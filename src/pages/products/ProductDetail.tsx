@@ -308,7 +308,7 @@ export default function ProductDetail() {
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
-          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images[0] || ''
+          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images?.[0] || ''
         }
         ogType="product"
       />

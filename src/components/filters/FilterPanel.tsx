@@ -28,7 +28,6 @@ import { MaterialsFilter } from './filter-panel/sections/MaterialsFilter';
 import { RamosFilter } from './filter-panel/sections/RamosFilter';
 import {
   PublicoFilter,
-  EndomarketingFilter,
   TechniquesFilter,
   TagsFilter,
   QuickOptionsFilter,
@@ -201,15 +200,6 @@ export function FilterPanel({
         compact
       />
     ),
-    endomarketing: () => (
-      <EndomarketingFilter
-        filters={filters}
-        endomarketingOptions={state.endomarketingOptions}
-        endoSearch={state.endoSearch}
-        setEndoSearch={state.setEndoSearch}
-        toggleArrayFilter={state.toggleArrayFilter}
-      />
-    ),
     materiais: () => (
       <MaterialsFilter
         materialSearch={state.materialSearch}
@@ -260,7 +250,11 @@ export function FilterPanel({
       />
     ),
     'opcoes-rapidas': () => (
-      <QuickOptionsFilter filters={filters} toggleBooleanFilter={state.toggleBooleanFilter} />
+      <QuickOptionsFilter
+        filters={filters}
+        toggleBooleanFilter={state.toggleBooleanFilter}
+        onMinStockChange={(v) => onFilterChange({ ...filters, minStock: v })}
+      />
     ),
     ordenacao: () => (
       <Select

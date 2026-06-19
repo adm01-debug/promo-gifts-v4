@@ -79,7 +79,12 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.featured) count++;
   if (filters.isNew) count++;
   if (filters.hasPersonalization) count++;
+  // BUG-COUNT-ONSALE FIX: onSale era filtrado mas não contado aqui.
+  if (filters.onSale) count++;
   if (filters.hasCommercialPackaging) count++;
+  // BUG-COUNT-VENDAS FIX: thresholds de vendas 90d não eram contados no preset.
+  if (filters.minSupplierSales90d > 0) count++;
+  if (filters.minPromoSales90d > 0) count++;
   // Ordenação só conta como filtro ativo quando foge do padrão global "Mais Recentes".
   if (filters.sortBy && filters.sortBy !== 'newest') count++;
   return count;
@@ -126,11 +131,15 @@ export function summarizeFilters(filters: FilterState): string {
   // BUG-SF-04 FIX: threshold era 500, correto é 9999
   if (filters.priceRange?.[0] > 0 || filters.priceRange?.[1] < 9999) parts.push('faixa de preço');
   if (filters.minStock > 0) parts.push(`estoque ≥ ${filters.minStock}`);
+  if (filters.minSupplierSales90d > 0) parts.push(`vendas forn. ≥ ${filters.minSupplierSales90d}`);
+  if (filters.minPromoSales90d > 0) parts.push(`vendas promo ≥ ${filters.minPromoSales90d}`);
   if (filters.inStock) parts.push('em estoque');
   if (filters.isKit) parts.push('kits');
   if (filters.featured) parts.push('destaques');
   if (filters.isNew) parts.push('novidades');
   if (filters.hasPersonalization) parts.push('personalizável');
+  // BUG-SUMMARY-ONSALE FIX: onSale era contado em countActiveFilters mas ausente do resumo.
+  if (filters.onSale) parts.push('em oferta');
   if (filters.hasCommercialPackaging) parts.push('embalagem nativa');
   if (filters.sortBy && filters.sortBy !== 'newest') parts.push(`ordenado por ${filters.sortBy}`);
   return parts.length > 0 ? parts.join(' · ') : 'Sem filtros';

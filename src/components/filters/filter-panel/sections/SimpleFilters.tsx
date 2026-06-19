@@ -1,10 +1,11 @@
 import React from 'react';
-import { Search, X, Clock, Gift } from 'lucide-react';
+import { Search, X, Clock, Gift, Package } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toTitleCase } from '@/lib/textUtils';
+import { DebouncedPriceInput } from '@/components/filters/DebouncedPriceInput';
 import type { FilterState } from '../types';
 
 // ============================================
@@ -348,13 +349,15 @@ export function TagsFilter({
 export function QuickOptionsFilter({
   filters,
   toggleBooleanFilter,
+  onMinStockChange,
 }: {
   filters: FilterState;
   toggleBooleanFilter: (key: keyof FilterState) => void;
+  onMinStockChange: (v: number) => void;
 }) {
   return (
     <div
-      className="max-h-48 space-y-2 overflow-y-auto overscroll-contain"
+      className="max-h-56 space-y-2 overflow-y-auto overscroll-contain"
       style={{ overscrollBehavior: 'contain' }}
     >
       <div className="flex items-center gap-2">
@@ -431,6 +434,19 @@ export function QuickOptionsFilter({
           <Gift className="h-3.5 w-3.5 text-warning" />
           Com Embalagem Nativa
         </Label>
+      </div>
+
+      <div className="flex items-center gap-2 pt-1">
+        <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <span className="whitespace-nowrap text-xs text-muted-foreground">Estoque mín.</span>
+        <DebouncedPriceInput
+          value={filters.minStock || ''}
+          onChange={onMinStockChange}
+          fallback={0}
+          placeholder="0 un."
+          min={0}
+          className={filters.minStock > 0 ? 'border-brand-primary/60' : ''}
+        />
       </div>
     </div>
   );

@@ -86,6 +86,9 @@ export function NoveltyProductGrid() {
       setLoadingProgress(0);
       progressRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
+          // Acelera até 85%, depois rasteja até 99% em passos mínimos para
+          // evitar que a barra "congele" visivelmente antes do carregamento
+          // terminar (o valor nunca chega a 100 — isso só ocorre ao concluir).
           if (prev >= 99) return 99;
           if (prev >= 85) return prev + 0.3;
           return prev + Math.random() * 12 + 3;
@@ -169,7 +172,7 @@ export function NoveltyProductGrid() {
     // Sem isso, produtos selecionados antes do filtro continuam marcados após
     // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
     if (selectionMode) sel.clearSelection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {

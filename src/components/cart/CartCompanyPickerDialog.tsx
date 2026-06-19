@@ -119,11 +119,20 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-search', debouncedSearch],
     queryFn: async () => {
       if (debouncedSearch.length < 3) return [];
-      const results = await searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, {
-        orderBy: { column: 'razao_social', ascending: true },
-        limit: 30,
-      });
-      return results.map(
+      const searchOpts = { orderBy: { column: 'razao_social', ascending: true }, limit: 30 } as const;
+      const [byRazao, byFantasia] = await Promise.all([
+        searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, searchOpts),
+        searchCrm<CrmCompany>('companies', 'nome_fantasia', debouncedSearch, searchOpts),
+      ]);
+      const seen = new Set<string>();
+      const deduped: CrmCompany[] = [];
+      for (const c of [...byRazao, ...byFantasia]) {
+        if (!seen.has(c.id)) {
+          seen.add(c.id);
+          deduped.push(c);
+        }
+      }
+      return deduped.map(
         (c): CompanyItem => ({
           id: c.id,
           name: getCompanyDisplayName(c),

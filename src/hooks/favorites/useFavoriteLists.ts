@@ -142,13 +142,35 @@ export function useFavoriteLists() {
     mutationFn: async (id: string) => {
       const target = listsQuery.data?.find((l) => l.id === id);
       if (target?.is_default) throw new Error('Não é possível excluir a lista padrão');
+
+      // Move all items to trash before deleting the list (prevents data loss on CASCADE DELETE)
+      const { data: listItems } = await supabase
+        .from('favorite_items')
+        .select('id')
+        .eq('list_id', id);
+      const itemIds = (listItems ?? []).map((i: { id: string }) => i.id);
+      if (itemIds.length > 0) {
+        // Deleting via the same table triggers fn_favorite_items_soft_delete → trash
+        const { error: itemsErr } = await supabase
+          .from('favorite_items')
+          .delete()
+          .in('id', itemIds);
+        if (itemsErr) throw itemsErr;
+      }
+
       const { error } = await supabase.from('favorite_lists').delete().eq('id', id);
       if (error) throw error;
-      return id;
+      return { id, itemCount: itemIds.length };
     },
-    onSuccess: () => {
+    onSuccess: ({ itemCount }) => {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
-      toast.success('Lista excluída');
+      qc.invalidateQueries({ queryKey: ['favorite-items'] });
+      qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      const msg =
+        itemCount > 0
+          ? `Lista excluída. ${itemCount} ${itemCount === 1 ? 'item movido' : 'itens movidos'} para a Lixeira.`
+          : 'Lista excluída';
+      toast.success(msg);
     },
     onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
@@ -295,51 +317,75 @@ export function useFavoriteListItems(listId: string | null) {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('favorite_items').delete().eq('id', id);
       if (error) throw error;
-      return id;
+      return id; // original item id (used as original_id in trash)
     },
-    onSuccess: (_id, _vars, ctx) => {
+    onSuccess: (deletedId) => {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-      // Toast com undo: restaura o último item da lixeira (que acabou de ser movido pelo trigger)
       if (!user) return;
-      const productName = (ctx as { productName?: string } | undefined)?.productName ?? 'Item';
-      toast.success(`${productName} removido`, {
+      toast.success('Item removido', {
         description: 'Você tem 30 dias para restaurar pela Lixeira.',
         action: {
           label: 'Desfazer',
           onClick: async () => {
-            // pega item mais recente da lixeira deste user e restaura
+            // Use original_id to find exactly this item in trash (not just the latest)
+            const { data: result, error: rpcErr } = await supabase.rpc(
+              'restore_favorite_from_trash',
+              { _trash_id: null, _user_id: user.id },
+            );
+            // Fallback: find by original_id
             const { data: trashed } = await supabase
               .from('favorite_items_trash')
-              .select('*')
+              .select('id')
               .eq('user_id', user.id)
-              .order('deleted_at', { ascending: false })
-              .limit(1)
+              .eq('original_id', deletedId)
               .maybeSingle();
             if (!trashed) {
-              toast.error('Nada para desfazer');
+              toast.error('Item não encontrado na lixeira');
               return;
             }
-            await supabase.from('favorite_items').insert({
-              list_id: trashed.list_id,
-              user_id: user.id,
-              product_id: trashed.product_id,
-              variant_id: trashed.variant_id,
-              variant_info: trashed.variant_info,
-              note: trashed.note,
-              price_at_save: trashed.price_at_save,
-            } as never);
-            await supabase.from('favorite_items_trash').delete().eq('id', trashed.id);
-            qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
-            qc.invalidateQueries({ queryKey: LISTS_KEY });
-            qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-            toast.success('Item restaurado');
+            void result; void rpcErr;
+            const { data: restored } = await supabase.rpc('restore_favorite_from_trash', {
+              _trash_id: trashed.id,
+              _user_id: user.id,
+            });
+            if (restored?.ok) {
+              qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+              qc.invalidateQueries({ queryKey: LISTS_KEY });
+              qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+              const msg = restored.original_list_changed
+                ? 'Item restaurado na lista padrão (lista original foi excluída)'
+                : 'Item restaurado';
+              toast.success(msg);
+            } else {
+              toast.error('Não foi possível restaurar');
+            }
           },
         },
         duration: 8000,
       });
     },
+  });
+
+  /** Remove múltiplos itens em uma única query (evita N toasts e N round-trips). */
+  const removeItems = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!ids.length) return ids;
+      const { error } = await supabase.from('favorite_items').delete().in('id', ids);
+      if (error) throw error;
+      return ids;
+    },
+    onSuccess: (ids) => {
+      qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+      qc.invalidateQueries({ queryKey: LISTS_KEY });
+      qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      toast.success(
+        `${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`,
+        { description: 'Restaure pela Lixeira em até 30 dias.' },
+      );
+    },
+    onError: (e: Error) => toast.error('Erro ao remover', { description: sanitizeError(e) }),
   });
 
   const moveItem = useMutation({
@@ -364,6 +410,7 @@ export function useFavoriteListItems(listId: string | null) {
     addItem,
     updateItem,
     removeItem,
+    removeItems,
     moveItem,
     refetch: itemsQuery.refetch,
   };
@@ -394,31 +441,23 @@ export function useFavoriteTrash() {
   const restoreItem = useMutation({
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
-      const trashed = trashQuery.data?.find((t) => t.id === trashId);
-      if (!trashed) throw new Error('Item não encontrado na lixeira');
-
-      const { error: insErr } = await supabase.from('favorite_items').insert({
-        list_id: trashed.list_id,
-        user_id: user.id,
-        product_id: trashed.product_id,
-        variant_id: trashed.variant_id,
-        variant_info: trashed.variant_info,
-        note: trashed.note,
-        price_at_save: trashed.price_at_save,
-      } as never);
-      if (insErr) throw insErr;
-
-      const { error: delErr } = await supabase
-        .from('favorite_items_trash')
-        .delete()
-        .eq('id', trashId);
-      if (delErr) throw delErr;
+      // Atomic RPC: handles missing original list by falling back to default list
+      const { data, error } = await supabase.rpc('restore_favorite_from_trash', {
+        _trash_id: trashId,
+        _user_id: user.id,
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
+      return data as { ok: boolean; list_id: string; item_id: string | null; original_list_changed: boolean };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-items'] });
-      toast.success('Item restaurado');
+      const msg = data.original_list_changed
+        ? 'Item restaurado na lista padrão (lista original foi excluída)'
+        : 'Item restaurado';
+      toast.success(msg);
     },
     onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });

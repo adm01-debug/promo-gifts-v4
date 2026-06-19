@@ -22,13 +22,15 @@ export interface ProductFilterContext {
   hasColorFilter: boolean;
   colorFilteredProductIds: Set<string>;
   isLoadingColorFilter: boolean;
+  colorFilterError?: unknown;
   hasCategoryFilter: boolean;
   categoryFilteredProductIds: Set<string>;
   isLoadingCategoryFilter: boolean;
-  categoryFilterError: unknown;
+  categoryFilterError?: unknown;
   hasMaterialFilter: boolean;
   materialFilteredProductIds: Set<string>;
   isLoadingMaterialFilter: boolean;
+  materialFilterError?: unknown;
   /**
    * SF-E (sizes server-side). Quando `hasSizeFilter` é true, a filtragem por
    * tamanho usa o Set de product IDs vindo de product_variants (em vez da
@@ -67,6 +69,7 @@ export function applyProductFilters(
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
@@ -74,6 +77,7 @@ export function applyProductFilters(
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
@@ -101,7 +105,13 @@ export function applyProductFilters(
   }
   if (hasColorFilter && colorFilteredProductIds.size > 0)
     result = result.filter((p) => colorFilteredProductIds.has(p.id));
-  else if (hasColorFilter && colorFilteredProductIds.size === 0 && !isLoadingColorFilter)
+  // FIX-21: guard !colorFilterError mirrors category filter — RPC error must not zero the grid.
+  else if (
+    hasColorFilter &&
+    colorFilteredProductIds.size === 0 &&
+    !isLoadingColorFilter &&
+    !colorFilterError
+  )
     result = [];
   if (hasCategoryFilter && categoryFilteredProductIds.size > 0)
     result = result.filter((p) => categoryFilteredProductIds.has(p.id));
@@ -113,13 +123,19 @@ export function applyProductFilters(
   )
     result = [];
   if (filters.suppliers.length > 0) {
-    const supplierIdSet = new Set(filters.suppliers);
-    const supplierLowerArr = filters.suppliers.map((s) => s.toLowerCase());
+    // FIX-17: normaliza todas as 3 vias (id, reference, name) para lowercase.
+    // Original: id/reference eram case-sensitive; name era case-insensitive → inconsistente.
+    const supplierLowerSet = new Set(filters.suppliers.map((s) => s.toLowerCase()));
+    const supplierLowerArr = [...supplierLowerSet].filter((s) => s !== '');
     result = result.filter((product) => {
-      if (supplierIdSet.has(product.supplier?.id ?? '')) return true;
-      if (supplierIdSet.has(product.supplier_reference || '')) return true;
-      const sName = (product.supplier?.name || product.brand || '').toLowerCase();
-      return supplierLowerArr.some((s) => sName.includes(s));
+      const suppId = (product.supplier?.id ?? '').toLowerCase();
+      const suppRef = (product.supplier_reference ?? '').toLowerCase();
+      const suppName = (product.supplier?.name || product.brand || '').toLowerCase();
+      return (
+        (suppId !== '' && supplierLowerSet.has(suppId)) ||
+        (suppRef !== '' && supplierLowerSet.has(suppRef)) ||
+        supplierLowerArr.some((s) => suppName.includes(s))
+      );
     });
   }
   // BUG-DB-02: metadados server-side (datas/tags/ramos/segmentos/público) via RPC.
@@ -180,7 +196,13 @@ export function applyProductFilters(
   }
   if (hasMaterialFilter && materialFilteredProductIds.size > 0)
     result = result.filter((p) => materialFilteredProductIds.has(p.id));
-  else if (hasMaterialFilter && materialFilteredProductIds.size === 0 && !isLoadingMaterialFilter)
+  // FIX-22: guard !materialFilterError — RPC error must not zero the grid.
+  else if (
+    hasMaterialFilter &&
+    materialFilteredProductIds.size === 0 &&
+    !isLoadingMaterialFilter &&
+    !materialFilterError
+  )
     result = [];
   if (!hasMaterialFilter && filters.materiais.length > 0) {
     const materiaisLower = filters.materiais.map((m) => m.toLowerCase());
@@ -232,7 +254,11 @@ export function applyProductFilters(
   if (filters.onSale) result = result.filter((product) => product.onSale === true);
   if (filters.gender?.length) {
     const genderSet = new Set(filters.gender.map((g) => g.toLowerCase().trim()));
-    result = result.filter((product) => genderSet.has((product.gender || '').toLowerCase().trim()));
+    result = result.filter((product) => {
+      const g = (product.gender ?? '').toLowerCase().trim();
+      // FIX-16: produtos sem gênero definido (null/'') são neutros — incluídos em qualquer filtro.
+      return g === '' || genderSet.has(g);
+    });
   }
   // SF-E: filtragem de tamanho server-side (product_variants) quando disponível;
   // fallback legado client-side (product.variations) caso o contexto não traga o Set.
@@ -245,10 +271,12 @@ export function applyProductFilters(
       }
     } else {
       // Legado: BUG-17 — match por variações carregadas no produto.
-      const sizeSet = new Set(filters.sizes);
+      // FIX-15: normaliza para lowercase+trim para não depender de casing do catálogo.
+      const sizeSet = new Set(filters.sizes.map((s) => s.toLowerCase().trim()));
       result = result.filter((product) =>
         product.variations?.some(
-          (v: ProductVariation) => v.size_code !== null && sizeSet.has(String(v.size_code)),
+          (v: ProductVariation) =>
+            v.size_code !== null && sizeSet.has(String(v.size_code).toLowerCase().trim()),
         ),
       );
     }

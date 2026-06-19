@@ -153,6 +153,27 @@ describe('saveMockupToDb', () => {
     expect(cfg.logoScale).toBe(150);
   });
 
+  // BUG-10 regression: technique_id has a FK to personalization_techniques but the UI
+  // loads techniques from tabela_preco_gravacao_oficial — zero UUID overlap. Sending a
+  // tabela_preco UUID causes a FK violation and silently prevents every save.
+  // The fix: always send null for technique_id; technique_name (text) carries the name.
+  it('always sends technique_id: null to avoid FK violation (BUG-10)', async () => {
+    tableResults['products'] = { data: { id: 'prod-1' }, error: null };
+    tableResults['generated_mockups'] = { data: { id: 'rec-1' }, error: null };
+
+    await saveMockupToDb({
+      userId: 'user-1',
+      product: { id: 'prod-1', name: 'Caneca', sku: 'CAN-001' },
+      technique: silk,
+      client: null,
+      area: area(),
+      mockupUrl: 'https://cdn.example.com/mockup.png',
+    });
+
+    expect(captured.insert!.technique_id).toBeNull();
+    expect(captured.insert!.technique_name).toBe('Serigrafia');
+  });
+
   it('uploads data: logos and nulls product_id when the product is unknown', async () => {
     tableResults['products'] = { data: null, error: null };
     tableResults['generated_mockups'] = { data: { id: 'rec-2' }, error: null };

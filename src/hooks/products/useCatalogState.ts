@@ -265,6 +265,16 @@ export function useCatalogState() {
 
     setIsTransitioning(false);
   }, [sortBy, updatePreferences, navigate, trackSort]);
+
+  // BUG-SORTBY-SYNC FIX: When sortBy state changes via the CatalogToolbar sort
+  // dropdown (or URL navigation), sync it into filters.sortBy so that:
+  // 1. The FilterPanel ordenacao section shows the correct selected option.
+  // 2. sectionCounts.ordenacao badge lights up when sort ≠ 'newest'.
+  // No loop risk: setFilters does not update sortBy state.
+  useEffect(() => {
+    setFilters((prev) => (prev.sortBy !== sortBy ? { ...prev, sortBy } : prev));
+  }, [sortBy]);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -372,6 +382,7 @@ export function useCatalogState() {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
@@ -381,6 +392,7 @@ export function useCatalogState() {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
+    error: categoryFilterError,
   } = useProductsByCategory({
     categoryIds: filters.categories?.map(String) ?? [],
     includeDescendants: true,
@@ -394,6 +406,7 @@ export function useCatalogState() {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
@@ -409,6 +422,7 @@ export function useCatalogState() {
     productIds: metadataFilteredProductIds,
     hasFilter: hasMetadataFilter,
     isLoading: isLoadingMetadataFilter,
+    error: metadataFilterError,
   } = useProductsByMetadata({
     datas: filters.datasComemorativas,
     tags: filters.tags,
@@ -426,6 +440,7 @@ export function useCatalogState() {
     productIds: sizeFilteredProductIds,
     hasFilter: hasSizeFilter,
     isLoading: isLoadingSizeFilter,
+    error: sizeFilterError,
   } = useProductsBySize(filters.sizes || []);
 
   useExternalCategoriesQuery();
@@ -540,6 +555,10 @@ export function useCatalogState() {
     // nunca contados no badge global "N filtros ativos".
     if (filters.minSupplierSales90d > 0) count += 1;
     if (filters.minPromoSales90d > 0) count += 1;
+    // BUG-MINSTOCK-COUNT FIX: minStock era filtrado no Super Filtro mas não contado aqui.
+    if (filters.minStock > 0) count += 1;
+    // BUG-TECHNIQUES-COUNT FIX: técnicas selecionadas não eram contadas no badge global.
+    if (filters.techniques?.length) count += filters.techniques.length;
     return count;
   }, [filters]);
 
@@ -558,18 +577,23 @@ export function useCatalogState() {
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    categoryFilterError,
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    metadataFilterError,
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
+    sizeFilterError,
     promoSalesMap,
     promoSales90dMap,
     supplierSalesMap,
