@@ -5,6 +5,7 @@ import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgr
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
 import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutableCache';
+import { computeKitCoverage, compareCoverage } from './kit-coverage';
 import {
   type PromobrindProduct,
   PRODUCT_SELECT_FIELDS_WITH_SALE,
