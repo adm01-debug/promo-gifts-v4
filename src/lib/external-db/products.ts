@@ -10,6 +10,7 @@ import {
   PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
+import { TECHNICAL_IMAGE_TYPES } from '@/utils/image-utils';
 
 // Row shapes for external_db_bridge results (untyped at runtime; assertions below).
 type VariantRow = {
@@ -38,23 +39,11 @@ type ImageRow = {
   supplier_code: string | null;
   alt_text: string | null;
   title_text: string | null;
+  blurhash: string | null;
 };
 type SupplierRow = { id: string; name: string; code: string };
 type ColorVariationRow = { id: string; name: string; slug: string; group_id: string };
 type ColorGroupRow = { id: string; name: string; slug: string };
-
-/**
- * Tipos de imagem técnicos — NÃO são fotos de produto.
- * Não devem aparecer no card de produto nem na galeria do frontend.
- *   box/pouch    = embalagens
- *   location     = templates de posicionamento de gravação
- *   area         = áreas de gravação (diagramas técnicos)
- *   component    = componentes de tecido/material
- *
- * Alinhado com o trigger trg_sync_product_images no banco e o backfill
- * executado em 2026-06-01.
- */
-const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'component']);
 
 export async function fetchPromobrindProducts(options?: {
   search?: string;
@@ -307,7 +296,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
         table: 'product_images',
         operation: 'select',
         select:
-          'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id',
+          'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id, blurhash',
         filters: { is_active: true, product_id: chunk },
         limit: 1000,
         offset: 0,
@@ -412,6 +401,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: string | null;
       titleText: string | null;
       variantId: string | null;
+      blurhash: string | null;
     }>
   >();
 
@@ -432,6 +422,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: img.alt_text || null,
       titleText: img.title_text || null,
       variantId: img.variant_id || null,
+      blurhash: img.blurhash || null,
     });
   });
 
@@ -544,6 +535,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       if (primaryImage) {
         product.primary_image_url = primaryImage.url;
         product.image_url = primaryImage.url;
+        product.primary_image_blurhash = primaryImage.blurhash || null;
       }
       const ogImage =
         mainImages.find((img) => img.isOgImage) ||

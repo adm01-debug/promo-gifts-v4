@@ -123,10 +123,10 @@ export function useProductGroups() {
   });
 
   const getMembersForGroup = (groupId: string) =>
-    groupMembers?.filter((m) => m.product_group_id === groupId) || [];
+    groupMembers?.filter((m) => m.product_group_id === groupId) ?? [];
   const getAvailableProducts = (groupId: string) => {
     const memberIds = getMembersForGroup(groupId).map((m) => m.product_id);
-    return allProducts?.filter((p) => !memberIds.includes(p.id)) || [];
+    return allProducts?.filter((p) => !memberIds.includes(p.id)) ?? [];
   };
   const getProductInfo = (productId: string) => allProducts?.find((p) => p.id === productId);
 

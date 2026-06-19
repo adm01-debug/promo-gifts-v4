@@ -6,6 +6,7 @@ const mockProduct: Product = {
   id: 'p1',
   name: 'Caneta Metal',
   price: 10,
+  shortDescription: '',
   sku: 'CAN-01',
   stock: 100,
   image_url: 'https://example.com/main.jpg',
@@ -18,7 +19,7 @@ const mockProduct: Product = {
       group: 'azul',
       groupSlug: 'azul',
       variationSlug: 'azul-marinho',
-      image: 'https://example.com/blue.jpg'
+      image: 'https://example.com/blue.jpg',
     },
     {
       name: 'Vermelho',
@@ -26,8 +27,8 @@ const mockProduct: Product = {
       group: 'vermelho',
       groupSlug: 'vermelho',
       variationSlug: 'vermelho-vivo',
-      images: ['https://example.com/red.jpg']
-    }
+      images: ['https://example.com/red.jpg'],
+    },
   ],
   materials: [],
   minQuantity: 1,
@@ -43,8 +44,8 @@ const mockProduct: Product = {
     datasComemorativas: [],
     endomarketing: [],
     ramo: [],
-    nicho: []
-  }
+    nicho: [],
+  },
 };
 
 describe('resolveColorImage', () => {
@@ -63,7 +64,7 @@ describe('resolveColorImage', () => {
     expect(resolveColorImage(mockProduct, activeColors)).toBe('https://example.com/red.jpg');
   });
 
-  it('should fallback to keyword match if slugs don\'t match', () => {
+  it("should fallback to keyword match if slugs don't match", () => {
     const activeColors = { groups: [], variations: ['azul'] };
     expect(resolveColorImage(mockProduct, activeColors)).toBe('https://example.com/blue.jpg');
   });

@@ -85,32 +85,32 @@ const App = () => {
         <Suspense fallback={<div className="min-h-screen bg-[#030508]" />}>
           <AccessibilityProvider>
             <AriaLiveProvider>
-            <TooltipProvider delayDuration={400} skipDelayDuration={200}>
-              {/*
-               * Keep v7_startTransition disabled: under concurrent root work it can
-               * update history before the matching route render commits.
-               */}
-              <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-                <AuthProvider>
-                  <AppBootstrapContainer>
-                    <AppBootstrap>
-                      <MotionProvider>
-                        <EnhancedErrorBoundary>
-                          <RootInteractivityGuard />
-                          <Sonner />
-                          <OptionalCloudStatusBanner />
-                          <OptionalCloudStatusDot />
-                          <OptionalGlobalOfflineAlert />
-                          <RouteScrollReset />
-                          <RoutePrefetcher />
-                          <AppRoutes />
-                        </EnhancedErrorBoundary>
-                      </MotionProvider>
-                    </AppBootstrap>
-                  </AppBootstrapContainer>
-                </AuthProvider>
-              </BrowserRouter>
-            </TooltipProvider>
+              <TooltipProvider delayDuration={400} skipDelayDuration={200}>
+                {/*
+                 * Keep v7_startTransition disabled: under concurrent root work it can
+                 * update history before the matching route render commits.
+                 */}
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <AuthProvider>
+                    <AppBootstrapContainer>
+                      <AppBootstrap>
+                        <MotionProvider>
+                          <EnhancedErrorBoundary>
+                            <RootInteractivityGuard />
+                            <Sonner />
+                            <OptionalCloudStatusBanner />
+                            <OptionalCloudStatusDot />
+                            <OptionalGlobalOfflineAlert />
+                            <RouteScrollReset />
+                            <RoutePrefetcher />
+                            <AppRoutes />
+                          </EnhancedErrorBoundary>
+                        </MotionProvider>
+                      </AppBootstrap>
+                    </AppBootstrapContainer>
+                  </AuthProvider>
+                </BrowserRouter>
+              </TooltipProvider>
             </AriaLiveProvider>
           </AccessibilityProvider>
         </Suspense>

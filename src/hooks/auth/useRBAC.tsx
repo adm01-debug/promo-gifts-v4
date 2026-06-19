@@ -122,7 +122,7 @@ export function useRBAC() {
   }, [roleName, dbPermissions]);
 
   const role: Role = {
-    id: profile?.id || '',
+    id: profile?.id ?? '',
     name: roleName,
     description: getDescriptionForRole(roleName),
   };
@@ -176,13 +176,14 @@ export function useRBAC() {
   };
 }
 
+const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
+  dev: 'Desenvolvedor',
+  supervisor: 'Supervisor',
+  agente: 'Agente',
+} as const;
+
 function getDescriptionForRole(role: RoleName): string {
-  const descriptions: Record<RoleName, string> = {
-    dev: 'Desenvolvedor',
-    supervisor: 'Supervisor',
-    agente: 'Agente',
-  };
-  return descriptions[role] || 'Agente';
+  return ROLE_DESCRIPTIONS[role] || 'Agente';
 }
 
 export default useRBAC;

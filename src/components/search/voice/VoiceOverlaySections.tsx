@@ -1,7 +1,7 @@
 /**
  * Extracted sections from VoiceSearchOverlay — suggestions, text input, footer
  */
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Send, Keyboard, X } from 'lucide-react';
 import type { VoiceAgentPhase } from '@/hooks/intelligence';

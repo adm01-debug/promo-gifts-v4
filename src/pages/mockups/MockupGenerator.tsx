@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTechniqueHandlers } from '@/pages/mockups/mockup-generator/MockupTechniqueHandlers';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
+import { toast } from 'sonner';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import type { LayoutCaptureRequest } from '@/components/mockup/approval/OffscreenLayoutCapture';
 
@@ -100,14 +101,6 @@ export default function MockupGenerator() {
   const mg = useMockupGenerator();
   const { profile } = useAuth();
   const user = mg.user;
-
-  const _summary = useMemo(() => {
-    const parts = [];
-    if (mg.selectedClient) parts.push(mg.selectedClient.name);
-    if (mg.selectedProduct) parts.push(mg.selectedProduct.name);
-    if (mg.selectedTechnique) parts.push(mg.selectedTechnique.name);
-    return parts.join(' · ');
-  }, [mg.selectedClient, mg.selectedProduct, mg.selectedTechnique]);
 
   const technique = useTechniqueHandlers({
     hasLogo: mg.hasLogo,
@@ -477,15 +470,20 @@ export default function MockupGenerator() {
                           colorsCount={mg.techniqueColorConfig?.colorCount}
                           onStaticGenerated={async (dataUrl, extra) => {
                             if (mg.activeArea) {
-                              const recordId = await mg.saveMockupToHistory(
-                                dataUrl,
-                                mg.activeArea,
-                                extra,
-                              );
-                              if (recordId) {
-                                mg.setLastSavedMockupUrl(dataUrl);
-                                mg.setLastSavedLayoutMode('static');
-                                mg.setLastSavedRecordId(recordId);
+                              try {
+                                const recordId = await mg.saveMockupToHistory(
+                                  dataUrl,
+                                  mg.activeArea,
+                                  extra,
+                                );
+                                if (recordId) {
+                                  mg.setLastSavedMockupUrl(dataUrl);
+                                  mg.setLastSavedLayoutMode('static');
+                                  mg.setLastSavedRecordId(recordId);
+                                }
+                              } catch (err) {
+                                toast.error('Erro ao salvar mockup no histórico');
+                                console.error('[MockupGenerator] saveMockupToHistory failed:', err);
                               }
                             }
                           }}
@@ -611,7 +609,7 @@ export default function MockupGenerator() {
           onOpenChange={technique.setColorConfigDialogOpen}
           currentConfig={mg.techniqueColorConfig}
           onConfirm={mg.setTechniqueColorConfig}
-          techniqueName={mg.selectedTechnique?.name || ''}
+          techniqueName={mg.selectedTechnique?.name ?? ''}
           techniqueCode={mg.selectedTechnique?.code}
           detectedColors={mg.logoColorAnalysis.colors || []}
         />

@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 type CacheEntry = {
   name: string;
@@ -131,7 +132,7 @@ export function CredentialCacheMetricsPanel() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', loading && 'animate-spin')} />
               Atualizar
             </Button>
             <Button variant="ghost" size="sm" onClick={reset} disabled={loading}>

@@ -38,7 +38,7 @@ export function IntelligenceKPICards({
       <Card>
         <CardContent className="py-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            {[...Array(5)].map((_, i) => (
+            {Array.from({ length: 5 }, (_, i) => (
               <Skeleton key={i} className="h-20 rounded-lg" />
             ))}
           </div>

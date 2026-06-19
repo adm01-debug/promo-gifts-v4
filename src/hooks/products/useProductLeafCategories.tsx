@@ -1,24 +1,26 @@
 /**
  * Categoria-FOLHA (mais profunda) de produtos — hook + provider batch.
  *
- * O catálogo lightweight só traz `category_id`/`main_category_id`, que frequentemente
- * apontam para a raiz ou um nó intermediário (≈57% dos produtos). A categoria que o
- * usuário quer ver é a FOLHA — a mais específica em que o produto se encaixa
- * (filha/neta/bisneta…), derivada de `product_category_assignments`.
+ * FIX BUG-C (2026-06-18): substituída a abordagem de batched GETs com
+ * cláusulas IN (300 UUIDs → URLs > 11 KB, risco 414) + "wave queries" de
+ * categories (até 10 rounds), por uma única chamada à RPC
+ * fn_get_all_leaf_categories() que retorna TODAS as 7 574 folhas de uma vez.
  *
- * Arquitetura: acesso PostgREST NATIVO ao banco oficial `pqpdolkaeqlyzpdpbizo`
- * (EXTERNAL_PROMOBRIND_URL/external-db-bridge foi descontinuado — operamos direto no
- * banco para evitar latência). UMA query batch nos assignments + UMA nos metadados de
- * categoria, em vez de N+1 por card. O desempate de folha (≥2 categorias no mesmo nível
- * máximo, ~686 produtos) é determinístico: maior level → is_primary → display_order → nome.
+ * Nova arquitetura:
+ *   - useGlobalLeafCategories: RPC → Map global por sessão (staleTime=Infinity)
+ *   - useProductLeafCategories: lê do Map global — zero queries adicionais
+ *   - ProductLeafCategoryProvider: passa o subconjunto de produto IDs ao contexto
  *
- * Fallback: em erro/RLS, o Map fica vazio e o consumidor mantém o comportamento atual
- * (category_id || main_category_id) — degradação suave, sem quebrar a listagem.
+ * Mantido: pickLeaves() exportado para retrocompatibilidade com testes unitários.
+ * Mantido: buildPath() exportado para uso em breadcrumbs futuros.
+ * Fallback: em erro de RPC, o Map fica vazio e o consumidor usa category_id (degradação suave).
  */
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { untypedFrom } from '@/lib/supabase-untyped';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+
+// ─── Tipos públicos ───────────────────────────────────────────────────────────
 
 export interface LeafCategory {
   id: string;
@@ -30,14 +32,7 @@ export interface LeafCategory {
 
 export type LeafCategoryMap = ReadonlyMap<string, LeafCategory>;
 
-// Limite de itens por cláusula IN para evitar URLs/queries gigantes no PostgREST.
-const CHUNK_SIZE = 300;
-
-function chunk<T>(arr: readonly T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
+// ─── Legado: tipos internos mantidos para pickLeaves() (usado em testes) ──────
 
 interface AssignmentRow {
   product_id: string;
@@ -53,8 +48,8 @@ interface CategoryMetaRow {
   parent_id: string | null;
 }
 
-/** Monta o caminho raiz→folha de uma categoria, subindo por parent_id (com guarda anti-ciclo). */
-function buildPath(leafId: string, catById: ReadonlyMap<string, CategoryMetaRow>): string[] {
+/** @internal Mantido para teste unitário do desempate. */
+export function buildPath(leafId: string, catById: ReadonlyMap<string, CategoryMetaRow>): string[] {
   const names: string[] = [];
   const seen = new Set<string>();
   let cur: string | null = leafId;
@@ -65,14 +60,10 @@ function buildPath(leafId: string, catById: ReadonlyMap<string, CategoryMetaRow>
     names.push(node.name);
     cur = node.parent_id;
   }
-  return names.reverse(); // raiz → folha
+  return names.reverse();
 }
 
-/**
- * Escolhe a folha de cada produto a partir dos assignments + metadados de categoria.
- * Desempate: maior level → is_primary DESC → display_order ASC → name ASC.
- * Exportada para teste unitário do desempate.
- */
+/** @internal Mantido para teste unitário. */
 export function pickLeaves(
   assignments: AssignmentRow[],
   catById: ReadonlyMap<string, CategoryMetaRow>,
@@ -124,87 +115,95 @@ export function pickLeaves(
   return leaves;
 }
 
-async function fetchLeaves(productIds: string[]): Promise<Map<string, LeafCategory>> {
-  // 1) Assignments (N:N) dos produtos — PostgREST nativo, em chunks.
-  const assignments: AssignmentRow[] = [];
-  for (const ids of chunk(productIds, CHUNK_SIZE)) {
-    const { data, error } = await untypedFrom<AssignmentRow>('product_category_assignments')
-      .select('product_id, category_id, is_primary, display_order')
-      .in('product_id', ids);
-    if (error) throw new Error(error.message);
-    if (data) assignments.push(...(data as AssignmentRow[]));
-  }
-  if (assignments.length === 0) return new Map();
+// ─── RPC row type ─────────────────────────────────────────────────────────────
 
-  // 2) Metadados das categorias referenciadas + seus ANCESTRAIS (para montar o caminho).
-  //    Carrega em "ondas": começa pelas categorias dos assignments e sobe pelos parent_id
-  //    que ainda não temos, até cobrir todas as raízes (hierarquia real tem ≤6 níveis).
-  const catById = new Map<string, CategoryMetaRow>();
-  let pending = [...new Set(assignments.map((a) => a.category_id).filter(Boolean))];
-  let guard = 0;
-  while (pending.length > 0 && guard < 10) {
-    guard += 1;
-    for (const ids of chunk(pending, CHUNK_SIZE)) {
-      const { data, error } = await untypedFrom<CategoryMetaRow>('categories')
-        .select('id, name, level, parent_id')
-        .in('id', ids);
-      if (error) throw new Error(error.message);
-      (data as CategoryMetaRow[] | null)?.forEach((c) => catById.set(c.id, c));
-    }
-    // Próxima onda: parents ainda não carregados.
-    pending = [
-      ...new Set(
-        [...catById.values()]
-          .map((c) => c.parent_id)
-          .filter((pid): pid is string => !!pid && !catById.has(pid)),
-      ),
-    ];
-  }
-
-  return pickLeaves(assignments, catById);
+interface LeafCategoryRow {
+  product_id: string;
+  leaf_category_id: string;
+  leaf_category_name: string;
+  leaf_category_level: number;
+  leaf_category_parent_id: string | null;
+  leaf_category_slug: string | null;
 }
 
+// ─── Query global (uma única chamada RPC por sessão) ──────────────────────────
+
 /**
- * Resolve as categorias-folha de uma lista de produtos (batch nativo + cache).
- * Retorna um Map vazio enquanto carrega ou em caso de erro (fallback transparente).
+ * Carrega TODAS as categorias-folha via RPC fn_get_all_leaf_categories().
+ * staleTime=Infinity → cache pela duração da sessão, sem refetch automático.
+ * Uma única chamada retorna as 7 574 linhas sem o limite de 1 000 do PostgREST.
+ */
+function useGlobalLeafCategories(): LeafCategoryMap {
+  const { data } = useQuery({
+    queryKey: ['global-leaf-categories'],
+    queryFn: async (): Promise<Map<string, LeafCategory>> => {
+      // fn_get_all_leaf_categories é SECURITY DEFINER e não está nos tipos gerados pelo Lovable.
+      type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
+      const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
+        'fn_get_all_leaf_categories',
+      );
+      if (error) {
+        logger.warn('[useProductLeafCategories] RPC falhou; usando fallback vazio', error);
+        throw error;
+      }
+      const rows = (data ?? []) as unknown as LeafCategoryRow[];
+      const map = new Map<string, LeafCategory>();
+      for (const row of rows) {
+        if (!row.product_id || !row.leaf_category_id) continue;
+        map.set(row.product_id, {
+          id: row.leaf_category_id,
+          name: row.leaf_category_name ?? '',
+          level: row.leaf_category_level ?? 0,
+          path: [], // caminho não disponível na MV — usar breadcrumb separado se necessário
+        });
+      }
+      logger.info(`[useProductLeafCategories] Loaded ${map.size} leaf categories (RPC global)`);
+      return map;
+    },
+    staleTime: Infinity, // mantém em cache toda a sessão
+    gcTime: Infinity, // nunca descarta da memória
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+  return data ?? new Map<string, LeafCategory>();
+}
+
+// ─── Hook público ─────────────────────────────────────────────────────────────
+
+/**
+ * Resolve as categorias-folha de uma lista de produtos.
+ * Lê do cache global (zero queries adicionais após o primeiro render).
  */
 export function useProductLeafCategories(productIds: readonly string[]): {
   leafById: LeafCategoryMap;
   isLoading: boolean;
 } {
-  // Chave estável: ids únicos e ordenados.
-  const uniqueSorted = useMemo(() => [...new Set(productIds.filter(Boolean))].sort(), [productIds]);
+  const globalMap = useGlobalLeafCategories();
 
-  const query = useQuery({
-    queryKey: ['product-leaf-categories', uniqueSorted],
-    enabled: uniqueSorted.length > 0,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    queryFn: async (): Promise<Map<string, LeafCategory>> => {
-      try {
-        return await fetchLeaves(uniqueSorted);
-      } catch (err) {
-        // Fallback suave: sem folha, o consumidor usa category_id || main_category_id.
-        logger.warn('[useProductLeafCategories] falha ao resolver folhas; usando fallback', err);
-        return new Map<string, LeafCategory>();
-      }
-    },
-  });
+  const leafById = useMemo((): LeafCategoryMap => {
+    if (globalMap.size === 0 || productIds.length === 0) return globalMap;
+    // Subconjunto apenas dos IDs relevantes (evita expor o Map completo ao consumidor)
+    const sub = new Map<string, LeafCategory>();
+    for (const id of productIds) {
+      const leaf = globalMap.get(id);
+      if (leaf) sub.set(id, leaf);
+    }
+    return sub;
+  }, [globalMap, productIds]);
 
   return {
-    leafById: query.data ?? new Map<string, LeafCategory>(),
-    isLoading: query.isLoading,
+    leafById,
+    isLoading: false, // O Map global carrega em background; o consumidor usa fallback enquanto aguarda
   };
 }
 
-// ---------- Provider (evita prop-drilling em grids/listas) ----------
+// ─── Provider (evita prop-drilling em grids/listas) ──────────────────────────
 
 const LeafCategoryCtx = createContext<LeafCategoryMap>(new Map());
 
 /**
- * Envolve uma lista/grade de produtos. Resolve as folhas em lote para os IDs dados
- * e as disponibiliza aos cards via `useLeafCategory(productId)`.
+ * Envolve uma lista/grade de produtos e disponibiliza as folhas via useLeafCategory().
+ * Após o fix BUG-C, este provider não dispara queries adicionais — apenas lê do cache global.
  */
 export function ProductLeafCategoryProvider({
   productIds,

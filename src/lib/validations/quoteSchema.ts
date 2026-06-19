@@ -34,6 +34,19 @@ export const quoteFormSchema = z
       message: 'Valor do frete inconsistente com a modalidade selecionada',
       path: ['shippingCost'],
     },
+  )
+  .refine(
+    (data) => {
+      // Desconto percentual deve ser entre 0 e 100
+      if (data.discountType === 'percent') {
+        return data.discountValue <= 100;
+      }
+      return true;
+    },
+    {
+      message: 'Desconto percentual não pode exceder 100%',
+      path: ['discountValue'],
+    },
   );
 
 export const quoteItemSchema = z.object({
@@ -51,6 +64,16 @@ export const quoteItemSchema = z.object({
  * Validates quote form data and returns validation errors as field keys.
  * Used for inline validation in QuoteBuilderPage.
  */
+const QUOTE_FIELD_NAMES: Record<string, string> = {
+  clientId: 'empresa',
+  contactId: 'contato',
+  paymentMethod: 'forma_pagamento',
+  paymentTerms: 'prazo_pagamento',
+  deliveryTime: 'prazo_entrega',
+  shippingType: 'frete',
+  shippingCost: 'valor_frete',
+} as const;
+
 export function validateQuoteForm(data: {
   clientId: string;
   contactId: string;
@@ -76,16 +99,7 @@ export function validateQuoteForm(data: {
   if (!result.success) {
     for (const issue of result.error.issues) {
       const field = issue.path[0] as string;
-      const fieldMap: Record<string, string> = {
-        clientId: 'empresa',
-        contactId: 'contato',
-        paymentMethod: 'forma_pagamento',
-        paymentTerms: 'prazo_pagamento',
-        deliveryTime: 'prazo_entrega',
-        shippingType: 'frete',
-        shippingCost: 'valor_frete',
-      };
-      const key = fieldMap[field] || field;
+      const key = QUOTE_FIELD_NAMES[field] || field;
       if (!errors.includes(key)) errors.push(key);
     }
   }

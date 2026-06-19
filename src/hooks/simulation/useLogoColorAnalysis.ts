@@ -91,7 +91,7 @@ export function useLogoColorAnalysis() {
         throw new Error(data.error);
       }
 
-      const rawColors: { name: string; hex: string }[] = data?.colors || [];
+      const rawColors: { name: string; hex: string }[] = data?.colors ?? [];
 
       if (rawColors.length === 0) {
         setError('Nenhuma cor detectada na imagem');

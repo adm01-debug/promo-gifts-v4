@@ -61,7 +61,7 @@ function isDebugEnabled(): boolean {
 
 function debugLog(event: string, payload: Record<string, unknown>) {
   if (!isDebugEnabled()) return;
-  const log = createClientLogger('notifications.' + event);
+  const log = createClientLogger(`notifications.${event}`);
   log.info('event', payload);
 }
 

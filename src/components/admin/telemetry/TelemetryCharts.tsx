@@ -23,6 +23,13 @@ interface TelemetryRow {
   created_at: string;
 }
 
+const BUCKET_MS: Record<string, number> = {
+  '1h': 5 * 60 * 1000,
+  '6h': 30 * 60 * 1000,
+  '24h': 60 * 60 * 1000,
+  '7d': 6 * 60 * 60 * 1000,
+};
+
 interface TelemetryChartsProps {
   rows: TelemetryRow[];
   timeFilter: string;
@@ -33,14 +40,7 @@ export function TelemetryCharts({ rows, timeFilter }: TelemetryChartsProps) {
   const timelineData = useMemo(() => {
     if (rows.length === 0) return [];
 
-    const bucketMs =
-      timeFilter === '1h'
-        ? 5 * 60 * 1000
-        : timeFilter === '6h'
-          ? 30 * 60 * 1000
-          : timeFilter === '24h'
-            ? 60 * 60 * 1000
-            : 6 * 60 * 60 * 1000; // 7d
+    const bucketMs = BUCKET_MS[timeFilter] ?? BUCKET_MS['7d'];
 
     const buckets = new Map<
       number,
@@ -104,7 +104,7 @@ export function TelemetryCharts({ rows, timeFilter }: TelemetryChartsProps) {
     }
     return [...stats.entries()]
       .map(([name, data]) => ({
-        name: name.length > 18 ? name.slice(0, 16) + '…' : name,
+        name: name.length > 18 ? `${name.slice(0, 16)}…` : name,
         alertas: data.count,
         mediaMs: Math.round(data.totalMs / data.count),
       }))

@@ -66,7 +66,7 @@ export function useAccessSecurity() {
             'id, ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations, max_failed_attempts, lockout_duration_minutes',
           )
           .limit(1)
-          .single(),
+          .maybeSingle(),
         untypedFrom('ip_access_control')
           .select('id, ip_address, list_type, reason, expires_at, created_at')
           .eq('list_type', 'allowlist')
@@ -138,8 +138,8 @@ export function useAccessSecurity() {
       .insert({ ip_address: ipAddress, list_type: 'allowlist', reason: reason || null })
       .select('id, ip_address, list_type, reason, expires_at, created_at')
       .single();
-    if (error) {
-      if ((error as { code?: string }).code === '23505') toast.error('IP já cadastrado');
+    if (error || !data) {
+      if ((error as { code?: string })?.code === '23505') toast.error('IP já cadastrado');
       else toast.error('Erro ao adicionar IP');
       return false;
     }
@@ -187,8 +187,8 @@ export function useAccessSecurity() {
       .insert({ country_code: countryCode, country_name: countryName })
       .select()
       .single();
-    if (error) {
-      if ((error as { code?: string }).code === '23505') toast.error('País já cadastrado');
+    if (error || !data) {
+      if ((error as { code?: string })?.code === '23505') toast.error('País já cadastrado');
       else toast.error('Erro ao adicionar país');
       return false;
     }

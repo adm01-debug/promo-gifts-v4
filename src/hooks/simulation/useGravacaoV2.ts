@@ -47,15 +47,11 @@ export function useProductPrintAreas(productId: string | null) {
     queryFn: async (): Promise<PrintAreaWithTechniques[]> => {
       if (!productId) return [];
       const { fetchPrintAreasFromProduct } = await import('@/lib/fetch-print-areas');
-      const areas = await fetchPrintAreasFromProduct(productId);
+      const [areas, { data: techData, error: techError }] = await Promise.all([
+        fetchPrintAreasFromProduct(productId),
+        untypedFrom('tabela_preco_gravacao_oficial').select('*').eq('ativo', true).limit(100),
+      ]);
       if (!areas.length) return [];
-
-      const { data: techData, error: techError } = await untypedFrom(
-        'tabela_preco_gravacao_oficial',
-      )
-        .select('*')
-        .eq('ativo', true)
-        .limit(100);
 
       if (techError) {
         if (techError.message?.includes('410')) return [];
@@ -206,13 +202,13 @@ export function useCustomizationPriceLegacy() {
         const result: CustomizationPriceV2 = {
           success: true,
           area_id: rawResult.area?.id || areaId,
-          area_code: rawResult.area?.code || '',
-          area_name: rawResult.area?.name || '',
+          area_code: rawResult.area?.code ?? '',
+          area_name: rawResult.area?.name ?? '',
           area_order: rawResult.faixa?.ordem || 0,
-          tabela_id: rawResult.tabela?.id || '',
-          tabela_codigo: rawResult.tabela?.codigo_tabela || '',
-          tabela_codigo_curto: rawResult.tabela?.codigo_tabela?.split('-')[0] || '',
-          technique: rawResult.tabela?.nome || '',
+          tabela_id: rawResult.tabela?.id ?? '',
+          tabela_codigo: rawResult.tabela?.codigo_tabela ?? '',
+          tabela_codigo_curto: rawResult.tabela?.codigo_tabela?.split('-')[0] ?? '',
+          technique: rawResult.tabela?.nome ?? '',
           codigo_orcamento: rawResult.codigo_orcamento || '',
           quantity: rawResult.parametros?.quantidade || quantidade,
           num_cores: rawResult.parametros?.num_cores || numCores,

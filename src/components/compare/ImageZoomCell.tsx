@@ -2,6 +2,7 @@
  * ImageZoomCell (C6 #6) — Hover ativa lupa flutuante 2× sobre a imagem.
  */
 import { useRef, useState } from 'react';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface Props {
   src: string;
@@ -31,7 +32,12 @@ export function ImageZoomCell({ src, alt, className = '', zoomLevel = 2 }: Props
       onMouseLeave={() => setShow(false)}
       onMouseMove={onMove}
     >
-      <img src={src} alt={alt} loading="lazy" className="h-full w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+      <OptimizedImage
+        src={src}
+        alt={alt}
+        className="object-contain"
+        containerClassName="h-full w-full"
+      />
       {show && (
         <div
           aria-hidden

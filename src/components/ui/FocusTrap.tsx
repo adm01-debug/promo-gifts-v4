@@ -3,7 +3,7 @@
  * Traps keyboard focus within a container for accessibility
  */
 
-import { useEffect, useRef, type ReactNode, useCallback } from 'react';
+import React, { useEffect, useRef, type ReactNode, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
 interface FocusTrapProps {
@@ -25,6 +25,14 @@ const FOCUSABLE_SELECTOR = [
   'video[controls]',
   '[contenteditable]:not([contenteditable="false"])',
 ].join(', ');
+
+const SENTINEL_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  margin: -1,
+  opacity: 0,
+};
 
 export function FocusTrap({
   children,
@@ -124,7 +132,7 @@ export function FocusTrap({
       <div
         tabIndex={active ? 0 : -1}
         onFocus={focusLast}
-        style={{ position: 'absolute', width: 1, height: 1, margin: -1, opacity: 0 }}
+        style={SENTINEL_STYLE}
         aria-hidden="true"
       />
 
@@ -134,7 +142,7 @@ export function FocusTrap({
       <div
         tabIndex={active ? 0 : -1}
         onFocus={focusFirst}
-        style={{ position: 'absolute', width: 1, height: 1, margin: -1, opacity: 0 }}
+        style={SENTINEL_STYLE}
         aria-hidden="true"
       />
     </div>

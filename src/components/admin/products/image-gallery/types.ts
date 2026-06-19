@@ -2,7 +2,20 @@
  * Shared types and constants for ProductImageGallery
  */
 
-import { Star, ImageIcon, ZoomIn, Eye, Layers, Package, Film, Type, Palette, Tag, Crop, Archive } from 'lucide-react';
+import {
+  Star,
+  ImageIcon,
+  ZoomIn,
+  Eye,
+  Layers,
+  Package,
+  Film,
+  Type,
+  Palette,
+  Tag,
+  Crop,
+  Archive,
+} from 'lucide-react';
 
 export interface ExternalImage {
   id: string;
@@ -26,6 +39,13 @@ export interface ExternalImage {
   supplier_code?: string;
   is_active?: boolean;
   applies_to_color?: boolean;
+  // Cloudflare Images sync
+  cf_image_id?: string;
+  cf_sync_status?: 'pending' | 'syncing' | 'verified' | 'missing' | 'failed' | 'skipped';
+  // Perceptual hash for duplicate detection
+  content_hash?: string;
+  // Blurhash placeholder for progressive loading
+  blurhash?: string;
 }
 
 export const IMAGE_TYPES = [
@@ -61,4 +81,7 @@ export interface GalleryStats {
   withAlt: number;
   withoutVariant: number;
   total: number;
+  cfVerified: number;
+  cfPending: number;
+  withBlurhash: number;
 }

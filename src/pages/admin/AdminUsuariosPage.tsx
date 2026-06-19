@@ -40,7 +40,7 @@ const VALID_TABS = ['users', 'password-reset', 'discounts', 'audit'] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 export default function AdminUsuariosPage() {
-  const { user, isAdmin, isDev } = useAuth();
+  const { user, isAdmin, isDev, rolesLoaded } = useAuth();
   const { pendingCount } = usePasswordResetRequests();
   const {
     users,
@@ -81,9 +81,10 @@ export default function AdminUsuariosPage() {
         .eq('status', 'pending');
       return count || 0;
     },
-    enabled: isAdmin,
+    enabled: rolesLoaded && Boolean(isAdmin), // FIX 2026-06-18: rolesLoaded garante JWT pronto
     refetchInterval: 30_000,
     staleTime: 15_000,
+    retry: 0,           // sem flood em erro temporário
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,17 +107,22 @@ export default function AdminUsuariosPage() {
   );
   const agenteCount = useMemo(() => users.filter((u) => u.role === 'vendedor').length, [users]);
 
-  const filteredUsers = users
-    .sort((a, b) =>
-      (a.full_name || '').localeCompare(b.full_name || '', 'pt-BR', { sensitivity: 'base' }),
-    )
-    .filter((u) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        (u.full_name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
-      );
-    });
+  const filteredUsers = useMemo(
+    () =>
+      users
+        .sort((a, b) =>
+          (a.full_name || '').localeCompare(b.full_name || '', 'pt-BR', { sensitivity: 'base' }),
+        )
+        .filter((u) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (u.full_name || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q)
+          );
+        }),
+    [users, searchQuery],
+  );
 
   return (
     <>

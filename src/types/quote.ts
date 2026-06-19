@@ -10,7 +10,8 @@ export type QuoteStatus =
   | 'approved'
   | 'converted'
   | 'rejected'
-  | 'expired';
+  | 'expired'
+  | 'cancelled';
 export type ClientResponse = 'approved' | 'rejected' | 'changes_requested';
 
 export interface Quote {

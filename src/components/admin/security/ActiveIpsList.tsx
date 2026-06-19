@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface IpEntry {
   id: string;
@@ -50,7 +51,7 @@ export function ActiveIpsList() {
   const [search, setSearch] = useState('');
   const { toast } = useToast();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('ip_access_control')
@@ -66,12 +67,11 @@ export function ActiveIpsList() {
       setItems(data || []);
     }
     setLoading(false);
-  };
+  }, [toast]);
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
   const now = Date.now();
 
@@ -177,7 +177,7 @@ export function ActiveIpsList() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </Button>
         </div>
       </CardHeader>

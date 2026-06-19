@@ -37,7 +37,7 @@ export function useCurrentSection(): string {
     // Try progressively shorter prefixes
     const parts = pathname.split('/').filter(Boolean);
     while (parts.length > 0) {
-      const prefix = '/' + parts.join('/');
+      const prefix = `/${parts.join('/')}`;
       if (sectionMap[prefix]) return sectionMap[prefix];
       parts.pop();
     }

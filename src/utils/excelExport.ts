@@ -79,7 +79,7 @@ export async function exportToExcel(config: ExcelExportConfig): Promise<void> {
     // 4. Aplicar estilos no cabeçalho (se possível)
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
     for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_col(C) + '1';
+      const address = `${XLSX.utils.encode_col(C)}1`;
       if (!worksheet[address]) continue;
       if (worksheet[address].s) {
         worksheet[address].s.font = { bold: true };
@@ -180,18 +180,18 @@ export function formatPercentage(value: number): string {
 /**
  * Formata status com emoji
  */
-export function formatStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    draft: '📝 Rascunho',
-    sent: '📤 Enviado',
-    approved: '✅ Aprovado',
-    rejected: '❌ Rejeitado',
-    expired: '⏰ Expirado',
-    pending: '⏳ Pendente',
-    processing: '🔄 Processando',
-    completed: '✅ Concluído',
-    cancelled: '🚫 Cancelado',
-  };
+const EXPORT_STATUS_MAP: Record<string, string> = {
+  draft: '📝 Rascunho',
+  sent: '📤 Enviado',
+  approved: '✅ Aprovado',
+  rejected: '❌ Rejeitado',
+  expired: '⏰ Expirado',
+  pending: '⏳ Pendente',
+  processing: '🔄 Processando',
+  completed: '✅ Concluído',
+  cancelled: '🚫 Cancelado',
+} as const;
 
-  return statusMap[status] || status;
+export function formatStatus(status: string): string {
+  return EXPORT_STATUS_MAP[status] || status;
 }

@@ -83,6 +83,8 @@ export interface QuickSuggestion {
   icon: string;
 }
 
+const RERANK_TYPES: SearchResultType[] = ['quote', 'conversation', 'reminder'];
+
 /**
  * FIX BUG-GS-14: Redact potential PII from search queries before logging to analytics.
  * Patterns: CPF (###.###.###-##), CNPJ (##.###.###/####-##), e-mail addresses.
@@ -148,7 +150,7 @@ export function useGlobalSearch() {
         case 'search':
         case 'filter':
           if (action.data?.query || action.data?.filters) {
-            const searchTerm = action.data?.query || '';
+            const searchTerm = action.data?.query ?? '';
             const filterParts: string[] = [];
             if (action.data?.filters?.category) filterParts.push(action.data.filters.category);
             if (action.data?.filters?.color) filterParts.push(action.data.filters.color);
@@ -420,7 +422,13 @@ export function useGlobalSearch() {
         }
       }
 
-      const term = (intent.keywords.join(' ') || searchQuery).toLowerCase();
+      const rawTerm = (intent.keywords.join(' ') || searchQuery).toLowerCase();
+      const term = rawTerm.replace(/[%_\\(),.*]/g, '').trim();
+      if (!term) {
+        setResults([]);
+        setSearchIntent(intent);
+        return;
+      }
       const wants = (t: SearchResultType) =>
         intent.type === t || intent.type === 'mixed' || intent.entities?.includes(t);
 
@@ -672,8 +680,6 @@ export function useGlobalSearch() {
           }));
         allResults.push(...matchedCmds);
       }
-
-      const RERANK_TYPES: SearchResultType[] = ['quote', 'conversation', 'reminder'];
 
       const candidates = allResults
         .filter((r) => RERANK_TYPES.includes(r.type))

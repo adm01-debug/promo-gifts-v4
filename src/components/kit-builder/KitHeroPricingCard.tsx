@@ -8,6 +8,10 @@ import { TrendingUp, Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
 import { cn } from '@/lib/utils';
 
+const GLOW_STYLE = {
+  background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)',
+} as const;
+
 interface KitHeroPricingCardProps {
   unitPrice: number;
   total: number;
@@ -48,7 +52,7 @@ export function KitHeroPricingCard({
       {/* Subtle decorative glow */}
       <div
         className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-20 blur-3xl"
-        style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+        style={GLOW_STYLE}
         aria-hidden
       />
       <CardContent className="relative space-y-3 p-5">

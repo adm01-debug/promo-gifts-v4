@@ -26,6 +26,12 @@ import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+const GOAL_TYPE_LABELS: Record<string, string> = {
+  weekly: 'Semanal',
+  monthly: 'Mensal',
+  quarterly: 'Trimestral',
+};
+
 export function SalesGoalsCard() {
   const { activeGoal, isLoading, createGoal, getProgress, getProgressColor, isCreating } =
     useSalesGoals();
@@ -177,12 +183,6 @@ export function SalesGoalsCard() {
     ? (activeGoal.current_conversions / activeGoal.target_conversions) * 100
     : 0;
 
-  const goalTypeLabels = {
-    weekly: 'Semanal',
-    monthly: 'Mensal',
-    quarterly: 'Trimestral',
-  };
-
   return (
     <Card
       className={cn(
@@ -213,7 +213,7 @@ export function SalesGoalsCard() {
               className={cn('h-5 w-5', activeGoal.is_achieved ? 'text-success' : 'text-primary')}
             />
           </div>
-          Meta {goalTypeLabels[activeGoal.goal_type]}
+          Meta {GOAL_TYPE_LABELS[activeGoal.goal_type]}
         </CardTitle>
       </CardHeader>
 

@@ -28,6 +28,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 type SortKey = 'name' | 'products' | 'featured' | 'updated';
 type SortDir = 'asc' | 'desc';
@@ -129,7 +131,12 @@ function CollectionTableRow({
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-2.5">
           {previewImage ? (
-            <img src={previewImage} alt="" className="h-8 w-8 shrink-0 rounded object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+            <OptimizedImage
+              src={getCdnUrl(previewImage, 'thumbnail')}
+              alt=""
+              className="rounded object-cover"
+              containerClassName="h-8 w-8 shrink-0"
+            />
           ) : (
             <div
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-sm"

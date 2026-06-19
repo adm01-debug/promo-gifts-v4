@@ -21,6 +21,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { useDevAccessAudit } from '@/hooks/admin';
+import { cn } from '@/lib/utils';
 
 export function DevAccessAuditAlert() {
   const { enabled, loading, results, blocked, ranAt, run } = useDevAccessAudit();
@@ -45,7 +46,7 @@ export function DevAccessAuditAlert() {
               {results.length}/{results.length} OK
             </Badge>
             <Button size="sm" variant="ghost" onClick={() => void run()} disabled={loading}>
-              <RefreshCcw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCcw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setDismissed(true)}>
               Ocultar
@@ -70,7 +71,7 @@ export function DevAccessAuditAlert() {
             {blocked.length} de {results.length} bloqueadas
           </Badge>
           <Button size="sm" variant="outline" onClick={() => void run()} disabled={loading}>
-            <RefreshCcw className={`mr-1 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCcw className={cn('mr-1 h-3.5 w-3.5', loading && 'animate-spin')} />
             Reexecutar
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setExpanded((e) => !e)}>

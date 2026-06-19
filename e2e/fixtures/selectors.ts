@@ -116,8 +116,25 @@ export const Sel = {
     rowName: TID("product-row-name"),
     /** Nome no item da view de lista (ProductListItem). */
     listName: TID("product-list-name"),
+    /** Thumb clicável na view de lista (abre QuickView). */
+    listItemThumb: TID("product-list-item-thumb"),
+    /** Thumb clicável na view de tabela (abre QuickView). */
+    tableRowThumb: TID("product-table-row-thumb"),
+    /** Thumbs do QuickView em módulos satélite (Novidades / Reposição / Estoque). */
+    noveltyGridThumb: TID("novelty-grid-card-thumb"),
+    noveltyListThumb: TID("novelty-list-card-thumb"),
+    noveltyTableThumb: TID("novelty-table-row-thumb"),
+    replenishmentGridThumb: TID("replenishment-grid-card-thumb"),
+    replenishmentTableThumb: TID("replenishment-table-row-thumb"),
+    stockTableThumb: TID("stock-table-row-thumb"),
     /** Nome no QuickView (ProductQuickView). */
     quickViewName: TID("product-quickview-name"),
+    /** Botões padronizados do ProductQuickView. */
+    quickViewCart: TID("product-quickview-cart"),
+    quickViewFavorite: TID("product-quickview-favorite"),
+    quickViewCompare: TID("product-quickview-compare"),
+    quickViewShare: TID("product-quickview-share"),
+    quickViewActions: TID("product-quickview-actions"),
     /** Nome no detalhe do produto (ProductDetailHero h1). */
     name: TID("product-name"),
     /** Qualquer nome de produto (catálogo + detalhe + lista + tabela + quickview). */

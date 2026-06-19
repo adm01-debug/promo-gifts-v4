@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/select';
 import { RoleBadge } from '@/components/RoleBadge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 const ROLE_ACTIONS = [
   'role.granted',
@@ -88,7 +89,7 @@ export function RoleAuditLogPanel() {
       let query = supabase
         .from('admin_audit_log')
         .select('id, created_at, user_id, action, resource_id, source, details')
-        .in('action', ROLE_ACTIONS as unknown as string[])
+        .in('action', [...ROLE_ACTIONS])
         .order('created_at', { ascending: false })
         .limit(200);
 
@@ -122,10 +123,8 @@ export function RoleAuditLogPanel() {
     refetchInterval: 30_000,
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const entries = data?.entries ?? [];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const profilesMap = data?.profilesMap ?? new Map<string, ProfileLite>();
+  const entries = useMemo(() => data?.entries ?? [], [data]);
+  const profilesMap = useMemo(() => data?.profilesMap ?? new Map<string, ProfileLite>(), [data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -134,10 +133,10 @@ export function RoleAuditLogPanel() {
       const actor = profilesMap.get(e.user_id);
       const target = e.resource_id ? profilesMap.get(e.resource_id) : null;
       return (
-        (actor?.full_name || '').toLowerCase().includes(q) ||
-        (actor?.email || '').toLowerCase().includes(q) ||
-        (target?.full_name || '').toLowerCase().includes(q) ||
-        (target?.email || '').toLowerCase().includes(q)
+        (actor?.full_name ?? '').toLowerCase().includes(q) ||
+        (actor?.email ?? '').toLowerCase().includes(q) ||
+        (target?.full_name ?? '').toLowerCase().includes(q) ||
+        (target?.email ?? '').toLowerCase().includes(q)
       );
     });
   }, [entries, profilesMap, search]);
@@ -177,7 +176,7 @@ export function RoleAuditLogPanel() {
           disabled={isFetching}
           className="gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
           Atualizar
         </Button>
       </CardHeader>

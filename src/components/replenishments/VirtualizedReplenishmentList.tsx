@@ -19,6 +19,11 @@ interface VirtualizedListProps {
   canAddToCompare: boolean;
 }
 
+const SCROLL_CONTAINER_STYLE = {
+  maxHeight:
+    'calc(100vh - var(--header-h, 56px) - var(--breadcrumb-h, 0px) - var(--replenishment-sticky-h, 180px) - 1rem)',
+} as const;
+
 export function VirtualizedReplenishmentList({
   products,
   productMap,
@@ -45,7 +50,7 @@ export function VirtualizedReplenishmentList({
     <div
       ref={parentRef}
       className="overflow-auto"
-      style={{ maxHeight: 'calc(100vh - 280px)' }}
+      style={SCROLL_CONTAINER_STYLE}
       role="list"
       aria-label="Lista de produtos repostos"
     >
@@ -104,6 +109,7 @@ export function VirtualizedReplenishmentList({
                     isInCompare={isInCompare(item.product_id)}
                     onToggleCompare={onToggleCompare}
                     canAddToCompare={canAddToCompare}
+                    priority={virtualRow.index < 6}
                   />
                 </div>
               </div>

@@ -21,7 +21,11 @@ import {
   CheckSquare,
   Loader2,
 } from 'lucide-react';
-import { useNoveltiesSelectionMode, useNoveltiesWithDetails } from '@/hooks/products';
+import {
+  useNoveltiesSelectionMode,
+  useNoveltiesWithDetails,
+  sortNovelties,
+} from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
@@ -38,7 +42,6 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { NoveltyTableView } from './NoveltyCards';
 import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
-import { sortProducts } from '@/utils/product-sorting';
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
@@ -89,7 +92,11 @@ export function NoveltyProductGrid() {
   // set-state/ref-write após desmontar e leak do timeout).
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails({ limit: 400 });
+  // FIX (auditoria Novidades, P1-B): sem teto fixo. Antes `{ limit: 400 }`
+  // truncava o grid quando havia mais de 400 novidades ativas (ex.: 550 -> 150
+  // produtos, incl. fornecedores inteiros, invisiveis; e o contador divergia do
+  // card "Novidades Ativas"). O hook agora pagina o conjunto completo da janela.
+  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails();
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -100,10 +107,11 @@ export function NoveltyProductGrid() {
       setLoadingProgress(0);
       progressRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
-          if (prev >= 90) {
-            if (progressRef.current) clearInterval(progressRef.current);
-            return prev;
-          }
+          // Acelera até 85%, depois rasteja até 99% em passos mínimos para
+          // evitar que a barra "congele" visivelmente antes do carregamento
+          // terminar (o valor nunca chega a 100 — isso só ocorre ao concluir).
+          if (prev >= 99) return 99;
+          if (prev >= 85) return prev + 0.3;
           return prev + Math.random() * 12 + 3;
         });
       }, 300);
@@ -146,7 +154,10 @@ export function NoveltyProductGrid() {
       // antes de comparar — espelha o stripAccents do postgrest.ts (PR #750).
       // Escopo INALTERADO: busca somente nas novidades já carregadas em memória.
       const norm = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        s
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
       const q = norm(searchQuery.trim());
       filtered = filtered.filter(
         (p) =>
@@ -159,7 +170,10 @@ export function NoveltyProductGrid() {
       filtered = filtered.filter((p) => p.supplier_id === selectedSupplier);
     if (selectedCategory !== 'all')
       filtered = filtered.filter((p) => p.category_id === selectedCategory);
-    sortProducts(filtered as unknown as Parameters<typeof sortProducts>[0], sortMode);
+    // FIX (auditoria Novidades, P1): ordena pelos campos REAIS de
+    // NoveltyWithDetails. Antes `sortProducts(... as Product[])` era no-op
+    // silencioso (formas divergentes) e "Mais recentes" caía em A-Z.
+    sortNovelties(filtered, sortMode);
     return filtered;
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
@@ -173,6 +187,11 @@ export function NoveltyProductGrid() {
       guardTimerRef.current = null;
     }
     isLoadingMoreLocalRef.current = false;
+    // GAP-SEL FIX: descarta seleção stale ao mudar filtros em modo de seleção.
+    // Sem isso, produtos selecionados antes do filtro continuam marcados após
+    // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
+    if (selectionMode) sel.clearSelection();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {
@@ -397,6 +416,7 @@ export function NoveltyProductGrid() {
                       canAddToCompare={canAddToCompare}
                       isNovelty={true}
                       noveltyDaysRemaining={novelty.days_remaining}
+                      priority={index < 6}
                     />
                   </div>
                 </div>
@@ -579,7 +599,7 @@ export function NoveltyProductGrid() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.map((option) => (
+              {SORT_OPTIONS.filter((o) => !o.value.startsWith('best-seller')).map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -707,7 +727,7 @@ export function NoveltyProductGrid() {
         open={sel.collectionModalOpen}
         onOpenChange={sel.setCollectionModalOpen}
         productId={sel.firstSelectedId}
-        productName={sel.firstSelectedProduct?.product_name || ''}
+        productName={sel.firstSelectedProduct?.product_name ?? ''}
       />
     </div>
   );

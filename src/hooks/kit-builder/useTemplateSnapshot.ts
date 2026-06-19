@@ -28,9 +28,9 @@ export function useTemplateSnapshot() {
         color: identity?.color ?? '#3B82F6',
         icon: identity?.icon ?? 'Package',
         tag: identity?.tag ?? null,
-        box_data: kitState.box ? JSON.parse(JSON.stringify(kitState.box)) : null,
-        items_data: JSON.parse(JSON.stringify(kitState.items)),
-        personalization_data: JSON.parse(JSON.stringify(kitState.personalization)),
+        box_data: kitState.box ? structuredClone(kitState.box) : null,
+        items_data: structuredClone(kitState.items),
+        personalization_data: structuredClone(kitState.personalization),
         total_price: kitState.totalPrice,
         volume_usage_percent: kitState.volumeUsagePercent,
         is_active: true,
@@ -44,7 +44,7 @@ export function useTemplateSnapshot() {
           .eq('id', templateId)
           .select()
           .single();
-        if (error) throw error;
+        if (error || !data) throw error ?? new Error('Template not found');
         return data;
       }
       const { data, error } = await supabase
@@ -52,7 +52,7 @@ export function useTemplateSnapshot() {
         .insert(payload as never)
         .select()
         .single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to create template');
       return data;
     },
     onSuccess: () => {

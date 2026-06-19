@@ -21,6 +21,7 @@ import { ColorTooltipContent, colorTooltipClassName } from './ColorTooltipConten
 import { ListItemActions } from './list-item/ListItemActions';
 import { useNavigate } from 'react-router-dom';
 import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
@@ -67,6 +68,8 @@ interface ProductListItemProps {
   isNovelty?: boolean;
   noveltyDaysRemaining?: number;
   onStatusClick?: (type: string, value?: string | number) => void;
+  /** Carrega imagem com alta prioridade (LCP) — true para itens above-the-fold */
+  priority?: boolean;
 }
 
 export const ProductListItem = memo(function ProductListItem({
@@ -84,6 +87,7 @@ export const ProductListItem = memo(function ProductListItem({
   isNovelty = false,
   noveltyDaysRemaining,
   onStatusClick,
+  priority = false,
 }: ProductListItemProps) {
   const navigate = useNavigate();
   const detectedIsKit = isProductKit(product);
@@ -376,20 +380,32 @@ export const ProductListItem = memo(function ProductListItem({
         onClick={handleClick}
       >
         {/* Thumbnail — compact square */}
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]">
+        <div
+          className="group/thumb relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]"
+          role="button"
+          tabIndex={0}
+          aria-label={`Visualização rápida de ${product.name}`}
+          data-testid="product-list-item-thumb"
+          onClick={(e) => {
+            e.stopPropagation();
+            setQuickViewOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              setQuickViewOpen(true);
+            }
+          }}
+        >
           <div key={thumbUrl} className="h-full w-full duration-500 animate-in fade-in">
-            <img
+            <OptimizedImage
               src={thumbUrl}
               alt={product.name}
-              className="h-full w-full object-contain"
-              loading="lazy"
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (!img.dataset.fallback) {
-                  img.dataset.fallback = '1';
-                  img.src = product.images[0] || '/placeholder.svg';
-                }
-              }}
+              className="object-contain transition-transform duration-300 group-hover/thumb:scale-105"
+              containerClassName="h-full w-full"
+              urlOriginal={product.images?.[0]}
+              priority={priority}
             />
           </div>
           {/* Multi-variant dots */}
@@ -633,6 +649,14 @@ export const ProductListItem = memo(function ProductListItem({
         isInCompare={isInCompare}
         onToggleCompare={onToggleCompare}
         onShare={onShare}
+        onAddToQuote={() => {
+          setVariantPickerMode('quote');
+          setVariantPickerOpen(true);
+        }}
+        onAddToCollection={() => {
+          setVariantPickerMode('collection');
+          setVariantPickerOpen(true);
+        }}
       />
 
       {/* Share Preview Dialog */}

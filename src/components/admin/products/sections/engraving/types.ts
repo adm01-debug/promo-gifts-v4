@@ -110,30 +110,31 @@ export const COMMON_LOCATIONS = [
 ];
 
 export function getTechniqueIcon(code: string): string {
-  const upper = code?.toUpperCase() || '';
+  const upper = code?.toUpperCase() ?? '';
   return TECHNIQUE_ICONS[upper] || '🔧';
 }
 
+const TECHNIQUE_COLOR_MAP: Record<string, string> = {
+  SERIGRAFIA: 'from-blue-500/20 to-blue-600/10 border-info/30',
+  SER: 'from-blue-500/20 to-blue-600/10 border-info/30',
+  SC: 'from-blue-500/20 to-blue-600/10 border-info/30',
+  LASER: 'from-destructive/20 to-destructive/10 border-destructive/30',
+  FB: 'from-destructive/20 to-destructive/10 border-destructive/30',
+  UV: 'from-primary/20 to-primary/10 border-primary/30',
+  TAMPOGRAFIA: 'from-success/20 to-success/10 border-success/30',
+  TAMP: 'from-success/20 to-success/10 border-success/30',
+  BORDADO: 'from-yellow-500/20 to-yellow-600/10 border-warning/30',
+  BD: 'from-yellow-500/20 to-yellow-600/10 border-warning/30',
+  SUBLIMACAO: 'from-pink-500/20 to-primary/10 border-pink-500/30',
+  SUB: 'from-pink-500/20 to-primary/10 border-pink-500/30',
+  HOT_STAMPING: 'from-brand-primary/20 to-brand-primary/10 border-brand-primary/30',
+  TRANSFER: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
+  ADESIVO: 'from-indigo-500/20 to-indigo-600/10 border-indigo-500/30',
+} as const;
+
 export function getTechniqueColor(code: string): string {
-  const upper = code?.toUpperCase() || '';
-  const colorMap: Record<string, string> = {
-    SERIGRAFIA: 'from-blue-500/20 to-blue-600/10 border-info/30',
-    SER: 'from-blue-500/20 to-blue-600/10 border-info/30',
-    SC: 'from-blue-500/20 to-blue-600/10 border-info/30',
-    LASER: 'from-destructive/20 to-destructive/10 border-destructive/30',
-    FB: 'from-destructive/20 to-destructive/10 border-destructive/30',
-    UV: 'from-primary/20 to-primary/10 border-primary/30',
-    TAMPOGRAFIA: 'from-success/20 to-success/10 border-success/30',
-    TAMP: 'from-success/20 to-success/10 border-success/30',
-    BORDADO: 'from-yellow-500/20 to-yellow-600/10 border-warning/30',
-    BD: 'from-yellow-500/20 to-yellow-600/10 border-warning/30',
-    SUBLIMACAO: 'from-pink-500/20 to-primary/10 border-pink-500/30',
-    SUB: 'from-pink-500/20 to-primary/10 border-pink-500/30',
-    HOT_STAMPING: 'from-brand-primary/20 to-brand-primary/10 border-brand-primary/30',
-    TRANSFER: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',
-    ADESIVO: 'from-indigo-500/20 to-indigo-600/10 border-indigo-500/30',
-  };
-  for (const [key, val] of Object.entries(colorMap)) {
+  const upper = code?.toUpperCase() ?? '';
+  for (const [key, val] of Object.entries(TECHNIQUE_COLOR_MAP)) {
     if (upper.includes(key)) return val;
   }
   return 'from-muted/40 to-muted/20 border-border/50';

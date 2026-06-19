@@ -40,7 +40,14 @@ function mulberry32(seed: number) {
 }
 
 const COLORS = ['Azul', 'Vermelho', 'Verde', 'Amarelo', 'Preto', 'Branco', 'Rosa', 'Cinza'];
-const STATUSES: StockStatus[] = ['in_stock', 'low_stock', 'critical', 'out_of_stock', 'incoming'];
+const STATUSES: StockStatus[] = [
+  'in_stock',
+  'low_stock',
+  'critical',
+  'out_of_stock',
+  'incoming',
+  'overstocked',
+];
 
 function makeVariant(rnd: () => number, productId: string, idx: number): VariantStock {
   const color = COLORS[Math.floor(rnd() * COLORS.length)];
@@ -68,15 +75,33 @@ function makeProduct(rnd: () => number, i: number): ProductStockSummary {
     makeVariant(rnd, `p${i}`, k),
   );
   const totals = aggregateVariantTotals(variants);
+  // Mirror aggregateVariantsToProduct priority exactly (post BUG-A fix)
+  const vIn = variants.filter((v) => v.status === 'incoming' || v.inTransitStock > 0).length;
+  const vOut = variants.filter((v) => v.status === 'out_of_stock').length;
+  const vCrit = variants.filter((v) => v.status === 'critical').length;
+  const vLow = variants.filter((v) => v.status === 'low_stock').length;
+  const overallStatus: ProductStockSummary['overallStatus'] =
+    vIn > 0 && (vOut > 0 || totals.totalCurrentStock === 0)
+      ? 'incoming'
+      : vOut === variants.length
+        ? 'out_of_stock'
+        : vCrit > 0 || vOut > 0
+          ? 'critical'
+          : vLow > 0
+            ? 'low_stock'
+            : 'in_stock';
   return {
     productId: `p${i}`,
     productName: `Produto ${i}`,
     productSku: `P${i}`,
-    overallStatus: 'in_stock',
-    variantsInStock: variants.filter((v) => v.status === 'in_stock').length,
-    variantsLowStock: variants.filter((v) => v.status === 'low_stock').length,
-    variantsCritical: variants.filter((v) => v.status === 'critical').length,
-    variantsOutOfStock: variants.filter((v) => v.status === 'out_of_stock').length,
+    overallStatus,
+    // 'in_stock'|'incoming'|'overstocked' → variantsInStock (mirrors BUG-A fix)
+    variantsInStock: variants.filter(
+      (v) => v.status === 'in_stock' || v.status === 'incoming' || v.status === 'overstocked',
+    ).length,
+    variantsLowStock: vLow,
+    variantsCritical: vCrit,
+    variantsOutOfStock: vOut,
     availableColors: [],
     ...totals,
     variants,
@@ -196,7 +221,12 @@ describe('stock-filter — fuzz (500 simulações)', () => {
 
     // (6) Reuso de índice entre filtros distintos: roda 3 filtros e reseta — saída final estável
     const filtersA: StockFilters = { ...defaultStockFilters, sortBy: 'name', colorName: 'Azul' };
-    const filtersB: StockFilters = { ...defaultStockFilters, sortBy: 'name', colorName: 'Verde', minQuantityNeeded: 200 };
+    const filtersB: StockFilters = {
+      ...defaultStockFilters,
+      sortBy: 'name',
+      colorName: 'Verde',
+      minQuantityNeeded: 200,
+    };
     const r1 = applyStockFilters(universe, filtersA, [], indexes);
     applyStockFilters(universe, filtersB, [], indexes);
     const r2 = applyStockFilters(universe, filtersA, [], indexes);

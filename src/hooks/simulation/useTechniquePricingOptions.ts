@@ -183,7 +183,7 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
     const hasPriceByColor = tables.some((t) => t.price_by_color === true);
     const hasPriceByArea = tables.some((t) => t.price_by_area === true);
     const colorOptions: ColorOption[] = hasPriceByColor
-      ? Array.from(new Set(tables.filter(hasMaxColors).map((t) => t.max_colors)))
+      ? [...new Set(tables.filter(hasMaxColors).map((t) => t.max_colors))]
           .sort((a, b) => a - b)
           .map((c) => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }))
       : [];

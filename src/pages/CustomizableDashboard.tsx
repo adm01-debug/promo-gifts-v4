@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentOrgId } from '@/hooks/common';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface WidgetConfig {
   id: string;
@@ -71,7 +72,7 @@ function SortableWidget({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={`group relative ${isDragging ? 'shadow-lg ring-2 ring-primary' : ''}`}>
+      <Card className={cn('group relative', isDragging && 'shadow-lg ring-2 ring-primary')}>
         <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
           <Button
             variant="ghost"
@@ -116,6 +117,14 @@ function MetricCard({
     </>
   );
 }
+
+const FULL_WIDTH_WIDGET_IDS = new Set([
+  'quick-actions',
+  'upcoming-dates',
+  'recent-kits',
+  'my-quotes',
+  'my-discounts',
+]);
 
 export function CustomizableDashboard() {
   const { user } = useAuth();
@@ -210,7 +219,7 @@ export function CustomizableDashboard() {
     toast.success('Layout restaurado para o padrão');
   };
 
-  const visibleWidgets = widgetOrder.filter((w) => w.visible);
+  const visibleWidgets = useMemo(() => widgetOrder.filter((w) => w.visible), [widgetOrder]);
 
   const renderWidgetContent = (widgetId: string) => {
     switch (widgetId) {
@@ -250,15 +259,6 @@ export function CustomizableDashboard() {
         return null;
     }
   };
-
-  // Widgets that render as full-width vs metric cards
-  const fullWidthIds = new Set([
-    'quick-actions',
-    'upcoming-dates',
-    'recent-kits',
-    'my-quotes',
-    'my-discounts',
-  ]);
 
   return (
     <>
@@ -330,7 +330,7 @@ export function CustomizableDashboard() {
           <SortableContext items={visibleWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
             <div className="space-y-3 sm:space-y-4">
               {visibleWidgets.map((widget) => {
-                const isFullWidth = fullWidthIds.has(widget.id);
+                const isFullWidth = FULL_WIDTH_WIDGET_IDS.has(widget.id);
 
                 if (isFullWidth) {
                   return (
@@ -346,7 +346,7 @@ export function CustomizableDashboard() {
               {/* Metric cards in grid */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {visibleWidgets
-                  .filter((w) => !fullWidthIds.has(w.id))
+                  .filter((w) => !FULL_WIDTH_WIDGET_IDS.has(w.id))
                   .map((widget) => (
                     <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
                       {renderWidgetContent(widget.id)}

@@ -18,6 +18,7 @@ import { memo } from 'react';
 import { Package } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { resolveNoveltyDaysRemaining } from '@/lib/products/novelty-days';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
@@ -34,6 +35,8 @@ const DEFAULT_IMAGE_CONFIG = {
   zoomAmount: 1.08,
   duration: 600,
 };
+
+const VALID_STOCK_STATUSES = new Set(['in-stock', 'low-stock', 'out-of-stock']);
 
 interface ProductCardImageProps {
   /** Full product object — used for name (alt), sku, and badge flags */
@@ -72,6 +75,8 @@ interface ProductCardImageProps {
   onVariantChange: (idx: number) => void;
   /** Whether to eagerly load the image (first visible cards) */
   priority?: boolean;
+  /** Blurhash da imagem primária para usar como placeholder de cor */
+  cardImageBlurhash?: string | null;
   /** Called when the user clicks a status/badge pill */
   onStatusClick?: (type: string) => void;
   /** Whether a color update is in progress (shows loading state) */
@@ -99,6 +104,7 @@ export const ProductCardImage = memo(function ProductCardImage({
   safeVariantIdx,
   onImageLoad,
   priority = false,
+  cardImageBlurhash,
   onStatusClick,
   isUpdatingColor = false,
   categoryName,
@@ -131,26 +137,21 @@ export const ProductCardImage = memo(function ProductCardImage({
   // "low-stock" porém quantidade = 0), derivamos do número via SSOT
   // `getCatalogStockStatus`. Isso evita que a badge "Estoque baixo" fique presa
   // quando o backend devolve um payload parcial.
-  const validStatuses = new Set(['in-stock', 'low-stock', 'out-of-stock']);
-  const stockQty = typeof product.stock === 'number' && Number.isFinite(product.stock)
-    ? product.stock
-    : null;
-  const rawStatus = validStatuses.has(product.stockStatus as string)
+  const stockQty =
+    typeof product.stock === 'number' && Number.isFinite(product.stock) ? product.stock : null;
+  const rawStatus = VALID_STOCK_STATUSES.has(product.stockStatus as string)
     ? product.stockStatus
     : stockQty !== null
       ? getCatalogStockStatus(stockQty)
       : undefined;
   const reconciledStatus =
-    rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0
-      ? 'out-of-stock'
-      : rawStatus;
+    rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0 ? 'out-of-stock' : rawStatus;
   const stockStatus: 'ok' | 'low' | 'unavailable' =
     reconciledStatus === 'out-of-stock'
       ? 'unavailable'
       : reconciledStatus === 'low-stock'
         ? 'low'
         : 'ok';
-
 
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
@@ -199,7 +200,10 @@ export const ProductCardImage = memo(function ProductCardImage({
                   transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
                 }}
                 containerClassName="h-full w-full"
-                urlOriginal={deriveOriginalUrl(activeSrc)}
+                urlOriginal={
+                  deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url || null
+                }
+                blurhash={cardImageBlurhash}
                 priority={priority}
                 onLoad={onImageLoad}
                 {...DEFAULT_IMAGE_CONFIG}
@@ -247,15 +251,11 @@ export const ProductCardImage = memo(function ProductCardImage({
           {(() => {
             // Compute days remaining from product.created_at when explicit
             // novelty props are not provided (catálogo/super filtro/etc).
-            let resolvedDaysRemaining = noveltyDaysRemaining;
-            if (resolvedDaysRemaining === undefined && newArrival && product.created_at) {
-              const ts = Date.parse(product.created_at);
-              if (!Number.isNaN(ts)) {
-                const elapsed = Math.floor((Date.now() - ts) / 86400000);
-                const remaining = 30 - elapsed;
-                if (remaining > 0 && remaining <= 30) resolvedDaysRemaining = remaining;
-              }
-            }
+            const resolvedDaysRemaining = resolveNoveltyDaysRemaining(
+              product.created_at,
+              noveltyDaysRemaining,
+              newArrival,
+            );
             const showNovelty = (isNovelty && noveltyDaysRemaining !== undefined) || newArrival;
             if (!showNovelty) return null;
             return (
@@ -315,7 +315,6 @@ export const ProductCardImage = memo(function ProductCardImage({
               onClick={() => onStatusClick?.('urgency')}
             />
           )}
-
         </div>
       </div>
 

@@ -89,7 +89,7 @@ export async function findAll(options: TechniqueQueryOptions = {}): Promise<Tecn
   if (!resp.ok) throw new Error(`Failed to fetch techniques: ${resp.statusText}`);
   const data = (await resp.json()) as PaginatedResponse<TecnicaGravacaoExterno>;
 
-  let tecnicas = (data.data?.records || []).map(externalToTecnicaUnificada);
+  let tecnicas = (data.data?.records ?? []).map(externalToTecnicaUnificada);
 
   // Filtros pós-query
   if (options?.search) {
@@ -112,7 +112,7 @@ export async function findById(id: string): Promise<TecnicaUnificada | null> {
   if (!resp.ok) throw new Error(`Failed to fetch technique: ${resp.statusText}`);
   const data = (await resp.json()) as PaginatedResponse<TecnicaGravacaoExterno>;
 
-  const records = data.data?.records || [];
+  const records = data.data?.records ?? [];
   return records.length > 0 ? externalToTecnicaUnificada(records[0]) : null;
 }
 

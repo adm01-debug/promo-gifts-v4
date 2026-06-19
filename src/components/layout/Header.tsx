@@ -64,7 +64,6 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
   const compareCount = useComparisonStore((s) => s.compareCount);
   const { user, profile, role, signOut, rolesLoaded } = useAuth();
 
-  const _isBadgeEnabled = useBadgeVisibilityStore((s) => s.isBadgeEnabled);
   const toggleBadges = useBadgeVisibilityStore((s) => s.toggleBadges);
   const initializeFromProfile = useBadgeVisibilityStore((s) => s.initializeFromProfile);
 
@@ -459,7 +458,10 @@ export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: 
                   <Tag className="mr-2 h-4 w-4" />
                   Badges: {badgesEnabled ? 'Ocultar' : 'Exibir'}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={toggleGlobalAIMode} className={isGlobalAIMode ? 'text-violet-600 dark:text-violet-400' : ''}>
+                <DropdownMenuItem
+                  onClick={toggleGlobalAIMode}
+                  className={isGlobalAIMode ? 'text-violet-600 dark:text-violet-400' : ''}
+                >
                   <Sparkles className="mr-2 h-4 w-4" />
                   IA: {isGlobalAIMode ? 'Ativo — clique para desativar' : 'Ativar textos com IA'}
                 </DropdownMenuItem>

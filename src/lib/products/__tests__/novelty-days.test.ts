@@ -3,32 +3,12 @@
  * Reproduz a mesma fórmula usada no componente para travar contrato.
  */
 import { describe, it, expect } from 'vitest';
-
-const NOVELTY_WINDOW_DAYS = 30;
-
-function resolveNoveltyDaysRemaining(
-  createdAt: string | null | undefined,
-  noveltyDaysRemaining: number | undefined,
-  newArrival: boolean,
-): number | undefined {
-  let resolved = noveltyDaysRemaining;
-  if (resolved === undefined && newArrival && createdAt) {
-    const ts = Date.parse(createdAt);
-    if (!Number.isNaN(ts)) {
-      const elapsed = Math.floor((Date.now() - ts) / 86400000);
-      const remaining = NOVELTY_WINDOW_DAYS - elapsed;
-      if (remaining > 0 && remaining <= NOVELTY_WINDOW_DAYS) resolved = remaining;
-    }
-  }
-  return resolved;
-}
-
-function badgeLabel(daysRemaining: number | undefined): string {
-  const daysElapsed = daysRemaining !== undefined ? 30 - daysRemaining : 0;
-  if (daysElapsed === 0) return 'Novidade hoje!';
-  if (daysElapsed === 1) return 'Novidade 1 dia';
-  return `Novidade ${daysElapsed} dias`;
-}
+import {
+  resolveNoveltyDaysRemaining,
+  noveltyBadgeLabel as badgeLabel,
+  noveltyDaysElapsed as daysElapsed,
+  noveltyBadgeLabelFromElapsed as labelFromElapsed,
+} from '@/lib/products/novelty-days';
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
 
@@ -98,5 +78,21 @@ describe('Novelty badge — resolveNoveltyDaysRemaining', () => {
 
   it('badge label fallback when daysRemaining undefined → "Novidade hoje!"', () => {
     expect(badgeLabel(undefined)).toBe('Novidade hoje!');
+  });
+
+  // Auditoria Novidades 2026-06-18: clamp de dias decorridos em 0.
+  it('noveltyDaysElapsed nunca é negativo (janela real ~60d da pipeline)', () => {
+    expect(daysElapsed(55)).toBe(0); // 30 - 55 = -25 → clampa em 0
+    expect(daysElapsed(31)).toBe(0);
+    expect(daysElapsed(30)).toBe(0);
+    expect(daysElapsed(25)).toBe(5);
+    expect(daysElapsed(undefined)).toBe(0);
+  });
+
+  it('noveltyBadgeLabelFromElapsed formata e clampa negativos', () => {
+    expect(labelFromElapsed(0)).toBe('Novidade hoje!');
+    expect(labelFromElapsed(1)).toBe('Novidade 1 dia');
+    expect(labelFromElapsed(12)).toBe('Novidade 12 dias');
+    expect(labelFromElapsed(-5)).toBe('Novidade hoje!');
   });
 });

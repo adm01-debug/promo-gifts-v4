@@ -116,7 +116,6 @@ function VirtualizedProductGridInner({
     });
   }, [products, colorsByProduct]);
 
-
   // Calculate rows based on columns
   const rowCount = Math.ceil(products.length / effectiveColumns);
   const estimatedRowHeight =
@@ -134,7 +133,6 @@ function VirtualizedProductGridInner({
     overscan: viewMode === 'list' ? 10 : 5,
     scrollMargin: 0,
   });
-
 
   const virtualItems = virtualizer.getVirtualItems();
 
@@ -192,7 +190,6 @@ function VirtualizedProductGridInner({
     parentRef.current?.scrollTo({ top: 0 });
   }, [scrollResetKey]);
 
-
   const scrollToTop = () => {
     parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -202,24 +199,28 @@ function VirtualizedProductGridInner({
       <div className="relative h-full">
         <div
           className="scrollbar-products h-full overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm"
-
           style={{ contain: 'strict' }}
         >
-          {showFilterBar && !isLoading && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-            <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
-              <InlineFilterBar
-                activeFiltersCount={activeFiltersCount}
-                totalProducts={0}
-                sortBy={sortBy}
-                onSortChange={onSortChange}
-                onOpenFilters={onOpenFilters}
-                onClearFilters={onClearFilters}
-                viewMode={viewMode}
-                onViewModeChange={onViewModeChange}
-                columnSelector={columnSelector}
-              />
-            </div>
-          )}
+          {showFilterBar &&
+            !isLoading &&
+            onSortChange &&
+            onOpenFilters &&
+            onClearFilters &&
+            onViewModeChange && (
+              <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+                <InlineFilterBar
+                  activeFiltersCount={activeFiltersCount}
+                  totalProducts={0}
+                  sortBy={sortBy}
+                  onSortChange={onSortChange}
+                  onOpenFilters={onOpenFilters}
+                  onClearFilters={onClearFilters}
+                  viewMode={viewMode}
+                  onViewModeChange={onViewModeChange}
+                  columnSelector={columnSelector}
+                />
+              </div>
+            )}
 
           <div className="p-4">
             <div
@@ -259,21 +260,26 @@ function VirtualizedProductGridInner({
         style={{ contain: 'strict' }}
       >
         {/* Barra de filtros sticky DENTRO do container de scroll */}
-        {showFilterBar && !isLoading && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-          <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
-            <InlineFilterBar
-              activeFiltersCount={activeFiltersCount}
-              totalProducts={products.length}
-              sortBy={sortBy}
-              onSortChange={onSortChange}
-              onOpenFilters={onOpenFilters}
-              onClearFilters={onClearFilters}
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-              columnSelector={columnSelector}
-            />
-          </div>
-        )}
+        {showFilterBar &&
+          !isLoading &&
+          onSortChange &&
+          onOpenFilters &&
+          onClearFilters &&
+          onViewModeChange && (
+            <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+              <InlineFilterBar
+                activeFiltersCount={activeFiltersCount}
+                totalProducts={products.length}
+                sortBy={sortBy}
+                onSortChange={onSortChange}
+                onOpenFilters={onOpenFilters}
+                onClearFilters={onClearFilters}
+                viewMode={viewMode}
+                onViewModeChange={onViewModeChange}
+                columnSelector={columnSelector}
+              />
+            </div>
+          )}
 
         <div
           style={{
@@ -330,7 +336,6 @@ function VirtualizedProductGridInner({
               );
             }
 
-
             // Get products for this row
             const startIndex = virtualRow.index * effectiveColumns;
             const rowProducts = hydratedProducts.slice(startIndex, startIndex + effectiveColumns);
@@ -378,6 +383,7 @@ function VirtualizedProductGridInner({
                       canAddToCompare={canAddToCompare}
                       activeColorFilter={activeColorFilter}
                       onStatusClick={onStatusClick}
+                      priority={virtualRow.index === 0}
                     />
                   ) : (
                     <div

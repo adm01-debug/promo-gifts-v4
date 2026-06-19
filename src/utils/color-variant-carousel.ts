@@ -56,7 +56,7 @@ export function resolveAllMatchingColors(
 
   const addMatch = (color: (typeof productColors)[0], slug: string) => {
     // Dedup by name+hex (not slug) to avoid duplicates when group and variation point to same color
-    const dedupKey = (color.name || '') + '|' + (color.hex || '');
+    const dedupKey = `${color.name || ''}|${color.hex || ''}`;
     if (seen.has(dedupKey)) return;
     seen.add(dedupKey);
     results.push({
@@ -81,7 +81,7 @@ export function resolveAllMatchingColors(
       addMatch(matches[0], groupSlug);
     } else if (COLOR_GROUP_HEX[groupSlug]) {
       // No color data match but we know this group
-      const key = groupSlug + '|fallback';
+      const key = `${groupSlug}|fallback`;
       if (!seen.has(key)) {
         seen.add(key);
         results.push({

@@ -33,7 +33,7 @@ export function RetestCooldownSelector({ className }: Props) {
               value={String(cooldownMs)}
               disabled={loading || saving}
               onValueChange={(v) => {
-                const ms = Number.parseInt(v, 10);
+                const ms = parseInt(v, 10);
                 if (Number.isFinite(ms) && ms > 0) void save(ms);
               }}
             >

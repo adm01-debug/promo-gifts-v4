@@ -7,7 +7,7 @@
  *  a variável `let itemIndex` acumulava o dobro dos índices na segunda passagem,
  *  causando numeração errada das linhas na tabela do PDF.
  */
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import type { ProposalTemplateData, ProposalItem } from './ProposalHtmlTemplate';
 import { ProposalHeader } from './proposal/ProposalHeader';
 import { ProposalClientBar } from './proposal/ProposalClientBar';
@@ -53,7 +53,6 @@ const PAGE_H = 1123;
 const FIRST_HEADER_H = 128;
 const CONT_HEADER_H = 60;
 const CONT_CLIENT_H = 60; // compact client bar on continuation pages
-const _FULL_FOOTER_H = 220; // last page: totals + signature + notes + green bar
 const SIMPLE_FOOTER_H = 30; // page number + green bar only
 const NOTES_FOOTER_H = 230; // notes block (conditions + terms) on every page
 const CONTENT_PAD = 36;

@@ -46,7 +46,7 @@ export function useAutoRevocations() {
       const rows = (data ?? []) as unknown as RawRow[];
 
       // Resolve emails dos emissores em batch (best-effort: profiles)
-      const userIds = Array.from(new Set(rows.map((r) => r.created_by)));
+      const userIds = [...new Set(rows.map((r) => r.created_by))];
       const emailMap = new Map<string, string>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase

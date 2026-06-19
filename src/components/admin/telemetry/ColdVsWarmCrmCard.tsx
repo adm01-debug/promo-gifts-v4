@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Flame, RefreshCw, Snowflake, Thermometer } from 'lucide-react';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { toErrorMessage } from '@/lib/to-error-message';
+import { cn } from '@/lib/utils';
 
 interface DiagSnapshot {
   ok: boolean;
@@ -90,7 +92,7 @@ export function ColdVsWarmCrmCard() {
       setSnap(json);
       setLastFetched(Date.now());
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(toErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -131,7 +133,7 @@ export function ColdVsWarmCrmCard() {
           </Badge>
         </CardTitle>
         <Button variant="outline" size="sm" onClick={fetchDiag} disabled={loading}>
-          <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', loading && 'animate-spin')} />
           Atualizar
         </Button>
       </CardHeader>

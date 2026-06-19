@@ -8,6 +8,8 @@ import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface RecentlyViewedPopoverProps {
   maxVisible?: number;
@@ -52,9 +54,7 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
             </PopoverTrigger>
           </span>
         </TooltipTrigger>
-        <TooltipContent>
-          Vistos recentemente{itemCount > 0 ? ` (${itemCount})` : ''}
-        </TooltipContent>
+        <TooltipContent>Vistos recentemente{itemCount > 0 ? ` (${itemCount})` : ''}</TooltipContent>
       </Tooltip>
 
       <PopoverContent align="end" className="w-80 p-3" sideOffset={8}>
@@ -102,11 +102,11 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
                       'hover:scale-105 hover:shadow-md',
                     )}
                   >
-                    <img
-                      src={product.images[0]}
+                    <OptimizedImage
+                      src={getCdnUrl(product.images?.[0], 'thumbnail')}
                       alt={product.name}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
+                      className="object-cover"
+                      containerClassName="h-full w-full"
                     />
                   </button>
                   <button

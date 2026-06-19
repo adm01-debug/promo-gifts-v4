@@ -90,9 +90,10 @@ export function useSuppliersManager() {
       }).catch(() => []);
       const list = (companies || []).filter((c) => c.nome_fantasia || c.razao_social);
       setCarrierResults(list);
-      setShowCarrierDropdown(list.length > 0);
+      setShowCarrierDropdown(true);
     } catch {
       setCarrierResults([]);
+      setShowCarrierDropdown(false);
     } finally {
       setSearchingCarriers(false);
     }
@@ -338,7 +339,7 @@ export function useSuppliersManager() {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') || '';
+    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') ?? '';
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
@@ -503,8 +504,8 @@ export function useSuppliersManager() {
       }
       setEditingSupplier(null);
       fetchSuppliers();
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao salvar fornecedor');
+    } catch {
+      toast.error('Erro ao salvar fornecedor');
     } finally {
       setSaving(false);
     }
@@ -524,8 +525,8 @@ export function useSuppliersManager() {
       await dbInvokeDelete({ table: 'suppliers', id: supplier.id });
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao excluir fornecedor');
+    } catch {
+      toast.error('Erro ao excluir fornecedor');
     } finally {
       setDeleting(null);
     }
@@ -560,8 +561,8 @@ export function useSuppliersManager() {
       const { data: urlData } = supabase.storage.from('supplier-logos').getPublicUrl(filePath);
       updateField('logo_url', urlData.publicUrl);
       toast.success('Logo enviada com sucesso');
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao enviar logo');
+    } catch {
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -570,7 +571,7 @@ export function useSuppliersManager() {
 
   // BUG-17 FIX: only fill fields that are currently empty — never overwrite existing data
   const handleCnpjLookup = async () => {
-    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') || '';
+    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') ?? '';
     if (!validateCnpj(digits)) {
       toast.error('CNPJ inválido');
       return;
@@ -595,8 +596,8 @@ export function useSuppliersManager() {
         if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
-    } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao consultar CNPJ');
+    } catch {
+      toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }

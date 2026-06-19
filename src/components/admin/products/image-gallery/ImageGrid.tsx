@@ -12,9 +12,27 @@ import {
   CheckSquare,
   Square,
   CheckCircle2,
+  Cloud,
+  CloudOff,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from './types';
 import { ImageMetaEditor } from './ImageMetaEditor';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+
+const CF_STATUS_CONFIG = {
+  verified: { icon: Cloud, className: 'text-emerald-500', label: 'Cloudflare: sincronizado' },
+  syncing: {
+    icon: Loader2,
+    className: 'text-blue-400 animate-spin',
+    label: 'Cloudflare: sincronizando',
+  },
+  pending: { icon: Cloud, className: 'text-muted-foreground/50', label: 'Cloudflare: pendente' },
+  missing: { icon: AlertCircle, className: 'text-amber-500', label: 'Cloudflare: ausente' },
+  failed: { icon: CloudOff, className: 'text-destructive', label: 'Cloudflare: falhou' },
+  skipped: { icon: AlertCircle, className: 'text-warning/60', label: 'Cloudflare: ignorado' },
+} as const;
 
 interface Props {
   filteredImages: string[];
@@ -75,6 +93,8 @@ export function ImageGrid({
         const isVideo = ext?.image_type === 'video';
         const globalIndex = images.indexOf(img);
         const isSelected = selectedUrls.has(img);
+        const cfStatus = ext?.cf_sync_status;
+        const cfConfig = cfStatus ? CF_STATUS_CONFIG[cfStatus] : null;
 
         return (
           <div
@@ -101,11 +121,13 @@ export function ImageGrid({
                 <Film className="h-8 w-8 text-muted-foreground/40" />
               </div>
             ) : (
-              <img
+              <OptimizedImage
                 src={img}
                 alt={ext?.alt_text || `Imagem ${index + 1}`}
-                className="h-full w-full bg-muted/30 object-contain"
-                loading="lazy"
+                urlOriginal={ext?.url_original ?? ext?.url ?? null}
+                blurhash={ext?.blurhash}
+                className="object-contain"
+                containerClassName="h-full w-full"
               />
             )}
 
@@ -156,6 +178,16 @@ export function ImageGrid({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>Alt: {ext.alt_text}</TooltipContent>
+                </Tooltip>
+              )}
+              {cfConfig && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex h-3.5 w-3.5 items-center justify-center">
+                      <cfConfig.icon className={cn('h-3 w-3', cfConfig.className)} />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{cfConfig.label}</TooltipContent>
                 </Tooltip>
               )}
             </div>

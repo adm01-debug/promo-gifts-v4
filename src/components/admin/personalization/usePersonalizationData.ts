@@ -367,10 +367,10 @@ export function usePersonalizationData(selectedProduct: string | null) {
   });
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.component_id === componentId) || [];
+    locations?.filter((l) => l.component_id === componentId) ?? [];
 
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.component_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.component_location_id === locationId) ?? [];
 
   return {
     products,

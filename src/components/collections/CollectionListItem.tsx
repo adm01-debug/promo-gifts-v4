@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface CollectionListItemProps {
   collection: Collection;
@@ -65,7 +67,12 @@ export function CollectionListItem({
         style={{ backgroundColor: `${collection.color}20` }}
       >
         {previewImage ? (
-          <img src={previewImage} alt="" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={getCdnUrl(previewImage, 'thumbnail')}
+            alt=""
+            className="object-cover"
+            containerClassName="h-full w-full"
+          />
         ) : (
           <span>{collection.icon}</span>
         )}

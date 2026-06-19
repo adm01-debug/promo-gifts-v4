@@ -219,7 +219,7 @@ export function GroupPersonalizationManager() {
                             l.group_component_id === component.id
                               ? getTechniquesForLocation(l.id)
                               : [],
-                          ) || []
+                          ) ?? []
                         }
                         onUpdateComponent={(data) => updateComponent.mutate(data)}
                         onDeleteComponent={(id) => deleteComponent.mutate(id)}

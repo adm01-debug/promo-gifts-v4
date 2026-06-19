@@ -51,7 +51,7 @@ export function QuantityRangeComparison({
   const [customQty, setCustomQty] = useState('');
 
   const addQuantity = () => {
-    const qty = parseInt(customQty);
+    const qty = parseInt(customQty, 10);
     if (!qty || qty <= 0 || quantities.includes(qty)) return;
     if (quantities.length >= 6) {
       toast.warning('Máximo 6 quantidades');
@@ -180,7 +180,11 @@ export function QuantityRangeComparison({
           >
             {qty}un
             {quantities.length > 2 && qty !== currentQuantity && (
-              <button onClick={() => removeQuantity(qty)} className="ml-1 hover:text-destructive">
+              <button
+                type="button"
+                onClick={() => removeQuantity(qty)}
+                className="ml-1 hover:text-destructive"
+              >
                 <X className="h-3 w-3" />
               </button>
             )}

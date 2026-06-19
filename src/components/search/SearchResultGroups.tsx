@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { HighlightMatch } from './HighlightMatch';
 import type { SearchResult } from '@/hooks/common';
 import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 const typeIcons: Record<string, React.ReactNode> = {
   product: <Package className="h-4 w-4 text-primary" />,
@@ -62,7 +63,12 @@ export function SearchResultItem({
         )}
       >
         {productImg ? (
-          <img src={productImg} alt="" className="h-full w-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }} />
+          <OptimizedImage
+            src={productImg}
+            alt=""
+            className="object-contain"
+            containerClassName="h-full w-full"
+          />
         ) : (
           typeIcons[result.type] || result.icon
         )}

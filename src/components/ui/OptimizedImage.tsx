@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ImageOff, Loader2 } from 'lucide-react';
+import { getBlurhashDominantColor } from '@/utils/image-utils';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackClassName?: string;
@@ -10,6 +11,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   zoomAmount?: number;
   duration?: number;
   lqip?: string;
+  /** String blurhash do banco. Extrai cor dominante como CSS placeholder sem libs externas. */
+  blurhash?: string | null;
   debug?: boolean;
   onDetection?: (rule: string) => void;
   /** URL de fallback (origem do fornecedor) tentada quando a src do CF Images falha, antes do ícone de erro. */
@@ -27,6 +30,7 @@ export function OptimizedImage({
   zoomAmount = 1.05,
   duration = 400,
   lqip,
+  blurhash,
   debug = false,
   onDetection,
   urlOriginal,
@@ -35,6 +39,7 @@ export function OptimizedImage({
   style: externalStyle,
   ...props
 }: OptimizedImageProps) {
+  const blurhashColor = useMemo(() => getBlurhashDominantColor(blurhash), [blurhash]);
   const [isLoaded, setIsLoaded] = useState(false);
   // 0 = src primaria (CF) | 1 = urlOriginal (origem fornecedor) | 2 = erro (icone)
   const [fallbackStage, setFallbackStage] = useState<0 | 1 | 2>(0);
@@ -161,6 +166,8 @@ export function OptimizedImage({
         {
           aspectRatio: props.width && props.height ? `${props.width}/${props.height}` : 'auto',
           contain: 'layout paint',
+          backgroundColor: !isLoaded && blurhashColor ? blurhashColor : undefined,
+          transition: 'background-color 0.3s ease',
         } as React.CSSProperties
       }
     >

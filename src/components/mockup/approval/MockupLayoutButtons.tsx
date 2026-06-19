@@ -142,7 +142,7 @@ export function MockupLayoutButtons({
           locationName: technique?.locationName || activeArea?.name || 'Frente',
           widthCm: activeArea?.logoWidth || technique?.maxWidth || 0,
           heightCm: activeArea?.logoHeight || technique?.maxHeight || 0,
-          colorsCount: colorsCount,
+          colorsCount,
         },
         pantoneColors: (pantoneColors || []).map((c) => ({
           name: c.selectedPantone || c.pantoneMatch?.pantoneCode || c.name,
@@ -285,7 +285,7 @@ export function MockupLayoutButtons({
       // Save to history automatically
       onStaticGenerated?.(dataUrl, {
         locationName: technique?.locationName || activeArea?.name || undefined,
-        colorsCount: colorsCount,
+        colorsCount,
       });
       const data = buildApprovalData(dataUrl, 'static');
       setApprovalData(data);
@@ -296,8 +296,16 @@ export function MockupLayoutButtons({
     } finally {
       setIsGeneratingStatic(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, activeArea, technique, productHeightCm, productWidthCm, buildApprovalData]);
+  }, [
+    product,
+    activeArea,
+    technique,
+    productHeightCm,
+    productWidthCm,
+    buildApprovalData,
+    onStaticGenerated,
+    colorsCount,
+  ]);
 
   // Don't show if no product/technique selected
   if (!product || !technique || !activeArea) return null;

@@ -18,7 +18,6 @@ import {
   getActiveColorName,
   type ActiveColorFilter,
 } from '@/utils/color-image-resolver';
-import { resolveHighlightHex } from '@/utils/color-group-hex';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -26,8 +25,16 @@ import { cn } from '@/lib/utils';
 // FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
+// Collator pt-BR compartilhado: mesma ordenação natural/acento-insensível do grid/lista
+// (apenas type-imports em runtime → sem ciclo). Evita localeCompare sem locale e null-throw.
+import { compareNamePtBR } from '@/utils/product-sorting';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+
+type SkeletonRow = { id: string; isSkeleton: true };
+function isSkeletonRow(row: Product | SkeletonRow): row is SkeletonRow {
+  return 'isSkeleton' in row;
+}
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
 import { ProductQuickView } from './ProductQuickView';
@@ -149,7 +156,7 @@ export const ProductTableView = memo(function ProductTableView({
   onToggleCompare,
   canAddToCompare = true,
   onShareProduct,
-  highlightColors = [],
+  highlightColors: _highlightColors = [],
   activeColorFilter,
   selectionMode,
   selectedIds,
@@ -246,26 +253,35 @@ export const ProductTableView = memo(function ProductTableView({
   const sorted = useMemo(() => {
     if (isLoading && products.length === 0) {
       return Array.from({ length: 12 }).map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }) as any,
+        (_, i): SkeletonRow => ({ id: `skeleton-${i}`, isSkeleton: true }),
       );
     }
     return [...hydratedProducts].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
+      // Desempate determinístico por id (independente de dir) → ordem estável
+      // entre renders com virtualização + carregamento progressivo.
+      const idTie = a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      let primary = 0;
       switch (sortCol) {
         case 'name':
-          return dir * a.name.localeCompare(b.name);
+          primary = compareNamePtBR(a.name, b.name);
+          break;
         case 'sku':
-          return dir * (a.sku || '').localeCompare(b.sku || '');
+          primary = compareNamePtBR(a.sku, b.sku);
+          break;
         case 'price':
-          return dir * (a.price - b.price);
+          primary = (a.price || 0) - (b.price || 0);
+          break;
         case 'stock':
-          return dir * ((a.stock || 0) - (b.stock || 0));
+          primary = (a.stock || 0) - (b.stock || 0);
+          break;
         case 'supplier':
-          return dir * (a.supplier?.name || '').localeCompare(b.supplier?.name || '');
+          primary = compareNamePtBR(a.supplier?.name, b.supplier?.name);
+          break;
         default:
-          return 0;
+          return idTie;
       }
+      return primary !== 0 ? dir * primary : idTie;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydratedProducts, sortCol, sortDir]);
@@ -441,7 +457,7 @@ export const ProductTableView = memo(function ProductTableView({
               );
             }
 
-            if (product.isSkeleton) {
+            if (isSkeletonRow(product)) {
               return (
                 <div
                   key={vr.key}
@@ -508,11 +524,6 @@ export const ProductTableView = memo(function ProductTableView({
             const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
             const activeColorName = getActiveColorName(product, activeColorFilter);
             const isSelected = selectionMode && selectedIds?.has(product.id);
-            const _matchedColor = resolveHighlightHex(
-              product.colors,
-              activeColorFilter,
-              highlightColors,
-            );
 
             return (
               <div
@@ -553,11 +564,30 @@ export const ProductTableView = memo(function ProductTableView({
                 </div>
 
                 <div className="w-12 px-2">
-                  <div className="h-10 w-10 overflow-hidden rounded-md border border-border/30 bg-muted/30">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Visualização rápida de ${product.name}`}
+                    data-testid="product-table-row-thumb"
+                    className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuickViewProduct(product);
+                      setQuickViewOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setQuickViewProduct(product);
+                        setQuickViewOpen(true);
+                      }
+                    }}
+                  >
                     <img
                       src={thumbUrl}
                       alt=""
-                      className="h-full w-full object-contain"
+                      className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
                       loading="lazy"
                     />
                   </div>
@@ -689,6 +719,16 @@ export const ProductTableView = memo(function ProductTableView({
           isInCompare={isInCompare?.(quickViewProduct.id) || false}
           onToggleCompare={onToggleCompare}
           onShare={onShareProduct}
+          onAddToQuote={(p) => {
+            setVariantPickerProduct(p);
+            setVariantPickerMode('quote');
+            setVariantPickerOpen(true);
+          }}
+          onAddToCollection={(p) => {
+            setVariantPickerProduct(p);
+            setVariantPickerMode('collection');
+            setVariantPickerOpen(true);
+          }}
         />
       )}
       {shareProduct && (

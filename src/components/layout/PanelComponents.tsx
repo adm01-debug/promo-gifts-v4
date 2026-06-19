@@ -16,6 +16,13 @@ interface SidePanelProps {
   footer?: React.ReactNode;
 }
 
+const SIDE_PANEL_SIZE_CLASSES = {
+  sm: 'w-80',
+  md: 'w-96',
+  lg: 'w-[28rem]',
+  xl: 'w-[32rem]',
+} as const;
+
 export function SidePanel({
   children,
   isOpen,
@@ -27,13 +34,6 @@ export function SidePanel({
   overlay = true,
   footer,
 }: SidePanelProps) {
-  const sizeClasses = {
-    sm: 'w-80',
-    md: 'w-96',
-    lg: 'w-[28rem]',
-    xl: 'w-[32rem]',
-  };
-
   return (
     <>
       {overlay && (
@@ -48,7 +48,7 @@ export function SidePanel({
       <div
         className={cn(
           'fixed top-0 z-50 h-full bg-background shadow-2xl transition-transform duration-200',
-          sizeClasses[size],
+          SIDE_PANEL_SIZE_CLASSES[size],
           side === 'left' ? 'left-0' : 'right-0',
           isOpen ? 'translate-x-0' : side === 'left' ? '-translate-x-full' : 'translate-x-full',
           !isOpen && 'pointer-events-none',
@@ -199,7 +199,11 @@ export function ExpandablePanel({
 
   return (
     <div className={cn('rounded-lg border bg-card', className)}>
-      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between p-4 text-left"
+      >
         <span className="font-medium">{title}</span>
         {isExpanded ? (
           <Minimize2 className="h-4 w-4 text-muted-foreground" />

@@ -29,6 +29,13 @@ export interface TableStat {
   maxMs: number;
 }
 
+const TIME_FILTER_MS: Record<string, number> = {
+  '1h': 3600000,
+  '6h': 21600000,
+  '24h': 86400000,
+  '7d': 604800000,
+} as const;
+
 export function useTelemetryData() {
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h');
@@ -44,13 +51,7 @@ export function useTelemetryData() {
       to.setHours(23, 59, 59, 999);
       return { from: from.toISOString(), to: to.toISOString() };
     }
-    const msMap: Record<string, number> = {
-      '1h': 3600000,
-      '6h': 21600000,
-      '24h': 86400000,
-      '7d': 604800000,
-    };
-    const ms = msMap[timeFilter] || 86400000;
+    const ms = TIME_FILTER_MS[timeFilter] || 86400000;
     return { from: new Date(now.getTime() - ms).toISOString(), to: now.toISOString() };
   };
 

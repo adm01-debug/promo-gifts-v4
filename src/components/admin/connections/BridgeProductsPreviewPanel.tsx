@@ -61,7 +61,7 @@ export function BridgeProductsPreviewPanel() {
   // Monta o objeto de filtros no formato suportado pelo external-db-bridge
   const buildFilters = useCallback((): Record<string, unknown> => {
     const f: Record<string, unknown> = {};
-    if (appliedSearch.trim().length > 0) f._search = appliedSearch.trim();
+    if (appliedSearch.trim() !== '') f._search = appliedSearch.trim();
     if (appliedActive === 'active') f.is_active = true;
     if (appliedActive === 'inactive') f.is_active = false;
     if (appliedMinPrice !== null) f.price_gte = appliedMinPrice;
@@ -85,8 +85,7 @@ export function BridgeProductsPreviewPanel() {
       // ignora resposta de requisições obsoletas (race protection)
       if (reqId !== lastReqRef.current) return;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildFilters, page, pageSize]);
+  }, [buildFilters, fetchAll, page, pageSize]);
 
   const handleApplyFilters = useCallback(() => {
     setAppliedSearch(searchInput);

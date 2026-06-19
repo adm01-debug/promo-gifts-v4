@@ -32,6 +32,7 @@ vi.mock('@/components/products/NoveltyBadge', () => ({
 vi.mock('@/components/products/ProductStatusBadge', () => ({
   ProductStatusBadge: () => null,
 }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
@@ -52,6 +53,7 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
     detected_at: new Date().toISOString(),
     expires_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
     days_remaining: 27,
+    days_as_novelty: 3,
     status: 'active',
     is_highlighted: false,
     is_active: true,
@@ -99,9 +101,7 @@ describe('NoveltyGridCard › footer de preço/estoque', () => {
       ['negativo', -5],
       ['NaN', Number.NaN],
     ])('exibe "Sob consulta" quando base_price = %s', (_label, value) => {
-      const { getByTestId, queryByTestId } = renderCard(
-        makeNovelty({ base_price: value }),
-      );
+      const { getByTestId, queryByTestId } = renderCard(makeNovelty({ base_price: value }));
       expect(getByTestId('novelty-card-price-unavailable')).toHaveTextContent(/Sob consulta/i);
       expect(queryByTestId('novelty-card-price')).toBeNull();
       expect(queryByTestId('novelty-card-price-prefix')).toBeNull();

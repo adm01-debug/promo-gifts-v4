@@ -23,6 +23,7 @@ export function replenishmentToProduct(n: ReplenishmentWithDetails): Product {
     id: n.product_id,
     name: n.product_name,
     description: n.product_description,
+    shortDescription: n.product_description || '',
     category_id: n.category_id,
     category_name: n.category_name,
     price: n.base_price || 0,

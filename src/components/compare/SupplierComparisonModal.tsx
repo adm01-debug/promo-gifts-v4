@@ -184,12 +184,12 @@ export function SupplierComparisonModal({
           </DialogHeader>
           <div className="space-y-6 p-4">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-20 w-full rounded-lg" />
               ))}
             </div>
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-24 w-full rounded-xl" />
               ))}
             </div>
@@ -517,6 +517,12 @@ function ToggleFilter({
   );
 }
 
+const KPI_COLOR_CLASSES = {
+  success: 'border-success/20 bg-success/5 text-success ring-1 ring-success/10',
+  primary: 'border-primary/20 bg-primary/5 text-primary ring-1 ring-primary/10',
+  neutral: 'border-border bg-muted/40 text-foreground',
+} as const;
+
 function KPICard({
   label,
   value,
@@ -526,16 +532,11 @@ function KPICard({
   value: string | number;
   color: 'success' | 'primary' | 'neutral';
 }) {
-  const colorMap = {
-    success: 'border-success/20 bg-success/5 text-success ring-1 ring-success/10',
-    primary: 'border-primary/20 bg-primary/5 text-primary ring-1 ring-primary/10',
-    neutral: 'border-border bg-muted/40 text-foreground',
-  };
   return (
     <div
       className={cn(
         'rounded-2xl border p-4 transition-all hover:translate-y-[-2px] hover:shadow-md',
-        colorMap[color],
+        KPI_COLOR_CLASSES[color],
       )}
     >
       <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
@@ -806,7 +807,7 @@ function ScoreBreakdown({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="group inline-flex items-center gap-1.5">
+        <button type="button" className="group inline-flex items-center gap-1.5">
           {label ? (
             <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-primary transition-all hover:bg-primary/20">
               <Sparkles className="h-3.5 w-3.5" />

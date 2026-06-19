@@ -12,6 +12,12 @@ interface A11yContextType {
 
 const A11yContext = createContext<A11yContextType | null>(null);
 
+const FONT_SIZE_PX: Record<'normal' | 'large' | 'larger', string> = {
+  normal: '16px',
+  large: '18px',
+  larger: '20px',
+} as const;
+
 export function useA11y() {
   const context = useContext(A11yContext);
   if (!context) {
@@ -74,12 +80,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   // Apply font size to document
   useEffect(() => {
     const root = document.documentElement;
-    const fontSizeMap = {
-      normal: '16px',
-      large: '18px',
-      larger: '20px',
-    };
-    root.style.fontSize = fontSizeMap[fontSize];
+    root.style.fontSize = FONT_SIZE_PX[fontSize];
   }, [fontSize]);
 
   // Apply high contrast class

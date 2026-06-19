@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const getCorsHeaders = () => buildPublicCorsHeaders();
 
@@ -24,6 +26,9 @@ async function signInClient(email: string, password: string): Promise<SupabaseCl
 }
 
 Deno.serve(async (req) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'audit-suite', requestId: __reqId, req });
+  log.info('request_start');
   const preflight = handleCorsPreflight(req);
   if (preflight) return preflight;
 
@@ -60,11 +65,7 @@ Deno.serve(async (req) => {
     try {
       const carts = [];
       for (let i = 0; i < 4; i++) {
-        const { data, error } = await s1Client.from("seller_carts").insert({ 
-          name: `Cart ${i}`, 
-          user_id: s1Id,
-          status: 'active'
-        }).select().single();
+        const { data, error } = await s1Client.from("seller_carts").insert({ company_id: `audit-co-${i}`, company_name: `Cart ${i}`, seller_id: s1Id }).select().single();
         if (error) {
           test1.logs.push(`Attempt ${i+1} failed: ${error.message}`);
         } else {
@@ -83,14 +84,14 @@ Deno.serve(async (req) => {
     const test2: TestResult = { name: "RLS Isolation", passed: false, details: "", logs: [] };
     try {
       const { data: s1Cart } = await s1Client.from("seller_carts").select("id").limit(1).single();
-      const { data: s2Cart } = await s2Client.from("seller_carts").insert({ name: "S2 Cart", user_id: s2Id }).select().single();
+      const { data: s2Cart } = await s2Client.from("seller_carts").insert({ company_id: "audit-co-s2", company_name: "S2 Cart", seller_id: s2Id }).select().single();
       
       // S1 tries to read S2 cart
       const { data: readOther, error: readError } = await s1Client.from("seller_carts").select("*").eq("id", s2Cart.id).maybeSingle();
       test2.logs.push(`S1 read S2 cart: ${readOther ? "Success (FAIL)" : "Empty (PASS)"}`);
       
       // S1 tries to update S2 cart
-      const { error: updateError } = await s1Client.from("seller_carts").update({ name: "Hacked" }).eq("id", s2Cart.id);
+      const { error: updateError } = await s1Client.from("seller_carts").update({ company_name: "Hacked" }).eq("id", s2Cart.id);
       test2.logs.push(`S1 update S2 cart: ${updateError ? "Error (PASS)" : "Success (FAIL)"}`);
 
       test2.passed = !readOther && !!updateError;
@@ -107,11 +108,7 @@ Deno.serve(async (req) => {
       // Simulate 50 simultaneous additions of the same product
       const productId = crypto.randomUUID(); 
       const promises = Array.from({ length: 50 }).map(() => 
-        s1Client.from("seller_cart_items").insert({
-          cart_id: cart.id,
-          product_id: productId,
-          quantity: 1
-        })
+        s1Client.from("seller_cart_items").insert({ cart_id: cart.id, product_id: productId, product_name: "Audit Product", quantity: 1 })
       );
       const res = await Promise.all(promises);
       const success = res.filter(r => !r.error).length;
@@ -134,12 +131,12 @@ Deno.serve(async (req) => {
       status: results.every(r => r.passed) ? "PASSED" : "FAILED",
       timestamp: new Date().toISOString(),
       results
-    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "X-Request-Id": __reqId } });
 
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { 
       status: 500, 
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } 
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "X-Request-Id": __reqId } 
     });
   }
 });

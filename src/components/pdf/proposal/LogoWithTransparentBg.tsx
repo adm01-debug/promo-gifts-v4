@@ -81,5 +81,5 @@ export function LogoWithTransparentBg({ src, style, alt }: Props) {
 
   if (!dataUrl) return <div style={{ ...style, opacity: 0 }} />;
 
-  return <img src={dataUrl} alt={alt ?? 'Logo'} style={style} loading="lazy" />;
+  return <img src={dataUrl} alt={alt ?? 'Logo'} style={style} />;
 }

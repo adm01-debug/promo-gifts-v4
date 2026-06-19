@@ -49,6 +49,9 @@ export interface ProductImageMeta {
   alt_text: string | null;
   title_text: string | null;
   display_order: number;
+  blurhash?: string | null;
+  content_hash?: string | null;
+  cf_sync_status?: string | null;
 }
 
 export interface GroupedImages {
@@ -243,13 +246,12 @@ export function categorizeImages(images: ProductImageMeta[]): GroupedImages {
  * @param colorCode  supplier_code da cor seleccionada
  */
 export function getColorImages(images: ProductImageMeta[], colorCode: string): ProductImageMeta[] {
-  // Tipos técnicos nunca aparecem na galeria de produto (ADR-001)
-  const TECHNICAL = new Set(['box', 'pouch', 'location', 'area', 'component']);
-
-  // 1) Imagens específicas desta cor (não-técnicas)
+  // 1) Imagens específicas desta cor (não-técnicas, ADR-001)
   const specific = images.filter(
     (i) =>
-      i.applies_to_color === true && i.supplier_code === colorCode && !TECHNICAL.has(i.image_type),
+      i.applies_to_color === true &&
+      i.supplier_code === colorCode &&
+      !TECHNICAL_IMAGE_TYPES.has(i.image_type),
   );
 
   // 2) Hero: main com is_primary=true → qualquer main sem applies_to_color
@@ -327,3 +329,40 @@ export const TECHNICAL_IMAGE_TYPES: Set<string> = new Set([
 
 /** Tipos de imagem que podem ser cor-específicas */
 export const COLOR_SPECIFIC_TYPES: ImageTypeCode[] = ['main', 'gallery', 'detail', 'product'];
+
+// ============================================
+// BLURHASH UTILITIES (zero-dependency)
+// ============================================
+
+const BASE83 =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~';
+
+function decode83(str: string, start: number, len: number): number {
+  let v = 0;
+  for (let i = start; i < start + len; i++) {
+    const idx = BASE83.indexOf(str[i]);
+    if (idx < 0) return 0;
+    v = v * 83 + idx;
+  }
+  return v;
+}
+
+/**
+ * Extrai a cor dominante (componente DC) de uma string blurhash sem bibliotecas externas.
+ * Retorna uma string CSS `rgb(r,g,b)` ou `null` se o hash for inválido.
+ *
+ * O componente DC está em espaço sRGB (8 bits por canal) codificado como 4 dígitos base83
+ * na posição 2 do hash. Funciona independente do número de componentes AC.
+ */
+export function getBlurhashDominantColor(hash: string | null | undefined): string | null {
+  if (!hash || hash.length < 6) return null;
+  try {
+    const dc = decode83(hash, 2, 4);
+    const r = (dc >> 16) & 0xff;
+    const g = (dc >> 8) & 0xff;
+    const b = dc & 0xff;
+    return `rgb(${r},${g},${b})`;
+  } catch {
+    return null;
+  }
+}

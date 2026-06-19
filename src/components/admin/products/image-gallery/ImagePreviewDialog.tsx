@@ -1,7 +1,16 @@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Cloud, CloudOff, Fingerprint, Layers } from 'lucide-react';
 import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from './types';
+
+const CF_BADGE: Record<string, { label: string; icon: typeof Cloud; className: string }> = {
+  verified: { label: 'CF ✓', icon: Cloud, className: 'text-emerald-600' },
+  failed: { label: 'CF falhou', icon: CloudOff, className: 'text-destructive' },
+  pending: { label: 'CF pendente', icon: Cloud, className: 'text-muted-foreground' },
+  syncing: { label: 'CF sincronizando', icon: Cloud, className: 'text-blue-400' },
+  skipped: { label: 'CF ignorado', icon: Cloud, className: 'text-warning' },
+};
 
 interface Props {
   previewUrl: string | null;
@@ -53,6 +62,7 @@ export function ImagePreviewDialog({ previewUrl, onClose, extImageMap, variantMa
                   )}
                   {ext.alt_text && <span>Alt: {ext.alt_text}</span>}
                   {ext.caption && <span>• {ext.caption}</span>}
+                  {ext.format && <span className="uppercase">• {ext.format}</span>}
                   {ext.width_px && ext.height_px && (
                     <span>
                       • {ext.width_px}×{ext.height_px}px
@@ -60,6 +70,30 @@ export function ImagePreviewDialog({ previewUrl, onClose, extImageMap, variantMa
                   )}
                   {ext.file_size_bytes && (
                     <span>• {(ext.file_size_bytes / 1024).toFixed(0)}KB</span>
+                  )}
+                  {(() => {
+                    const status = ext.cf_sync_status;
+                    if (!status) return null;
+                    const cf = CF_BADGE[status];
+                    if (!cf) return null;
+                    return (
+                      <Badge variant="outline" className={cn('flex items-center gap-1 text-[10px]', cf.className)}>
+                        <cf.icon className="h-2.5 w-2.5" />
+                        {cf.label}
+                      </Badge>
+                    );
+                  })()}
+                  {ext.blurhash && (
+                    <Badge variant="secondary" className="flex items-center gap-1 text-[10px]">
+                      <Layers className="h-2.5 w-2.5" />
+                      blurhash
+                    </Badge>
+                  )}
+                  {ext.content_hash && (
+                    <span className="flex items-center gap-1">
+                      <Fingerprint className="h-2.5 w-2.5" />
+                      {ext.content_hash.slice(0, 8)}…
+                    </span>
                   )}
                 </div>
               );

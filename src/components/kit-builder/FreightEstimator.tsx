@@ -47,7 +47,7 @@ const FREIGHT_TABLE = {
     { maxKg: 100, price: 80.0 },
     { maxKg: Infinity, price: 120.0 },
   ],
-};
+} as const;
 
 const METHOD_LABELS: Record<string, string> = {
   sedex: 'SEDEX',

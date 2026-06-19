@@ -50,7 +50,7 @@ export function useColorEnrichment({
   colorVariations,
 }: UseColorEnrichmentOptions) {
   const hasFilter = colorGroups.length > 0 || colorVariations.length > 0;
-  const filterKey = [...colorGroups].sort().join(',') + '|' + [...colorVariations].sort().join(',');
+  const filterKey = `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}`;
 
   // Accumulator: track which product IDs have already been enriched for this filter
   const enrichedIdsRef = useRef<Set<string>>(new Set());

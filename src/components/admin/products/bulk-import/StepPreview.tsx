@@ -1,4 +1,5 @@
-﻿import { Badge } from '@/components/ui/badge';
+﻿import { useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -35,12 +36,22 @@ export function StepPreview({
   onBack,
   onImport,
 }: StepPreviewProps) {
-  const validCount = validationResults.filter((r) => r.valid).length;
-  const invalidCount = validationResults.filter((r) => !r.valid).length;
-  const warningCount = validationResults.filter((r) => r.warnings.length > 0).length;
-  const existsCount = validationResults.filter((r) => r.existsInDb).length;
-  const newCount = validationResults.filter((r) => r.valid && !r.existsInDb).length;
-  const importableCount = importMode === 'insert' ? newCount : validCount;
+  const { validCount, invalidCount, warningCount, existsCount, newCount, importableCount } =
+    useMemo(() => {
+      const valid = validationResults.filter((r) => r.valid).length;
+      const invalid = validationResults.filter((r) => !r.valid).length;
+      const warning = validationResults.filter((r) => r.warnings.length > 0).length;
+      const exists = validationResults.filter((r) => r.existsInDb).length;
+      const newItems = validationResults.filter((r) => r.valid && !r.existsInDb).length;
+      return {
+        validCount: valid,
+        invalidCount: invalid,
+        warningCount: warning,
+        existsCount: exists,
+        newCount: newItems,
+        importableCount: importMode === 'insert' ? newItems : valid,
+      };
+    }, [validationResults, importMode]);
 
   return (
     <div className="space-y-4">
@@ -123,14 +134,14 @@ export function StepPreview({
                 <TableCell className="font-mono text-xs">
                   {r.data?.sku ||
                     (rawData[r.row - 1]?.[
-                      Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] || ''
+                      Object.entries(mapping).find(([, v]) => v === 'sku')?.[0] ?? ''
                     ] as string) ||
                     '—'}
                 </TableCell>
                 <TableCell className="max-w-[180px] truncate text-sm">
                   {r.data?.name ||
                     (rawData[r.row - 1]?.[
-                      Object.entries(mapping).find(([, v]) => v === 'name')?.[0] || ''
+                      Object.entries(mapping).find(([, v]) => v === 'name')?.[0] ?? ''
                     ] as string) ||
                     '—'}
                 </TableCell>

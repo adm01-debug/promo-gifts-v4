@@ -152,7 +152,7 @@ export function SuccessCelebration({
                 </motion.div>
 
                 {/* Pulse rings */}
-                {[...Array(3)].map((_, i) => (
+                {Array.from({ length: 3 }, (_, i) => (
                   <motion.div
                     key={i}
                     className={`absolute inset-0 rounded-full border-2 border-current ${config.iconColor} opacity-30`}
@@ -199,7 +199,7 @@ export function SuccessCelebration({
               </motion.div>
 
               {/* Sparkle particles */}
-              {[...Array(8)].map((_, i) => (
+              {Array.from({ length: 8 }, (_, i) => (
                 <motion.div
                   key={i}
                   className="absolute"

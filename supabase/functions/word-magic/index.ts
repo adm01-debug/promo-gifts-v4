@@ -4,6 +4,8 @@ import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
 import { z } from '../_shared/zod-validate.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -69,6 +71,9 @@ IMPORTANTE: ai_description deve ter entre 500 e 900 caracteres, NUNCA ser cortad
 // ─── Handler principal ────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'word-magic', requestId: __reqId, req });
+  log.info('request_start');
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -318,7 +323,7 @@ Deno.serve(async (req) => {
         generation_ms:  generationMs,
         total_ms:       totalMs,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
     );
 
   } catch (e) {
@@ -328,7 +333,7 @@ Deno.serve(async (req) => {
     console.error('[word-magic] unhandled_error', safeErrorFields(e));
     return new Response(
       JSON.stringify({ error: 'Erro interno. Tente novamente em instantes.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
     );
   }
 });

@@ -82,6 +82,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const METRIC_TILE_CLASSES = {
+  default: { icon: 'text-muted-foreground', value: 'text-foreground' },
+  success: { icon: 'text-success', value: 'text-success' },
+  warning: { icon: 'text-warning', value: 'text-warning' },
+  destructive: { icon: 'text-destructive', value: 'text-destructive' },
+} as const;
+
 function MetricTile({
   icon: Icon,
   label,
@@ -95,12 +102,7 @@ function MetricTile({
   tone?: 'default' | 'success' | 'warning' | 'destructive';
   hint?: string;
 }) {
-  const cls = {
-    default: { icon: 'text-muted-foreground', value: 'text-foreground' },
-    success: { icon: 'text-success', value: 'text-success' },
-    warning: { icon: 'text-warning', value: 'text-warning' },
-    destructive: { icon: 'text-destructive', value: 'text-destructive' },
-  }[tone];
+  const cls = METRIC_TILE_CLASSES[tone];
   return (
     <div className="flex flex-col gap-1 rounded-lg border bg-muted/30 p-3">
       <div className="flex items-center gap-1.5">

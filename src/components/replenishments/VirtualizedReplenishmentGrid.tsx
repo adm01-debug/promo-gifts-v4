@@ -16,6 +16,11 @@ interface VirtualizedGridProps {
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }
 
+const SCROLL_CONTAINER_STYLE = {
+  maxHeight:
+    'calc(100vh - var(--header-h, 56px) - var(--breadcrumb-h, 0px) - var(--replenishment-sticky-h, 180px) - 1rem)',
+} as const;
+
 export function VirtualizedReplenishmentGrid({
   products,
   gridColumns,
@@ -45,7 +50,7 @@ export function VirtualizedReplenishmentGrid({
     <div
       ref={parentRef}
       className="overflow-auto"
-      style={{ maxHeight: 'calc(100vh - 280px)' }}
+      style={SCROLL_CONTAINER_STYLE}
       role="list"
       aria-label="Grade de produtos repostos"
     >
@@ -83,6 +88,7 @@ export function VirtualizedReplenishmentGrid({
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
                     colors={colorsByProduct?.get(product.product_id)}
+                    priority={virtualRow.index === 0}
                   />
                 </div>
               ))}

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useKitCollaborators, useKitComments } from '@/hooks/kit-builder';
+import { cn } from '@/lib/utils';
 
 interface Props {
   kitId: string | undefined;
@@ -132,7 +133,10 @@ export function KitCollaborationPanel({ kitId }: Props) {
             {comments.map((c) => (
               <li
                 key={c.id}
-                className={`space-y-1 rounded bg-muted/30 p-2 text-xs ${c.resolved ? 'opacity-60' : ''}`}
+                className={cn(
+                  'space-y-1 rounded bg-muted/30 p-2 text-xs',
+                  c.resolved && 'opacity-60',
+                )}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-muted-foreground">{c.author_id.slice(0, 8)}</span>

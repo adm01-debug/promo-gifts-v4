@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { PageSEO } from '@/components/seo/PageSEO';
@@ -60,6 +60,7 @@ import { RecentAuditTable } from '@/components/admin/security/RecentAuditTable';
 import { HardeningHealthCard } from '@/components/admin/security/HardeningHealthCard';
 import { ActiveIpsList } from '@/components/admin/security/ActiveIpsList';
 import { AutoDefenseTab } from '@/components/admin/security/AutoDefenseTab';
+import { cn } from '@/lib/utils';
 
 interface BotLog {
   id: string;
@@ -122,7 +123,7 @@ export default function AdminSegurancaAcessoPage() {
   // que resolve após o teardown vaza "window is not defined" nos testes).
   const mountedRef = useRef(true);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     if (mountedRef.current) setIsLoading(true);
     try {
       const [botRes, rateRes, ipRes] = await Promise.all([
@@ -171,18 +172,17 @@ export default function AdminSegurancaAcessoPage() {
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchAll();
+    void fetchAll();
     const interval = setInterval(fetchAll, 30000); // 30s polling
     return () => {
       mountedRef.current = false;
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchAll]);
 
   const stats = useMemo(() => {
     const blocked = botLogs.filter((l) => l.blocked).length;
@@ -275,7 +275,7 @@ export default function AdminSegurancaAcessoPage() {
           <div className="flex items-center gap-2">
             <ForceGlobalLogoutDialog />
             <Button variant="outline" size="sm" onClick={fetchAll} disabled={isLoading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
               Atualizar
             </Button>
           </div>

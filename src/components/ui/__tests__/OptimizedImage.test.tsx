@@ -168,4 +168,44 @@ describe('OptimizedImage', () => {
     expect(src).toContain('width=50');
     expect(src).toContain('quality=10');
   });
+
+  describe('blurhash prop — cor dominante como placeholder', () => {
+    it('aplica backgroundColor do blurhash ao container enquanto carregando', () => {
+      // "00TI:j" → DC=0xFF0000 → rgb(255,0,0) vermelho puro
+      const { container } = render(<OptimizedImage {...defaultProps} blurhash="00TI:j" />);
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper).toHaveStyle('background-color: rgb(255, 0, 0)');
+    });
+
+    it('remove backgroundColor do container após onLoad', () => {
+      const { container } = render(<OptimizedImage {...defaultProps} blurhash="00TI:j" />);
+      const wrapper = container.firstChild as HTMLElement;
+      const img = screen.getByAltText('Test Image');
+
+      expect(wrapper).toHaveStyle('background-color: rgb(255, 0, 0)');
+
+      fireEvent.load(img);
+
+      // Após carregar, backgroundColor deve ser undefined (sem cor)
+      expect(wrapper).not.toHaveStyle('background-color: rgb(255, 0, 0)');
+    });
+
+    it('sem blurhash → sem backgroundColor no container', () => {
+      const { container } = render(<OptimizedImage {...defaultProps} />);
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.style.backgroundColor).toBe('');
+    });
+
+    it('blurhash null → sem backgroundColor no container', () => {
+      const { container } = render(<OptimizedImage {...defaultProps} blurhash={null} />);
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.style.backgroundColor).toBe('');
+    });
+
+    it('blurhash inválido (muito curto) → sem backgroundColor', () => {
+      const { container } = render(<OptimizedImage {...defaultProps} blurhash="ab" />);
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.style.backgroundColor).toBe('');
+    });
+  });
 });

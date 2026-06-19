@@ -14,13 +14,16 @@
 
 import type { ProductStockSummary, StockStatus } from '@/types/stock';
 
+/** Faixa semântica de saúde: verde (good), amarelo (warning) ou vermelho (danger). */
 export type HealthBand = 'good' | 'warning' | 'danger';
 
+/** Parâmetros de entrada para o cálculo do score de saúde do estoque. */
 export interface HealthScoreInput {
   productsInStock: number;
   totalProducts: number;
 }
 
+/** Produtos agrupados por bucket de status para exibição nos cards do dashboard. */
 export interface ProductBuckets {
   healthy: ProductStockSummary[];
   low: ProductStockSummary[];
@@ -70,6 +73,7 @@ const STATUS_BUCKET: Record<StockStatus, keyof ProductBuckets | null> = {
   overstocked: 'healthy',
 };
 
+/** Distribui produtos nos 5 buckets de status para os cards do dashboard. */
 export function bucketByStatus(products: readonly ProductStockSummary[]): ProductBuckets {
   const buckets: ProductBuckets = {
     healthy: [],
@@ -92,19 +96,25 @@ export function countCriticalAlerts<T extends { severity: string }>(alerts: read
   return n;
 }
 
+/** Definição visual das faixas de saúde (bom ≥80%, atenção 50–79%, crítico <50%). */
 export const HEALTH_BANDS: ReadonlyArray<{ band: HealthBand; min: number; label: string }> = [
   { band: 'good', min: 80, label: '≥ 80% · saudável' },
   { band: 'warning', min: 50, label: '50% a 79% · atenção' },
   { band: 'danger', min: 0, label: '< 50% · crítico' },
 ];
 
+/** Regras de limiar de estoque exibidas no tooltip dos cards do dashboard. */
 export const STOCK_THRESHOLD_RULES: ReadonlyArray<{
   key: 'healthy' | 'low' | 'critical' | 'out';
   label: string;
   rule: string;
 }> = [
-  { key: 'healthy', label: 'Adequado', rule: 'estoque atual > mínimo do produto' },
-  { key: 'low', label: 'Baixo', rule: '25% do mínimo < estoque ≤ mínimo' },
-  { key: 'critical', label: 'Crítico', rule: 'estoque ≤ 25% do mínimo (e > 0)' },
-  { key: 'out', label: 'Sem estoque', rule: 'estoque = 0 (sem reposição em trânsito)' },
+  { key: 'healthy', label: 'Em estoque', rule: 'saldo acima do limiar do fornecedor' },
+  {
+    key: 'low',
+    label: 'Estoque baixo',
+    rule: 'saldo positivo, abaixo do limiar configurado no fornecedor',
+  },
+  { key: 'critical', label: 'Crítico', rule: 'saldo ≤ 25% do mínimo — risco iminente de ruptura' },
+  { key: 'out', label: 'Sem estoque', rule: 'saldo zerado (sem reposição em trânsito)' },
 ];

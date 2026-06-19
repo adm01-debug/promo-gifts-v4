@@ -106,7 +106,7 @@ export function NoveltiesSection() {
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos (30d)</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="7">Últimos 7 dias</SelectItem>
                 <SelectItem value="15">Últimos 15 dias</SelectItem>
               </SelectContent>
@@ -181,6 +181,9 @@ export function NoveltiesSection() {
                 return (
                   <Card
                     key={item.novelty_id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Ver produto ${item.product_name}`}
                     className={cn(
                       'group cursor-pointer overflow-hidden transition-all duration-300',
                       'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
@@ -189,6 +192,12 @@ export function NoveltiesSection() {
                     )}
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => handleProductClick(item.product_id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleProductClick(item.product_id);
+                      }
+                    }}
                   >
                     <CardContent className="p-0">
                       {/* Image */}
@@ -206,7 +215,11 @@ export function NoveltiesSection() {
                           </div>
                         )}
                         <div className="absolute left-2 top-2">
-                          <NoveltyBadge daysRemaining={item.days_remaining} size="sm" />
+                          <NoveltyBadge
+                            daysRemaining={item.days_remaining}
+                            daysElapsed={item.days_as_novelty}
+                            size="sm"
+                          />
                         </div>
                       </div>
 

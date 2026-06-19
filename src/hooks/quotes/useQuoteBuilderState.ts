@@ -135,6 +135,15 @@ export function useQuoteBuilderState() {
   // ── Detecção de concorrência: armazena updated_at ao abrir o orçamento ──
   const baselineUpdatedAtRef = useRef<string | null>(null);
   const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
+  // Status que o usuário tentou salvar quando o conflito foi detectado.
+  // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
+  // evitando rebaixar silenciosamente o orçamento para rascunho.
+  const pendingSaveStatusRef = useRef<'draft' | 'pending' | 'pending_approval'>('draft');
+  // Preserva a justificativa de aprovação digitada pelo vendedor caso um conflito
+  // de concorrência interrompa o save: o diálogo de aprovação limpa seu estado local
+  // logo após o submit, então sem isto o replay do overwrite enviaria sellerNotes
+  // = undefined e o admin perderia o motivo informado.
+  const pendingSellerNotesRef = useRef<string | undefined>(undefined);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
@@ -429,7 +438,7 @@ export function useQuoteBuilderState() {
           if (saved.deliveryTime.startsWith('date:')) {
             setDeliveryMode('data');
             try {
-              setDeliveryDate(new Date(saved.deliveryTime.slice(5) + 'T12:00:00'));
+              setDeliveryDate(new Date(`${saved.deliveryTime.slice(5)}T12:00:00`));
             } catch (e) {
               logger.warn('Failed to restore delivery date', e);
             }
@@ -468,19 +477,12 @@ export function useQuoteBuilderState() {
      */
     let isMounted = true;
     setLoadingQuote(true);
-    fetchQuote(quoteId).then((quote) => {
+    fetchQuote(quoteId)
+      .then((quote) => {
       if (!isMounted) return;
       if (quote) {
         setClientId(quote.client_id || '');
-        /**
-         * BUG-02 FIX: usar contact_id (ID do contato) em vez de client_id (ID da empresa).
-         *
-         * PROBLEMA ORIGINAL: setContactId recebia quote.client_id, ou seja, o ID da
-         * empresa. Isso fazia a validação do step 'client' passar (ambos clientId e
-         * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
-         * da pessoa de contato, não da empresa.
-         */
-        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) || '');
+        setContactId(quote.contact_id || '');
         setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
         setNotes(quote.notes || '');
         setInternalNotes(quote.internal_notes || '');
@@ -518,7 +520,7 @@ export function useQuoteBuilderState() {
         if (quote.delivery_time) {
           if (quote.delivery_time.startsWith('date:')) {
             setDeliveryMode('data');
-            setDeliveryDate(new Date(quote.delivery_time.slice(5) + 'T12:00:00'));
+            setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
           } else {
             setDeliveryMode('prazo');
           }
@@ -529,7 +531,12 @@ export function useQuoteBuilderState() {
         baselineUpdatedAtRef.current = quote.updated_at ?? null;
       }
       setLoadingQuote(false);
-    });
+    })
+      .catch((err) => {
+        if (!isMounted) return;
+        logger.error('[useQuoteBuilderState] fetchQuote failed:', err);
+        setLoadingQuote(false);
+      });
     return () => {
       isMounted = false;
     };
@@ -554,8 +561,8 @@ export function useQuoteBuilderState() {
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => ({
-      technique_id: p.technique?.id || '',
-      technique_name: p.technique?.name || '',
+      technique_id: p.technique?.id ?? '',
+      technique_name: p.technique?.name ?? '',
       colors_count: p.specs?.colors || 1,
       positions_count: 1,
       width_cm: p.specs?.width || undefined,
@@ -681,7 +688,7 @@ export function useQuoteBuilderState() {
             product_sku: p.product_sku || '',
             product_image_url: p.product_image || undefined,
             quantity: Math.max(1, p.quantity || 1),
-            unit_price: parseFloat(p.product_price || '0'),
+            unit_price: parseFloat(p.product_price) || 0,
             color_name: p.color_name || undefined,
             color_hex: p.color_hex || undefined,
             personalizations: [],
@@ -713,7 +720,7 @@ export function useQuoteBuilderState() {
       product_sku: searchParams.get('product_sku') || '',
       product_image_url: searchParams.get('product_image') || undefined,
       quantity: Math.max(1, parseInt(searchParams.get('min_quantity') || '1', 10)),
-      unit_price: parseFloat(searchParams.get('product_price') || '0'),
+      unit_price: parseFloat(searchParams.get('product_price') ?? '') || 0,
       color_name: colorName,
       color_hex: colorHex,
       personalizations: [],
@@ -912,16 +919,17 @@ export function useQuoteBuilderState() {
   const isDraftValid = !!clientId;
 
   // ── Discount limit check ──
+  // Compara contra o DESCONTO REAL (sobre o subtotal real, sem markup) — exatamente
+  // a métrica que o trigger server-side `fn_quotes_validate_discount` enforce via
+  // `real_discount_percent`. Usar o desconto APARENTE aqui (discountValue ou
+  // discountValue/subtotal) divergia da regra do banco quando havia margem de
+  // negociação: o markup dilui o desconto real, então um desconto aparente acima
+  // do limite podia estar, na verdade, dentro da alçada. O gate antigo empurrava
+  // esses casos para aprovação desnecessariamente — anulando o propósito do markup.
   const isDiscountExceeded = useMemo(() => {
     if (maxDiscountPercent === null) return false;
-    if (discountType === 'percent') return discountValue > maxDiscountPercent;
-    // For amount type, calculate effective percent
-    if (subtotal > 0) {
-      const effectivePercent = (discountValue / subtotal) * 100;
-      return effectivePercent > maxDiscountPercent;
-    }
-    return false;
-  }, [maxDiscountPercent, discountType, discountValue, subtotal]);
+    return realDiscountPercent > maxDiscountPercent;
+  }, [maxDiscountPercent, realDiscountPercent]);
 
   // ── Save ──
   const handleSaveQuote = useCallback(
@@ -964,6 +972,7 @@ export function useQuoteBuilderState() {
 
       const quoteData: Partial<Quote> = {
         client_id: clientId || undefined,
+        contact_id: contactId || undefined,
         client_name: contactInfo?.name || undefined,
         client_company: companyInfo?.name || undefined,
         client_cnpj: companyInfo?.cnpj || undefined,
@@ -971,7 +980,7 @@ export function useQuoteBuilderState() {
         client_phone: contactInfo?.phone || undefined,
         status: effectiveStatus,
         discount_percent: discountType === 'percent' ? discountValue : 0,
-        discount_amount: discountType === 'amount' ? discountValue : 0,
+        discount_amount: discountType === 'amount' ? discountAmount : 0,
         negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
         notes: notes || undefined,
         internal_notes: internalNotes || undefined,
@@ -1005,6 +1014,8 @@ export function useQuoteBuilderState() {
               minute: '2-digit',
               timeZone: 'America/Sao_Paulo',
             });
+            pendingSaveStatusRef.current = status; // preserva a intenção do save
+            pendingSellerNotesRef.current = sellerNotes; // preserva a justificativa de aprovação
             setConflictInfo({ modifiedAt: remoteTs, label });
             return; // Bloqueia o save — usuário decide no banner
           }
@@ -1033,6 +1044,7 @@ export function useQuoteBuilderState() {
       companyInfo,
       discountType,
       discountValue,
+      discountAmount,
       negotiationMarkup,
       realDiscountPercent,
       notes,
@@ -1162,12 +1174,20 @@ export function useQuoteBuilderState() {
     dismissConflict: () => setConflictInfo(null),
     /**
      * Ignora o conflito detectado e salva mesmo assim (overwrite consciente).
+     * Preserva o status que o usuário tentou salvar (não rebaixa para rascunho).
      * Após o save, atualiza o baseline para evitar falsos positivos futuros.
      */
-    overwriteAndSave: async (status: 'draft' | 'pending' | 'pending_approval' = 'draft') => {
+    overwriteAndSave: async (status?: 'draft' | 'pending' | 'pending_approval') => {
+      const effectiveStatus = status ?? pendingSaveStatusRef.current;
+      // Repassa a justificativa preservada para que o requestApproval no replay
+      // não perca o motivo informado pelo vendedor.
+      const sellerNotes =
+        effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
-      baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
-      await handleSaveQuote(status);
+      // Reset baseline AFTER save — resetting before could allow another concurrent save
+      // to pass undetected if the save itself fails.
+      await handleSaveQuote(effectiveStatus, sellerNotes);
+      baselineUpdatedAtRef.current = new Date().toISOString();
     },
   };
 }

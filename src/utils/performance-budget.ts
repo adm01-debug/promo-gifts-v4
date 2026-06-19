@@ -53,37 +53,44 @@ export function initPerformanceBudget(): void {
       reportMetric('LCP', value, getRating('LCP', value));
     });
     lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
-  } catch { /* Observer not supported */ }
+  } catch {
+    /* Observer not supported */
+  }
 
   // CLS — Cumulative Layout Shift
   try {
     let clsValue = 0;
     const clsObserver = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (!(entry as any).hadRecentInput) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          clsValue += (entry as any).value;
+      for (const entry of list.getEntries() as LayoutShift[]) {
+        if (!entry.hadRecentInput) {
+          clsValue += entry.value;
           reportMetric('CLS', clsValue, getRating('CLS', clsValue));
         }
       }
     });
     clsObserver.observe({ type: 'layout-shift', buffered: true });
-  } catch { /* Observer not supported */ }
+  } catch {
+    /* Observer not supported */
+  }
 
   // INP — Interaction to Next Paint
   // durationThreshold não está no PerformanceObserverInit do lib.dom.d.ts;
   // usa double-cast para passar o parâmetro sem TS2353.
   try {
     const inpObserver = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const value = (entry as any).duration;
-        if (value > 0) reportMetric('INP', value, getRating('INP', value));
+      for (const entry of list.getEntries() as PerformanceEventTiming[]) {
+        if (entry.duration > 0)
+          reportMetric('INP', entry.duration, getRating('INP', entry.duration));
       }
     });
-    inpObserver.observe({ type: 'event', buffered: true, durationThreshold: 16 } as unknown as PerformanceObserverInit);
-  } catch { /* Observer not supported */ }
+    inpObserver.observe({
+      type: 'event',
+      buffered: true,
+      durationThreshold: 16,
+    } as unknown as PerformanceObserverInit);
+  } catch {
+    /* Observer not supported */
+  }
 
   // TTFB — Time to First Byte
   try {
@@ -92,5 +99,7 @@ export function initPerformanceBudget(): void {
       const ttfb = navEntries[0].responseStart - navEntries[0].requestStart;
       reportMetric('TTFB', ttfb, getRating('TTFB', ttfb));
     }
-  } catch { /* Not supported */ }
+  } catch {
+    /* Not supported */
+  }
 }

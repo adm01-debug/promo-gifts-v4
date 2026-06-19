@@ -6,6 +6,7 @@ import { type ExternalTechnique } from '@/types/external-db';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import type { Json } from '@/integrations/supabase/types';
 import { fetchPromobrindProducts, getProductPrice, getProductImageUrl } from '@/lib/external-db';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -183,7 +184,7 @@ export function useSimulation() {
   });
 
   const techniqueCodes = useMemo(
-    () => techniques?.map((t) => t.code).filter(Boolean) || [],
+    () => techniques?.map((t) => t.code).filter(Boolean) ?? [],
     [techniques],
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);
@@ -235,7 +236,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByColor) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('SILK') ||
         c.includes('SERIGRAFIA') ||
@@ -250,7 +251,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByArea) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('DTF') ||
         c.includes('SUB') ||
@@ -470,7 +471,7 @@ export function useSimulation() {
           product_sku: selectedProduct.sku,
           quantity,
           product_unit_price: effectiveProductPrice,
-          simulation_data: JSON.parse(JSON.stringify(simulationOptions)),
+          simulation_data: structuredClone(simulationOptions) as unknown as Json,
           notes: simulationNotes || null,
         },
       ]);

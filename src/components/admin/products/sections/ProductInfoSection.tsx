@@ -38,7 +38,6 @@ export function ProductInfoSection({
   const supplierRefValue = watch('supplier_reference') || '';
   const descValue = watch('description') || '';
   const shortDescValue = watch('short_description') || '';
-  const _categoryId = watch('category_id');
 
   return (
     <SectionCard
@@ -232,7 +231,7 @@ export function ProductInfoSection({
             Modo de Fornecimento
           </FieldLabel>
           <Select
-            value={watch?.('supply_mode') || ''}
+            value={watch?.('supply_mode') ?? ''}
             onValueChange={(v) => setValue?.('supply_mode', v)}
           >
             <SelectTrigger className="h-9">

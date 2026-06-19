@@ -355,7 +355,7 @@ export const PresetsBar = React.forwardRef<HTMLDivElement, PresetsBarProps>(func
                           {/* Icon */}
                           <div
                             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm"
-                            style={{ backgroundColor: presetColor + '20' }}
+                            style={{ backgroundColor: `${presetColor}20` }}
                           >
                             {preset.icon || '🔖'}
                           </div>
@@ -378,7 +378,7 @@ export const PresetsBar = React.forwardRef<HTMLDivElement, PresetsBarProps>(func
                           {!isActive && filterCount > 0 && (
                             <span
                               className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                              style={{ backgroundColor: presetColor + '20', color: presetColor }}
+                              style={{ backgroundColor: `${presetColor}20`, color: presetColor }}
                             >
                               {filterCount}
                             </span>

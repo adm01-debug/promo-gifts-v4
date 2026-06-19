@@ -172,7 +172,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
               <Badge variant="secondary" className="gap-1 text-xs">
                 Cat:{' '}
                 {selectedCategoryName.length > 20
-                  ? selectedCategoryName.slice(0, 20) + '…'
+                  ? `${selectedCategoryName.slice(0, 20)}…`
                   : selectedCategoryName}
                 <X
                   className="h-3 w-3 cursor-pointer"
@@ -184,7 +184,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
               <Badge variant="secondary" className="gap-1 text-xs">
                 Forn:{' '}
                 {selectedSupplierName.length > 15
-                  ? selectedSupplierName.slice(0, 15) + '…'
+                  ? `${selectedSupplierName.slice(0, 15)}…`
                   : selectedSupplierName}
                 <X
                   className="h-3 w-3 cursor-pointer"

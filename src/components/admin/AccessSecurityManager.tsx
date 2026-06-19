@@ -2,6 +2,7 @@
  * AccessSecurityManager — Refactored orchestrator
  * Sub-components extracted to ./access-security/
  */
+import { useMemo } from 'react';
 import { useAccessSecurity } from '@/hooks/auth';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +28,9 @@ export function AccessSecurityManager() {
     toggleCity,
   } = useAccessSecurity();
 
+  const activeIpCount = useMemo(() => ips.filter((i) => i.is_active).length, [ips]);
+  const activeCityCount = useMemo(() => cities.filter((c) => c.is_active).length, [cities]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -45,14 +49,14 @@ export function AccessSecurityManager() {
             <Wifi className="h-4 w-4" />
             IPs Permitidos
             <Badge variant="secondary" className="ml-1">
-              {ips.filter((i) => i.is_active).length}
+              {activeIpCount}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="cities" className="gap-2">
             <MapPin className="h-4 w-4" />
             Cidades Permitidas
             <Badge variant="secondary" className="ml-1">
-              {cities.filter((c) => c.is_active).length}
+              {activeCityCount}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="logs" className="gap-2">

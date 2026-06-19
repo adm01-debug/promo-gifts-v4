@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
+const SCROLL_COLOR_CLASSES = {
+  primary: 'bg-primary',
+  orange: 'bg-brand-primary',
+  success: 'bg-success',
+} as const;
+
 interface ScrollProgressProps {
   className?: string;
   color?: 'primary' | 'orange' | 'success';
@@ -39,19 +45,13 @@ export function ScrollProgressIndicator({
     };
   }, []);
 
-  const colorClasses = {
-    primary: 'bg-primary',
-    orange: 'bg-brand-primary',
-    success: 'bg-success',
-  };
-
   return (
     <div
       ref={barRef}
       className={cn(
         'pointer-events-none fixed left-0 right-0 z-50 origin-left will-change-transform',
         position === 'top' ? 'top-0' : 'bottom-0',
-        colorClasses[color],
+        SCROLL_COLOR_CLASSES[color],
         className,
       )}
       style={{ height: `${height}px`, transform: 'scaleX(0)' }}

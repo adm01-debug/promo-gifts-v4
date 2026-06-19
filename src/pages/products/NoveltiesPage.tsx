@@ -57,12 +57,10 @@ export default function NoveltiesPage() {
                 data-testid="novelty-description"
                 className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm"
               >
-                Produtos recém-chegados ao catálogo nos últimos 30 dias
+                Produtos recém-chegados, destacados como novidade pelos fornecedores
               </p>
             </div>
           </div>
-
-
 
           {/* KPIs focados em chegadas */}
           <NoveltyStatsCards />

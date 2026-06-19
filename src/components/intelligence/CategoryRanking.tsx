@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { LayoutGrid, TrendingUp, Store, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,6 +20,14 @@ import { cn } from '@/lib/utils';
 import { IntelligenceEmptyState } from './IntelligenceEmptyState';
 
 type SortMode = 'combined' | 'internal' | 'market';
+
+const MEDAL_EMOJIS = ['🥇', '🥈', '🥉'] as const;
+
+const MODE_LABELS: Record<SortMode, string> = {
+  combined: 'Combinado',
+  internal: 'Receita Interna',
+  market: 'Volume Mercado',
+};
 type ViewMode = 'list' | 'chart';
 
 interface PieDatum {
@@ -91,16 +99,19 @@ export function CategoryRanking({
     }
   }, [categories, sortMode]);
 
-  const getBarValue = (cat: CategoryRankingItem): number => {
-    switch (sortMode) {
-      case 'internal':
-        return cat.internalRevenue;
-      case 'market':
-        return cat.marketDepleted;
-      default:
-        return cat.totalScore;
-    }
-  };
+  const getBarValue = useCallback(
+    (cat: CategoryRankingItem): number => {
+      switch (sortMode) {
+        case 'internal':
+          return cat.internalRevenue;
+        case 'market':
+          return cat.marketDepleted;
+        default:
+          return cat.totalScore;
+      }
+    },
+    [sortMode],
+  );
 
   const getDisplayValue = (cat: CategoryRankingItem): string => {
     switch (sortMode) {
@@ -121,7 +132,7 @@ export function CategoryRanking({
 
     const items = top.map((cat, i) => ({
       name:
-        cat.categoryName.length > 18 ? cat.categoryName.substring(0, 18) + '…' : cat.categoryName,
+        cat.categoryName.length > 18 ? `${cat.categoryName.substring(0, 18)}…` : cat.categoryName,
       fullName: cat.categoryName,
       value: getBarValue(cat),
       internalRevenue: cat.internalRevenue,
@@ -141,8 +152,7 @@ export function CategoryRanking({
     }
 
     return items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortedCategories, sortMode]);
+  }, [sortedCategories, getBarValue]);
 
   if (isLoading) {
     return (
@@ -151,7 +161,7 @@ export function CategoryRanking({
           <Skeleton className="h-5 w-56" />
         </CardHeader>
         <CardContent className="space-y-2">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-12 rounded" />
           ))}
         </CardContent>
@@ -164,14 +174,6 @@ export function CategoryRanking({
 
   // Use opacity-based approach so bars follow the skin
   const getBarOpacity = (i: number) => Math.max(1 - i * 0.06, 0.35);
-
-  const medalEmojis = ['🥇', '🥈', '🥉'];
-
-  const modeLabels: Record<SortMode, string> = {
-    combined: 'Combinado',
-    internal: 'Receita Interna',
-    market: 'Volume Mercado',
-  };
 
   const CustomTooltipContent = ({
     active,
@@ -213,7 +215,7 @@ export function CategoryRanking({
             </CardTitle>
             <CardDescription className="mt-0.5 text-xs">
               {categoryName ? `Sub-categorias de "${categoryName}"` : 'Categorias mais vendidas'} ·{' '}
-              {modeLabels[sortMode].toLowerCase()} · {days} dias
+              {MODE_LABELS[sortMode].toLowerCase()} · {days} dias
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -339,7 +341,7 @@ export function CategoryRanking({
                                       : 'bg-muted text-muted-foreground',
                                   )}
                                 >
-                                  {i < 3 ? medalEmojis[i] : i + 1}
+                                  {i < 3 ? MEDAL_EMOJIS[i] : i + 1}
                                 </span>
                                 <span className="truncate text-xs font-medium">
                                   {cat.categoryName}

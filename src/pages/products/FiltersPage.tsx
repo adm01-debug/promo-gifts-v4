@@ -46,6 +46,7 @@ import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
+import { applyVoiceFilters } from './applyVoiceFilters';
 import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
 import { toast } from 'sonner';
 import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
@@ -58,6 +59,18 @@ const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverl
 // DEFAULT_SORT_VALUE derivado do SSOT (SORT_OPTIONS) — evita hardcodar 'name'.
 // Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
+
+// BUG-VOZ FIX: mapeamento canônico de sortBy da voz para valores aceitos pelo pipeline.
+const VOICE_SORT_MAP: Record<string, string> = {
+  'price-asc': 'price-asc',
+  'price-desc': 'price-desc',
+  name: 'name',
+  stock: 'stock',
+  newest: 'newest',
+  popularity: 'popularity',
+  'best-seller-supplier': 'best-seller-supplier',
+  'best-seller-promo': 'best-seller-promo',
+} as const;
 
 // GAP-1 FIX (PR #689 review): labels para valores internos de sortBy que são
 // válidos no pipeline (VALID_SORT_VALUES do useFiltersPageState) mas não
@@ -125,35 +138,14 @@ export default function FiltersPage() {
 
       if (action.action === 'filter' && action.data.filters) {
         const f = action.data.filters;
-        state.setFilters((prev: FilterState) => {
-          const next = { ...prev };
-          if (f.color) next.colors = [...prev.colors, f.color];
-          if (f.category) next.categories = [...prev.categories, f.category];
-          if (f.material) next.materiais = [...prev.materiais, f.material];
-          if (f.maxPrice) next.priceRange = [prev.priceRange[0], f.maxPrice];
-          if (f.minPrice) next.priceRange = [f.minPrice, prev.priceRange[1]];
-          if (f.inStock) next.inStock = true;
-          if (f.isKit) next.isKit = true;
-          return next;
-        });
+        state.setFilters((prev: FilterState) => applyVoiceFilters(prev, f));
         toast.success(action.response);
       } else if (action.action === 'search' && action.data.query) {
         const query = action.data.query;
         state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
-        // BUG-VOZ FIX: sortMap não continha 'best-seller-supplier' e 'best-seller-promo'.
-        const sortMap: Record<string, string> = {
-          'price-asc': 'price-asc',
-          'price-desc': 'price-desc',
-          name: 'name',
-          stock: 'stock',
-          newest: 'newest',
-          popularity: 'popularity',
-          'best-seller-supplier': 'best-seller-supplier',
-          'best-seller-promo': 'best-seller-promo',
-        };
-        const sortValue = sortMap[action.data.sortBy] || 'name';
+        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || 'name';
         state.setSortBy(sortValue);
         toast.success(action.response);
       } else if (action.action === 'clear') {
@@ -292,14 +284,14 @@ export default function FiltersPage() {
                       if (result.type === 'category') {
                         state.handleFilterChange({
                           ...state.filters,
-                          categories: Array.from(new Set([...state.filters.categories, result.id])),
+                          categories: [...new Set([...state.filters.categories, result.id])],
                         });
                         return;
                       }
                       if (result.type === 'supplier') {
                         state.handleFilterChange({
                           ...state.filters,
-                          suppliers: Array.from(new Set([...state.filters.suppliers, result.id])),
+                          suppliers: [...new Set([...state.filters.suppliers, result.id])],
                         });
                         return;
                       }
@@ -462,7 +454,7 @@ export default function FiltersPage() {
                       </div>
                     </SheetContent>
                   </Sheet>
-                  <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -529,64 +521,68 @@ export default function FiltersPage() {
                       </TooltipTrigger>
                       <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
                     </Tooltip>
-                    {/* Selection toggle & Layout */}
-                    <div className="ml-auto flex items-center gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={state.selectionMode ? 'default' : 'outline'}
-                            size="sm"
-                            className={cn(
-                              'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
-                              state.selectionMode
-                                ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
-                                : 'hover:border-primary/50',
+                  </div>
+                  {/* Selection toggle & Layout — pinned right (full toolbar) */}
+                  <div
+                    data-testid="superfiltro-toolbar-actions"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2"
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={state.selectionMode ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                            state.selectionMode
+                              ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+                              : 'hover:border-primary/50',
+                          )}
+                          onClick={toggleSelectionMode}
+                          aria-label={
+                            state.selectionMode
+                              ? 'Cancelar seleção'
+                              : 'Ativar modo de seleção em massa'
+                          }
+                        >
+                          <CheckSquare className="h-3.5 w-3.5" />
+                          <span className="hidden text-xs sm:inline">
+                            {state.selectionMode ? 'Cancelar' : 'Selecionar'}
+                          </span>
+                          <AnimatePresence>
+                            {state.selectionMode && sel.selectedCount > 0 && (
+                              <motion.div
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                className="absolute -right-2 -top-2"
+                              >
+                                <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
+                                  {sel.selectedCount}
+                                </Badge>
+                              </motion.div>
                             )}
-                            onClick={toggleSelectionMode}
-                            aria-label={
-                              state.selectionMode
-                                ? 'Cancelar seleção'
-                                : 'Ativar modo de seleção em massa'
-                            }
-                          >
-                            <CheckSquare className="h-3.5 w-3.5" />
-                            <span className="hidden text-xs sm:inline">
-                              {state.selectionMode ? 'Cancelar' : 'Selecionar'}
-                            </span>
-                            <AnimatePresence>
-                              {state.selectionMode && sel.selectedCount > 0 && (
-                                <motion.div
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  exit={{ scale: 0, opacity: 0 }}
-                                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                                  className="absolute -right-2 -top-2"
-                                >
-                                  <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
-                                    {sel.selectedCount}
-                                  </Badge>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {state.selectionMode
-                            ? 'Sair do modo de seleção'
-                            : 'Selecionar vários produtos para ações em massa'}
-                        </TooltipContent>
-                      </Tooltip>
+                          </AnimatePresence>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {state.selectionMode
+                          ? 'Sair do modo de seleção'
+                          : 'Selecionar vários produtos para ações em massa'}
+                      </TooltipContent>
+                    </Tooltip>
 
-                      <div className="shrink-0">
-                        <LayoutPopover
-                          viewMode={state.viewMode}
-                          setViewMode={state.setViewMode}
-                          gridColumns={state.gridColumns}
-                          setGridColumns={state.setGridColumns}
-                        />
-                      </div>
+                    <div className="shrink-0">
+                      <LayoutPopover
+                        viewMode={state.viewMode}
+                        setViewMode={state.setViewMode}
+                        gridColumns={state.gridColumns}
+                        setGridColumns={state.setGridColumns}
+                      />
                     </div>
                   </div>
+
                   {state.activeFiltersSummary.length > 0 && (
                     <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
                       {state.activeFiltersSummary.slice(0, 3).map((filter) => (

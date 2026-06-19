@@ -13,6 +13,9 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 
+const UUID_OR_SHORT_ID_RE = /^[0-9a-f-]{36}$/;
+const NUMERIC_ID_RE = /^\d+$/;
+
 export interface BreadcrumbItem {
   label: string;
   href?: string;
@@ -125,7 +128,7 @@ function generateBreadcrumbs(
     currentPath += `/${segment}`;
 
     // Skip UUIDs or numeric IDs in breadcrumbs display
-    const isId = /^[0-9a-f-]{36}$/.test(segment) || /^\d+$/.test(segment);
+    const isId = UUID_OR_SHORT_ID_RE.test(segment) || NUMERIC_ID_RE.test(segment);
 
     if (isId) {
       breadcrumbs.push({

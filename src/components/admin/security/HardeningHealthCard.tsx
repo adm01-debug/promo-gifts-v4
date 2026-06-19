@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, ShieldCheck, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/ui';
+import { cn } from '@/lib/utils';
 
 interface HardeningStatus {
   private_buckets_count: number;
@@ -100,7 +101,7 @@ export function HardeningHealthCard() {
             </Badge>
           )}
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </Button>
         </div>
       </CardHeader>

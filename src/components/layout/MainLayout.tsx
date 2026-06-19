@@ -51,7 +51,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     performanceTracker.mark('main-layout-mounted');
     performanceTracker.measure(
       'Main Layout Mount',
-      'route-start:' + location.pathname,
+      `route-start:${location.pathname}`,
       'main-layout-mounted',
     );
   }, [location.pathname]);

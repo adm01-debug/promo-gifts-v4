@@ -3,7 +3,7 @@
  * (limites por vendedor + fila de aprovações). Extraído da antiga
  * AdminDiscountApprovalsPage para reutilização dentro de Usuários.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,20 +88,19 @@ export function DiscountManagementPanel() {
     notes: string;
   }>({ open: false, request: null, action: null, notes: '' });
 
-  useEffect(() => {
-    fetchAllLimits();
-    fetchPendingRequests();
-    fetchSellers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchSellers = async () => {
+  const fetchSellers = useCallback(async () => {
     const { data } = await supabase
       .from('profiles')
       .select('user_id, full_name, email, role')
       .order('full_name');
     setSellers((data || []) as SellerProfile[]);
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchAllLimits();
+    void fetchPendingRequests();
+    void fetchSellers();
+  }, [fetchAllLimits, fetchPendingRequests, fetchSellers]);
 
   const handleSetLimit = async () => {
     const ok = await setLimit(editDialog.userId, editDialog.currentLimit, editDialog.notes);
@@ -274,7 +273,7 @@ export function DiscountManagementPanel() {
             <CardContent>
               {limitsLoading ? (
                 <div className="space-y-3">
-                  {[...Array(4)].map((_, i) => (
+                  {Array.from({ length: 4 }, (_, i) => (
                     <Skeleton key={i} className="h-14 w-full rounded-xl" />
                   ))}
                 </div>
@@ -339,7 +338,7 @@ export function DiscountManagementPanel() {
                                     userId: seller.user_id,
                                     name: seller.full_name || seller.email || '',
                                     currentLimit: limit?.max_discount_percent || 5,
-                                    notes: limit?.notes || '',
+                                    notes: limit?.notes ?? '',
                                   })
                                 }
                               >
@@ -426,7 +425,7 @@ export function DiscountManagementPanel() {
 
           {requestsLoading ? (
             <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
+              {Array.from({ length: 3 }, (_, i) => (
                 <Skeleton key={i} className="h-36 w-full rounded-xl" />
               ))}
             </div>

@@ -26,7 +26,6 @@ import { ProductSeoSection } from './sections/ProductSeoSection';
 import { ProductMarketingTextsSection } from './sections/ProductMarketingTextsSection';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import type { ProductFormData } from './ProductFormSchema';
-import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
 const ProductClassificationSection = lazyWithRetry(
   () => import('./sections/ProductClassificationSection'),
@@ -51,13 +50,7 @@ function SectionSkeleton() {
   );
 }
 
-interface FormProps {
-  register: UseFormRegister<ProductFormData>;
-  setValue: UseFormSetValue<ProductFormData>;
-  watch: UseFormWatch<ProductFormData>;
-  errors: FieldErrors<ProductFormData>;
-  numericProps: (name: keyof ProductFormData) => Record<string, unknown>;
-}
+type FormProps = FormSectionProps;
 
 interface StepContentProps {
   stepId: string;
@@ -135,16 +128,13 @@ export function ProductFormStepContent({
             primarySupplierName={formValues.brand || ''}
           />
           <ProductInfoSection
-            {...(formProps as unknown as Parameters<typeof ProductInfoSection>[0])}
+            {...formProps}
             skuStatus={skuStatus as 'idle' | 'valid' | 'duplicate' | 'checking'}
             duplicateName={duplicateName ?? ''}
             skuManuallyEdited={skuManuallyEdited}
             onSkuManualEdit={onSkuManualEdit}
           />
-          <ProductDimensionsSection
-            {...(formProps as unknown as FormSectionProps)}
-            isBoxProduct={isBoxProduct}
-          />
+          <ProductDimensionsSection {...formProps} isBoxProduct={isBoxProduct} />
         </>
       );
     case 'commercial':
@@ -166,12 +156,12 @@ export function ProductFormStepContent({
         </>
       );
     case 'packaging':
-      return <ProductPackagingSection {...(formProps as unknown as FormSectionProps)} />;
+      return <ProductPackagingSection {...formProps} />;
     case 'fiscal':
       return (
         <>
           <ProductPriceSection
-            {...(formProps as unknown as FormSectionProps)}
+            {...formProps}
             supplierMarkup={supplierMarkup}
             costPriceDisplay={costPriceDisplay}
             salePriceDisplay={salePriceDisplay}
@@ -180,7 +170,7 @@ export function ProductFormStepContent({
             onSalePriceManualEdit={onSalePriceManualEdit}
             lastPriceUpdate={lastPriceUpdate}
           />
-          <ProductFiscalSection {...(formProps as unknown as FormSectionProps)} />
+          <ProductFiscalSection {...formProps} />
         </>
       );
     case 'content':
@@ -203,7 +193,7 @@ export function ProductFormStepContent({
               {isSeoGenerating ? 'Gerando...' : 'Preencher com IA'}
             </Button>
           </div>
-          <ProductSeoSection {...(formProps as unknown as FormSectionProps)} />
+          <ProductSeoSection {...formProps} />
           <ProductMarketingTextsSection register={register} />
         </>
       );

@@ -67,7 +67,7 @@ export function extractStepUpError(
       return {
         kind: 'dev_role_required',
         message:
-          typeof c.message === 'string' && c.message.trim().length > 0
+          typeof c.message === 'string' && c.message.trim() !== ''
             ? c.message
             : 'Seu papel de desenvolvedor foi removido entre a confirmação e a execução desta operação. Peça para um administrador restaurar o acesso e refaça a verificação dupla.',
       };
@@ -77,7 +77,7 @@ export function extractStepUpError(
       return {
         kind: c.error,
         message:
-          typeof c.message === 'string' && c.message.trim().length > 0
+          typeof c.message === 'string' && c.message.trim() !== ''
             ? c.message
             : c.error === 'step_up_required'
               ? 'Confirme sua identidade (senha + código por e-mail) para continuar.'

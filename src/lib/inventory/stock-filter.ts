@@ -22,6 +22,7 @@ import {
 } from '@/types/stock';
 
 // ---------- normalização ----------
+/** Normaliza string para comparação case-insensitive e sem acentos. */
 export const normalize = (s: string | undefined | null): string =>
   (s ?? '')
     .toLowerCase()
@@ -30,6 +31,7 @@ export const normalize = (s: string | undefined | null): string =>
     .trim();
 
 // ---------- contexto derivado dos filtros ----------
+/** Valores pré-computados derivados de `StockFilters` para evitar recálculos em loops. */
 export interface FilterContext {
   searchN: string;
   colorName?: string;
@@ -41,9 +43,10 @@ export interface FilterContext {
   hasVariantFilter: boolean;
   includeFutureStock: boolean;
   futureCutoffMs: number; // 0 quando desativado
+  minQtyIncludesFutureStock: boolean;
 }
 
-
+/** Deriva o contexto de filtragem a partir dos filtros brutos, normalizando strings uma única vez. */
 export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorName = filters.colorName?.trim() || undefined;
   const colorGroupN = normalize(filters.colorGroup);
@@ -54,17 +57,20 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     colorName,
     colorNameN: normalize(colorName),
     colorGroupN,
+    // categoryId from the UI is the category name (from StockCategoryTreeSelect).
+    // Normalize for case/accent-insensitive matching, consistent with supplierN.
     categoryN: normalize(filters.categoryId),
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
     hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
     includeFutureStock,
     futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
+    minQtyIncludesFutureStock: Boolean(filters.minQtyIncludesFutureStock),
   };
 }
 
-
 // ---------- estágio 1: seleção de variações ----------
+/** Retorna apenas as variações do produto que casam com o filtro de cor/grupo (estágio 1). */
 export function selectMatchingVariants(
   product: ProductStockSummary,
   ctx: FilterContext,
@@ -74,12 +80,14 @@ export function selectMatchingVariants(
     const cn = normalize(v.colorName);
     const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;
-    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN)) return false;
+    if (ctx.colorGroupN && !cn.includes(ctx.colorGroupN) && !cg.includes(ctx.colorGroupN))
+      return false;
     return true;
   });
 }
 
 // ---------- estágio 2: agregação ----------
+/** Totais somados de um subconjunto de variações (resultado do estágio 2). */
 export interface VariantTotals {
   totalVariants: number;
   totalCurrentStock: number;
@@ -89,6 +97,7 @@ export interface VariantTotals {
   totalAvailableStock: number;
 }
 
+/** Soma os campos de estoque de um array de variações em um único `VariantTotals`. */
 export function aggregateVariantTotals(variants: VariantStock[]): VariantTotals {
   return variants.reduce<VariantTotals>(
     (acc, v) => {
@@ -111,6 +120,7 @@ export function aggregateVariantTotals(variants: VariantStock[]): VariantTotals 
   );
 }
 
+/** Reconstrói um `ProductStockSummary` com os totais recalculados a partir de um subconjunto de variações. */
 export function projectProduct(
   product: ProductStockSummary,
   variants: VariantStock[],
@@ -120,6 +130,7 @@ export function projectProduct(
 }
 
 // ---------- estágio 0: índices reutilizáveis ----------
+/** Índices pré-computados para filtragem O(1) por cor, categoria, fornecedor e alertas. */
 export interface StockIndexes {
   byColorNameN: Map<string, Set<string>>; // colorN → productIds
   byColorGroupN: Map<string, Set<string>>; // tokens da cor → productIds (inclui substrings de colorGroup)
@@ -128,6 +139,7 @@ export interface StockIndexes {
   productsWithAlerts: Set<string>;
 }
 
+/** Pré-computa índices invertidos sobre a lista de produtos e alertas para reutilização entre chamadas. */
 export function buildStockIndexes(
   products: ProductStockSummary[],
   alerts: StockAlert[],
@@ -146,7 +158,8 @@ export function buildStockIndexes(
     set.add(id);
   };
   for (const p of products) {
-    addTo(byCategoryN, normalize(p.categoryName), p.productId);
+    // Normalize categoryId (category name from tree select) for case/accent-insensitive index.
+    addTo(byCategoryN, normalize(p.categoryId ?? p.categoryName), p.productId);
     addTo(bySupplierN, normalize(p.supplierName), p.productId);
     for (const v of p.variants) {
       const cn = normalize(v.colorName);
@@ -158,7 +171,6 @@ export function buildStockIndexes(
   const productsWithAlerts = new Set(alerts.map((a) => a.productId));
   return { byColorNameN, byColorGroupN, byCategoryN, bySupplierN, productsWithAlerts };
 }
-
 
 // ---------- predicados auxiliares ----------
 function matchStatus(
@@ -184,6 +196,10 @@ function matchStatus(
   }
   if (product.overallStatus === status) return true;
   if (status === 'low_stock' && product.overallStatus === 'critical') return true;
+  // "Crítico" é decisão de PRODUTO (overallStatus) e espelha 1:1 o KPI do card.
+  // Variantes nunca recebem status 'critical'; esta guarda torna explícito e
+  // impede que um futuro fallback por variante infle o filtro vs. o card.
+  if (status === 'critical') return false;
   return product.variants.some((v) => v.status === status);
 }
 
@@ -201,6 +217,22 @@ function matchSearch(
 }
 
 function futureWithinWindow(v: VariantStock, cutoffMs: number): number {
+  // Caminho preferencial: quando há segmentos granulares (qtd × data),
+  // soma APENAS as chegadas cuja data cai dentro da janela. Evita o
+  // super/subdimensionamento de colapsar múltiplas datas num único total.
+  if (v.futureSegments && v.futureSegments.length > 0) {
+    let sum = 0;
+    for (const seg of v.futureSegments) {
+      const qty = seg?.quantity;
+      if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0) continue;
+      if (!seg.date) continue;
+      const t = Date.parse(seg.date);
+      if (Number.isNaN(t) || t > cutoffMs) continue;
+      sum += qty;
+    }
+    return sum;
+  }
+  // Fallback (contrato de data única): total `futureStock` atrelado a uma só data.
   if (!v.futureStock || v.futureStock <= 0) return 0;
   const dateStr = v.expectedReplenishDate ?? v.futureStockDate;
   if (!dateStr) return 0;
@@ -215,10 +247,14 @@ function matchMinQuantity(
   ctx: FilterContext,
 ): boolean {
   if (ctx.minQty <= 0) return true;
+  // Por padrão, "Preciso de X un…" é estrito sobre o estoque DISPONÍVEL AGORA.
+  // Só soma Estoque Futuro ao pool quando o usuário ATIVAR explicitamente o
+  // sub-toggle "Incluir Estoque Futuro no cálculo" E o toggle global de
+  // Estoque Futuro também estiver ligado (necessário para definir a janela).
   let pool = ctx.hasVariantFilter
-    ? variantsForFilter.reduce((sum, v) => sum + v.availableStock, 0)
-    : product.totalAvailableStock;
-  if (ctx.includeFutureStock) {
+    ? variantsForFilter.reduce((sum, v) => sum + Math.max(0, v.availableStock), 0)
+    : Math.max(0, product.totalAvailableStock);
+  if (ctx.minQtyIncludesFutureStock && ctx.includeFutureStock) {
     const source = ctx.hasVariantFilter ? variantsForFilter : product.variants;
     for (const v of source) pool += futureWithinWindow(v, ctx.futureCutoffMs);
   }
@@ -226,6 +262,10 @@ function matchMinQuantity(
 }
 
 // ---------- estágio 3: orquestrador ----------
+/**
+ * Pipeline completo de filtragem: índice → variantes → status → busca → categoria →
+ * fornecedor → quantidade mínima → alertas → projeção → ordenação.
+ */
 export function applyStockFilters(
   products: ProductStockSummary[],
   filters: StockFilters,
@@ -279,18 +319,19 @@ export function applyStockFilters(
     if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
     if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
     if (!matchSearch(p, variantsForFilter, ctx.searchN)) continue;
-    if (ctx.categoryN && normalize(p.categoryName) !== ctx.categoryN) continue;
+    if (ctx.categoryN && normalize(p.categoryId ?? p.categoryName ?? '') !== ctx.categoryN)
+      continue;
     if (ctx.supplierN && normalize(p.supplierName) !== ctx.supplierN) continue;
     if (!matchMinQuantity(p, variantsForFilter, ctx)) continue;
     if (filters.showOnlyWithAlerts && !idx.productsWithAlerts.has(p.productId)) continue;
     out.push(ctx.hasVariantFilter ? projectProduct(p, variantsForFilter) : p);
   }
 
-
   return sortProducts(out, filters);
 }
 
 // ---------- ordenação ----------
+/** Ordena os produtos filtrados pelo critério e direção configurados nos filtros. */
 export function sortProducts(
   items: ProductStockSummary[],
   filters: Pick<StockFilters, 'sortBy' | 'sortDirection'>,

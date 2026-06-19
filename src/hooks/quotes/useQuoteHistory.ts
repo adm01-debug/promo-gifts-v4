@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-
+import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 export interface QuoteHistoryEntry {
   id: string;
@@ -15,6 +15,15 @@ export interface QuoteHistoryEntry {
   metadata?: Record<string, unknown>;
   created_at: string;
 }
+
+const QUOTE_STATUS_LABELS: Record<string, string> = {
+  draft: 'Rascunho',
+  pending: 'Pendente',
+  sent: 'Enviado',
+  approved: 'Aprovado',
+  rejected: 'Rejeitado',
+  expired: 'Expirado',
+} as const;
 
 export function useQuoteHistory() {
   const { user } = useAuth();
@@ -65,7 +74,7 @@ export function useQuoteHistory() {
         field_changed: options?.fieldChanged || null,
         old_value: options?.oldValue || null,
         new_value: options?.newValue || null,
-        metadata: JSON.parse(JSON.stringify(options?.metadata || {})),
+        metadata: structuredClone(options?.metadata ?? {}) as unknown as Json,
       });
       return true;
     } catch (err) {
@@ -84,18 +93,10 @@ export function useQuoteHistory() {
   };
 
   const logStatusChanged = async (quoteId: string, oldStatus: string, newStatus: string) => {
-    const statusLabels: Record<string, string> = {
-      draft: 'Rascunho',
-      pending: 'Pendente',
-      sent: 'Enviado',
-      approved: 'Aprovado',
-      rejected: 'Rejeitado',
-      expired: 'Expirado',
-    };
     return addHistoryEntry(
       quoteId,
       'status_changed',
-      `Status alterado de "${statusLabels[oldStatus] || oldStatus}" para "${statusLabels[newStatus] || newStatus}"`,
+      `Status alterado de "${QUOTE_STATUS_LABELS[oldStatus] || oldStatus}" para "${QUOTE_STATUS_LABELS[newStatus] || newStatus}"`,
       { fieldChanged: 'status', oldValue: oldStatus, newValue: newStatus },
     );
   };

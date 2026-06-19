@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 import { type InvokeResult } from './bridge';
 
 const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
+  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
 const LIGHTWEIGHT_PAGE_SIZE = 500;
 const LIGHTWEIGHT_MAX_CONCURRENCY = 3;
 const LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE = 125;
@@ -23,6 +23,7 @@ export interface LightweightProduct {
   cost_price?: number | null;
   image_url: string | null;
   primary_image_url: string | null;
+  primary_image_fallback_url?: string | null;
   /**
    * URL da imagem "set" (todas as cores juntas) no Cloudflare Images.
    * Sem sufixo de variante — concatenar /public para exibição.
@@ -33,6 +34,11 @@ export interface LightweightProduct {
   supplier_id: string | null;
   category_id: string | null;
   main_category_id: string | null;
+  /** Leaf category (mais profunda) — preenchido por mv_product_leaf_category na view v_products_public. */
+  // FIX BUG-D (2026-06-18): campos pré-computados em v_products_public via mv_product_leaf_category.
+  leaf_category_id?: string | null;
+  leaf_category_name?: string | null;
+  leaf_category_level?: number | null;
   brand: string | null;
   is_active: boolean;
   active: boolean;
@@ -40,6 +46,15 @@ export interface LightweightProduct {
   min_quantity?: number | null;
   is_kit?: boolean | null;
   is_new?: boolean | null;
+  // Quick-option flags exibidos no Super Filtro. Antes ausentes do SELECT/tipo,
+  // tornavam os toggles "Destaques", "Promoções", "Com Personalização" e
+  // "Com Embalagem Nativa" inertes (sempre 0 resultados). Mapeados em
+  // mapLightweightToProduct espelhando product-mapper.ts.
+  is_featured?: boolean | null;
+  is_bestseller?: boolean | null;
+  is_on_sale?: boolean | null;
+  allows_personalization?: boolean | null;
+  has_commercial_packaging?: boolean | null;
   created_at?: string | null;
   gender?: string | null;
   short_description?: string | null;

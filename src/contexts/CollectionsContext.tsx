@@ -1,4 +1,4 @@
-import React, { createContext, useContext, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, type ReactNode, useCallback } from 'react';
 import {
   useCollections,
   type Collection,
@@ -32,6 +32,7 @@ interface CollectionsContextType {
     productId: string,
     collectionIds: string[],
     variant?: CollectionVariantInfo,
+    priceAtSave?: number | null,
   ) => void;
   restoreFromTrash: (collectionId: string, productId: string) => Promise<boolean>;
   reorderProducts: (collectionId: string, orderedProductIds: string[]) => void;

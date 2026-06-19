@@ -14,7 +14,7 @@
  * Captura erros de renderização e oferece retry com feedback visual.
  */
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { m as motion } from 'framer-motion';

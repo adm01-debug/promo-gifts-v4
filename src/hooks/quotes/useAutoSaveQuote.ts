@@ -99,7 +99,7 @@ export function useAutoSaveQuote<T>({
 
       const payload: AutoSavePayload<T> = {
         version: AUTOSAVE_SCHEMA_VERSION,
-        data: data,
+        data,
         savedAt: new Date().toISOString(),
       };
 

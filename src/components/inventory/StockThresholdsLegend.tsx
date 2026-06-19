@@ -20,7 +20,7 @@ export function StockThresholdsLegend({ className, compact = false }: Props) {
       className={cn('flex flex-wrap items-center gap-1.5 text-xs', className)}
     >
       {!compact && (
-        <span className="text-muted-foreground">Faixas (por produto, baseadas no mínimo):</span>
+        <span className="text-muted-foreground">Faixas de classificação:</span>
       )}
       {STOCK_THRESHOLD_RULES.map((t) => (
         <span

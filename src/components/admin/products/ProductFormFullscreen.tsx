@@ -109,7 +109,7 @@ const STEPS: StepDef[] = [
     icon: Boxes,
     requiredFields: [],
     fieldLabels: {},
-  } as unknown as StepDef,
+  },
   {
     id: 'media',
     label: 'Mídia',
@@ -244,8 +244,8 @@ export function ProductFormFullscreen({
     }
   }, [costPriceValue, supplierMarkup, priceManuallyEdited, setValue]);
 
-  const numericProps = (name: keyof ProductFormData) => ({
-    ...register(name, { valueAsNumber: true }),
+  const numericProps = (name: keyof ProductFormData | (string & {})) => ({
+    ...register(name as keyof ProductFormData, { valueAsNumber: true }),
     type: 'number' as const,
     step: name.includes('price') ? '0.01' : '1',
   });
@@ -263,7 +263,7 @@ export function ProductFormFullscreen({
       step.requiredFields
         .filter((f) => {
           const val = formValues[f];
-          if (typeof val === 'number') return val <= 0 || val === undefined || val === null;
+          if (typeof val === 'number') return val <= 0;
           return !val;
         })
         .map((f) => step.fieldLabels[f] || f),
@@ -272,14 +272,15 @@ export function ProductFormFullscreen({
 
   const stepReady = useMemo(
     () => [
-      Boolean(formValues.supplier_id && formValues.sku && formValues.name),
-      Boolean((formValues.sale_price ?? 0) > 0),
-      Boolean(formValues.packing_type),
-      Boolean(formValues.ncm_code || formValues.ean),
-      isEdit && !!productId,
-      true,
-      images.length > 0 || Boolean(formValues.video_url),
-      Boolean(formValues.meta_title || formValues.meta_description || formValues.key_benefits),
+      Boolean(formValues.supplier_id && formValues.sku && formValues.name), // 0: essentials
+      Boolean((formValues.sale_price ?? 0) > 0), // 1: fiscal
+      true, // 2: classification
+      true, // 3: commercial
+      isEdit && !!productId, // 4: engraving
+      Boolean(formValues.packing_type), // 5: packaging
+      true, // 6: kits
+      images.length > 0 || Boolean(formValues.video_url), // 7: media
+      Boolean(formValues.meta_title || formValues.meta_description || formValues.key_benefits), // 8: content/SEO
     ],
     [formValues, images.length, isEdit, productId],
   );
@@ -332,7 +333,7 @@ export function ProductFormFullscreen({
     }
     clearDraft();
     handleSubmit(async (data) => {
-      if (skuStatus === 'duplicate') return;
+      if (skuStatus === 'duplicate' || skuStatus === 'checking') return;
       await onSubmit(data, images);
     })(e);
   };
@@ -372,7 +373,7 @@ export function ProductFormFullscreen({
               type="submit"
               size="sm"
               data-testid="admin-save-btn"
-              disabled={isSaving || skuStatus === 'duplicate'}
+              disabled={isSaving || skuStatus === 'duplicate' || skuStatus === 'checking'}
               className="gap-2 font-semibold shadow-sm"
             >
               {isSaving ? (
@@ -514,7 +515,7 @@ export function ProductFormFullscreen({
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={isSaving || skuStatus === 'duplicate'}
+                  disabled={isSaving || skuStatus === 'duplicate' || skuStatus === 'checking'}
                   className="gap-2 font-semibold shadow-sm"
                 >
                   {isSaving ? (
@@ -608,7 +609,7 @@ export function ProductFormFullscreen({
               <Button
                 type="submit"
                 size="sm"
-                disabled={isSaving || skuStatus === 'duplicate'}
+                disabled={isSaving || skuStatus === 'duplicate' || skuStatus === 'checking'}
                 className="gap-2"
               >
                 {isSaving ? (

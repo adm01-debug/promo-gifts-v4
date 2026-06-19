@@ -237,25 +237,29 @@ export function useClientSeasonality(
         return { clientRows: [], industryRows: [], companiesCount: 0 };
       }
 
-      // 1) Sazonalidade do cliente
-      const { data: clientData, error: clientErr } = await supabase.rpc('get_client_seasonality', {
-        _client_id: clientId,
-        _months: WINDOW_MONTHS,
-      });
+      // 1+2) Client RPC and companies lookup are independent — run in parallel
+      const [{ data: clientData, error: clientErr }, companiesRaw] = await Promise.all([
+        supabase.rpc('get_client_seasonality', {
+          _client_id: clientId,
+          _months: WINDOW_MONTHS,
+        }),
+        ramoAtividade
+          ? selectCrm<{ id: string }>('companies', {
+              select: 'id',
+              filters: { ramo_atividade: ramoAtividade, deleted_at: null },
+              limit: 500,
+            }).catch((): { id: string }[] => [])
+          : Promise.resolve([] as { id: string }[]),
+      ]);
       if (clientErr) throw clientErr;
       const clientRows = (clientData ?? []) as ClientRow[];
 
-      // 2) Sazonalidade do setor (se houver ramo)
+      // 3) Industry seasonality — depends on company IDs from step 2
       let industryRows: IndustryRow[] = [];
       let companiesCount = 0;
-      if (ramoAtividade) {
+      if (ramoAtividade && companiesRaw.length > 0) {
         try {
-          const companies = await selectCrm<{ id: string }>('companies', {
-            select: 'id',
-            filters: { ramo_atividade: ramoAtividade, deleted_at: null },
-            limit: 500,
-          });
-          const ids = companies.map((c) => c.id).filter((id) => id && id !== clientId);
+          const ids = companiesRaw.map((c) => c.id).filter((id) => id && id !== clientId);
           companiesCount = ids.length;
           if (ids.length > 0) {
             const { data: indData, error: indErr } = await supabase.rpc(

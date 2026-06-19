@@ -17,6 +17,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { reportSilentEmpty } from './silent-empty-report';
 import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId } from '@/lib/telemetry/requestId';
@@ -604,7 +605,7 @@ export async function tryExecuteRestNative<T>(
       });
       return result;
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = toErrorMessage(e);
       if (attempt < REST_NATIVE_RETRY_COUNT && isRetryableError(msg)) {
         logger.warn(`[rest-native] transient error for ${resolvedTable}, retrying: ${msg}`);
         await sleep(REST_NATIVE_RETRY_DELAY_MS);
@@ -778,7 +779,7 @@ export async function tryExecuteRestNativeWrite<T>(
     );
     return result;
   } catch (e) {
-    const msg = (e as Error).message;
+    const msg = toErrorMessage(e);
     metrics.fail++;
     metrics.lastError = msg;
     metrics.lastErrorAt = Date.now();

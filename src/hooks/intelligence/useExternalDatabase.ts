@@ -23,25 +23,15 @@ import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 import { logger } from '@/lib/logger';
 import type {
   ExternalProduct,
-  ExternalProductImage,
-  ExternalProductVariant,
   ExternalCategory,
   ExternalSupplier,
-  ExternalSupplierColor,
-  ExternalSupplierMaterial,
-  ExternalSupplierAttributeDefinition,
-  ExternalSupplierProductAttribute,
-  ExternalProductSupplier,
   ExternalTechnique,
-  ExternalPriceTable,
   ExternalCollection,
-  ExternalTag,
   ExternalCompany,
   ExternalClientContact,
   ExternalOrganization,
   ExternalRamoAtividade,
   ExternalRamoAtividadeFilho,
-  ExternalBusinessSector,
   ExternalMaterialGroup,
   ExternalMaterialType,
   ExternalColorGroup,
@@ -289,16 +279,6 @@ export function useExternalProducts() {
   return useExternalDatabase<ExternalProduct>('products');
 }
 
-/** @deprecated Dead code — 0 consumers. Tabela real: product_images (acessível via supabase.from) */
-export function useExternalProductImages() {
-  return useExternalDatabase<ExternalProductImage>('product_images');
-}
-
-/** @deprecated Dead code — 0 consumers. Tabela real: product_variants (acessível via supabase.from) */
-export function useExternalProductVariants() {
-  return useExternalDatabase<ExternalProductVariant>('product_variants');
-}
-
 export function useExternalCategories() {
   return useExternalDatabase<ExternalCategory>('categories');
 }
@@ -307,47 +287,12 @@ export function useExternalSuppliers() {
   return useExternalDatabase<ExternalSupplier>('suppliers');
 }
 
-/** @deprecated Dead code — 0 consumers. Tabela real: supplier_colors (acessível via supabase.from) */
-export function useExternalSupplierColors() {
-  return useExternalDatabase<ExternalSupplierColor>('supplier_colors');
-}
-
-/** @deprecated Dead code — 0 consumers. Tabela real: supplier_materials (acessível via supabase.from) */
-export function useExternalSupplierMaterials() {
-  return useExternalDatabase<ExternalSupplierMaterial>('supplier_materials');
-}
-
-/** @deprecated Dead code — 0 consumers. Tabela real: supplier_attribute_definitions (acessível via supabase.from) */
-export function useExternalSupplierAttributeDefinitions() {
-  return useExternalDatabase<ExternalSupplierAttributeDefinition>('supplier_attribute_definitions');
-}
-
-/** @deprecated Dead code — 0 consumers. Tabela `supplier_product_attributes` NÃO EXISTE no DB. */
-export function useExternalSupplierProductAttributes() {
-  return useExternalDatabase<ExternalSupplierProductAttribute>('supplier_product_attributes');
-}
-
-/** @deprecated Dead code — 0 consumers. Tabela `product_suppliers` NÃO EXISTE no DB. */
-export function useExternalProductSuppliers() {
-  return useExternalDatabase<ExternalProductSupplier>('product_suppliers');
-}
-
 export function useExternalTechniques() {
   return useExternalDatabase<ExternalTechnique>('personalization_techniques');
 }
 
-/** @deprecated Dead code — 0 consumers. Use tabela_preco_gravacao_oficial via dbInvoke. */
-export function useExternalPriceTables() {
-  return useExternalDatabase<ExternalPriceTable>('customization_price_tables');
-}
-
 export function useExternalCollections() {
   return useExternalDatabase<ExternalCollection>('collections');
-}
-
-/** @deprecated Dead code — 0 consumers. Tabela real: tags (acessível via supabase.from) */
-export function useExternalTags() {
-  return useExternalDatabase<ExternalTag>('tags');
 }
 
 // Empresas/Clientes — MIGRADO para CRM externo
@@ -370,20 +315,6 @@ export function useExternalRamosAtividade() {
 
 export function useExternalRamosAtividadeFilho() {
   return useExternalDatabase<ExternalRamoAtividadeFilho>('ramo_atividade_filho');
-}
-
-/**
- * @deprecated business_sectors não está exposta no PostgREST do BD externo (PGRST205).
- * Use useExternalRamosAtividade() para dados de segmentos/público-alvo.
- * Mantido com fallback vazio para evitar quebras em código futuro.
- */
-export function useExternalBusinessSectors() {
-  return {
-    data: [] as ExternalBusinessSector[],
-    isLoading: false,
-    error: null,
-    refetch: () => Promise.resolve({ data: [] as ExternalBusinessSector[], error: null }),
-  };
 }
 
 export function useExternalMaterialGroups() {

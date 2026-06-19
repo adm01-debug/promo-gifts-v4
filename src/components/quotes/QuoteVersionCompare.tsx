@@ -82,6 +82,14 @@ function DiffBadge({
   );
 }
 
+const QUOTE_STATUS_LABELS: Record<string, string> = {
+  draft: 'Rascunho',
+  sent: 'Enviado',
+  approved: 'Aprovado',
+  rejected: 'Rejeitado',
+  expired: 'Expirado',
+} as const;
+
 export function QuoteVersionCompare({
   open,
   onOpenChange,
@@ -142,14 +150,6 @@ export function QuoteVersionCompare({
     return { ...quote, items: items || [] } as QuoteDetail;
   }
 
-  const statusLabels: Record<string, string> = {
-    draft: 'Rascunho',
-    sent: 'Enviado',
-    approved: 'Aprovado',
-    rejected: 'Rejeitado',
-    expired: 'Expirado',
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-5xl overflow-y-auto">
@@ -209,7 +209,7 @@ export function QuoteVersionCompare({
                         v{detail.version} — {detail.quote_number}
                       </span>
                       <Badge variant={detail.status === 'approved' ? 'default' : 'outline'}>
-                        {statusLabels[detail.status] || detail.status}
+                        {QUOTE_STATUS_LABELS[detail.status] || detail.status}
                       </Badge>
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">

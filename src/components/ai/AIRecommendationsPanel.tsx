@@ -186,7 +186,7 @@ export function AIRecommendationsPanel({
     fetchRecommendations(client, safeProducts);
   }, [client, safeProducts, fetchRecommendations]);
 
-  const canGenerate = client.name.trim().length > 0 && safeProducts.length > 0 && !isLoading;
+  const canGenerate = client.name.trim() !== '' && safeProducts.length > 0 && !isLoading;
 
   return (
     <div className={cn('space-y-4 font-display', className)}>

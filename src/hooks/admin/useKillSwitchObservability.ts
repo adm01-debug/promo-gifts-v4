@@ -13,6 +13,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export interface SwitchState {
   switch_name: string;
@@ -73,7 +74,7 @@ export function useKillSwitchObservability(): KillSwitchObservabilityData {
       setError(null);
       setLastRefresh(new Date());
     } catch (e) {
-      const msg = (e as Error).message;
+      const msg = toErrorMessage(e);
       logger.warn(`[useKillSwitchObservability] load failed: ${msg}`);
       setError(msg);
     } finally {

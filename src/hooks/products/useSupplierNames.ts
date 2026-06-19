@@ -2,11 +2,12 @@
  * Hook para buscar nomes dos fornecedores a partir de IDs.
  * Consulta a tabela 'suppliers' no banco externo.
  */
+import { useMemo } from 'react';
 import { dbInvoke, type InvokeOptions } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 
 export function useSupplierNames(supplierIds: string[]) {
-  const uniqueIds = [...new Set(supplierIds.filter(Boolean))];
+  const uniqueIds = useMemo(() => [...new Set(supplierIds.filter(Boolean))], [supplierIds]);
 
   return useQuery({
     queryKey: ['supplier-names', uniqueIds.sort().join(',')],

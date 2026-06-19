@@ -135,6 +135,27 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
     // Same auth pattern as asia-ingestion.
     invalidInputs: [],
   },
+  "hash-product-images": {
+    skipCors: true,
+    // Auth is x-cron-secret header; called by pg_cron (verify_jwt=false).
+    // No happy-path: downloads and hashes images — expensive and writes to DB.
+    invalidInputs: [],
+  },
+  "generate-blurhashes": {
+    skipCors: true,
+    // Auth is x-cron-secret header; called by pg_cron (verify_jwt=false).
+    // No happy-path: downloads images and writes blurhash strings — expensive.
+    invalidInputs: [],
+  },
+
+  // ---------------- Funções de teste internas (utilitários de QA) ----------------
+  // Usam SERVICE_ROLE_KEY internamente; não expõem ação pública.
+  // Sem happy-path: executar geraria efeitos colaterais no DB (carts/itens).
+  // Marcadas como DESTRUCTIVE em _authz.ts. invalidInputs:[] pois verify_jwt=true
+  // → chamada anônima é rejeitada pelo gateway (401) antes de atingir o handler.
+  "test-cart-concurrency": { invalidInputs: [] },
+  "test-cart-limit": { invalidInputs: [] },
+  "test-cart-rls": { invalidInputs: [] },
 
   // ---------------- Geração de IA cara (gate COSTLY) ----------------
   "word-magic": {

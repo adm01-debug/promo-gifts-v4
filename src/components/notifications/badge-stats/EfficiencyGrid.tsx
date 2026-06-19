@@ -23,8 +23,6 @@ export function EfficiencyGrid({
 }: EfficiencyGridProps) {
   const ttlWithinPct =
     fetches === 0 ? 0 : Math.round((fetchesByTtlWindow.withinTtl / fetches) * 100);
-  const _ttlAfterPct =
-    fetches === 0 ? 0 : Math.round((fetchesByTtlWindow.afterTtl / fetches) * 100);
 
   return (
     <div className="mb-2 rounded border border-border/40 bg-background/60 px-2 py-1.5 font-mono text-muted-foreground">
@@ -60,7 +58,7 @@ export function EfficiencyGrid({
           </span>
         ))}
         {Object.entries(byTrigger).map(([source, count]) => (
-          <span key={source + '-val'} className="text-right tabular-nums">
+          <span key={`${source}-val`} className="text-right tabular-nums">
             {count}
           </span>
         ))}
@@ -76,7 +74,7 @@ export function EfficiencyGrid({
           </span>
         ))}
         {Object.entries(byFetch).map(([type, count]) => (
-          <span key={type + '-val'} className="text-right tabular-nums">
+          <span key={`${type}-val`} className="text-right tabular-nums">
             {count}
           </span>
         ))}

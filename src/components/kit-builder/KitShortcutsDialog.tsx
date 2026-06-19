@@ -42,7 +42,7 @@ export function KitShortcutsDialog() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  const sections = Array.from(new Set(SHORTCUTS.map((s) => s.section)));
+  const sections = [...new Set(SHORTCUTS.map((s) => s.section))];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

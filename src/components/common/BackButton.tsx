@@ -47,9 +47,9 @@ export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(functio
       /^\d+$/.test(lastPart);
 
     if (isId && pathParts.length > 2) {
-      return '/' + pathParts.slice(0, -2).join('/');
+      return `/${pathParts.slice(0, -2).join('/')}`;
     }
-    return '/' + pathParts.slice(0, -1).join('/');
+    return `/${pathParts.slice(0, -1).join('/')}`;
   }, [location.pathname]);
 
   if (location.pathname === '/') return null;

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface GalleryFullscreenProps {
   open: boolean;
@@ -87,6 +88,7 @@ export function GalleryFullscreen({
             />
           ) : (
             <img
+              key={allMedia[selectedIndex]}
               src={allMedia[selectedIndex]}
               alt={`${productName} - Imagem ${selectedIndex + 1}`}
               className={cn(
@@ -100,6 +102,13 @@ export function GalleryFullscreen({
                 transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
               }}
               draggable={false}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallback) {
+                  img.dataset.fallback = '1';
+                  img.src = '/placeholder.svg';
+                }
+              }}
             />
           )}
 
@@ -192,11 +201,11 @@ export function GalleryFullscreen({
                     <Play className="h-4 w-4 text-foreground" />
                   </div>
                 ) : (
-                  <img
+                  <OptimizedImage
                     src={getCdnUrl(media, 'thumbnail')}
                     alt={`${productName} - ${index + 1}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
+                    className="object-cover"
+                    containerClassName="h-full w-full"
                   />
                 )}
               </button>

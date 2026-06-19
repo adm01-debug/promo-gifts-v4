@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 /** Recalculate personalization total using rounded unit price to match UI display */
 function calcPersTotal(totalCost: number, qty: number): number {
@@ -20,6 +21,10 @@ export interface QuotePersonalization {
   technique_name?: string | null;
   unit_cost?: number | null;
   total_cost?: number | null;
+  notes?: string | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
+  colors_count?: number | null;
 }
 
 export interface QuoteItem {
@@ -79,7 +84,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     return (
       <tr
         key={item.id || `item-${index}`}
-        className={`border-b border-border/50 transition-colors hover:bg-muted/40 ${index % 2 === 1 ? 'bg-muted/20' : ''}`}
+        className={cn(
+          'border-b border-border/50 transition-colors hover:bg-muted/40',
+          index % 2 === 1 && 'bg-muted/20',
+        )}
       >
         <td className="p-3">
           <div className="flex items-center gap-3">
@@ -89,7 +97,9 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 alt={item.product_name}
                 className="h-16 w-16 rounded border border-border object-cover print:hidden"
                 loading="lazy"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
             )}
             <div>
@@ -121,8 +131,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           <td className="p-3">
             {allPersonalizations.length > 0 ? (
               <div className="space-y-1.5">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {allPersonalizations.map((p: any, pIdx: number) => {
+                {allPersonalizations.map((p, pIdx) => {
                   const notesRaw = p.notes || '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
                   const locationLabel = locationPart ? locationPart.split(' — ')[0] : null;
@@ -133,10 +142,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     dimLabel = `${p.width_cm} × ${p.height_cm} cm`;
                   }
                   return (
-                    <div
-                      key={pIdx}
-                      className={`${pIdx > 0 ? 'border-t border-border/30 pt-1.5' : ''}`}
-                    >
+                    <div key={pIdx} className={cn(pIdx > 0 && 'border-t border-border/30 pt-1.5')}>
                       <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1.5">
                         <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                           ✦ {p.technique_name}
@@ -203,6 +209,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 technique_name: p.technique_name ?? undefined,
                 unit_cost: p.unit_cost ?? undefined,
                 total_cost: p.total_cost ?? undefined,
+                notes: p.notes ?? undefined,
+                width_cm: p.width_cm ?? undefined,
+                height_cm: p.height_cm ?? undefined,
+                colors_count: p.colors_count ?? undefined,
               })),
             }}
           />

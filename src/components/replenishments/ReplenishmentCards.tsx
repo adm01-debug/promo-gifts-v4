@@ -25,6 +25,7 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
+import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -73,6 +74,8 @@ export interface ReplenishmentCardProps {
   readonly isSelected: boolean;
   readonly onToggleSelect: () => void;
   readonly colors?: readonly ColorDotLike[];
+  /** Carrega imagem com alta prioridade (LCP) — true para cards above-the-fold */
+  readonly priority?: boolean;
 }
 
 export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
@@ -82,6 +85,7 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
   isSelected,
   onToggleSelect,
   colors,
+  priority = false,
 }: ReplenishmentCardProps) {
   const recent = isRecent(product.replenished_at);
   const stockQty = product.stock_quantity;
@@ -142,14 +146,22 @@ export const ReplenishmentGridCard = memo(function ReplenishmentGridCard({
       <CardContent className="flex h-full flex-col p-0">
         {/* Image Section */}
         <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
-          <HoverSetImage
-            key={activeImage ?? product.product_image ?? 'placeholder'}
-            primary={activeImage}
-            // Desativa o crossfade "todas as cores" quando o usuário está
-            // navegando pelas variantes — a foto da cor selecionada vence.
-            set={activeColorName ? null : product.product_set_image}
-            alt={`Foto de ${product.product_name}`}
-          />
+          <QuickViewThumb
+            productId={product.product_id}
+            productName={product.product_name}
+            testId="replenishment-grid-card-thumb"
+            className="h-full w-full"
+          >
+            <HoverSetImage
+              key={activeImage ?? product.product_image ?? 'placeholder'}
+              primary={activeImage}
+              // Desativa o crossfade "todas as cores" quando o usuário está
+              // navegando pelas variantes — a foto da cor selecionada vence.
+              set={activeColorName ? null : product.product_set_image}
+              alt={`Foto de ${product.product_name}`}
+              priority={priority}
+            />
+          </QuickViewThumb>
 
           {/* Badge superior esquerdo — Reposição */}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
@@ -387,27 +399,34 @@ export function ReplenishmentTableView({
                 )}
                 <TableCell className="p-1.5">
                   <div className="h-9 w-9 overflow-hidden rounded bg-muted">
-                    {product.product_image ? (
-                      <img
-                        src={product.product_image}
-                        alt={`Foto de ${product.product_name}`}
-                        onError={(e) => {
-                          const img = e.currentTarget as HTMLImageElement;
-                          img.onerror = null;
-                          img.src = '/placeholder.svg';
-                        }}
-                        className="h-full w-full object-contain"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-full w-full items-center justify-center"
-                        aria-hidden="true"
-                      >
-                        <Package className="h-3.5 w-3.5 text-muted-foreground/30" />
-                      </div>
-                    )}
+                    <QuickViewThumb
+                      productId={product.product_id}
+                      productName={product.product_name}
+                      testId="replenishment-table-row-thumb"
+                      className="h-full w-full"
+                    >
+                      {product.product_image ? (
+                        <img
+                          src={product.product_image}
+                          alt={`Foto de ${product.product_name}`}
+                          onError={(e) => {
+                            const img = e.currentTarget as HTMLImageElement;
+                            img.onerror = null;
+                            img.src = '/placeholder.svg';
+                          }}
+                          className="h-full w-full object-contain"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-full w-full items-center justify-center"
+                          aria-hidden="true"
+                        >
+                          <Package className="h-3.5 w-3.5 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </QuickViewThumb>
                   </div>
                 </TableCell>
                 <TableCell className="px-2 py-1.5">

@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
 import { useSimilarProducts, type SimilarProductItem } from '@/hooks/products/useSimilarProducts';
 import type { Product } from '@/types/product-catalog';
+import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface SimilarProductsProps {
   currentProduct: Product;
@@ -40,11 +42,11 @@ const SimilarProductCard = forwardRef<
       onClick={onClick}
     >
       <div className="relative aspect-square overflow-hidden bg-muted">
-        <img
-          src={item.image_url}
+        <OptimizedImage
+          src={getCdnUrl(item.image_url, 'card')}
           alt={item.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          loading="lazy"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          containerClassName="h-full w-full"
         />
         {isLowestPrice && (
           <div className="absolute right-1.5 top-1.5">
@@ -73,7 +75,10 @@ const SimilarProductCard = forwardRef<
         </h4>
         <div className="flex items-center justify-between gap-2 pt-0.5">
           <span className="truncate font-display text-sm font-bold text-foreground xl:text-base">
-            R$ {item.price.toFixed(2).replace('.', ',')}
+            R${' '}
+            {item.price !== null && item.price !== undefined
+              ? item.price.toFixed(2).replace('.', ',')
+              : '—'}
           </span>
           {item.colors_count && item.colors_count > 0 && (
             <span className="shrink-0 text-[10px] text-muted-foreground xl:text-xs">

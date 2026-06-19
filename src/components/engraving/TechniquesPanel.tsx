@@ -35,6 +35,24 @@ import {
 } from 'lucide-react';
 import { useTecnicasUnificadas, useCategoriasTecnicas } from '@/hooks/simulation';
 import type { TecnicaUnificada, TecnicaFiltros } from '@/types/tecnica-unificada';
+import { cn } from '@/lib/utils';
+
+const CATEGORIA_LABELS: Record<string, string> = {
+  impression: 'Impressão',
+  engraving: 'Gravação',
+  textile: 'Têxtil',
+  embroidery: 'Bordado',
+  transfer: 'Transfer',
+} as const;
+
+const CATEGORIA_COLORS: Record<string, string> = {
+  impression: 'bg-info/10 text-info border-info/20',
+  engraving: 'bg-warning/10 text-warning border-warning/20',
+  textile: 'bg-primary/10 text-primary border-primary/20',
+  embroidery: 'bg-primary/10 text-primary border-primary/20',
+  transfer: 'bg-success/10 text-success border-success/20',
+} as const;
+
 
 export function TechniquesPanel() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,27 +77,10 @@ export function TechniquesPanel() {
     toggleStatus({ id: tecnica.id, ativo: !tecnica.ativo });
   };
 
-  const getCategoriaLabel = (categoria: string) => {
-    const labels: Record<string, string> = {
-      impression: 'Impressão',
-      engraving: 'Gravação',
-      textile: 'Têxtil',
-      embroidery: 'Bordado',
-      transfer: 'Transfer',
-    };
-    return labels[categoria] || categoria;
-  };
+  const getCategoriaLabel = (categoria: string) => CATEGORIA_LABELS[categoria] || categoria;
 
-  const getCategoriaColor = (categoria: string) => {
-    const colors: Record<string, string> = {
-      impression: 'bg-info/10 text-info border-info/20',
-      engraving: 'bg-warning/10 text-warning border-warning/20',
-      textile: 'bg-primary/10 text-primary border-primary/20',
-      embroidery: 'bg-primary/10 text-primary border-primary/20',
-      transfer: 'bg-success/10 text-success border-success/20',
-    };
-    return colors[categoria] || 'bg-muted text-muted-foreground';
-  };
+  const getCategoriaColor = (categoria: string) =>
+    CATEGORIA_COLORS[categoria] || 'bg-muted text-muted-foreground';
 
   if (isError) {
     return (
@@ -115,7 +116,7 @@ export function TechniquesPanel() {
             </CardDescription>
           </div>
           <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            <RotateCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RotateCcw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Atualizar
           </Button>
         </div>

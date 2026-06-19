@@ -66,7 +66,7 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
       return (
         <Badge
           variant="outline"
-          className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${statusConfig[quote.status]?.className || ''}`}
+          className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${statusConfig[quote.status]?.className ?? ''}`}
         >
           {quote.status === 'pending' && (
             <span className="relative flex h-2 w-2">

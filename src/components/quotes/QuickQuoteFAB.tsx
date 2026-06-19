@@ -68,6 +68,8 @@ interface QuickQuoteFABProps {
   productName?: string;
 }
 
+const HIDDEN_FAB_PATHS = ['/orcamentos/novo', '/auth', '/mockup-generator'];
+
 export function QuickQuoteFAB({ productId, productName: _productName }: QuickQuoteFABProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expertOpen, setExpertOpen] = useState(false);
@@ -87,8 +89,7 @@ export function QuickQuoteFAB({ productId, productName: _productName }: QuickQuo
   }, [bridgeOpen, expertOpen, pendingMessage]);
 
   // Don't show on certain pages
-  const hiddenPaths = ['/orcamentos/novo', '/auth', '/mockup-generator'];
-  if (hiddenPaths.some((path) => location.pathname.startsWith(path))) {
+  if (HIDDEN_FAB_PATHS.some((path) => location.pathname.startsWith(path))) {
     return null;
   }
 

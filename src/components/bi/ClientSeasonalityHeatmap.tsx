@@ -358,7 +358,7 @@ export function ClientSeasonalityHeatmap({ clientId, ramoAtividade }: Props) {
                     const followUp = new Date(peakDate);
                     followUp.setDate(followUp.getDate() - 21);
                     const dt = (d: Date) =>
-                      d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                      `${d.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
                     const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bi-${Date.now()}@promogifts\nDTSTAMP:${dt(new Date())}\nDTSTART:${dt(followUp)}\nDTEND:${dt(new Date(followUp.getTime() + 30 * 60000))}\nSUMMARY:Follow-up campanha sazonal\nDESCRIPTION:Janela ideal: ${nextPeakName}\nEND:VEVENT\nEND:VCALENDAR`;
                     const blob = new Blob([ics], { type: 'text/calendar' });
                     const url = URL.createObjectURL(blob);

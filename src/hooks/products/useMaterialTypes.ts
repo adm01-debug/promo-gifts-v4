@@ -22,7 +22,7 @@ export function useMaterialTypes(): UseMaterialTypesReturn {
   });
 
   return {
-    types: data?.types || [],
+    types: data?.types ?? [],
     isLoading,
     error: error as Error | null,
     refetch,
@@ -49,7 +49,7 @@ export function useMaterialTypesByGroup(groupSlug: string): UseMaterialTypesByGr
   });
 
   return {
-    types: data?.types || [],
+    types: data?.types ?? [],
     isLoading,
     error: error as Error | null,
     refetch,
@@ -76,7 +76,7 @@ export function useMaterialsComplete(): UseMaterialsCompleteReturn {
     gcTime: 30 * 60 * 1000,
   });
 
-  const materials = data?.materials || [];
+  const materials = data?.materials ?? [];
 
   // Organizar por grupo
   const byGroup = new Map<string, MaterialComplete[]>();
@@ -112,7 +112,7 @@ export function useMaterialSearch() {
   });
 
   return {
-    results: data?.types || [],
+    results: data?.types ?? [],
     isLoading,
     error: error as Error | null,
     count: data?.count || 0,

@@ -124,14 +124,17 @@ export function FutureStockModal({
     entries.sort((a, b) => {
       switch (sortOrder) {
         case 'nearest': {
-          const timeA = new Date(a.expectedDate).getTime();
-          const timeB = new Date(b.expectedDate).getTime();
+          // parseISO (local midnight) p/ casar com o filtro de período e o
+          // cálculo de daysUntil; new Date('YYYY-MM-DD') usava UTC midnight,
+          // divergindo no limite do dia (UTC-3) entre ordenação e filtragem.
+          const timeA = parseISO(a.expectedDate).getTime();
+          const timeB = parseISO(b.expectedDate).getTime();
           if (timeA !== timeB) return timeA - timeB;
           return (a.entryIndex || 0) - (b.entryIndex || 0); // Desempate pelo índice da entrada
         }
         case 'farthest': {
-          const timeA = new Date(a.expectedDate).getTime();
-          const timeB = new Date(b.expectedDate).getTime();
+          const timeA = parseISO(a.expectedDate).getTime();
+          const timeB = parseISO(b.expectedDate).getTime();
           if (timeA !== timeB) return timeB - timeA;
           return (b.entryIndex || 0) - (a.entryIndex || 0);
         }
@@ -180,12 +183,12 @@ export function FutureStockModal({
               <div className="space-y-4 p-4">
                 <Skeleton className="h-10 w-full rounded-xl" />
                 <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-                  {[...Array(8)].map((_, i) => (
+                  {Array.from({ length: 8 }, (_, i) => (
                     <Skeleton key={i} className="aspect-square rounded-lg" />
                   ))}
                 </div>
                 <div className="space-y-3 pt-6">
-                  {[...Array(3)].map((_, i) => (
+                  {Array.from({ length: 3 }, (_, i) => (
                     <Skeleton key={i} className="h-20 w-full rounded-xl" />
                   ))}
                 </div>
@@ -289,6 +292,10 @@ export function FutureStockModal({
                         <Tooltip key={color.name}>
                           <TooltipTrigger asChild>
                             <button
+                              type="button"
+                              title={color.name}
+                              aria-label={`Filtrar por cor ${color.name}`}
+                              aria-pressed={isSelected}
                               onClick={() => setSelectedColor(isSelected ? null : color.name)}
                               className={cn(
                                 'relative overflow-hidden rounded-lg transition-all duration-200',
@@ -394,10 +401,10 @@ export function FutureStockModal({
               hasVariants && (
                 <div className="space-y-6">
                   {/* Agrupamento por cor */}
-                  {Array.from(new Set(sortedEntries.map((e) => e.colorName))).map((colorName) => {
+                  {[...new Set(sortedEntries.map((e) => e.colorName))].map((colorName) => {
                     const colorEntries = sortedEntries.filter((e) => e.colorName === colorName);
                     // Agrupar por variante dentro da cor
-                    const variantIds = Array.from(new Set(colorEntries.map((e) => e.variantId)));
+                    const variantIds = [...new Set(colorEntries.map((e) => e.variantId))];
                     const isExpanded =
                       expandedGroups.includes(colorName) || selectedColor === colorName;
 
@@ -438,8 +445,8 @@ export function FutureStockModal({
                                 .filter((e) => e.variantId === vId)
                                 .sort(
                                   (a, b) =>
-                                    new Date(a.expectedDate).getTime() -
-                                    new Date(b.expectedDate).getTime(),
+                                    parseISO(a.expectedDate).getTime() -
+                                    parseISO(b.expectedDate).getTime(),
                                 );
 
                               const first = variantEntries[0];

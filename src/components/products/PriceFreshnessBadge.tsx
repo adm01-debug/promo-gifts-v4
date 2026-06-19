@@ -22,6 +22,8 @@ import {
   type PriceFreshness,
 } from '@/utils/price-freshness';
 
+const INVALID_DATE_RE = /inválida/i;
+
 const STATUS_LABELS: Record<PriceFreshnessStatus, string> = {
   fresh: 'Atualizado',
   aging: 'Próximo do limite',
@@ -48,9 +50,7 @@ function buildAccessibleLabel(
   priceUpdatedAt?: string | Date | null,
 ): { ariaLabel: string; title: string } {
   const absolute = priceUpdatedAt ? formatAbsoluteDateLong(priceUpdatedAt) : null;
-  const days = freshness.daysSinceUpdate;
-  const relative =
-    days === null ? null : days === 0 ? 'há 0 dias' : days === 1 ? 'há 1 dia' : `há ${days} dias`;
+  const relative = formatRelativeDaysShort(freshness.daysSinceUpdate);
 
   let ariaLabel: string;
   switch (freshness.status) {
@@ -71,7 +71,7 @@ function buildAccessibleLabel(
       break;
     case 'unknown':
     default:
-      ariaLabel = /inválida/i.test(freshness.label)
+      ariaLabel = INVALID_DATE_RE.test(freshness.label)
         ? 'Preço com data de atualização inválida. Confirme o valor antes de enviar o orçamento.'
         : 'Preço com data não informada. Confirme o valor antes de enviar o orçamento.';
   }

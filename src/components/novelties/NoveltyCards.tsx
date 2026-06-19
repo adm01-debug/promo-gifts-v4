@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2, FolderTree } from 'lucide-react';
+import { Package, Building2, FolderTree, Clock } from 'lucide-react';
 import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
@@ -27,6 +27,7 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
+import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 
 interface NoveltyCardProps {
   product: NoveltyWithDetails;
@@ -41,6 +42,8 @@ interface NoveltyCardProps {
    * (ex.: hidratação assíncrona após o primeiro paint do card).
    */
   isPriceStockLoading?: boolean;
+  /** Carrega imagem com alta prioridade (LCP) — true para cards above-the-fold */
+  priority?: boolean;
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
@@ -83,17 +86,18 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
   onStatusClick,
   colors,
   isPriceStockLoading = false,
+  priority = false,
 }: NoveltyCardProps) {
-  const fresh = product.days_remaining >= 25;
+  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+  const fresh = product.is_highlighted;
 
   // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
   // num swatch troca a foto principal pela imagem da variante selecionada.
   const [activeColorName, setActiveColorName] = useState<string | null>(null);
   const activeImage = useMemo(() => {
     if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find(
-      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
-    );
+    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
     return match?.image || product.product_image;
   }, [activeColorName, colors, product.product_image]);
 
@@ -151,18 +155,27 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
 
       {/* Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
-        <HoverSetImage
-          key={activeImage ?? product.product_image ?? 'placeholder'}
-          primary={activeImage}
-          // Desativa o crossfade "todas as cores" quando o usuário está navegando
-          // pelas variantes — a foto da cor selecionada tem prioridade.
-          set={activeColorName ? null : product.product_set_image}
-          alt={product.product_name}
-          fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
-        />
+        <QuickViewThumb
+          productId={product.product_id}
+          productName={product.product_name ?? 'Produto'}
+          testId="novelty-grid-card-thumb"
+          className="h-full w-full"
+        >
+          <HoverSetImage
+            key={activeImage ?? product.product_image ?? 'placeholder'}
+            primary={activeImage}
+            // Desativa o crossfade "todas as cores" quando o usuário está navegando
+            // pelas variantes — a foto da cor selecionada tem prioridade.
+            set={activeColorName ? null : product.product_set_image}
+            alt={product.product_name}
+            fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
+            priority={priority}
+          />
+        </QuickViewThumb>
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           <NoveltyBadge
             daysRemaining={product.days_remaining}
+            daysElapsed={product.days_as_novelty}
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -181,6 +194,19 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
                 onStatusClick?.('novelty');
               }}
             />
+          </div>
+        )}
+        {/* Urgência: novidade saindo da janela (≤7 dias). Mutuamente exclusiva
+            com "NEW" (fresh = detectado há ≤5d). */}
+        {product.status === 'expiring_soon' && !fresh && !selectionMode && (
+          <div className="absolute right-2 top-2">
+            <span
+              data-testid="novelty-expiring-badge"
+              className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {product.days_remaining <= 1 ? 'Último dia' : `Últimos ${product.days_remaining}d`}
+            </span>
           </div>
         )}
       </div>
@@ -223,7 +249,6 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
             )}
           </div>
         )}
-
 
         {/* 4 — Nome do produto (altura reservada para 2 linhas evita CLS no rodapé) */}
         <p
@@ -292,9 +317,7 @@ export const NoveltyGridCard = memo(function NoveltyGridCard({
             />
           ) : (
             <StockBadge
-              status={
-                product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)
-              }
+              status={product.stock_status ?? getStockStatus(product.stock_quantity ?? 0, 10)}
               quantity={product.stock_quantity ?? 0}
               showQuantity
               size="sm"
@@ -315,15 +338,15 @@ export const NoveltyListCard = memo(function NoveltyListCard({
   onStatusClick,
   colors,
 }: NoveltyCardProps) {
-  const fresh = product.days_remaining >= 25;
+  // "Recém-chegado" agora vem da pipeline (detectado há ≤ 5 dias). Antes era
+  // `days_remaining >= 25`, que com a janela real (~60 dias) seria sempre true.
+  const fresh = product.is_highlighted;
 
   // Mini-carrossel de variantes — mesmo comportamento do grid.
   const [activeColorName, setActiveColorName] = useState<string | null>(null);
   const activeImage = useMemo(() => {
     if (!activeColorName || !colors?.length) return product.product_image;
-    const match = colors.find(
-      (c) => c.name?.toLowerCase() === activeColorName.toLowerCase(),
-    );
+    const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
     return match?.image || product.product_image;
   }, [activeColorName, colors, product.product_image]);
 
@@ -361,20 +384,29 @@ export const NoveltyListCard = memo(function NoveltyListCard({
 
       {/* Thumbnail */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted/20">
-        {activeImage ? (
-          <img
-            key={activeImage}
-            src={activeImage}
-            alt={product.product_name}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
-            className="h-full w-full object-contain transition-opacity duration-200"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <Package className="h-5 w-5 text-muted-foreground/30" />
-          </div>
-        )}
+        <QuickViewThumb
+          productId={product.product_id}
+          productName={product.product_name ?? 'Produto'}
+          testId="novelty-list-card-thumb"
+          className="h-full w-full"
+        >
+          {activeImage ? (
+            <img
+              key={activeImage}
+              src={activeImage}
+              alt={product.product_name}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+              }}
+              className="h-full w-full object-contain transition-opacity duration-200"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Package className="h-5 w-5 text-muted-foreground/30" />
+            </div>
+          )}
+        </QuickViewThumb>
       </div>
 
       {/* Info */}
@@ -382,6 +414,7 @@ export const NoveltyListCard = memo(function NoveltyListCard({
         <div className="mb-0.5 flex items-center gap-2">
           <NoveltyBadge
             daysRemaining={product.days_remaining}
+            daysElapsed={product.days_as_novelty}
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
@@ -507,19 +540,28 @@ export function NoveltyTableView({
                 <TableCell className="px-2 py-1.5">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-muted/20">
-                      {product.product_image ? (
-                        <img
-                          src={product.product_image}
-                          alt={product.product_name}
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
-                          className="h-full w-full object-contain"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <Package className="h-4 w-4 text-muted-foreground/30" />
-                        </div>
-                      )}
+                      <QuickViewThumb
+                        productId={product.product_id}
+                        productName={product.product_name ?? 'Produto'}
+                        testId="novelty-table-row-thumb"
+                        className="h-full w-full"
+                      >
+                        {product.product_image ? (
+                          <img
+                            src={product.product_image}
+                            alt={product.product_name}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                            className="h-full w-full object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </QuickViewThumb>
                     </div>
                     <span className="line-clamp-1 text-sm font-medium">
                       {product.product_name ?? '—'}
@@ -532,6 +574,7 @@ export function NoveltyTableView({
                 <TableCell className="px-2 py-1.5 text-center">
                   <NoveltyBadge
                     daysRemaining={product.days_remaining}
+                    daysElapsed={product.days_as_novelty}
                     size="sm"
                     onClick={() => {}}
                   />

@@ -18,7 +18,10 @@ export function ProductCardSkeleton({
 }: ProductCardSkeletonProps) {
   if (variant === 'compact') {
     return (
-      <div className={cn('flex items-center gap-2', selectionMode && 'pl-1')} data-testid="product-card-skeleton">
+      <div
+        className={cn('flex items-center gap-2', selectionMode && 'pl-1')}
+        data-testid="product-card-skeleton"
+      >
         {selectionMode && (
           <div className="flex-shrink-0">
             <Skeleton className="h-5 w-5 rounded" animate={animate} />
@@ -375,7 +378,7 @@ export function ProductListItemSkeleton() {
 export function ProductListSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="flex flex-col gap-2">
-      {[...Array(count)].map((_, i) => (
+      {Array.from({ length: count }, (_, i) => (
         <ProductListItemSkeleton key={i} />
       ))}
     </div>

@@ -14,6 +14,7 @@ import {
 import { fetchAndProcessStockData } from '@/hooks/stock/stockFetcher';
 import { applyStockFilters, buildStockIndexes } from '@/lib/inventory/stock-filter';
 
+/** Hook principal do dashboard de estoque: busca dados, aplica filtros e expõe ações de refresh/dismiss. */
 export function useVariantStock() {
   const [filters, setFilters] = useState<StockFilters>(defaultStockFilters);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
@@ -65,6 +66,12 @@ export function useVariantStock() {
     for (const p of productStocks) {
       switch (p.overallStatus) {
         case 'in_stock':
+        case 'incoming':
+        case 'overstocked':
+          // SSOT: produtos com reposição em trânsito ou excesso de estoque
+          // ainda estão saudáveis no dashboard; contar como "in stock"
+          // garante que os 4 buckets fechem com `totalProducts` (bug #2 —
+          // 305 produtos ficavam fora dos 4 cartões).
           productsInStock++;
           break;
         case 'low_stock':
@@ -77,12 +84,15 @@ export function useVariantStock() {
           productsOutOfStock++;
           break;
       }
+
       for (const v of p.variants) {
         totalVariants++;
         if (v.colorName) colorSet.add(v.colorName);
         daysSum += v.daysUntilStockout || 0;
         switch (v.status) {
           case 'in_stock':
+          case 'incoming':
+          case 'overstocked':
             variantsInStock++;
             break;
           case 'low_stock':
@@ -224,7 +234,7 @@ export function useVariantStock() {
   const getColorStock = useCallback(
     (productId: string, colorName: string): VariantStock[] => {
       const product = productStocks.find((p) => p.productId === productId);
-      return product?.variants.filter((v) => v.colorName === colorName) || [];
+      return product?.variants.filter((v) => v.colorName === colorName) ?? [];
     },
     [productStocks],
   );
@@ -257,6 +267,7 @@ export function useVariantStock() {
   };
 }
 
+/** Versão simplificada do hook de estoque escoped a um único produto. */
 export function useProductVariantStock(productId: string) {
   const {
     productStocks: _productStocks,
@@ -278,8 +289,8 @@ export function useProductVariantStock(productId: string) {
   return {
     isLoading,
     productStock,
-    variants: productStock?.variants || [],
-    colors: productStock?.availableColors || [],
+    variants: productStock?.variants ?? [],
+    colors: productStock?.availableColors ?? [],
     alerts: productAlerts,
     refresh: fetchStockData,
   };

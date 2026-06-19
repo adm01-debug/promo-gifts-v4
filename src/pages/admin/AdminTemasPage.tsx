@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Save, Palette, Sparkles, Check, Gamepad2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { m as motion } from 'framer-motion';
@@ -29,6 +29,9 @@ const fadeUp = {
   }),
 };
 
+const classicPresets = THEME_PRESETS.filter((p) => p.category !== 'gx');
+const gxPresets = THEME_PRESETS.filter((p) => p.category === 'gx');
+
 export default function AdminTemasPage() {
   const { actualTheme: _actualTheme } = useTheme();
   const [config, setConfig] = useState<ThemeConfig>(loadThemeConfig);
@@ -40,9 +43,6 @@ export default function AdminTemasPage() {
     applyThemePreset(cfg.presetId, 'dark');
     applyRadius(cfg.radius);
   }, []);
-
-  const classicPresets = useMemo(() => THEME_PRESETS.filter((p) => p.category !== 'gx'), []);
-  const gxPresets = useMemo(() => THEME_PRESETS.filter((p) => p.category === 'gx'), []);
 
   useEffect(() => {
     applyAll(config);
@@ -62,9 +62,6 @@ export default function AdminTemasPage() {
     // Auto-save on every change for instant feedback
     saveThemeConfig(next);
   };
-
-  // Mode changes are no longer supported
-  const _handleModeChange = (_mode: unknown) => {};
 
   const handleSave = () => {
     saveThemeConfig(config);

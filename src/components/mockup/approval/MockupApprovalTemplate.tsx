@@ -3,7 +3,7 @@
  * One product per page. Rendered as a web page, exportable to PDF.
  */
 
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { LogoWithTransparentBg } from '@/components/pdf/proposal/LogoWithTransparentBg';
 

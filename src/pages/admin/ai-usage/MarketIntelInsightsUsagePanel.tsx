@@ -2,6 +2,7 @@
  * MarketIntelInsightsUsagePanel — telemetria do módulo Inteligência de Mercado.
  * Mostra: total de regenerações por dia, top usuários, % cache hit estimado.
  */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,36 +50,49 @@ export function MarketIntelInsightsUsagePanel() {
     staleTime: 1000 * 60 * 2,
   });
 
-  const events = data?.events || [];
-  const totalRegens = events.filter((e) => e.event_type === 'manual_regenerate').length;
-  const uniqueUsers = new Set(events.map((e) => e.user_id)).size;
+  const events = useMemo(() => data?.events ?? [], [data]);
   const cacheCount = data?.cacheCount || 0;
+
+  const totalRegens = useMemo(
+    () => events.filter((e) => e.event_type === 'manual_regenerate').length,
+    [events],
+  );
+  const uniqueUsers = useMemo(() => new Set(events.map((e) => e.user_id)).size, [events]);
   // Cache hit aproximado: cache rows existentes / (cache rows + regenerations)
-  const cacheHitRate =
-    totalRegens + cacheCount > 0 ? Math.round((cacheCount / (cacheCount + totalRegens)) * 100) : 0;
+  const cacheHitRate = useMemo(
+    () =>
+      totalRegens + cacheCount > 0
+        ? Math.round((cacheCount / (cacheCount + totalRegens)) * 100)
+        : 0,
+    [totalRegens, cacheCount],
+  );
 
   // Agrupa por dia
-  const byDay = events.reduce<Record<string, number>>((acc, e) => {
-    const day = e.created_at.slice(0, 10);
-    acc[day] = (acc[day] || 0) + 1;
-    return acc;
-  }, {});
-  const chartData = Object.entries(byDay)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-14)
-    .map(([day, count]) => ({
-      day: new Date(day).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      regens: count,
-    }));
+  const chartData = useMemo(() => {
+    const byDay = events.reduce<Record<string, number>>((acc, e) => {
+      const day = e.created_at.slice(0, 10);
+      acc[day] = (acc[day] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(byDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-14)
+      .map(([day, count]) => ({
+        day: new Date(day).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        regens: count,
+      }));
+  }, [events]);
 
   // Top usuários
-  const byUser = events.reduce<Record<string, number>>((acc, e) => {
-    acc[e.user_id] = (acc[e.user_id] || 0) + 1;
-    return acc;
-  }, {});
-  const topUsers = Object.entries(byUser)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
+  const topUsers = useMemo(() => {
+    const byUser = events.reduce<Record<string, number>>((acc, e) => {
+      acc[e.user_id] = (acc[e.user_id] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(byUser)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5);
+  }, [events]);
 
   return (
     <Card>

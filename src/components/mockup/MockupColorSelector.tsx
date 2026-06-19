@@ -1,7 +1,7 @@
 /**
  * ProductLoaderAndColorSelector — extracted from MockupProductSelector
  */
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,6 +38,23 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
     () => sortedVariants.reduce((sum, v) => sum + (v.stock_quantity ?? 0), 0),
     [sortedVariants],
   );
+
+  // BUG-24 FIX: was `setTimeout(() => onSelect(null, fullProduct), 0)` directly in
+  // the render body — a side-effect inside render fires on every re-render and
+  // double-fires under React 18 StrictMode, causing onSelect to be called multiple
+  // times before setPendingProductId(null) could unmount this component.
+  // Hook placed BEFORE all early returns to satisfy Rules of Hooks.
+  useEffect(() => {
+    if (
+      !isLoadingProduct &&
+      !isLoadingVariants &&
+      fullProduct &&
+      (!variants || variants.length === 0)
+    ) {
+      onSelect(null, fullProduct);
+    }
+  }, [isLoadingProduct, isLoadingVariants, fullProduct, variants, onSelect]);
+
   const formatStock = (qty: number) =>
     qty >= 1000 ? `${(qty / 1000).toFixed(1)}k` : qty.toString();
 
@@ -79,7 +96,6 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
   }
 
   if (!variants || variants.length === 0) {
-    setTimeout(() => onSelect(null, fullProduct), 0);
     return (
       <div className="flex animate-pulse items-center gap-3 rounded-lg border border-border/30 bg-card p-3">
         <Skeleton className="h-11 w-11 rounded-lg" />

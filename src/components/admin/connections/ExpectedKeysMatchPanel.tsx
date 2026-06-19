@@ -19,6 +19,14 @@ const ENV_KEYS = [
 
 const SECRET_SUFFIXES = ['URL', 'ANON_KEY', 'SERVICE_ROLE_KEY'] as const;
 
+const EXPECTED_SECRET_NAMES: ReadonlySet<string> = new Set(
+  ENV_KEYS.flatMap(({ key }) =>
+    SECRET_SUFFIXES.map((suf) => `EXTERNAL_${key.toUpperCase()}_${suf}`),
+  ),
+);
+
+const EXPECTED_ENV_KEYS: ReadonlySet<string> = new Set(ENV_KEYS.map((e) => e.key.toLowerCase()));
+
 type SecretRow = { name: string; has_value?: boolean };
 type ExtRow = { env_key: string | null; type: string | null; name: string | null };
 
@@ -89,15 +97,8 @@ export function ExpectedKeysMatchPanel({
   }, [secretMap, extByEnvKey]);
 
   // Órfãos: presentes em uma fonte mas não esperados / sem par na outra
-  const expectedSecretNames = useMemo(() => {
-    const set = new Set<string>();
-    for (const { key } of ENV_KEYS) {
-      for (const suf of SECRET_SUFFIXES) set.add(`EXTERNAL_${key.toUpperCase()}_${suf}`);
-    }
-    return set;
-  }, []);
-
-  const expectedEnvKeys = useMemo(() => new Set(ENV_KEYS.map((e) => e.key.toLowerCase())), []);
+  const expectedSecretNames = EXPECTED_SECRET_NAMES;
+  const expectedEnvKeys = EXPECTED_ENV_KEYS;
 
   const orphanSecrets = useMemo(
     () =>

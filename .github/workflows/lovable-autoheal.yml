@@ -1,0 +1,210 @@
+name: Lovable Autoheal
+
+# Objetivo: corrigir automaticamente violações ESLint auto-fixáveis
+# introduzidas por commits do Lovable direto na branch main.
+#
+# Guard anti-loop: commits com "[autoheal]" nunca re-trigam o workflow.
+# Regras auto-fixáveis: unused-imports/no-unused-imports, consistent-type-imports, prefer-const
+# Não auto-fixável → issue criada: rules-of-hooks (requer refactor manual)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: 'SHA para re-analisar (vazio = HEAD)'
+        required: false
+        type: string
+
+concurrency:
+  group: lovable-autoheal
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  autoheal:
+    name: ESLint auto-fix (Lovable commits)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    if: |
+      !contains(github.event.head_commit.message, '[autoheal]') &&
+      !startsWith(github.event.head_commit.message, 'Merge pull request #')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Detectar arquivos TypeScript alterados
+        id: changed_files
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.target_sha }}" ]; then
+            TARGET="${{ inputs.target_sha }}"
+            DIFF_BASE="${TARGET}~1"
+          else
+            TARGET="HEAD"
+            DIFF_BASE="HEAD~1"
+          fi
+
+          if ! git cat-file -e "${DIFF_BASE}" 2>/dev/null; then
+            echo "has_ts_files=false" >> "$GITHUB_OUTPUT"
+            echo "files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "${DIFF_BASE}" "${TARGET}" -- '*.ts' '*.tsx' | grep -E '^(src|tests|e2e)/' || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "has_ts_files=false" >> "$GITHUB_OUTPUT"
+            echo "files=" >> "$GITHUB_OUTPUT"
+          else
+            echo "$CHANGED"
+            FILES_FLAT=$(echo "$CHANGED" | tr '\n' ' ' | sed 's/ $//')
+            echo "has_ts_files=true" >> "$GITHUB_OUTPUT"
+            echo "files=$FILES_FLAT" >> "$GITHUB_OUTPUT"
+            echo "count=$(echo "$CHANGED" | wc -l)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rodar ESLint --fix nos arquivos alterados
+        id: eslint_fix
+        if: steps.changed_files.outputs.has_ts_files == 'true'
+        run: |
+          FILES="${{ steps.changed_files.outputs.files }}"
+          echo "ESLint --fix em: $FILES"
+          NODE_OPTIONS="--max-old-space-size=4096" node node_modules/eslint/bin/eslint.js --fix $FILES 2>&1 || true
+
+      - name: Verificar se há correções a commitar
+        id: check_changes
+        if: steps.changed_files.outputs.has_ts_files == 'true'
+        run: |
+          if git diff --quiet; then
+            echo "has_fixes=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Nenhuma correção — codebase já estava limpo."
+          else
+            echo "has_fixes=true" >> "$GITHUB_OUTPUT"
+            git diff --name-only
+            git diff --stat
+          fi
+
+      - name: Verificar compilação TypeScript pós-fix
+        id: tsc_check
+        if: steps.check_changes.outputs.has_fixes == 'true'
+        run: |
+          if npx tsc -p tsconfig.app.json --noEmit 2>&1; then
+            echo "tsc_ok=true" >> "$GITHUB_OUTPUT"
+            echo "✅ TypeScript compilou sem erros."
+          else
+            echo "tsc_ok=false" >> "$GITHUB_OUTPUT"
+            echo "❌ TypeScript falhou após fix — correções serão descartadas."
+          fi
+
+      - name: Commitar correções ESLint
+        if: |
+          steps.check_changes.outputs.has_fixes == 'true' &&
+          steps.tsc_check.outputs.tsc_ok == 'true'
+        run: |
+          git config user.email "adm01@promobrindes.com.br"
+          git config user.name "adm01-debug"
+          git add -A
+
+          FILES_FIXED=$(git diff --cached --name-only | tr '\n' ', ' | sed 's/,$//')
+          TRIGGER_SHA="${{ github.sha }}"
+          TRIGGER_MSG=$(echo "${{ github.event.head_commit.message }}" | head -1 | cut -c1-80)
+
+          git commit -m "fix(autoheal): ESLint --fix automático [autoheal] [skip ci]
+
+          Disparado por: ${TRIGGER_SHA:0:7} — ${TRIGGER_MSG}
+          Arquivos: ${FILES_FIXED}
+          Regras: unused-imports/no-unused-imports, consistent-type-imports, prefer-const
+          TSC: ✅ passou após o fix"
+
+          MAX_RETRIES=3
+          for i in $(seq 1 $MAX_RETRIES); do
+            if git push; then
+              echo "✅ Push OK (tentativa $i)."; break
+            fi
+            if [ $i -lt $MAX_RETRIES ]; then
+              echo "⚠️ Push falhou (tentativa $i) — rebase e retry..."
+              git pull --rebase origin main
+            else
+              echo "❌ Push falhou após $MAX_RETRIES tentativas."; exit 1
+            fi
+          done
+
+      - name: Criar issue (TSC falhou após fix)
+        if: |
+          steps.check_changes.outputs.has_fixes == 'true' &&
+          steps.tsc_check.outputs.tsc_ok == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ github.sha }}';
+            const msg = `${{ github.event.head_commit.message }}`.split('\n')[0].slice(0, 200);
+            const runUrl = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Autoheal: fix ESLint quebrou TSC — ${sha.slice(0,7)}`,
+              body: [
+                '## 🚨 Autoheal: fix ESLint quebrou TypeScript',
+                '',
+                `**Commit:** [\`${sha.slice(0,7)}\`](https://github.com/${{ github.repository }}/commit/${sha})`,
+                `**Mensagem:** ${msg}`,
+                `**Workflow:** [Ver logs](${runUrl})`,
+                '',
+                '### O que aconteceu',
+                '1. Autoheal detectou violações ESLint nos arquivos alterados',
+                '2. Aplicou `eslint --fix` → TSC **FALHOU** (fix causou erro de tipo)',
+                '3. Correções descartadas — produção não foi quebrada',
+                '',
+                '### Como corrigir manualmente',
+                '```bash',
+                'git checkout main && git pull',
+                'npx eslint --fix <arquivos-alterados>',
+                'npm run typecheck',
+                'git commit -m "fix: corrige ESLint pós-Lovable" && git push',
+                '```',
+                '',
+                '> **Dica:** `rules-of-hooks` NÃO é auto-fixável.',
+                '> Mover hooks para ANTES de early returns geralmente resolve.',
+              ].join('\n'),
+              labels: ['bug', 'Lovable', 'autoheal'],
+            });
+
+      - name: Step Summary
+        if: always()
+        run: |
+          {
+            echo "## 🤖 Lovable Autoheal"
+            echo ""
+            echo "**Commit:** `${{ github.sha }}`"
+            TS="${{ steps.changed_files.outputs.has_ts_files }}"
+            FIX="${{ steps.check_changes.outputs.has_fixes }}"
+            TSC="${{ steps.tsc_check.outputs.tsc_ok }}"
+            if   [ "$TS"  = "false" ]; then echo "✅ Nenhum arquivo TypeScript alterado."
+            elif [ "$FIX" = "false" ]; then echo "✅ ESLint limpo — sem correções."
+            elif [ "$TSC" = "true"  ]; then echo "✅ **Correções aplicadas e commitadas.**"
+            elif [ "$TSC" = "false" ]; then echo "❌ **Fix quebrou TSC — issue criada.**"
+            else echo "⏭️ Sem ação necessária."; fi
+            echo ""
+            echo "---"
+            echo "*Lovable Autoheal · .github/workflows/lovable-autoheal.yml*"
+          } >> "$GITHUB_STEP_SUMMARY"

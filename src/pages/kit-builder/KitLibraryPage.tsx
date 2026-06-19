@@ -131,6 +131,7 @@ export default function KitLibraryPage() {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['custom-kits'] }),
+    onError: () => toast.error('Erro ao atualizar favorito'),
   });
 
   const duplicateMutation = useMutation({

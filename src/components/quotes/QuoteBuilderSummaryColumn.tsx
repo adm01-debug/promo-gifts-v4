@@ -2,7 +2,7 @@
  * QuoteBuilderSummaryColumn — Coluna 3: Resumo com cards de itens, desconto e CTAs
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -43,6 +43,8 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { toast } from 'sonner';
+
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 interface Props {
   items: QuoteItem[];
@@ -116,13 +118,11 @@ export function QuoteBuilderSummaryColumn({
 
   // ── Base apresentada (subtotal + markup) — referência para converter desconto %/R$ ──
   const presentedSubtotal = useMemo(() => {
-    const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
     return round2((realSubtotal || 0) * (1 + (negotiationMarkup || 0) / 100));
   }, [realSubtotal, negotiationMarkup]);
 
   const handleDiscountTypeChange = (next: 'percent' | 'amount') => {
     if (next === discountType) return;
-    const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
     if (presentedSubtotal > 0 && discountValue > 0) {
       if (next === 'amount') {
         // % → R$
@@ -162,10 +162,11 @@ export function QuoteBuilderSummaryColumn({
     [items, showOnlyStale, staleIndexes],
   );
 
-  // Auto-desliga o filtro se a contagem zerar (após confirmar todos)
-  if (showOnlyStale && staleCount === 0) {
-    setTimeout(() => setShowOnlyStale(false), 0);
-  }
+  // Auto-desliga o filtro se a contagem zerar (após confirmar todos).
+  // Em um effect (não no corpo do render) para evitar setState durante a renderização.
+  useEffect(() => {
+    if (showOnlyStale && staleCount === 0) setShowOnlyStale(false);
+  }, [showOnlyStale, staleCount]);
 
   const handleRequestApproval = () => {
     onSave('pending_approval', sellerNotes);
@@ -278,7 +279,9 @@ export function QuoteBuilderSummaryColumn({
                                 alt={item.product_name}
                                 className="h-12 w-12 rounded-lg bg-muted object-cover"
                                 loading="lazy"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                                }}
                               />
                             ) : (
                               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
@@ -430,7 +433,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Discount */}
           {items.length > 0 && (
             <div className="space-y-2.5 px-4 pt-3">
-              {maxDiscountPercent !== null && (
+              {maxDiscountPercent != null && (
                 <div
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-colors',

@@ -37,23 +37,24 @@ export const quoteService = {
   },
 
   async fetchQuote(quoteId: string): Promise<Quote | null> {
-    const { data: quoteData, error: qErr } = await supabase
-      // rls-allow: lookup por id; RLS (can_access_quote) valida ownership
-      .from('quotes')
-      .select('*')
-      .eq('id', quoteId)
-      .single();
+    // Both queries depend only on quoteId — run in parallel.
+    const [{ data: quoteData, error: qErr }, { data: itemsData, error: iErr }] = await Promise.all([
+      supabase
+        // rls-allow: lookup por id; RLS (can_access_quote) valida ownership
+        .from('quotes')
+        .select('*')
+        .eq('id', quoteId)
+        .single(),
+      supabase
+        .from('quote_items')
+        .select('*')
+        .eq('quote_id', quoteId)
+        .order('sort_order', { ascending: true }),
+    ]);
 
     if (qErr) throw qErr;
-    if (!quoteData) return null;
-
-    const { data: itemsData, error: iErr } = await supabase
-      .from('quote_items')
-      .select('*')
-      .eq('quote_id', quoteId)
-      .order('sort_order', { ascending: true });
-
     if (iErr) throw iErr;
+    if (!quoteData) return null;
 
     const itemIds = (itemsData || []).map((i) => i.id);
     let allPersonalizations: Array<Record<string, unknown>> = [];
@@ -84,20 +85,37 @@ export const quoteService = {
   ): Promise<Quote> {
     const totals = calculateQuoteTotals(quote, items);
     const insertPayload = buildInsertPayload(quote, userId, orgId, totals);
+    const itemsPayload = buildItemsInsertPayload(items, '').map((item, index) => ({
+      ...item,
+      product_name: item.product_name?.trim().slice(0, 255),
+      unit_price: round2(item.unit_price),
+      notes: item.notes?.trim().slice(0, 1000),
+      personalizations: buildPersonalizationsInsertPayload(
+        items[index]?.personalizations ?? [],
+        '',
+      ),
+    }));
 
-    const { data: inserted, error: insErr } = await supabase
-      // rls-allow: INSERT define seller_id no payload (buildInsertPayload com userId); RLS valida
-      .from('quotes')
-      .insert(insertPayload)
-      .select('*')
-      .single();
+    const { data: created, error } = await supabase.rpc(
+      'create_quote_transactional' as never,
+      {
+        _quote: insertPayload,
+        _items: itemsPayload,
+      } as never,
+    );
 
-    if (insErr) throw insErr;
-    if (!inserted) throw new Error('Falha ao inserir orçamento');
+    if (error) {
+      const message = sanitizeMessage(error, {
+        fallback: 'Não foi possível criar o orçamento. Tente novamente.',
+      });
+      throw new Error(message);
+    }
 
-    await this.insertItemsWithPersonalizations(items, inserted.id);
+    if (!created) {
+      throw new Error('Não foi possível criar o orçamento: nenhum dado retornado.');
+    }
 
-    return { ...inserted, items } as unknown as Quote;
+    return { ...(created as Quote), items } as Quote;
   },
 
   async updateQuote(quoteId: string, quote: Partial<Quote>, items: QuoteItem[]): Promise<Quote> {
@@ -109,8 +127,8 @@ export const quoteService = {
       unit_price: round2(item.unit_price),
       notes: item.notes?.trim().slice(0, 1000),
       personalizations: buildPersonalizationsInsertPayload(
-        items[index]?.personalizations || [],
-        quoteId,
+        items[index]?.personalizations ?? [],
+        items[index]?.id ?? '',
       ),
     }));
 

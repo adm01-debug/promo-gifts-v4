@@ -20,6 +20,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 // ── Correct interfaces (verified against DB information_schema.parameters) ────────────────
 
@@ -128,9 +129,7 @@ async function enrichCustomizationPrice(result: EnrichableResult): Promise<Enric
       },
     };
   } catch (e) {
-    logger.warn(
-      `[rpc-native] enrichCustomizationPrice failed (non-fatal): ${(e as Error).message}`,
-    );
+    logger.warn(`[rpc-native] enrichCustomizationPrice failed (non-fatal): ${toErrorMessage(e)}`);
     return result;
   }
 }
@@ -170,9 +169,7 @@ export async function getProductCustomizationOptions(
     );
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    logger.warn(
-      `[rpc-native] getProductCustomizationOptions(${productId}): ${(e as Error).message}`,
-    );
+    logger.warn(`[rpc-native] getProductCustomizationOptions(${productId}): ${toErrorMessage(e)}`);
     return [];
   }
 }
@@ -188,7 +185,7 @@ export async function getCategoryDescendants(categoryId: string): Promise<string
     });
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    logger.warn(`[rpc-native] getCategoryDescendants(${categoryId}): ${(e as Error).message}`);
+    logger.warn(`[rpc-native] getCategoryDescendants(${categoryId}): ${toErrorMessage(e)}`);
     return [];
   }
 }
@@ -231,15 +228,6 @@ export async function findFornecedorPriceTable(_params: { technique_id: string }
 
 // ── Dispatch table ────────────────────────────────────────────────────────────────────────
 type DispatchFn = (params: Record<string, unknown>) => Promise<unknown>;
-// FASE 2: NOT_IN_DB agora retorna valores seguros em vez de throw.
-// A função NOT_IN_DB foi substituída por retornos inline para cada RPC.
-const _NOT_IN_DB =
-  (name: string): DispatchFn =>
-  async () => {
-    throw new Error(
-      `rpc-native: '${name}' does not exist in doufsxqlfjyuvxuezpln. Create the DB function first.`,
-    );
-  };
 
 const RPC_DISPATCH: Record<string, DispatchFn> = {
   // ✓ Exists in DB — correct param names

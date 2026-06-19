@@ -15,7 +15,7 @@
  * Importante: é apenas leitura, não dispara invocações novas — recebe os
  * `secrets` já carregados pelo hook `useSecretsManager` do componente pai.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Database, Clock, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import { resolveSource } from './CredentialsSourceFilterContext';
 import type { SecretStatus } from '@/hooks/admin';
+import { cn } from '@/lib/utils';
 
 interface Props {
   secrets: SecretStatus[];
@@ -72,6 +73,8 @@ function formatAbsolute(iso: string | null): string | null {
   });
 }
 
+const TOOLTIP_LIMIT = 12;
+
 export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, className }: Props) {
   const [refreshing, setRefreshing] = useState(false);
 
@@ -94,29 +97,25 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
 
   // Agrupa secrets por origem resolvida — usado tanto para os contadores
   // quanto para listar os nomes contribuintes em cada tooltip.
-  const grouped = secrets.reduce(
-    (acc, s) => {
-      const src = resolveSource(s);
-      acc[src].push(s);
-      return acc;
-    },
-    { db: [] as SecretStatus[], env: [] as SecretStatus[], none: [] as SecretStatus[] },
-  );
-
-  // Ordena alfabeticamente para consistência de leitura nos tooltips.
-  (Object.keys(grouped) as Array<'db' | 'env' | 'none'>).forEach((k) => {
-    grouped[k].sort((a, b) => a.name.localeCompare(b.name));
-  });
-
-  const counts = {
-    db: grouped.db.length,
-    env: grouped.env.length,
-    none: grouped.none.length,
-  };
+  const { grouped, counts } = useMemo(() => {
+    const g = secrets.reduce(
+      (acc, s) => {
+        const src = resolveSource(s);
+        acc[src].push(s);
+        return acc;
+      },
+      { db: [] as SecretStatus[], env: [] as SecretStatus[], none: [] as SecretStatus[] },
+    );
+    // Ordena alfabeticamente para consistência de leitura nos tooltips.
+    (Object.keys(g) as Array<'db' | 'env' | 'none'>).forEach((k) => {
+      g[k].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return { grouped: g, counts: { db: g.db.length, env: g.env.length, none: g.none.length } };
+  }, [secrets]);
 
   // Limita a lista exibida no tooltip para não estourar a viewport
   // quando houver muitos secrets — o restante aparece como "+ N mais".
-  const TOOLTIP_LIMIT = 12;
+
   function renderNameList(items: SecretStatus[], tone: 'success' | 'warning' | 'destructive') {
     if (items.length === 0) {
       return <p className="italic text-muted-foreground">Nenhum secret nesta categoria.</p>;
@@ -338,7 +337,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 className="shrink-0 self-start"
               >
                 <RefreshCw
-                  className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
+                  className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')}
                   aria-hidden="true"
                 />
                 <span className="ml-1.5 text-xs">{refreshing ? 'Atualizando…' : 'Atualizar'}</span>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useVideoVariantLinks } from '@/hooks/products';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,11 +39,15 @@ export default function AdminVideoVariantsPage() {
 
   const { data: links, isLoading, createLink, deleteLink } = useVideoVariantLinks();
 
-  const filteredLinks = (links || []).filter(
-    (l) =>
-      !productFilter ||
-      l.product_id.toLowerCase().includes(productFilter.toLowerCase()) ||
-      (l.variant_name || '').toLowerCase().includes(productFilter.toLowerCase()),
+  const filteredLinks = useMemo(
+    () =>
+      (links || []).filter(
+        (l) =>
+          !productFilter ||
+          l.product_id.toLowerCase().includes(productFilter.toLowerCase()) ||
+          (l.variant_name || '').toLowerCase().includes(productFilter.toLowerCase()),
+      ),
+    [links, productFilter],
   );
 
   const handleCreate = () => {

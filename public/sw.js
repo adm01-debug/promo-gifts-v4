@@ -17,7 +17,7 @@
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;

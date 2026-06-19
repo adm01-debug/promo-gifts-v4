@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface ClientDetailHeaderProps {
   client: CrmCompany;
@@ -24,7 +25,15 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
       <div className="flex items-start gap-4">
         <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
           {client.logo_url ? (
-            <img src={client.logo_url} alt={name} className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+            <OptimizedImage
+              src={client.logo_url}
+              alt={name}
+              className="object-cover"
+              containerClassName="h-full w-full"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
           ) : (
             <Building2 className="h-7 w-7 text-primary" />
           )}

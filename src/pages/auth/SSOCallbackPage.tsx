@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import type { Session } from '@supabase/supabase-js';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { useAuth } from '@/contexts/AuthContext';
 import { authDebugUrl } from '@/lib/auth/auth-debug';
 import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
@@ -128,8 +130,7 @@ export default function SSOCallbackPage() {
     let timeoutId: number | null = null;
     let confirmedHoldId: number | null = null;
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-    const goHome = async (session?: import('@supabase/supabase-js').Session | null) => {
+    const goHome = async (session?: Session | null) => {
       if (cancelled) return;
       if (session) tracer.captureSession(session);
       // Status: sessão capturada, atualizando contexto local
@@ -141,7 +142,7 @@ export default function SSOCallbackPage() {
         tracer.stepError('redirect-home', e);
         logger.warn('[sso-callback] refreshSession failed', {
           flowId: tracer.flowId,
-          message: e instanceof Error ? e.message : String(e),
+          message: toErrorMessage(e),
         });
       }
       if (cancelled) return;
@@ -177,7 +178,7 @@ export default function SSOCallbackPage() {
         // (2) Fluxo PKCE — troca o code por sessão
         if (code) {
           tracer.setFlow('pkce');
-          tracer.step('pkce-exchange-start', { codePrefix: code.slice(0, 6) + '…' });
+          tracer.step('pkce-exchange-start', { codePrefix: `${code.slice(0, 6)}…` });
           const { data: exData, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
@@ -362,7 +363,7 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
         return (
           <li
             key={s.key}
-            className={'flex flex-1 flex-col items-center gap-2 ' + (done ? 'text-white' : '')}
+            className={`flex flex-1 flex-col items-center gap-2 ${done ? 'text-white' : ''}`}
           >
             <span
               className={

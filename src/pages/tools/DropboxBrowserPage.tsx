@@ -23,8 +23,7 @@ export default function DropboxBrowserPage() {
     checkConnection().then((connected) => {
       if (connected) listFiles('');
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkConnection, listFiles]);
 
   const formatSize = (bytes?: number) => {
     if (!bytes) return '';
@@ -88,7 +87,7 @@ export default function DropboxBrowserPage() {
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
-                  onClick={() => listFiles('/' + pathParts.slice(0, i + 1).join('/'))}
+                  onClick={() => listFiles(`/${pathParts.slice(0, i + 1).join('/')}`)}
                 >
                   {part}
                 </Button>
@@ -111,7 +110,7 @@ export default function DropboxBrowserPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>

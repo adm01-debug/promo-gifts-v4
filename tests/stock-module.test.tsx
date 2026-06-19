@@ -31,20 +31,22 @@ describe('calculateStockStatus', () => {
     expect(calculateStockStatus(0, 10, undefined, 50)).toBe('incoming');
   });
 
-  it('returns critical when current <= 25% of min', () => {
-    expect(calculateStockStatus(2, 10)).toBe('critical');
-    expect(calculateStockStatus(1, 10)).toBe('critical');
+  // NOTA: a régua baseada em `min` (low_stock/critical) foi descontinuada.
+  // calculateStockStatus agora retorna `in_stock` para qualquer current > 0
+  // sem trigger de overstocked. Classificação preditiva vive em rupture-risk.
+  it('does NOT derive critical from min (deprecated)', () => {
+    expect(calculateStockStatus(2, 10)).toBe('in_stock');
+    expect(calculateStockStatus(1, 10)).toBe('in_stock');
   });
 
-  it('returns critical at exactly 25% boundary', () => {
-    // 25% of 100 = 25
-    expect(calculateStockStatus(25, 100)).toBe('critical');
+  it('does NOT derive critical at 25% boundary (deprecated)', () => {
+    expect(calculateStockStatus(25, 100)).toBe('in_stock');
   });
 
-  it('returns low_stock when between 25% and 100% of min', () => {
-    expect(calculateStockStatus(5, 10)).toBe('low_stock');
-    expect(calculateStockStatus(10, 10)).toBe('low_stock');
-    expect(calculateStockStatus(26, 100)).toBe('low_stock');
+  it('does NOT derive low_stock from min (deprecated)', () => {
+    expect(calculateStockStatus(5, 10)).toBe('in_stock');
+    expect(calculateStockStatus(10, 10)).toBe('in_stock');
+    expect(calculateStockStatus(26, 100)).toBe('in_stock');
   });
 
   it('returns in_stock when above min', () => {
@@ -83,9 +85,9 @@ describe('calculateStockStatus', () => {
   });
 
   it('handles fractional numbers', () => {
-    expect(calculateStockStatus(0.5, 10)).toBe('critical');
-    expect(calculateStockStatus(2.5, 10)).toBe('critical');
-    expect(calculateStockStatus(5.5, 10)).toBe('low_stock');
+    expect(calculateStockStatus(0.5, 10)).toBe('in_stock');
+    expect(calculateStockStatus(2.5, 10)).toBe('in_stock');
+    expect(calculateStockStatus(5.5, 10)).toBe('in_stock');
   });
 });
 
@@ -263,11 +265,11 @@ describe('aggregateVariantsToProduct', () => {
       makeVariant({ id: 'v6', status: 'incoming' }),
     ];
     const result = aggregateVariantsToProduct(variants);
-    expect(result.variantsInStock).toBe(1);
+    // incoming + overstocked are counted as healthy (variantsInStock) since BUG-C fix
+    expect(result.variantsInStock).toBe(3);
     expect(result.variantsLowStock).toBe(1);
     expect(result.variantsCritical).toBe(1);
     expect(result.variantsOutOfStock).toBe(1);
-    // overstocked and incoming are not counted in the switch
   });
 
   it('handles empty variants array', () => {

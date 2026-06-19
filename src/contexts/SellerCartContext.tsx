@@ -3,14 +3,7 @@
  * Expõe dados e operações do carrinho em toda a aplicação
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import {
   useSellerCarts,
   type SellerCart,
@@ -36,7 +29,7 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => void;
-  addToActiveCart: (item: AddToCartInput, cartId?: string) => void;
+  addToActiveCart: (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => void;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;
@@ -76,13 +69,22 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     restoreItems: restoreItemsMutation,
   } = useSellerCarts();
 
-  const [activeCartId, setActiveCartId] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(ACTIVE_CART_STORAGE_KEY);
-    } catch {
-      return null;
+  const [activeCartId, setActiveCartId] = useState<string | null>(null);
+
+  // Hidrata o carrinho ativo persistido com chave namespeada por usuario — evita que,
+  // numa estacao compartilhada, um vendedor herde o carrinho ativo de outro. Enquanto
+  // nao hidrata, resolvedActiveCartId ja cai em carts[0] (sem UX quebrada).
+  useEffect(() => {
+    if (!user?.id) {
+      setActiveCartId(null);
+      return;
     }
-  });
+    try {
+      setActiveCartId(localStorage.getItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`));
+    } catch {
+      setActiveCartId(null);
+    }
+  }, [user?.id]);
 
   const resolvedActiveCartId =
     activeCartId && carts.find((c) => c.id === activeCartId)
@@ -93,18 +95,16 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const activeCart = carts.find((c) => c.id === resolvedActiveCartId) || null;
 
+  // Persiste apenas selecoes explicitas (nao-nulas) sob a chave do usuario. Nao
+  // persistir null impede o clobber do valor recem-hidratado no primeiro render.
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !activeCartId) return;
     try {
-      if (resolvedActiveCartId) {
-        localStorage.setItem(ACTIVE_CART_STORAGE_KEY, resolvedActiveCartId);
-      } else {
-        localStorage.removeItem(ACTIVE_CART_STORAGE_KEY);
-      }
+      localStorage.setItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`, activeCartId);
     } catch {
       // no-op: storage unavailable
     }
-  }, [resolvedActiveCartId, user?.id]);
+  }, [activeCartId, user?.id]);
 
   const createCart = useCallback(
     async (input: CreateCartInput) => {
@@ -133,7 +133,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   const addToActiveCart = useCallback(
-    (item: AddToCartInput, cartId?: string) => {
+    (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => {
       const targetId = cartId || resolvedActiveCartId;
 
       if (!targetId) {
@@ -149,9 +149,13 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         { cartId: targetId, item },
         {
           onSuccess: () => {
-            toast.success(`${item.product_name} adicionado ao carrinho`, {
-              description: targetCart?.company_name,
-            });
+            // silent: usado em lote (template/bulk) onde o chamador exibe um
+            // único toast agregado — evita N toasts empilhados.
+            if (!options?.silent) {
+              toast.success(`${item.product_name} adicionado ao carrinho`, {
+                description: targetCart?.company_name,
+              });
+            }
             // Update active cart if we explicitly added to a specific one
             if (cartId && cartId !== resolvedActiveCartId) {
               setActiveCartId(cartId);
@@ -231,7 +235,6 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       try {
         await clearCartMutation(cartId);
         setActiveCartId(cartId);
-        toast.success('Carrinho limpo');
       } catch {
         toast.error('Erro ao limpar carrinho');
       }

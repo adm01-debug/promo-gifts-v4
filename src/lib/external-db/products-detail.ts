@@ -3,6 +3,7 @@
  */
 import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutableCache';
 import {
   type PromobrindProduct,
@@ -14,6 +15,7 @@ import {
   PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
+import { TECHNICAL_IMAGE_TYPES } from '@/utils/image-utils';
 
 async function fetchProductWithRetry(
   productId: string,
@@ -53,7 +55,7 @@ async function fetchProductWithRetry(
 }
 
 function isTransientError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = toErrorMessage(err);
   return /(timeout|statement timeout|canceling statement|schema cache|retrying|ECONNRESET|fetch failed)/i.test(
     msg,
   );
@@ -257,6 +259,7 @@ export async function fetchPromobrindProductById(
     allows_personalization: boolean | null;
     material: string | null;
     primary_image_url: string | null;
+    primary_image_fallback_url?: string | null;
     height_mm: number | null;
     width_mm: number | null;
     length_mm: number | null;
@@ -307,16 +310,12 @@ export async function fetchPromobrindProductById(
     }
   }
   if (imagesAll.length > 0) {
-    // Tipos técnicos que NÃO devem aparecer na galeria do produto.
-    // Alinhado com products.ts (TECHNICAL_IMAGE_TYPES) e ADR-001.
-    const TECHNICAL_IMAGE_TYPES_PDP = new Set([
-      'box', 'pouch', 'location', 'area', 'component',
-    ]);
+    // Tipos técnicos que NÃO devem aparecer na galeria do produto. (ADR-001)
     const colorImages = imagesAll
-      .filter((img) => img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
+      .filter((img) => img.supplier_code && !TECHNICAL_IMAGE_TYPES.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);
     const generalImages = imagesAll
-      .filter((img) => !img.supplier_code && !TECHNICAL_IMAGE_TYPES_PDP.has(img.image_type))
+      .filter((img) => !img.supplier_code && !TECHNICAL_IMAGE_TYPES.has(img.image_type))
       .sort((a, b) => a.display_order - b.display_order);
     const mainImages = [...colorImages, ...generalImages];
     const primaryImage = mainImages.find((img) => img.is_primary) || mainImages[0];

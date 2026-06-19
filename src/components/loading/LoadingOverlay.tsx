@@ -2,6 +2,18 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { LiveRegion } from '@/components/a11y';
 
+const LOADING_VARIANT_CLASSES = {
+  fullscreen: 'fixed inset-0 z-[100]',
+  container: 'absolute inset-0 z-50',
+  inline: 'flex items-center justify-center p-4',
+} as const;
+
+const SPINNER_SIZE_CLASSES = {
+  sm: 'h-4 w-4',
+  md: 'h-6 w-6',
+  lg: 'h-8 w-8',
+} as const;
+
 interface LoadingOverlayProps {
   isLoading: boolean;
   message?: string;
@@ -19,18 +31,12 @@ export function LoadingOverlay({
 }: LoadingOverlayProps) {
   if (!isLoading) return null;
 
-  const variants = {
-    fullscreen: 'fixed inset-0 z-[100]',
-    container: 'absolute inset-0 z-50',
-    inline: 'flex items-center justify-center p-4',
-  };
-
   return (
     <>
       <div
         className={cn(
           'animate-fade-in',
-          variants[variant],
+          LOADING_VARIANT_CLASSES[variant],
           variant !== 'inline' && 'flex items-center justify-center',
           variant !== 'inline' && blur && 'bg-background/60 backdrop-blur-sm',
           className,
@@ -68,15 +74,9 @@ interface SpinnerProps {
 }
 
 export function Spinner({ size = 'md', className }: SpinnerProps) {
-  const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-6 w-6',
-    lg: 'h-8 w-8',
-  };
-
   return (
     <Loader2
-      className={cn('animate-spin text-primary', sizeClasses[size], className)}
+      className={cn('animate-spin text-primary', SPINNER_SIZE_CLASSES[size], className)}
       aria-hidden="true"
     />
   );

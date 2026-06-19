@@ -36,6 +36,8 @@ import { RlsIntegrationTestsDialog } from '@/components/admin/RlsIntegrationTest
 import { OwnershipRepairDialog } from '@/components/admin/OwnershipRepairDialog';
 
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
+import { cn } from '@/lib/utils';
 interface ReportDetail {
   table: string;
   owner_column: string;
@@ -104,7 +106,7 @@ export default function OwnershipAuditAdminPage() {
       await qc.invalidateQueries({ queryKey: ['ownership-audit-reports'] });
     } catch (e) {
       logger.error('Ownership audit run failed', e);
-      toast.error(`Falha ao executar auditoria: ${(e as Error).message}`);
+      toast.error(`Falha ao executar auditoria: ${toErrorMessage(e)}`);
     } finally {
       setRunning(false);
     }
@@ -142,7 +144,7 @@ export default function OwnershipAuditAdminPage() {
       toast.success(`Matriz RLS exportada (${format.toUpperCase()}).`);
     } catch (e) {
       logger.error('RLS matrix export failed', e);
-      toast.error(`Falha ao exportar matriz: ${(e as Error).message}`);
+      toast.error(`Falha ao exportar matriz: ${toErrorMessage(e)}`);
     }
   }
 
@@ -181,7 +183,7 @@ export default function OwnershipAuditAdminPage() {
               <FileText className="h-4 w-4" /> Matriz PDF
             </Button>
             <Button onClick={runNow} disabled={running} className="gap-2">
-              <RefreshCw className={`h-4 w-4 ${running ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('h-4 w-4', running && 'animate-spin')} />
               Rodar agora
             </Button>
           </div>

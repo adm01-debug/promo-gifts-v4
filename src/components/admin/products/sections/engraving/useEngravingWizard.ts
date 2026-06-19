@@ -346,7 +346,7 @@ function enrichArea(
     ...area,
     technique_name: tech?.nome || '—',
     technique_code: tech?.codigo_curto || '—',
-    technique_group: tech?.grupo_tecnica || '',
+    technique_group: tech?.grupo_tecnica ?? '',
     max_colors:
       tech !== null && tech !== undefined && tech.max_cores !== null && tech.max_cores !== undefined
         ? typeof tech.max_cores === 'string'

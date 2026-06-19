@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { resolveRedirectTarget } from '@/lib/auth/resolve-redirect-target';
@@ -37,6 +37,7 @@ import { AppLogo } from '@/components/layout/AppLogo';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 
 type LoginForm = LoginFormData;
 
@@ -377,6 +378,7 @@ export default function Auth() {
             </div>
           ),
         });
+        return;
       }
 
       if (profileData && profileData.is_active === false) {
@@ -517,7 +519,10 @@ export default function Auth() {
           {/* Auth Card */}
           <Card
             aria-labelledby="auth-title"
-            className={`relative overflow-hidden rounded-[2rem] border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-500 ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
+            className={cn(
+              'relative overflow-hidden rounded-[2rem] border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-500',
+              ipBlocked && 'pointer-events-none opacity-50',
+            )}
           >
             {loginStatus === 'success' ? (
               <div
@@ -785,7 +790,6 @@ export default function Auth() {
                         'Entrar na Plataforma'
                       )}
                     </button>
-
                   </form>
                 </CardContent>
               </div>

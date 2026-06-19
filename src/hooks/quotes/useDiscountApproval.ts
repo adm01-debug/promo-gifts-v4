@@ -128,17 +128,12 @@ export function useDiscountApproval() {
           });
         }
 
-        // Notify all admins
-        const { data: adminRoles } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'admin');
+        // Notify all admins — both queries are independent, run in parallel
+        const [{ data: adminRoles }, { data: profile }] = await Promise.all([
+          supabase.from('user_roles').select('user_id').eq('role', 'admin'),
+          supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
+        ]);
         if (adminRoles && adminRoles.length > 0) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('user_id', user.id)
-            .maybeSingle();
           const sellerName = profile?.full_name || 'Vendedor';
           const msg =
             markup > 0
@@ -172,6 +167,10 @@ export function useDiscountApproval() {
     async (requestId: string, approved: boolean, adminNotes?: string): Promise<boolean> => {
       if (!user) return false;
       try {
+        const validUntilDate = approved
+          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
         const { data: request, error: updateError } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
@@ -180,6 +179,7 @@ export function useDiscountApproval() {
             admin_id: user.id,
             admin_notes: adminNotes || null,
             responded_at: new Date().toISOString(),
+            valid_until: validUntilDate,
           })
           .eq('id', requestId)
           .select()

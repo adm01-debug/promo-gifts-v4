@@ -160,9 +160,9 @@ export function VideoShareWhatsAppDialog({
     }
   }, [open]);
 
-  const phoneFromCrm = selection?.contactPhone?.trim() || '';
+  const phoneFromCrm = selection?.contactPhone?.trim() ?? '';
   const phoneToSend = tab === 'crm' ? phoneFromCrm : manualPhone.trim();
-  const canSend = message.trim().length > 0;
+  const canSend = message.trim() !== '';
 
   const handleSend = () => {
     if (!canSend) {

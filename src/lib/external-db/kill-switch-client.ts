@@ -17,6 +17,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 const MEM_TTL_MS = 60_000;
 const STORAGE_TTL_MS = 300_000;
@@ -72,7 +73,10 @@ const memoryCache = new Map<string, SwitchCheck>();
  * com fallback para Date.now() + Math.random() (browsers antigos / Node SSR).
  */
 function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof (crypto as { randomUUID?: () => string }).randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof (crypto as { randomUUID?: () => string }).randomUUID === 'function'
+  ) {
     try {
       return (crypto as { randomUUID: () => string }).randomUUID();
     } catch {
@@ -103,7 +107,7 @@ function generateUUID(): string {
 function getBucketKey(): string {
   if (typeof window === 'undefined' || !window.localStorage) {
     // SSR ou ambiente sem localStorage: key única por chamada para evitar bias.
-    return 'ssr-' + generateUUID();
+    return `ssr-${generateUUID()}`;
   }
   try {
     let key = window.localStorage.getItem(BUCKET_KEY_STORAGE);
@@ -113,7 +117,7 @@ function getBucketKey(): string {
     }
     return key;
   } catch {
-    return 'fallback-' + generateUUID();
+    return `fallback-${generateUUID()}`;
   }
 }
 
@@ -268,9 +272,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
             shouldApply = Boolean(rpcResult);
           }
         } catch (e) {
-          logger.warn(
-            `[kill-switch-client] RPC rollout erro — assume 100%: ${(e as Error).message}`,
-          );
+          logger.warn(`[kill-switch-client] RPC rollout erro — assume 100%: ${toErrorMessage(e)}`);
           shouldApply = true;
         }
       }
@@ -288,7 +290,7 @@ export async function getKillSwitchState(switchName: string): Promise<KillSwitch
     return resolveEffectiveState(check, 'network');
   } catch (e) {
     logger.warn(
-      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${(e as Error).message}`,
+      `[kill-switch-client] erro inesperado para "${switchName}" — fail-open: ${toErrorMessage(e)}`,
     );
     return { enabled: true, source: 'fail-open' };
   }

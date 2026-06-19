@@ -60,7 +60,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
   // BUG-A FIX: removed 3 FK pre-validation queries (product, technique, client).
   // These fired on every auto-save (every 2s during active editing), generating
   // ~90 unnecessary SELECT queries per 5 minutes of work.
-  // The upsert's existing 23503/409 fallback already handles FK violations gracefully.
+  // The upsert's 23503 fallback handles FK violations gracefully.
   const saveToBackend = useCallback(
     async (data: MockupDraftData): Promise<boolean> => {
       if (!user) return false;
@@ -102,16 +102,12 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
           .upsert(payload, { onConflict: 'user_id,draft_key' });
 
         if (upsertError) {
-          if (upsertError.code === '23503' || upsertError.code === '409') {
-            // BUG-H FIX: log warning so devs can diagnose FK mismatches in devtools.
-            console.warn(
-              '[useMockupDraft] FK violation on draft save — falling back to null IDs.',
-              {
-                productId: safeProductId,
-                techniqueId: safeTechniqueId,
-                clientId: safeClientId,
-              },
-            );
+          if (upsertError.code === '23503') {
+            logger.warn('[useMockupDraft] FK violation on draft save — falling back to null IDs.', {
+              productId: safeProductId,
+              techniqueId: safeTechniqueId,
+              clientId: safeClientId,
+            });
             const { error: updateError } = await supabase
               .from('mockup_drafts')
               .update({
@@ -232,7 +228,23 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
       if (localData && backendData) {
         const localDate = new Date(localData.updatedAt || 0);
         const backendDate = new Date(backendData.updatedAt || 0);
-        return backendDate > localDate ? backendData : localData;
+        const chosen = backendDate > localDate ? backendData : localData;
+        // AUDIT 2026-06-17 — data: URL logos are intentionally NOT persisted to the
+        // backend draft (saveToBackend only keeps http logos to avoid multi-MB base64
+        // rows), but localStorage keeps the full preview. When the backend copy wins
+        // the recency check it would otherwise come back with the logo stripped, so a
+        // freshly-uploaded logo silently vanished on reload. Re-hydrate any missing
+        // logo previews from the local copy (matched by area id, falling back to index).
+        if (chosen === backendData) {
+          chosen.personalizationAreas = chosen.personalizationAreas.map((a, i) => {
+            if (a.logoPreview) return a;
+            const localMatch =
+              localData.personalizationAreas.find((la) => la.id === a.id) ??
+              localData.personalizationAreas[i];
+            return localMatch?.logoPreview ? { ...a, logoPreview: localMatch.logoPreview } : a;
+          });
+        }
+        return chosen;
       }
 
       return backendData || localData;
@@ -245,6 +257,14 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
   }, [loadFromLocal, loadFromBackend]);
 
   const clearDraft = useCallback(async () => {
+    // BUG-1 FIX: cancel pending debounced save BEFORE clearing storage — otherwise
+    // a 2s timer started by the last saveDraft() call would re-create the draft
+    // row/localStorage entry immediately after we delete it (race condition).
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
     try {
       const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
       localStorage.removeItem(key);

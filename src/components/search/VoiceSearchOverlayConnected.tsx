@@ -6,7 +6,7 @@
  *   const LazyVoice = lazy(() => import("./VoiceSearchOverlayConnected"));
  *   {voiceOpen && <Suspense fallback={null}><LazyVoice isOpen onClose={...} onAction={...} /></Suspense>}
  */
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { useVoiceAgent, type VoiceAgentAction } from '@/hooks/intelligence';
 import { useVoiceHistory } from '@/hooks/voice/useVoiceHistory';
 import { VoiceSearchOverlay } from './VoiceSearchOverlay';

@@ -15,6 +15,8 @@ import { ShareContactSelector, type ShareContactSelection } from './ShareContact
 import { WhatsAppPreview } from './WhatsAppPreview';
 import { openWhatsAppShare } from './whatsapp';
 import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
 
 interface ShareKitDialogProps {
   open: boolean;
@@ -93,7 +95,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
       kitItems.forEach((item) => {
         if (item.imageUrl) images.push(item.imageUrl);
       });
-      return Array.from(new Set(images.filter(Boolean) as string[]));
+      return [...new Set(images.filter(Boolean) as string[])];
     } else if (activeItem) {
       const images = [activeItem.imageUrl].filter(Boolean) as string[];
       if (images.length === 0 && (product.images?.[0] || product.image_url)) {
@@ -181,10 +183,11 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
                   >
                     <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-muted">
                       {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
+                        <OptimizedImage
+                          src={getCdnUrl(item.imageUrl, 'thumbnail')}
                           alt={item.productName}
-                          className="h-full w-full object-cover"
+                          className="object-cover"
+                          containerClassName="h-full w-full"
                         />
                       ) : (
                         <Package className="h-6 w-6 text-muted-foreground/30" />

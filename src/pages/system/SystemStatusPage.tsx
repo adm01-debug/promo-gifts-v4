@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
 import { invokeCrmBatch, type CrmBatchResult } from '@/lib/crm-db';
 import {
   CheckCircle,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { MedallionPipelineCard } from '@/components/system/MedallionPipelineCard';
+import { cn } from '@/lib/utils';
 
 interface StatusItem {
   name: string;
@@ -87,7 +88,7 @@ export default function SystemStatusPage() {
 
     // 1. Instance & Session Info
     const supabaseUrl = SUPABASE_URL || '';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+    const supabaseKey = SUPABASE_PUBLISHABLE_KEY || '';
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -210,7 +211,7 @@ export default function SystemStatusPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `diagnostico-sistema-${new Date().getTime()}.json`;
+    a.download = `diagnostico-sistema-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setIsChecking(false);
@@ -299,9 +300,15 @@ export default function SystemStatusPage() {
     }
   };
 
-  const overallStatus = statuses.every((s) => s.status === 'ok') ? 'ok' : 'error';
-  const crmOkCount = crmTables.filter((t) => t.status === 'ok').length;
-  const crmErrorCount = crmTables.filter((t) => t.status === 'error').length;
+  const overallStatus = useMemo(
+    () => (statuses.every((s) => s.status === 'ok') ? 'ok' : 'error'),
+    [statuses],
+  );
+  const crmOkCount = useMemo(() => crmTables.filter((t) => t.status === 'ok').length, [crmTables]);
+  const crmErrorCount = useMemo(
+    () => crmTables.filter((t) => t.status === 'error').length,
+    [crmTables],
+  );
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1920px] animate-fade-in space-y-3 bg-background px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
@@ -350,7 +357,7 @@ export default function SystemStatusPage() {
                     variant="outline"
                     size="sm"
                   >
-                    <RefreshCw className={`mr-2 h-3 w-3 ${isChecking ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={cn('mr-2 h-3 w-3', isChecking && 'animate-spin')} />
                     Verificar
                   </Button>
                   <Button onClick={downloadReport} variant="secondary" size="sm">
@@ -582,9 +589,7 @@ export default function SystemStatusPage() {
                 variant="outline"
                 size="sm"
               >
-                <RefreshCw
-                  className={`mr-1.5 h-3.5 w-3.5 ${isCheckingCrm ? 'animate-spin' : ''}`}
-                />
+                <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', isCheckingCrm && 'animate-spin')} />
                 Re-verificar
               </Button>
             </div>

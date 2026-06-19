@@ -54,8 +54,6 @@ export function VideoUploadArea({
   addYoutubeVideo,
   isAddingYoutube,
 }: Props) {
-  const _activeType = VIDEO_TYPES.find((t) => t.value === uploadVideoType);
-
   return (
     <div
       className={cn(

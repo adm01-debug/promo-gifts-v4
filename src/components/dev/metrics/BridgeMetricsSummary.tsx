@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { latencyClass, formatBytes } from './MetricUtils';
+import { cn } from '@/lib/utils';
 
 interface BridgeMetricsSummaryProps {
   summary: {
@@ -30,7 +31,7 @@ export const BridgeMetricsSummary = memo(({ summary }: BridgeMetricsSummaryProps
       </div>
       <div>
         <div className="text-zinc-400">errors</div>
-        <div className={`font-semibold tabular-nums ${summary.errors > 0 ? 'text-red-400' : ''}`}>
+        <div className={cn('font-semibold tabular-nums', summary.errors > 0 && 'text-red-400')}>
           {summary.errors}
         </div>
       </div>

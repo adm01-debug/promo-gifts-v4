@@ -7,6 +7,7 @@
 // ESTOQUE POR VARIAÇÃO
 // ============================================
 
+/** Dados de estoque granular por variação (cor/tamanho/SKU). */
 export interface VariantStock {
   id: string;
   productId: string;
@@ -15,8 +16,6 @@ export interface VariantStock {
 
   /** Imagem da variação quando disponível (fallback para a do produto pai). */
   imageUrl?: string;
-
-
 
   // Identificação da variação
   colorId?: string;
@@ -44,6 +43,21 @@ export interface VariantStock {
   futureStock?: number;
   futureStockDate?: string;
   expectedReplenishDate?: string;
+  /**
+   * Reposições futuras granulares (quantidade × data) quando a fonte expõe
+   * múltiplas chegadas com datas distintas (ex.: next_quantity_1..3 /
+   * next_date_1..3 em `variant_supplier_sources`).
+   *
+   * Por quê: `futureStock` é um total único atrelado a `futureStockDate`
+   * (uma só data). Quando uma variação tem 3 chegadas em datas diferentes,
+   * colapsá-las numa única data faz o filtro de janela ("Estoque Futuro
+   * dentro de N dias") superestimar (conta chegadas distantes dentro de uma
+   * janela curta) ou subestimar (ignora uma chegada cuja 2ª/3ª data está na
+   * janela, mas a 1ª não). Com os segmentos, a janela soma APENAS as
+   * chegadas com data ≤ corte. Opcional — consumidores caem no comportamento
+   * de data única quando ausente.
+   */
+  futureSegments?: Array<{ quantity: number; date: string }>;
 
   // Status calculado
   status: StockStatus;
@@ -59,6 +73,7 @@ export interface VariantStock {
   notes?: string;
 }
 
+/** Status de disponibilidade de uma variação de estoque. */
 export type StockStatus =
   | 'in_stock' // Estoque OK
   | 'low_stock' // Abaixo do mínimo
@@ -71,11 +86,13 @@ export type StockStatus =
 // PRODUTO COM ESTOQUE DETALHADO
 // ============================================
 
+/** Resumo de estoque de um produto com todas as suas variações agregadas. */
 export interface ProductStockSummary {
   productId: string;
   productName: string;
   productSku: string;
   productImageUrl?: string;
+  categoryId?: string;
   categoryName?: string;
   supplierName?: string;
 
@@ -109,6 +126,7 @@ export interface ProductStockSummary {
   daysUntilFullStockout?: number;
 }
 
+/** Disponibilidade de estoque para uma cor específica do produto. */
 export interface ColorStockInfo {
   colorId?: string;
   colorName: string;
@@ -123,6 +141,7 @@ export interface ColorStockInfo {
 // ESTOQUE FUTURO / PREVISÃO
 // ============================================
 
+/** Previsão de chegada de estoque futuro (pedido de compra, produção ou transferência). */
 export interface FutureStockEntry {
   id: string;
   productId: string;
@@ -160,6 +179,7 @@ export interface FutureStockEntry {
 // MOVIMENTAÇÕES DE ESTOQUE
 // ============================================
 
+/** Registro de movimentação de estoque (entrada, saída, ajuste, transferência). */
 export interface StockMovement {
   id: string;
   productId: string;
@@ -187,6 +207,7 @@ export interface StockMovement {
   createdByName?: string;
 }
 
+/** Categoria de movimentação de estoque. */
 export type StockMovementType =
   | 'in' // Entrada
   | 'out' // Saída (venda)
@@ -200,6 +221,7 @@ export type StockMovementType =
 // ALERTAS DE ESTOQUE
 // ============================================
 
+/** Alerta de estoque gerado quando um produto atinge um limiar crítico. */
 export interface StockAlert {
   id: string;
   type: StockAlertType;
@@ -230,6 +252,7 @@ export interface StockAlert {
   dismissedBy?: string;
 }
 
+/** Categoria de alerta de estoque. */
 export type StockAlertType =
   | 'out_of_stock'
   | 'critical'
@@ -243,6 +266,7 @@ export type StockAlertType =
 // FILTROS E ORDENAÇÃO
 // ============================================
 
+/** Critérios de filtro, ordenação e agrupamento do dashboard de estoque. */
 export interface StockFilters {
   // Filtros de status
   status: StockStatus | 'all';
@@ -258,6 +282,9 @@ export interface StockFilters {
 
   // Quantidade mínima necessária (smart filter)
   minQuantityNeeded?: number;
+  // Quando true, soma o Estoque Futuro (dentro da janela) ao pool da régua
+  // "Preciso de X un". Padrão: false (estrito sobre disponível agora).
+  minQtyIncludesFutureStock?: boolean;
 
   // Estoque futuro — quando true, soma futureStock dentro da janela
   includeFutureStock?: boolean;
@@ -278,15 +305,15 @@ export interface StockFilters {
   showOnlyWithAlerts: boolean;
 }
 
+/** Critérios de ordenação disponíveis no dashboard de estoque. */
 export type StockSortOption =
   | 'name'
   | 'sku'
   | 'stock_quantity'
   | 'available_stock'
-  | 'days_remaining'
-  | 'color_name'
-  | 'last_updated';
+  | 'days_remaining';
 
+/** Opções de agrupamento de produtos no dashboard de estoque. */
 export type StockGroupOption =
   | 'none'
   | 'product'
@@ -296,6 +323,7 @@ export type StockGroupOption =
   | 'category'
   | 'supplier';
 
+/** Filtros padrão aplicados ao abrir o dashboard de estoque. */
 export const defaultStockFilters: StockFilters = {
   status: 'all',
   search: '',
@@ -312,6 +340,7 @@ export const defaultStockFilters: StockFilters = {
 // RESUMO GERAL DE ESTOQUE
 // ============================================
 
+/** Totais agregados exibidos nos cards do dashboard de estoque. */
 export interface StockDashboardSummary {
   // Contagens
   totalProducts: number;
@@ -350,22 +379,27 @@ export interface StockDashboardSummary {
 // HELPERS DE CÁLCULO
 // ============================================
 
+/** Classifica o status de estoque de uma variação com base em estoque atual, máximo e em trânsito. */
 export function calculateStockStatus(
   current: number,
-  min: number,
+  _min: number,
   max?: number,
   inTransit?: number,
 ): StockStatus {
+  // NOTA: a régua histórica baseada em `min` (low_stock/critical) foi
+  // descontinuada na UI por gerar confusão. O parâmetro é mantido por
+  // compatibilidade de contrato. O nível "Risco de Ruptura" agora é
+  // calculado exclusivamente pela camada preditiva (rupture-risk.ts),
+  // que usa média de baixa real × horizonte × alvo do vendedor.
   if (current <= 0) {
     if (inTransit && inTransit > 0) return 'incoming';
     return 'out_of_stock';
   }
-  if (current <= min * 0.25) return 'critical';
-  if (current <= min) return 'low_stock';
   if (max && current > max * 1.5) return 'overstocked';
   return 'in_stock';
 }
 
+/** Estima dias até o esgotamento com base no estoque atual e na média diária de vendas. */
 export function calculateDaysUntilStockout(
   currentStock: number,
   avgDailySales: number = 2,
@@ -376,15 +410,23 @@ export function calculateDaysUntilStockout(
   return Math.floor(currentStock / avgDailySales);
 }
 
+/** Retorna o estoque disponível (atual menos reservado, mínimo 0). */
 export function calculateAvailableStock(currentStock: number, reservedStock: number = 0): number {
   return Math.max(0, currentStock - reservedStock);
 }
 
+/** Agrega múltiplas variações em totais consolidados de produto (sem metadados de identificação). */
 export function aggregateVariantsToProduct(
   variants: VariantStock[],
 ): Omit<
   ProductStockSummary,
-  'productId' | 'productName' | 'productSku' | 'productImageUrl' | 'categoryName' | 'supplierName'
+  | 'productId'
+  | 'productName'
+  | 'productSku'
+  | 'productImageUrl'
+  | 'categoryId'
+  | 'categoryName'
+  | 'supplierName'
 > {
   const totalCurrentStock = variants.reduce((sum, v) => sum + v.currentStock, 0);
   const totalMinStock = variants.reduce((sum, v) => sum + v.minStock, 0);
@@ -400,6 +442,8 @@ export function aggregateVariantsToProduct(
   for (const v of variants) {
     switch (v.status) {
       case 'in_stock':
+      case 'incoming':
+      case 'overstocked':
         variantsInStock++;
         break;
       case 'low_stock':

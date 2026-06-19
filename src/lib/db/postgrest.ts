@@ -27,7 +27,11 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   id?: string;
   filters?: Record<string, unknown>;
   select?: string;
-  orderBy?: { column: string; ascending?: boolean };
+  orderBy?: { column: string; ascending?: boolean; nullsFirst?: boolean };
+  // Desempate determinístico opcional (ex.: { column: 'id', ascending: true }).
+  // Sem ele, um ORDER BY por coluna NÃO-única + paginação OFFSET produz ordem
+  // não-determinística entre páginas → produtos duplicados/pulados no scroll.
+  secondaryOrderBy?: { column: string; ascending?: boolean };
   limit?: number;
   offset?: number;
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
@@ -238,13 +242,16 @@ const SEARCH_COLUMNS: Record<string, string | string[]> = {
 // O termo é normalizado (NFD + strip) antes do FTS para garantir match mesmo com acento.
 const FTS_TABLES: Record<string, { column: string; config: string }> = {
   v_products_public: { column: 'search_vector', config: 'portuguese' },
-  products:          { column: 'search_vector', config: 'portuguese' },
+  products: { column: 'search_vector', config: 'portuguese' },
 };
 
 /** Strip accents via NFD decomposition (mirrors normalizeProductSearch no cliente). */
 function stripAccents(s: string): string {
   // Strip combining diacritical marks (U+0300-U+036F) — mirrors normalizeProductSearch.
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
 }
 
 /**
@@ -266,7 +273,7 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
   let searchTerm: string | undefined;
   if (rawFilters && '_search' in rawFilters) {
     const raw = rawFilters._search;
-    if (typeof raw === 'string' && raw.trim().length > 0) searchTerm = raw.trim();
+    if (typeof raw === 'string' && raw.trim() !== '') searchTerm = raw.trim();
     delete rawFilters._search;
   }
 
@@ -302,13 +309,18 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
       const normalized = stripAccents(searchTerm);
       if (normalized.length > 0) {
         try {
-          query = (query as unknown as {
-          textSearch: (col: string, q: string, opts?: { type?: string; config?: string }) => typeof query;
-        }).textSearch(
-            ftsCfg.column,
-            normalized,
-            { type: 'websearch', config: ftsCfg.config },
-          ) as typeof query;
+          query = (
+            query as unknown as {
+              textSearch: (
+                col: string,
+                q: string,
+                opts?: { type?: string; config?: string },
+              ) => typeof query;
+            }
+          ).textSearch(ftsCfg.column, normalized, {
+            type: 'websearch',
+            config: ftsCfg.config,
+          }) as typeof query;
         } catch {
           // Coluna ainda não existe / Supabase SDK incompatível -> degrada p/ ILIKE multi-coluna.
           const searchCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
@@ -376,7 +388,19 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
   }
 
   if (options.orderBy && remappedOrderCol) {
-    query = query.order(remappedOrderCol, { ascending: options.orderBy.ascending ?? true });
+    query = query.order(remappedOrderCol, {
+      ascending: options.orderBy.ascending ?? true,
+      ...(options.orderBy.nullsFirst !== undefined
+        ? { nullsFirst: options.orderBy.nullsFirst }
+        : {}),
+    });
+    // Desempate determinístico → estabiliza a paginação OFFSET (sem duplicar/pular linhas).
+    if (options.secondaryOrderBy) {
+      const secondaryCol = remapColumnName(table, options.secondaryOrderBy.column);
+      query = query.order(secondaryCol, {
+        ascending: options.secondaryOrderBy.ascending ?? true,
+      });
+    }
   }
   if (typeof options.limit === 'number') {
     const from = options.offset || 0;

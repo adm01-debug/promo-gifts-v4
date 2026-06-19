@@ -1,4 +1,26 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  boleto: 'Boleto Bancário',
+  pix_transferencia: 'Transferência Bancária / Pix',
+} as const;
+
+const PAYMENT_TERMS_LABELS: Record<string, string> = {
+  '7_dias': '7 dias a partir da entrega',
+  '14_dias': '14 dias a partir da entrega',
+  '21_dias': '21 dias a partir da entrega',
+  '28_dias': '28 dias a partir da entrega',
+  '7_14_dias': '7 e 14 dias a partir da entrega',
+  '50_50': '50% entrada / 50% após entrega',
+} as const;
+
+const DELIVERY_TIME_LABELS: Record<string, string> = {
+  '7_dias': '7 dias após aprovação',
+  '14_dias': '14 dias após aprovação',
+  '21_dias': '21 dias após aprovação',
+  '28_dias': '28 dias após aprovação',
+  '45_dias': '45 dias após aprovação',
+} as const;
 import {
   HeaderSection,
   ClientBar,
@@ -71,23 +93,11 @@ export interface ProposalTemplateData {
 }
 
 export function formatPaymentMethod(value?: string): string {
-  const map: Record<string, string> = {
-    boleto: 'Boleto Bancário',
-    pix_transferencia: 'Transferência Bancária / Pix',
-  };
-  return value ? map[value] || value : '';
+  return value ? PAYMENT_METHOD_LABELS[value] || value : '';
 }
 
 export function formatPaymentTerms(value?: string): string {
-  const map: Record<string, string> = {
-    '7_dias': '7 dias a partir da entrega',
-    '14_dias': '14 dias a partir da entrega',
-    '21_dias': '21 dias a partir da entrega',
-    '28_dias': '28 dias a partir da entrega',
-    '7_14_dias': '7 e 14 dias a partir da entrega',
-    '50_50': '50% entrada / 50% após entrega',
-  };
-  return value ? map[value] || value : '';
+  return value ? PAYMENT_TERMS_LABELS[value] || value : '';
 }
 
 export function formatDeliveryTime(value?: string): string {
@@ -103,14 +113,7 @@ export function formatDeliveryTime(value?: string): string {
     }
     return value; // formato inválido: retorna raw sem explodir
   }
-  const map: Record<string, string> = {
-    '7_dias': '7 dias após aprovação',
-    '14_dias': '14 dias após aprovação',
-    '21_dias': '21 dias após aprovação',
-    '28_dias': '28 dias após aprovação',
-    '45_dias': '45 dias após aprovação',
-  };
-  return map[value] || value;
+  return DELIVERY_TIME_LABELS[value] || value;
 }
 
 export function formatShipping(type?: string, cost?: number): string {

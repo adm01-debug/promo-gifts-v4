@@ -16,6 +16,7 @@ interface UseProductsByColorResult {
   productIds: Set<string>;
   hasFilter: boolean;
   isLoading: boolean;
+  error: unknown;
 }
 
 export function useProductsByColor({
@@ -26,6 +27,7 @@ export function useProductsByColor({
 }: UseProductsByColorOptions): UseProductsByColorResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
 
   const hasFilter = useMemo(
     () =>
@@ -49,10 +51,13 @@ export function useProductsByColor({
   );
 
   const lastFetchedKey = useRef('');
-  const isFetchingRef = useRef(false);
+  // fetchTokenRef: substitui isFetchingRef — cada chamada incrementa o token;
+  // resultados de chamadas supersedidas sao descartados, eliminando a condicao de corrida
+  // onde filtros rapidos A->B bloqueavam B (isFetchingRef=true) e mostravam o resultado
+  // stale de A. Propriedade chave: somente o ultimo fetch em voo aplica setState.
+  const fetchTokenRef = useRef(0);
 
   const fetchProductIds = useCallback(async () => {
-    if (isFetchingRef.current) return;
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
       setProductIds(new Set());
@@ -60,8 +65,9 @@ export function useProductsByColor({
       return;
     }
 
-    isFetchingRef.current = true;
+    const token = ++fetchTokenRef.current;
     setIsLoading(true);
+    setError(null);
 
     try {
       const refQueries = [
@@ -77,18 +83,28 @@ export function useProductsByColor({
         {
           table: 'color_variations',
           operation: 'select' as const,
-          select: 'id, name, slug, group_id',
+          select: 'id, name, slug, group_id, nuance_id',
           filters: { is_active: true },
           limit: 500,
           offset: 0,
           cacheKey: 'ref:color_variations',
         },
+        {
+          table: 'color_nuances',
+          operation: 'select' as const,
+          select: 'id, name, slug',
+          filters: { is_active: true },
+          limit: 500,
+          offset: 0,
+          cacheKey: 'ref:color_nuances',
+        },
       ];
 
       const refResults = await Promise.all(refQueries.map((q) => dbInvoke(q)));
+      if (token !== fetchTokenRef.current) return; // superseded
 
-      const groupsData = (refResults[0]?.records || []) as Record<string, unknown>[];
-      const variationsData = (refResults[1]?.records || []) as Record<string, unknown>[];
+      const groupsData = (refResults[0]?.records ?? []) as Record<string, unknown>[];
+      const variationsData = (refResults[1]?.records ?? []) as Record<string, unknown>[];
 
       const groupsBySlug = new Map(groupsData.map((g) => [g.slug as string, g.id as string]));
       const variationsBySlug = new Map(variationsData.map((v) => [v.slug as string, v]));
@@ -112,7 +128,28 @@ export function useProductsByColor({
             targetColorIds.add((v as Record<string, unknown>).id as string);
       }
 
-      if (targetColorIds.size === 0 && colorNuances.length === 0) {
+      // FIX-NUANCE (2026-06-18): resolve nuances (color_nuances.slug) via
+      // color_variations.nuance_id -> variation ids -> product_variants.color_id.
+      // Antes, colorNuances era IGNORADO: nuance sozinha zerava (targetColorIds vazio)
+      // e nuance combinada era silenciosamente descartada. Semantica OR (uniao),
+      // consistente com group/variation/color dentro do mesmo bloco de cor.
+      if (colorNuances.length > 0) {
+        const nuancesData = (refResults[2]?.records ?? []) as Record<string, unknown>[];
+        const nuanceIdBySlug = new Map(nuancesData.map((n) => [n.slug as string, n.id as string]));
+        const targetNuanceIds = new Set<string>();
+        for (const slug of colorNuances) {
+          const nid = nuanceIdBySlug.get(slug);
+          if (nid) targetNuanceIds.add(nid);
+        }
+        for (const v of variationsData) {
+          const nid = (v as Record<string, unknown>).nuance_id as string | null;
+          if (nid && targetNuanceIds.has(nid))
+            targetColorIds.add((v as Record<string, unknown>).id as string);
+        }
+      }
+
+      if (targetColorIds.size === 0) {
+        if (token !== fetchTokenRef.current) return; // superseded
         setProductIds(new Set());
         lastFetchedKey.current = filterKey;
         return;
@@ -122,41 +159,52 @@ export function useProductsByColor({
       const matchingProductIds = new Set<string>();
 
       if (colorIdArray.length > 0) {
+        // PERF-COLOR-01 (2026-06-18): chunks paralelos em vez de serial.
+        // Antes: loop com await serial → cada CHUNK = 1 round-trip sequential.
+        // Depois: Promise.all → todos os chunks em paralelo → até 3× mais rápido
+        // para filtros de cor com >50 color IDs (ex: grupo inteiro de cores).
+        // Edge: se 1 chunk falha, Promise.all rejeita → catch zera productIds (safe).
         const CHUNK = 50;
+        const chunks: string[][] = [];
         for (let i = 0; i < colorIdArray.length; i += CHUNK) {
-          const chunk = colorIdArray.slice(i, i + CHUNK);
-          const variantQueries = [
-            {
+          chunks.push(colorIdArray.slice(i, i + CHUNK));
+        }
+
+        const chunkResults = await Promise.all(
+          chunks.map((chunk) =>
+            dbInvoke<{ product_id: string }>({
               table: 'product_variants',
-              operation: 'select' as const,
+              operation: 'select',
               select: 'product_id',
               filters: { is_active: true, color_id: chunk },
               limit: 5000,
               offset: 0,
-            },
-          ];
+            }),
+          ),
+        );
 
-          const variantResults = await Promise.all(variantQueries.map((q) => dbInvoke(q)));
-          // FIX-CATALOG-01: dbInvoke returns InvokeResult { records, count }, not BatchResult { success, data }
-          if (variantResults[0]?.records) {
-            for (const r of variantResults[0].records as Array<{ product_id: string }>) {
+        for (const result of chunkResults) {
+          if (result?.records) {
+            for (const r of result.records) {
               matchingProductIds.add(r.product_id);
             }
           }
         }
       }
 
+      if (token !== fetchTokenRef.current) return; // superseded
       setProductIds(matchingProductIds);
       lastFetchedKey.current = filterKey;
       logger.log(
         `[useProductsByColor] Found ${matchingProductIds.size} products for ${colorIdArray.length} color IDs`,
       );
     } catch (err) {
+      if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByColor] Critical Error:', err);
+      setError(err);
       setProductIds(new Set());
     } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
+      if (token === fetchTokenRef.current) setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey, hasFilter]);
@@ -165,5 +213,5 @@ export function useProductsByColor({
     if (filterKey !== lastFetchedKey.current || !hasFilter) fetchProductIds();
   }, [filterKey, hasFilter, fetchProductIds]);
 
-  return { productIds, hasFilter, isLoading };
+  return { productIds, hasFilter, isLoading, error };
 }

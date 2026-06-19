@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 import type { Product } from '@/hooks/products';
 import { formatCurrency } from '@/lib/format';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 interface Props {
   products: Product[];
@@ -75,7 +76,7 @@ export function ExportCollectionButton({ products, variantMap, notesMap, collect
       downloadBlob(blob, `${safeName}-${date}.csv`);
       toast.success('CSV exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar CSV: ${(e as Error).message}`);
+      toast.error(`Erro ao exportar CSV: ${toErrorMessage(e)}`);
     } finally {
       setBusy(null);
     }
@@ -103,7 +104,7 @@ export function ExportCollectionButton({ products, variantMap, notesMap, collect
       downloadBlob(blob, `${safeName}-${date}.json`);
       toast.success('JSON exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar JSON: ${(e as Error).message}`);
+      toast.error(`Erro ao exportar JSON: ${toErrorMessage(e)}`);
     } finally {
       setBusy(null);
     }
@@ -191,7 +192,7 @@ export function ExportCollectionButton({ products, variantMap, notesMap, collect
       doc.save(`${safeName}-${date}.pdf`);
       toast.success('PDF exportado');
     } catch (e) {
-      toast.error(`Erro ao exportar PDF: ${(e as Error).message}`);
+      toast.error(`Erro ao exportar PDF: ${toErrorMessage(e)}`);
     } finally {
       setBusy(null);
     }

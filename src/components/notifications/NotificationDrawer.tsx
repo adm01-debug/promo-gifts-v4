@@ -319,11 +319,11 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
         ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
       ].join('\n');
 
-      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `notificacoes_${new Date().getTime()}.csv`);
+      link.setAttribute('download', `notificacoes_${Date.now()}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -647,7 +647,7 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
 
                 {isLoading && notifications.length === 0 ? (
                   <div className="space-y-3 p-4">
-                    {[...Array(4)].map((_, i) => (
+                    {Array.from({ length: 4 }, (_, i) => (
                       <div key={i} className="flex animate-pulse gap-3">
                         <div className="h-9 w-9 rounded-lg bg-muted" />
                         <div className="flex-1 space-y-2">

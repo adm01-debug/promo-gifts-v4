@@ -41,6 +41,48 @@ interface BulkVariantWizardProps {
   onComplete: (selections: BulkVariantSelection[]) => void;
 }
 
+const BULK_WIZARD_MODE_CONFIG: Record<
+  BulkWizardMode,
+  { icon: LucideIcon; title: string; colorClass: string; bgClass: string }
+> = {
+  cart: {
+    icon: ShoppingBag,
+    title: 'Adicionar ao Carrinho',
+    colorClass: 'text-primary',
+    bgClass: 'bg-primary/15',
+  },
+  quote: {
+    icon: FileText,
+    title: 'Enviar para Orçamento',
+    colorClass: 'text-success',
+    bgClass: 'bg-success/15',
+  },
+  favorite: {
+    icon: Heart,
+    title: 'Favoritar com Cor',
+    colorClass: 'text-destructive',
+    bgClass: 'bg-destructive/15',
+  },
+  compare: {
+    icon: GitCompare,
+    title: 'Comparar com Cor',
+    colorClass: 'text-primary',
+    bgClass: 'bg-primary/15',
+  },
+  collection: {
+    icon: FolderPlus,
+    title: 'Coleção com Cor',
+    colorClass: 'text-info',
+    bgClass: 'bg-info/15',
+  },
+  pdf: {
+    icon: FileDown,
+    title: 'Gerar Catálogo PDF',
+    colorClass: 'text-brand-primary-500',
+    bgClass: 'bg-brand-primary-500/15',
+  },
+} as const;
+
 /* ── Step: variant picker for a single product ── */
 function ProductVariantStep({
   product,
@@ -80,8 +122,7 @@ function ProductVariantStep({
     if (!isLoading && sortedVariants.length === 0) {
       onSkip();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, sortedVariants.length]);
+  }, [isLoading, sortedVariants.length, onSkip]);
 
   if (isLoading) {
     return (
@@ -297,49 +338,8 @@ export function BulkVariantWizard({
   const currentProduct = products[currentIndex];
   if (!currentProduct) return null;
 
-  const modeConfig: Record<
-    BulkWizardMode,
-    { icon: LucideIcon; title: string; colorClass: string; bgClass: string }
-  > = {
-    cart: {
-      icon: ShoppingBag,
-      title: 'Adicionar ao Carrinho',
-      colorClass: 'text-primary',
-      bgClass: 'bg-primary/15',
-    },
-    quote: {
-      icon: FileText,
-      title: 'Enviar para Orçamento',
-      colorClass: 'text-success',
-      bgClass: 'bg-success/15',
-    },
-    favorite: {
-      icon: Heart,
-      title: 'Favoritar com Cor',
-      colorClass: 'text-destructive',
-      bgClass: 'bg-destructive/15',
-    },
-    compare: {
-      icon: GitCompare,
-      title: 'Comparar com Cor',
-      colorClass: 'text-primary',
-      bgClass: 'bg-primary/15',
-    },
-    collection: {
-      icon: FolderPlus,
-      title: 'Coleção com Cor',
-      colorClass: 'text-info',
-      bgClass: 'bg-info/15',
-    },
-    pdf: {
-      icon: FileDown,
-      title: 'Gerar Catálogo PDF',
-      colorClass: 'text-brand-primary-500',
-      bgClass: 'bg-brand-primary-500/15',
-    },
-  };
-  const { icon: Icon, title, colorClass } = modeConfig[mode];
-  const bgClass = modeConfig[mode].bgClass;
+  const { icon: Icon, title, colorClass } = BULK_WIZARD_MODE_CONFIG[mode];
+  const bgClass = BULK_WIZARD_MODE_CONFIG[mode].bgClass;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

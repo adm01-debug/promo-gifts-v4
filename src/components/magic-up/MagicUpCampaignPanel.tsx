@@ -65,7 +65,7 @@ export function MagicUpCampaignPanel({
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Título</Label>
           <Input
-            value={campaign?.title || ''}
+            value={campaign?.title ?? ''}
             placeholder="Ex: WhatsApp premium · caneca"
             onChange={(e) => updateCampaign({ title: e.target.value })}
             className="h-9"

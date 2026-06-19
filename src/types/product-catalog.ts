@@ -5,6 +5,7 @@
  * Distinct from src/types/product.ts which holds DB-oriented types.
  */
 
+/** Variação de cor de um produto com hex real, grupo cromático e imagem da variação. */
 export interface ProductColor {
   name: string;
   hex: string;
@@ -18,13 +19,15 @@ export interface ProductColor {
   stock?: number;
 }
 
+/** Tipo canônico de produto no catálogo B2B — usado em UI, cart, kit-builder e filtros. */
 export interface Product {
   id: string;
   name: string;
   description?: string | null;
   /** Descrição curta opcional (blurb) usada no QuickView. */
-  shortDescription?: string | null;
+  shortDescription: string;
   price: number;
+  sale_price?: number;
   /** Preço de comparação / preço original antes do desconto. */
   comparePrice?: number | null;
   category_id?: string | null;
@@ -40,6 +43,10 @@ export interface Product {
   set_image_url?: string | null;
   og_image_url?: string;
   primary_image_url?: string | null;
+  /** Blurhash da imagem primária — cor dominante usada como placeholder no card. */
+  primary_image_blurhash?: string | null;
+  /** URL de fallback da imagem primária (usada se a imagem principal falhar). */
+  primary_image_fallback_url?: string | null;
   images: string[];
   sku: string;
   stock: number;
@@ -130,6 +137,7 @@ export interface Product {
   aiGeneratedAt?: string | null;
 }
 
+/** Componente individual de um kit de brindes (produto + quantidade + dimensões). */
 export interface KitComponent {
   id: string;
   productId: string;
@@ -167,6 +175,7 @@ export interface KitComponent {
   }>;
 }
 
+/** Variação de produto (SKU) com cor, estoque, imagens e dimensões específicas. */
 export interface ProductVariation {
   id: string;
   sku: string;
@@ -192,6 +201,7 @@ export interface ProductVariation {
   size_code?: string | null;
 }
 
+/** Parâmetros de consulta para filtrar e ordenar produtos no catálogo. */
 export interface ProductFilters {
   category?: string;
   categoryId?: string | number;
@@ -215,6 +225,7 @@ export interface ProductFilters {
     | string;
 }
 
+/** Representação mínima de produto para seletores e catálogo (~10× menor que `Product`). */
 export interface ProductLightweight {
   id: string;
   name: string;
