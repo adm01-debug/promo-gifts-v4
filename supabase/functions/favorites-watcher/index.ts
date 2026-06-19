@@ -65,12 +65,16 @@ Deno.serve(async (req) => {
     const productIds = [...new Set(items.map((i) => i.product_id))];
     const { data: products } = await service
       .from("products")
-      .select("id, name, price")
+      .select("id, name, price, sale_price")
       .in("id", productIds);
 
     const priceMap = new Map<string, { name: string; price: number }>();
-    (products ?? []).forEach((p: { id: string; name: string; price: number | null }) => {
-      if (p.price && p.price > 0) priceMap.set(p.id, { name: p.name, price: p.price });
+    (products ?? []).forEach((p: { id: string; name: string; price: number | null; sale_price?: number | null }) => {
+      // Use effective selling price: sale_price when available, otherwise price
+      const effectivePrice = (typeof p.sale_price === 'number' && p.sale_price > 0)
+        ? p.sale_price
+        : p.price;
+      if (effectivePrice && effectivePrice > 0) priceMap.set(p.id, { name: p.name, price: effectivePrice });
     });
 
     // Agrupa drops por usuário
