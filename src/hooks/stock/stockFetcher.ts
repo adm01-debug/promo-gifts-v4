@@ -316,6 +316,7 @@ export async function fetchAndProcessStockData(): Promise<{
   futureStock: FutureStockEntry[];
   degradedTables: string[];
 }> {
+  const t0 = performance.now();
   const degradedTables: string[] = [];
   const graceful =
     <T>(table: string) =>
@@ -410,6 +411,7 @@ export async function fetchAndProcessStockData(): Promise<{
     ).catch(() => [] as ExternalStockVelocity[]),
   ]);
 
+  const tFetch = performance.now();
   // Build lookup maps for category and supplier names
   const categoryMap = new Map<string, string>();
   allCategories.forEach((c) => categoryMap.set(c.id, c.name));
@@ -663,9 +665,22 @@ export async function fetchAndProcessStockData(): Promise<{
     };
   });
 
+  const tProcess = performance.now();
   const alerts = generateStockAlerts(summaries);
-  logger.log(
-    `[Stock] Processados ${summaries.length} produtos com ${futureEntries.length} previsoes`,
-  );
+  const tAlerts = performance.now();
+
+  logger.log('[Stock] perf', {
+    fetchMs: Math.round(tFetch - t0),
+    processMs: Math.round(tProcess - tFetch),
+    alertsMs: Math.round(tAlerts - tProcess),
+    totalMs: Math.round(tAlerts - t0),
+    products: allProducts.length,
+    variants: allVariants.length,
+    sources: allSupplierSources.length,
+    futureEntries: futureEntries.length,
+    alerts: alerts.length,
+    ...(degradedTables.length > 0 && { degradedTables }),
+  });
+
   return { productStocks: summaries, alerts, futureStock: futureEntries, degradedTables };
 }
