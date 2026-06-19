@@ -8,14 +8,22 @@
 --
 -- Schema confirmado (2026-06-19):
 --   product_variants:         id, product_id, color_name, color_hex,
---                             stock_quantity, next_date_1..6
+--                             stock_quantity, next_date_1..6, is_active
 --   variant_supplier_sources: variant_id, next_date_1..6, is_active
 --
 -- Regra de negócio:
 --   • stock_qty           = product_variants.stock_quantity (já agregado)
---   • next_restock_date   = menor data >= hoje entre next_date_1..6 de
---                            product_variants OU variant_supplier_sources ativos
+--   • next_restock_date   = menor data ESTRITAMENTE > hoje (BR) entre next_date_1..6
+--                           de product_variants OU variant_supplier_sources ativos
 --   • has_upcoming_restock= (next_restock_date IS NOT NULL)
+--   • Boundary STRICT (> hoje): data do dia corrente não é "upcoming" — mercadoria
+--     prevista para hoje deve ter chegado; consistente com fn_get_reposicao_listing.
+--   • Timezone: America/Sao_Paulo (UTC-3, sem DST desde 2019), igual à listing.
+--
+-- Changelog:
+--   v1 2026-06-19: criação inicial (Lovable draft)
+--   v2 2026-06-19: M1 — CURRENT_DATE → timezone Brazil correto
+--   v3 2026-06-19: M2 — >= hoje → > hoje (boundary strict, alinhado à listing)
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.fn_get_reposicao_variants_summary(
@@ -34,18 +42,25 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  WITH future_dates AS (
-    -- todas as datas futuras de reposição, vindas de pv OU vss
-    SELECT pv.id AS variant_id, d::date AS dt
+  WITH v_today AS (
+    -- Timezone Brasil (UTC-3, sem DST desde 2019) — mesmo padrão de fn_get_reposicao_listing
+    SELECT (now() AT TIME ZONE 'America/Sao_Paulo')::date AS d
+  ),
+  future_dates AS (
+    -- Datas ESTRITAMENTE futuras (> hoje BR) de product_variants
+    SELECT pv.id AS variant_id, x.d::date AS dt
     FROM public.product_variants pv
     CROSS JOIN LATERAL (VALUES
       (pv.next_date_1),(pv.next_date_2),(pv.next_date_3),
       (pv.next_date_4),(pv.next_date_5),(pv.next_date_6)
     ) AS x(d)
     WHERE pv.product_id = ANY(p_product_ids)
-      AND d IS NOT NULL AND d::date >= CURRENT_DATE
+      AND x.d IS NOT NULL
+      AND x.d::date > (SELECT v_today.d FROM v_today)
     UNION ALL
-    SELECT vss.variant_id, d::date
+    -- Datas ESTRITAMENTE futuras de variant_supplier_sources ativos
+    -- (defensivo: cobre casos onde PV.next_date_* ainda não foi propagado do VSS)
+    SELECT vss.variant_id, x.d::date
     FROM public.variant_supplier_sources vss
     JOIN public.product_variants pv2 ON pv2.id = vss.variant_id
     CROSS JOIN LATERAL (VALUES
@@ -54,9 +69,11 @@ AS $$
     ) AS x(d)
     WHERE pv2.product_id = ANY(p_product_ids)
       AND COALESCE(vss.is_active, true) = true
-      AND d IS NOT NULL AND d::date >= CURRENT_DATE
+      AND x.d IS NOT NULL
+      AND x.d::date > (SELECT v_today.d FROM v_today)
   ),
   next_per_variant AS (
+    -- MIN garante que múltiplos VSS por variante não inflem contagens
     SELECT variant_id, MIN(dt) AS next_restock_date
     FROM future_dates
     GROUP BY variant_id
@@ -100,11 +117,24 @@ REVOKE ALL ON FUNCTION public.fn_get_reposicao_variants_summary(uuid[]) FROM PUB
 GRANT EXECUTE ON FUNCTION public.fn_get_reposicao_variants_summary(uuid[]) TO authenticated, service_role;
 
 COMMENT ON FUNCTION public.fn_get_reposicao_variants_summary(uuid[]) IS
-  'Reposição UI helper — variantes (cor) por produto com stock_qty e next_restock_date (pv+vss). Aditivo: não substitui fn_get_reposicao_listing.';
+  'Reposição UI helper — variantes (cor) por produto com stock_qty e next_restock_date (pv+vss). Timezone: America/Sao_Paulo. Boundary: > hoje (strict, igual a fn_get_reposicao_listing). v3 2026-06-19.';
+
+NOTIFY pgrst, 'reload schema';
 
 -- ============================================================================
 -- VALIDAÇÃO (rode após o CREATE):
+--
+--   -- Teste básico:
 --   SELECT * FROM public.fn_get_reposicao_variants_summary(
 --     ARRAY(SELECT id FROM public.products LIMIT 3)::uuid[]
 --   );
+--
+--   -- Verifica que a função usa TZ BR e boundary strict:
+--   SELECT
+--     position('CURRENT_DATE'        IN pg_get_functiondef(oid)) = 0 AS sem_current_date,
+--     position('America/Sao_Paulo'   IN pg_get_functiondef(oid)) > 0 AS tem_tz_br,
+--     position('> (SELECT v_today'   IN pg_get_functiondef(oid)) > 0 AS boundary_strict_ok
+--   FROM pg_proc
+--   WHERE proname = 'fn_get_reposicao_variants_summary'
+--     AND pronamespace = 'public'::regnamespace;
 -- ============================================================================
