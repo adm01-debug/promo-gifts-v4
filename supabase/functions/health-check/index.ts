@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { handleCorsPreflight, getCorsHeaders, buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { handleCorsPreflight, buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getCredential } from "../_shared/credentials.ts";
@@ -19,30 +19,73 @@ interface HealthChecker {
   check(): Promise<CheckResult>;
 }
 
+// --- Singletons (hoisted out of handler so warm invocations skip client construction) ---
+
+let internalClient: SupabaseClient | null = null;
+function getInternalClient(): SupabaseClient {
+  if (!internalClient) {
+    internalClient = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+  }
+  return internalClient;
+}
+
+let externalClientPromise: Promise<SupabaseClient | null> | null = null;
+function getExternalClient(): Promise<SupabaseClient | null> {
+  if (!externalClientPromise) {
+    externalClientPromise = (async () => {
+      const [url, key] = await Promise.all([
+        getCredential("EXTERNAL_PROMOBRIND_URL"),
+        getCredential("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY"),
+      ]);
+      if (!url || !key) return null;
+      return createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+    })();
+  }
+  return externalClientPromise;
+}
+
+// Per-check timeout: gate is 500ms total; cap each probe to keep the worst case bounded.
+const PROBE_TIMEOUT_MS = 1500;
+
+async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return await Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 // --- Implementations ---
 
 class DatabaseChecker implements HealthChecker {
   name = "database";
-  
+
   async check(): Promise<CheckResult> {
     const start = Date.now();
     try {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL") || "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+      const supabase = getInternalClient();
+      const { error } = await withTimeout(
+        supabase.from("profiles").select("id").limit(1),
+        PROBE_TIMEOUT_MS,
+        "database",
       );
-      const { error } = await supabase.from("profiles").select("id").limit(1);
-      
       return {
         status: error ? "degraded" : "healthy",
         latency_ms: Date.now() - start,
         ...(error && { error: error.message }),
       };
     } catch (e) {
-      return { 
-        status: "unhealthy", 
+      return {
+        status: "unhealthy",
         error: (e as Error).message,
-        latency_ms: Date.now() - start 
+        latency_ms: Date.now() - start,
       };
     }
   }
@@ -54,27 +97,24 @@ class ExternalDatabaseChecker implements HealthChecker {
   async check(): Promise<CheckResult> {
     const start = Date.now();
     try {
-      const url = await getCredential('EXTERNAL_PROMOBRIND_URL');
-      const key = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
-      
-      if (!url || !key) {
-        return { status: "skipped", error: "No credentials" };
-      }
+      const client = await getExternalClient();
+      if (!client) return { status: "skipped", error: "No credentials" };
 
-      const client = createClient(url, key);
-      // Alterado de 'produto' para 'products' para refletir o schema real
-      const { error } = await client.from("products").select("id").limit(1);
-      
+      const { error } = await withTimeout(
+        client.from("products").select("id").limit(1),
+        PROBE_TIMEOUT_MS,
+        "external_db",
+      );
       return {
         status: error ? "degraded" : "healthy",
         latency_ms: Date.now() - start,
         ...(error && { error: error.message }),
       };
     } catch (e) {
-      return { 
-        status: "unhealthy", 
+      return {
+        status: "unhealthy",
         error: (e as Error).message,
-        latency_ms: Date.now() - start 
+        latency_ms: Date.now() - start,
       };
     }
   }
@@ -82,44 +122,34 @@ class ExternalDatabaseChecker implements HealthChecker {
 
 // --- Main Handler ---
 
+const CHECKERS: HealthChecker[] = [new DatabaseChecker(), new ExternalDatabaseChecker()];
+
 Deno.serve(async (req) => {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: "health-check", requestId, req });
 
-  // Handle CORS (Public endpoint but with security headers)
   const preflight = handleCorsPreflight(req, { public: true });
   if (preflight) return preflight;
 
   const corsHeaders = {
     ...buildPublicCorsHeaders(),
     "Content-Type": "application/json",
-    "X-Health-Version": "1.1.0"
+    "X-Health-Version": "1.2.0",
   };
 
   const start = Date.now();
-  const checkers: HealthChecker[] = [
-    new DatabaseChecker(),
-    new ExternalDatabaseChecker(),
-  ];
-
   const results: Record<string, CheckResult> = {};
-  
-  // Run all checks in parallel
+
   await Promise.all(
-    checkers.map(async (checker) => {
+    CHECKERS.map(async (checker) => {
       results[checker.name] = await checker.check();
-    })
+    }),
   );
 
-  // Compute aggregate status
   const statuses = Object.values(results).map((r) => r.status);
   let overall: HealthStatus = "healthy";
-  
-  if (statuses.some((s) => s === "unhealthy")) {
-    overall = "unhealthy";
-  } else if (statuses.some((s) => s === "degraded")) {
-    overall = "degraded";
-  }
+  if (statuses.some((s) => s === "unhealthy")) overall = "unhealthy";
+  else if (statuses.some((s) => s === "degraded")) overall = "degraded";
 
   const responseBody = {
     status: overall,
@@ -135,6 +165,6 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(responseBody), {
       status: overall === "unhealthy" ? 503 : 200,
       headers: corsHeaders,
-    })
+    }),
   );
 });
