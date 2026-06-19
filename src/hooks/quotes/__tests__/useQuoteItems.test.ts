@@ -220,6 +220,10 @@ describe('removeItem', () => {
     act(() => {
       result.current.addProductWithColor({ ...P1, id: 'p3' }, null);
     });
+    // addProductWithColor auto-expands each item → {0,1,2}; reset before test scenario
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.toggleExpanded(1);
     });
@@ -246,6 +250,10 @@ describe('removeItem', () => {
     act(() => {
       result.current.addProductWithColor({ ...P1, id: 'p3' }, null);
     });
+    // addProductWithColor auto-expands each item → {0,1,2}; reset before test scenario
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.toggleExpanded(0);
     });
@@ -263,6 +271,10 @@ describe('toggleExpanded', () => {
     act(() => {
       result.current.addProductWithColor(P1, null);
     });
+    // addProductWithColor auto-expands index 0; reset to test toggle-open from closed state
+    act(() => {
+      result.current.setExpandedItems(new Set());
+    });
     act(() => {
       result.current.toggleExpanded(0);
     });
@@ -274,11 +286,15 @@ describe('toggleExpanded', () => {
     act(() => {
       result.current.addProductWithColor(P1, null);
     });
+    // addProductWithColor auto-expands index 0; reset then open explicitly
     act(() => {
-      result.current.toggleExpanded(0);
+      result.current.setExpandedItems(new Set());
     });
     act(() => {
-      result.current.toggleExpanded(0);
+      result.current.toggleExpanded(0); // open
+    });
+    act(() => {
+      result.current.toggleExpanded(0); // close
     });
     expect(result.current.expandedItems.has(0)).toBe(false);
   });
