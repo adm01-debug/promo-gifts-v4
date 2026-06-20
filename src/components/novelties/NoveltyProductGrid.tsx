@@ -131,8 +131,7 @@ export function NoveltyProductGrid() {
   // `products` (total geral), gerando counts inflados que não refletiam a seleção.
   // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
-    const normSearch = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const normSearch = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
     const searchMatch = (p: (typeof products)[0]) =>
       !q ||
@@ -274,13 +273,12 @@ export function NoveltyProductGrid() {
   if (error) logger.error('Erro ao carregar novidades:', error);
 
   // Favorites & Compare stores for ProductListItem integration
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const {
-    isInCompare,
-    addToCompare,
-    removeFromCompare,
-    canAddMore: canAddToCompare,
-  } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const removeFromCompare = useComparisonStore((s) => s.removeFromCompare);
+  const canAddToCompare = useComparisonStore((s) => s.canAddMore);
   const onToggleCompare = useCallback(
     (productId: string) => {
       if (isInCompare(productId)) {
@@ -750,7 +748,9 @@ export function NoveltyProductGrid() {
                 Atualizando novidades...
               </>
             ) : (
-              <span className="text-xs">Role para ver mais {filteredProducts.length - visibleCount} novidades</span>
+              <span className="text-xs">
+                Role para ver mais {filteredProducts.length - visibleCount} novidades
+              </span>
             )}
           </div>
         </div>

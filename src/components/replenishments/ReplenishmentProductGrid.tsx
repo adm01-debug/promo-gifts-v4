@@ -41,8 +41,14 @@ function useLoadingProgress(isLoading: boolean): number {
 
   useEffect(() => {
     const clearAll = () => {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-      if (timeoutRef.current)  { clearTimeout(timeoutRef.current);   timeoutRef.current  = null; }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
 
     if (isLoading) {
@@ -157,13 +163,12 @@ export function ReplenishmentProductGrid() {
     });
   }, [sel]);
 
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const {
-    isInCompare,
-    addToCompare,
-    removeFromCompare,
-    canAddMore: canAddToCompare,
-  } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const removeFromCompare = useComparisonStore((s) => s.removeFromCompare);
+  const canAddToCompare = useComparisonStore((s) => s.canAddMore);
 
   const onToggleCompare = useCallback(
     (productId: string) => {
