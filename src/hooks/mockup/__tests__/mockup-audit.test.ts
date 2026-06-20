@@ -1063,3 +1063,23 @@ describe('Analise estatica — MockupSuccessToast.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// Analise estatica — MockupConfigPanel.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupConfigPanel.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupConfigPanel.tsx');
+  });
+
+  describe('a11y — SelectTrigger de tecnica com aria-label', () => {
+    it('SelectTrigger de tecnica tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Selecionar técnica de personalização"');
+    });
+    it('botao de limpar formulario tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Limpar formulário"');
+    });
+  });
+});
