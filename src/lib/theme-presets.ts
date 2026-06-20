@@ -969,6 +969,13 @@ export function loadThemeConfig(): ThemeConfig {
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }
+      // Clamp radius to the slider's valid range; guard against NaN/Infinity
+      // from corrupted localStorage (BUG-THEME-16).
+      if (typeof parsed.radius !== 'number' || !isFinite(parsed.radius)) {
+        parsed.radius = getDefaultConfig().radius;
+      } else {
+        parsed.radius = Math.max(0, Math.min(20, parsed.radius));
+      }
       return parsed;
     }
   } catch {
@@ -1053,7 +1060,8 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' | 'aut
 }
 
 export function applyRadius(px: number): void {
-  document.documentElement.style.setProperty('--radius', `${px / 16}rem`);
+  const safe = isFinite(px) ? Math.max(0, Math.min(20, px)) : 14;
+  document.documentElement.style.setProperty('--radius', `${safe / 16}rem`);
 }
 
 export function clearThemeOverrides(): void {
