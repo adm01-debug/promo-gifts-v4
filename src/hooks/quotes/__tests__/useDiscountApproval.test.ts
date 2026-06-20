@@ -181,7 +181,7 @@ describe('respondToApproval', () => {
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'discount_approval_requests') {
-        const innerSingleFn = vi.fn().mockResolvedValue({ data: mockReq, error: null });
+        const innerSingleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
         const innerSelectAfterEq = vi.fn().mockReturnValue({ single: innerSingleFn });
         const eqFn = vi.fn().mockReturnValue({ select: innerSelectAfterEq });
         return { update: vi.fn().mockReturnValue({ eq: eqFn }) } as never;
