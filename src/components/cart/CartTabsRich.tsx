@@ -97,6 +97,7 @@ export function CartTabsRich({
               role="tab"
               aria-selected={isActive}
               tabIndex={isActive ? 0 : -1}
+              aria-label={`${cart.company_name} — ${cart.items.length} ${cart.items.length === 1 ? 'item' : 'itens'}${needsFollowUp ? ', aguardando follow-up' : ''}`}
               className={cn(
                 'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
                 isActive
@@ -165,10 +166,10 @@ export function CartTabsRich({
                   data-testid="cart-tab-followup"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
+                  aria-label={`Sem movimento há ${ageDays} dias`}
                   className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
-                  title={`Sem movimento há ${ageDays} dias`}
                 >
-                  <Clock className="h-3 w-3" />
+                  <Clock className="h-3 w-3" aria-hidden="true" />
                 </motion.span>
               )}
             </button>
