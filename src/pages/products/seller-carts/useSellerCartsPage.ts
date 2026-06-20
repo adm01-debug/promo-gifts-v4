@@ -253,10 +253,15 @@ export function useSellerCartsPage() {
     [duplicateItemToCart, activeCart, carts],
   );
 
-  const handleClearCart = useCallback(() => {
+  const handleClearCart = useCallback(async () => {
     if (!activeCart) return;
     const itemsToRestore = [...activeCart.items];
-    clearCart(activeCart.id);
+    try {
+      await clearCart(activeCart.id);
+    } catch {
+      toast.error('Erro ao limpar carrinho. Tente novamente.');
+      return;
+    }
     recordAction(activeCart.id, { type: 'clear', itemName: 'todos os itens', time: new Date() });
 
     showUndoToast({
@@ -399,12 +404,6 @@ export function useSellerCartsPage() {
     : 0;
   const cartTotalQty = activeCart ? activeCart.items.reduce((s, i) => s + i.quantity, 0) : 0;
 
-  const companyAccentColor = useMemo(() => {
-    if (!activeCart) return null;
-    const cart = activeCart as SellerCart & { company_primary_color?: string };
-    return cart.company_primary_color || null;
-  }, [activeCart]);
-
   return {
     navigate,
     carts,
@@ -451,7 +450,6 @@ export function useSellerCartsPage() {
     cartAge,
     cartSubtotal,
     cartTotalQty,
-    companyAccentColor,
     isLoadingProducts,
     exportCartToCSV,
     exportCartToPDF,

@@ -433,14 +433,7 @@ function SellerCartsContent() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
           <div className="space-y-4">
             {/* Cart header fundido (status Select óbvio + ações inline) */}
-            <Card
-              className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center"
-              style={
-                s.companyAccentColor
-                  ? { borderLeft: `4px solid ${s.companyAccentColor}` }
-                  : undefined
-              }
-            >
+            <Card className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="relative">
                   {s.activeCart.company_logo_url ? (
@@ -532,7 +525,7 @@ function SellerCartsContent() {
               </div>
             </Card>
 
-            <FollowUpTimer createdAt={s.activeCart.created_at} />
+            <FollowUpTimer createdAt={s.activeCart.created_at} status={s.activeCart.status} />
 
             {/* Notas sempre visíveis */}
             <div className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3">
@@ -855,7 +848,6 @@ function SellerCartsContent() {
                               item={item}
                               index={index}
                               otherCarts={s.otherCarts}
-                              companyAccentColor={s.companyAccentColor}
                               stockMap={s.stockMap}
                               onRemove={s.handleRemoveItem}
                               onUpdateQuantity={s.handleUpdateQuantity}
