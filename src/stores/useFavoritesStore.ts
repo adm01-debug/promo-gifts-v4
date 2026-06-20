@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = 'product-favorites';
 
@@ -38,7 +39,8 @@ function loadFromStorage(): FavoriteItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch {
+  } catch (err) {
+    logger.warn('[useFavoritesStore] Failed to load from localStorage', err);
     return [];
   }
 }
@@ -46,8 +48,8 @@ function loadFromStorage(): FavoriteItem[] {
 function saveToStorage(items: FavoriteItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // silently fail
+  } catch (err) {
+    logger.warn('[useFavoritesStore] Failed to save to localStorage (quota exceeded?)', err);
   }
 }
 
