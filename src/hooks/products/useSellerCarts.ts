@@ -22,7 +22,7 @@ export interface SellerCart {
   company_location: string | null;
   company_logo_url: string | null;
   notes: string | null;
-  status: string;
+  status: CartStatus;
   created_at: string;
   updated_at: string;
   items: SellerCartItem[];
@@ -140,7 +140,7 @@ export function useSellerCarts() {
       return carts.map((cart) => ({
         ...cart,
         notes: cart.notes ?? null,
-        status: cart.status ?? 'novo',
+        status: (cart.status ?? 'novo') as CartStatus,
         items: (items || []).filter((i) => i.cart_id === cart.id),
       }));
     },
@@ -173,7 +173,7 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'novo', items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'novo' as CartStatus, items: [] } as SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
