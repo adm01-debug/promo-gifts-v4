@@ -124,7 +124,12 @@ export const ProductColorSwatches = memo(
       );
     }
 
-    const visible = colors;
+    // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
+    // Garante altura uniforme dos cards entre módulos (Novidades/Reposição/Catálogo).
+    const effectiveMax = Math.max(1, max);
+    const overflow = Math.max(0, colors.length - effectiveMax);
+    const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
+
     // Resolve o estado selecionado o mais cedo possível
     const queryParams =
       typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
