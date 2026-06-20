@@ -156,9 +156,11 @@ export const SortableCartItem = memo(
               <GripVertical className="h-4 w-4" />
             </button>
 
-            <div
+            <button
+              type="button"
               data-testid="cart-item-image"
-              className="relative z-10 h-full w-full cursor-pointer"
+              aria-label={`Ver produto ${item.product_name}`}
+              className="relative z-10 h-full w-full cursor-pointer bg-transparent p-0"
               onClick={() => onNavigate(`/produto/${item.product_id}`)}
             >
               {!item.product_image_url && (
@@ -178,18 +180,20 @@ export const SortableCartItem = memo(
                 )}
                 loading="lazy"
               />
-            </div>
+            </button>
 
-            {/* Quick view overlay */}
+            {/* Quick view overlay — mouse-only enhancement; keyboard path is via dropdown menu */}
             <div
               data-testid="cart-item-view"
-              className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-primary/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100"
-              onClick={() => onNavigate(`/produto/${item.product_id}`)}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-primary/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:pointer-events-auto group-hover:opacity-100"
             >
               <Button
                 variant="secondary"
                 size="sm"
+                tabIndex={-1}
                 className="gap-2 border border-white/20 bg-card/90 text-[11px] font-bold shadow-lg hover:bg-card"
+                onClick={() => onNavigate(`/produto/${item.product_id}`)}
               >
                 <Eye className="h-3.5 w-3.5" />
                 Ver Produto
