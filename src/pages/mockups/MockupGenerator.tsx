@@ -344,7 +344,7 @@ export default function MockupGenerator() {
                     mg.setProductSelection(sel);
                     mg.setGeneratedMockup(null);
                   }}
-                  onTechniqueSelect={(t) => handleTechniqueSelect(t as MockupTechnique | null)}
+                  onTechniqueSelect={(t) => handleTechniqueSelect(t)}
                   onClientSelect={mg.setSelectedClient}
                   onReset={mg.resetForm}
                   activeAreaId={mg.activeAreaId}
