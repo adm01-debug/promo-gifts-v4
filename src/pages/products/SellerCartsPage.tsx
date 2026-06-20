@@ -716,6 +716,7 @@ function SellerCartsContent() {
                                       step={1}
                                       defaultValue={item.quantity}
                                       key={`${item.id}-${item.quantity}`}
+                                      aria-label={`Quantidade de ${item.product_name}`}
                                       data-testid={`cart-qty-input-${item.id}`}
                                       aria-invalid={err ? true : undefined}
                                       aria-describedby={err ? `qty-err-${item.id}` : undefined}
