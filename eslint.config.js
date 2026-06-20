@@ -194,6 +194,21 @@ export default [
       '@typescript-eslint/no-inferrable-types': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
+      // Batch 78: 1 rule with violations + 12 zero-violation safety rules
+      // no-promise-executor-return: 37 fixes in 25 files (block-form setTimeout)
+      'no-promise-executor-return': 'error',
+      'no-array-constructor': 'error',
+      'no-new-object': 'error',
+      'prefer-object-spread': 'error',
+      'no-useless-rename': 'error',
+      'no-useless-computed-key': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-return': 'error',
+      'no-useless-call': 'error',
+      'no-self-compare': 'error',
+      'no-throw-literal': 'error',
+      'prefer-promise-reject-errors': 'error',
+      'symbol-description': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
