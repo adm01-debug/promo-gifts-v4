@@ -142,17 +142,29 @@ export function SaveTemplateDialog({
           <DialogTitle>Salvar Template de Carrinho</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <Input
-            placeholder='Ex: "Kit Onboarding"'
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Textarea
-            placeholder="Descrição opcional..."
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            rows={2}
-          />
+          <div className="space-y-1.5">
+            <label htmlFor="dlg-tpl-name" className="text-sm font-medium">
+              Nome do template
+            </label>
+            <Input
+              id="dlg-tpl-name"
+              placeholder='Ex: "Kit Onboarding"'
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="dlg-tpl-desc" className="text-sm font-medium text-muted-foreground">
+              Descrição <span className="font-normal">(opcional)</span>
+            </label>
+            <Textarea
+              id="dlg-tpl-desc"
+              placeholder="Descreva o propósito deste template..."
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              rows={2}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">
             {cart.items.length} itens serão salvos no template
           </p>
@@ -232,6 +244,7 @@ export function LoadTemplateDialog({
                     <Button
                       size="sm"
                       variant="ghost"
+                      aria-label={`Excluir template ${t.name}`}
                       className="h-7 text-xs text-destructive"
                       onClick={() => onDelete(t.id)}
                     >

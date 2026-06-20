@@ -55,9 +55,11 @@ export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string; b
   },
 };
 
-export function getStatusCfg(
-  status: string | undefined | null,
-): { label: string; color: string; bg: string } {
+export function getStatusCfg(status: string | undefined | null): {
+  label: string;
+  color: string;
+  bg: string;
+} {
   return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.novo;
 }
 
@@ -159,8 +161,10 @@ export function SuggestionSkeleton() {
 // ============================================
 
 export function FollowUpTimer({ createdAt, status }: { createdAt: string; status?: string }) {
-  const days = differenceInDays(new Date(), new Date(createdAt));
-  const hours = differenceInHours(new Date(), new Date(createdAt));
+  const now = new Date();
+  const created = new Date(createdAt);
+  const days = differenceInDays(now, created);
+  const hours = differenceInHours(now, created);
 
   if (days < 1 || status === 'pronto_orcamento') return null;
 
@@ -278,11 +282,11 @@ export function SmartSuggestions({
 
   return (
     <div className="space-y-2">
-      {suggestions.map((s, i) => {
+      {suggestions.map((s) => {
         const Icon = s.icon;
         return (
           <div
-            key={i}
+            key={s.text}
             className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2.5 text-[10px] leading-relaxed text-muted-foreground transition-colors hover:bg-primary/10"
           >
             <div className="mt-0.5 flex-shrink-0 rounded-full bg-background/80 p-1 shadow-sm">

@@ -49,7 +49,12 @@ export function CartHealthChecklist({
 
     return [
       { id: 'company', label: 'Empresa vinculada', ok: !!cart.company_id },
-      { id: 'prices', label: 'Todos os itens com preço', ok: noZeroPriceItems, onFix: onAddProducts },
+      {
+        id: 'prices',
+        label: 'Todos os itens com preço',
+        ok: noZeroPriceItems,
+        onFix: onAddProducts,
+      },
       { id: 'items', label: 'Mix de produtos (≥ 3 SKUs)', ok: hasMinItems, onFix: onAddProducts },
       { id: 'value', label: 'Valor mínimo (R$ 500,00)', ok: hasMinValue, onFix: onAddProducts },
       { id: 'notes', label: 'Observações do pedido', ok: hasNotes, onFix: onFocusNotes },
@@ -101,7 +106,14 @@ export function CartHealthChecklist({
         </div>
       </div>
 
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Saúde do carrinho: ${pct}%`}
+        className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/40"
+      >
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
