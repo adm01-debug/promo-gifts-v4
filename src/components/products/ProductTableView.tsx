@@ -206,6 +206,7 @@ export const ProductTableView = memo(
     >(undefined);
     const [quickViewOpen, setQuickViewOpen] = useState(false);
     const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+    const quickViewTriggerRef = useRef<HTMLElement | null>(null);
     const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const [shareProduct, setShareProduct] = useState<Product | null>(null);
     const [shareVariant, setShareVariant] = useState<{
@@ -569,10 +570,18 @@ export const ProductTableView = memo(
                       role="button"
                       tabIndex={0}
                       aria-label={`Visualização rápida de ${product.name}`}
+                      aria-haspopup="dialog"
+                      aria-expanded={quickViewOpen && quickViewProduct?.id === product.id}
                       data-testid="product-table-row-thumb"
-                      className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30"
+                      data-product-id={product.id}
+                      className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      style={{ touchAction: 'manipulation' }}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) {
+                          return;
+                        }
+                        quickViewTriggerRef.current = e.currentTarget;
                         setQuickViewProduct(product);
                         setQuickViewOpen(true);
                       }}
@@ -580,6 +589,10 @@ export const ProductTableView = memo(
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
+                          if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) {
+                            return;
+                          }
+                          quickViewTriggerRef.current = e.currentTarget;
                           setQuickViewProduct(product);
                           setQuickViewOpen(true);
                         }
@@ -714,7 +727,14 @@ export const ProductTableView = memo(
           <ProductQuickView
             product={quickViewProduct}
             open={quickViewOpen}
-            onOpenChange={setQuickViewOpen}
+            onOpenChange={(open) => {
+              setQuickViewOpen(open);
+              if (!open) {
+                requestAnimationFrame(() => {
+                  quickViewTriggerRef.current?.focus({ preventScroll: true });
+                });
+              }
+            }}
             isFavorited={isFavorite?.(quickViewProduct.id) || false}
             onToggleFavorite={onToggleFavorite}
             isInCompare={isInCompare?.(quickViewProduct.id) || false}
