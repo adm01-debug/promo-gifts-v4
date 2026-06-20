@@ -35,7 +35,7 @@ const MAX_PRODUCTS_PER_VIEW = Number(process.env.E2E_SWEEP_MAX_PRODUCTS ?? 5);
 const MAX_COLORS_PER_PRODUCT = Number(process.env.E2E_SWEEP_MAX_COLORS ?? 4);
 
 async function switchView(page: Page, mode: ViewMode): Promise<void> {
-  const trigger = page.locator('[data-testid="layout-popover-trigger"]');
+  const trigger = page.locator('[data-testid="${TID.layoutPopoverTrigger}"]');
   if (!(await trigger.isVisible().catch(() => false))) return;
   await trigger.click();
   const btn = page.locator(`[data-testid="view-mode-${mode}"]`);
