@@ -97,6 +97,7 @@ const AREA_LASER: PrintAreaV2 = {
   technique_name: 'Fiber Laser',
   grupo_tecnica: 'LASER',
   cobra_por_cor: false,
+  usa_dimensao: true,
 };
 
 const AREA_SERIG: PrintAreaV2 = {
@@ -156,9 +157,20 @@ function buildPayload(args: {
     valor_gravacao: valor,
     setup_total: args.setup,
     total_cobrado: total,
-    faixa: { faixa_id: `${args.tabela}-f1`, qtd_min: args.qtd, qtd_max: args.qtd + 999, prazo_dias: args.prazoDias },
+    faixa: {
+      faixa_id: `${args.tabela}-f1`,
+      qtd_min: args.qtd,
+      qtd_max: args.qtd + 999,
+      prazo_dias: args.prazoDias,
+    },
     detalhes: { cobra_por_cor: args.cores > 1, max_cores: 4, is_curved: false },
-    markup: { markup_pct: 120, custo_unitario: +(args.unit / 1.2).toFixed(2), custo_setup_tabela: args.setup, preco_min_unit: args.unit, setup_proprio: null },
+    markup: {
+      markup_pct: 120,
+      custo_unitario: +(args.unit / 1.2).toFixed(2),
+      custo_setup_tabela: args.setup,
+      preco_min_unit: args.unit,
+      setup_proprio: null,
+    },
     codigo_orcamento: `${args.tabela}-${args.qtd}`,
   };
 }
@@ -198,7 +210,16 @@ const SCENARIOS: Scenario[] = [
     area: AREA_LASER,
     settings: { colors: 1, width: 5, height: 8, positions: 1 },
     quantity: 100,
-    payload: buildPayload({ tabela: 'LASER-3x12', nome: 'Fiber Laser', grupo: 'LASER', qtd: 100, cores: 1, unit: 3.5, setup: 50, prazoDias: 7 }),
+    payload: buildPayload({
+      tabela: 'LASER-3x12',
+      nome: 'Fiber Laser',
+      grupo: 'LASER',
+      qtd: 100,
+      cores: 1,
+      unit: 3.5,
+      setup: 50,
+      prazoDias: 7,
+    }),
   },
   {
     label: 'Serigrafia • Costas • 10×10 • 2 cores • 200un',
@@ -206,7 +227,16 @@ const SCENARIOS: Scenario[] = [
     area: AREA_SERIG,
     settings: { colors: 2, width: 10, height: 10, positions: 1 },
     quantity: 200,
-    payload: buildPayload({ tabela: 'SERI-10x10', nome: 'Serigrafia', grupo: 'SERIGRAFIA', qtd: 200, cores: 2, unit: 2.0, setup: 80, prazoDias: 10 }),
+    payload: buildPayload({
+      tabela: 'SERI-10x10',
+      nome: 'Serigrafia',
+      grupo: 'SERIGRAFIA',
+      qtd: 200,
+      cores: 2,
+      unit: 2.0,
+      setup: 80,
+      prazoDias: 10,
+    }),
   },
   {
     label: 'UV Digital • Tampa • 7×7 • 1 cor • 50un (setup vira piso)',
@@ -214,7 +244,16 @@ const SCENARIOS: Scenario[] = [
     area: AREA_UV,
     settings: { colors: 1, width: 7, height: 7, positions: 1 },
     quantity: 50,
-    payload: buildPayload({ tabela: 'UV-7x7', nome: 'UV Digital', grupo: 'UV', qtd: 50, cores: 1, unit: 1.2, setup: 90, prazoDias: 7 }),
+    payload: buildPayload({
+      tabela: 'UV-7x7',
+      nome: 'UV Digital',
+      grupo: 'UV',
+      qtd: 50,
+      cores: 1,
+      unit: 1.2,
+      setup: 90,
+      prazoDias: 7,
+    }),
   },
   {
     label: 'Laser • quantidade alta (1000un)',
@@ -222,7 +261,16 @@ const SCENARIOS: Scenario[] = [
     area: AREA_LASER,
     settings: { colors: 1, width: 5, height: 8, positions: 1 },
     quantity: 1000,
-    payload: buildPayload({ tabela: 'LASER-3x12', nome: 'Fiber Laser', grupo: 'LASER', qtd: 1000, cores: 1, unit: 1.8, setup: 50, prazoDias: 5 }),
+    payload: buildPayload({
+      tabela: 'LASER-3x12',
+      nome: 'Fiber Laser',
+      grupo: 'LASER',
+      qtd: 1000,
+      cores: 1,
+      unit: 1.8,
+      setup: 50,
+      prazoDias: 5,
+    }),
   },
 ];
 
@@ -261,10 +309,13 @@ describe('Paridade simulador ↔ wizard (fn_get_customization_price)', () => {
       expect(simulatorOption.estimatedDays).toBe(wizardPricing.productionDays);
 
       // Sanidade: o RPC foi chamado com os mesmos parâmetros que o wizard usaria
-      expect(mockedRpc).toHaveBeenCalledWith('fn_get_customization_price', expect.objectContaining({
-        p_area_id: scenario.area.area_id,
-        p_quantidade: scenario.quantity,
-      }));
+      expect(mockedRpc).toHaveBeenCalledWith(
+        'fn_get_customization_price',
+        expect.objectContaining({
+          p_area_id: scenario.area.area_id,
+          p_quantidade: scenario.quantity,
+        }),
+      );
     });
   }
 
@@ -294,7 +345,12 @@ describe('Paridade simulador ↔ wizard (fn_get_customization_price)', () => {
     mockedRpc.mockResolvedValue(payloadEN);
 
     const simulatorOption = await fetchOptionForTechnique(
-      tech, settings, quantity, 0, [area], 'parity-en',
+      tech,
+      settings,
+      quantity,
+      0,
+      [area],
+      'parity-en',
     );
     const flat = adaptPriceResponse(payloadEN as unknown as Record<string, unknown>);
     const wizardPricing = mapWizardPricing(flat, quantity);
