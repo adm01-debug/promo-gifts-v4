@@ -69,3 +69,14 @@ d('Edge authz bypass — supervisor/dev sem auth retorna 401', () => {
     });
   }
 });
+
+// Static manifest-integrity assertion (sempre roda — não depende de rede/secrets).
+describe('Manifest integrity — generate-mockup', () => {
+  it('é "authenticated" (usa authenticateRequest/JWT, não "token público assinado")', () => {
+    const e = EDGE_AUTHZ_MANIFEST['generate-mockup'];
+    expect(e?.category).toBe('authenticated');
+    // skipAnonBypassTest era falso-positivo herdado da categoria "public" incorreta:
+    // a função SEMPRE exige JWT, então não deve dispensar o teste de bypass anônimo.
+    expect(e?.skipAnonBypassTest).not.toBe(true);
+  });
+});

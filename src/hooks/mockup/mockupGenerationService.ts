@@ -47,6 +47,12 @@ export function createDefaultArea(): PersonalizationArea {
     positionY: 50,
     logoWidth: 10,
     logoHeight: 5,
+    // Explicit defaults: the size/rotation sliders are controlled inputs, so binding
+    // them to `undefined` on first render triggers React's controlled→uncontrolled
+    // warning and a dead slider until the user first drags it. Seeding 0°/100% here
+    // also means the first generate/save persists real geometry instead of NULL.
+    logoRotation: 0,
+    logoScale: 100,
     logoPreview: null,
   };
 }
@@ -183,9 +189,11 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // semantically-invalid empty string for a URL field.
     let logoUrl: string | null = area.logoPreview ?? null;
     if (logoUrl?.startsWith('data:')) {
+      // logoUrl is narrowed to a non-null `data:` string inside this guard, so pass it
+      // directly instead of re-asserting area.logoPreview (removes a non-null assertion).
       logoUrl = await uploadLogoToStorage(
         userId,
-        area.logoPreview!,
+        logoUrl,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
@@ -575,10 +583,14 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
+      // Spread the raw row FIRST so the explicit string coercions below WIN. Previously
+      // `...t` came last and re-overwrote id/name/code with the raw (often numeric)
+      // values, so Technique.id could be a number despite the `id: string` contract —
+      // breaking strict === comparisons and React keys downstream.
+      ...t,
       id: String(t.id),
       name: String(t.name),
       code: t.code ? String(t.code) : null,
-      ...t,
     }));
 }
 
