@@ -1249,3 +1249,25 @@ describe('Analise estatica — MockupLightbox.tsx', () => {
     });
   });
 });
+
+describe('Analise estatica — LogoPreviewCanvas.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/logo-editor/LogoPreviewCanvas.tsx');
+  });
+
+  describe('a11y — badge clicavel de configuracao de cores tem semantica de botao', () => {
+    it('badge interativo tem role="button"', () => {
+      expect(src).toContain('role="button"');
+    });
+    it('badge interativo tem tabIndex={0} para navegacao por teclado', () => {
+      expect(src).toContain('tabIndex={0}');
+    });
+    it('badge interativo tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Configurar cores da técnica"');
+    });
+    it('badge interativo responde a Enter e Space (ARIA spec)', () => {
+      expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+    });
+  });
+});
