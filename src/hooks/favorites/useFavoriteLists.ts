@@ -583,14 +583,16 @@ export function useLegacyFavoritesMigration() {
         onConflict: 'list_id,product_id,variant_id',
         ignoreDuplicates: true,
       });
-      if (!error) {
-        localStorage.setItem(FLAG, '1');
-        toast.success(`${legacy.length} favoritos migrados para a nuvem`);
+      if (error) {
+        logger.warn('[favorites-migration] upsert failed — will retry on next load', error);
+        return; // do NOT setMigrated: allows retry on next page load (FLAG not set)
       }
+      localStorage.setItem(FLAG, '1');
+      toast.success(`${legacy.length} favoritos migrados para a nuvem`);
+      setMigrated(true);
     } catch (e) {
       logger.warn('[favorites-migration]', e);
-    } finally {
-      setMigrated(true);
+      // do NOT setMigrated: allows retry on next page load
     }
   }, [user, defaultList, migrated]);
 
