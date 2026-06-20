@@ -20,7 +20,7 @@ import {
 } from '@/utils/color-image-resolver';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { cn } from '@/lib/utils';
 // FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
