@@ -107,9 +107,10 @@ export function getTechniquePrompt(technique: Technique): string {
 // migration 20251215011449) AND mirrored in area_config for backward-compat with
 // older records. client_id/client_name/logo_rotation/logo_scale added by
 // migration 20260620000001. Uses untypedFrom because the generated types.ts is stale.
+// user_id and thumbnail_url omitted: never used by the mapper below.
 const MOCKUP_HISTORY_COLUMNS =
-  'id, user_id, product_id, product_name, product_sku, technique_id, technique_name, ' +
-  'mockup_url, thumbnail_url, layout_url, logo_url, position_x, position_y, ' +
+  'id, product_id, product_name, product_sku, technique_id, technique_name, ' +
+  'mockup_url, layout_url, logo_url, position_x, position_y, ' +
   'logo_width_cm, logo_height_cm, logo_rotation, logo_scale, ' +
   'client_id, client_name, area_name, area_config, created_at';
 
@@ -263,6 +264,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
           .select('id')
           .single();
         if (!retryError) return retryRow?.id || null;
+        logger.error('[saveMockupToDb] FK retry also failed:', retryError);
       }
       logger.error('Error saving to history:', error);
       toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
@@ -516,14 +518,16 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
 
   // Remove both logo and composite mockup PNG from storage after successful DB
   // delete (best-effort — storage failures must not surface to the caller).
-  const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
-  const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
-
+  // Extract the storage path directly from the URL — avoids an extra getPublicUrl('')
+  // round-trip and is robust to base-URL format variations (trailing slash, etc.).
+  // Supabase storage public URLs follow the pattern:
+  //   .../storage/v1/object/public/mockup-assets/<path>
+  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/(.+)$/;
   const pathsToRemove: string[] = [];
   for (const url of [logoUrl, mockupUrl]) {
-    if (url && bucketPublicBase && url.startsWith(`${bucketPublicBase}/`)) {
-      pathsToRemove.push(url.slice(bucketPublicBase.length + 1));
-    }
+    if (!url) continue;
+    const match = url.match(STORAGE_PATH_RE);
+    if (match?.[1]) pathsToRemove.push(match[1]);
   }
 
   if (pathsToRemove.length > 0) {
