@@ -82,8 +82,8 @@ export function CartCompanyPickerDialog({
       setSearchTerm('');
       return;
     }
-    setRecents(readList(RECENT_KEY));
-    setFavorites(readList(FAV_KEY));
+    setRecents(readList(recentKey));
+    setFavorites(readList(favKey));
     // Sempre abre na aba "Todas" (busca) para o usuário poder digitar imediatamente.
     setTab('search');
     // Aguarda a aba "search" montar para garantir que inputRef.current exista.
