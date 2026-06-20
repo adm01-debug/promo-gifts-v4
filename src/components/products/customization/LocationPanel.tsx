@@ -122,19 +122,11 @@ function SelectedTechniqueBar({
 }: SelectedTechniqueBarProps) {
   return (
     <div
-      className={
-        'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ' +
-        (isPickerOpen
-          ? 'border-primary/60 bg-primary/10 ring-1 ring-primary/30'
-          : 'border-primary/30 bg-primary/5')
-      }
+      className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ${isPickerOpen ? 'border-primary/60 bg-primary/10 ring-1 ring-primary/30' : 'border-primary/30 bg-primary/5'}`}
     >
       <div className="flex min-w-0 items-center gap-2">
         <span
-          className={
-            'h-2 w-2 shrink-0 rounded-full bg-primary transition-transform ' +
-            (isPickerOpen ? 'scale-110 animate-pulse' : '')
-          }
+          className={`h-2 w-2 shrink-0 rounded-full bg-primary transition-transform ${isPickerOpen ? 'scale-110 animate-pulse' : ''}`}
           aria-hidden
         />
         <div className="min-w-0">

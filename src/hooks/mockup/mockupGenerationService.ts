@@ -65,6 +65,8 @@ export interface GeneratedMockup {
   position_y: number | null;
   logo_width_cm: number | null;
   logo_height_cm: number | null;
+  logo_rotation?: number | null;
+  logo_scale?: number | null;
   location_name?: string | null;
   colors_count?: number | null;
   annotations?: Array<Record<string, unknown>> | null;
@@ -137,6 +139,8 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
         (row.logo_width_cm as number | null) ?? (cfg.logoWidth as number | null) ?? null,
       logo_height_cm:
         (row.logo_height_cm as number | null) ?? (cfg.logoHeight as number | null) ?? null,
+      logo_rotation: (cfg.logoRotation as number | null) ?? null,
+      logo_scale: (cfg.logoScale as number | null) ?? null,
       client_id: null,
       client_name: (cfg.clientName as string | null) ?? null,
       location_name: (row.area_name as string | null) ?? null,
@@ -167,14 +171,18 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
   const { userId, product, technique, client, area, mockupUrl, annotations, extra } = params;
 
   try {
-    let logoUrl = area.logoPreview || '';
+    // BUG-7 FIX: was `|| ''` which stored empty string when upload fails or preview is
+    // absent. Use null so the column receives a proper SQL NULL instead of a
+    // semantically-invalid empty string for a URL field.
+    let logoUrl: string | null = area.logoPreview?.startsWith('data:')
+      ? null
+      : (area.logoPreview ?? null);
     if (area.logoPreview?.startsWith('data:')) {
-      const uploadedUrl = await uploadLogoToStorage(
+      logoUrl = await uploadLogoToStorage(
         userId,
         area.logoPreview,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
-      logoUrl = uploadedUrl || '';
     }
 
     let safeProductId: string | null = null;
@@ -187,7 +195,15 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       if (productRow) safeProductId = product.id;
     }
 
-    const safeTechniqueId: string | null = technique.id || null;
+    // BUG-10 FIX: generated_mockups.technique_id has a FK constraint pointing to
+    // `personalization_techniques`, but the techniques shown in the UI come from
+    // `tabela_preco_gravacao_oficial`. The two tables have ZERO overlapping UUIDs,
+    // so inserting a `tabela_preco` UUID into `technique_id` always raises a FK
+    // violation, causing saveMockupToDb to silently return null on EVERY invocation.
+    // Solution: always null-out technique_id (the technique name is already persisted
+    // in the `technique_name` text column, which is what all read paths use). The FK
+    // column should only be set once the UI loads techniques from `personalization_techniques`.
+    const safeTechniqueId: null = null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
     const { data: insertedRow, error } = await untypedFrom('generated_mockups')
@@ -224,10 +240,15 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       .select('id')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logger.error('Error saving to history:', error);
+      toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
+      return null;
+    }
     return insertedRow?.id || null;
   } catch (error) {
     logger.error('Error saving to history:', error);
+    toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
     return null;
   }
 }
@@ -237,6 +258,10 @@ export interface GenerateMockupParams {
   productName: string;
   technique: Technique;
   areas: PersonalizationArea[];
+  /** Largura física do produto em cm (WYSIWYG): proporciona escala real do logo gerado. */
+  productWidthCm?: number | null;
+  /** Altura física do produto em cm (WYSIWYG): proporciona escala real do logo gerado. */
+  productHeightCm?: number | null;
 }
 
 export interface GenerateMockupResult {
@@ -314,6 +339,10 @@ async function invokeMockupForArea(
       logoHeightCm: area.logoHeight,
       logoRotation: area.logoRotation ?? 0,
       logoScale: area.logoScale ?? 100,
+      // WYSIWYG: repassa dimensoes fisicas do produto para a edge function.
+      // Sem esses valores, posX/posY sao calculados com prodW=0 → fallback /20.
+      productWidthCm: params.productWidthCm ?? undefined,
+      productHeightCm: params.productHeightCm ?? undefined,
     },
   });
 
@@ -358,16 +387,23 @@ export async function generateMockupApi(
     return { singleUrl: url, batchResults: [] };
   }
 
-  // BATCH: one invocation per area; keep the successes, warn about partial failures.
+  // BATCH: one invocation per area — run all concurrently (BUG-2 FIX: was sequential
+  // for-loop which wasted N×latency for N areas; Promise.allSettled lets them run in
+  // parallel while still collecting partial failures without short-circuiting on the
+  // first error).
+  const settled = await Promise.allSettled(
+    areasWithLogos.map((area) =>
+      invokeMockupForArea(params, area).then((url) => ({ url, areaName: area.name })),
+    ),
+  );
   const batchResults: { url: string; areaName: string }[] = [];
   let failures = 0;
-  for (const area of areasWithLogos) {
-    try {
-      const url = await invokeMockupForArea(params, area);
-      batchResults.push({ url, areaName: area.name });
-    } catch (err) {
+  for (const result of settled) {
+    if (result.status === 'fulfilled') {
+      batchResults.push(result.value);
+    } else {
       failures += 1;
-      logger.error(`[generateMockupApi] área "${area.name}" falhou:`, err);
+      logger.error('[generateMockupApi] área falhou:', result.reason);
     }
   }
 
@@ -386,18 +422,43 @@ export function downloadMockupAsPdf(
   mockupUrl: string,
   product: { sku?: string | null },
   technique: Technique,
-): void {
+): Promise<void> {
   const safeSku = product.sku?.replace(/[^a-zA-Z0-9]/g, '-') || 'mockup';
   const safeTechnique = (technique.code || technique.name).replace(/[^a-zA-Z0-9]/g, '-');
   const fileName = `mockup-${safeSku}-${safeTechnique}.pdf`;
-  downloadImageAsPdfFromUrl(mockupUrl, fileName);
+  return downloadImageAsPdfFromUrl(mockupUrl, fileName);
 }
 
 export async function deleteMockupFromDb(id: string, userId?: string): Promise<void> {
-  let query = supabase.from('generated_mockups').delete().eq('id', id);
-  if (userId) query = query.eq('user_id', userId);
-  const { error } = await query;
+  // BUG-22 FIX: fetch logo_url before deleting the row so we can clean up
+  // the uploaded logo from storage. Best-effort — storage failure must not
+  // prevent the DB delete from proceeding.
+  let selectQuery = untypedFrom<Record<string, unknown>>('generated_mockups')
+    .select('logo_url')
+    .eq('id', id);
+  if (userId) selectQuery = selectQuery.eq('user_id', userId);
+  const { data: rows } = await selectQuery.limit(1);
+  const logoUrl =
+    (rows as unknown as Array<{ logo_url: string | null }> | null)?.[0]?.logo_url ?? null;
+
+  let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
+  if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
+  const { error } = await deleteQuery;
   if (error) throw error;
+
+  // Remove logo from storage after successful DB delete (best-effort)
+  if (logoUrl) {
+    try {
+      const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
+      const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
+      if (bucketPublicBase && logoUrl.startsWith(`${bucketPublicBase}/`)) {
+        const storagePath = logoUrl.slice(bucketPublicBase.length + 1);
+        await supabase.storage.from('mockup-assets').remove([storagePath]);
+      }
+    } catch (storageErr) {
+      logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
+    }
+  }
 }
 
 export function validateSvgLogo(logoDataUrl: string): { valid: boolean; reason?: string } {
@@ -410,6 +471,7 @@ export function validateSvgLogo(logoDataUrl: string): { valid: boolean; reason?:
     if (!svgText.includes('<svg') && !svgText.includes('<SVG')) {
       return { valid: false, reason: 'SVG inválido: elemento <svg> ausente' };
     }
+    // eslint-disable-next-line no-script-url -- security validation string, not a navigable URL
     if (svgText.includes('<script') || svgText.includes('javascript:')) {
       return { valid: false, reason: 'SVG rejeitado: contém script' };
     }

@@ -21,10 +21,12 @@ vi.mock('@/components/products/ProductColorSwatches', () => ({
 }));
 vi.mock('@/components/products/NoveltyBadge', () => ({ NoveltyBadge: () => null }));
 vi.mock('@/components/products/ProductStatusBadge', () => ({ ProductStatusBadge: () => null }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 vi.mock('@/components/inventory/StockBadge', () => ({
   StockBadge: () => null,
   getStockStatus: () => 'in-stock' as const,
 }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';

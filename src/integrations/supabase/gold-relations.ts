@@ -201,6 +201,17 @@ export interface GoldProductRow {
   supplier_type_code: string | null;
   supplier_subtype_code: string | null;
   price_verified_at: string | null;
+  // ── Campos adicionados em 2026-06-18 (audit-10-10) ─────────────────────────
+  // Gerados por mv_product_leaf_category + migração recente da view v_products_public.
+  // Campos opcionais (nullable) por construção do PostgREST sobre views.
+  primary_image_fallback_url: string | null;
+  leaf_category_id: string | null;
+  leaf_category_name: string | null;
+  leaf_category_level: number | null;
+  leaf_category_slug: string | null;
+  leaf_category_id_safe: string | null;
+  circumference_cm: number | null;
+  search_vector: string | null;
 }
 
 /** Linha da tabela Ouro `product_variants`. */

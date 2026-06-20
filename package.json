@@ -7,7 +7,7 @@
     "e2e:generate-fixtures": "tsx e2e/scripts/generate-fixtures.ts",
     "e2e:watch-fixtures": "npx chokidar-cli \"e2e/fixtures/permissions-matrix.ts\" -c \"npm run e2e:generate-fixtures\"",
     "dev": "npm run e2e:generate-fixtures && vite",
-    "build": "node scripts/guard-canonical-project.mjs && node scripts/validate-supabase-config.mjs && npm run typecheck && npm run lint:baseline && vite build",
+    "build": "node scripts/guard-canonical-project.mjs && node scripts/validate-supabase-config.mjs && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test": "TZ=America/Sao_Paulo vitest run",
@@ -20,6 +20,7 @@
     "test:coverage": "TZ=America/Sao_Paulo vitest run --coverage",
     "coverage": "TZ=America/Sao_Paulo vitest run --coverage",
     "test:price-freshness": "TZ=America/Sao_Paulo bash -c 'set -euo pipefail; files=( tests/utils/price-freshness*.test.ts tests/components/PriceFreshnessBadge*.test.tsx ); vitest run \"${files[@]}\" --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=html --coverage.include=src/utils/price-freshness.ts --coverage.include=src/components/products/PriceFreshnessBadge.tsx --coverage.thresholds.statements=0 --coverage.thresholds.branches=0 --coverage.thresholds.functions=0 --coverage.thresholds.lines=0 && node scripts/check-price-freshness-coverage.mjs'",
+    "test:kit-coverage:integration": "RUN_INTEGRATION_TESTS=1 TZ=America/Sao_Paulo vitest run src/lib/external-db/kit-coverage.integration.test.ts",
     "test:cloud-status": "TZ=America/Sao_Paulo vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts",
     "test:cloud-status-coverage": "TZ=America/Sao_Paulo vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.include=src/components/system/CloudStatusBanner.tsx --coverage.include=src/hooks/admin/useDevGate.ts && node scripts/check-cloud-status-coverage.mjs",
     "lint": "node scripts/check-tsc-baseline.mjs",
@@ -118,7 +119,8 @@
     "test:replenishment:unit": "vitest run tests/replenishment/",
     "test:replenishment:e2e": "npx playwright test e2e/replenishment/",
     "test:replenishment:dashboard": "node scripts/replenishment-ci/metrics-dashboard.mjs",
-    "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts"
+    "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts",
+    "build:verify": "npm run typecheck && npm run lint:baseline && npm run build"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
@@ -173,7 +175,7 @@
     "clsx": "^2.1.0",
     "cmdk": "^0.2.0",
     "date-fns": "3.6.0",
-    "dompurify": "^3.4.10",
+    "dompurify": "^3.4.11",
     "embla-carousel-react": "^8.0.0",
     "eslint": "^9.17.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",

@@ -18,7 +18,7 @@ interface ProductSectionNavProps {
  * Highlights the active section as user scrolls.
  */
 export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
-  const [activeId, setActiveId] = useState(tabs[0]?.id || '');
+  const [activeId, setActiveId] = useState(tabs[0]?.id ?? '');
   const navRef = useRef<HTMLDivElement>(null);
   const isClickScrolling = useRef(false);
 

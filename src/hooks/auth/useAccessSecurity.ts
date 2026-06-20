@@ -66,7 +66,7 @@ export function useAccessSecurity() {
             'id, ip_whitelist_enabled, city_whitelist_enabled, block_unknown_locations, max_failed_attempts, lockout_duration_minutes',
           )
           .limit(1)
-          .single(),
+          .maybeSingle(),
         untypedFrom('ip_access_control')
           .select('id, ip_address, list_type, reason, expires_at, created_at')
           .eq('list_type', 'allowlist')

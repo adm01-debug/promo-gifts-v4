@@ -184,7 +184,7 @@ export function useSimulation() {
   });
 
   const techniqueCodes = useMemo(
-    () => techniques?.map((t) => t.code).filter(Boolean) || [],
+    () => techniques?.map((t) => t.code).filter(Boolean) ?? [],
     [techniques],
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);
@@ -236,7 +236,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByColor) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('SILK') ||
         c.includes('SERIGRAFIA') ||
@@ -251,7 +251,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByArea) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('DTF') ||
         c.includes('SUB') ||

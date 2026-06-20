@@ -51,13 +51,22 @@ export function PriceHistoryChart({ data, title = 'Histórico de Preços' }: Pri
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${v}`} />
+            <YAxis
+              tick={{ fontSize: 11 }}
+              tickFormatter={(v) => {
+                const n = typeof v === 'number' ? v : Number(v);
+                return Number.isFinite(n) ? `R$${n}` : '';
+              }}
+            />
             <Tooltip
               contentStyle={{
                 background: 'hsl(var(--background))',
                 border: '1px solid hsl(var(--border))',
               }}
-              formatter={(v: number) => [`R$ ${v.toFixed(2)}`, 'Preço']}
+              formatter={(v) => {
+                const n = typeof v === 'number' ? v : Number(v);
+                return [Number.isFinite(n) ? `R$ ${n.toFixed(2)}` : '—', 'Preço'];
+              }}
             />
             <Line
               type="monotone"

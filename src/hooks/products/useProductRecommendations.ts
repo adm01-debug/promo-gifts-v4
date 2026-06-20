@@ -104,7 +104,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (viewsError) return [];
 
-      const viewedSkus = recentViews?.map((v) => v.product_sku).filter(Boolean) || [];
+      const viewedSkus = recentViews?.map((v) => v.product_sku).filter(Boolean) ?? [];
 
       try {
         const { fetchPromobrindProducts, getProductPrice, getProductImageUrl } =
@@ -217,8 +217,8 @@ export function useProductRecommendations(productId?: string, productSku?: strin
             reason: 'Em alta nas cotações',
           };
         });
-      } catch (error) {
-        logger.error('Error fetching trending products:', error);
+      } catch (fetchErr) {
+        logger.error('Error fetching trending products:', fetchErr);
         return [];
       }
     },

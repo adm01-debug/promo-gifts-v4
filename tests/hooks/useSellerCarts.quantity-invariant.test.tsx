@@ -170,7 +170,7 @@ describe('useSellerCarts — invariante de quantidade nos caminhos de escrita', 
     expect(lastUpdate()?.payload).toMatchObject({ quantity: MAX_ITEM_QUANTITY });
   });
 
-  it('moveItemToCart com mesclagem clampa a soma no teto', async () => {
+  it('moveItemToCart com overflow rejeita o move — sem perda de unidades', async () => {
     itemsTable = [
       mkRow({ id: 'src', cart_id: 'cart-A', product_id: 'p1', color_name: null, quantity: 600000 }),
       mkRow({ id: 'dst', cart_id: 'cart-B', product_id: 'p1', color_name: null, quantity: 600000 }),
@@ -178,14 +178,32 @@ describe('useSellerCarts — invariante de quantidade nos caminhos de escrita', 
     const { result } = renderHook(() => useSellerCarts(), { wrapper });
     await waitFor(() => expect(result.current.carts.length).toBe(2));
 
+    await expect(
+      result.current.moveItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' }),
+    ).rejects.toThrow(/excede o limite/);
+
+    // Nenhuma escrita — quantidades intactas
+    expect(ops).toHaveLength(0);
+    expect(itemsTable.find((r) => r.id === 'src')?.quantity).toBe(600000);
+    expect(itemsTable.find((r) => r.id === 'dst')?.quantity).toBe(600000);
+  });
+
+  it('moveItemToCart com mesclagem dentro do teto usa valor exato (sem clamp)', async () => {
+    itemsTable = [
+      mkRow({ id: 'src', cart_id: 'cart-A', product_id: 'p1', color_name: null, quantity: 100 }),
+      mkRow({ id: 'dst', cart_id: 'cart-B', product_id: 'p1', color_name: null, quantity: 200 }),
+    ];
+    const { result } = renderHook(() => useSellerCarts(), { wrapper });
+    await waitFor(() => expect(result.current.carts.length).toBe(2));
+
     await result.current.moveItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' });
 
     const update = ops.find((o) => o.kind === 'update');
-    expect(update?.payload).toMatchObject({ quantity: MAX_ITEM_QUANTITY });
+    expect(update?.payload).toMatchObject({ quantity: 300 });
     expect((update?.ids as string[])).toContain('dst');
   });
 
-  it('duplicateItemToCart com mesclagem clampa a soma no teto', async () => {
+  it('duplicateItemToCart com overflow rejeita a duplicação — destino inalterado', async () => {
     itemsTable = [
       mkRow({ id: 'src', cart_id: 'cart-A', product_id: 'p1', color_name: 'Azul', quantity: 700000 }),
       mkRow({ id: 'dst', cart_id: 'cart-B', product_id: 'p1', color_name: 'Azul', quantity: 700000 }),
@@ -193,8 +211,11 @@ describe('useSellerCarts — invariante de quantidade nos caminhos de escrita', 
     const { result } = renderHook(() => useSellerCarts(), { wrapper });
     await waitFor(() => expect(result.current.carts.length).toBe(2));
 
-    await result.current.duplicateItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' });
+    await expect(
+      result.current.duplicateItemToCart.mutateAsync({ itemId: 'src', targetCartId: 'cart-B' }),
+    ).rejects.toThrow(/excede o limite/);
 
-    expect(lastUpdate()?.payload).toMatchObject({ quantity: MAX_ITEM_QUANTITY });
+    expect(ops).toHaveLength(0);
+    expect(itemsTable.find((r) => r.id === 'dst')?.quantity).toBe(700000);
   });
 });

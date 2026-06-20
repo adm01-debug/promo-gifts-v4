@@ -94,11 +94,11 @@ function bench(label: string, fn: () => unknown) {
 describe(`stock benchmark — ${SKU_COUNT} SKUs × ${ITERATIONS} iter`, () => {
   it('gera relatório e bloqueia regressão > THRESHOLD_PCT em p95', () => {
     const products = buildDataset(SKU_COUNT);
-    const indexes = buildStockIndexes(products, []);
+    const indexes = buildStockIndexes(products);
     const base = { ...defaultStockFilters };
 
     const results = [
-      bench('buildStockIndexes', () => buildStockIndexes(products, [])),
+      bench('buildStockIndexes', () => buildStockIndexes(products)),
       bench('applyStockFilters (no filter)', () =>
         applyStockFilters(products, base, [], indexes),
       ),

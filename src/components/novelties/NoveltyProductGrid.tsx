@@ -28,6 +28,7 @@ import {
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
+import { NoveltyCardSkeleton } from './NoveltyCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
@@ -42,33 +43,16 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { NoveltyTableView } from './NoveltyCards';
 import { VirtualizedNoveltyGrid } from './VirtualizedNoveltyGrid';
+import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
+
+const CARD_MIN_HEIGHT_PX = 420;
+const SKELETON_GRID_ROWS = 3;
+const SKELETON_LIST_MIN_H = 600;
+
 type ViewMode = 'grid' | 'list' | 'table';
-
-function getGridColsClass(cols: ColumnCount): string {
-  switch (cols) {
-    case 3:
-      return 'grid-cols-2 sm:grid-cols-3';
-    case 4:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
-    case 5:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-    case 6:
-      return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
-    case 8:
-      return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
-    default:
-      return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-  }
-}
-
-function getGridGapClass(cols: ColumnCount): string {
-  if (cols >= 8) return 'gap-x-4 gap-y-8';
-  if (cols >= 6) return 'gap-x-6 gap-y-8';
-  return 'gap-x-8 gap-y-8';
-}
 
 export function NoveltyProductGrid() {
   const navigate = useNavigate();
@@ -80,6 +64,7 @@ export function NoveltyProductGrid() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
+  const [scrollToken, setScrollToken] = useState(0);
   const pageSize = 20;
   // BUG-SCROLL-03 FIX: guard local para evitar que o IntersectionObserver
   // do sentinel dispare múltiplos setVisibleCount antes do re-render React.
@@ -103,14 +88,12 @@ export function NoveltyProductGrid() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isFetching) {
       setLoadingProgress(0);
       progressRef.current = setInterval(() => {
         setLoadingProgress((prev) => {
-          if (prev >= 90) {
-            if (progressRef.current) clearInterval(progressRef.current);
-            return prev;
-          }
+          if (prev >= 99) return 99;
+          if (prev >= 85) return prev + 0.3;
           return prev + Math.random() * 12 + 3;
         });
       }, 300);
@@ -123,16 +106,17 @@ export function NoveltyProductGrid() {
     return () => {
       if (progressRef.current) clearInterval(progressRef.current);
     };
-  }, [isLoading]);
+  }, [isFetching]);
 
   const { suppliers, categories } = useMemo(() => {
     const supMap = new Map<string, { id: string; name: string; count: number }>();
     const catMap = new Map<string, { id: string; name: string; count: number }>();
     products.forEach((p) => {
-      if (p.supplier_id && p.supplier_name) {
+      if (p.supplier_id) {
+        const name = p.supplier_name || `Fornecedor ${p.supplier_id.slice(0, 6)}`;
         const e = supMap.get(p.supplier_id);
         if (e) e.count++;
-        else supMap.set(p.supplier_id, { id: p.supplier_id, name: p.supplier_name, count: 1 });
+        else supMap.set(p.supplier_id, { id: p.supplier_id, name, count: 1 });
       }
       if (p.category_id && p.category_name) {
         const e = catMap.get(p.category_id);
@@ -150,7 +134,9 @@ export function NoveltyProductGrid() {
     let filtered = [...products];
     if (searchQuery.trim()) {
       // FIX 2026-06-15 (novidades-search-accent): normaliza acento em ambos os lados
-      // antes de comparar — espelha o stripAccents do postgrest.ts (PR #750).
+      // antes de comparar — espelha o stripAccents de postgrest.ts (PR #750).
+      // Se search-server-side for adicionado futuramente, DEVE usar normalização
+      // idêntica (mesma função stripAccents), senão os resultados divergem.
       // Escopo INALTERADO: busca somente nas novidades já carregadas em memória.
       const norm = (s: string) =>
         s
@@ -179,6 +165,7 @@ export function NoveltyProductGrid() {
   // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(40);
+    setScrollToken((prev) => prev + 1);
     // GAP-11 FIX: libera o guard ao trocar de filtro para que o primeiro
     // load-more do novo conjunto não fique bloqueado pelos 150ms residuais.
     if (guardTimerRef.current) {
@@ -186,6 +173,13 @@ export function NoveltyProductGrid() {
       guardTimerRef.current = null;
     }
     isLoadingMoreLocalRef.current = false;
+    // GAP-SEL FIX: descarta seleção stale ao mudar filtros em modo de seleção.
+    // Sem isso, produtos selecionados antes do filtro continuam marcados após
+    // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
+    if (selectionMode) sel.clearSelection();
+    // sel is derived from filteredProducts (already a dep); adding sel would
+    // create a circular update loop (sel → filteredProducts → sel → …).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
   const paginatedProducts = useMemo(() => {
@@ -217,12 +211,16 @@ export function NoveltyProductGrid() {
 
   const sel = useNoveltiesSelectionMode({ selectionMode, filteredProducts });
   const hasActiveFilters =
-    selectedSupplier !== 'all' || selectedCategory !== 'all' || searchQuery.trim() !== '';
+    selectedSupplier !== 'all' ||
+    selectedCategory !== 'all' ||
+    searchQuery.trim() !== '' ||
+    sortMode !== 'newest';
   const handleProductClick = (id: string) => navigate(`/produto/${id}`);
   const clearFilters = () => {
     setSelectedSupplier('all');
     setSelectedCategory('all');
     setSearchQuery('');
+    setSortMode('newest');
   };
   if (error) logger.error('Erro ao carregar novidades:', error);
 
@@ -253,7 +251,9 @@ export function NoveltyProductGrid() {
     return map;
   }, [filteredProducts, sel]);
 
-  // Batch-load cores das variantes para os produtos visíveis (visualização atual)
+  // Batch-load cores das variantes para os produtos visíveis (visualização atual).
+  // Grid: apenas paginatedProducts (virtualizados). List/table: todos filtrados,
+  // pois todos estão no DOM (sem virtualização no momento).
   const visibleProductIds = useMemo(() => {
     if (viewMode === 'list' || viewMode === 'table') {
       return filteredProducts.map((n) => n.product_id);
@@ -285,7 +285,10 @@ export function NoveltyProductGrid() {
             // Reserva altura mínima do bloco da lista durante o loading para que
             // a transição skeleton→cards não cause oscilação na medição do
             // virtualizer.
-            style={{ minHeight: viewMode === 'list' ? 600 : 1260 }}
+            style={{
+              minHeight:
+                viewMode === 'list' ? SKELETON_LIST_MIN_H : CARD_MIN_HEIGHT_PX * SKELETON_GRID_ROWS,
+            }}
             className={cn(
               'grid',
               viewMode === 'list'
@@ -293,17 +296,15 @@ export function NoveltyProductGrid() {
                 : `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
           >
-            {Array.from({ length: 15 }).map((_, i) => (
-              <div
-                key={i}
-                data-testid="novelty-loading-card"
-                // Altura reservada idêntica ao card real (min-h-[420px]) para
-                // estabilizar o layout no swap skeleton→dados.
-                className={viewMode === 'list' ? '' : 'min-h-[420px]'}
-              >
-                <ProductCardSkeleton variant={viewMode === 'list' ? 'compact' : 'default'} />
-              </div>
-            ))}
+            {Array.from({ length: 15 }).map((_, i) =>
+              viewMode === 'list' ? (
+                <div key={i} data-testid="novelty-loading-card">
+                  <ProductCardSkeleton variant="compact" />
+                </div>
+              ) : (
+                <NoveltyCardSkeleton key={i} />
+              ),
+            )}
           </div>
         </div>
       );
@@ -408,7 +409,7 @@ export function NoveltyProductGrid() {
                       isInCompare={isInCompare(novelty.product_id)}
                       onToggleCompare={onToggleCompare}
                       canAddToCompare={canAddToCompare}
-                      isNovelty={true}
+                      isNovelty={novelty.is_active && novelty.days_remaining > 0}
                       noveltyDaysRemaining={novelty.days_remaining}
                       priority={index < 6}
                     />
@@ -433,6 +434,7 @@ export function NoveltyProductGrid() {
         hasMore={hasMore}
         isLoadingMore={isFetching}
         onLoadMore={handleLoadMore}
+        scrollToTopToken={scrollToken}
         onStatusClick={(type) => {
           if (type === 'novelty') return;
           if (type === 'promotion') navigate('/filtros?onSale=1');
@@ -470,7 +472,7 @@ export function NoveltyProductGrid() {
               )}
             </Badge>
             <AnimatePresence>
-              {isLoading && loadingProgress > 0 && loadingProgress < 100 && (
+              {isFetching && loadingProgress > 0 && loadingProgress < 100 && (
                 <motion.span
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 48 }}
@@ -673,7 +675,7 @@ export function NoveltyProductGrid() {
             >
               <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-sm text-muted-foreground">Filtrando...</span>
+                <span className="text-sm text-muted-foreground">Atualizando...</span>
               </div>
             </motion.div>
           )}
@@ -721,7 +723,7 @@ export function NoveltyProductGrid() {
         open={sel.collectionModalOpen}
         onOpenChange={sel.setCollectionModalOpen}
         productId={sel.firstSelectedId}
-        productName={sel.firstSelectedProduct?.product_name || ''}
+        productName={sel.firstSelectedProduct?.product_name ?? ''}
       />
     </div>
   );

@@ -53,16 +53,54 @@ const p = (id: string, name: string, variants: VariantStock[]): ProductStockSumm
 
 const fixture = (): ProductStockSummary[] => [
   p('p1', 'Garrafa térmica 480ml', [
-    v({ id: 'p1-azul', variantSku: 'P1-AZ', colorName: 'Azul', currentStock: 595, availableStock: 595 }),
-    v({ id: 'p1-rosa', variantSku: 'P1-RO', colorName: 'Rosa', currentStock: 0, availableStock: 0, status: 'out_of_stock' }),
+    v({
+      id: 'p1-azul',
+      variantSku: 'P1-AZ',
+      colorName: 'Azul',
+      currentStock: 595,
+      availableStock: 595,
+    }),
+    v({
+      id: 'p1-rosa',
+      variantSku: 'P1-RO',
+      colorName: 'Rosa',
+      currentStock: 0,
+      availableStock: 0,
+      status: 'out_of_stock',
+    }),
   ]),
   p('p2', 'Garrafa térmica 550ml', [
-    v({ id: 'p2-azul', variantSku: 'P2-AZ', colorName: 'Azul', currentStock: 200, availableStock: 200 }),
-    v({ id: 'p2-amar', variantSku: 'P2-AM', colorName: 'Amarelo', currentStock: 6, availableStock: 6 }),
-    v({ id: 'p2-preto', variantSku: 'P2-PR', colorName: 'Preto', currentStock: 0, availableStock: 0, status: 'out_of_stock' }),
+    v({
+      id: 'p2-azul',
+      variantSku: 'P2-AZ',
+      colorName: 'Azul',
+      currentStock: 200,
+      availableStock: 200,
+    }),
+    v({
+      id: 'p2-amar',
+      variantSku: 'P2-AM',
+      colorName: 'Amarelo',
+      currentStock: 6,
+      availableStock: 6,
+    }),
+    v({
+      id: 'p2-preto',
+      variantSku: 'P2-PR',
+      colorName: 'Preto',
+      currentStock: 0,
+      availableStock: 0,
+      status: 'out_of_stock',
+    }),
   ]),
   p('p3', 'Caneca cerâmica', [
-    v({ id: 'p3-verm', variantSku: 'P3-VM', colorName: 'Vermelho', currentStock: 800, availableStock: 800 }),
+    v({
+      id: 'p3-verm',
+      variantSku: 'P3-VM',
+      colorName: 'Vermelho',
+      currentStock: 800,
+      availableStock: 800,
+    }),
   ]),
 ];
 
@@ -159,7 +197,7 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
 
   it('buildStockIndexes monta byColorNameN normalizado e fast-path retorna vazio se ausente', () => {
     const data = fixture();
-    const idx = buildStockIndexes(data, []);
+    const idx = buildStockIndexes(data);
     expect(idx.byColorNameN.get('azul')?.size).toBe(2);
     const empty = applyStockFilters(data, withFilters({ colorName: 'Inexistente' }), [], idx);
     expect(empty).toEqual([]);
@@ -186,7 +224,7 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
 
   it('reuso de índice entre múltiplas paginações/filtros não corrompe resultado', () => {
     const data = fixture();
-    const idx = buildStockIndexes(data, []);
+    const idx = buildStockIndexes(data);
     const r1 = applyStockFilters(data, withFilters({ colorName: 'Azul' }), [], idx);
     const r2 = applyStockFilters(data, withFilters({ colorName: 'Amarelo' }), [], idx);
     const r3 = applyStockFilters(data, withFilters({ colorName: 'Azul' }), [], idx);
@@ -201,11 +239,17 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
         v({ id: `b${i}-azul`, variantSku: `B${i}-AZ`, colorName: 'Azul', availableStock: 600 }),
         v({ id: `b${i}-rosa`, variantSku: `B${i}-RO`, colorName: 'Rosa', availableStock: 50 }),
         v({ id: `b${i}-verde`, variantSku: `B${i}-VD`, colorName: 'Verde', availableStock: 10 }),
-        v({ id: `b${i}-preto`, variantSku: `B${i}-PR`, colorName: 'Preto', availableStock: 0, status: 'out_of_stock' }),
+        v({
+          id: `b${i}-preto`,
+          variantSku: `B${i}-PR`,
+          colorName: 'Preto',
+          availableStock: 0,
+          status: 'out_of_stock',
+        }),
         v({ id: `b${i}-amar`, variantSku: `B${i}-AM`, colorName: 'Amarelo', availableStock: 5 }),
       ]),
     );
-    const idx = buildStockIndexes(big, []);
+    const idx = buildStockIndexes(big);
     const t0 = performance.now();
     const out = applyStockFilters(
       big,
@@ -314,4 +358,3 @@ describe('stock-filter — pipeline de seleção/agregação/montagem', () => {
     });
   });
 });
-

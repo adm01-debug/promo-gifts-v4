@@ -12,21 +12,26 @@ import { cn } from '@/lib/utils';
 const QUERY_KEY = ['pending-discount-approvals-count'];
 
 export function DiscountApprovalHeaderBadge() {
-  const { isAdmin } = useAuth();
+  // FIX 2026-06-18 (BUG-DAR-401): adicionado rolesLoaded para evitar race condition.
+  // Sem rolesLoaded, isAdmin podia ser true antes do JWT estar anexado ao
+  // supabase-js client, fazendo a query disparar com anon key → HTTP 401.
+  // rolesLoaded=true garante que fetchUserData completou, portanto o JWT já
+  // está no cliente e a request vai como authenticated → HTTP 200 com RLS.
+  const { isAdmin, rolesLoaded } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: count = 0 } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      const { count } = await supabase
+      const { count: rawCount } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-      return count || 0;
+      return rawCount || 0;
     },
-    enabled: Boolean(isAdmin), // força boolean estável — evita re-trigger em undefined→false
+    enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto
     retry: 0, // sem retries: falha = falha, não flood de HEAD requests
     retryOnMount: false, // não re-tenta ao remontar o componente
     refetchInterval: 60_000,

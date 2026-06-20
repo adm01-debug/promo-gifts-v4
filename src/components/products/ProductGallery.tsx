@@ -72,6 +72,7 @@ export function ProductGallery({
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0 });
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasProductVideos = productVideos.length > 0;
   const selectedColor = colors?.[selectedColorIndex];
@@ -107,6 +108,12 @@ export function ProductGallery({
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (animTimerRef.current) clearTimeout(animTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     setSelectedIndex(0);
     resetZoom();
   }, [selectedColorIndex, resetZoom]);
@@ -118,14 +125,16 @@ export function ProductGallery({
     setIsAnimating(true);
     setSelectedIndex((prev) => (prev === 0 ? allMedia.length - 1 : prev - 1));
     resetZoom();
-    setTimeout(() => setIsAnimating(false), 400);
+    if (animTimerRef.current) clearTimeout(animTimerRef.current);
+    animTimerRef.current = setTimeout(() => setIsAnimating(false), 400);
   }, [allMedia.length, resetZoom]);
 
   const goToNext = useCallback(() => {
     setIsAnimating(true);
     setSelectedIndex((prev) => (prev === allMedia.length - 1 ? 0 : prev + 1));
     resetZoom();
-    setTimeout(() => setIsAnimating(false), 400);
+    if (animTimerRef.current) clearTimeout(animTimerRef.current);
+    animTimerRef.current = setTimeout(() => setIsAnimating(false), 400);
   }, [allMedia.length, resetZoom]);
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.5, 4));
@@ -187,7 +196,8 @@ export function ProductGallery({
     setIsAnimating(true);
     setSelectedIndex(index);
     resetZoom();
-    setTimeout(() => setIsAnimating(false), 400);
+    if (animTimerRef.current) clearTimeout(animTimerRef.current);
+    animTimerRef.current = setTimeout(() => setIsAnimating(false), 400);
   };
 
   return (

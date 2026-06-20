@@ -4,6 +4,8 @@
  * Loads ~10x faster than useProducts (no color/variant enrichment).
  */
 import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
@@ -27,7 +29,7 @@ function isWithinNoveltyWindow(createdAt: string | null | undefined): boolean {
 
 function mapLightweight(p: LightweightProduct): ProductLightweight {
   const price = p.sale_price ?? p.cost_price ?? 0;
-  const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
+  const imageUrl = p.primary_image_url || p.primary_image_fallback_url || '/placeholder.svg';
   return {
     id: String(p.id),
     name: p.name,
@@ -42,23 +44,33 @@ function mapLightweight(p: LightweightProduct): ProductLightweight {
   };
 }
 
-function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock' {
+function getStockStatus(
+  stock: number,
+  minQuantity?: number | null,
+): 'in-stock' | 'low-stock' | 'out-of-stock' {
   if (stock <= 0) return 'out-of-stock';
+  // FIX BUG-STOCK-01 (2026-06-18): 144 produtos ativos com stock > 0 mas
+  // min_quantity > stock — aparecem como "Estoque baixo" mas não podem ser
+  // pedidos (fornecedor exige mínimo que excede o disponível). Correto: out-of-stock.
+  // Proteção: min >= 1 evita falso-positivo quando min_quantity é 0/null.
+  if (minQuantity && minQuantity >= 1 && stock < minQuantity) return 'out-of-stock';
   if (stock < 10) return 'low-stock';
   return 'in-stock';
 }
 
+/** Converte um `LightweightProduct` (DB) em `Product` (UI), resolvendo categoria-folha e imagens. */
 export function mapLightweightToProduct(
   p: LightweightProduct,
   categoriesById?: ReadonlyMap<string, string>,
 ): Product {
-  const imageUrl = p.primary_image_url || p.image_url || '/placeholder.svg';
+  const imageUrl = p.primary_image_url || p.primary_image_fallback_url || '/placeholder.svg';
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
-  const resolvedCategoryId = p.category_id || p.main_category_id;
-  const resolvedCategoryName = resolvedCategoryId
-    ? (categoriesById?.get(resolvedCategoryId) ?? null)
-    : null;
+  // FIX BUG-D (2026-06-18): preferir leaf_category_id (categoria mais profunda).
+  const resolvedCategoryId = p.leaf_category_id || p.category_id || p.main_category_id;
+  const resolvedCategoryName =
+    p.leaf_category_name ||
+    (resolvedCategoryId ? (categoriesById?.get(resolvedCategoryId) ?? null) : null);
 
   // set_image_url: URL da imagem "set" (todas as cores juntas).
   // null = produto não tem set → card mostra imagem estática sem hover.
@@ -85,7 +97,7 @@ export function mapLightweightToProduct(
     brand: p.brand,
     is_active: p.is_active || p.active,
     minQuantity: p.min_quantity || 1,
-    stockStatus: getStockStatus(stock),
+    stockStatus: getStockStatus(stock, p.min_quantity),
     // Espelha product-mapper.ts: featured = is_featured OR is_bestseller.
     // Antes hardcoded false → toggle "Destaques" do Super Filtro retornava 0.
     featured: Boolean(p.is_featured || p.is_bestseller),
@@ -110,7 +122,9 @@ export function mapLightweightToProduct(
   };
 }
 
+/** Número de produtos por página nas queries do catálogo. */
 export const CATALOG_PAGE_SIZE = 500;
+/** Número de páginas buscadas em paralelo no primeiro load (burst inicial). */
 export const CATALOG_BATCH_PAGES = 4;
 
 /**
@@ -122,12 +136,22 @@ export const CATALOG_BATCH_PAGES = 4;
  */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, short_description, ' +
-  'sale_price, cost_price, primary_image_url, set_image_url, ' +
+  // FIX 2026-06-18 (catalog-audit-batch-k): adicionado primary_image_fallback_url.
+  // Antes ausente → fallback chain usava p.image_url que sempre era undefined
+  // (campo não existe no SELECT de nenhuma das duas fontes). Agora:
+  //   primary_image_url (CF CDN) → primary_image_fallback_url (supplier CDN) → placeholder.
+  // Cobertura: 7028 produtos têm fallback_url; com os workers populando primary_image_url
+  // para ~7153/7154, o fix é defensivo mas elimina o risco para produtos recém-ativados
+  // antes do primeiro ciclo do backfill (cada 5 min).
+  'sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'supplier_id, category_id, main_category_id, brand, is_active, active, ' +
   'stock_quantity, min_quantity, is_kit, is_new, ' +
   'is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, ' +
   'created_at, gender, price_updated_at, ' +
-  'ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
+  'ai_title, ai_description, ai_summary, ai_version, ai_generated_at, ' +
+  // FIX BUG-D (2026-06-18): leaf_category_id/name pré-computados em v_products_public
+  // via mv_product_leaf_category. Elimina o round-trip de useProductLeafCategories.
+  'leaf_category_id, leaf_category_name, leaf_category_level';
 // FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
 // Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e
 // description='' em TODO produto da grade, neutralizando o re-rank/substring client-side por
@@ -148,6 +172,56 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
   }
 }
 
+/**
+ * FIX 2026-06-18 (catalog-audit): ordenação server-side para os sorts
+ * best-seller-* via RPC get_catalog_bestseller_page. Sem isto, o servidor
+ * paginava por `name` e o cliente reordenava SÓ a janela já carregada
+ * (~2000 de ~7150) — campeões de venda alfabeticamente tardios nunca
+ * alcançavam o topo. A RPC ordena o conjunto GLOBAL de ativos (turnover ou
+ * vendas promo) e devolve as próprias linhas de v_products_public (mesmas
+ * colunas/grants), sem precisar de um segundo fetch por id (evita URL gigante).
+ * Usada apenas no caminho SEM busca/filtros; com filtros o ranking permanece
+ * client-side sobre o conjunto (menor) filtrado.
+ */
+async function fetchBestSellerCatalogPage(offset: number, sortBy: string): Promise<CatalogPage> {
+  const isFirstLoad = offset === 0;
+  const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
+  const span = CATALOG_PAGE_SIZE * pagesToFetch;
+
+  // RPC fora dos tipos gerados -> cast `as never` (padrão do projeto).
+  const { data, error } = await supabase.rpc(
+    'get_catalog_bestseller_page' as never,
+    {
+      p_sort: sortBy,
+      p_limit: span,
+      p_offset: offset,
+    } as never,
+  );
+  if (error) throw error;
+
+  const rows = (data as unknown as LightweightProduct[] | null) ?? [];
+  const categoriesById = await loadCategoriesMap();
+  const products = rows.map((r) => mapLightweightToProduct(r, categoriesById));
+
+  // Total exato apenas no primeiro load (o front mantém o número estável depois).
+  let totalEstimate: number | null = null;
+  if (isFirstLoad) {
+    const { count } = await dbInvoke<LightweightProduct>({
+      table: 'products',
+      operation: 'select',
+      select: 'id',
+      filters: { active: true },
+      limit: 1,
+      offset: 0,
+      countMode: 'exact',
+    });
+    totalEstimate = count;
+  }
+
+  const nextOffset = rows.length === span ? offset + rows.length : null;
+  return { products, nextOffset, totalEstimate };
+}
+
 async function fetchCatalogPage(
   offset: number,
   search?: string,
@@ -155,6 +229,19 @@ async function fetchCatalogPage(
   suppliers?: string[],
   sortBy?: string,
 ): Promise<CatalogPage> {
+  // best-seller-*: ordenação server-side (RPC) no caminho sem busca/filtros.
+  // Fallback gracioso: qualquer erro cai no fluxo padrão (name + re-sort client-side).
+  const isBestSeller = sortBy === 'best-seller-supplier' || sortBy === 'best-seller-promo';
+  const hasNoConstraints =
+    !search && (!categories || categories.length === 0) && (!suppliers || suppliers.length === 0);
+  if (isBestSeller && hasNoConstraints) {
+    try {
+      return await fetchBestSellerCatalogPage(offset, sortBy as string);
+    } catch (err) {
+      logger.warn('[catalog] RPC best-seller indisponível; fallback p/ ordenação client-side', err);
+    }
+  }
+
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
   if (categories && categories.length > 0) filters.category_id = categories;
@@ -277,6 +364,7 @@ async function fetchCatalogPage(
   };
 }
 
+/** Busca lista mínima de produtos (sem enriquecimento) para seletores e catálogo de seleção rápida. */
 export function useProductsLightweight() {
   return useQuery<ProductLightweight[]>({
     queryKey: ['promobrind-products-lightweight', 'v3-page-100'],
@@ -296,15 +384,16 @@ export function useProductsLightweight() {
   });
 }
 
+/** Hook de catálogo paginado infinito com busca, filtros de categoria/fornecedor e sort server-side. */
 export function useProductsCatalog(filters?: {
   search?: string;
   categories?: string[];
   suppliers?: string[];
   sortBy?: string;
 }) {
-  const search = filters?.search || '';
-  const categories = filters?.categories || [];
-  const suppliers = filters?.suppliers || [];
+  const search = filters?.search ?? '';
+  const categories = filters?.categories ?? [];
+  const suppliers = filters?.suppliers ?? [];
   const sortBy = filters?.sortBy || 'newest';
   return useInfiniteQuery<CatalogPage, Error>({
     queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],

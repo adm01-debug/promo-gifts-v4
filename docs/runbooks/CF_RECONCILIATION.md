@@ -33,22 +33,84 @@ o asset exista no CF, e porque imagens são removidas do CF sem limpar a referê
 - **5** produtos ativos sem imagem → fila `product_no_active_image`.
 - Verificação que `produtos_ativos_sem_primaria = 0` após as desativações.
 
-## Pendente para 10/10 — Crawl completo CF→DB (direção órfã)
+## Sessão 2026-06-19 — Melhorias P1–P5
 
-A amostra (~2,3% órfãs) indica órfãos minoritários, mas o número exato exige varrer
-as ~72k imagens do Cloudflare (`cf_images_list`, ~721 páginas de 100). Isso deve rodar
-como **job agendado** (Edge Function ou n8n), não inline. Procedimento:
+### P1 — Fechar 56 remediações `broken_active_no_replacement` obsoletas
+Migration `20260619140000`: o pipeline re-verificou todos os 56 `cloudflare_image_id`
+após a remediação ser aberta. Fechadas via `status='done'` com evidência em `action_log`.
 
-1. `insert into cf_recon.crawl_run(status) values ('running') returning id;`
+### P2 — Adicionar `product_id` em `action_log`
+Migration `20260619140100`: coluna `product_id uuid` adicionada para sobreviver ao
+`ON DELETE CASCADE` de `product_images`. Backfill por `product_images.product_id`
+e `remediation.product_id`.
+
+### P3 — Reconstruir 2 migrations ausentes do repo
+Migrations `20260617123455` e `20260617124547` reconstruídas a partir de evidências
+em `action_log` e `pg_indexes`. Cobrem 11 entradas fantasma da auditoria (ids `asia-*`)
+e 3 índices de performance para `cf_image`/`remediation`.
+
+### P4 — Fechar 5 remediações `product_no_active_image` obsoletas
+Migration `20260619140200`: produtos estavam inativos desde que a remediação foi aberta.
+Sem dono ativo → não é mais um problema de negócio vivo.
+
+### P5 — Referência circular em `v_cf_orphans` (raiz do problema)
+Migration `20260619140300`.
+
+**Causa raiz:** `cf_recon.cf_image` foi populada por backfill de
+`product_images WHERE cf_sync_status = 'verified'` — a **mesma** fonte que se queria
+auditar. `v_cf_orphans` fazia LEFT JOIN de `cf_image` → `product_images` e retornava
+`WHERE pi.id IS NULL`, que era sempre vazio porque cada linha de `cf_image` veio de
+`product_images`. Referência 100% circular.
+
+**Correção:** `v_cf_orphans` agora requer `ci.crawl_run_id IS NOT NULL`. Somente
+imagens confirmadas por um crawl real da API do Cloudflare são consideradas para
+detecção de órfãos.
+
+**Crawl parcial realizado (2026-06-19):**
+- `crawl_run_id`: `bf9095c3-34c7-49a1-b9be-fd1925a78145`
+- Páginas 1–8 = 800 imagens reais confirmadas (`status='partial'`)
+- 0 órfãs nas 800 amostras (esperado: imagens `spot-*` têm donos no DB)
+- CF reporta 72 199 imagens totais; crawl completo = 722 páginas (job agendado)
+
+---
+
+## Crawl completo CF→DB (pendente — job agendado)
+
+As ~72k imagens do Cloudflare (`cf_images_list`, ~722 páginas de 100) devem ser
+varridas por **job agendado** (Edge Function ou n8n), não inline. Procedimento:
+
+1. `INSERT INTO cf_recon.crawl_run(status) VALUES ('running') RETURNING id;`
 2. Para cada página `p` de 1..N (até `count < per_page`):
    - chamar `cf_images_list(page=p, per_page=100, sort_order='desc')`;
-   - `insert into cf_recon.cf_image (image_id, uploaded_at, filename, crawl_run_id)`
-     `... on conflict (image_id) do update set last_seen_at = now();`
-3. Ao fim: `update cf_recon.crawl_run set status='completed', finished_at=now(), pages_scanned=p, images_seen=...`.
+   - ```sql
+     INSERT INTO cf_recon.cf_image (image_id, uploaded_at, filename, crawl_run_id)
+     SELECT img_id, '2026-02-06'::timestamptz, substring(img_id FROM 6)||'.jpg', '<crawl_run_id>'
+     FROM unnest(ARRAY[...]) AS img_id
+     ON CONFLICT (image_id) DO UPDATE SET crawl_run_id = EXCLUDED.crawl_run_id,
+                                          last_seen_at = NOW();
+     ```
+3. Ao fim: `UPDATE cf_recon.crawl_run SET status='completed', finished_at=NOW(), pages_scanned=p, images_seen=... WHERE id='<id>';`
 4. Reconciliar:
-   - **Órfãs CF**: `select * from cf_recon.v_cf_orphans;` (candidatas a delete no CF — revisar antes).
-   - **Quebradas DB**: `select * from cf_recon.v_divergence where divergence_class like 'broken%';`
-   - **Drift** (verified que sumiu do CF): `... where cf_sync_status='verified' and not exists_in_cf`.
+   - **Órfãs CF** (agora funciona): `SELECT * FROM cf_recon.v_cf_orphans;` — candidatas a delete no CF (revisar antes).
+   - **Quebradas DB**: `SELECT * FROM cf_recon.v_divergence WHERE divergence_class LIKE 'broken%';`
+   - **Drift** (verified que sumiu do CF): `... WHERE cf_sync_status='verified' AND NOT exists_in_cf`.
+
+## Riscos conhecidos
+
+### CASCADE FK em `product_images`
+`product_images` tem FK `product_images_product_id_fkey ON DELETE CASCADE`.
+Deletar fisicamente um produto → todos os `product_images` do produto somem → `action_log.image_db_id` fica órfão sem rastreabilidade de produto.
+**Mitigação:** coluna `action_log.product_id` (P2 acima) — armazena `product_id` denormalizado antes do cascade.
+
+### 14 triggers em `product_images`
+Atualizar `is_active`/`is_primary` dispara autopromote e re-sync para `products`.
+Atualizar apenas `cf_*` + `last_modified_source` **não** dispara triggers — seguro para reconciliação de status.
+
+### Gap de ~150+ migrations ausentes do repo (2026-06-16 → 2026-06-19)
+As migrations `20260616181001..181005` (fundação `cf_recon`) estão presentes.
+As migrations entre `20260616181005` e `20260617123455` **não existem como arquivos** —
+foram aplicadas diretamente ao DB via MCP sem criar arquivos. P3 reconstruiu 2 delas.
+Ao criar novas migrations, checar `SELECT * FROM supabase_migrations.schema_migrations ORDER BY version DESC LIMIT 20` para garantir consistência.
 
 ## Regras de segurança (NÃO violar)
 

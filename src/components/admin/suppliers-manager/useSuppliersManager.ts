@@ -339,7 +339,7 @@ export function useSuppliersManager() {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') || '';
+    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') ?? '';
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
@@ -505,7 +505,8 @@ export function useSuppliersManager() {
       setEditingSupplier(null);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar fornecedor');
+      logger.error('Failed to save supplier', err);
+      toast.error('Erro ao salvar fornecedor');
     } finally {
       setSaving(false);
     }
@@ -526,7 +527,8 @@ export function useSuppliersManager() {
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao excluir fornecedor');
+      logger.error('Failed to delete supplier', err);
+      toast.error('Erro ao excluir fornecedor');
     } finally {
       setDeleting(null);
     }
@@ -562,7 +564,8 @@ export function useSuppliersManager() {
       updateField('logo_url', urlData.publicUrl);
       toast.success('Logo enviada com sucesso');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao enviar logo');
+      logger.error('Failed to upload supplier logo', err);
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -571,7 +574,7 @@ export function useSuppliersManager() {
 
   // BUG-17 FIX: only fill fields that are currently empty — never overwrite existing data
   const handleCnpjLookup = async () => {
-    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') || '';
+    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') ?? '';
     if (!validateCnpj(digits)) {
       toast.error('CNPJ inválido');
       return;
@@ -597,7 +600,8 @@ export function useSuppliersManager() {
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao consultar CNPJ');
+      logger.error('Failed to lookup supplier CNPJ', err);
+      toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }

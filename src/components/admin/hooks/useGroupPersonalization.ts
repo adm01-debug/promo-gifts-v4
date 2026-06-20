@@ -275,18 +275,18 @@ export function useGroupPersonalization() {
   });
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.group_component_id === componentId) || [];
+    locations?.filter((l) => l.group_component_id === componentId) ?? [];
 
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.group_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.group_location_id === locationId) ?? [];
 
   const reorderComponents = async (
-    components: GroupComponent[],
+    groupComponents: GroupComponent[],
     oldIndex: number,
     newIndex: number,
   ) => {
     const { arrayMove } = await import('@dnd-kit/sortable');
-    const reordered = arrayMove(components, oldIndex, newIndex);
+    const reordered = arrayMove(groupComponents, oldIndex, newIndex);
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].sort_order !== i) {
         await untypedFrom('product_group_components')

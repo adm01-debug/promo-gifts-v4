@@ -373,7 +373,7 @@ export function MockupPromptManager() {
       />
       <HistoryDialog
         open={!!historyDialog}
-        label={historyDialog?.label || ''}
+        label={historyDialog?.label ?? ''}
         history={history}
         loading={historyLoading}
         onClose={() => setHistoryDialog(null)}
@@ -381,7 +381,7 @@ export function MockupPromptManager() {
       />
       <TestDialog
         open={!!testDialog}
-        label={testDialog?.label || ''}
+        label={testDialog?.label ?? ''}
         result={testResult}
         loading={isTesting}
         onClose={() => setTestDialog(null)}

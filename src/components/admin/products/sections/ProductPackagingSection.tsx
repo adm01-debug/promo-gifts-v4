@@ -60,10 +60,10 @@ export function ProductPackagingSection({
   watch,
   setValue,
 }: Props) {
-  const packingType = watch?.('packing_type') || '';
-  const packagingMaterial = watch?.('packaging_material') || '';
-  const packagingColor = watch?.('packaging_color') || '';
-  const packagingFinish = watch?.('packaging_finish') || '';
+  const packingType = watch?.('packing_type') ?? '';
+  const packagingMaterial = watch?.('packaging_material') ?? '';
+  const packagingColor = watch?.('packaging_color') ?? '';
+  const packagingFinish = watch?.('packaging_finish') ?? '';
 
   return (
     <SectionCard

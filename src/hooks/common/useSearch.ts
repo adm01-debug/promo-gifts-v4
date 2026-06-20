@@ -41,7 +41,7 @@ export function useSearch(products: Product[] = []) {
   // when productsContext?.products is undefined (fallback to []) causing all
   // dependent useMemos (Fuse instances, suggestions) to recompute every keystroke.
   const availableProducts = useMemo(
-    () => (products.length > 0 ? products : productsContext?.products || []),
+    () => (products.length > 0 ? products : productsContext?.products ?? []),
     [products, productsContext?.products],
   );
 

@@ -27,7 +27,7 @@ interface ImageWithFallbackProps extends Omit<React.ImgHTMLAttributes<HTMLImageE
 }
 
 export const ImageWithFallback = forwardRef<HTMLImageElement, ImageWithFallbackProps>(
-  function ImageWithFallback(
+  (
     {
       urlCdn,
       urlOriginal,
@@ -43,7 +43,7 @@ export const ImageWithFallback = forwardRef<HTMLImageElement, ImageWithFallbackP
       ...props
     },
     ref,
-  ) {
+  ) => {
     const [error, setError] = useState(false);
     const [loaded, setLoaded] = useState(false);
 

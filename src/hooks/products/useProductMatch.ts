@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import type { Product } from '@/types/product-catalog';
 
+/** Produto correspondente com pontuação de relevância e motivos do match. */
 export interface MatchResult {
   product: Product;
   score: number;
@@ -106,8 +107,8 @@ function calculateMatchScore(
     'endomarketing',
   ];
   for (const tagCat of tagCategories) {
-    const srcTags = (source.tags?.[tagCat] || []).map((t) => t.trim().toLowerCase());
-    const candTags = (candidate.tags?.[tagCat] || []).map((t) => t.trim().toLowerCase());
+    const srcTags = (source.tags?.[tagCat] ?? []).map((t) => t.trim().toLowerCase());
+    const candTags = (candidate.tags?.[tagCat] ?? []).map((t) => t.trim().toLowerCase());
     const shared = srcTags.filter((t) => t && candTags.includes(t));
     if (shared.length > 0) {
       score += 10 * shared.length;
@@ -116,10 +117,10 @@ function calculateMatchScore(
   }
 
   // Shared nicho/ramo
-  const srcNiches = [...(source.tags?.nicho || []), ...(source.tags?.ramo || [])].map((n) =>
+  const srcNiches = [...(source.tags?.nicho ?? []), ...(source.tags?.ramo ?? [])].map((n) =>
     n.trim().toLowerCase(),
   );
-  const candNiches = [...(candidate.tags?.nicho || []), ...(candidate.tags?.ramo || [])].map((n) =>
+  const candNiches = [...(candidate.tags?.nicho ?? []), ...(candidate.tags?.ramo ?? [])].map((n) =>
     n.trim().toLowerCase(),
   );
   const sharedNiches = srcNiches.filter((n) => n && candNiches.includes(n));
@@ -167,6 +168,7 @@ function getMatchType(
   return 'similar';
 }
 
+/** Filtros para limitar quais produtos correspondentes são retornados pelo hook. */
 export interface MatchFilters {
   minScore: number;
   matchTypes: MatchResult['matchType'][];
@@ -181,6 +183,7 @@ const DEFAULT_FILTERS: MatchFilters = {
   onlyInStock: false,
 };
 
+/** Retorna produtos similares/complementares ordenados por pontuação de relevância. */
 export function useProductMatch(
   sourceProduct: Product | null,
   allProducts: Product[],

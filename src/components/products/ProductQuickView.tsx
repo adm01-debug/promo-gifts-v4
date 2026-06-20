@@ -8,6 +8,8 @@ import {
   ChevronRight,
   BarChart2,
   Share2,
+  FileText,
+  FolderPlus,
 } from 'lucide-react';
 import {
   Dialog,
@@ -30,6 +32,27 @@ import {
 import { type Product } from '@/types/product-catalog';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+const QuickViewTooltip = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <span className="inline-flex">{children}</span>
+    </TooltipTrigger>
+    <TooltipContent side="top">{label}</TooltipContent>
+  </Tooltip>
+);
 
 // Image types that are excluded from the gallery (ADR-001)
 const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'component']);
@@ -46,6 +69,8 @@ interface ProductQuickViewProps {
   onAddToCart?: (productId: string, quantity: number, colorId?: string) => void;
   onNavigateToProduct?: (productId: string) => void;
   onShare?: (product: Product) => void;
+  onAddToQuote?: (product: Product) => void;
+  onAddToCollection?: (product: Product) => void;
 }
 
 export const ProductQuickView = React.memo(
@@ -61,6 +86,8 @@ export const ProductQuickView = React.memo(
     onAddToCart,
     onNavigateToProduct,
     onShare,
+    onAddToQuote,
+    onAddToCollection,
   }: ProductQuickViewProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -413,7 +440,7 @@ export const ProductQuickView = React.memo(
                   <p className="mb-2 text-sm font-medium">
                     Cor
                     {selectedColorId
-                      ? `: ${productColors.find((c) => c.id === selectedColorId)?.name || ''}`
+                      ? `: ${productColors.find((c) => c.id === selectedColorId)?.name ?? ''}`
                       : ''}
                   </p>
                   <ProductColorSelector
@@ -464,20 +491,52 @@ export const ProductQuickView = React.memo(
 
               {/* Actions */}
               <div className="mt-auto flex flex-col gap-2 pt-2">
-                {onAddToCart && (
-                  <Button
-                    onClick={() => handleAddToCart()}
-                    disabled={product.stockStatus === 'out-of-stock'}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Adicionar ao carrinho
-                  </Button>
-                )}
+                <TooltipProvider delayDuration={200}>
+                <div className="flex flex-wrap gap-2" data-testid="product-quickview-actions">
+                  <QuickViewTooltip label="Adicionar ao carrinho">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleAddToCart()}
+                      disabled={product.stockStatus === 'out-of-stock'}
+                      className="flex-shrink-0"
+                      aria-label="Adicionar ao carrinho"
+                      data-testid="product-quickview-cart"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                    </Button>
+                  </QuickViewTooltip>
 
-                <div className="flex gap-2">
+                  {onAddToQuote && (
+                    <QuickViewTooltip label="Adicionar ao orçamento">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onAddToQuote(product)}
+                      className="flex-shrink-0"
+                      aria-label="Adicionar ao orçamento"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    </QuickViewTooltip>
+                  )}
+
+                  {onAddToCollection && (
+                    <QuickViewTooltip label="Adicionar à coleção">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onAddToCollection(product)}
+                      className="flex-shrink-0"
+                      aria-label="Adicionar à coleção"
+                    >
+                      <FolderPlus className="h-4 w-4" />
+                    </Button>
+                    </QuickViewTooltip>
+                  )}
+
                   {onToggleFavorite && (
+                    <QuickViewTooltip label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
                     <Button
                       variant="outline"
                       size="icon"
@@ -487,12 +546,15 @@ export const ProductQuickView = React.memo(
                         isFavorited && 'border-red-200 bg-red-50 text-red-500',
                       )}
                       aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      data-testid="product-quickview-favorite"
                     >
                       <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
                     </Button>
+                    </QuickViewTooltip>
                   )}
 
                   {onToggleCompare && (
+                    <QuickViewTooltip label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}>
                     <Button
                       variant="outline"
                       size="icon"
@@ -503,22 +565,44 @@ export const ProductQuickView = React.memo(
                         isInCompare && 'border-primary/30 bg-primary/5 text-primary',
                       )}
                       aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                      data-testid="product-quickview-compare"
                     >
                       <BarChart2 className="h-4 w-4" />
                     </Button>
+                    </QuickViewTooltip>
                   )}
 
-                  {onShare && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onShare(product)}
-                      className="flex-shrink-0"
-                      aria-label="Compartilhar"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <QuickViewTooltip label="Compartilhar">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={async () => {
+                      if (onShare) {
+                        onShare(product);
+                        return;
+                      }
+                      const url = typeof window !== 'undefined' ? window.location.href : '';
+                      const nav: Navigator | undefined =
+                        typeof navigator !== 'undefined' ? navigator : undefined;
+                      try {
+                        if (nav && typeof nav.share === 'function') {
+                          await nav.share({ title: product.name, url });
+                        } else if (nav?.clipboard) {
+                          await nav.clipboard.writeText(url);
+                          toast.success('Link copiado');
+                        }
+                      } catch {
+                        /* user cancelled */
+                      }
+                    }}
+                    className="flex-shrink-0"
+                    aria-label="Compartilhar"
+                    data-testid="product-quickview-share"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                  </QuickViewTooltip>
+
 
                   {onNavigateToProduct && (
                     <Button variant="outline" onClick={handleNavigate} className="flex-1">
@@ -526,6 +610,7 @@ export const ProductQuickView = React.memo(
                     </Button>
                   )}
                 </div>
+                </TooltipProvider>
               </div>
 
               {/* Badges */}

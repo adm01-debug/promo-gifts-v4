@@ -45,11 +45,22 @@ export function QuoteAutoSave({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
   const dataRef = useRef(data);
   const initialDataRef = useRef<string | null>(null);
 
   // Storage key único para este orçamento
   const storageKey = `${STORAGE_KEY_PREFIX}${quoteId || 'new'}`;
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
 
   // Salvar estado inicial para comparação
   useEffect(() => {
@@ -120,11 +131,16 @@ export function QuoteAutoSave({
       // Obter versões anteriores. Uma versão histórica corrompida (storage
       // truncado por quota, adulteração, drift de schema) NÃO deve abortar o
       // autosave inteiro — senão a cotação para de persistir silenciosamente.
-      // Parse defensivo por entrada: ignora e remove a chave inválida.
-      const existingDrafts: QuoteDraft[] = [];
+      // Snapshot de keys antes de qualquer remoção: removeItem durante iteração
+      // por índice desloca os índices e pula items subsequentes.
+      const allKeys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key?.startsWith(storageKey + '_v')) {
+        const k = localStorage.key(i);
+        if (k) allKeys.push(k);
+      }
+      const existingDrafts: QuoteDraft[] = [];
+      for (const key of allKeys) {
+        if (key.startsWith(`${storageKey}_v`)) {
           try {
             existingDrafts.push(JSON.parse(localStorage.getItem(key) || '') as QuoteDraft);
           } catch {
@@ -148,18 +164,23 @@ export function QuoteAutoSave({
       const versionKey = `${storageKey}_v${newDraft.version}`;
       localStorage.setItem(versionKey, JSON.stringify(newDraft));
 
-      // Limpar versões antigas (manter apenas MAX_VERSIONS)
+      // Limpar versões antigas (manter apenas MAX_VERSIONS).
+      // existingDrafts não inclui o newDraft recém-salvo, então o total após
+      // o save é existingDrafts.length + 1. Para manter MAX_VERSIONS no total,
+      // devemos manter apenas MAX_VERSIONS - 1 dos existentes.
       const sortedDrafts = [...existingDrafts].sort((a, b) => b.version - a.version);
-      sortedDrafts.slice(MAX_VERSIONS).forEach((draft) => {
+      sortedDrafts.slice(MAX_VERSIONS - 1).forEach((draft) => {
         localStorage.removeItem(`${storageKey}_v${draft.version}`);
       });
 
+      if (!mountedRef.current) return;
       setLastSaved(new Date());
       setStatus('saved');
 
       // Reset para idle após 2s
-      setTimeout(() => {
-        setStatus('idle');
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        if (mountedRef.current) setStatus('idle');
       }, 2000);
     } catch (error) {
       logger.error('Erro ao salvar draft:', error);

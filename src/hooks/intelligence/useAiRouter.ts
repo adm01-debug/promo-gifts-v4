@@ -2,7 +2,7 @@
  * useAiRouter — hooks para gerenciar AI Router via UI /admin/conexoes
  *
  * ⚠️ SCHEMA-ALIGNED (2026-05-10): As interfaces aqui refletem fielmente o
- * schema real das 3 tabelas no banco pqpdolkaeqlyzpdpbizo (ground truth).
+ * schema real das 3 tabelas no banco doufsxqlfjyuvxuezpln (ground truth).
  * Quando regenerar `database.types.ts`, remover o cast `sb: any` abaixo —
  * já está conforme o schema, deve "just work".
  *

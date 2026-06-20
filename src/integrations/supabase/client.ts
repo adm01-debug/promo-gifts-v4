@@ -31,6 +31,10 @@ const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
 // Localhost, placeholders, and URLs explicitly pointing to the canonical project are OK.
 // Self-hosted (atomicabr), other Lovable Cloud projects, etc. are REJECTED.
 // Returns true when the URL is usable, false when it must be rejected.
+// Dedup: emite no máximo 1 warn por sessão por par (envUrl, expected). Evita
+// poluir telemetria quando o módulo é reavaliado (HMR, testes, lazy loaders).
+const inconsistencyEmitted = new Set<string>();
+
 const validateEnv = (): boolean => {
   if (!envUrl) {
     log.warn('missing_env_url', { fallback: CURRENT_PROJECT_ID });
@@ -39,13 +43,27 @@ const validateEnv = (): boolean => {
   const isLocal = envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
   const isPlaceholder = envUrl.includes('placeholder');
   if (!isLocal && !isPlaceholder && !envUrl.includes(CURRENT_PROJECT_ID)) {
-    log.error('config_inconsistency', { envUrl, expected: CURRENT_PROJECT_ID });
-    if (import.meta.env.DEV) {
-      console.error(
-        "%c[Supabase Critical]",
-        "color: red; font-weight: bold;",
-        `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Usando fallback ${CANONICAL_URL}.`,
-      );
+    // Severidade: WARN (não ERROR) — o guard SSOT já neutralizou o impacto aplicando
+    // o fallback canônico. ERROR ficava ruidoso a cada reload sempre que o Lovable
+    // reescrevia o .env, poluindo dashboards de telemetria. Mantemos o nome do evento
+    // ("config_inconsistency") para preservar contratos (ssot-fallback.test.ts e
+    // alertas externos que filtram por substring).
+    const dedupKey = `${envUrl}->${CURRENT_PROJECT_ID}`;
+    if (!inconsistencyEmitted.has(dedupKey)) {
+      inconsistencyEmitted.add(dedupKey);
+      log.warn('config_inconsistency', {
+        envUrl,
+        expected: CURRENT_PROJECT_ID,
+        fallback_applied: CANONICAL_URL,
+        severity_note: 'auto_resolved_by_ssot_guard',
+      });
+      if (import.meta.env.DEV) {
+        console.warn(
+          "%c[Supabase SSOT]",
+          "color: orange; font-weight: bold;",
+          `VITE_SUPABASE_URL aponta para projeto externo (${envUrl}). Fallback canônico aplicado: ${CANONICAL_URL}.`,
+        );
+      }
     }
     return false;
   }
@@ -111,15 +129,25 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
           const body = await response.clone().json().catch(() => ({}));
           if (body.code === 'UNAUTHORIZED_LEGACY_JWT' || body.message?.includes('Invalid JWT') || body.message?.includes('Invalid API key')) {
             const projectId = SUPABASE_URL.split('.')[0].split('//')[1];
+            const isCanonical = projectId === CURRENT_PROJECT_ID;
+            const diagnostic = isCanonical
+              ? 'JWT/anon key inválida para o projeto canônico — possível rotação de chave. Atualize VITE_SUPABASE_PUBLISHABLE_KEY no painel Lovable.'
+              : `Projeto resolvido (${projectId}) ≠ canônico (${CURRENT_PROJECT_ID}). Troque a conexão Supabase no painel Lovable → Cloud para o projeto canônico.`;
             log.error('auth_401_detected', {
               url,
               status: response.status,
               body,
               project_id: projectId,
-              is_canonical: projectId === CURRENT_PROJECT_ID
+              is_canonical: isCanonical,
+              diagnostic,
+              recommendation: 'painel Lovable → Cloud → Database → reconectar projeto canônico',
             });
-            if (projectId !== CURRENT_PROJECT_ID && !projectId.includes('localhost')) {
-              console.error(`[Supabase Critical] 401 Unauthorized on project ${projectId}. Current configuration might be invalid.`);
+            if (import.meta.env.DEV) {
+              console.error(
+                "%c[Supabase 401]",
+                "color: red; font-weight: bold;",
+                diagnostic,
+              );
             }
           }
         }

@@ -148,11 +148,30 @@ describe('KitComposition', () => {
   // ──────── Images ────────
 
   it('renders product image when imageUrl is provided', () => {
+    // OptimizedImage uses IntersectionObserver for lazy loading; use a real class so
+    // `new IntersectionObserver(cb)` works (arrow functions cannot be constructors).
+    class ImmediateIntersectionObserver {
+      private _cb: IntersectionObserverCallback;
+      root: Element | null = null;
+      rootMargin = '0px';
+      thresholds = [0];
+      constructor(cb: IntersectionObserverCallback) { this._cb = cb; }
+      observe(el: Element) {
+        this._cb([{ isIntersecting: true, target: el } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+      disconnect() {}
+      unobserve() {}
+      takeRecords(): IntersectionObserverEntry[] { return []; }
+    }
+    vi.stubGlobal('IntersectionObserver', ImmediateIntersectionObserver);
+
     const withImg = makeItem({ id: 'img', imageUrl: 'https://example.com/img.jpg', productName: 'Prod Img' });
     render(<KitComposition items={[withImg]} />);
     openDialog();
     const img = screen.getByAltText('Prod Img');
     expect(img).toHaveAttribute('src', 'https://example.com/img.jpg');
+
+    vi.unstubAllGlobals();
   });
 
   it('renders fallback icon when imageUrl is null', () => {

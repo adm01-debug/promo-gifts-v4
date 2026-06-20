@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     // BUG-A16 FIX: Only return mock CNPJ data in non-production environments.
     // Previously returned mock data for CNPJ 00000000000191 (Banco Central) in prod.
     const isProductionEnv = Deno.env.get('ENVIRONMENT') === 'production'
-      || (Deno.env.get('SUPABASE_DB_URL') ?? '').includes('pqpdolkaeqlyzpdpbizo');
+      || (Deno.env.get('SUPABASE_DB_URL') ?? '').includes('doufsxqlfjyuvxuezpln');
     if (cnpjDigits === '00000000000191' && !isProductionEnv) {
       return new Response(
         JSON.stringify({

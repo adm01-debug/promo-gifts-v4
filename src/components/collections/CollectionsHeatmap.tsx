@@ -18,9 +18,11 @@ export function CollectionsHeatmap() {
     queryKey: ['collections-weekly-count', user?.id],
     queryFn: async (): Promise<WeekRow[]> => {
       if (!user) return [];
-      const { data, error } = await supabase.rpc('get_collections_weekly_count', { _weeks: 8 });
+      const { data: queryRows, error } = await supabase.rpc('get_collections_weekly_count', {
+        _weeks: 8,
+      });
       if (error) throw error;
-      return (data ?? []) as WeekRow[];
+      return (queryRows ?? []) as WeekRow[];
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

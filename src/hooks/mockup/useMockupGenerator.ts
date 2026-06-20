@@ -523,6 +523,15 @@ export function useMockupGenerator() {
         productName: selectedProduct?.name ?? '',
         technique: selectedTechnique,
         areas: personalizationAreas,
+        // Same derivation the preview uses (LogoPositionEditor) so the generated
+        // mockup matches the on-screen logo size (WYSIWYG); null ⇒ edge /20 fallback.
+        productWidthCm:
+          selectedProduct?.dimensions?.width_cm ??
+          selectedProduct?.dimensions?.diameter_cm ??
+          (selectedProduct?.metadata?.width_mm ? selectedProduct.metadata.width_mm / 10 : null),
+        productHeightCm:
+          selectedProduct?.dimensions?.height_cm ??
+          (selectedProduct?.metadata?.height_mm ? selectedProduct.metadata.height_mm / 10 : null),
       });
       if (result.singleUrl && result.batchResults.length === 0) {
         setGeneratedMockup(result.singleUrl);
@@ -565,6 +574,9 @@ export function useMockupGenerator() {
         setGeneratedBatchMockups(result.batchResults);
         toast.success(`${result.batchResults.length} mockups gerados com sucesso!`);
       }
+      // BUG-3 FIX: history panel was stale after generation because fetchHistory() was
+      // only called once on mount. Refresh it now so the new record appears immediately.
+      fetchHistory();
     } catch (error: unknown) {
       logger.error('Error generating mockup:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao gerar mockup';
@@ -582,6 +594,7 @@ export function useMockupGenerator() {
     saveMockupToHistory,
     selectedProduct,
     downloadMockup,
+    fetchHistory,
   ]);
 
   const deleteMockup = useCallback(async () => {
@@ -633,9 +646,14 @@ export function useMockupGenerator() {
   const loadFromHistory = useCallback(
     (mockup: GeneratedMockup) => {
       const product = mockup.product_id ? getProductById(mockup.product_id) : null;
-      const technique = mockup.technique_id
-        ? techniques.find((t) => t.id === mockup.technique_id)
-        : null;
+      // BUG-11 FIX: technique_id is now always null (BUG-10 fix) because the FK points to
+      // personalization_techniques but the UI loads from tabela_preco_gravacao_oficial.
+      // Fall back to name-matching so the technique is correctly pre-selected when loading from history.
+      const technique =
+        (mockup.technique_id && techniques.find((t) => t.id === mockup.technique_id)) ||
+        (mockup.technique_name &&
+          techniques.find((t) => t.name.toLowerCase() === mockup.technique_name?.toLowerCase())) ||
+        null;
       if (product)
         setProductSelection({
           product,
@@ -654,8 +672,8 @@ export function useMockupGenerator() {
         positionY: mockup.position_y ?? 50,
         logoWidth: mockup.logo_width_cm ?? 5,
         logoHeight: mockup.logo_height_cm ?? 3,
-        logoRotation: 0,
-        logoScale: 100,
+        logoRotation: mockup.logo_rotation ?? 0,
+        logoScale: mockup.logo_scale ?? 100,
         logoPreview: mockup.logo_url,
       };
       setPersonalizationAreas([restoredArea]);

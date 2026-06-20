@@ -8,6 +8,7 @@
  *  • Painel de requisições recentes que excederam o limite
  */
 import { useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
@@ -65,11 +66,14 @@ interface ExceededRequest {
 
 export default function SellerDiscountLimitsAdminPage() {
   const qc = useQueryClient();
+  const { isAdmin, rolesLoaded } = useAuth(); // FIX 2026-06-18: guard de auth
   const [edits, setEdits] = useState<Record<string, { percent?: number; notes?: string }>>({});
 
   // ---------- Vendedores + limites ----------
   const { data: sellers, isLoading: loadingSellers } = useQuery({
     queryKey: ['admin-seller-discount-limits'],
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
     queryFn: async (): Promise<SellerRow[]> => {
       const { data: profiles, error: pErr } = await supabase
         .from('profiles')
@@ -79,10 +83,10 @@ export default function SellerDiscountLimitsAdminPage() {
         .order('full_name');
       if (pErr) throw pErr;
 
-      const sellers = (profiles ?? []).filter(
+      const sellerProfiles = (profiles ?? []).filter(
         (p): p is typeof p & { user_id: string } => p.user_id !== null,
       );
-      const ids = sellers.map((p) => p.user_id);
+      const ids = sellerProfiles.map((p) => p.user_id);
       if (!ids.length) return [];
 
       const { data: limits } = await supabase
@@ -97,7 +101,7 @@ export default function SellerDiscountLimitsAdminPage() {
         ]),
       );
 
-      return sellers.map((p) => {
+      return sellerProfiles.map((p) => {
         const lim = byId.get(p.user_id);
         return {
           user_id: p.user_id,
@@ -114,6 +118,8 @@ export default function SellerDiscountLimitsAdminPage() {
   // ---------- Impacto: agregados de discount_approval_requests ----------
   const { data: impact } = useQuery({
     queryKey: ['admin-discount-impact'],
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
     queryFn: async (): Promise<Map<string, ImpactRow>> => {
       const { data, error } = await supabase
         // rls-allow: admin-only; RLS filtra
@@ -151,6 +157,8 @@ export default function SellerDiscountLimitsAdminPage() {
   // ---------- Requisições recentes que excederam limite ----------
   const { data: exceeded } = useQuery({
     queryKey: ['admin-discount-exceeded'],
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
     queryFn: async (): Promise<ExceededRequest[]> => {
       const { data, error } = await supabase
         // rls-allow: admin-only; RLS filtra

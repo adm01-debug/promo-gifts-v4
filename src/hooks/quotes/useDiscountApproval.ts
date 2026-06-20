@@ -76,11 +76,14 @@ export function useDiscountApproval() {
         }
 
         // Set quote status to pending_approval so UI shows correct state
-        await supabase
+        const { error: statusError } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('quotes')
           .update({ status: 'pending_approval' })
           .eq('id', quoteId);
+        if (statusError) {
+          logger.error('Failed to set quote status to pending_approval:', statusError);
+        }
 
         // Buscar contexto do orçamento (markup + aparente) para auditoria e história
         const { data: quoteCtx } = await supabase
@@ -167,6 +170,10 @@ export function useDiscountApproval() {
     async (requestId: string, approved: boolean, adminNotes?: string): Promise<boolean> => {
       if (!user) return false;
       try {
+        const validUntilDate = approved
+          ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
         const { data: request, error: updateError } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
@@ -175,6 +182,7 @@ export function useDiscountApproval() {
             admin_id: user.id,
             admin_notes: adminNotes || null,
             responded_at: new Date().toISOString(),
+            valid_until: validUntilDate,
           })
           .eq('id', requestId)
           .select()

@@ -22,6 +22,15 @@ export interface VoiceAgentAction {
       minPrice?: number;
       inStock?: boolean;
       isKit?: boolean;
+      // FIX-5: campos adicionais mapeados para FilterState
+      gender?: 'Unissex' | 'Masculino' | 'Feminino' | 'Infantil';
+      featured?: boolean;
+      isNew?: boolean;
+      hasPersonalization?: boolean;
+      onSale?: boolean;
+      minStock?: number;
+      publicoAlvo?: string;
+      endomarketing?: boolean;
     };
   };
 }

@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
@@ -40,6 +41,7 @@ import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 
 const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
 
+/** Lê do localStorage se o painel de risco estava aberto na última sessão. */
 function readRiskPanelPref(): boolean {
   if (typeof window === 'undefined') return true;
   try {
@@ -64,6 +66,17 @@ function formatRelativeTime(date: Date, now: number): string {
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
 }
 
+/** Portal que projeta controles de cabeçalho no slot `#stock-header-slot` da página. */
+function HeaderSlotPortal({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setSlot(document.getElementById('stock-header-slot'));
+  }, []);
+  if (!slot) return null;
+  return createPortal(children, slot);
+}
+
+/** Dashboard completo de gestão de estoque: cards de KPI, tabela de variações e painel de risco. */
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
@@ -170,6 +183,8 @@ export function StockDashboard() {
         return 'Sem Estoque';
       case 'incoming':
         return 'Estoque Futuro';
+      case 'overstocked':
+        return 'Excesso de Estoque';
       default:
         return null;
     }
@@ -302,31 +317,46 @@ export function StockDashboard() {
       {/* Header with Health Score */}
 
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2" />
+        <div className="flex flex-col gap-2">
+          {warningAlerts.length > 0 && (
+            <Badge
+              variant="secondary"
+              data-testid="warning-alerts-badge"
+              className="cursor-pointer gap-1 text-xs"
+              onClick={() => setLowStockDialogOpen(true)}
+            >
+              <AlertCircle className="h-3 w-3" />
+              {warningAlerts.length} aviso{warningAlerts.length > 1 ? 's' : ''} de esgotamento
+            </Badge>
+          )}
+        </div>
 
-        <div
-          className="flex items-center gap-2 text-xs text-muted-foreground"
-          title={lastRefresh.toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          })}
-          aria-live="polite"
-        >
-          <Clock className="h-3.5 w-3.5" />
-          <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
-          <span className="text-muted-foreground/60">
-            ·{' '}
-            {lastRefresh.toLocaleTimeString('pt-BR', {
+        <HeaderSlotPortal>
+          <div
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+            title={lastRefresh.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
               hour: '2-digit',
               minute: '2-digit',
+              second: '2-digit',
             })}
-          </span>
-          {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-        </div>
+            aria-live="polite"
+            data-testid="stock-last-refresh"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
+            <span className="text-muted-foreground/60">
+              ·{' '}
+              {lastRefresh.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+            {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+          </div>
+        </HeaderSlotPortal>
       </div>
 
       {/* Summary Cards — clickable filters */}
@@ -361,25 +391,26 @@ export function StockDashboard() {
           }
         />
         <StatCard
-          title="Estoque Baixo"
-          // SSOT KPI ↔ chip: o valor bate 1:1 com `filters.status ===
-          // 'low_stock'` (que é o que o clique aplica). Críticos têm
-          // KPI próprio em "Sem Estoque" + chip "Crítico" na tabela.
+          title="Crítico"
+          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status ===
+          // 'critical'` (o que o clique aplica). "Crítico" = produtos
+          // parcialmente sem estoque (overallStatus==='critical'). A régua
+          // por `min` (low_stock) foi descontinuada e o KPI ficava sempre 0;
+          // este card agora expõe um número real e clicável.
           // Testado em VariantStockTable.kpi-consistency.test.tsx.
-          value={summary.productsLowStock.toLocaleString('pt-BR')}
+          value={summary.productsCritical.toLocaleString('pt-BR')}
           icon={<TrendingDown className="h-6 w-6 text-warning" />}
           variant="warning"
-          isActive={filters.status === 'low_stock'}
+          isActive={filters.status === 'critical'}
           onClick={() => {
-            updateFilter('status', filters.status === 'low_stock' ? 'all' : 'low_stock');
-            if (warningAlerts.length > 0) setLowStockDialogOpen(true);
+            updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
           }}
-          clickHint="Filtrar produtos com estoque baixo (não inclui críticos)"
+          clickHint="Filtrar produtos em estado crítico (parcialmente sem estoque)"
           trend={
-            summary.productsCritical > 0
+            summary.totalProducts > 0 && summary.productsCritical > 0
               ? {
                   value: -1,
-                  label: `+ ${summary.productsCritical.toLocaleString('pt-BR')} em estado crítico`,
+                  label: `${Math.round((summary.productsCritical / summary.totalProducts) * 100)}% do catálogo`,
                 }
               : undefined
           }

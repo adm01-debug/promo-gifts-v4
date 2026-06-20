@@ -151,14 +151,56 @@ const navGroups: NavGroup[] = [
     icon: Wrench,
     defaultOpen: false,
     items: [
-      { icon: ImagePlus, label: 'Mockup', href: '/mockup-generator', shortcut: 'Alt+M' },
-      { icon: Sparkles, label: 'Magic Up', href: '/magic-up' },
-      { icon: Crosshair, label: 'Match', href: '/match' },
-      { icon: Boxes, label: 'Kit Maker', href: '/montar-kit' },
-      { icon: Zap, label: 'Raio X', href: '/raio-x' },
-      { icon: Calculator, label: 'Simulador', href: '/simulador', shortcut: 'Alt+S' },
-      { icon: BarChart3, label: 'Preços por Tiragem', href: '/simulador-precos' },
-      { icon: DollarSign, label: 'Busca por Preço', href: '/busca-preco' },
+      {
+        icon: ImagePlus,
+        label: 'Mockup',
+        href: '/mockup-generator',
+        shortcut: 'Alt+M',
+        tooltip: 'Crie uma prévia do produto com a logo do cliente e feche a venda no visual.',
+      },
+      {
+        icon: Sparkles,
+        label: 'Magic Up',
+        href: '/magic-up',
+        tooltip: 'Gere artes e anúncios prontos para enviar ao cliente em segundos.',
+      },
+      {
+        icon: Crosshair,
+        label: 'Match',
+        href: '/match',
+        tooltip: 'Encontre o brinde perfeito para o perfil e a ocasião do seu cliente.',
+      },
+      {
+        icon: Boxes,
+        label: 'Kit Maker',
+        href: '/montar-kit',
+        tooltip: 'Monte kits personalizados que aumentam o ticket médio do pedido.',
+      },
+      {
+        icon: Zap,
+        label: 'Raio X',
+        href: '/raio-x',
+        tooltip: 'Veja tudo sobre o produto num só lugar para responder o cliente na hora.',
+      },
+      {
+        icon: Calculator,
+        label: 'Simulador',
+        href: '/simulador',
+        shortcut: 'Alt+S',
+        tooltip: 'Calcule o preço final com gravação e quantidade antes de enviar a proposta.',
+      },
+      {
+        icon: BarChart3,
+        label: 'Preços por Tiragem',
+        href: '/simulador-precos',
+        tooltip: 'Compare preços por quantidade e mostre ao cliente quanto ele ganha pedindo mais.',
+      },
+      {
+        icon: DollarSign,
+        label: 'Busca por Preço',
+        href: '/busca-preco',
+        tooltip: 'Tem um orçamento? Encontre rapidamente produtos que cabem no bolso do cliente.',
+      },
     ],
   },
   {
@@ -167,11 +209,21 @@ const navGroups: NavGroup[] = [
     icon: Brain,
     defaultOpen: false,
     items: [
-      { icon: Brain, label: 'Inteligência de Mercado', href: '/inteligencia-comercial' },
+      {
+        icon: Brain,
+        label: 'Inteligência de Mercado',
+        href: '/inteligencia-comercial',
+        tooltip: 'Descubra os produtos mais procurados e venda o que está bombando agora.',
+      },
       // NOTE: '/estoque' removido deste grupo -- duplicata com catalog/Estoque.
       // href único por item evita que computeOpenGroups abra dois grupos simultaneamente
       // (root cause do stack overflow em 25/05/2026).
-      { icon: Activity, label: 'Tendências', href: '/tendencias' },
+      {
+        icon: Activity,
+        label: 'Tendências',
+        href: '/tendencias',
+        tooltip: 'Acompanhe o que está em alta e antecipe a próxima campanha do seu cliente.',
+      },
     ],
   },
   {
@@ -181,45 +233,130 @@ const navGroups: NavGroup[] = [
     adminOnly: true,
     defaultOpen: false,
     items: [
-      { icon: Users, label: 'Usuários', href: '/admin/usuarios', adminOnly: true },
-      { icon: Settings, label: 'Configurações', href: '/configuracoes', adminOnly: true },
-      { icon: ShieldCheck, label: 'Segurança', href: '/admin/seguranca', devOnly: true },
-      { icon: ShieldCheck, label: 'Acesso & Bots', href: '/admin/seguranca-acesso', devOnly: true },
-      { icon: Plug, label: 'Conexões', href: '/admin/conexoes', devOnly: true },
+      {
+        icon: Users,
+        label: 'Usuários',
+        href: '/admin/usuarios',
+        adminOnly: true,
+        tooltip: 'Gerencie a equipe: cadastre vendedores, defina permissões e alçadas.',
+      },
+      {
+        icon: Settings,
+        label: 'Configurações',
+        href: '/configuracoes',
+        adminOnly: true,
+        tooltip: 'Ajuste preferências da sua conta e do funcionamento do sistema.',
+      },
+      {
+        icon: ShieldCheck,
+        label: 'Segurança',
+        href: '/admin/seguranca',
+        devOnly: true,
+        tooltip: 'Controle acessos e proteja os dados sensíveis dos seus clientes.',
+      },
+      {
+        icon: ShieldCheck,
+        label: 'Acesso & Bots',
+        href: '/admin/seguranca-acesso',
+        devOnly: true,
+        tooltip: 'Bloqueie acessos indevidos e proteja o catálogo contra cópias automáticas.',
+      },
+      {
+        icon: Plug,
+        label: 'Conexões',
+        href: '/admin/conexoes',
+        devOnly: true,
+        tooltip: 'Conecte o sistema ao seu CRM e às ferramentas que a equipe já usa.',
+      },
       {
         icon: FolderOpen,
         label: 'Cadastros',
         href: '/admin/cadastros',
         adminOnly: true,
+        tooltip: 'Mantenha produtos, fornecedores e gravações sempre atualizados.',
         children: [
-          { icon: Package, label: 'Produtos', href: '/admin/cadastros?tab=products' },
-          { icon: Truck, label: 'Fornecedores', href: '/admin/cadastros?tab=suppliers' },
-          { icon: Palette, label: 'Gravação', href: '/admin/cadastros?tab=personalizacao' },
+          {
+            icon: Package,
+            label: 'Produtos',
+            href: '/admin/cadastros?tab=products',
+            tooltip: 'Cadastre e edite os produtos que aparecem no catálogo de vendas.',
+          },
+          {
+            icon: Truck,
+            label: 'Fornecedores',
+            href: '/admin/cadastros?tab=suppliers',
+            tooltip: 'Gerencie seus parceiros e prazos para prometer entregas com confiança.',
+          },
+          {
+            icon: Palette,
+            label: 'Gravação',
+            href: '/admin/cadastros?tab=personalizacao',
+            tooltip: 'Configure técnicas e cores de gravação para precificar a personalização.',
+          },
         ],
       },
-      { icon: Sparkles, label: 'Prompts IA', href: '/admin/prompts-ia', devOnly: true },
-      { icon: Workflow, label: 'Workflows IA', href: '/admin/workflows', devOnly: true },
-      { icon: Activity, label: 'Telemetria', href: '/admin/telemetria', devOnly: true },
-      { icon: Gauge, label: 'Performance UX', href: '/admin/client-performance', devOnly: true },
+      {
+        icon: Sparkles,
+        label: 'Prompts IA',
+        href: '/admin/prompts-ia',
+        devOnly: true,
+        tooltip: 'Ajuste como a IA responde para deixar o atendimento com a sua cara.',
+      },
+      {
+        icon: Workflow,
+        label: 'Workflows IA',
+        href: '/admin/workflows',
+        devOnly: true,
+        tooltip: 'Automatize tarefas repetitivas e libere tempo para focar em vender.',
+      },
+      {
+        icon: Activity,
+        label: 'Telemetria',
+        href: '/admin/telemetria',
+        devOnly: true,
+        tooltip: 'Acompanhe a saúde do sistema para garantir que nada atrapalhe sua venda.',
+      },
+      {
+        icon: Gauge,
+        label: 'Performance UX',
+        href: '/admin/client-performance',
+        devOnly: true,
+        tooltip: 'Veja se o sistema está rápido para sua equipe atender sem travamentos.',
+      },
       {
         icon: DollarSign,
         label: 'Validade de Preços',
         href: '/admin/validade-precos',
         devOnly: true,
+        tooltip: 'Garanta que os preços enviados ao cliente estejam sempre atualizados.',
       },
-      { icon: ShieldCheck, label: 'Auditoria RBAC', href: '/admin/rbac-rotas', devOnly: true },
-      { icon: Activity, label: 'Status do Sistema', href: '/admin/status', devOnly: true },
+      {
+        icon: ShieldCheck,
+        label: 'Auditoria RBAC',
+        href: '/admin/rbac-rotas',
+        devOnly: true,
+        tooltip: 'Confira quem pode acessar o quê e mantenha a operação organizada.',
+      },
+      {
+        icon: Activity,
+        label: 'Status do Sistema',
+        href: '/admin/status',
+        devOnly: true,
+        tooltip: 'Veja em tempo real se está tudo funcionando para vender sem surpresas.',
+      },
       {
         icon: SlidersHorizontal,
         label: 'Observabilidade',
         href: '/admin/observabilidade',
         devOnly: true,
+        tooltip: 'Acompanhe métricas de uso e identifique oportunidades de melhoria.',
       },
       {
         icon: Cloud,
         label: 'Cloudflare Images',
         href: '/admin/cloudflare-images',
         devOnly: true,
+        tooltip: 'Gerencie as imagens do catálogo para uma vitrine sempre rápida e bonita.',
       },
     ],
   },
@@ -240,10 +377,7 @@ function computeOpenGroups(pathname: string): Record<string, boolean> {
 }
 
 export const SidebarReorganized = React.memo(
-  React.forwardRef<HTMLElement, SidebarProps>(function SidebarReorganized(
-    { isOpen, onToggle },
-    ref,
-  ) {
+  React.forwardRef<HTMLElement, SidebarProps>(({ isOpen, onToggle }, ref) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -267,7 +401,7 @@ export const SidebarReorganized = React.memo(
       });
     }, [location.pathname]);
 
-    const { isAdmin, isDev } = useAuth();
+    const { isAdmin, isDev, rolesLoaded } = useAuth();
     const isMobile = useMediaQuery('(max-width: 1023px)');
 
     const { data: pendingApprovalCount } = useQuery({
@@ -280,7 +414,7 @@ export const SidebarReorganized = React.memo(
           .eq('status', 'pending');
         return count || 0;
       },
-      enabled: Boolean(isAdmin),
+      enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto — FIX 2026-06-18 BUG-DAR-401
       refetchInterval: 30_000,
       staleTime: 15_000,
       retry: 0,

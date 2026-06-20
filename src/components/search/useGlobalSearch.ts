@@ -150,7 +150,7 @@ export function useGlobalSearch() {
         case 'search':
         case 'filter':
           if (action.data?.query || action.data?.filters) {
-            const searchTerm = action.data?.query || '';
+            const searchTerm = action.data?.query ?? '';
             const filterParts: string[] = [];
             if (action.data?.filters?.category) filterParts.push(action.data.filters.category);
             if (action.data?.filters?.color) filterParts.push(action.data.filters.color);
@@ -603,7 +603,7 @@ export function useGlobalSearch() {
             allResults.push({
               id: m.id,
               title: m.scene_title || m.product_name || 'Magic Up',
-              subtitle: `${m.client_name || 'Sem cliente'} • ${m.product_name || ''}${m.scene_category ? ' • ' + m.scene_category : ''}`,
+              subtitle: `${m.client_name || 'Sem cliente'} • ${m.product_name || ''}${m.scene_category ? ` • ${m.scene_category}` : ''}`,
               type: 'magic_up',
               href: '/magic-up',
               metadata: { image_url: m.generated_image_url },

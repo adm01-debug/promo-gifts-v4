@@ -194,7 +194,7 @@ export function ProductPersonalizationRules({
                   name: opt.tecnica_nome,
                   code: opt.codigo_tabela,
                   max_colors: opt.max_cores,
-                })) || [],
+                })) ?? [],
             },
           ],
         }));
@@ -237,7 +237,7 @@ export function ProductPersonalizationRules({
                   name: opt.tecnica_nome,
                   code: opt.codigo_tabela,
                   max_colors: opt.max_cores,
-                })) || [],
+                })) ?? [],
             },
           ],
         }));

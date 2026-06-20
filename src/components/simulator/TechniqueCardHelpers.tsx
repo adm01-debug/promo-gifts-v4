@@ -18,7 +18,7 @@ export const TECHNIQUE_THUMBNAILS: Record<string, string> = {
 };
 
 export function getTechniqueStyle(code: string) {
-  const c = code?.toUpperCase() || '';
+  const c = code?.toUpperCase() ?? '';
   if (c.includes('SILK') || c.includes('SERIGRAFIA'))
     return { color: 'bg-primary', textColor: 'text-primary', icon: '🎨' };
   if (c.includes('DTF')) return { color: 'bg-info', textColor: 'text-info', icon: '🖨️' };
@@ -33,7 +33,7 @@ export function getTechniqueStyle(code: string) {
 }
 
 export function getTechniqueThumbnail(code: string): string | null {
-  const c = code?.toUpperCase() || '';
+  const c = code?.toUpperCase() ?? '';
   for (const [key, url] of Object.entries(TECHNIQUE_THUMBNAILS)) {
     if (c.includes(key)) return url;
   }

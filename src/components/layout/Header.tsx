@@ -55,7 +55,7 @@ interface HeaderProps {
   sidebarOpen: boolean;
 }
 
-export const Header = React.memo(function Header({ onMenuToggle, sidebarOpen }: HeaderProps) {
+export const Header = React.memo(({ onMenuToggle, sidebarOpen }: HeaderProps) => {
   const { actualTheme, tooltipStyle, setTooltipStyle, isFallback } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();

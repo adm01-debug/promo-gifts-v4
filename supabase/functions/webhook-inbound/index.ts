@@ -22,6 +22,56 @@ interface WebhookPayload {
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*' };
 
+// SEC-WHS (2026-06-18): verificação OPT-IN de assinatura HMAC-SHA256.
+// Threat model: este endpoint é público (verify_jwt=false) e recebe webhooks de
+// bitrix24/n8n/evolution-api/zapier/make. Sem assinatura, qualquer um que alcance
+// a URL pode injetar eventos forjados em `webhook_events`.
+// Compat (gap E1): a verificação só é ENFORÇADA quando o segredo
+// WEBHOOK_INBOUND_SIGNING_SECRET está presente no ambiente da função. Enquanto não
+// estiver setado, o comportamento é idêntico ao anterior (fail-open) — não quebra os
+// emissores atuais. Depois de configurar o segredo e fazer os emissores assinarem o
+// corpo CRU com HMAC-SHA256 (header `X-Webhook-Signature: sha256=<hex>`), requisições
+// sem assinatura válida passam a ser rejeitadas (401).
+// Bypass: chamadas internas autenticadas com service_role (mesma regra do rate-limit).
+function hexFromBytes(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Comparação hex em tempo constante (mitiga timing attacks).
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string,
+  secret: string,
+): Promise<boolean> {
+  if (!signatureHeader) return false;
+  // Normaliza prefixo sha256= de forma case-insensitive (SHA256= de alguns emissores).
+  const sigLower = signatureHeader.toLowerCase();
+  const provided = sigLower.startsWith('sha256=')
+    ? signatureHeader.slice(7).trim()
+    : signatureHeader.trim();
+  if (!provided) return false;
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
+    return timingSafeEqualHex(hexFromBytes(mac).toLowerCase(), provided.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
 
@@ -60,9 +110,35 @@ Deno.serve(async (req) => {
     );
   }
 
+  // SEC-WHS: lê o corpo CRU uma única vez (necessário p/ HMAC sobre os bytes exatos).
+  let rawBody: string;
+  try {
+    rawBody = await req.text();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'Unable to read request body' }),
+      { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } },
+    );
+  }
+
+  // SEC-WHS: enforce de assinatura SOMENTE quando o segredo está configurado (opt-in).
+  const signingSecret = Deno.env.get('WEBHOOK_INBOUND_SIGNING_SECRET') || '';
+  if (signingSecret && !(isInternal && isServiceRole)) {
+    const provided = req.headers.get('X-Webhook-Signature')
+      || req.headers.get('x-webhook-signature')
+      || '';
+    const valid = await verifyWebhookSignature(rawBody, provided, signingSecret);
+    if (!valid) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing webhook signature' }),
+        { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } },
+      );
+    }
+  }
+
   let body: WebhookPayload;
   try {
-    const parsed = await req.json();
+    const parsed = JSON.parse(rawBody);
     // Guard: null / array / primitive bodies would throw when we access
     // body.source below — treat them as an empty object so the handler
     // proceeds with safe defaults (source='custom', event='unknown').

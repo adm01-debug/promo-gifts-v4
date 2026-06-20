@@ -58,9 +58,9 @@ export function MyRecentQuotesWidget() {
         .order('updated_at', { ascending: false })
         .limit(PAGE_SIZE);
       if (pageParam) q = q.lt('updated_at', pageParam);
-      const { data, error } = await q;
+      const { data: queryRows, error } = await q;
       if (error) throw error;
-      return data ?? [];
+      return queryRows ?? [];
     },
     getNextPageParam: (last) =>
       last.length < PAGE_SIZE ? undefined : (last[last.length - 1]?.updated_at ?? undefined),

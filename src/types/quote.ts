@@ -10,13 +10,15 @@ export type QuoteStatus =
   | 'approved'
   | 'converted'
   | 'rejected'
-  | 'expired';
+  | 'expired'
+  | 'cancelled';
 export type ClientResponse = 'approved' | 'rejected' | 'changes_requested';
 
 export interface Quote {
   id: string;
   quote_number: string; // "ORC-2026-0001"
   client_id: string | null;
+  contact_id: string | null; // CRM contact ID (external DB, no FK)
   client_name: string | null;
   client_email: string | null;
   client_phone: string | null;

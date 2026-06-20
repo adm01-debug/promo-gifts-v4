@@ -98,7 +98,7 @@ export function usePersonalizationManager() {
         group?.group_name.toLowerCase().includes(query) ||
         group?.group_code.toLowerCase().includes(query);
       return matchesName || matchesSku || matchesGroup;
-    }) || [];
+    }) ?? [];
 
   const { data: productMembership } = useQuery({
     queryKey: ['product-membership', selectedProduct],
@@ -411,9 +411,9 @@ export function usePersonalizationManager() {
   };
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.component_id === componentId) || [];
+    locations?.filter((l) => l.component_id === componentId) ?? [];
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.component_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.component_location_id === locationId) ?? [];
 
   const handleComponentDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -486,7 +486,7 @@ export function usePersonalizationManager() {
             if (groupTechniques?.length) {
               for (const gt of groupTechniques) {
                 const technique = techniques?.find((t) => t.id === gt.technique_id);
-                const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code || ''}`;
+                const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code ?? ''}`;
                 await untypedFrom('product_component_location_techniques').insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,

@@ -1,9 +1,17 @@
 /**
  * DiscountApprovalQueue — fila administrativa de solicitações de desconto pendentes.
+ *
+ * FIX 2026-06-18 (BUG-DAR-401 / G9): guards de autenticação completos:
+ *   - useAuth: isAdmin + rolesLoaded — impede query antes do JWT estar pronto
+ *   - enabled: rolesLoaded && Boolean(isAdmin)
+ *   - retry: 0 / retryOnMount: false — sem flood em erro 401/403
+ *   - isLoading composto: !rolesLoaded || queryLoading — UX correta durante auth
+ *   - Early return silencioso quando !isAdmin pós-carregamento
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,13 +22,14 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 export function DiscountApprovalQueue() {
+  const { isAdmin, rolesLoaded } = useAuth();
   const qc = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: queryLoading } = useQuery({
     queryKey: ['discount-approval-queue'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: rows, error } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select(
@@ -29,9 +38,14 @@ export function DiscountApprovalQueue() {
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data || [];
+      return rows || [];
     },
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
+    retryOnMount: false,
   });
+
+  const isLoading = !rolesLoaded || queryLoading;
 
   const respond = useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
@@ -64,6 +78,8 @@ export function DiscountApprovalQueue() {
       </div>
     );
   }
+
+  if (!isAdmin) return null;
 
   if (!data?.length) {
     return (

@@ -145,7 +145,7 @@ export function ProductPersonalizationManager() {
   const handleAddTechnique = () => {
     if (!selectedLocationId || !newTechniqueId) return;
     // lookup below
-    const allLocs = components?.flatMap((c) => getLocationsForComponent(c.id)) || [];
+    const allLocs = components?.flatMap((c) => getLocationsForComponent(c.id)) ?? [];
     const loc = allLocs.find((l) => l.id === selectedLocationId);
     const comp = components?.find((c) => c.id === loc?.component_id);
     const tech = techniques?.find((t) => t.id === newTechniqueId);
@@ -528,7 +528,7 @@ export function ProductPersonalizationManager() {
                                             Larg. (cm)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_width_cm?.toString() || ''}
+                                            value={location.max_width_cm?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
@@ -544,7 +544,7 @@ export function ProductPersonalizationManager() {
                                             Alt. (cm)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_height_cm?.toString() || ''}
+                                            value={location.max_height_cm?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
@@ -560,7 +560,7 @@ export function ProductPersonalizationManager() {
                                             Área (cm²)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_area_cm2?.toString() || ''}
+                                            value={location.max_area_cm2?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,

@@ -45,7 +45,7 @@ export function useProductFuzzySearch(
 
   // Executar busca
   return useMemo(() => {
-    const query = searchQuery?.trim() || '';
+    const query = searchQuery?.trim() ?? '';
 
     if (!query || query.length < 2) {
       return { results: products, hasSearch: false };

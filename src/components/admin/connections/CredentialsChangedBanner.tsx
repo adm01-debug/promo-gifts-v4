@@ -127,7 +127,9 @@ export function CredentialsChangedBanner({ onRefreshed }: CredentialsChangedBann
         type="button"
         size="sm"
         variant="default"
-        onClick={() => void handleRefresh()}
+        onClick={() => {
+          handleRefresh();
+        }}
         disabled={isRefreshing}
         aria-label="Recarregar status e cards agora"
       >

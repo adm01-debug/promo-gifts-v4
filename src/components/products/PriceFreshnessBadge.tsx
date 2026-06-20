@@ -231,282 +231,288 @@ function formatRelativeDaysShort(days: number | null): string {
   return `há ${days} dias`;
 }
 
-export const PriceFreshnessBadge = memo(function PriceFreshnessBadge({
-  priceUpdatedAt,
-  thresholdDays,
-  variant = 'inline',
-  className,
-  alwaysShow = false,
-  onConfirm,
-  confirmedAt,
-}: PriceFreshnessBadgeProps) {
-  const freshness = getPriceFreshness(priceUpdatedAt, thresholdDays);
-  const { Icon, color } = STATUS_STYLES[freshness.status];
+export const PriceFreshnessBadge = memo(
+  ({
+    priceUpdatedAt,
+    thresholdDays,
+    variant = 'inline',
+    className,
+    alwaysShow = false,
+    onConfirm,
+    confirmedAt,
+  }: PriceFreshnessBadgeProps) => {
+    const freshness = getPriceFreshness(priceUpdatedAt, thresholdDays);
+    const { Icon, color } = STATUS_STYLES[freshness.status];
 
-  // Sufixo "(limite Yd)" só aparece quando o produto traz threshold próprio.
-  // Para o resto do catálogo (default global de 60d) o badge segue limpo.
-  const explicitThreshold = hasExplicitThreshold(thresholdDays);
-  const limitSuffix = explicitThreshold ? ` (limite ${thresholdDays}d)` : '';
+    // Sufixo "(limite Yd)" só aparece quando o produto traz threshold próprio.
+    // Para o resto do catálogo (default global de 60d) o badge segue limpo.
+    const explicitThreshold = hasExplicitThreshold(thresholdDays);
+    const limitSuffix = explicitThreshold ? ` (limite ${thresholdDays}d)` : '';
 
-  // Estado "confirmado pelo vendedor" — substitui o alerta stale/aging por um
-  // pill verde discreto. Só faz sentido quando o item realmente entrava em
-  // alerta; para `fresh`/`unknown` ignoramos (não polui o catálogo padrão).
-  const isConfirmed = Boolean(confirmedAt) && freshness.shouldWarn;
-  const canOfferConfirm = typeof onConfirm === 'function' && freshness.shouldWarn && !isConfirmed;
+    // Estado "confirmado pelo vendedor" — substitui o alerta stale/aging por um
+    // pill verde discreto. Só faz sentido quando o item realmente entrava em
+    // alerta; para `fresh`/`unknown` ignoramos (não polui o catálogo padrão).
+    const isConfirmed = Boolean(confirmedAt) && freshness.shouldWarn;
+    const canOfferConfirm = typeof onConfirm === 'function' && freshness.shouldWarn && !isConfirmed;
 
-  // Quiet variants only render when there's something worth flagging.
-  if (!alwaysShow && (variant === 'compact' || variant === 'icon-only') && !freshness.shouldWarn) {
-    return null;
-  }
+    // Quiet variants only render when there's something worth flagging.
+    if (
+      !alwaysShow &&
+      (variant === 'compact' || variant === 'icon-only') &&
+      !freshness.shouldWarn
+    ) {
+      return null;
+    }
 
-  // Estado "confirmado pelo vendedor" — pill verde discreto que substitui o
-  // alerta. Mantém o tooltip (mostra data SSOT + regra) para auditoria.
-  if (isConfirmed) {
-    const confirmedLabel = `Preço confirmado por você ${formatConfirmedRelative(confirmedAt as string | Date)}`;
-    const confirmedBody =
-      variant === 'icon-only' ? (
+    // Estado "confirmado pelo vendedor" — pill verde discreto que substitui o
+    // alerta. Mantém o tooltip (mostra data SSOT + regra) para auditoria.
+    if (isConfirmed) {
+      const confirmedLabel = `Preço confirmado por você ${formatConfirmedRelative(confirmedAt as string | Date)}`;
+      const confirmedBody =
+        variant === 'icon-only' ? (
+          <span
+            role="status"
+            aria-label={confirmedLabel}
+            className={cn(
+              'inline-flex items-center justify-center text-emerald-600 dark:text-emerald-500',
+              className,
+            )}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+        ) : variant === 'compact' ? (
+          <span
+            role="status"
+            aria-label={confirmedLabel}
+            className={cn(
+              'inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-500',
+              className,
+            )}
+          >
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+            <span>Confirmado</span>
+          </span>
+        ) : (
+          <span
+            role="status"
+            aria-label={confirmedLabel}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400',
+              className,
+            )}
+          >
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>Confirmado com fornecedor</span>
+          </span>
+        );
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>{confirmedBody}</TooltipTrigger>
+            <TooltipContent side="top" className=" ">
+              <div className="flex flex-col gap-1.5">
+                <div className="font-semibold">Preço confirmado com fornecedor</div>
+                <div className="leading-snug text-muted-foreground">
+                  Você validou este preço {formatConfirmedRelative(confirmedAt as string | Date)}. O
+                  alerta de preço defasado fica suprimido neste contexto até o próximo recálculo.
+                </div>
+                <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    const { ariaLabel } = buildAccessibleLabel(freshness, priceUpdatedAt);
+
+    // Anel de foco visível padronizado para os triggers compactos. Usa o token
+    // `--ring` para herdar a cor do tema (light/dark/skins) e respeitar o
+    // contraste configurado pelo design system.
+    const focusRing =
+      'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm';
+
+    let body: React.ReactNode;
+    if (variant === 'icon-only') {
+      body = (
         <span
           role="status"
-          aria-label={confirmedLabel}
-          className={cn(
-            'inline-flex items-center justify-center text-emerald-600 dark:text-emerald-500',
-            className,
-          )}
+          aria-label={ariaLabel}
+          tabIndex={0}
+          className={cn('inline-flex items-center justify-center', color, focusRing, className)}
         >
-          <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-        </span>
-      ) : variant === 'compact' ? (
-        <span
-          role="status"
-          aria-label={confirmedLabel}
-          className={cn(
-            'inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-500',
-            className,
-          )}
-        >
-          <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-          <span>Confirmado</span>
-        </span>
-      ) : (
-        <span
-          role="status"
-          aria-label={confirmedLabel}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400',
-            className,
-          )}
-        >
-          <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>Confirmado com fornecedor</span>
+          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
       );
-    return (
+    } else if (variant === 'compact') {
+      // `compact` é usado em listas densas (ProductListItem). Mostra o
+      // relativo curto ("há 12d") + a data numérica pt-BR como sufixo
+      // discreto para que o vendedor consiga conferir sem abrir o tooltip.
+      const compactDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
+      body = (
+        <span
+          role="status"
+          aria-label={ariaLabel}
+          tabIndex={0}
+          className={cn(
+            'inline-flex items-center gap-1 text-xs font-medium',
+            color,
+            focusRing,
+            className,
+          )}
+        >
+          <Icon className="h-3 w-3" aria-hidden="true" />
+          <span className="tabular-nums">
+            {formatCompactRelative(freshness.daysSinceUpdate)}
+            {compactDate && <span className="text-muted-foreground"> · em {compactDate}</span>}
+            {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
+          </span>
+        </span>
+      );
+    } else if (variant === 'pdp') {
+      const absolute = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
+      const relative = formatRelativeDaysShort(freshness.daysSinceUpdate);
+
+      if (freshness.status === 'stale') {
+        body = (
+          <span
+            role="status"
+            aria-label={ariaLabel}
+            className={cn(
+              'inline-flex items-start gap-1.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-100',
+              className,
+            )}
+          >
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>
+              <span className="block">Preço pode estar defasado</span>
+              {absolute && (
+                <span className="block tabular-nums text-amber-900/80 dark:text-amber-200/80">
+                  Última atualização em {absolute}
+                  {relative && ` (${relative})`}
+                </span>
+              )}
+              <span className="block text-[11px] font-normal text-amber-800 dark:text-amber-200">
+                Confirme com o fornecedor antes de fechar o orçamento.
+              </span>
+            </span>
+          </span>
+        );
+      } else if (freshness.status === 'aging' && absolute) {
+        body = (
+          <span
+            role="status"
+            aria-label={ariaLabel}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300',
+              className,
+            )}
+          >
+            <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="tabular-nums">
+              Atualizado em {absolute}
+              <span className="text-amber-700/70 dark:text-amber-300/70"> · {relative}</span>
+              {limitSuffix}
+            </span>
+          </span>
+        );
+      } else if (freshness.status === 'fresh' && absolute) {
+        body = (
+          <span
+            role="status"
+            aria-label={ariaLabel}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400',
+              className,
+            )}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="tabular-nums">
+              Atualizado em {absolute}
+              <span className="text-emerald-700/70 dark:text-emerald-400/70"> · {relative}</span>
+              {limitSuffix}
+            </span>
+          </span>
+        );
+      } else {
+        // unknown / invalid date
+        body = (
+          <span
+            role="status"
+            aria-label={ariaLabel}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground',
+              className,
+            )}
+          >
+            <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>Data de atualização não informada</span>
+          </span>
+        );
+      }
+    } else {
+      // `inline` (default) — PDP/Quick View.
+      // Format: "${freshness.label} · em ${shortDate}${limitSuffix}"
+      // freshness.label is the canonical pt-BR copy from the utility:
+      //   fresh:   "Atualizado hoje" / "Atualizado há 1 dia" / "Atualizado há N dias"
+      //   aging:   "Atualizado há N dias"
+      //   stale:   "Preço pode estar defasado (há N dias)"
+      //   unknown: "Data de atualização não informada"
+      const inlineDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
+
+      body = (
+        <span
+          role="status"
+          aria-label={ariaLabel}
+          className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
+        >
+          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="tabular-nums">
+            {freshness.label}
+            {inlineDate && <span className="opacity-70"> · em {inlineDate}</span>}
+            {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
+          </span>
+        </span>
+      );
+    }
+
+    const tooltipped = (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>{confirmedBody}</TooltipTrigger>
+          <TooltipTrigger asChild>{body}</TooltipTrigger>
           <TooltipContent side="top" className=" ">
-            <div className="flex flex-col gap-1.5">
-              <div className="font-semibold">Preço confirmado com fornecedor</div>
-              <div className="leading-snug text-muted-foreground">
-                Você validou este preço {formatConfirmedRelative(confirmedAt as string | Date)}. O
-                alerta de preço defasado fica suprimido neste contexto até o próximo recálculo.
-              </div>
-              <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
-            </div>
+            <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
-  }
 
-  const { ariaLabel } = buildAccessibleLabel(freshness, priceUpdatedAt);
+    // Sem ação individual configurada → comportamento clássico (somente leitura).
+    if (!canOfferConfirm) return tooltipped;
 
-  // Anel de foco visível padronizado para os triggers compactos. Usa o token
-  // `--ring` para herdar a cor do tema (light/dark/skins) e respeitar o
-  // contraste configurado pelo design system.
-  const focusRing =
-    'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm';
-
-  let body: React.ReactNode;
-  if (variant === 'icon-only') {
-    body = (
-      <span
-        role="status"
-        aria-label={ariaLabel}
-        tabIndex={0}
-        className={cn('inline-flex items-center justify-center', color, focusRing, className)}
-      >
-        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+    // Com ação configurada → agrupa o badge + botão "Confirmei com fornecedor".
+    // Em variants compactas o CTA encolhe para "Confirmei" para caber em linha.
+    const ctaLabel =
+      variant === 'compact' || variant === 'icon-only' ? 'Confirmei' : 'Confirmei com fornecedor';
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        {tooltipped}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onConfirm?.();
+          }}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full border-[1.5px] border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20',
+          )}
+          aria-label="Confirmar que validei este preço com o fornecedor"
+        >
+          <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+          <span>{ctaLabel}</span>
+        </button>
       </span>
     );
-  } else if (variant === 'compact') {
-    // `compact` é usado em listas densas (ProductListItem). Mostra o
-    // relativo curto ("há 12d") + a data numérica pt-BR como sufixo
-    // discreto para que o vendedor consiga conferir sem abrir o tooltip.
-    const compactDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
-    body = (
-      <span
-        role="status"
-        aria-label={ariaLabel}
-        tabIndex={0}
-        className={cn(
-          'inline-flex items-center gap-1 text-xs font-medium',
-          color,
-          focusRing,
-          className,
-        )}
-      >
-        <Icon className="h-3 w-3" aria-hidden="true" />
-        <span className="tabular-nums">
-          {formatCompactRelative(freshness.daysSinceUpdate)}
-          {compactDate && <span className="text-muted-foreground"> · em {compactDate}</span>}
-          {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
-        </span>
-      </span>
-    );
-  } else if (variant === 'pdp') {
-    const absolute = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
-    const relative = formatRelativeDaysShort(freshness.daysSinceUpdate);
-
-    if (freshness.status === 'stale') {
-      body = (
-        <span
-          role="status"
-          aria-label={ariaLabel}
-          className={cn(
-            'inline-flex items-start gap-1.5 rounded-xl border-[1.5px] border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-100',
-            className,
-          )}
-        >
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>
-            <span className="block">Preço pode estar defasado</span>
-            {absolute && (
-              <span className="block tabular-nums text-amber-900/80 dark:text-amber-200/80">
-                Última atualização em {absolute}
-                {relative && ` (${relative})`}
-              </span>
-            )}
-            <span className="block text-[11px] font-normal text-amber-800 dark:text-amber-200">
-              Confirme com o fornecedor antes de fechar o orçamento.
-            </span>
-          </span>
-        </span>
-      );
-    } else if (freshness.status === 'aging' && absolute) {
-      body = (
-        <span
-          role="status"
-          aria-label={ariaLabel}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300',
-            className,
-          )}
-        >
-          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="tabular-nums">
-            Atualizado em {absolute}
-            <span className="text-amber-700/70 dark:text-amber-300/70"> · {relative}</span>
-            {limitSuffix}
-          </span>
-        </span>
-      );
-    } else if (freshness.status === 'fresh' && absolute) {
-      body = (
-        <span
-          role="status"
-          aria-label={ariaLabel}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-400',
-            className,
-          )}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="tabular-nums">
-            Atualizado em {absolute}
-            <span className="text-emerald-700/70 dark:text-emerald-400/70"> · {relative}</span>
-            {limitSuffix}
-          </span>
-        </span>
-      );
-    } else {
-      // unknown / invalid date
-      body = (
-        <span
-          role="status"
-          aria-label={ariaLabel}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground',
-            className,
-          )}
-        >
-          <HelpCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span>Data de atualização não informada</span>
-        </span>
-      );
-    }
-  } else {
-    // `inline` (default) — PDP/Quick View.
-    // Format: "${freshness.label} · em ${shortDate}${limitSuffix}"
-    // freshness.label is the canonical pt-BR copy from the utility:
-    //   fresh:   "Atualizado hoje" / "Atualizado há 1 dia" / "Atualizado há N dias"
-    //   aging:   "Atualizado há N dias"
-    //   stale:   "Preço pode estar defasado (há N dias)"
-    //   unknown: "Data de atualização não informada"
-    const inlineDate = priceUpdatedAt ? formatAbsoluteDate(priceUpdatedAt) : null;
-
-    body = (
-      <span
-        role="status"
-        aria-label={ariaLabel}
-        className={cn('inline-flex items-center gap-1.5 text-xs font-medium', color, className)}
-      >
-        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        <span className="tabular-nums">
-          {freshness.label}
-          {inlineDate && <span className="opacity-70"> · em {inlineDate}</span>}
-          {limitSuffix && <span className="text-muted-foreground">{limitSuffix}</span>}
-        </span>
-      </span>
-    );
-  }
-
-  const tooltipped = (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>{body}</TooltipTrigger>
-        <TooltipContent side="top" className=" ">
-          <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-
-  // Sem ação individual configurada → comportamento clássico (somente leitura).
-  if (!canOfferConfirm) return tooltipped;
-
-  // Com ação configurada → agrupa o badge + botão "Confirmei com fornecedor".
-  // Em variants compactas o CTA encolhe para "Confirmei" para caber em linha.
-  const ctaLabel =
-    variant === 'compact' || variant === 'icon-only' ? 'Confirmei' : 'Confirmei com fornecedor';
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      {tooltipped}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onConfirm?.();
-        }}
-        className={cn(
-          'inline-flex items-center gap-1 rounded-full border-[1.5px] border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20',
-        )}
-        aria-label="Confirmar que validei este preço com o fornecedor"
-      >
-        <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-        <span>{ctaLabel}</span>
-      </button>
-    </span>
-  );
-});
+  },
+);

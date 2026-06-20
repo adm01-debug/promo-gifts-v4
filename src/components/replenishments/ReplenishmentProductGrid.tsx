@@ -9,7 +9,12 @@ import {
   useReplenishmentsWithDetails,
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import {
+  useReposicaoVariantsSummary,
+  normalizeColorKey,
+} from '@/hooks/products/useReposicaoVariantsSummary';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
@@ -68,12 +73,7 @@ export function ReplenishmentProductGrid() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
 
-  const {
-    data: replenishments,
-    isLoading,
-    isFetching,
-    error,
-  } = useReplenishmentsWithDetails({ limit: 200 });
+  const { data: replenishments, isLoading, isFetching, error } = useReplenishmentsWithDetails();
   const products = useMemo(() => replenishments ?? [], [replenishments]);
   const loadingProgress = useLoadingProgress(isLoading);
 
@@ -178,7 +178,40 @@ export function ReplenishmentProductGrid() {
     () => filteredProducts.map((p) => p.product_id),
     [filteredProducts],
   );
-  const { data: colorsByProduct } = useProductsColorsBatch(visibleProductIds);
+  const { data: rawColorsByProduct } = useProductsColorsBatch(visibleProductIds);
+  const { data: variantsSummary } = useReposicaoVariantsSummary(visibleProductIds);
+
+  // Onda 1: funde estoque por cor (RPC fn_get_reposicao_variants_summary) dentro
+  // do colorsByProduct existente. Quando a RPC ainda não chegou (loading) ou
+  // não tem entry para o produto, mantém os swatches sem overlay (comportamento
+  // do antes). Identidade preservada quando não há summary → não invalida memo
+  // a jusante (VirtualizedGrid/TableView).
+  const colorsByProduct = useMemo(() => {
+    if (!rawColorsByProduct || rawColorsByProduct.size === 0) return rawColorsByProduct;
+    if (!variantsSummary || variantsSummary.size === 0) return rawColorsByProduct;
+    const out = new Map<string, readonly ColorDotLike[]>();
+    for (const [pid, colors] of rawColorsByProduct) {
+      const perColor = variantsSummary.get(pid);
+      if (!perColor || perColor.size === 0) {
+        out.set(pid, colors);
+        continue;
+      }
+      out.set(
+        pid,
+        colors.map((c) => {
+          const entry = perColor.get(normalizeColorKey(c.name));
+          if (!entry) return c;
+          return {
+            ...c,
+            stockQty: entry.stockQty,
+            hasUpcomingRestock: entry.hasUpcomingRestock,
+            nextRestockDate: entry.nextRestockDate,
+          };
+        }),
+      );
+    }
+    return out;
+  }, [rawColorsByProduct, variantsSummary]);
 
   // Enriquece o productMap (usado pelo list-view via ProductListItem) com as cores carregadas
   const enrichedProductMap = useMemo(() => {

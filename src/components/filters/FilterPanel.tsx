@@ -28,7 +28,6 @@ import { MaterialsFilter } from './filter-panel/sections/MaterialsFilter';
 import { RamosFilter } from './filter-panel/sections/RamosFilter';
 import {
   PublicoFilter,
-  EndomarketingFilter,
   TechniquesFilter,
   TagsFilter,
   QuickOptionsFilter,
@@ -98,9 +97,15 @@ export function FilterPanel({
             <span className="text-xs text-muted-foreground">R$</span>
             <DebouncedPriceInput
               value={filters.priceRange[0]}
-              onChange={(v) =>
-                onFilterChange({ ...filters, priceRange: [v, filters.priceRange[1]] })
-              }
+              onChange={(v) => {
+                const curMax = filters.priceRange[1];
+                // Auto-swap: se novo mínimo supera máximo real (< sentinela 9999), inverte
+                if (v > curMax && curMax < 9999) {
+                  onFilterChange({ ...filters, priceRange: [curMax, v] });
+                } else {
+                  onFilterChange({ ...filters, priceRange: [v, curMax] });
+                }
+              }}
               fallback={0}
               min={0}
               className={filters.priceRange[0] > 0 ? 'border-brand-primary/60' : ''}
@@ -111,9 +116,16 @@ export function FilterPanel({
             <span className="text-xs text-muted-foreground">R$</span>
             <DebouncedPriceInput
               value={filters.priceRange[1] >= 9999 ? '' : filters.priceRange[1]}
-              onChange={(v) =>
-                onFilterChange({ ...filters, priceRange: [filters.priceRange[0], v || 9999] })
-              }
+              onChange={(v) => {
+                const newMax = v || 9999;
+                const curMin = filters.priceRange[0];
+                // Auto-swap: se novo máximo real é menor que mínimo, inverte
+                if (newMax < curMin && newMax < 9999) {
+                  onFilterChange({ ...filters, priceRange: [newMax, curMin] });
+                } else {
+                  onFilterChange({ ...filters, priceRange: [curMin, newMax] });
+                }
+              }}
               fallback={9999}
               placeholder="Sem limite"
               min={0}
@@ -188,15 +200,6 @@ export function FilterPanel({
         compact
       />
     ),
-    endomarketing: () => (
-      <EndomarketingFilter
-        filters={filters}
-        endomarketingOptions={state.endomarketingOptions}
-        endoSearch={state.endoSearch}
-        setEndoSearch={state.setEndoSearch}
-        toggleArrayFilter={state.toggleArrayFilter}
-      />
-    ),
     materiais: () => (
       <MaterialsFilter
         materialSearch={state.materialSearch}
@@ -247,7 +250,11 @@ export function FilterPanel({
       />
     ),
     'opcoes-rapidas': () => (
-      <QuickOptionsFilter filters={filters} toggleBooleanFilter={state.toggleBooleanFilter} />
+      <QuickOptionsFilter
+        filters={filters}
+        toggleBooleanFilter={state.toggleBooleanFilter}
+        onMinStockChange={(v) => onFilterChange({ ...filters, minStock: v })}
+      />
     ),
     ordenacao: () => (
       <Select
@@ -293,6 +300,7 @@ export function FilterPanel({
       <SizeFilter
         selectedSizes={filters.sizes || []}
         onToggleSize={(size) => state.toggleArrayFilter('sizes', size)}
+        availableSizes={state.availableSizes}
         products={products as Array<{ variations?: Array<{ size_code?: string | null }> }>}
       />
     ),
@@ -314,6 +322,9 @@ export function FilterPanel({
             const config = SECTION_CONFIG[sId];
             if (!config) return false;
             if (!state.sectionMatchesSearch(sId, config.title)) return false;
+            // SF-D: Técnicas ocultas até a tabela personalization_techniques ter
+            // dados no DB. Quando techniqueOptions.length > 0 a seção aparece
+            // automaticamente sem precisar alterar este arquivo.
             if (sId === 'tecnicas' && state.techniqueOptions.length === 0) return false;
             if (sId === 'tags' && state.tagOptions.length === 0) return false;
             return true;

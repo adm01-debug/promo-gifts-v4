@@ -27,12 +27,14 @@ vi.mock('@/components/products/NoveltyBadge', () => ({
 vi.mock('@/components/products/ProductStatusBadge', () => ({
   ProductStatusBadge: () => null,
 }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 vi.mock('@/components/inventory/StockBadge', () => ({
   StockBadge: ({ quantity }: { quantity: number }) => (
     <div data-testid="mock-stock-badge">{quantity}</div>
   ),
   getStockStatus: () => 'in-stock' as const,
 }));
+vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';

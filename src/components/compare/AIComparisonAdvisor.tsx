@@ -23,13 +23,10 @@ interface AdvisorResult {
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 function cacheKey(products: Product[]): string {
-  return (
-    'cmp-ai-' +
-    products
-      .map((p) => p.id)
-      .sort()
-      .join('|')
-  );
+  return `cmp-ai-${products
+    .map((p) => p.id)
+    .sort()
+    .join('|')}`;
 }
 
 function readCache(key: string): AdvisorResult | null {

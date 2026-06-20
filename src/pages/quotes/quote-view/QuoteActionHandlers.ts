@@ -55,7 +55,7 @@ export function buildWhatsAppUrl(quote: Quote, approvalLink: string | null): str
   }
   lines.push('', 'Qualquer dúvida, estou à disposição! 😊');
   const message = encodeURIComponent(lines.join('\n'));
-  const phone = quote.client_phone?.replace(/\D/g, '') || '';
+  const phone = quote.client_phone?.replace(/\D/g, '') ?? '';
   return phone ? `https://wa.me/55${phone}?text=${message}` : `https://wa.me/?text=${message}`;
 }
 
@@ -102,8 +102,8 @@ export async function handleSyncBitrix(params: {
     return;
   }
 
-  const itemsSemBitrixId = quote.items?.filter((item) => !item.bitrix_product_id) || [];
-  const itensSincronizaveis = quote.items?.filter((item) => !!item.bitrix_product_id) || [];
+  const itemsSemBitrixId = quote.items?.filter((item) => !item.bitrix_product_id) ?? [];
+  const itensSincronizaveis = quote.items?.filter((item) => !!item.bitrix_product_id) ?? [];
 
   if (itensSincronizaveis.length === 0) {
     toast.error('Nenhum produto com ID Bitrix24');

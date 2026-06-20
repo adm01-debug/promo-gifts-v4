@@ -128,8 +128,8 @@ export function useQuoteViewData(id: string | undefined) {
               setup_cost: p.setup_cost || 0,
               total_cost: p.total_cost || 0,
               notes: p.notes || undefined,
-            })) || [],
-        })) || [],
+            })) ?? [],
+        })) ?? [],
       subtotal: fullSubtotal,
       discount: discountValue || undefined,
       shippingCost: quote.shipping_cost || undefined,
@@ -176,7 +176,7 @@ export function useQuoteViewData(id: string | undefined) {
 
   const handleWhatsAppShare = () => {
     const lines = [
-      `📋 *Proposta Comercial ${quote?.quote_number || ''}*`,
+      `📋 *Proposta Comercial ${quote?.quote_number ?? ''}*`,
       '',
       `💰 Valor Total: *${formatCurrencyHelper(quote?.total || 0)}*`,
     ];
@@ -187,7 +187,7 @@ export function useQuoteViewData(id: string | undefined) {
     }
     lines.push('', 'Qualquer dúvida, estou à disposição! 😊');
     const message = encodeURIComponent(lines.join('\n'));
-    const phone = quote?.client_phone?.replace(/\D/g, '') || '';
+    const phone = quote?.client_phone?.replace(/\D/g, '') ?? '';
     const url = phone
       ? `https://wa.me/55${phone}?text=${message}`
       : `https://wa.me/?text=${message}`;

@@ -91,7 +91,7 @@ export const quoteService = {
       unit_price: round2(item.unit_price),
       notes: item.notes?.trim().slice(0, 1000),
       personalizations: buildPersonalizationsInsertPayload(
-        items[index]?.personalizations || [],
+        items[index]?.personalizations ?? [],
         '',
       ),
     }));
@@ -127,8 +127,8 @@ export const quoteService = {
       unit_price: round2(item.unit_price),
       notes: item.notes?.trim().slice(0, 1000),
       personalizations: buildPersonalizationsInsertPayload(
-        items[index]?.personalizations || [],
-        quoteId,
+        items[index]?.personalizations ?? [],
+        items[index]?.id ?? '',
       ),
     }));
 

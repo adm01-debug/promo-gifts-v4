@@ -141,6 +141,7 @@ describe('resolveRedirectTarget — precedência pós-login', () => {
       expect(peekPostLoginRedirect()).toBeNull();
       const result = resolveRedirectTarget({
         fromState: { pathname: '/reset-password' }, // bloqueado
+        // eslint-disable-next-line no-script-url -- test fixture: verifying javascript: protocol is rejected
         queryRedirect: 'javascript:alert(1)', // bloqueado
       });
       expect(result).toBe('/');

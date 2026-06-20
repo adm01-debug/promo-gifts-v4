@@ -86,7 +86,7 @@ export function ImageUploadButton({
 
           retryCount++;
           if (retryCount < maxRetries) {
-            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s
+            const delay = 2 ** retryCount * 1000; // Exponential backoff: 2s, 4s
             logger.warn(
               `Tentativa ${retryCount} falhou. Tentando novamente em ${delay}ms...`,
               error,

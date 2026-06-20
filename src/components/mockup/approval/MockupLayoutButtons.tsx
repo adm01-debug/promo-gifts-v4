@@ -174,11 +174,18 @@ export function MockupLayoutButtons({
       return;
     }
     // No mockup yet — trigger generation, layout opens via useEffect above
-    if (onGenerateMockup) {
-      pendingLayoutAI.current = true;
-      await onGenerateMockup();
-    } else {
+    if (!onGenerateMockup) {
       toast.error('Configure o gerador de mockup primeiro.');
+      return;
+    }
+    // BUG-LAY1 FIX: wrap in try/catch so that (a) unhandled rejection is prevented
+    // and (b) pendingLayoutAI is cleared if onGenerateMockup throws, stopping it
+    // from auto-opening the layout dialog on the next unrelated mockup generation.
+    pendingLayoutAI.current = true;
+    try {
+      await onGenerateMockup();
+    } catch {
+      pendingLayoutAI.current = false;
     }
   }, [generatedMockup, buildApprovalData, onGenerateMockup]);
 

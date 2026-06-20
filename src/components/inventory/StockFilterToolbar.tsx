@@ -2,9 +2,8 @@
  * StockFilterToolbar — Advanced filter bar for Stock Dashboard
  * Uses same FilterSection architecture as Super Filtro
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Search,
   X,
   Building2,
   Palette,
@@ -17,6 +16,7 @@ import {
   Filter,
   Truck,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -76,7 +76,7 @@ export function StockFilterToolbar({
   filteredCount,
 }: StockFilterToolbarProps) {
   const [localSearch, setLocalSearch] = useState(filters.search);
-  const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() || '');
+  const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() ?? '');
   const [openSections, setOpenSections] = useState<string[]>([]);
 
   // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
@@ -113,11 +113,32 @@ export function StockFilterToolbar({
     [filters],
   );
 
-  // Debounce search
+  // Search é commit-on-Enter / botão Busca (não há mais debounce).
+  // Mantém sincronia quando filtros são resetados externamente.
   useEffect(() => {
-    const t = setTimeout(() => onUpdateFilter('search', localSearch), 300);
-    return () => clearTimeout(t);
+    setLocalSearch(filters.search ?? '');
+  }, [filters.search]);
+
+  // Loading transitório enquanto a busca é aplicada (UX feedback).
+  const [isSearching, setIsSearching] = useState(false);
+  const commitSearch = useCallback(() => {
+    setIsSearching(true);
+    onUpdateFilter('search', localSearch);
   }, [localSearch, onUpdateFilter]);
+
+  // Encerra o loading assim que o filtro externo reflete o valor digitado
+  // (ou após 600ms como fallback de segurança).
+  useEffect(() => {
+    if (!isSearching) return;
+    if ((filters.search ?? '') === localSearch) {
+      setIsSearching(false);
+      return;
+    }
+    const t = setTimeout(() => setIsSearching(false), 600);
+    return () => clearTimeout(t);
+  }, [isSearching, filters.search, localSearch]);
+
+
 
   // Debounce quantity
   useEffect(() => {
@@ -141,6 +162,9 @@ export function StockFilterToolbar({
   const handleReset = () => {
     setLocalSearch('');
     setQuantityInput('');
+    // Evita ficar com aria-busy="true" / spinner travado se o usuário
+    // resetar logo após clicar em "Busca" (race entre commit e reset).
+    setIsSearching(false);
     onResetFilters();
   };
 
@@ -546,29 +570,66 @@ export function StockFilterToolbar({
             </span>
           )}
 
-        {/* 3. Search */}
+        {/* 3. Search — commit on Enter / botão "Busca" (sem lupa interna) */}
         <StockHelpTooltip
           title="Busca no Estoque"
-          description="Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens). Debounce de 300ms."
+          description='Preencha filtros, "Em Estoque", quantidade e o texto desejado, depois pressione Enter ou clique em "Busca" para aplicar. Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens).'
           example='"caneca azul" casa "Caneca cerâmica azul royal" e SKU CANECA-AZ-01.'
           emptyHint="Use menos palavras, verifique a grafia ou limpe outros filtros ativos."
         >
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar no Estoque (Nome, SKU ou Cor)... "
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="pl-9 pr-8"
-            />
-            {localSearch && (
-              <button
-                onClick={() => setLocalSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+          <div className="relative flex max-w-md flex-1 items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                placeholder="Buscar no Estoque (Nome, SKU ou Cor)... "
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commitSearch();
+                  }
+                }}
+                className="pr-8"
+                aria-label="Buscar no Estoque por Nome, SKU ou Cor"
+              />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSearch('');
+                    onUpdateFilter('search', '');
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              type="button"
+              onClick={commitSearch}
+              variant="default"
+              size="sm"
+              className="shrink-0"
+              data-testid="stock-search-button"
+              // Habilitado quando há algo a buscar: texto digitado OU
+              // pelo menos um filtro ativo (status, categoria, fornecedor,
+              // cor, quantidade mínima). Loading desabilita.
+              disabled={
+                isSearching ||
+                (localSearch.trim() === '' && activeFiltersCount === 0)
+              }
+              aria-label="Aplicar busca no estoque"
+              aria-busy={isSearching}
+              title="Aplicar busca (Enter)"
+            >
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : null}
+              <span>{isSearching ? 'Buscando…' : 'Busca'}</span>
+            </Button>
+
           </div>
         </StockHelpTooltip>
 
@@ -577,6 +638,7 @@ export function StockFilterToolbar({
             <X className="h-4 w-4" />
           </Button>
         )}
+
       </div>
 
       {/* Status chips removed — StatCards above handle status filtering */}

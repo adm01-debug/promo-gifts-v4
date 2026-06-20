@@ -161,11 +161,12 @@ export function useQuoteVersions(quoteId?: string) {
               total_cost: p.total_cost,
               notes: p.notes,
             })),
-          })) || [];
+          })) ?? [];
 
         const newQuote = await createQuote(
           {
             client_id: original.client_id,
+            contact_id: original.contact_id,
             client_name: original.client_name,
             client_email: original.client_email,
             client_phone: original.client_phone,

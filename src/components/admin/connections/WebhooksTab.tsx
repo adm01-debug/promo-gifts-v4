@@ -106,10 +106,7 @@ export function WebhooksTab() {
     }
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
-    const slug =
-      formIn.source_system.toLowerCase().replace(/[^a-z0-9]+/g, '-') +
-      '-' +
-      Math.random().toString(36).slice(2, 8);
+    const slug = `${formIn.source_system.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).slice(2, 8)}`;
     const secretRef = `INBOUND_WEBHOOK_HMAC_${slug.toUpperCase().replace(/-/g, '_')}`;
     const { error } = await supabase.from('inbound_webhook_endpoints').insert({
       slug,

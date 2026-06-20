@@ -2,7 +2,7 @@
  * QuoteBuilderSummaryColumn — Coluna 3: Resumo com cards de itens, desconto e CTAs
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -162,10 +162,11 @@ export function QuoteBuilderSummaryColumn({
     [items, showOnlyStale, staleIndexes],
   );
 
-  // Auto-desliga o filtro se a contagem zerar (após confirmar todos)
-  if (showOnlyStale && staleCount === 0) {
-    setTimeout(() => setShowOnlyStale(false), 0);
-  }
+  // Auto-desliga o filtro se a contagem zerar (após confirmar todos).
+  // Em um effect (não no corpo do render) para evitar setState durante a renderização.
+  useEffect(() => {
+    if (showOnlyStale && staleCount === 0) setShowOnlyStale(false);
+  }, [showOnlyStale, staleCount]);
 
   const handleRequestApproval = () => {
     onSave('pending_approval', sellerNotes);
@@ -258,7 +259,7 @@ export function QuoteBuilderSummaryColumn({
                   const isStale = staleIndexes.has(idx);
                   return (
                     <div
-                      key={idx}
+                      key={item.id ?? `${item.product_id}-${item.product_sku ?? ''}-${item.color_name ?? ''}-${idx}`}
                       className={cn(
                         'cursor-pointer rounded-xl border transition-all',
                         isActive
@@ -432,7 +433,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Discount */}
           {items.length > 0 && (
             <div className="space-y-2.5 px-4 pt-3">
-              {maxDiscountPercent !== null && (
+              {maxDiscountPercent !== null && maxDiscountPercent !== undefined && (
                 <div
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-colors',

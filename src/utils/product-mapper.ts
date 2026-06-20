@@ -122,11 +122,16 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   return {
     id: p.id,
     name: p.name,
-    description: p.description || p.short_description || p.meta_description || null,
+    description:
+      (p.description?.trim() || null) ??
+      (p.short_description?.trim() || null) ??
+      (p.meta_description?.trim() || null) ??
+      null,
     shortDescription: p.short_description ?? '',
     category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
     price: getProductPrice(p),
+    sale_price: typeof p.sale_price === 'number' ? p.sale_price : undefined,
     image_url: images[0],
     primary_image_url: p.primary_image_url || null,
     primary_image_fallback_url: p.primary_image_fallback_url || null,
@@ -139,7 +144,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     materials: parseMaterials(p.materials),
     supplier_reference: p.supplier_reference,
     brand: p.brand,
-    is_active: p.is_active || p.active,
+    is_active: p.is_active ?? p.active,
     minQuantity: p.min_quantity || 1,
     stockStatus: getStockStatus(stock),
     featured: Boolean(p.is_featured || p.is_bestseller),
@@ -197,22 +202,47 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     kitItems:
       p.kit_components?.map((c) => {
         const ck = c as Record<string, unknown>;
+        // Normaliza galeria: aceita string[], {url}[] ou {primary_image_url}[]
+        const rawImages = ck.images;
+        const gallery: string[] = Array.isArray(rawImages)
+          ? rawImages
+              .map((img) => {
+                if (typeof img === 'string') return img;
+                if (img && typeof img === 'object') {
+                  const o = img as Record<string, unknown>;
+                  return (o.url ?? o.image_url ?? o.primary_image_url ?? null) as
+                    | string
+                    | null;
+                }
+                return null;
+              })
+              .filter((u): u is string => typeof u === 'string' && u.length > 0)
+          : [];
+        // Garantir que a capa esteja na galeria
+        const primaryImage = c.primary_image_url || null;
+        if (primaryImage && !gallery.includes(primaryImage)) {
+          gallery.unshift(primaryImage);
+        }
         return {
           id: c.id,
           productId: c.component_product_id || c.id,
           productName: c.component_name || 'Componente',
           quantity: c.quantity || 1,
           sku: c.component_sku || c.component_code || '',
-          imageUrl: c.primary_image_url || null,
-          isOptional: c.is_optional || false,
-          isPackaging: c.is_packaging || false,
-          isReplaceable: c.is_replaceable || false,
-          allowsPersonalization: c.allows_personalization || false,
-          material: c.material || null,
-          weightG: c.weight_g || null,
+          imageUrl: primaryImage,
+          images: gallery.length > 0 ? gallery : null,
+          isOptional: c.is_optional ?? false,
+          isPackaging: c.is_packaging ?? false,
+          isReplaceable: c.is_replaceable ?? false,
+          allowsPersonalization: c.allows_personalization ?? false,
+          material: c.material ?? null,
+          weightG: c.weight_g ?? null,
           heightMm: c.height_mm ?? null,
           widthMm: c.width_mm ?? null,
           lengthMm: c.length_mm ?? null,
+          diameterMm: (ck.diameter_mm as number | null | undefined) ?? null,
+          circumferenceMm: (ck.circumference_mm as number | null | undefined) ?? null,
+          volumeMl: (ck.capacity_ml as number | null | undefined) ?? null,
           componentTypeCode: (ck.component_type_code ?? null) as string | null,
           supplierComponentCode: (ck.supplier_component_code ?? null) as string | null,
           description: (ck.component_description ?? null) as string | null,

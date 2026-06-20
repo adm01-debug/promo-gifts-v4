@@ -72,9 +72,12 @@ export function useCatalogRealStats() {
 
       return { totalVariants, totalCategories, totalSuppliers };
     },
+    // FIX 2026-06-18: staleTime mantido em 30min (stats aggregate mudam lentamente).
+    // retry: 1 (era 2) — view é rápida; 1 retry é suficiente para falha transitória.
+    // refetchOnWindowFocus: true — garante freshness pós-pipeline ao retornar ao tab.
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    retry: 2,
+    refetchOnWindowFocus: true,
+    retry: 1,
   });
 }

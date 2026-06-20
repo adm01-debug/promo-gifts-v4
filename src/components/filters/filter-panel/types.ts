@@ -58,7 +58,7 @@ export interface FilterState {
   sortBy: string;
   // COMERCIAL — Filtros por vendas (somente Super Filtro) — janela padronizada 90d
   minSupplierSales90d: number; // mín. unidades vendidas pelo fornecedor nos últimos 90 dias
-  minPromoSales90d: number;    // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
+  minPromoSales90d: number; // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
 }
 
 export interface FilterPanelProps {
@@ -116,7 +116,7 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Categorias',
     icon: React.createElement(LayoutGrid, { className: 'h-4 w-4' }),
   },
-  
+
   preco: {
     title: 'Faixa de Preço',
     icon: React.createElement(DollarSign, { className: 'h-4 w-4' }),
@@ -166,6 +166,8 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
 export const SECTION_GROUPS = [
   {
     label: 'PRODUTO',
+    // SF-E FIX: 'tamanhos' reabilitada — useProductsBySize consulta product_variants
+    // server-side e retorna Set<product_id>; catalogo leve nao precisa de variations.
     sections: ['cores', 'categorias', 'preco', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
@@ -176,7 +178,9 @@ export const SECTION_GROUPS = [
   },
   {
     label: 'MARKETING',
-    sections: ['publico', 'datas-comemorativas', 'endomarketing', 'ramos-atividade'],
+    // BUG-DB-05: 'endomarketing' removido — secao redundante/vazia. 'Endomarketing' e na
+    // verdade uma TAG (2.760 produtos), filtravel na secao Tags; nao ha sub-opcoes proprias.
+    sections: ['publico', 'datas-comemorativas', 'ramos-atividade'],
     icon: Target,
   },
   // BUG-SF-03 FIX: 'ordenacao' estava definido em SECTION_CONFIG e sectionRenderers

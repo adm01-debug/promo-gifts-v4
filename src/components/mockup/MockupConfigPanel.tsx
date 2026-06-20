@@ -175,7 +175,7 @@ export function MockupConfigPanel({
               }
             >
               <Select
-                value={selectedTechnique?.id || ''}
+                value={selectedTechnique?.id ?? ''}
                 onValueChange={(value) => {
                   const technique = filteredTechniques.find((t) => t.id === value);
                   onTechniqueSelect(technique || null);
@@ -192,7 +192,7 @@ export function MockupConfigPanel({
                           Técnicas compatíveis com {productSelection.product.name}
                         </div>
                       )}
-                      {filteredTechniques.map((technique) => (
+                      {filteredTechniques.filter((t) => t.id).map((technique) => (
                         <TechniqueTooltip key={technique.id} technique={technique}>
                           <SelectItem value={technique.id} className="cursor-pointer">
                             <div className="flex w-full flex-col gap-0.5">
@@ -302,21 +302,23 @@ export function MockupConfigPanel({
               />
             </MobileCollapsibleSection>
 
-            {/* Step 5: Art Files */}
-            <MobileCollapsibleSection
-              id="step-art-files"
-              label="Arquivos de Arte (Vetor)"
-              isCompleted={artAttachments.length > 0}
-              summary={
-                artAttachments.length > 0 ? `${artAttachments.length} arquivo(s)` : undefined
-              }
-            >
-              <ArtFileUpload
-                userId={userId || ''}
-                attachments={artAttachments}
-                onAttachmentsChange={onArtAttachmentsChange}
-              />
-            </MobileCollapsibleSection>
+            {/* Step 5: Art Files — only rendered when user is authenticated */}
+            {userId && (
+              <MobileCollapsibleSection
+                id="step-art-files"
+                label="Arquivos de Arte (Vetor)"
+                isCompleted={artAttachments.length > 0}
+                summary={
+                  artAttachments.length > 0 ? `${artAttachments.length} arquivo(s)` : undefined
+                }
+              >
+                <ArtFileUpload
+                  userId={userId}
+                  attachments={artAttachments}
+                  onAttachmentsChange={onArtAttachmentsChange}
+                />
+              </MobileCollapsibleSection>
+            )}
 
             {/* Logo Color Analysis — auto-appears after logo upload */}
             {logoColorAnalysis &&

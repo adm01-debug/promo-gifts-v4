@@ -5,7 +5,7 @@
  *  3. Em runtime, mesmo com env apontando para projeto externo, o client
  *     resolve para a URL canônica (fallback ativado por config_inconsistency).
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -55,18 +55,70 @@ describe('SSOT Supabase — client.ts (guarda imutável)', () => {
 });
 
 describe('SSOT Supabase — fallback em runtime', () => {
-  it('client real resolve para URL canônica mesmo com env apontando para pqp', async () => {
-    // O setup de teste tipicamente carrega .env.test apontando para pqp.
-    // O client.ts deve detectar e usar fallback canônico.
+  // Cada caso reavalia o módulo client.ts do zero (resetModules) com um env
+  // diferente, exercitando de fato a lógica validateEnv()→SUPABASE_URL.
+  // Sem resetModules o client é cacheado e o env stub não tem efeito.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  async function loadClientUrl(envUrl: string, envKey = 'sb_publishable_externo') {
+    vi.resetModules();
+    vi.stubEnv('VITE_SUPABASE_URL', envUrl);
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', envKey);
     const mod = await import('../client');
-    const url = (mod as { SUPABASE_URL?: string }).SUPABASE_URL;
-    if (typeof url === 'string') {
+    return mod.SUPABASE_URL;
+  }
+
+  it('client real (env ambiente) NUNCA resolve para o projeto proibido (pqp); usa canônico fora de dev local', async () => {
+    // INVARIANTE SSOT (não negociável): a URL resolvida sob o env ambiente do
+    // runner jamais pode apontar para o projeto Lovable (pqp). Em dev local
+    // (localhost/127.0.0.1/placeholder) o client mantém a URL local legitimamente
+    // — por isso a asserção canônica só vale quando NÃO é dev local.
+    const mod = await import('../client');
+    const url =
+      (mod as { SUPABASE_URL?: string }).SUPABASE_URL ??
+      (mod as unknown as { supabase?: { supabaseUrl?: string } }).supabase?.supabaseUrl ??
+      '';
+    expect(url).not.toContain(FORBIDDEN);
+    const isLocalDev =
+      url.includes('localhost') || url.includes('127.0.0.1') || url.includes('placeholder');
+    if (!isLocalDev) {
       expect(url).toContain(CANONICAL);
+<<<<<<< HEAD
       expect(url).not.toContain(FORBIDDEN);
     } else {
       // Fallback: valida via supabase client interno
       const client = (mod as unknown as { supabase?: { supabaseUrl?: string } }).supabase;
       expect(client?.supabaseUrl ?? '').toContain(CANONICAL);
+=======
+>>>>>>> origin/main
     }
+  });
+
+  it('faz fallback para a URL canônica quando env aponta para o projeto Lovable (pqp)', async () => {
+    const url = await loadClientUrl(`https://${FORBIDDEN}.supabase.co`);
+    expect(url).toContain(CANONICAL);
+    expect(url).not.toContain(FORBIDDEN);
+  });
+
+  it('faz fallback para a URL canônica quando env aponta para self-hosted externo', async () => {
+    const url = await loadClientUrl('https://supabase.atomicabr.com.br');
+    expect(url).toContain(CANONICAL);
+    expect(url).not.toContain('atomicabr');
+  });
+
+  it('mantém a URL canônica quando o env já aponta para o projeto canônico', async () => {
+    const url = await loadClientUrl(`https://${CANONICAL}.supabase.co`, CANONICAL);
+    expect(url).toContain(CANONICAL);
+    expect(url).not.toContain(FORBIDDEN);
+  });
+
+  it('aceita localhost como dev legítimo sem vazar o projeto proibido', async () => {
+    const url = await loadClientUrl('http://localhost:54321');
+    // localhost é dev válido (não força fallback), mas jamais o projeto proibido.
+    expect(url).not.toContain(FORBIDDEN);
+    expect(url).toContain('localhost');
   });
 });
