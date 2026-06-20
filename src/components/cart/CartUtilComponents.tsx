@@ -304,7 +304,6 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
       <CollapsibleTrigger asChild>
         <button
           className="flex w-full items-center gap-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-          aria-label="Recolher"
         >
           <History className="h-3.5 w-3.5" />
           Histórico de ações ({history.length})
