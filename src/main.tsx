@@ -1,5 +1,4 @@
 import './lib/console-filter';
-import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { registerServiceWorker } from '@/lib/sw-register';
@@ -51,13 +50,11 @@ if (!root) {
 }
 
 createRoot(root).render(
-  <Fragment>
-    <HelmetProvider>
-      <EnhancedErrorBoundary>
-        <App />
-      </EnhancedErrorBoundary>
-    </HelmetProvider>
-  </Fragment>,
+  <HelmetProvider>
+    <EnhancedErrorBoundary>
+      <App />
+    </EnhancedErrorBoundary>
+  </HelmetProvider>,
 );
 
 if (import.meta.env.PROD) {

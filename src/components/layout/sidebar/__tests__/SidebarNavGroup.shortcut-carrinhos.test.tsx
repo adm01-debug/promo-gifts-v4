@@ -170,7 +170,7 @@ describe('Sidebar shortcut: hint visual de Alt+R', () => {
       <MemoryRouter initialEntries={['/carrinhos']}>
         <SidebarNavGroup
           group={group}
-          isOpen={true}
+          isOpen
           isCollapsed={false}
           onToggle={() => {}}
           onMobileClose={() => {}}

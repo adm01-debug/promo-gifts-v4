@@ -260,20 +260,18 @@ export function BridgeProductsPreviewPanel() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {hasActiveFilters ? (
-                <>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {
-                      [
-                        appliedSearch && 'busca',
-                        appliedActive !== 'all' && 'status',
-                        appliedMinPrice !== null && 'preço mín.',
-                        appliedMaxPrice !== null && 'preço máx.',
-                        appliedMinStock !== null && 'estoque',
-                      ].filter(Boolean).length
-                    }{' '}
-                    filtro(s) ativo(s)
-                  </Badge>
-                </>
+                <Badge variant="secondary" className="text-[10px]">
+                  {
+                    [
+                      appliedSearch && 'busca',
+                      appliedActive !== 'all' && 'status',
+                      appliedMinPrice !== null && 'preço mín.',
+                      appliedMaxPrice !== null && 'preço máx.',
+                      appliedMinStock !== null && 'estoque',
+                    ].filter(Boolean).length
+                  }{' '}
+                  filtro(s) ativo(s)
+                </Badge>
               ) : (
                 <span>Sem filtros aplicados</span>
               )}

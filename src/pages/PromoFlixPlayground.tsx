@@ -26,7 +26,7 @@ export default function PromoFlixPlayground() {
             <div className="overflow-hidden rounded-xl border border-white/10 shadow-2xl">
               <PromoFlixPlayer
                 src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-                isHls={true}
+                isHls
                 title="Sintel - Test HLS Stream"
                 productName="Produto de Teste"
                 autoPlay={false}

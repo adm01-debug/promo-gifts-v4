@@ -584,7 +584,7 @@ function ApprovalFooter({
           gap: '40px',
         }}
       >
-        <span></span>
+        <span />
         {seller.email && <span style={{ textAlign: 'left' }}>{seller.email}</span>}
         {seller.name && (
           <span>

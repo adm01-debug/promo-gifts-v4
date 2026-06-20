@@ -235,7 +235,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               <th className="w-20 p-3 text-center text-sm font-semibold text-primary">Qtd</th>
               <th className="w-28 p-3 text-left text-sm font-semibold text-primary">Unitário</th>
               <th className="w-32 p-3 text-left text-sm font-semibold text-primary">Total</th>
-              <th className="w-24 p-3 text-center text-sm font-semibold text-primary print:hidden"></th>
+              <th className="w-24 p-3 text-center text-sm font-semibold text-primary print:hidden" />
             </tr>
           </thead>
           <tbody>

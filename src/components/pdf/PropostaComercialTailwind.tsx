@@ -221,7 +221,7 @@ export const PropostaComercialTailwind = forwardRef<
               {!isFirst && <ProposalClientBarCompact data={data} />}
 
               {pageItems.length > 0 && (
-                <ProposalProductTable items={pageItems} showHeader={true} startIndex={startIdx} />
+                <ProposalProductTable items={pageItems} showHeader startIndex={startIdx} />
               )}
 
               {isLast && (

@@ -418,6 +418,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 123: 6 zero-violation rules (removed: no-misused-promises many, button-has-type many, no-unescaped-entities many, no-import-type-side-effects 2v+, no-noninteractive-tabindex intentional a11y patterns, no-noninteractive-element-to-interactive-role intentional a11y patterns)
+      'react/jsx-boolean-value': 'error',
+      'react/self-closing-comp': 'error',
+      'jsx-a11y/role-supports-aria-props': 'error',
+      'react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/consistent-type-exports': 'error',
       // Batch 119: 3 zero-violation rules (removed: jsx-newline many, forbid-component-props many, jsx-max-props-per-line many, jsx-closing-tag-location 3v)
       'react/jsx-equals-spacing': 'error',
       'react/jsx-tag-spacing': 'error',

@@ -75,7 +75,7 @@ export function QuickViewGallery({
             alt={currentAlt}
             blurhash={currentImage?.blurhash}
             urlOriginal={currentImage?.url_original}
-            priority={true}
+            priority
             className="object-contain p-8"
             containerClassName="h-full w-full"
           />

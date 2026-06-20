@@ -71,7 +71,7 @@ export default function AdminExternalDbPage() {
       const rpcResult = await invokeExternalRpc<Record<string, unknown>>(contractName, params);
       const validation = validateRpcPayload(contract, rpcResult ?? {});
       setLiveResults((prev) => ({ ...prev, [contractName]: validation }));
-      toast.success(`${contractName}`, {
+      toast.success(contractName, {
         description: validation.ok ? 'Contrato OK' : `${validation.missing.length} campos ausentes`,
       });
       refreshTelemetry();
