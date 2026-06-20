@@ -414,6 +414,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 102: 6 zero-violation rules (removed: react/no-array-index-key 21v, jsx-a11y/prefer-tag-over-role 16v, no-void 9v, no-return-await 1v, no-param-reassign 1v, jsx-a11y/no-aria-hidden-on-focusable 1v, @typescript-eslint/no-invalid-void-type 1v, only-throw-error 1v, react/no-object-type-as-default-prop 1v, react/void-dom-elements-no-children 1v)
+      'no-implied-eval': 'error',
+      'no-new': 'error',
+      '@typescript-eslint/no-extraneous-class': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
+      'react/jsx-no-duplicate-props': 'error',
+      'react/jsx-no-target-blank': 'error',
       // Batch 101: 18 zero-violation rules (removed: no-redundant-type-constituents 18v, react/no-unknown-property 1v)
       'no-compare-neg-zero': 'error',
       'no-duplicate-case': 'error',
