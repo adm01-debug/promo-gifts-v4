@@ -50,8 +50,7 @@ const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
  *    descarta flags vencidas mesmo antes do `cleanup-novelties` rodar).
  * Os filtros de qualidade continuam aplicados.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const applyNoveltyPredicate = (query: any, nowIso: string): any =>
+const applyNoveltyPredicate = (query: NoveltyQuery, nowIso: string): NoveltyQuery =>
   applyNoveltyQualityFilters(query.eq('is_active', true))
     .eq('is_new', true)
     .gt('novelty_expires_at', nowIso);

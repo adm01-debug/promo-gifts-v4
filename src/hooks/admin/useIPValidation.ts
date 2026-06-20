@@ -22,7 +22,13 @@ export function useIPValidation() {
       const { data, error } = await supabase.functions.invoke('get-visitor-info');
       if (error || !data?.ip) {
         logger.warn('Fallback to secondary IP identification');
-        const response = await fetch('https://api.ipify.org?format=json').catch(() => null);
+        const ipCtrl = new AbortController();
+        const ipTimeout = setTimeout(() => ipCtrl.abort(), 5000);
+        const response = await fetch('https://api.ipify.org?format=json', {
+          signal: ipCtrl.signal,
+        })
+          .catch(() => null)
+          .finally(() => clearTimeout(ipTimeout));
         if (response) {
           const ipData = await response.json();
           return ipData.ip;
