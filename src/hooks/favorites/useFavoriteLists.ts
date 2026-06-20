@@ -410,7 +410,7 @@ export function useFavoriteListItems(listId: string | null) {
             }
             const results = await Promise.allSettled(
               trashed.map((t) =>
-                supabase.rpc('restore_favorite_from_trash', {
+                untypedRpc('restore_favorite_from_trash', {
                   _trash_id: t.id,
                   _user_id: user.id,
                 }),

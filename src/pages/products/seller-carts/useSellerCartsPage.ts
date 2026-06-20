@@ -84,16 +84,12 @@ export function useSellerCartsPage() {
   const weightVolume = useMemo(() => {
     if (!activeCart) return null;
     // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
-    const dimMap = new Map(
-      allProducts.map((p: { id: string; dimensions?: { weight_g?: number }; boxVolumeCm3?: number }) => [p.id, p]),
-    );
+    const dimMap = new Map(allProducts.map((p) => [p.id, p]));
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
-      const product = dimMap.get(item.product_id) as
-        | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
-        | undefined;
+      const product = dimMap.get(item.product_id);
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
