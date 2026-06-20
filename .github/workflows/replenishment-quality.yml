@@ -49,8 +49,7 @@ jobs:
         continue-on-error: true
         run: |
           bunx playwright install --with-deps chromium
-          bunx playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts \
-            --reporter=list --pass-with-no-tests
+          npm run test:e2e:card-parity -- --pass-with-no-tests
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
