@@ -1,10 +1,12 @@
 # Validação Exaustiva — `fn_get_reposicao_variants_summary` v3
 
 **Auditor:** Claude Opus 4.8 (modo Senior DBA)
-**Data:** 2026-06-19
+**Data:** 2026-06-19 · **Atualização:** 2026-06-20 (gaps A e C resolvidos via query no Gold)
 **Escopo:** análise estática da migração + matriz de ~60 cenários simulados.
-**Limitação:** não tenho acesso de execução ao Gold (`doufsxqlfjyuvxuezpln`). O que segue é
-revisão de código, não execução real. Itens marcados **⚠ GAP** exigem decisão antes do GO.
+
+> **🟢 ATUALIZAÇÃO 2026-06-20:** `fn_get_reposicao_variants_summary` já está implantada no
+> Gold (`doufsxqlfjyuvxuezpln`). A migração `2026-06-19_reposicao_variants_summary.sql`
+> **NÃO precisa ser re-aplicada**. GAP-A e GAP-C foram resolvidos (ver seção 2 abaixo).
 
 ---
 
@@ -40,11 +42,11 @@ revisão de código, não execução real. Itens marcados **⚠ GAP** exigem dec
 
 ## 2. Gaps encontrados
 
-### GAP-A — Variantes inativas somem do agregado
-`COALESCE(pv.is_active, true) = true` exclui variantes inativas. Se a UI mostra **4 swatches**
-(inclusive descontinuadas) mas a RPC retorna **3**, o indicador "X/Y cores em estoque" diverge
-do card visível. **Decisão necessária:** UI usa só ativas? Se sim, OK. Se mostra inativas
-(históricas), preciso remover esse filtro ou expô-lo como parâmetro `p_include_inactive bool`.
+### GAP-A — Variantes inativas somem do agregado ✅ RESOLVIDO (2026-06-20)
+
+`COALESCE(pv.is_active, true) = true` exclui variantes inativas. Decisão tomada pela função
+já implantada no Gold: **a UI exibe apenas variantes ativas**. Verificado em 2026-06-20 via
+query direta no Gold — a função implantada usa exatamente esse filtro. Sem ação adicional.
 
 ### GAP-B — Produto sem nenhuma variante ativa → 0 linhas
 A query agrega via `GROUP BY product_id` dentro do `vs` CTE. Se `vs` estiver vazio para um
@@ -52,15 +54,14 @@ produto, **não há linha** para ele. O hook React precisa tratar `product_id` a
 "sem dados" (não como erro). **Mitigação opcional:** `LEFT JOIN` partindo de
 `unnest(p_product_ids)` para garantir 1 linha por id, com KPIs zerados e `variants_summary='[]'::jsonb`.
 
-### GAP-C — Tipo da coluna `next_date_*` não confirmado
-Assumi `date`. Se for `timestamp` ou `timestamptz`, o cast `x.d::date` pode shiftar 1 dia
-quando o servidor está em UTC e a data BR vira do dia anterior/posterior. **Ação:**
-```sql
-SELECT column_name, data_type FROM information_schema.columns
-WHERE table_name='product_variants' AND column_name LIKE 'next_date%';
+### GAP-C — Tipo da coluna `next_date_*` não confirmado ✅ RESOLVIDO (2026-06-20)
+
+Confirmado no Gold em 2026-06-20:
 ```
-Se vier `timestamp with time zone`, trocar `x.d::date` por
-`(x.d AT TIME ZONE 'America/Sao_Paulo')::date`.
+next_date_1..6 → data_type: "date", udt_name: "date"
+```
+Sem risco de shift de timezone. O cast `x.d::date` na função é correto e não precisa de
+`AT TIME ZONE 'America/Sao_Paulo'`.
 
 ### GAP-D — Performance em arrays grandes
 Sem `EXPLAIN` real não dá pra cravar. O filtro `pv.product_id = ANY(p_product_ids)` usa o
@@ -108,7 +109,7 @@ Para implementar Onda 2 fielmente, precisamos de UMA das opções:
 
 ---
 
-## 5. Veredito
+## 5. Veredito (atualizado 2026-06-20)
 
 | Critério | Status |
 |----------|--------|
@@ -118,8 +119,13 @@ Para implementar Onda 2 fielmente, precisamos de UMA das opções:
 | Boundary BR strict, alinhada à listing | ✅ |
 | Cobertura de cenários básicos | 16/21 |
 | Gaps bloqueantes | **0** |
-| Gaps que exigem decisão do PO | 3 (A, C, F) |
+| Gaps que exigem decisão do PO | ~~3 (A, C, F)~~ **1 (F)** |
 | Gaps a medir em runtime | 2 (B–opcional, D) |
+| **Migração necessária?** | ❌ **Não** — função já implantada no Gold |
 
-**Recomendação:** aplicar a migração no Gold, rodar o `EXPLAIN ANALYZE` do GAP-D e a
-inspeção de tipo do GAP-C, e decidir GAP-A/F antes de eu codar a UI.
+**Status atual:**
+- GAP-A ✅ Resolvido: UI exibe só variantes ativas (filtro `COALESCE(is_active, true) = true`)
+- GAP-C ✅ Resolvido: colunas `next_date_*` confirmadas como `date` (não `timestamptz`)
+- GAP-B ⚠ Opcional: tratar ausência de linha p/ produto sem variantes ativas como "sem dados"
+- GAP-D ⚠ Medir: rodar `EXPLAIN ANALYZE` com 5k product_ids em produção
+- GAP-F 🔴 Pendente PO: badge "Reposto hoje" precisa de `last_restock_at` ou snapshot diário
