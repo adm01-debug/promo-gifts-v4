@@ -49,6 +49,15 @@ function cartSubtotal(c: SellerCart) {
   return c.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
 }
 
+/**
+ * Normaliza para busca acento-insensível: razões sociais em pt-BR são cheias de
+ * acentos (São, Comércio, Eletrônica) e o vendedor frequentemente digita sem eles.
+ * Sem isto, "sao paulo" não encontra "São Paulo".
+ */
+function fold(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
 export default function CartsListPage() {
   return (
     <>
@@ -86,14 +95,12 @@ function CartsListContent() {
   }, [carts]);
 
   const filteredCarts = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = fold(query.trim());
     let out = carts.filter((c) => {
       const matchesStatus = statusFilter === 'all' || (c.status ?? 'novo') === statusFilter;
       if (!matchesStatus) return false;
       if (!q) return true;
-      return (
-        c.company_name?.toLowerCase().includes(q) || c.company_location?.toLowerCase().includes(q)
-      );
+      return fold(c.company_name ?? '').includes(q) || fold(c.company_location ?? '').includes(q);
     });
     out = [...out].sort((a, b) => {
       if (sort === 'value-desc') return cartSubtotal(b) - cartSubtotal(a);
@@ -135,7 +142,11 @@ function CartsListContent() {
           disabled={!canCreateCart}
           data-testid="carts-list-new"
           className="gap-2"
-          title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+          title={
+            !canCreateCart
+              ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+              : undefined
+          }
         >
           <Plus className="h-4 w-4" />
           Novo carrinho
@@ -228,7 +239,11 @@ function CartsListContent() {
             onClick={() => setPickerOpen(true)}
             disabled={!canCreateCart}
             className="gap-2"
-            title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+            title={
+              !canCreateCart
+                ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+                : undefined
+            }
           >
             <Plus className="h-4 w-4" /> Novo carrinho
           </Button>

@@ -30,7 +30,8 @@ vi.mock('@/hooks/products', () => ({
     canCreateCart: true,
     createCart: { mutateAsync: mockMutateAsync },
     deleteCart: { mutate: mockMutate },
-    addItem: { mutate: mockMutate },
+    // addToActiveCart agora usa mutateAsync (awaitable, para reporte de sucesso em lote).
+    addItem: { mutate: mockMutate, mutateAsync: mockMutate },
     removeItem: { mutate: mockMutate },
     updateItemQuantity: { mutate: mockMutate },
     updateItemNotes: { mutate: mockMutate },
@@ -59,22 +60,33 @@ describe('SellerCartContext - carrinho', () => {
     const { result } = renderHook(() => useSellerCartContext(), { wrapper });
 
     act(() => {
-      result.current.addToActiveCart({ product_id: 'p3', product_name: 'Mochila', product_price: 20, quantity: 1 });
+      result.current.addToActiveCart({
+        product_id: 'p3',
+        product_name: 'Mochila',
+        product_price: 20,
+        quantity: 1,
+      });
       result.current.updateItemQuantity('i1', 7);
       result.current.removeItem('i2');
     });
 
-    expect(mockMutate).toHaveBeenCalledWith(
-      { cartId: 'cart-1', item: expect.objectContaining({ product_id: 'p3', quantity: 1 }) },
-      expect.any(Object),
-    );
+    // add agora delega via mutateAsync({ cartId, item }) — sem 2º arg de opções
+    // (o onSuccess foi internalizado no try/await para permitir await em lote).
+    expect(mockMutate).toHaveBeenCalledWith({
+      cartId: 'cart-1',
+      item: expect.objectContaining({ product_id: 'p3', quantity: 1 }),
+    });
     expect(mockMutate).toHaveBeenCalledWith({ itemId: 'i1', quantity: 7 });
     expect(mockMutate).toHaveBeenCalledWith('i2');
   });
 
   it('calcula subtotal/total em tempo real a partir dos itens atuais', () => {
     const { result } = renderHook(() => useSellerCartContext(), { wrapper });
-    const subtotal = result.current.activeCart?.items.reduce((acc, item) => acc + item.product_price * item.quantity, 0) ?? 0;
+    const subtotal =
+      result.current.activeCart?.items.reduce(
+        (acc, item) => acc + item.product_price * item.quantity,
+        0,
+      ) ?? 0;
     const total = subtotal;
 
     expect(subtotal).toBe(35);

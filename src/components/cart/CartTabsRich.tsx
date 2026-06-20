@@ -166,7 +166,7 @@ export function CartTabsRich({
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
-                  title={`Sem movimento há ${ageDays} dias`}
+                  title={`Follow-up sugerido — criado há ${ageDays} dias`}
                 >
                   <Clock className="h-3 w-3" />
                 </motion.span>
@@ -191,11 +191,18 @@ export function CartTabsRich({
           )}
           aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 3 carrinhos atingido'}
         >
-          <div className={cn(
-            'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
-            canCreateCart && 'group-hover/new:bg-primary/20',
-          )}>
-            <Plus className={cn('h-4 w-4 transition-transform duration-300', canCreateCart && 'group-hover/new:rotate-90')} />
+          <div
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
+              canCreateCart && 'group-hover/new:bg-primary/20',
+            )}
+          >
+            <Plus
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                canCreateCart && 'group-hover/new:rotate-90',
+              )}
+            />
           </div>
           <span>Novo</span>
         </button>

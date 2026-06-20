@@ -30,7 +30,11 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => void;
-  addToActiveCart: (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => void;
+  addToActiveCart: (
+    item: AddToCartInput,
+    cartId?: string,
+    options?: { silent?: boolean },
+  ) => Promise<boolean>;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;
@@ -126,54 +130,67 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const deleteCart = useCallback(
     (cartId: string) => {
-      deleteCartMutation.mutate(cartId);
-      clearActionHistory(cartId);
-      if (activeCartId === cartId) {
-        setActiveCartId(null);
-        // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
-        if (user?.id) {
-          try {
-            localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
-          } catch {
-            // no-op: storage unavailable
+      // Limpa histórico/seleção SOMENTE após o delete confirmar. Antes isso rodava
+      // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
+      // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
+      deleteCartMutation.mutate(cartId, {
+        onSuccess: () => {
+          clearActionHistory(cartId);
+          if (activeCartId === cartId) {
+            setActiveCartId(null);
+            // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
+            if (user?.id) {
+              try {
+                localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
+              } catch {
+                // no-op: storage unavailable
+              }
+            }
           }
-        }
-      }
+        },
+      });
     },
     [deleteCartMutation, activeCartId, user?.id],
   );
 
+  // Retorna Promise<boolean> (true = adicionado) para que chamadores em lote
+  // (bulk/template) consigam aguardar e reportar contagem real de sucesso/falha
+  // em vez de assumir sucesso (fire-and-forget). Nunca rejeita: o onError do
+  // mutation já exibe o toast de falha; aqui devolvemos false.
   const addToActiveCart = useCallback(
-    (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => {
+    async (
+      item: AddToCartInput,
+      cartId?: string,
+      options?: { silent?: boolean },
+    ): Promise<boolean> => {
       const targetId = cartId || resolvedActiveCartId;
 
       if (!targetId) {
         toast.error('Selecione uma empresa antes de adicionar produtos', {
           description: 'Crie um carrinho vinculado a uma empresa primeiro.',
         });
-        return;
+        return false;
       }
 
       const targetCart = carts.find((c) => c.id === targetId);
 
-      addItem.mutate(
-        { cartId: targetId, item },
-        {
-          onSuccess: () => {
-            // silent: usado em lote (template/bulk) onde o chamador exibe um
-            // único toast agregado — evita N toasts empilhados.
-            if (!options?.silent) {
-              toast.success(`${item.product_name} adicionado ao carrinho`, {
-                description: targetCart?.company_name,
-              });
-            }
-            // Update active cart if we explicitly added to a specific one
-            if (cartId && cartId !== resolvedActiveCartId) {
-              setActiveCartId(cartId);
-            }
-          },
-        },
-      );
+      try {
+        await addItem.mutateAsync({ cartId: targetId, item });
+        // silent: usado em lote (template/bulk) onde o chamador exibe um
+        // único toast agregado — evita N toasts empilhados.
+        if (!options?.silent) {
+          toast.success(`${item.product_name} adicionado ao carrinho`, {
+            description: targetCart?.company_name,
+          });
+        }
+        // Update active cart if we explicitly added to a specific one
+        if (cartId && cartId !== resolvedActiveCartId) {
+          setActiveCartId(cartId);
+        }
+        return true;
+      } catch {
+        return false;
+      }
     },
     [resolvedActiveCartId, addItem, carts],
   );

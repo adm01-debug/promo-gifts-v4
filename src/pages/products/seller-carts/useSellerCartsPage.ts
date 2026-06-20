@@ -317,6 +317,10 @@ export function useSellerCartsPage() {
           color_name: item.color_name || undefined,
           color_hex: item.color_hex || undefined,
           notes: item.notes ?? undefined,
+          // Preserva a ordem original ao desfazer (espelha o snapshot do CartHeaderButton):
+          // sem sort_order, restoreItems insere com sort_order nulo e o trigger reatribui
+          // MAX+1 em ordem não-determinística (Promise.all), embaralhando os itens.
+          sort_order: item.sort_order ?? undefined,
         }));
         restoreItems(activeCart.id, addItems);
       },
@@ -392,7 +396,7 @@ export function useSellerCartsPage() {
     const uuidIds = allIds.filter((id) => uuidRe.test(id));
     // Non-UUID IDs (legacy) bypass server validation — fail-open.
     const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
-    let validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
+    const validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
     if (uuidIds.length > 0) {
       try {
         const { data, error } = await supabase.from('products').select('id').in('id', uuidIds);
