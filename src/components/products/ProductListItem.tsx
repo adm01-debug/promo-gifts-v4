@@ -671,7 +671,9 @@ export const ProductListItem = memo(
                     prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
                   );
                 }}
+                onClear={() => setUserSelectedColorName(null)}
               />
+
             </div>
           </div>
 
