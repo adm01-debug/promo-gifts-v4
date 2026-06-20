@@ -435,8 +435,8 @@ export function useMockupGenerator() {
         toast.error('Logos SVG não são suportados. Converta para PNG ou JPG e tente novamente.');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('A imagem deve ter no máximo 5MB');
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('A imagem deve ter no máximo 10MB');
         return;
       }
       let processedFile = file;
@@ -708,7 +708,7 @@ export function useMockupGenerator() {
       );
       const restoredArea: PersonalizationArea = {
         id: crypto.randomUUID(),
-        name: 'Frente',
+        name: (mockup as Record<string, unknown>).location_name as string ?? (mockup as Record<string, unknown>).area_name as string ?? 'Frente',
         positionX: mockup.position_x ?? 50,
         positionY: mockup.position_y ?? 50,
         logoWidth: mockup.logo_width_cm ?? 5,
