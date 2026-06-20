@@ -89,6 +89,8 @@ const DEFAULT_CART_TABLE_COLS: Record<CartTableColumnKey, boolean> = {
   actions: true,
 } as const;
 
+const rowPad = 'px-3 py-2 align-middle';
+
 function SellerCartsContent() {
   const s = useSellerCartsPage();
   const notesRef = useRef<HTMLTextAreaElement>(null);
