@@ -418,6 +418,8 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 146: 1 rule (9v auto-fixed; excluded: unbound-method 64v, no-loop-func 7v, restrict-template-expressions 8v, require-await 119v, no-unnecessary-type-assertion 385v, sort-type-constituents 746v, use-unknown-in-catch-callback-variable 18v, no-autofocus 36v, no-noninteractive-tabindex 12v, no-unnecessary-type-parameters 16v, prefer-reduce-type-parameter 10v, no-nested-ternary 709v, jsx-no-constructed-context-values 14v)
+      '@typescript-eslint/no-useless-default-assignment': 'error',
       // Batch 145: 4 rules (all zero-violation; excluded: no-useless-default-assignment 9v, no-loop-func 7v, no-unsafe-type-assertion 1535v)
       '@typescript-eslint/return-await': 'error',
       'jsx-a11y/no-aria-hidden-on-focusable': 'error',
