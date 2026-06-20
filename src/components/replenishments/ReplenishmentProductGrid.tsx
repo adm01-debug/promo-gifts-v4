@@ -14,6 +14,7 @@ import {
   normalizeColorKey,
 } from '@/hooks/products/useReposicaoVariantsSummary';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
@@ -72,12 +73,7 @@ export function ReplenishmentProductGrid() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
 
-  const {
-    data: replenishments,
-    isLoading,
-    isFetching,
-    error,
-  } = useReplenishmentsWithDetails();
+  const { data: replenishments, isLoading, isFetching, error } = useReplenishmentsWithDetails();
   const products = useMemo(() => replenishments ?? [], [replenishments]);
   const loadingProgress = useLoadingProgress(isLoading);
 
@@ -193,7 +189,7 @@ export function ReplenishmentProductGrid() {
   const colorsByProduct = useMemo(() => {
     if (!rawColorsByProduct || rawColorsByProduct.size === 0) return rawColorsByProduct;
     if (!variantsSummary || variantsSummary.size === 0) return rawColorsByProduct;
-    const out = new Map<string, readonly import('@/components/products/ProductColorSwatches').ColorDotLike[]>();
+    const out = new Map<string, readonly ColorDotLike[]>();
     for (const [pid, colors] of rawColorsByProduct) {
       const perColor = variantsSummary.get(pid);
       if (!perColor || perColor.size === 0) {

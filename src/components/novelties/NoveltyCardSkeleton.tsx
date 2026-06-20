@@ -17,9 +17,7 @@ export interface NoveltyCardSkeletonProps {
   readonly className?: string;
 }
 
-export const NoveltyCardSkeleton = memo(function NoveltyCardSkeleton({
-  className,
-}: NoveltyCardSkeletonProps) {
+export const NoveltyCardSkeleton = memo(({ className }: NoveltyCardSkeletonProps) => {
   return (
     <Card
       className={cn(
