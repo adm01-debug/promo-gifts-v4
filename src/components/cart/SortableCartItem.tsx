@@ -373,7 +373,7 @@ export const SortableCartItem = memo(
               >
                 <button
                   data-testid="cart-qty-decrement"
-                  aria-label="Diminuir quantidade"
+                  aria-label={item.quantity <= 1 ? `Remover ${item.product_name}` : `Diminuir quantidade de ${item.product_name}`}
                   className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90"
                   onClick={() => {
                     if (item.quantity <= 1) {
@@ -409,7 +409,7 @@ export const SortableCartItem = memo(
                 />
                 <button
                   data-testid="cart-qty-increment"
-                  aria-label="Aumentar quantidade"
+                  aria-label={`Aumentar quantidade de ${item.product_name}`}
                   disabled={item.quantity >= 999999}
                   className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90 active:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-40"
                   onClick={() => {
@@ -441,7 +441,7 @@ export const SortableCartItem = memo(
                       ? 'border-primary/10 bg-primary/5 text-primary'
                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                   )}
-                  aria-label="Notas do item"
+                  aria-label={item.notes ? `Ver observações de ${item.product_name}` : `Adicionar observação a ${item.product_name}`}
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
                   {item.notes ? 'Ver Observações' : 'Adicionar Observação'}

@@ -707,6 +707,7 @@ function SellerCartsContent() {
                                       defaultValue={item.quantity}
                                       key={`${item.id}-${item.quantity}`}
                                       data-testid={`cart-qty-input-${item.id}`}
+                                      aria-label={`Quantidade de ${item.product_name}`}
                                       aria-invalid={err ? true : undefined}
                                       aria-describedby={err ? `qty-err-${item.id}` : undefined}
                                       onChange={(e) =>
@@ -773,7 +774,7 @@ function SellerCartsContent() {
                                           name: item.product_name,
                                         })
                                       }
-                                      aria-label="Remover item"
+                                      aria-label={`Remover ${item.product_name}`}
                                       data-testid={`cart-remove-${item.id}`}
                                     >
                                       <Trash2 className="h-4 w-4" />
