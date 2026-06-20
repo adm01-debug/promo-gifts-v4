@@ -36,7 +36,7 @@ interface LogoPositionEditorProps {
   headerActions?: React.ReactNode;
 }
 
-export const LogoPositionEditor = memo(function LogoPositionEditor({
+export const LogoPositionEditor = memo(({
   productImageUrl,
   logoPreview,
   positionX,
@@ -58,7 +58,7 @@ export const LogoPositionEditor = memo(function LogoPositionEditor({
   onSizeChange,
   onLogoScaleChange,
   headerActions,
-}: LogoPositionEditorProps) {
+}: LogoPositionEditorProps) => {
   const { ref: containerRef, size: containerSize } = useElementSize<HTMLDivElement>();
   const productBounds = useProductBounds(productImageUrl);
   const { processedLogoUrl } = useLogoProcessing(logoPreview, techniqueColorConfig);

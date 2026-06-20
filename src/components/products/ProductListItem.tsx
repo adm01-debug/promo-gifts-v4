@@ -239,7 +239,7 @@ export const ProductListItem = memo(
       }
     };
 
-    const getStockLabel = (status: string) => {
+    const _getStockLabel = (status: string) => {
       switch (status) {
         case 'in-stock':
           return 'Em estoque';

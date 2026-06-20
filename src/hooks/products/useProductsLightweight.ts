@@ -5,7 +5,6 @@
  */
 import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
 import { untypedRpc } from '@/lib/supabase-untyped';
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {

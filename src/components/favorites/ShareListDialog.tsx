@@ -28,7 +28,7 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
   const [copied, setCopied] = useState(false);
 
   const isExpired =
-    list.shared_expires_at != null && new Date(list.shared_expires_at) < new Date();
+    !!list.shared_expires_at && new Date(list.shared_expires_at) < new Date();
   const shareUrl =
     list.shared_token && !isExpired
       ? `${window.location.origin}/lista-publica/${list.shared_token}`

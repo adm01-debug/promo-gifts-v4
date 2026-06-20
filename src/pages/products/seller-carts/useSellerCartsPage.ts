@@ -396,7 +396,7 @@ export function useSellerCartsPage() {
     const uuidIds = allIds.filter((id) => uuidRe.test(id));
     // Non-UUID IDs (legacy) bypass server validation — fail-open.
     const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
-    let validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
+    const validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
     if (uuidIds.length > 0) {
       try {
         const { data, error } = await supabase.from('products').select('id').in('id', uuidIds);
