@@ -30,6 +30,8 @@ interface Technique {
   id: string;
   name: string;
   code: string | null;
+  /** Permite Technique ser atribuível a MockupTechnique (que aceita campos arbitrários do bridge). */
+  [key: string]: unknown;
   maxWidth?: number | null;
   maxHeight?: number | null;
   areaName?: string | null;
@@ -192,43 +194,45 @@ export function MockupConfigPanel({
                           Técnicas compatíveis com {productSelection.product.name}
                         </div>
                       )}
-                      {filteredTechniques.filter((t) => t.id).map((technique) => (
-                        <TechniqueTooltip key={technique.id} technique={technique}>
-                          <SelectItem value={technique.id} className="cursor-pointer">
-                            <div className="flex w-full flex-col gap-0.5">
-                              <div className="flex items-center gap-2">
-                                <Paintbrush className="h-3.5 w-3.5 text-primary" />
-                                <span>{technique.name}</span>
-                                {technique.maxWidth && technique.maxHeight ? (
-                                  <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
-                                    {technique.maxWidth}×{technique.maxHeight}cm
-                                  </span>
-                                ) : null}
-                              </div>
-                              {(technique.variationLabel ||
-                                technique.maxColors ||
-                                technique.isCurved ||
-                                technique.usesDimension) && (
-                                <div className="ml-5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                  {technique.variationLabel && (
-                                    <span className="max-w-[140px] truncate">
-                                      {technique.variationLabel}
-                                    </span>
-                                  )}
-                                  {technique.maxColors ? (
-                                    <span>
-                                      · {technique.maxColors} cor
-                                      {technique.maxColors > 1 ? 'es' : ''}
+                      {filteredTechniques
+                        .filter((t) => t.id)
+                        .map((technique) => (
+                          <TechniqueTooltip key={technique.id} technique={technique}>
+                            <SelectItem value={technique.id} className="cursor-pointer">
+                              <div className="flex w-full flex-col gap-0.5">
+                                <div className="flex items-center gap-2">
+                                  <Paintbrush className="h-3.5 w-3.5 text-primary" />
+                                  <span>{technique.name}</span>
+                                  {technique.maxWidth && technique.maxHeight ? (
+                                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                                      {technique.maxWidth}×{technique.maxHeight}cm
                                     </span>
                                   ) : null}
-                                  {technique.isCurved ? <span>· curvo</span> : null}
-                                  {technique.usesDimension ? <span>· por área</span> : null}
                                 </div>
-                              )}
-                            </div>
-                          </SelectItem>
-                        </TechniqueTooltip>
-                      ))}
+                                {(technique.variationLabel ||
+                                  technique.maxColors ||
+                                  technique.isCurved ||
+                                  technique.usesDimension) && (
+                                  <div className="ml-5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                    {technique.variationLabel && (
+                                      <span className="max-w-[140px] truncate">
+                                        {technique.variationLabel}
+                                      </span>
+                                    )}
+                                    {technique.maxColors ? (
+                                      <span>
+                                        · {technique.maxColors} cor
+                                        {technique.maxColors > 1 ? 'es' : ''}
+                                      </span>
+                                    ) : null}
+                                    {technique.isCurved ? <span>· curvo</span> : null}
+                                    {technique.usesDimension ? <span>· por área</span> : null}
+                                  </div>
+                                )}
+                              </div>
+                            </SelectItem>
+                          </TechniqueTooltip>
+                        ))}
                     </>
                   ) : (
                     <div className="px-2 py-4 text-center text-sm text-muted-foreground">

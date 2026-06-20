@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
-
 const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
