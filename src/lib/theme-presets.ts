@@ -580,17 +580,14 @@ function applyGxDarkSurfaces(preset: ThemePreset): ThemePreset {
   return preset;
 }
 
-// Substitui o alpha da última ocorrência hsl(... / X) de uma string
-// `box-shadow`, preservando offset/blur/spread e a cor base. Trabalhar
-// com a última ocorrência permite manter drop shadows neutros antes do
-// glow colorido (caso comum nas sombras dark do Promo Gifts).
-//   '0 0 30px hsl(347 96% 54% / 0.4)' → '0 0 30px hsl(347 96% 54% / 0.7)'
+// Substitui o alpha da PRIMEIRA ocorrência hsl(... / X) em uma string
+// `box-shadow`. Para sombras com dois componentes (core neon + ambient),
+// a primeira ocorrência é sempre o glow principal — a segunda (ambient,
+// menor alpha) permanece inalterada para não estourar o halo de fundo.
+//   '0 0 30px hsl(347 96% 54% / 0.4), 0 0 60px hsl(347 96% 54% / 0.15)'
+//   → '0 0 30px hsl(347 96% 54% / 0.7), 0 0 60px hsl(347 96% 54% / 0.15)'
 function boostGlowAlpha(shadow: string, alpha: number): string {
-  const matches = shadow.match(/\/\s*[0-9.]+\s*\)/g);
-  if (!matches || matches.length === 0) return shadow;
-  const last = matches[matches.length - 1];
-  const idx = shadow.lastIndexOf(last);
-  return `${shadow.slice(0, idx)}/ ${alpha})${shadow.slice(idx + last.length)}`;
+  return shadow.replace(/\/\s*[0-9.]+\s*\)/, `/ ${alpha})`);
 }
 
 // Aplica o "neon glow" característico do Opera GX, aumentando a opacidade
