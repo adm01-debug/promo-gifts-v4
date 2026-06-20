@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -84,17 +85,14 @@ export function useFavoriteLists() {
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: countRows } = await supabase.rpc(
-          'get_favorite_list_counts' as never,
-          { _user_id: user.id } as never,
-        );
+        const { data: countRows } = await untypedRpc('get_favorite_list_counts', { _user_id: user.id });
         ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
           (r) => { counts[r.list_id] = Number(r.item_count); },
         );
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as FavoriteList[];
+      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as unknown as FavoriteList[];
     },
     enabled: !!user,
     staleTime: 30_000,
