@@ -185,6 +185,7 @@ export function CartHeaderButton() {
                     </span>
                     <span className="text-[10px] text-muted-foreground opacity-30">|</span>
                     <button
+                      type="button"
                       className="text-[10px] font-bold text-primary underline-offset-2 transition-colors hover:text-primary/80 hover:underline"
                       onClick={() => {
                         setOpen(false);
@@ -374,6 +375,8 @@ export function CartHeaderButton() {
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <button
+                                    type="button"
+                                    aria-label={`Confirmar exclusão do carrinho de ${cart.company_name}`}
                                     className="rounded-md px-1.5 py-0.5 text-[10px] font-bold text-destructive transition-colors hover:bg-destructive/10"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -384,6 +387,8 @@ export function CartHeaderButton() {
                                     Excluir
                                   </button>
                                   <button
+                                    type="button"
+                                    aria-label={`Cancelar exclusão do carrinho de ${cart.company_name}`}
                                     className="rounded-md px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted/60"
                                     onClick={(e) => {
                                       e.stopPropagation();
