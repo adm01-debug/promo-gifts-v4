@@ -186,6 +186,7 @@ export function CartHeaderButton() {
                     <span className="text-[10px] text-muted-foreground opacity-30">|</span>
                     <button
                       type="button"
+                      aria-label="Ver todos os carrinhos"
                       className="text-[10px] font-bold text-primary underline-offset-2 transition-colors hover:text-primary/80 hover:underline"
                       onClick={() => {
                         setOpen(false);
@@ -562,7 +563,8 @@ export function CartHeaderButton() {
                   activeCart.items.length > 0 &&
                   (() => {
                     const subtotal = activeCart.items.reduce(
-                      (sum, item) => sum + item.product_price * item.quantity,
+                      (sum, item) =>
+                        sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
                       0,
                     );
                     return (
