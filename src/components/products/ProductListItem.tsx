@@ -583,19 +583,36 @@ export const ProductListItem = memo(
               </Badge>
             )}
 
-            {/* SKU row */}
-            {product.sku && (
-              <div className="mt-0.5 flex items-center gap-2">
+            {/* SKU + Stock row (estoque inline só no mobile; em md+ vira coluna própria) */}
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+              {product.sku && (
                 <span className="rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide text-primary sm:text-xs">
                   {product.sku}
                 </span>
-              </div>
-            )}
+              )}
+              <span
+                className={cn(
+                  'flex items-center gap-1 text-[10px] font-medium md:hidden',
+                  getStockColor(displayStatus),
+                )}
+                aria-label={`Estoque: ${getStockLabel(displayStatus)} ${displayStock.toLocaleString('pt-BR')} unidades`}
+              >
+                <Package className="h-2.5 w-2.5" aria-hidden="true" />
+                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
+              </span>
+            </div>
           </div>
 
-          {/* Estoque column — entre Produto e Cores */}
-          <div className="hidden shrink-0 flex-col items-start justify-center md:flex md:w-[150px]">
-            <span className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          {/* Estoque column — entre Produto e Cores (md+) */}
+          <div
+            role="group"
+            aria-labelledby={`stock-label-${product.id}`}
+            className="hidden shrink-0 flex-col items-start justify-center md:flex md:w-[150px]"
+          >
+            <span
+              id={`stock-label-${product.id}`}
+              className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
               Estoque
             </span>
             <span
@@ -604,16 +621,23 @@ export const ProductListItem = memo(
                 getStockColor(displayStatus),
               )}
             >
-              <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+              <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
               <span className="whitespace-nowrap">
                 {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
               </span>
             </span>
           </div>
 
-          {/* Cores column — todas as cores, sem clipping */}
-          <div className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-3 pr-2 md:flex">
-            <span className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          {/* Cores column — todas as cores, sem clipping (md+) */}
+          <div
+            role="group"
+            aria-labelledby={`colors-label-${product.id}`}
+            className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-3 pr-2 md:flex"
+          >
+            <span
+              id={`colors-label-${product.id}`}
+              className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
               Cores
             </span>
             <ProductColorSwatches
@@ -633,8 +657,15 @@ export const ProductListItem = memo(
           </div>
 
           {/* Price column — right-aligned, always visible */}
-          <div className="flex min-w-[90px] shrink-0 flex-col items-end text-right sm:min-w-[110px]">
-            <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          <div
+            role="group"
+            aria-labelledby={`price-label-${product.id}`}
+            className="flex min-w-[90px] shrink-0 flex-col items-end text-right sm:min-w-[110px]"
+          >
+            <span
+              id={`price-label-${product.id}`}
+              className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
               A partir de
             </span>
             <div className="flex items-center justify-end gap-1.5">
