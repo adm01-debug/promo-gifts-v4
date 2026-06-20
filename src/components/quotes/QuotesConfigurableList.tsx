@@ -78,6 +78,8 @@ const ALL_COLUMNS: ColumnDef[] = [
   { id: 'delivery', label: 'Entrega', width: '150px' },
   { id: 'quote_number', label: 'Nº Orçamento', width: '200px' },
 ];
+// Module-level Map — built once at load time, O(1) lookup in visibleColumns useMemo.
+const ALL_COLUMNS_BY_ID = new Map(ALL_COLUMNS.map((c) => [c.id, c]));
 
 // ── Sortable Header Cell ──
 function SortableHeaderCell({ column }: { column: ColumnDef }) {
@@ -192,7 +194,7 @@ export function QuotesConfigurableList({
     () =>
       columnOrder
         .filter((id) => !hiddenColumns.has(id))
-        .map((id) => ALL_COLUMNS.find((c) => c.id === id))
+        .map((id) => ALL_COLUMNS_BY_ID.get(id))
         .filter((column): column is ColumnDef => Boolean(column)),
     [columnOrder, hiddenColumns],
   );
