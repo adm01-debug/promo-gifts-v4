@@ -1006,3 +1006,26 @@ describe('Analise estatica — MockupAnnotations.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// Analise estatica — MockupResultCard.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupResultCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  describe('a11y — botao de fechar tela cheia com label contextual', () => {
+    it('botao de fechar fullscreen usa "Fechar tela cheia" (nao generico "Fechar")', () => {
+      expect(src).toContain('aria-label="Fechar tela cheia"');
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+    it('controles de zoom no fullscreen tem aria-labels descritivos', () => {
+      expect(src).toContain('aria-label="Diminuir zoom"');
+      expect(src).toContain('aria-label="Aumentar zoom"');
+      expect(src).toContain('aria-label="Resetar zoom para 100%"');
+    });
+  });
+});

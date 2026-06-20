@@ -311,7 +311,7 @@ export const MockupResultCard = memo(
                     </Button>
                     <Button
                       size="icon"
-                      aria-label="Fechar"
+                      aria-label="Fechar tela cheia"
                       variant="secondary"
                       className="h-8 w-8 shadow-md"
                       onClick={() => setIsFullscreen(false)}
