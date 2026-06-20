@@ -692,3 +692,41 @@ describe('Analise estatica — LogoColorAnalyzer.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — LogoSizeControls.tsx
+// =====================================================================
+
+describe('Analise estatica — LogoSizeControls.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/logo-editor/LogoSizeControls.tsx');
+  });
+
+  describe('a11y — aria-label descritivo nos botoes de largura', () => {
+    it('botao de diminuir largura tem aria-label="Diminuir largura"', () => {
+      expect(src).toContain('aria-label="Diminuir largura"');
+    });
+    it('botao de aumentar largura tem aria-label="Aumentar largura"', () => {
+      expect(src).toContain('aria-label="Aumentar largura"');
+    });
+  });
+
+  describe('a11y — aria-label descritivo nos botoes de altura', () => {
+    it('botao de diminuir altura tem aria-label="Diminuir altura"', () => {
+      expect(src).toContain('aria-label="Diminuir altura"');
+    });
+    it('botao de aumentar altura tem aria-label="Aumentar altura"', () => {
+      expect(src).toContain('aria-label="Aumentar altura"');
+    });
+  });
+
+  describe('a11y — aria-label descritivo nos botoes de escala', () => {
+    it('botao de diminuir escala tem aria-label="Diminuir escala"', () => {
+      expect(src).toContain('aria-label="Diminuir escala"');
+    });
+    it('botao de aumentar escala tem aria-label="Aumentar escala"', () => {
+      expect(src).toContain('aria-label="Aumentar escala"');
+    });
+  });
+});
