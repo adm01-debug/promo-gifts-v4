@@ -72,7 +72,6 @@ detecção de órfãos.
 - 0 órfãs nas 800 amostras (esperado: imagens `spot-*` têm donos no DB)
 - CF reporta 72 199 imagens totais; crawl completo = 722 páginas (job agendado)
 
-<<<<<<< HEAD
 ### P7 — Fechar 135 remediações `recover_url_original` obsoletas
 Migration `20260619140400`.
 
@@ -146,8 +145,7 @@ detecção circular pré-P5 — mesma referência que `v_cf_orphans` resolvia an
 **Após crawl completo:** `v_cf_orphans` (já com filtro `crawl_run_id IS NOT NULL` do P5)
 re-detectará automaticamente os verdadeiros órfãos confirmados.
 
-=======
->>>>>>> origin/main
+
 ---
 
 ## Crawl completo CF→DB (pendente — job agendado)
