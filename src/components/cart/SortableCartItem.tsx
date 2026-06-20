@@ -86,17 +86,6 @@ export const SortableCartItem = memo(
     };
   }, []);
 
-  const commitQty = () => {
-    const val = parseInt(qtyDraft, 10);
-    if (isNaN(val) || val < 1) {
-      setQtyDraft(String(item.quantity)); // reverte entrada vazia/invalida
-      return;
-    }
-    const clamped = Math.min(val, 999999);
-    if (clamped !== item.quantity) onUpdateQuantity(item.id, clamped);
-    setQtyDraft(String(clamped));
-  };
-
     const commitQty = () => {
       const val = parseInt(qtyDraft, 10);
       if (isNaN(val) || val < 1) {
