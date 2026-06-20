@@ -274,7 +274,7 @@ export function CartHeaderButton() {
                             {cart.company_logo_url ? (
                               <img
                                 src={cart.company_logo_url}
-                                alt="Logo da empresa"
+                                alt={`Logo de ${cart.company_name}`}
                                 className="h-9 w-9 flex-shrink-0 rounded-full border border-border/50 bg-background object-cover"
                                 loading="lazy"
                               />
@@ -431,6 +431,7 @@ export function CartHeaderButton() {
                                         navigate(`/produto/${item.product_id}`);
                                         setOpen(false);
                                       }}
+                                      aria-label={`Ver produto ${item.product_name}`}
                                       className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10 opacity-0 transition-opacity group-hover/img:opacity-100"
                                     >
                                       <Eye className="h-3 w-3 text-primary" />
@@ -472,6 +473,7 @@ export function CartHeaderButton() {
                                       {/* Qty stepper */}
                                       <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
                                         <button
+                                          aria-label={item.quantity <= 1 ? `Remover ${item.product_name}` : `Diminuir quantidade de ${item.product_name}`}
                                           className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -492,6 +494,7 @@ export function CartHeaderButton() {
                                           {item.quantity}
                                         </span>
                                         <button
+                                          aria-label={`Aumentar quantidade de ${item.product_name}`}
                                           className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                                           disabled={item.quantity >= 999999}
                                           onClick={(e) => {
@@ -515,6 +518,7 @@ export function CartHeaderButton() {
 
                                   {/* Remove button */}
                                   <button
+                                    aria-label={`Remover ${item.product_name} do carrinho`}
                                     className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover/item:opacity-100"
                                     onClick={(e) => {
                                       e.stopPropagation();
