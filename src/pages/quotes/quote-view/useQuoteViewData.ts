@@ -77,12 +77,24 @@ export function useQuoteViewData(id: string | undefined) {
       0,
     );
     const fullSubtotal = prodSub + persSub;
-    const discountValue = quote.discount_percent
-      ? Math.round(fullSubtotal * (quote.discount_percent / 100) * 100) / 100
-      : quote.discount_amount || 0;
     // Apenas 'fob_pre' (FOB Pré-negociado) tem custo no total. 'fob' = cliente paga, sem cost.
     const shipValue = quote.shipping_type === 'fob_pre' ? quote.shipping_cost || 0 : 0;
-    const computedTotal = fullSubtotal - discountValue + shipValue;
+    const computedDiscount = quote.discount_percent
+      ? Math.round(fullSubtotal * (quote.discount_percent / 100) * 100) / 100
+      : quote.discount_amount || 0;
+    const computedTotal = fullSubtotal - computedDiscount + shipValue;
+
+    // SSOT dos totais: preferir os valores persistidos (subtotal/discount_amount/total),
+    // calculados pelos triggers do banco a partir dos itens (com a margem aplicada) e
+    // exibidos em lista/kanban/WhatsApp. Recalcular item-a-item aqui divergia por centavos
+    // (markup arredondado por item vs. agregado no banco), fazendo o PDF do cliente
+    // discordar do total registrado. Fallback ao cálculo local só em orçamentos legados.
+    const displaySubtotal = typeof quote.subtotal === 'number' ? quote.subtotal : fullSubtotal;
+    const displayDiscount =
+      typeof quote.discount_amount === 'number' && quote.discount_amount > 0
+        ? quote.discount_amount
+        : computedDiscount;
+    const displayTotal = typeof quote.total === 'number' ? quote.total : computedTotal;
 
     return {
       quoteNumber: (quote.quote_number || '').replace(/\s+/g, ''),
@@ -136,11 +148,11 @@ export function useQuoteViewData(id: string | undefined) {
             notes: p.notes || undefined,
           })) ?? [],
       })),
-      subtotal: fullSubtotal,
-      discount: discountValue || undefined,
+      subtotal: displaySubtotal,
+      discount: displayDiscount || undefined,
       shippingCost: quote.shipping_cost || undefined,
       shippingType: quote.shipping_type || undefined,
-      total: computedTotal,
+      total: displayTotal,
       notes: quote.notes || undefined,
       paymentTerms: quote.payment_terms || undefined,
       deliveryTime: quote.delivery_time || undefined,

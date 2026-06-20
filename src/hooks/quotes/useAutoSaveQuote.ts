@@ -12,6 +12,13 @@ interface AutoSavePayload<T> {
 
 interface AutoSaveOptions<T> {
   enabled: boolean;
+  /**
+   * Gate independente para a RESTAURAÇÃO do rascunho. Default = `enabled`.
+   * Permite manter o salvamento ligado enquanto desliga o restore — usado quando
+   * a tela já foi pré-preenchida (deep-link de produto, carrinho, simulador,
+   * coleção): sem isto, o restore sobrescreveria os itens recém-injetados.
+   */
+  restoreEnabled?: boolean;
   data: T;
   onRestore?: (data: T) => void;
   debounceMs?: number;
@@ -53,6 +60,7 @@ export function migratePayload<T>(
  */
 export function useAutoSaveQuote<T>({
   enabled,
+  restoreEnabled,
   data,
   onRestore,
   debounceMs = 2000,
@@ -60,6 +68,8 @@ export function useAutoSaveQuote<T>({
 }: AutoSaveOptions<T>) {
   const lastSavedRef = useRef<string>('');
   const hasRestoredRef = useRef(false);
+  // Default: restaura sempre que o autosave estiver habilitado (comportamento legado).
+  const effectiveRestoreEnabled = restoreEnabled ?? enabled;
 
   /**
    * BUG-07 FIX: capturar onRestore em ref para estabilizar as deps do useEffect.
@@ -69,7 +79,7 @@ export function useAutoSaveQuote<T>({
 
   // Efeito de carregamento inicial (Restaurar)
   useEffect(() => {
-    if (!enabled || hasRestoredRef.current) return;
+    if (!effectiveRestoreEnabled || hasRestoredRef.current) return;
     hasRestoredRef.current = true;
 
     const saved = localStorage.getItem(key);
@@ -86,7 +96,7 @@ export function useAutoSaveQuote<T>({
         logger.error('Failed to parse/migrate autosave data', e);
       }
     }
-  }, [enabled, key]);
+  }, [effectiveRestoreEnabled, key]);
 
   // Efeito de salvamento (Debounced)
   // NOTE: `data` MUST stay in deps. Each `data` change cancels the pending timer

@@ -403,8 +403,24 @@ export function useQuoteBuilderState() {
     [currentStep, validateStep],
   );
   // ── AutoSave ──
+  // Detecta abertura com pré-preenchimento (deep-link de produto, carrinho, simulador
+  // ou coleção). Nesses casos desligamos APENAS o restore do rascunho — senão o draft
+  // salvo sobrescreveria os itens recém-injetados (o efeito de restore roda após os
+  // efeitos de prefill). O salvamento permanece ligado normalmente.
+  const hasPrefillSource = useMemo(() => {
+    const st = location.state as Record<string, unknown> | null;
+    const fromState = !!(st && (st.fromSimulator || st.fromCart || st.fromCollection));
+    const fromParams =
+      !!searchParams.get('product_id') ||
+      !!searchParams.get('productId') ||
+      searchParams.getAll('items[]').length > 0;
+    return fromState || fromParams;
+  }, [location.state, searchParams]);
+
+  const autoSaveEnabled = (!!clientId || items.length > 0) && !isEditMode;
   const { clearAutoSave } = useAutoSaveQuote({
-    enabled: (!!clientId || items.length > 0) && !isEditMode,
+    enabled: autoSaveEnabled,
+    restoreEnabled: autoSaveEnabled && !hasPrefillSource,
     data: {
       clientId,
       contactId,
@@ -524,8 +540,17 @@ export function useQuoteBuilderState() {
           if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
           if (quote.delivery_time) {
             if (quote.delivery_time.startsWith('date:')) {
-              setDeliveryMode('data');
-              setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
+              // Valida antes de setar: um delivery_time corrompido (ex.: 'date:2026-13-99')
+              // geraria Invalid Date e o format(deliveryDate) no render estouraria,
+              // quebrando toda a página de edição. Fallback seguro: modo prazo.
+              const parsed = new Date(`${quote.delivery_time.slice(5)}T12:00:00`);
+              if (!Number.isNaN(parsed.getTime())) {
+                setDeliveryMode('data');
+                setDeliveryDate(parsed);
+              } else {
+                logger.warn('Invalid delivery_time on quote load', quote.delivery_time);
+                setDeliveryMode('prazo');
+              }
             } else {
               setDeliveryMode('prazo');
             }

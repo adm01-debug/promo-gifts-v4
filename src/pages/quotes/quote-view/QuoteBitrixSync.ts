@@ -133,7 +133,15 @@ export async function syncQuoteToBitrix({
   const bitrixQuoteIdFromResponse =
     parsedBitrixId && !isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
 
-  const crmUpdates: TablesUpdate<'quotes'> = { status: 'sent' };
+  // sent_at/last_sent_at marcam quando o orçamento foi efetivamente enviado.
+  // A edge function quote-followup-reminders filtra por `sent_at` (>=2 dias sem
+  // visualização); sem preencher aqui, nenhum lembrete de follow-up é gerado.
+  const nowIso = new Date().toISOString();
+  const crmUpdates: TablesUpdate<'quotes'> = {
+    status: 'sent',
+    sent_at: nowIso,
+    last_sent_at: nowIso,
+  };
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
   try {

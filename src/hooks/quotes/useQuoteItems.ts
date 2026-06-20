@@ -92,8 +92,14 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
   );
 
   const updateItemQuantity = useCallback((index: number, quantity: number) => {
-    if (quantity < 1) return;
-    setItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, quantity } : item)));
+    // quote_items.quantity é INTEGER no banco (CHECK quantity > 0) e a RPC faz
+    // `(_item->>'quantity')::integer` — um valor fracionário (ex.: 2.5) faria o save
+    // estourar com erro de cast. Coage para inteiro e ignora valores < 1 / NaN.
+    const safeQty = Math.floor(quantity);
+    if (!Number.isFinite(safeQty) || safeQty < 1) return;
+    setItems((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, quantity: safeQty } : item)),
+    );
   }, []);
 
   const updateItemPrice = useCallback((index: number, price: number) => {

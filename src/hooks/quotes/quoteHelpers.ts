@@ -28,8 +28,7 @@ export const round2 = (n: number | null | undefined): number => {
  * at 50 here would persist a different value than what the user entered, which
  * is a worse outcome than letting the DB reject it with an explicit error.
  */
-const clampMarkup = (v: number | null | undefined): number =>
-  round2(Math.max(0, v || 0));
+const clampMarkup = (v: number | null | undefined): number => round2(Math.max(0, v || 0));
 
 export function validateDiscount(
   quote: Partial<Quote>,
@@ -80,9 +79,16 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
-  // Negative value is valid: means markup > apparent discount (seller has margin).
+  // Clamp em 0 — espelha calculations.calculateRealDiscountPercent (o valor que o
+  // gate de alçada do cliente realmente usa). Quando o markup supera o desconto
+  // aparente, o "desconto real" é negativo (vendedor tem margem) e não há nada a
+  // aprovar; expor isso como 0 mantém os dois pipelines de cálculo do cliente
+  // consistentes. Este campo NÃO é persistido — o banco deriva o seu próprio
+  // real_discount_percent (fn_quotes_calc_real_values) e trata <= 0 como "sem aprovação".
   const realDiscountPercent =
-    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
+    realSubtotal > 0
+      ? round2(Math.max(0, ((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
+      : 0;
 
   return {
     subtotal: round2(subtotal),
@@ -106,6 +112,10 @@ export function buildInsertPayload(
   return {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
+    // GUARD: contact_id é coluna real de `quotes` e a RPC create_quote_transactional
+    // lê `_quote->>'contact_id'`. NÃO REMOVER: sua ausência desvincula silenciosamente
+    // o contato CRM em todo orçamento criado (regressão recorrente do bot Lovable).
+    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
@@ -138,6 +148,10 @@ export function buildUpdatePayload(
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
+    // GUARD: update_quote_transactional só atualiza contact_id quando a chave existe
+    // no patch (`_quote_patch ? 'contact_id'`). NÃO REMOVER: sem isto, trocar/limpar o
+    // contato nunca persiste (regressão recorrente do bot Lovable).
+    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,

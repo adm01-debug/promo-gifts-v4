@@ -155,15 +155,20 @@ export async function handleSyncBitrix(params: {
     },
   });
 
-  if (error || !data?.ok)
-    throw new Error(data?.error || error?.message || 'Erro desconhecido');
+  if (error || !data?.ok) throw new Error(data?.error || error?.message || 'Erro desconhecido');
 
   const result = data.result;
   const parsedBitrixId = result?.quote_id ? Number(result.quote_id) : null;
   const bitrixQuoteIdFromResponse =
     parsedBitrixId && !isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
 
-  const crmUpdates: TablesUpdate<'quotes'> = { status: 'sent' };
+  // sent_at/last_sent_at: requeridos pela quote-followup-reminders (filtra por sent_at).
+  const nowIso = new Date().toISOString();
+  const crmUpdates: TablesUpdate<'quotes'> = {
+    status: 'sent',
+    sent_at: nowIso,
+    last_sent_at: nowIso,
+  };
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
   try {

@@ -6,38 +6,56 @@
  *   - round2: arredondamento monetario SSOT
  */
 import { describe, it, expect } from 'vitest';
-import { validateDiscount, calculateQuoteTotals, round2 } from '../quoteHelpers';
+import {
+  validateDiscount,
+  calculateQuoteTotals,
+  round2,
+  buildInsertPayload,
+  buildUpdatePayload,
+} from '../quoteHelpers';
 import type { Quote, QuoteItem } from '../quoteTypes';
 
 // -- validateDiscount ---------------------------------------------------------
 describe('quoteHelpers validation logic', () => {
   it('throws error when percent is > 100', () => {
     expect(() =>
-      validateDiscount({ discount_percent: 101 } as Partial<Quote>, { subtotal: 100, discountAmount: 101 })
+      validateDiscount({ discount_percent: 101 } as Partial<Quote>, {
+        subtotal: 100,
+        discountAmount: 101,
+      }),
     ).toThrow();
   });
 
   it('throws error when amount is > subtotal', () => {
     expect(() =>
-      validateDiscount({} as Partial<Quote>, { subtotal: 100, discountAmount: 150 })
+      validateDiscount({} as Partial<Quote>, { subtotal: 100, discountAmount: 150 }),
     ).toThrow();
   });
 
   it('throws error when discount is negative', () => {
     expect(() =>
-      validateDiscount({ discount_percent: -1 } as Partial<Quote>, { subtotal: 100, discountAmount: 0 })
+      validateDiscount({ discount_percent: -1 } as Partial<Quote>, {
+        subtotal: 100,
+        discountAmount: 0,
+      }),
     ).toThrow();
   });
 
   it('passes for valid discount (edge cases)', () => {
     expect(() =>
-      validateDiscount({ discount_percent: 0 } as Partial<Quote>, { subtotal: 100, discountAmount: 0 })
+      validateDiscount({ discount_percent: 0 } as Partial<Quote>, {
+        subtotal: 100,
+        discountAmount: 0,
+      }),
     ).not.toThrow();
     expect(() =>
-      validateDiscount({ discount_percent: 100 } as Partial<Quote>, { subtotal: 100, discountAmount: 100 })
+      validateDiscount({ discount_percent: 100 } as Partial<Quote>, {
+        subtotal: 100,
+        discountAmount: 100,
+      }),
     ).not.toThrow();
     expect(() =>
-      validateDiscount({} as Partial<Quote>, { subtotal: 100, discountAmount: 100 })
+      validateDiscount({} as Partial<Quote>, { subtotal: 100, discountAmount: 100 }),
     ).not.toThrow();
   });
 });
@@ -45,14 +63,27 @@ describe('quoteHelpers validation logic', () => {
 // -- Helpers ------------------------------------------------------------------
 function makeItem(qty: number, price: number, persTotal = 0): QuoteItem {
   return {
-    id: 'i1', quote_id: 'q1', product_id: 'p1',
-    product_name: 'Prod', product_sku: 'SKU',
-    unit_price: price, quantity: qty,
-    personalizations: persTotal > 0
-      ? [{ id: 'per1', quote_item_id: 'i1', name: 'Grav',
-           total_cost: persTotal, unit_cost: persTotal,
-           quantity: qty, organization_id: 'org1' }]
-      : [],
+    id: 'i1',
+    quote_id: 'q1',
+    product_id: 'p1',
+    product_name: 'Prod',
+    product_sku: 'SKU',
+    unit_price: price,
+    quantity: qty,
+    personalizations:
+      persTotal > 0
+        ? [
+            {
+              id: 'per1',
+              quote_item_id: 'i1',
+              name: 'Grav',
+              total_cost: persTotal,
+              unit_cost: persTotal,
+              quantity: qty,
+              organization_id: 'org1',
+            },
+          ]
+        : [],
   } as unknown as QuoteItem;
 }
 
@@ -94,7 +125,7 @@ describe('calculateQuoteTotals — logica central de orcamentos', () => {
 
   it('lanca erro quando markup > 50% — BUG-NEW-03', () => {
     expect(() =>
-      calculateQuoteTotals({ negotiation_markup_percent: 51 }, [makeItem(1, 100)])
+      calculateQuoteTotals({ negotiation_markup_percent: 51 }, [makeItem(1, 100)]),
     ).toThrow('50%');
   });
 
@@ -125,24 +156,27 @@ describe('calculateQuoteTotals — logica central de orcamentos', () => {
   it('frete adicionado ao total quando shipping_type = fob_pre', () => {
     const r = calculateQuoteTotals(
       { shipping_type: 'fob_pre', shipping_cost: 25 } as Partial<Quote>,
-      [makeItem(1, 100)]
+      [makeItem(1, 100)],
     );
     expect(r.total).toBe(125);
   });
 
   it('frete ignorado quando shipping_type nao e fob_pre', () => {
-    const r = calculateQuoteTotals(
-      { shipping_type: 'cif', shipping_cost: 25 } as Partial<Quote>,
-      [makeItem(1, 100)]
-    );
+    const r = calculateQuoteTotals({ shipping_type: 'cif', shipping_cost: 25 } as Partial<Quote>, [
+      makeItem(1, 100),
+    ]);
     expect(r.total).toBe(100);
   });
 
   it('cenario combinado: markup 20% + desconto 10% + frete 10 = 118', () => {
     const r = calculateQuoteTotals(
-      { negotiation_markup_percent: 20, discount_percent: 10,
-        shipping_type: 'fob_pre', shipping_cost: 10 } as Partial<Quote>,
-      [makeItem(1, 100)]
+      {
+        negotiation_markup_percent: 20,
+        discount_percent: 10,
+        shipping_type: 'fob_pre',
+        shipping_cost: 10,
+      } as Partial<Quote>,
+      [makeItem(1, 100)],
     );
     expect(r.realSubtotal).toBe(100);
     expect(r.subtotal).toBe(120);
@@ -151,12 +185,9 @@ describe('calculateQuoteTotals — logica central de orcamentos', () => {
   });
 
   it('valores arredondados para 2 casas decimais', () => {
-    const r = calculateQuoteTotals(
-      { discount_percent: 1 } as Partial<Quote>,
-      [makeItem(1, 33.33)]
-    );
+    const r = calculateQuoteTotals({ discount_percent: 1 } as Partial<Quote>, [makeItem(1, 33.33)]);
     expect(Number.isFinite(r.total)).toBe(true);
-    expect((r.total.toString().split('.')[1]?.length ?? 0)).toBeLessThanOrEqual(2);
+    expect(r.total.toString().split('.')[1]?.length ?? 0).toBeLessThanOrEqual(2);
   });
 
   it('round2: half-up, null/undefined => 0', () => {
@@ -164,5 +195,35 @@ describe('calculateQuoteTotals — logica central de orcamentos', () => {
     expect(round2(1.004)).toBe(1);
     expect(round2(null)).toBe(0);
     expect(round2(undefined)).toBe(0);
+  });
+});
+
+// -- contact_id persistence (GUARD — regressão recorrente do bot Lovable) ------
+// As RPCs create_quote_transactional / update_quote_transactional leem contact_id
+// do payload JSONB. Se o campo sumir do builder, o vínculo com o contato CRM é
+// perdido silenciosamente em TODO orçamento. Este teste falha se o campo regredir.
+describe('buildInsertPayload/buildUpdatePayload — contact_id (GUARD)', () => {
+  const totals = { subtotal: 100, discountAmount: 0, total: 100 };
+
+  it('buildInsertPayload inclui contact_id no payload', () => {
+    const payload = buildInsertPayload(
+      { contact_id: 'contact-123', client_id: 'client-1' } as Partial<Quote>,
+      'seller-1',
+      null,
+      totals,
+    );
+    expect(payload.contact_id).toBe('contact-123');
+  });
+
+  it('buildUpdatePayload inclui contact_id no payload', () => {
+    const payload = buildUpdatePayload({ contact_id: 'contact-456' } as Partial<Quote>, totals);
+    expect(payload.contact_id).toBe('contact-456');
+  });
+
+  it('contact_id ausente vira null (limpável via RPC)', () => {
+    const ins = buildInsertPayload({} as Partial<Quote>, 'seller-1', null, totals);
+    const upd = buildUpdatePayload({} as Partial<Quote>, totals);
+    expect(ins.contact_id).toBeNull();
+    expect(upd.contact_id).toBeNull();
   });
 });

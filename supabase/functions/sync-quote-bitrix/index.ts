@@ -107,7 +107,10 @@ Deno.serve(async (req) => {
       offer_id: item.bitrix_product_id,
       product_name: item.product_name || item.name,
       quantity: item.quantity || 1,
-      unit_price: item.unit_price || item.price || 0,
+      // O chamador (useQuoteViewData.proposalData.items) envia `unitPrice` (camelCase).
+      // Antes líamos só `unit_price`/`price` (snake), zerando o preço de TODO produto no
+      // deal Bitrix. Aceita ambas as convenções; `??` preserva preço 0 legítimo.
+      unit_price: item.unitPrice ?? item.unit_price ?? item.price ?? 0,
       color: item.color || null,
     }));
 
