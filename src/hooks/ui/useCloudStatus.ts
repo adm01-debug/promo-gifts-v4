@@ -65,14 +65,18 @@ export function useCloudStatus(): UseCloudStatusReturn {
       if (snap.status === 'healthy') {
         degradedAttemptRef.current = 0;
         downSinceRef.current = null;
-        timerRef.current = setTimeout(() => void runProbe(false), HEALTHY_INTERVAL);
+        timerRef.current = setTimeout(() => {
+          runProbe(false);
+        }, HEALTHY_INTERVAL);
         return;
       }
       if (snap.status === 'down') {
         if (downSinceRef.current === null) downSinceRef.current = Date.now();
         const elapsed = Date.now() - (downSinceRef.current ?? Date.now());
         if (elapsed >= DOWN_AUTO_STOP_MS) return; // aguarda retry manual
-        timerRef.current = setTimeout(() => void runProbe(true), 5_000);
+        timerRef.current = setTimeout(() => {
+          runProbe(true);
+        }, 5_000);
         return;
       }
       // warming | degraded
@@ -80,7 +84,9 @@ export function useCloudStatus(): UseCloudStatusReturn {
       const idx = Math.min(degradedAttemptRef.current, DEGRADED_BACKOFF.length - 1);
       const delay = DEGRADED_BACKOFF[idx];
       degradedAttemptRef.current++;
-      timerRef.current = setTimeout(() => void runProbe(true), delay);
+      timerRef.current = setTimeout(() => {
+        runProbe(true);
+      }, delay);
     },
     [runProbe],
   );

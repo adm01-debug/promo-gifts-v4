@@ -71,8 +71,7 @@ export function BulkAddToCollectionModal({ open, onOpenChange, rows, onApplied }
         added++;
       }
       toast.success(
-        `${added} ${added === 1 ? 'item adicionado' : 'itens adicionados'} a "${collectionName}"` +
-          (skipped > 0 ? ` (${skipped} já existia${skipped > 1 ? 'm' : ''})` : ''),
+        `${added} ${added === 1 ? 'item adicionado' : 'itens adicionados'} a "${collectionName}"${skipped > 0 ? ` (${skipped} já existia${skipped > 1 ? 'm' : ''})` : ''}`,
       );
       onApplied?.();
       onOpenChange(false);
@@ -102,10 +101,12 @@ export function BulkAddToCollectionModal({ open, onOpenChange, rows, onApplied }
         onClick={(e) => e.stopPropagation()}
       >
         <DialogHeader>
-          <DialogTitle>Adicionar {count} {count === 1 ? 'variação' : 'variações'} a uma coleção</DialogTitle>
+          <DialogTitle>
+            Adicionar {count} {count === 1 ? 'variação' : 'variações'} a uma coleção
+          </DialogTitle>
           <DialogDescription>
-            Escolha uma coleção existente ou crie uma nova. A variação (cor/tamanho)
-            de cada SKU é preservada.
+            Escolha uma coleção existente ou crie uma nova. A variação (cor/tamanho) de cada SKU é
+            preservada.
           </DialogDescription>
         </DialogHeader>
 
@@ -133,7 +134,7 @@ export function BulkAddToCollectionModal({ open, onOpenChange, rows, onApplied }
                   onClick={() => setSelectedColor(c)}
                   className={cn(
                     'h-6 w-6 rounded-full border-2 transition',
-                    selectedColor === c ? 'border-foreground scale-110' : 'border-transparent',
+                    selectedColor === c ? 'scale-110 border-foreground' : 'border-transparent',
                   )}
                   style={{ background: c }}
                 />
@@ -147,9 +148,7 @@ export function BulkAddToCollectionModal({ open, onOpenChange, rows, onApplied }
                   onClick={() => setSelectedIcon(ic)}
                   className={cn(
                     'h-8 w-8 rounded-md text-base transition',
-                    selectedIcon === ic
-                      ? 'bg-primary/15 ring-1 ring-primary'
-                      : 'hover:bg-muted',
+                    selectedIcon === ic ? 'bg-primary/15 ring-1 ring-primary' : 'hover:bg-muted',
                   )}
                 >
                   {ic}

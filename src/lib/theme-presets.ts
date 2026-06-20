@@ -586,7 +586,7 @@ function boostGlowAlpha(shadow: string, alpha: number): string {
   if (!matches || matches.length === 0) return shadow;
   const last = matches[matches.length - 1];
   const idx = shadow.lastIndexOf(last);
-  return shadow.slice(0, idx) + `/ ${alpha})` + shadow.slice(idx + last.length);
+  return `${shadow.slice(0, idx)}/ ${alpha})${shadow.slice(idx + last.length)}`;
 }
 
 // Aplica o "neon glow" característico do Opera GX, aumentando a opacidade

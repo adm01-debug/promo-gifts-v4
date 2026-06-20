@@ -96,7 +96,9 @@ export function McpKeysList() {
                 key={r.id}
                 row={r}
                 onRotate={setRotateTarget}
-                onRevoke={(row) => void revoke(row.id)}
+                onRevoke={(row) => {
+                  revoke(row.id);
+                }}
                 onDetails={setDetailsTarget}
                 onEdit={setEditTarget}
               />

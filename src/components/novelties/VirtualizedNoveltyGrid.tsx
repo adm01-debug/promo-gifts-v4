@@ -22,6 +22,9 @@ interface VirtualizedNoveltyGridProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  /** Increment this counter to imperatively scroll the inner container back to the top.
+   *  Typically incremented whenever the active filter set changes. */
+  scrollToTopToken?: number;
 }
 
 /**
@@ -41,6 +44,7 @@ export function VirtualizedNoveltyGrid({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  scrollToTopToken = 0,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +58,18 @@ export function VirtualizedNoveltyGrid({
     overscan: 3,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
+
+  // Scroll the inner container back to the top whenever the active filter set
+  // changes. Skip the very first render (token = 0 on mount) to avoid an
+  // unnecessary instant-scroll on initial page load.
+  const isFirstScrollRef = useRef(true);
+  useEffect(() => {
+    if (isFirstScrollRef.current) {
+      isFirstScrollRef.current = false;
+      return;
+    }
+    parentRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [scrollToTopToken]);
 
   useEffect(() => {
     const el = parentRef.current;

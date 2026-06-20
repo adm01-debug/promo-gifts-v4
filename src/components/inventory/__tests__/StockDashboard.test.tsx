@@ -233,7 +233,7 @@ describe('StockDashboard — render states', () => {
     expect(fetchStockData).toHaveBeenCalled();
   });
 
-  it('renderiza visão geral, cartões e tabela quando carregado', () => {
+  it('renderiza cartões de KPI e tabela quando carregado', () => {
     renderDashboard();
     // StatCards expose unique aria-labels ("<title>: <value>. <hint>").
     expect(screen.getByRole('button', { name: /^Total de Produtos:/ })).toBeInTheDocument();

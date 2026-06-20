@@ -136,78 +136,80 @@ const variants: Record<
   },
 };
 
-export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(function EmptyState(
-  { variant = 'generic', title, description, action, secondaryAction, className, children },
-  ref,
-) {
-  const config = variants[variant];
-  const Icon = config.icon;
+export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
+  (
+    { variant = 'generic', title, description, action, secondaryAction, className, children },
+    ref,
+  ) => {
+    const config = variants[variant];
+    const Icon = config.icon;
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'flex animate-fade-in flex-col items-center justify-center px-6 py-12 text-center',
-        className,
-      )}
-    >
-      {/* Animated Icon Container */}
-      <div className="relative mb-6 animate-scale-in">
-        {/* Background circles */}
-        <div className="absolute inset-0 -m-4">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-muted/50" />
-          <div className="absolute inset-2 rounded-full bg-muted/30" />
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'flex animate-fade-in flex-col items-center justify-center px-6 py-12 text-center',
+          className,
+        )}
+      >
+        {/* Animated Icon Container */}
+        <div className="relative mb-6 animate-scale-in">
+          {/* Background circles */}
+          <div className="absolute inset-0 -m-4">
+            <div className="absolute inset-0 animate-pulse rounded-full bg-muted/50" />
+            <div className="absolute inset-2 rounded-full bg-muted/30" />
+          </div>
+
+          {/* Icon */}
+          <div
+            className={cn(
+              'relative z-10 rounded-2xl bg-gradient-subtle p-6',
+              'border border-border shadow-sm',
+            )}
+          >
+            <Icon className={cn('h-12 w-12', config.color)} strokeWidth={1.5} />
+          </div>
         </div>
 
-        {/* Icon */}
-        <div
-          className={cn(
-            'relative z-10 rounded-2xl bg-gradient-subtle p-6',
-            'border border-border shadow-sm',
-          )}
-        >
-          <Icon className={cn('h-12 w-12', config.color)} strokeWidth={1.5} />
+        {/* Text content */}
+        <div className="max-w-md animate-fade-in space-y-2">
+          <h3 className="font-display text-lg font-semibold text-foreground">
+            {title || config.title}
+          </h3>
+          <p className="text-muted-foreground">{description || config.description}</p>
         </div>
+
+        {/* Actions */}
+        {(action || secondaryAction) && (
+          <div className="mt-6 flex animate-fade-in flex-wrap gap-3">
+            {action && (
+              <button
+                type="button"
+                onClick={action.onClick}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-all duration-300 ease-out hover:bg-primary-hover"
+              >
+                <Plus className="h-4 w-4" />
+                {action.label}
+              </button>
+            )}
+            {secondaryAction && (
+              <button
+                type="button"
+                onClick={secondaryAction.onClick}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border-2 border-primary/30 bg-background px-4 py-2 text-sm font-bold text-primary transition-all duration-300 ease-out hover:border-primary hover:bg-primary/5"
+              >
+                {secondaryAction.label}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Custom content */}
+        {children && <div className="mt-6 animate-fade-in">{children}</div>}
       </div>
-
-      {/* Text content */}
-      <div className="max-w-md animate-fade-in space-y-2">
-        <h3 className="font-display text-lg font-semibold text-foreground">
-          {title || config.title}
-        </h3>
-        <p className="text-muted-foreground">{description || config.description}</p>
-      </div>
-
-      {/* Actions */}
-      {(action || secondaryAction) && (
-        <div className="mt-6 flex animate-fade-in flex-wrap gap-3">
-          {action && (
-            <button
-              type="button"
-              onClick={action.onClick}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-all duration-300 ease-out hover:bg-primary-hover"
-            >
-              <Plus className="h-4 w-4" />
-              {action.label}
-            </button>
-          )}
-          {secondaryAction && (
-            <button
-              type="button"
-              onClick={secondaryAction.onClick}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border-2 border-primary/30 bg-background px-4 py-2 text-sm font-bold text-primary transition-all duration-300 ease-out hover:border-primary hover:bg-primary/5"
-            >
-              {secondaryAction.label}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Custom content */}
-      {children && <div className="mt-6 animate-fade-in">{children}</div>}
-    </div>
-  );
-});
+    );
+  },
+);
 
 // Compact version for inline use
 export function InlineEmptyState({

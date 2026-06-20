@@ -383,10 +383,9 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-      toast.success(
-        `${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`,
-        { description: 'Restaure pela Lixeira em até 30 dias.' },
-      );
+      toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`, {
+        description: 'Restaure pela Lixeira em até 30 dias.',
+      });
     },
     onError: (e: Error) => toast.error('Erro ao remover', { description: sanitizeError(e) }),
   });
@@ -452,7 +451,12 @@ export function useFavoriteTrash() {
       if (error) throw error;
       const data = rawData as RestoreResult | null;
       if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
-      return data as { ok: boolean; list_id: string; item_id: string | null; original_list_changed: boolean };
+      return data as {
+        ok: boolean;
+        list_id: string;
+        item_id: string | null;
+        original_list_changed: boolean;
+      };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: KEY });

@@ -100,13 +100,13 @@ export function EnhancedSpotlight() {
         .filter(Boolean) as SpotlightItem[];
 
       if (recentItems.length > 0) {
-        groups['Recentes'] = recentItems;
+        groups.Recentes = recentItems;
       }
     }
 
     filteredItems.forEach((item) => {
       // Skip if already in recentes
-      if (groups['Recentes']?.some((r) => r.id === item.id)) return;
+      if (groups.Recentes?.some((r) => r.id === item.id)) return;
 
       if (!groups[item.category]) {
         groups[item.category] = [];

@@ -81,7 +81,6 @@ export function MockupHistoryPanel({
   mockupHistory,
   isLoading,
   clients,
-  techniques,
   onLoadFromHistory,
   onDownload,
   onDelete,
@@ -104,9 +103,14 @@ export function MockupHistoryPanel({
   }, []);
   const toggleCompareSelection = useCallback((id: string) => {
     setSelectedForCompare((prev) => {
+      if (prev.has(id)) {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      }
+      if (prev.size >= 4) return prev;
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else if (next.size < 4) next.add(id);
+      next.add(id);
       return next;
     });
   }, []);
@@ -115,17 +119,16 @@ export function MockupHistoryPanel({
   const compareMockups = mockupHistory.filter((m) => selectedForCompare.has(m.id));
 
   const historyTechniques = useMemo(() => {
-    const map = new Map<string, string>();
+    const seen = new Set<string>();
+    const result: { id: string; name: string }[] = [];
     for (const m of mockupHistory) {
-      if (m.technique_name) {
-        const tech = techniques.find((t) => t.name === m.technique_name);
-        map.set(m.technique_name, tech?.id || m.technique_name);
+      if (m.technique_name && !seen.has(m.technique_name)) {
+        seen.add(m.technique_name);
+        result.push({ id: m.technique_name, name: m.technique_name });
       }
     }
-    return Array.from(map.entries())
-      .map(([name, id]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [mockupHistory, techniques]);
+    return result.sort((a, b) => a.name.localeCompare(b.name));
+  }, [mockupHistory]);
 
   const filteredMockups = useMemo(() => {
     return mockupHistory.filter((mockup) => {
@@ -142,10 +145,7 @@ export function MockupHistoryPanel({
         )
           return false;
       }
-      if (filterTechnique !== 'all') {
-        const selectedTech = historyTechniques.find((t) => t.id === filterTechnique);
-        if (selectedTech && mockup.technique_name !== selectedTech.name) return false;
-      }
+      if (filterTechnique !== 'all' && mockup.technique_name !== filterTechnique) return false;
       if (filterDateRange !== 'all') {
         const diffDays =
           (Date.now() - new Date(mockup.created_at).getTime()) / (1000 * 60 * 60 * 24);
@@ -155,14 +155,7 @@ export function MockupHistoryPanel({
       }
       return true;
     });
-  }, [
-    mockupHistory,
-    filterClient,
-    deferredFilterProduct,
-    filterTechnique,
-    filterDateRange,
-    historyTechniques,
-  ]);
+  }, [mockupHistory, filterClient, deferredFilterProduct, filterTechnique, filterDateRange]);
 
   const totalPages = Math.ceil(filteredMockups.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

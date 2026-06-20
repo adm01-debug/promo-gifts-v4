@@ -21,7 +21,7 @@ interface LayoutPopoverProps {
 }
 
 export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps>(
-  function LayoutPopover({ viewMode, setViewMode, gridColumns, setGridColumns }, ref) {
+  ({ viewMode, setViewMode, gridColumns, setGridColumns }, ref) => {
     return (
       <div ref={ref}>
         <Popover>
@@ -46,7 +46,11 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
               Alterar visualização (grid, lista, tabela) e densidade de colunas
             </TooltipContent>
           </Tooltip>
-          <PopoverContent align="end" className="w-60 p-4 shadow-2xl border-primary/10" sideOffset={8}>
+          <PopoverContent
+            align="end"
+            className="w-60 border-primary/10 p-4 shadow-2xl"
+            sideOffset={8}
+          >
             <div className="space-y-4">
               {/* View Mode */}
               <div>

@@ -64,9 +64,9 @@ export default function RlsDenialsAdminPage() {
       if (tableFilter !== 'all') q = q.eq('table_name', tableFilter);
       if (opFilter !== 'all') q = q.eq('operation', opFilter);
       if (emailFilter.trim()) q = q.ilike('user_email', `%${emailFilter.trim()}%`);
-      const { data, error } = await q;
+      const { data: queryData, error } = await q;
       if (error) throw error;
-      return (data ?? []) as DenialRow[];
+      return (queryData ?? []) as DenialRow[];
     },
     refetchInterval: 30_000,
   });

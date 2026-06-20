@@ -1,5 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, CalendarPlus, CalendarRange, CalendarDays, Building2 } from 'lucide-react';
+import {
+  Sparkles,
+  CalendarPlus,
+  CalendarRange,
+  CalendarDays,
+  Building2,
+  AlertCircle,
+} from 'lucide-react';
 import { useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -17,7 +24,7 @@ function useCountUp(end: number, duration: number = 800) {
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const easeOutQuart = 1 - (1 - progress) ** 4;
       setCount(Math.floor(end * easeOutQuart));
       if (progress < 1) requestAnimationFrame(animate);
     };
@@ -140,6 +147,29 @@ export function NoveltyStatsCards() {
 
   if (error) {
     logger.error('Erro ao carregar estatísticas:', error);
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i} className="border-border/50 border-destructive/20">
+            <CardContent className="p-2.5 sm:p-3">
+              <div className="flex items-center gap-2.5">
+                <div className="shrink-0 rounded-lg bg-destructive/10 p-2">
+                  <AlertCircle className="h-4 w-4 text-destructive/70 sm:h-5 sm:w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-lg font-bold tabular-nums leading-tight text-muted-foreground sm:text-xl">
+                    —
+                  </p>
+                  <p className="truncate text-[10px] leading-tight text-muted-foreground/60 sm:text-xs">
+                    Indisponível
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   return (

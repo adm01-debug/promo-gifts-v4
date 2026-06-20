@@ -176,7 +176,7 @@ export function LogoPositionEditor({
           colorConfigFilter={colorConfigFilter}
           techniqueColorConfig={techniqueColorConfig}
           techniqueName={techniqueName}
-          onPointerDown={logoPreview ? handlePointerDown : () => {}}
+          onPointerDown={handlePointerDown}
           onColorConfigClick={onColorConfigClick}
         />
 

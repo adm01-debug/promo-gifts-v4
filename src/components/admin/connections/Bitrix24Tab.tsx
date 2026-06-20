@@ -145,7 +145,11 @@ export function Bitrix24Tab() {
             open={timelineOpen}
             onOpenChange={setTimelineOpen}
           />
-          <RefreshFromDbButton onRefreshed={() => void list()} />
+          <RefreshFromDbButton
+            onRefreshed={() => {
+              list();
+            }}
+          />
           <RetestCooldownSelector className="ml-auto" />
         </div>
         <TestProgressIndicator

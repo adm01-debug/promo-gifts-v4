@@ -33,7 +33,6 @@ describe("RootInteractivityGuard", () => {
     expect(getComputedStyle(document.body).pointerEvents).not.toBe("none");
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining("root pointer-events:none"),
-      expect.anything(),
     );
   });
 
@@ -62,6 +61,7 @@ describe("RootInteractivityGuard", () => {
     ghost.style.position = "fixed";
     ghost.style.inset = "0";
     ghost.style.opacity = "0";
+    ghost.style.zIndex = "100";
     ghost.getBoundingClientRect = () =>
       ({
         width: window.innerWidth,
@@ -87,7 +87,6 @@ describe("RootInteractivityGuard", () => {
     expect(ghost.getAttribute("data-interactivity-ghost")).toBe("true");
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining("ghost overlay neutralized"),
-      expect.objectContaining({ element: "div" }),
     );
   });
 

@@ -45,6 +45,10 @@ export function isBadJwtError(input: unknown): boolean {
 let recoveryInflight: Promise<boolean> | null = null;
 let lastRecoveryAt = 0;
 const RECOVERY_DEBOUNCE_MS = 5_000;
+const MAX_RECOVERY_ATTEMPTS = 3;
+const RECOVERY_RESET_MS = 60 * 60 * 1000; // 1h — reset circuit breaker
+let recoveryAttemptCount = 0;
+let firstRecoveryAt = 0;
 
 /**
  * Tenta recuperar a sessão. Retorna `true` se conseguiu (sessão válida ao final),
@@ -52,20 +56,38 @@ const RECOVERY_DEBOUNCE_MS = 5_000;
  */
 export function recoverSession(reason: string): Promise<boolean> {
   if (recoveryInflight) return recoveryInflight;
-  const since = Date.now() - lastRecoveryAt;
+  const now = Date.now();
+
+  // Reset circuit breaker after RECOVERY_RESET_MS to allow recovery after a long pause.
+  if (firstRecoveryAt > 0 && now - firstRecoveryAt > RECOVERY_RESET_MS) {
+    recoveryAttemptCount = 0;
+    firstRecoveryAt = 0;
+  }
+
+  // Circuit breaker: stop attempting after MAX_RECOVERY_ATTEMPTS failures in a window.
+  if (recoveryAttemptCount >= MAX_RECOVERY_ATTEMPTS) {
+    return Promise.resolve(false);
+  }
+
+  const since = now - lastRecoveryAt;
   if (since < RECOVERY_DEBOUNCE_MS) {
     // Evita storm de retries em loops de erro
     return Promise.resolve(true);
   }
+  if (firstRecoveryAt === 0) firstRecoveryAt = Date.now();
+  recoveryAttemptCount++;
+
   recoveryInflight = (async () => {
     const log = createClientLogger('auth.sessionRecovery');
-    log.info('start', { reason });
+    log.info('start', { reason, attempt: recoveryAttemptCount, max: MAX_RECOVERY_ATTEMPTS });
     try {
       const supabase = await getSupabaseClient();
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
 
       if (!refreshError && refreshData?.session) {
         log.info('refreshed');
+        recoveryAttemptCount = 0; // reset circuit breaker on success
+        firstRecoveryAt = 0;
         return true;
       }
 
@@ -130,8 +152,8 @@ export function attachSessionRevalidation(): () => void {
     try {
       const supabase = await getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
-      
-      // BUG-FIX: Se detectarmos que não há sessão mas o localStorage tem resquícios, 
+
+      // BUG-FIX: Se detectarmos que não há sessão mas o localStorage tem resquícios,
       // ou se o token atual falhar na validação getUser(), forçamos recuperação.
       if (!sessionData?.session) {
         // Se houver flags de autenticação no cache mas sem sessão real, pode ser um estado zumbi
@@ -143,7 +165,7 @@ export function attachSessionRevalidation(): () => void {
         await recoverSession(`revalidate:${reason}`);
       }
     } catch (err) {
-      // Se falhar por rede (ex: reconexão lenta), não faz nada. 
+      // Se falhar por rede (ex: reconexão lenta), não faz nada.
       // Se for erro de auth explícito, loga.
       if (isBadJwtError(err)) {
         await recoverSession(`revalidate:catch:${reason}`);
@@ -153,8 +175,12 @@ export function attachSessionRevalidation(): () => void {
     }
   };
 
-  const onFocus = () => void revalidate('focus');
-  const onOnline = () => void revalidate('online');
+  const onFocus = () => {
+    revalidate('focus');
+  };
+  const onOnline = () => {
+    revalidate('online');
+  };
   const onVisibility = () => {
     if (document.visibilityState === 'visible') void revalidate('visibility');
   };

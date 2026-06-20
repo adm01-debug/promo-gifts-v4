@@ -76,11 +76,14 @@ export function useDiscountApproval() {
         }
 
         // Set quote status to pending_approval so UI shows correct state
-        await supabase
+        const { error: statusError } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('quotes')
           .update({ status: 'pending_approval' })
           .eq('id', quoteId);
+        if (statusError) {
+          logger.error('Failed to set quote status to pending_approval:', statusError);
+        }
 
         // Buscar contexto do orçamento (markup + aparente) para auditoria e história
         const { data: quoteCtx } = await supabase

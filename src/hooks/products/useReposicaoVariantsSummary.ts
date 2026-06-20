@@ -1,0 +1,113 @@
+/**
+ * useReposicaoVariantsSummary — Onda 1 da Reposição
+ *
+ * Consulta a RPC `fn_get_reposicao_variants_summary(p_product_ids)` (Gold) e
+ * devolve, por produto, um Map indexado por NOME DE COR normalizado
+ * (lowercase, trim, sem acentos) com os campos consumidos pelos swatches:
+ *   - stock_qty            (int)
+ *   - has_upcoming_restock (bool)
+ *   - next_restock_date    (date|null)
+ *   - variant_id           (uuid)
+ *
+ * A indexação por nome (não por variant_id) é proposital: os swatches
+ * existentes vêm de `useProductsColorsBatch` (que agrega por cor única
+ * `nome|hex`) e o ponto de fusão é a string da cor. Hooks futuros podem
+ * indexar por variant_id quando a UI passar a navegar variante-a-variante.
+ *
+ * Strict boundary "> hoje (TZ Brasil)" — a RPC já aplica essa regra.
+ */
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const log = createClientLogger('reposicao.variants-summary');
+
+export interface VariantSummaryEntry {
+  readonly variantId: string;
+  readonly stockQty: number;
+  readonly hasUpcomingRestock: boolean;
+  readonly nextRestockDate: string | null;
+}
+
+/** Map<productId, Map<colorNameKey, VariantSummaryEntry>> */
+export type VariantsSummaryByProduct = ReadonlyMap<string, ReadonlyMap<string, VariantSummaryEntry>>;
+
+/** Normaliza nome de cor para casamento estável (lowercase + trim + sem diacríticos). */
+export function normalizeColorKey(name: string | null | undefined): string {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+interface RpcRow {
+  product_id: string;
+  variants_summary: Array<{
+    variant_id: string;
+    nome: string | null;
+    hex: string | null;
+    stock_qty: number;
+    has_upcoming_restock: boolean;
+    next_restock_date: string | null;
+  }> | null;
+  total_variants: number;
+  variants_in_stock: number;
+  variants_zeroed: number;
+  variants_with_upcoming: number;
+}
+
+const EMPTY: VariantsSummaryByProduct = new Map();
+
+/**
+ * Busca o sumário de variantes para um conjunto de productIds.
+ * Retorna Map vazio quando productIds for vazio (não dispara a RPC).
+ */
+export function useReposicaoVariantsSummary(productIds: readonly string[]) {
+  // Ordenação estável p/ chave de cache idempotente
+  const sortedIds = [...productIds].sort();
+  const key = sortedIds.join(',');
+
+  return useQuery<VariantsSummaryByProduct>({
+    queryKey: ['reposicao-variants-summary', key],
+    enabled: sortedIds.length > 0,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC ainda não tipada em types.ts (será regenerada no próximo deploy)
+        const { data, error } = await (supabase as any).rpc(
+          'fn_get_reposicao_variants_summary',
+          { p_product_ids: sortedIds },
+        );
+        if (error) {
+          log.warn('rpc_failed', { error: error.message, ids: sortedIds.length });
+          return EMPTY;
+        }
+        const rows = (data ?? []) as RpcRow[];
+        const out = new Map<string, Map<string, VariantSummaryEntry>>();
+        for (const row of rows) {
+          const inner = new Map<string, VariantSummaryEntry>();
+          for (const v of row.variants_summary ?? []) {
+            const k = normalizeColorKey(v.nome);
+            if (!k) continue;
+            inner.set(k, {
+              variantId: v.variant_id,
+              stockQty: v.stock_qty,
+              hasUpcomingRestock: Boolean(v.has_upcoming_restock),
+              nextRestockDate: v.next_restock_date,
+            });
+          }
+          if (inner.size > 0) out.set(row.product_id, inner);
+        }
+        return out;
+      } catch (err) {
+        log.error('unexpected_failure', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return EMPTY;
+      }
+    },
+  });
+}

@@ -5203,7 +5203,6 @@ export type Database = {
           client_response: string | null
           client_response_at: string | null
           client_response_notes: string | null
-          contact_id: string | null
           conversion_notes: string | null
           converted_at: string | null
           converted_to_order_id: string | null
@@ -5263,7 +5262,6 @@ export type Database = {
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
-          contact_id?: string | null
           conversion_notes?: string | null
           converted_at?: string | null
           converted_to_order_id?: string | null
@@ -5323,7 +5321,6 @@ export type Database = {
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
-          contact_id?: string | null
           conversion_notes?: string | null
           converted_at?: string | null
           converted_to_order_id?: string | null
@@ -7639,7 +7636,9 @@ export type Database = {
         | { Args: { _user_id?: string }; Returns: boolean }
       is_admin_strict: { Args: { _user_id?: string }; Returns: boolean }
       is_dev: { Args: { _user_id?: string }; Returns: boolean }
-      is_dnd_active: { Args: never; Returns: boolean }
+      is_dnd_active:
+        | { Args: never; Returns: boolean }
+        | { Args: { p_user_id: string }; Returns: boolean }
       is_kit_collaborator: {
         Args: { _kit_id: string; _user_id: string }
         Returns: boolean

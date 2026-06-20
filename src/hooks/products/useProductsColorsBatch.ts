@@ -81,8 +81,8 @@ export function useProductsColorsBatch(productIds: string[]) {
 
   const query = useQuery({
     queryKey,
-    queryFn: async ({ queryKey }): Promise<Map<string, ProductColorDot[]>> => {
-      const [, ids] = queryKey as [string, string[]];
+    queryFn: async ({ queryKey: fnQueryKey }): Promise<Map<string, ProductColorDot[]>> => {
+      const [, ids] = fnQueryKey as [string, string[]];
 
       // Identifica apenas o que ainda não temos no cache global
       const missingIds = ids.filter((id) => !GLOBAL_COLORS_CACHE.has(id));
