@@ -57,13 +57,22 @@ export async function installColorStockMock(
     // Só aumenta leituras; deixa mutações seguirem o fluxo normal.
     if (route.request().method() !== 'GET') return route.fallback();
 
-    let realRows: unknown[] = [];
+    // Não contamina buscas explícitas de OUTROS produtos: injeta apenas em buscas
+    // em massa (sem filtro product_id — o componente filtra por product_id mesmo)
+    // ou quando o request mira o produto-alvo. PostgREST usa `eq.<id>` / `in.(...)`.
+    const productFilter = new URL(route.request().url()).searchParams.get('product_id');
+    const targetsOurProduct = !productFilter || productFilter.includes(productId);
+    if (!targetsOurProduct) return route.fallback();
+
+    let realRows: unknown[];
     try {
       const upstream = await route.fetch();
       const parsed = (await upstream.json()) as unknown;
       realRows = Array.isArray(parsed) ? parsed : [];
     } catch {
-      realRows = [];
+      // Não mascara falha real de rede/auth/API com um 200 fabricado: deixa o
+      // request original seguir (e falhar de verdade) para o teste enxergar.
+      return route.fallback();
     }
 
     const rows = [mockVariant, ...realRows];
