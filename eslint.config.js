@@ -298,6 +298,18 @@ export default [
       'react/no-find-dom-node': 'error',
       'react/no-render-return-value': 'error',
       'react/no-string-refs': 'error',
+      // Batch 88: 11 zero-violation rules
+      'react/no-deprecated': 'error',
+      'react/no-is-mounted': 'error',
+      'react/jsx-key': 'error',
+      'no-loss-of-precision': 'error',
+      'no-nonoctal-decimal-escape': 'error',
+      '@typescript-eslint/no-loss-of-precision': 'error',
+      '@typescript-eslint/no-array-constructor': 'error',
+      'no-dupe-class-members': 'error',
+      'no-dupe-else-if': 'error',
+      'no-import-assign': 'error',
+      'no-setter-return': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
