@@ -414,6 +414,11 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 112: 4 zero-violation rules (removed: react/no-unescaped-entities many, react/no-unstable-nested-components many, unicode-bom many, no-undef-init 1v, plus many duplicates from earlier batches)
+      'react/prefer-es6-class': 'error',
+      '@typescript-eslint/no-unsafe-unary-minus': 'error',
+      'no-cond-assign': 'error',
+      'no-this-before-super': 'error',
       // Batch 111: 6 zero-violation rules (removed: no-void 9v+, no-unnecessary-type-arguments many, no-unnecessary-template-expression 3v)
       'react/no-adjacent-inline-elements': 'error',
       'react/no-arrow-function-lifecycle': 'error',
