@@ -236,6 +236,7 @@ export function MockupProductSelector({
               <div className="group relative">
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input
+                  aria-label="Buscar produto por nome, SKU ou palavras-chave"
                   placeholder="Busque por nome, SKU ou palavras-chave..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -271,6 +272,7 @@ export function MockupProductSelector({
                 <div className="flex items-center gap-2">
                   <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                   <select
+                    aria-label="Ordenar produtos"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="cursor-pointer border-none bg-transparent text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus:ring-0"

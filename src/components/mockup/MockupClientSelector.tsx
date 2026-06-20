@@ -150,6 +150,7 @@ export function MockupClientSelector({
         <Input
           ref={inputRef}
           data-testid="mockup-client-search-input"
+          aria-label="Buscar empresa"
           placeholder="Buscar empresa..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

@@ -1402,3 +1402,65 @@ describe('Analise estatica — GenerateButton.tsx (reduced-motion)', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — aria-label em controles de formulario (6 arquivos)
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  it('campo de busca de empresa tem aria-label', () => {
+    expect(src).toContain('aria-label="Buscar empresa"');
+  });
+});
+
+describe('Analise estatica — LogoColorAnalyzer.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  it('campo de busca Pantone tem aria-label', () => {
+    expect(src).toContain('aria-label="Buscar código Pantone"');
+  });
+});
+
+describe('Analise estatica — MockupAnnotations.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupAnnotations.tsx');
+  });
+
+  it('input de texto de anotacao tem aria-label', () => {
+    expect(src).toContain('aria-label="Texto da anotação"');
+  });
+});
+
+describe('Analise estatica — MockupProductSelector.tsx (aria-label inputs)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  it('campo de busca de produto tem aria-label', () => {
+    expect(src).toContain('aria-label="Buscar produto por nome, SKU ou palavras-chave"');
+  });
+  it('select de ordenacao tem aria-label', () => {
+    expect(src).toContain('aria-label="Ordenar produtos"');
+  });
+});
+
+describe('Analise estatica — AreaCard.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  it('input de nome da area tem aria-label dinamico com indice', () => {
+    expect(src).toMatch(/aria-label=\{`Nome da área \$\{index \+ 1\}`\}/);
+  });
+});

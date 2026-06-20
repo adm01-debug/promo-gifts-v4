@@ -144,6 +144,7 @@ export function MockupAnnotations({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Input
+                    aria-label="Texto da anotação"
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     placeholder="Ex: ajustar 1cm à esquerda"
