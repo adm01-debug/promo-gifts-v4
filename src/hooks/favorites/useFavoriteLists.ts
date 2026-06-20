@@ -357,6 +357,9 @@ export function useFavoriteListItems(listId: string | null) {
               if (restoreErr) throw restoreErr;
               if (restored?.ok) {
                 qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+                if (restored.original_list_changed) {
+                  qc.invalidateQueries({ queryKey: ITEMS_KEY(restored.list_id) });
+                }
                 qc.invalidateQueries({ queryKey: LISTS_KEY });
                 qc.invalidateQueries({ queryKey: ['favorite-trash'] });
                 const msg = restored.original_list_changed
