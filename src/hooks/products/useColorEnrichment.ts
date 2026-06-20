@@ -29,8 +29,8 @@ interface UseColorEnrichmentOptions {
   colorGroups: string[];
   /** Active color variation slugs */
   colorVariations: string[];
-  /** Active color nuance slugs */
-  colorNuances: string[];
+  /** Active color nuance slugs (optional — callers without nuance filter omit this) */
+  colorNuances?: string[];
 }
 
 // Cached reference tables (shared across instances)
@@ -52,7 +52,7 @@ export function useColorEnrichment({
   productIds,
   colorGroups,
   colorVariations,
-  colorNuances,
+  colorNuances = [],
 }: UseColorEnrichmentOptions) {
   const hasFilter = colorGroups.length > 0 || colorVariations.length > 0 || colorNuances.length > 0;
   const filterKey = `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}|${[...colorNuances].sort().join(',')}`;
