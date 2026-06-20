@@ -384,7 +384,7 @@ export function MockupHistoryPanel({
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Voltar"
+                  aria-label="Página anterior"
                   className="h-8 w-8"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
@@ -414,7 +414,7 @@ export function MockupHistoryPanel({
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label="Avançar"
+                  aria-label="Próxima página"
                   className="h-8 w-8"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
@@ -582,7 +582,7 @@ const MockupGridCard = memo(
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                aria-label="Regenerar"
+                aria-label={`Regenerar mockup de ${mockup.product_name}`}
                 variant="secondary"
                 className="h-8 w-8 shadow-md"
                 onClick={() => onLoadFromHistory(mockup)}
@@ -602,7 +602,7 @@ const MockupGridCard = memo(
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                aria-label="Download"
+                aria-label={`Baixar mockup de ${mockup.product_name}`}
                 variant="secondary"
                 className="h-8 w-8 shadow-md"
                 onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
@@ -616,7 +616,7 @@ const MockupGridCard = memo(
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                aria-label="Excluir"
+                aria-label={`Excluir mockup de ${mockup.product_name}`}
                 data-testid="delete-mockup-button"
                 variant="destructive"
                 className="h-8 w-8 shadow-md"
@@ -727,7 +727,7 @@ const MockupListRow = memo(
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                aria-label="Regenerar"
+                aria-label={`Regenerar mockup de ${mockup.product_name}`}
                 variant="secondary"
                 className="h-8 w-8"
                 onClick={() => onLoadFromHistory(mockup)}
@@ -747,7 +747,7 @@ const MockupListRow = memo(
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                aria-label="Download"
+                aria-label={`Baixar mockup de ${mockup.product_name}`}
                 variant="secondary"
                 className="h-8 w-8"
                 onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
@@ -761,7 +761,7 @@ const MockupListRow = memo(
             <TooltipTrigger asChild>
               <Button
                 size="icon"
-                aria-label="Excluir"
+                aria-label={`Excluir mockup de ${mockup.product_name}`}
                 data-testid="delete-mockup-button"
                 variant="destructive"
                 className="h-8 w-8"

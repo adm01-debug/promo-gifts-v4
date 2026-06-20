@@ -143,7 +143,7 @@ export const AreaCard = memo(
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Atualizar"
+                aria-label="Substituir logo"
                 className="pointer-events-none h-7 w-7 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                 title="Substituir logo"
               >

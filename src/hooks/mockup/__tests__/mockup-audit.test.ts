@@ -844,3 +844,101 @@ describe('Analise estatica — MockupLightbox.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — MockupCompareDialog.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupCompareDialog.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupCompareDialog.tsx');
+  });
+
+  describe('a11y — aria-label contextual no botao de fechar', () => {
+    it('botao de fechar especifica o que esta sendo fechado', () => {
+      expect(src).toContain('aria-label="Fechar comparação de mockups"');
+    });
+    it('aria-label generico "Fechar" nao existe sozinho', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — AreaCard.tsx
+// =====================================================================
+
+describe('Analise estatica — AreaCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  describe('a11y — aria-label descritivo no botao de atualizar logo', () => {
+    it('botao de substituir logo nao usa aria-label generico "Atualizar"', () => {
+      expect(src).not.toContain('aria-label="Atualizar"');
+    });
+    it('botao de substituir logo usa aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Substituir logo"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ArtFileUpload.tsx
+// =====================================================================
+
+describe('Analise estatica — ArtFileUpload.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  describe('a11y — aria-labels contextuais com nome do arquivo', () => {
+    it('botao de baixar usa aria-label com nome do arquivo (nao generico "Baixar")', () => {
+      expect(src).toContain('aria-label={`Baixar arquivo ');
+      expect(src).not.toContain('aria-label="Baixar"');
+    });
+    it('botao de remover usa aria-label com nome do arquivo (nao generico "Remover")', () => {
+      expect(src).toContain('aria-label={`Remover arquivo ');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupHistoryPanel.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupHistoryPanel.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  describe('a11y — paginacao com aria-labels semanticos', () => {
+    it('botao de pagina anterior usa "Página anterior" (nao "Voltar" ambiguo)', () => {
+      expect(src).toContain('aria-label="Página anterior"');
+      expect(src).not.toContain('aria-label="Voltar"');
+    });
+    it('botao de proxima pagina usa "Próxima página" (nao "Avançar" ambiguo)', () => {
+      expect(src).toContain('aria-label="Próxima página"');
+      expect(src).not.toContain('aria-label="Avançar"');
+    });
+  });
+
+  describe('a11y — botoes de acao do mockup com contexto do produto', () => {
+    it('botao regenerar usa aria-label com nome do produto', () => {
+      expect(src).toContain('aria-label={`Regenerar mockup de ');
+      expect(src).not.toContain('aria-label="Regenerar"');
+    });
+    it('botao baixar usa aria-label com nome do produto (nao "Download" em ingles)', () => {
+      expect(src).toContain('aria-label={`Baixar mockup de ');
+      expect(src).not.toContain('aria-label="Download"');
+    });
+    it('botao excluir usa aria-label com nome do produto', () => {
+      expect(src).toContain('aria-label={`Excluir mockup de ');
+      expect(src).not.toContain('aria-label="Excluir"');
+    });
+  });
+});

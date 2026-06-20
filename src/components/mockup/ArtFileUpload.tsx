@@ -237,7 +237,7 @@ export function ArtFileUpload({
                 size="icon"
                 variant="ghost"
                 onClick={() => handleDownload(att)}
-                aria-label="Baixar"
+                aria-label={`Baixar arquivo ${att.original_name}`}
               >
                 <Download className="h-4 w-4" />
               </Button>
@@ -245,7 +245,7 @@ export function ArtFileUpload({
                 size="icon"
                 variant="ghost"
                 onClick={() => handleRemove(att)}
-                aria-label="Remover"
+                aria-label={`Remover arquivo ${att.original_name}`}
                 className="text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
