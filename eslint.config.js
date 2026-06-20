@@ -418,6 +418,11 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 116: 4 zero-violation rules (removed: multiline-comment-style many, new-cap many, no-inline-comments many, no-mixed-operators many, prefer-named-capture-group many, no-continue many, no-negated-condition many, no-underscore-dangle many, sort-vars many, spaced-comment 1v, jsx-fragments many, no-noninteractive-element-interactions many, no-noninteractive-element-to-interactive-role many, etc.)
+      'block-scoped-var': 'error',
+      'func-name-matching': 'error',
+      'react/boolean-prop-naming': 'error',
+      'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error',
       // Batch 115: 5 zero-violation rules (removed: parameter-properties many, prefer-function-type many, prefer-object-has-own many, no-unused-prop-types many, require-atomic-updates many, sort-type-constituents many, no-loop-func 1v, require-optimization 1v, vars-on-top 1v)
       '@typescript-eslint/default-param-last': 'error',
       'react/require-render-return': 'error',
