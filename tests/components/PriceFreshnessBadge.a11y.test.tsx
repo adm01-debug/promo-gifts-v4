@@ -92,8 +92,8 @@ describe("PriceFreshnessBadge — acessibilidade", () => {
     });
   });
 
-  describe("title nativo (fallback de tooltip offline)", () => {
-    it("title === aria-label nas variantes compactas (icon-only e compact)", () => {
+  describe("aria-label rico por variante (fallback de tooltip offline)", () => {
+    it("aria-label rico presente nas variantes compactas (icon-only)", () => {
       render(
         <PriceFreshnessBadge
           priceUpdatedAt={daysAgo(90)}
@@ -102,11 +102,10 @@ describe("PriceFreshnessBadge — acessibilidade", () => {
         />,
       );
       const badge = screen.getByRole("status");
-      expect(badge.getAttribute("title")).toBe(badge.getAttribute("aria-label"));
-      expect(badge.getAttribute("title")).toMatch(/possivelmente defasado/i);
+      expect(badge.getAttribute("aria-label")).toMatch(/possivelmente defasado/i);
     });
 
-    it("title presente no inline (PDP/QuickView)", () => {
+    it("aria-label rico presente no inline (PDP/QuickView)", () => {
       render(
         <PriceFreshnessBadge
           priceUpdatedAt={daysAgo(45)}
@@ -115,7 +114,7 @@ describe("PriceFreshnessBadge — acessibilidade", () => {
         />,
       );
       expect(
-        screen.getByRole("status").getAttribute("title"),
+        screen.getByRole("status").getAttribute("aria-label"),
       ).toMatch(/próximo do limite/i);
     });
   });

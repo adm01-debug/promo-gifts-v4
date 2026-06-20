@@ -19,7 +19,7 @@ let consoleSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   notificationsMetrics.reset();
-  consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -46,7 +46,14 @@ function findSummaryLogs() {
         typeof args[0] === "string" &&
         (args[0] as string).includes("notifications-metrics:badge-budget-summary")
     )
-    .map((args) => args[2] as Record<string, unknown>);
+    .map((args) => {
+      try {
+        return JSON.parse(args[0] as string).data as Record<string, unknown>;
+      } catch {
+        return undefined;
+      }
+    })
+    .filter((x): x is Record<string, unknown> => x !== undefined);
 }
 
 describe("notifications-metrics — badge budget hit/miss counters", () => {
