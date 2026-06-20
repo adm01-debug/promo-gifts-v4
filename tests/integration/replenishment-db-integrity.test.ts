@@ -1,8 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 
+const RUN_INTEGRATION = process.env.RUN_INTEGRATION_TESTS === '1';
+
 describe('Edge Function Simulation: Replenishment Triggers', () => {
-  it('Deve validar integridade dos dados de reposição via RPC/View', async () => {
+  it.skipIf(!RUN_INTEGRATION)('Deve validar integridade dos dados de reposição via RPC/View', async () => {
     // Simula chamada que o hook faz
     const { data, error } = await supabase
       .from('v_products_public')

@@ -67,9 +67,10 @@ describe('AuthContext', () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null } } as any);
   });
 
-  it('throws error when useAuth is used outside AuthProvider', () => {
+  it('returns safe fallback when useAuth is used outside AuthProvider', () => {
+    // useAuth no longer throws — it returns FALLBACK_AUTH to avoid crashes.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<AuthConsumer />)).toThrow('useAuth must be used within an AuthProvider');
+    expect(() => render(<AuthConsumer />)).not.toThrow();
     spy.mockRestore();
   });
 

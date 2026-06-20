@@ -48,12 +48,10 @@ export interface MaterialComplete {
 
 // Service para chamadas à API de materiais
 class MaterialService {
-  private baseUrl: string;
-
-  constructor() {
-    // URL canonica resolvida (com fallback) — evita `undefined/functions/v1/...`
-    // em builds sem env (ex.: preview Lovable).
-    this.baseUrl = `${SUPABASE_URL}/functions/v1/materials-api`;
+  // Lazy getter: SUPABASE_URL is only read when a method is actually called,
+  // not at module initialization time. Avoids mock failures in unit tests.
+  private get baseUrl(): string {
+    return `${SUPABASE_URL}/functions/v1/materials-api`;
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
