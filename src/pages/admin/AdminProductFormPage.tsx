@@ -53,6 +53,26 @@ function withoutPriceFreshnessThreshold(data: Record<string, unknown>): Record<s
   return fallbackData;
 }
 
+/**
+ * `products.key_benefits` and `products.use_cases` are Postgres `text[]` columns, but the
+ * form edits them as multiline textareas (one item per line). Writing a raw string to a
+ * `text[]` column throws "malformed array literal", so split into a trimmed, non-empty array.
+ */
+function linesToArray(value: string | null | undefined): string[] | null {
+  if (!value) return null;
+  const arr = value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return arr.length > 0 ? arr : null;
+}
+
+/** Inverse of {@link linesToArray}: render a `text[]` column (or a legacy string) for editing. */
+function arrayToLines(value: unknown): string {
+  if (Array.isArray(value)) return value.join('\n');
+  return typeof value === 'string' ? value : '';
+}
+
 export default function AdminProductFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -220,8 +240,9 @@ export default function AdminProductFormPage() {
       slug: p.slug ?? '',
       canonical_url: p.canonical_url ?? '',
       video_url: p.videos?.[0] ?? p.video_url ?? '',
-      key_benefits: p.key_benefits ?? '',
-      use_cases: p.use_cases ?? '',
+      // key_benefits/use_cases are text[] in the DB — render one item per line for editing.
+      key_benefits: arrayToLines(p.key_benefits),
+      use_cases: arrayToLines(p.use_cases),
     };
   }, []);
 
@@ -259,7 +280,9 @@ export default function AdminProductFormPage() {
         cost_price: data.cost_price ?? null,
         suggested_price: data.suggested_price ?? null,
         stock_quantity: data.stock_quantity ?? 0,
-        stock_unit: data.stock_unit || 'un',
+        // NOTE: `stock_unit` is intentionally NOT written — the column does not exist on
+        // `products` (writing it throws PGRST204). The unit is treated as 'un' on every
+        // read path. Persisting it would require a base-table column + Gold-view change.
         product_type: data.product_type || 'product',
         is_kit: data.product_type === 'kit',
         min_quantity: data.min_quantity ?? 1,
@@ -305,7 +328,9 @@ export default function AdminProductFormPage() {
         ncm_code: data.ncm_code || null,
         ean: data.ean || null,
         gtin: data.gtin || null,
-        country_of_origin: data.country_of_origin || null,
+        // The real column is `origin_country` (not `country_of_origin`); the latter does
+        // not exist and would throw PGRST204 on save.
+        origin_country: data.country_of_origin || null,
         supplier_product_url: data.supplier_product_url || null,
         supply_mode: data.supply_mode || null,
         ipi_rate: data.ipi_rate ?? null,
@@ -321,14 +346,15 @@ export default function AdminProductFormPage() {
         slug: data.slug || null,
         canonical_url: data.canonical_url || null,
         videos: data.video_url ? [data.video_url] : [],
-        key_benefits: data.key_benefits || null,
-        use_cases: data.use_cases || null,
+        key_benefits: linesToArray(data.key_benefits),
+        use_cases: linesToArray(data.use_cases),
         updated_at: new Date().toISOString(),
       };
 
       if (images.length > 0) {
+        // `products` has no `image_url` column — `images` (jsonb) + `primary_image_url`
+        // are the real columns. Writing `image_url` throws PGRST204.
         productData.images = images;
-        productData.image_url = images[0];
         productData.primary_image_url = images[0];
       }
 

@@ -17,6 +17,10 @@ import { GOLD_READ_ALIASES } from '@/integrations/supabase/gold-relations';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
+import {
+  executeRestNativeWrite,
+  isRestNativeWriteEligible,
+} from '@/lib/external-db/rest-native';
 
 export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
 
@@ -268,6 +272,25 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
 }
 
 export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  // WRITE fast-path (insert/update/delete/upsert/batch_insert): delegate to the same
+  // REST-native write engine that bridge.ts uses. This module replaced bridge.ts as the
+  // SSOT data-access layer, but the original migration only ported the READ path — so
+  // every write operation silently degraded into a `SELECT … LIMIT 1` no-op. That left
+  // product create/edit, category/supplier creation, bulk import and variant supplier
+  // sources persisting nothing while still reporting success. Restoring write parity here
+  // fixes all migrated write call-sites at once.
+  if (options.operation !== 'select') {
+    if (isRestNativeWriteEligible(options)) {
+      return executeRestNativeWrite<T>(options);
+    }
+    // Fail loud instead of silently running a SELECT for an unsupported write target —
+    // a silent no-op here is exactly what caused product saves to vanish.
+    throw new Error(
+      `[postgrest] write operation '${options.operation}' on table '${options.table}' is not ` +
+        `supported (not in REST_NATIVE_WRITE_TABLES). Refusing to silently no-op the write.`,
+    );
+  }
+
   const table = TABLE_ALIASES[options.table] ?? options.table;
 
   // Extract _search before remapping (it's a meta-filter, not a column name)
