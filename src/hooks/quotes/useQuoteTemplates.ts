@@ -23,11 +23,18 @@ export interface QuoteTemplateItem {
   personalizations?: {
     techniqueId: string;
     techniqueName: string;
+    locationCode?: string;
+    locationName?: string;
+    personalizedQuantity?: number;
     colorsCount?: number;
     positionsCount?: number;
+    areaCm2?: number;
+    widthCm?: number;
+    heightCm?: number;
     unitCost?: number;
     setupCost?: number;
     totalCost?: number;
+    notes?: string;
   }[];
 }
 
