@@ -343,6 +343,13 @@ export default [
       'prefer-promise-reject-errors': 'error',
       'no-unsafe-optional-chaining': 'error',
       '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      // Batch 92: 6 zero-violation rules (also removed: no-useless-constructor 1v)
+      '@typescript-eslint/adjacent-overload-signatures': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/no-empty-interface': 'error',
+      '@typescript-eslint/unified-signatures': 'error',
+      'no-div-regex': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
