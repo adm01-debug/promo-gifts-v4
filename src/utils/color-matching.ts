@@ -74,7 +74,7 @@ export interface PantoneMatch {
  * Find the closest Pantone color to a given hex code.
  * Returns the top N matches sorted by Delta-E (lower = better match).
  */
-export function findNearestPantone(hex: string, topN: number = 5): PantoneMatch[] {
+export function findNearestPantone(hex: string, topN = 5): PantoneMatch[] {
   const [r, g, b] = hexToRgb(hex);
   const targetLab = rgbToLab(r, g, b);
   const catalog = getCatalogWithLab();

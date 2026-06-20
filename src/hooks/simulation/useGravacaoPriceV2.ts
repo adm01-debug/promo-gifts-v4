@@ -304,7 +304,7 @@ export function useCustomizationPriceV2() {
 export function useCustomizationPriceReactiveLegacy(
   areaId: string | null,
   quantidade: number,
-  numCores: number = 1,
+  numCores = 1,
 ) {
   const [price, setPrice] = useState<CustomizationPriceFlat | null>(null);
   const [loading, setLoading] = useState(false);

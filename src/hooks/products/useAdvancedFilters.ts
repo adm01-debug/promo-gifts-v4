@@ -134,7 +134,7 @@ export function useAdvancedFilters() {
       if (cat.parentId) {
         const parent = categoryMap.get(cat.parentId);
         if (parent) {
-          parent.children = parent.children || [];
+          parent.children ||= [];
           parent.children.push(cat);
         }
       } else {

@@ -177,7 +177,9 @@ export async function fetchPromobrindProducts(options?: {
           logger.warn(
             `[external-db] Timeout at offset=${offset}, retrying (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})...`,
           );
-          await new Promise((r) => setTimeout(r, 1000 * consecutiveErrors));
+          await new Promise((r) => {
+            setTimeout(r, 1000 * consecutiveErrors);
+          });
           continue;
         }
         if (!shouldFallbackSelect(err)) throw err;
@@ -203,7 +205,9 @@ export async function fetchPromobrindProducts(options?: {
               );
               break;
             }
-            await new Promise((r) => setTimeout(r, 1000 * consecutiveErrors));
+            await new Promise((r) => {
+              setTimeout(r, 1000 * consecutiveErrors);
+            });
             continue;
           }
           if (shouldFallbackSelect(fallbackErr)) {

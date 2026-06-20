@@ -55,7 +55,9 @@ vi.mock('@/lib/logger', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: fetchMyLimit retorna null (sem limite cadastrado)
-  mockSelect.mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }) });
+  mockSelect.mockReturnValue({
+    eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }),
+  });
   mockOrder.mockResolvedValue({ data: [], error: null });
   mockUpsert.mockReturnValue({ error: null });
   mockEq.mockReturnValue({ error: null });
@@ -109,7 +111,9 @@ describe('fetchMyLimit', () => {
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useSellerDiscountLimits());
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
     expect(supabase.from).not.toHaveBeenCalled();
   });
 });

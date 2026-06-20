@@ -64,7 +64,10 @@ function cacheKey(client: ClientProfile, products: ProductForRecommendation[]): 
 }
 
 /** Delay com promise */
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 /** Verifica se o erro é retentável.
  * Apenas 502/503/504 (infra temporariamente indisponível) devem ser retentados.

@@ -39,7 +39,7 @@ export function useUserManagement() {
       // do PostgREST recurra no embed `user_roles(role)` — relacionamento não
       // reconhecido pelos tipos gerados — que causava TS2589 (instanciação
       // profunda). `.returns<T>()` fornece a forma final do resultado.
-      const selectCols: string =
+      const selectCols =
         'id, user_id, full_name, email, avatar_url, is_active, created_at, user_roles(role)';
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')

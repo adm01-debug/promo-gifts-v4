@@ -108,7 +108,9 @@ describe('tratamento de erros', () => {
 describe('cleanup — sem state update apos unmount', () => {
   it('nao atualiza state apos desmontagem (cancelled flag)', async () => {
     let resolve!: (val: unknown) => void;
-    const pending = new Promise(r => { resolve = r; });
+    const pending = new Promise((r) => {
+      resolve = r;
+    });
     mockDbInvoke.mockReturnValue(pending);
 
     const { unmount } = renderHook(() => usePublicoAlvoOptions());
@@ -116,7 +118,9 @@ describe('cleanup — sem state update apos unmount', () => {
 
     await act(async () => {
       resolve({ records: [{ slug_ou_codigo: 'corporativo', ordem: 1 }] });
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => {
+        setTimeout(r, 50);
+      });
     });
 
     // Se chegou aqui sem warning de "state update on unmounted component", cleanup ok

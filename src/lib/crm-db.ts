@@ -207,9 +207,9 @@ export async function detectCanonicalDbHealth(timeoutMs = 5000): Promise<Canonic
   const t0 = performance.now();
   try {
     // Race entre a query e um timeout hard-coded
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Health check timeout após ${timeoutMs}ms`)), timeoutMs),
-    );
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`Health check timeout após ${timeoutMs}ms`)), timeoutMs);
+    });
     // Usamos system_kill_switches: tabela sempre presente, sem dados sensíveis,
     // query leve (LIMIT 1). Alternativa: pg_stat_activity, mas requer permissão.
     const queryPromise = supabase
@@ -512,7 +512,9 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
           requestId,
           message: safeCrmLogMessage(msg),
         });
-        await new Promise((r) => setTimeout(r, delay));
+        await new Promise((r) => {
+          setTimeout(r, delay);
+        });
         continue;
       }
 

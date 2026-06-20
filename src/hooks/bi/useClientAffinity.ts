@@ -113,7 +113,7 @@ function deriveCategoryFromName(name: string): string {
   if (/power\s*bank|carregador|wireless|bluetooth|fone/.test(lower)) return 'Brindes Tecnológicos';
   if (/bloco|notas/.test(lower)) return 'Blocos e Notas';
   if (/camis|polo|jaqueta|moletom/.test(lower)) return 'Vestuário';
-  if (/kit/.test(lower)) return 'Kits';
+  if (lower.includes('kit')) return 'Kits';
   return 'Outros';
 }
 
