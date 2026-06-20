@@ -438,6 +438,7 @@ export const ProductListItem = memo(
               <OptimizedImage
                 src={thumbUrl}
                 alt={product.name}
+                data-testid="product-image"
                 className="object-contain transition-transform duration-300 group-hover/thumb:scale-105"
                 containerClassName="h-full w-full"
                 urlOriginal={product.images?.[0]}
