@@ -418,6 +418,16 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 144: 9 rules (all zero-violation)
+      'no-empty-static-block': 'error',
+      'no-new-native-nonconstructor': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
+      'prefer-object-has-own': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      'react/no-danger': 'error',
+      'react/prefer-stateless-function': 'error',
+      'react/no-access-state-in-setstate': 'error',
+      '@typescript-eslint/consistent-type-exports': 'error',
       // Batch 143: 3 rules (wrap-iife:0v with 'inside' matches Prettier, jsx-a11y/no-noninteractive-element-to-interactive-role:1v, react/require-optimization:5v)
       'wrap-iife': ['error', 'inside'],
       'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error',
