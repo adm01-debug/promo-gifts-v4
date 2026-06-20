@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = 'product-favorites';
 
@@ -42,7 +43,8 @@ function loadFromStorage(): FavoriteItem[] {
     // Corrupted non-array payload would crash at store init (`.map`/`.length`) —
     // fall back to empty instead of white-screening the app.
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch (err) {
+    logger.warn('[useFavoritesStore] Failed to load from localStorage', err);
     return [];
   }
 }
@@ -50,8 +52,8 @@ function loadFromStorage(): FavoriteItem[] {
 function saveToStorage(items: FavoriteItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // silently fail
+  } catch (err) {
+    logger.warn('[useFavoritesStore] Failed to save to localStorage (quota exceeded?)', err);
   }
 }
 

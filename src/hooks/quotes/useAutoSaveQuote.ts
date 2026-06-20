@@ -89,6 +89,10 @@ export function useAutoSaveQuote<T>({
   }, [enabled, key]);
 
   // Efeito de salvamento (Debounced)
+  // NOTE: `data` MUST stay in deps. Each `data` change cancels the pending timer
+  // and starts a fresh one — that is the intended debounce behaviour.
+  // Moving `data` to a ref (like onRestoreRef above) would break debouncing:
+  // the timer would no longer reset on rapid changes, and could fire with stale state.
   useEffect(() => {
     if (!enabled) return;
 

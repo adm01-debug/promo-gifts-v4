@@ -67,6 +67,11 @@ export function usePushNotifications() {
       if (!state.isEnabled) {
         return null;
       }
+      // Re-check live permission — state.isEnabled may be stale if the user
+      // revoked permission in browser settings after we last synced.
+      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        return null;
+      }
 
       try {
         const notificationOptions: ExtendedNotificationOptions = {
