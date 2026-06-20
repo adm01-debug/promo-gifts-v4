@@ -264,7 +264,7 @@ export function CartCompanyPickerDialog({
             ? 'text-warning'
             : 'text-muted-foreground/40 opacity-0 hover:text-warning group-hover:opacity-100',
         )}
-        aria-label={isFavorite(company.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+        aria-label={isFavorite(company.id) ? `Remover ${company.name} dos favoritos` : `Adicionar ${company.name} aos favoritos`}
       >
         <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
       </button>
