@@ -200,20 +200,17 @@ export function useQuoteBuilderState() {
       if (value !== 'fob_pre' && shippingCost !== 0) {
         setShippingCost(0);
       }
-      setTimeout(() => {
-        // Pequeno delay para garantir que o estado foi processado antes de avisar
-        toast.success(
-          `Frete alterado para: ${
-            value === 'cif' ? 'CIF' : value === 'fob' ? 'FOB' : 'FOB Pré-negociado'
-          }`,
-          {
-            description:
-              value === 'fob_pre'
-                ? 'Lembre-se de informar o valor acordado.'
-                : 'O custo será zerado no orçamento.',
-          },
-        );
-      }, 50);
+      toast.success(
+        `Frete alterado para: ${
+          value === 'cif' ? 'CIF' : value === 'fob' ? 'FOB' : 'FOB Pré-negociado'
+        }`,
+        {
+          description:
+            value === 'fob_pre'
+              ? 'Lembre-se de informar o valor acordado.'
+              : 'O custo será zerado no orçamento.',
+        },
+      );
     },
     [shippingCost],
   );
@@ -855,6 +852,7 @@ export function useQuoteBuilderState() {
         positions_count: p.positionsCount,
         unit_cost: p.unitCost,
         setup_cost: p.setupCost,
+        total_cost: p.totalCost,
       })),
     }));
     setItems(newItems);
@@ -891,6 +889,7 @@ export function useQuoteBuilderState() {
         positionsCount: p.positions_count,
         unitCost: p.unit_cost,
         setupCost: p.setup_cost,
+        totalCost: p.total_cost,
       })),
     }));
   }, [items]);
