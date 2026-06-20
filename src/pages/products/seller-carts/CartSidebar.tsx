@@ -335,6 +335,7 @@ export function CartSidebar({
                         <Button
                           size="sm"
                           variant="ghost"
+                          aria-label={`Excluir template ${t.name}`}
                           className="h-7 text-xs text-destructive"
                           onClick={() => onDeleteTemplate.mutate(t.id)}
                         >
