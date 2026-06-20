@@ -16,6 +16,7 @@ import {
 const mockUseVariantStock = vi.fn();
 vi.mock('@/hooks/products', () => ({
   useVariantStock: () => mockUseVariantStock(),
+  noveltyToProduct: vi.fn(),
 }));
 
 // ── Mock toast ──────────────────────────────────────────────────

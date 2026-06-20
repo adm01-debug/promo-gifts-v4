@@ -21,6 +21,7 @@ vi.mock('@/hooks/products', () => ({
   useNoveltiesWithDetails: (...a: unknown[]) => hooks.useNoveltiesWithDetails(...a),
   useExpiringNovelties: (...a: unknown[]) => hooks.useExpiringNovelties(...a),
   useNoveltyStats: (...a: unknown[]) => hooks.useNoveltyStats(...a),
+  noveltyToProduct: vi.fn(),
 }));
 
 function novelty(over: Partial<NoveltyWithDetails>): NoveltyWithDetails {

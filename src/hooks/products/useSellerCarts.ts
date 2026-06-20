@@ -67,6 +67,12 @@ export interface CreateCartInput {
 
 export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 
+/** Raw row returned by `select('*, seller_cart_items(*)')` before mapping. */
+type SellerCartDbRow = Omit<SellerCart, 'items' | 'status'> & {
+  seller_cart_items: SellerCartItem[];
+  status: string;
+};
+
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
@@ -128,8 +134,7 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+        const { seller_cart_items: rowItems, ...cart } = row as SellerCartDbRow;
         return {
           ...cart,
           notes: (cart.notes as string | null) ?? null,

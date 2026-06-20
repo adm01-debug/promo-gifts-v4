@@ -46,8 +46,10 @@ export async function installColorStockMock(
   };
 
   // Only intercept single-product requests (`eq.` filter), not batch (`in.` filter).
+  // Escape all regex-special chars in productId to prevent regex injection.
+  const escapedId = productId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const singleProductRe = new RegExp(
-    `\\/rest\\/v1\\/product_variants.*product_id=eq\\.${productId.replace(/-/g, '\\-')}`,
+    `\\/rest\\/v1\\/product_variants.*product_id=eq\\.${escapedId}`,
   );
 
   await page.route(singleProductRe, async (route: Route) => {
