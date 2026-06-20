@@ -67,9 +67,19 @@ describe('AuthContext', () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null } } as any);
   });
 
-  it('throws error when useAuth is used outside AuthProvider', () => {
+  it('uses a safe fallback (no throw) when useAuth is called outside AuthProvider', () => {
+    // REGRA #5: useAuth foi alterado DE PROPÓSITO para retornar FALLBACK_AUTH em
+    // vez de lançar — evita crash em corridas de duplicação de módulo no HMR
+    // (ver src/contexts/AuthContext.tsx). O contrato agora é "fallback seguro",
+    // não "throw". O teste valida o novo comportamento.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<AuthConsumer />)).toThrow('useAuth must be used within an AuthProvider');
+    expect(() => render(<AuthConsumer />)).not.toThrow();
+    expect(screen.getByTestId('loading').textContent).toBe('false');
+    expect(screen.getByTestId('authenticated').textContent).toBe('false');
+    expect(screen.getByTestId('role').textContent).toBe('none');
+    expect(screen.getByTestId('isAdmin').textContent).toBe('false');
+    expect(screen.getByTestId('canManage').textContent).toBe('false');
+    expect(screen.getByTestId('isSeller').textContent).toBe('false');
     spy.mockRestore();
   });
 

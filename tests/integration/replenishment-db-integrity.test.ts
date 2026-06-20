@@ -1,7 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 
-describe('Edge Function Simulation: Replenishment Triggers', () => {
+// GAP (auditoria 200-commits): este é um teste de INTEGRAÇÃO que faz fetch real
+// contra o banco vivo (sem mock). No gate unitário (quality-gate) ele estoura o
+// timeout / dá ECONNREFUSED porque não há Supabase local. Alinhado à convenção
+// do repo (RUN_INTEGRATION_TESTS, ver package.json), roda só sob demanda.
+const runIntegration = process.env.RUN_INTEGRATION_TESTS === '1';
+
+describe.skipIf(!runIntegration)('Edge Function Simulation: Replenishment Triggers', () => {
   it('Deve validar integridade dos dados de reposição via RPC/View', async () => {
     // Simula chamada que o hook faz
     const { data, error } = await supabase
