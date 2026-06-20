@@ -236,10 +236,11 @@ export function useSellerCarts() {
           const retryExisting = await findVariantInCart(cartId, item.product_id, colorName);
 
           if (retryExisting) {
-            await supabase
+            const { error: retryErr } = await supabase
               .from('seller_cart_items')
               .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
+            if (retryErr) throw retryErr;
           }
         } else if (error) {
           throw error;
