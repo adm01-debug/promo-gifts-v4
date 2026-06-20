@@ -677,6 +677,7 @@ function SellerCartsContent() {
                                       />
                                       <button
                                         type="button"
+                                        aria-label={`Ver página de ${item.product_name}`}
                                         onClick={() => s.navigate(`/produto/${item.product_id}`)}
                                         className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
                                       >
