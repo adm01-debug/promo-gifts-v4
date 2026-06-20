@@ -117,7 +117,8 @@ export default function MockupGenerator() {
   });
 
   const handleTechniqueSelect = useCallback(
-    (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
+    (t: { id?: string; name?: string; code?: string | null; [key: string]: unknown } | null) =>
+      technique.handleTechniqueChange(t as MockupTechnique | null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [technique.handleTechniqueChange],
   );
@@ -492,7 +493,9 @@ export default function MockupGenerator() {
                                 }
                               } catch (err) {
                                 toast.error('Erro ao salvar mockup no histórico');
-                                log.error('save_history_failed', { error: err instanceof Error ? err.message : String(err) });
+                                log.error('save_history_failed', {
+                                  error: err instanceof Error ? err.message : String(err),
+                                });
                               }
                             }
                           }}

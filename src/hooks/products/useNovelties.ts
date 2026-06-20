@@ -33,10 +33,15 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-type NoveltyQuery = ReturnType<typeof fromTable>;
+// After .select() the builder becomes a PostgrestFilterBuilder with filter methods.
+// We capture that post-select type so TS accepts .eq()/.gt()/.order() etc.
+type NoveltyQuery = ReturnType<ReturnType<typeof fromTable>['select']>;
 
 const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
-  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0) as NoveltyQuery;
+  query
+    .eq('is_stockout', false)
+    .not('primary_image_url', 'is', null)
+    .gt('sale_price', 0) as NoveltyQuery;
 
 /**
  * Predicado de PERTINÊNCIA de novidade (fonte da verdade = pipeline DB).
