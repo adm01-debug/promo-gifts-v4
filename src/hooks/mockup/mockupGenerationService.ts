@@ -265,6 +265,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
           .select('id')
           .single();
         if (!retryError) return retryRow?.id || null;
+        logger.error('[saveMockupToDb] FK retry also failed:', retryError);
       }
       logger.error('Error saving to history:', error);
       toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
