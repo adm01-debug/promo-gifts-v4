@@ -16,6 +16,7 @@
  *
  * Strict boundary "> hoje (TZ Brasil)" — a RPC já aplica essa regra.
  */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
@@ -65,9 +66,9 @@ const EMPTY: VariantsSummaryByProduct = new Map();
  * Retorna Map vazio quando productIds for vazio (não dispara a RPC).
  */
 export function useReposicaoVariantsSummary(productIds: readonly string[]) {
-  // Ordenação estável p/ chave de cache idempotente
-  const sortedIds = [...productIds].sort();
-  const key = sortedIds.join(',');
+  // Memoizado: evita recriar array/string em cada render mesmo que os IDs não mudem.
+  const sortedIds = useMemo(() => [...productIds].sort(), [productIds]);
+  const key = useMemo(() => sortedIds.join(','), [sortedIds]);
 
   return useQuery<VariantsSummaryByProduct>({
     queryKey: ['reposicao-variants-summary', key],
@@ -91,7 +92,10 @@ export function useReposicaoVariantsSummary(productIds: readonly string[]) {
           const inner = new Map<string, VariantSummaryEntry>();
           for (const v of row.variants_summary ?? []) {
             const k = normalizeColorKey(v.nome);
-            if (!k) continue;
+            if (!k) {
+              log.warn('variant_sem_nome_de_cor', { variant_id: v.variant_id, product_id: row.product_id });
+              continue;
+            }
             inner.set(k, {
               variantId: v.variant_id,
               stockQty: v.stock_qty,

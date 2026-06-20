@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, AlertTriangle } from 'lucide-react';
+import { Package, AlertTriangle, RefreshCw } from 'lucide-react';
 import {
   replenishmentToProduct,
   useReplenishmentsSelectionMode,
@@ -36,9 +37,16 @@ type SortMode = 'name' | 'price-asc' | 'price-desc' | 'newest' | 'stock';
 function useLoadingProgress(isLoading: boolean): number {
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const clearAll = () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      if (timeoutRef.current)  { clearTimeout(timeoutRef.current);   timeoutRef.current  = null; }
+    };
+
     if (isLoading) {
+      clearAll();
       setProgress(0);
       intervalRef.current = setInterval(() => {
         setProgress((prev) => {
@@ -50,14 +58,12 @@ function useLoadingProgress(isLoading: boolean): number {
         });
       }, 300);
     } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearAll();
       setProgress(100);
-      const t = setTimeout(() => setProgress(0), 800);
-      return () => clearTimeout(t);
+      timeoutRef.current = setTimeout(() => setProgress(0), 800);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+
+    return clearAll;
   }, [isLoading]);
 
   return progress;
@@ -65,6 +71,7 @@ function useLoadingProgress(isLoading: boolean): number {
 
 export function ReplenishmentProductGrid() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const [sortMode, setSortMode] = useState<SortMode>('newest');
@@ -281,7 +288,18 @@ export function ReplenishmentProductGrid() {
             <AlertTriangle className="h-7 w-7 text-destructive" />
           </div>
           <p className="text-sm font-medium text-destructive">Erro ao carregar reposições</p>
-          <p className="mt-1 text-xs text-muted-foreground/70">Tente recarregar a página</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            {(error as Error).message ?? 'Falha ao buscar dados do servidor'}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 gap-2 text-xs"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['replenishments-details'] })}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Tentar novamente
+          </Button>
         </div>
       );
     }
@@ -391,17 +409,18 @@ export function ReplenishmentProductGrid() {
       <div className="relative">
         {renderContent()}
         <AnimatePresence>
-          {isFetching && products.length > 0 && (
+          {isFetching && !isLoading && products.length > 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
               role="status"
+              aria-label="Atualizando dados de reposição"
             >
               <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-sm text-muted-foreground">Filtrando…</span>
+                <span className="text-sm text-muted-foreground">Atualizando…</span>
               </div>
             </motion.div>
           )}
