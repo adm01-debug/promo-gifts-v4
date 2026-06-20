@@ -50,12 +50,17 @@ export default function AdminTemasPage() {
 
   const updateConfig = (partial: Partial<ThemeConfig>) => {
     let next = { ...config, ...partial };
-    // Quando o usuário troca de preset, se o novo skin tem borderRadius
-    // próprio (ex.: GX = 4px), sincroniza o slider para refletir o efeito.
+    // Quando o usuário troca de preset, sincroniza o slider de raio de borda:
+    // · GX preset (borderRadius definido) → snap para o valor angular do preset
+    // · Saindo de GX para classic → restaura o raio padrão (não deixa 4px angular
+    //   travado num skin clássico que não exige bordas retas)  [BUG-THEME-13]
     if (partial.presetId && partial.presetId !== config.presetId) {
       const nextPreset = THEME_PRESETS.find((p) => p.id === partial.presetId);
+      const prevPreset = THEME_PRESETS.find((p) => p.id === config.presetId);
       if (nextPreset?.borderRadius !== undefined) {
         next = { ...next, radius: nextPreset.borderRadius };
+      } else if (prevPreset?.borderRadius !== undefined) {
+        next = { ...next, radius: getDefaultConfig().radius };
       }
     }
     setConfig(next);
