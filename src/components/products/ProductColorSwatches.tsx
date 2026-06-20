@@ -84,7 +84,7 @@ export const ProductColorSwatches = memo(
       return (
         <div
           className={cn(
-            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+            'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden',
             className,
           )}
           aria-busy="true"
@@ -139,7 +139,9 @@ export const ProductColorSwatches = memo(
     return (
       <div
         className={cn(
-          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
+          // flex-nowrap + overflow-hidden: garante UMA única linha e impede
+          // que o chip "+N" empurre a altura do card em qualquer viewport.
+          'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"

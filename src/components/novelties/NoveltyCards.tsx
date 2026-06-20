@@ -113,11 +113,10 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura mínima estável para o grid não "quicar"; sem `max-h` para
-          // permitir crescimento com conteúdo (categoria/SKU/nome longos) e
-          // evitar overflow clipping que invalida a medição do virtualizer
-          // (causa de scroll inconsistente no /novidades).
-          'min-h-[420px]',
+          // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
+          // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
+          // Reposição em todos os viewports.
+          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
