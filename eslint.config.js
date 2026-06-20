@@ -368,6 +368,15 @@ export default [
       '@typescript-eslint/prefer-enum-initializers': 'error',
       'no-empty': 'error',
       'no-extra-semi': 'error',
+      // Batch 95: 8 zero-violation rules (no-empty-function 38v, method-signature-style 7v, jsx-boolean-value 5v)
+      'jsx-a11y/aria-props': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
+      'jsx-a11y/aria-unsupported-elements': 'error',
+      'jsx-a11y/no-access-key': 'error',
+      'jsx-a11y/no-distracting-elements': 'error',
+      'jsx-a11y/scope': 'error',
+      '@typescript-eslint/consistent-type-assertions': 'error',
+      'react/prefer-stateless-function': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
