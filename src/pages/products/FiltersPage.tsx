@@ -85,8 +85,11 @@ const INTERNAL_SORT_LABELS: Readonly<Record<string, string>> = {
 
 export default function FiltersPage() {
   const navigate = useNavigate();
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
 
   const state = useFiltersPageState();
   // GAP-19 FIX: FiltersPage usa VirtualizedProductGrid SEM onLoadMore — todos os
