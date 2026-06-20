@@ -69,12 +69,14 @@ export function CartCompanyPickerDialog({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [recents, setRecents] = useState<CompanyItem[]>(() => readList(RECENT_KEY));
   const [favorites, setFavorites] = useState<CompanyItem[]>(() => readList(FAV_KEY));
+  const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { createCart, canCreateCart } = useSellerCartContext();
 
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
+      setIsCreating(false);
       return;
     }
     setRecents(readList(RECENT_KEY));
@@ -183,45 +185,53 @@ export function CartCompanyPickerDialog({
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {
-      const input: CreateCartInput = {
-        company_id: company.id,
-        company_name: company.name,
-        company_location: company.ramo || undefined,
-        company_logo_url: company.logo_url || undefined,
-      };
-      const result = await createCart(input);
-      if (result) {
-        const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
-          0,
-          MAX_RECENT,
-        );
-        writeList(RECENT_KEY, nextRecents);
-        setRecents(nextRecents);
-        onCreated?.(result.id);
-        onOpenChange(false);
+      if (isCreating) return;
+      setIsCreating(true);
+      try {
+        const input: CreateCartInput = {
+          company_id: company.id,
+          company_name: company.name,
+          company_location: company.ramo || undefined,
+          company_logo_url: company.logo_url || undefined,
+        };
+        const result = await createCart(input);
+        if (result) {
+          const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
+            0,
+            MAX_RECENT,
+          );
+          writeList(RECENT_KEY, nextRecents);
+          setRecents(nextRecents);
+          onCreated?.(result.id);
+          onOpenChange(false);
+        }
+      } finally {
+        setIsCreating(false);
       }
     },
-    [createCart, onCreated, onOpenChange, recents],
+    [isCreating, createCart, onCreated, onOpenChange, recents],
   );
 
   const isLoading = loadingLocal || loadingServer;
+
+  const canSelect = canCreateCart && !isCreating;
 
   const renderRow = (company: CompanyItem) => (
     <div
       key={company.id}
       role="button"
-      tabIndex={canCreateCart ? 0 : -1}
-      aria-disabled={!canCreateCart}
+      tabIndex={canSelect ? 0 : -1}
+      aria-disabled={!canSelect}
       data-testid="cart-company-picker-select"
       data-company-id={company.id}
       className={cn(
         'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
         'group transition-colors hover:bg-accent/60',
-        !canCreateCart && 'pointer-events-none opacity-50',
+        !canSelect && 'pointer-events-none opacity-50',
       )}
-      onClick={() => canCreateCart && handleSelect(company)}
+      onClick={() => canSelect && handleSelect(company)}
       onKeyDown={(e) => {
-        if (canCreateCart && (e.key === 'Enter' || e.key === ' ')) {
+        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           handleSelect(company);
         }

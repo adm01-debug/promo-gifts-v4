@@ -366,15 +366,15 @@ function SellerCartsContent() {
         </div>
         <div className="flex items-center gap-2">
           {s.carts.length >= 2 && <CompareCartsDialog carts={s.carts} />}
-          {s.canCreateCart && (
-            <Button
-              onClick={() => s.setShowNewCart(true)}
-              size="sm"
-              className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-3.5 w-3.5" /> Novo Carrinho
-            </Button>
-          )}
+          <Button
+            onClick={() => s.setShowNewCart(true)}
+            disabled={!s.canCreateCart}
+            size="sm"
+            className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
+            title={!s.canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo Carrinho
+          </Button>
         </div>
       </header>
 
@@ -869,6 +869,7 @@ function SellerCartsContent() {
           {/* Sidebar */}
           {s.activeCart.items.length > 0 && (
             <CartSidebar
+              key={s.activeCart.id}
               cart={s.activeCart}
               otherCarts={s.otherCarts}
               cartSubtotal={s.cartSubtotal}
@@ -899,8 +900,8 @@ function SellerCartsContent() {
         </div>
       ) : null}
 
-      {/* Mobile summary */}
-      {s.activeCart && (
+      {/* Mobile summary — só mostra quando há itens para gerar orçamento */}
+      {s.activeCart && s.activeCart.items.length > 0 && (
         <MobileSummarySheet
           cart={s.activeCart}
           subtotal={s.cartSubtotal}

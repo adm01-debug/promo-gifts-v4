@@ -114,6 +114,10 @@ export function getActionHistory(cartId: string): CartAction[] {
   return actionHistoryMap.get(cartId) || [];
 }
 
+export function clearActionHistory(cartId: string) {
+  actionHistoryMap.delete(cartId);
+}
+
 // ============================================
 // SKELETON LOADER
 // ============================================

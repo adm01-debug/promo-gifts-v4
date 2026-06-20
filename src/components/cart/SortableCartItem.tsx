@@ -101,7 +101,7 @@ export const SortableCartItem = memo(
 
     const style = {
       transform: CSS.Transform.toString(transform),
-      transition,
+      transition: isDragging ? undefined : transition,
       opacity: isDragging ? 0.5 : 1,
       zIndex: isDragging ? 50 : undefined,
     };
@@ -385,6 +385,9 @@ export const SortableCartItem = memo(
                 </button>
                 <input
                   type="number"
+                  min={1}
+                  max={999999}
+                  aria-label={`Quantidade para ${item.product_name}`}
                   data-testid="cart-qty-input"
                   value={qtyDraft}
                   onFocus={(e) => e.target.select()}

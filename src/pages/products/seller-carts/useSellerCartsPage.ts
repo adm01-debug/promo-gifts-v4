@@ -136,13 +136,29 @@ export function useSellerCartsPage() {
     setCartNotesOpen(!!activeCart?.notes);
   }, [activeCart?.id, activeCart?.notes]);
 
-  // FIX: cleanup debounceNotesRef no unmount — sem isso, o timer dispara
-  // e chama updateCartNotes após a navegação para fora da página.
+  // Cleanup debounceNotesRef no unmount — evita disparo após navegar para outra página.
   useEffect(() => {
     return () => {
       if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
     };
   }, []);
+
+  // Flush do debounce de notas quando o usuário fecha/recarrega a aba (beforeunload).
+  // Sem isso, notas editadas nos últimos 800ms antes do fechamento são perdidas.
+  const activeCartIdForFlush = activeCart?.id;
+  const localCartNotesRef = useRef(localCartNotes);
+  localCartNotesRef.current = localCartNotes;
+  useEffect(() => {
+    const flush = () => {
+      if (debounceNotesRef.current && activeCartIdForFlush) {
+        clearTimeout(debounceNotesRef.current);
+        debounceNotesRef.current = undefined;
+        updateCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, [activeCartIdForFlush, updateCartNotes]);
 
   const handleCartNotesChange = (value: string) => {
     setLocalCartNotes(value);
@@ -332,6 +348,12 @@ export function useSellerCartsPage() {
   const [confirmClearCart, setConfirmClearCart] = useState(false);
 
   const handleGenerateQuote = useCallback((cart: SellerCart) => {
+    if (cart.items.length === 0) {
+      toast.error('Carrinho vazio', {
+        description: 'Adicione ao menos um produto antes de gerar o orçamento.',
+      });
+      return;
+    }
     setConfirmQuoteCart(cart);
   }, []);
 
@@ -370,6 +392,13 @@ export function useSellerCartsPage() {
       });
     }
     setConfirmQuoteCart(null);
+    // Flush das notas em debounce antes de navegar — evita perda de notas editadas
+    // nos últimos 800ms (o cleanup do unmount cancela o timer sem disparar).
+    if (debounceNotesRef.current && activeCartIdForFlush) {
+      clearTimeout(debounceNotesRef.current);
+      debounceNotesRef.current = undefined;
+      updateCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+    }
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
     // consome número de orçamento — o orçamento só se torna real quando o vendedor
@@ -392,7 +421,7 @@ export function useSellerCartsPage() {
         })),
       },
     });
-  }, [confirmQuoteCart, navigate]);
+  }, [confirmQuoteCart, navigate, activeCartIdForFlush, updateCartNotes]);
 
   const otherCarts = useMemo(
     () => carts.filter((c) => c.id !== activeCartId),
