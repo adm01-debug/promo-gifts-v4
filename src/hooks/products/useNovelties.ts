@@ -4,8 +4,7 @@ import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- untypedFrom already escapes the typed schema via SupabaseClient<any>; any is the honest return type and avoids TS2339/TS2345 on filter builder methods
-const fromTable = (table: string): any => untypedFrom(resolveTable(table));
+const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -34,7 +33,8 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-type NoveltyQuery = ReturnType<typeof fromTable>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase filter builder after .select(); ReturnType<...['select']> hits TS2589.
+type NoveltyQuery = any;
 
 const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
   query

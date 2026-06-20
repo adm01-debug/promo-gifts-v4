@@ -1190,9 +1190,13 @@ export function useQuoteBuilderState() {
       const sellerNotes =
         effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
-      // Reset baseline AFTER save — resetting before could allow another concurrent save
-      // to pass undetected if the save itself fails.
+      // Clear baseline BEFORE calling handleSaveQuote so the conflict check inside is
+      // bypassed. Without this, handleSaveQuote would re-detect the same conflict
+      // (baseline still points to the old timestamp) and abort again — the user would
+      // be permanently stuck in the conflict dialog.
+      baselineUpdatedAtRef.current = null;
       await handleSaveQuote(effectiveStatus, sellerNotes);
+      // Re-arm baseline after save so future concurrent edits are detected.
       baselineUpdatedAtRef.current = new Date().toISOString();
     },
   };
