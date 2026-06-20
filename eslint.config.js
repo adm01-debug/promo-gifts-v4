@@ -414,6 +414,18 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 105: 11 zero-violation rules (removed: react/jsx-handler-names 38v, react/jsx-no-constructed-context-values 7v, no-implicit-coercion 3v, jsx-a11y/media-has-caption 2v)
+      '@typescript-eslint/no-unsafe-unary-minus': 'error',
+      '@typescript-eslint/no-meaningless-void-operator': 'error',
+      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/class-literal-property-style': 'error',
+      '@typescript-eslint/prefer-return-this-type': 'error',
+      '@typescript-eslint/no-unnecessary-qualifier': 'error',
+      'operator-assignment': 'error',
+      'object-shorthand': 'error',
+      'no-else-return': 'error',
+      'no-unused-expressions': 'error',
+      'react/no-danger': 'error',
       // Batch 104: 3 zero-violation rules (removed: jsx-no-leaked-render 28v, no-bitwise 12v, control-has-associated-label 23v, switch-exhaustiveness-check 13v, react/hook-use-state 8v, react/no-multi-comp 3v, no-unnecessary-type-parameters 3v, prefer-reduce-type-parameter 2v, no-nested-ternary 2v, no-unnecessary-template-expression 1v, promise-function-async 5v, require-array-sort-compare 1v)
       '@typescript-eslint/prefer-find': 'error',
       'jsx-a11y/autocomplete-valid': 'error',
