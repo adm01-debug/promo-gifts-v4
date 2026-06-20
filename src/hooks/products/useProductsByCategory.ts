@@ -166,12 +166,21 @@ export function useCategoryDescendants(categoryIds: string[]) {
   // Verificações após cada await descartam respostas de chamadas supersedidas.
   const fetchTokenRef = useRef(0);
 
+  // FIX RENDER-LOOP (2026-06-20): estabilizar a dependência do effect. A versão
+  // anterior usava deps [categoryIds] (array bruto, referência nova a cada render
+  // do pai): com array inline não-memoizado, o effect re-disparava a cada render,
+  // e setDescendantIds([]) no ramo vazio criava um array novo a cada vez,
+  // realimentando o ciclo. Agora a chave string é estável e o setState do ramo
+  // vazio é condicional (bail-out do React quando já está vazio).
+  const categoryIdsKey = useMemo(() => [...categoryIds].sort().join(','), [categoryIds]);
+
   useEffect(() => {
-    if (categoryIds.length === 0) {
-      setDescendantIds([]);
+    if (categoryIdsKey === '') {
+      setDescendantIds((prev) => (prev.length === 0 ? prev : []));
       return;
     }
 
+    const idsForFetch = categoryIdsKey.split(',');
     const fetchDescendants = async () => {
       const token = ++fetchTokenRef.current;
       setIsLoading(true);
@@ -179,7 +188,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
         const { data, error } = await supabase.functions.invoke('categories-api', {
           body: {
             action: 'descendants',
-            categoryIds,
+            categoryIds: idsForFetch,
           },
         });
 
@@ -196,7 +205,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
     };
 
     fetchDescendants();
-  }, [categoryIds]);
+  }, [categoryIdsKey]);
 
   return { descendantIds, isLoading };
 }
