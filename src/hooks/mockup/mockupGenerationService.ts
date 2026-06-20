@@ -148,8 +148,7 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
       // BUG-CLIENT-ID FIX: client_id and client_name are now real columns
       // (migration 20260620000001). Fall back to area_config for rows created before the migration.
       client_id: (row.client_id as string | null) ?? null,
-      client_name:
-        (row.client_name as string | null) ?? (cfg.clientName as string | null) ?? null,
+      client_name: (row.client_name as string | null) ?? (cfg.clientName as string | null) ?? null,
       location_name: (row.area_name as string | null) ?? null,
       colors_count: (cfg.colorsCount as number | null) ?? null,
       annotations: (cfg.annotations as Array<Record<string, unknown>> | null) ?? null,
@@ -210,7 +209,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // Solution: always null-out technique_id (the technique name is already persisted
     // in the `technique_name` text column, which is what all read paths use). The FK
     // column should only be set once the UI loads techniques from `personalization_techniques`.
-    const safeTechniqueId: null = null;
+    const safeTechniqueId = null;
     // BUG-CLIENT-ID FIX: persist client_id and client_name as top-level columns.
     const safeClientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
@@ -386,7 +385,7 @@ async function invokeMockupOnce(
 function isTransientError(msg: string): boolean {
   const lower = msg.toLowerCase();
   return (
-    lower.includes('esgotado') ||      // pt-BR timeout message
+    lower.includes('esgotado') || // pt-BR timeout message
     lower.includes('timeout') ||
     lower.includes('network') ||
     lower.includes('fetch') ||
@@ -413,7 +412,9 @@ async function invokeMockupForArea(
     const msg = err instanceof Error ? err.message : String(err);
     if (isTransientError(msg)) {
       logger.warn('[invokeMockupForArea] Transient error, retrying in 2 s:', msg);
-      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 2000);
+      });
       return invokeMockupOnce(params, area);
     }
     throw err;
