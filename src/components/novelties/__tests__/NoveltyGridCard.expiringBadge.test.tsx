@@ -51,6 +51,14 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
   };
 }
 
+// ISSUE-5 FIX (prod): o card deriva `fresh` AO RENDERIZAR via
+// getRecencyVariant(detected_at) === 'hot' (≤ 2 dias), NÃO de `is_highlighted`.
+// Como o badge de urgência só aparece quando `!fresh`, os cenários abaixo precisam
+// fixar `detected_at` explicitamente: antigo → não-fresh (badge aparece); recente →
+// fresh (badge suprimido pela prioridade "recém-chegado").
+const OLD_DETECTED = new Date(Date.now() - 12 * 86_400_000).toISOString(); // não-fresh
+const FRESH_DETECTED = new Date().toISOString(); // fresh (hot)
+
 const renderCard = (n: NoveltyWithDetails) =>
   render(
     <MemoryRouter>
@@ -63,14 +71,22 @@ const renderCard = (n: NoveltyWithDetails) =>
 describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   it('mostra "Últimos Nd" quando expiring_soon e não fresh', () => {
     const { getByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', days_remaining: 5, is_highlighted: false }),
+      makeNovelty({
+        status: 'expiring_soon',
+        days_remaining: 5,
+        detected_at: OLD_DETECTED, // não-fresh → badge de urgência aparece
+      }),
     );
     expect(getByTestId('novelty-expiring-badge').textContent).toContain('Últimos 5d');
   });
 
   it('mostra "Último dia" quando resta ≤ 1 dia', () => {
     const { getByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', days_remaining: 1, is_highlighted: false }),
+      makeNovelty({
+        status: 'expiring_soon',
+        days_remaining: 1,
+        detected_at: OLD_DETECTED, // não-fresh → badge de urgência aparece
+      }),
     );
     expect(getByTestId('novelty-expiring-badge').textContent).toContain('Último dia');
   });
@@ -82,7 +98,7 @@ describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
 
   it('NÃO mostra o badge quando fresh (recém-chegado tem prioridade)', () => {
     const { queryByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', is_highlighted: true }),
+      makeNovelty({ status: 'expiring_soon', detected_at: FRESH_DETECTED }),
     );
     expect(queryByTestId('novelty-expiring-badge')).toBeNull();
   });

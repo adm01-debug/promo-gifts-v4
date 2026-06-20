@@ -131,8 +131,7 @@ export function NoveltyProductGrid() {
   // `products` (total geral), gerando counts inflados que não refletiam a seleção.
   // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
-    const normSearch = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const normSearch = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
     const searchMatch = (p: (typeof products)[0]) =>
       !q ||
@@ -230,7 +229,14 @@ export function NoveltyProductGrid() {
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);
   }, [filteredProducts, visibleCount]);
-  const hasMore = visibleCount < filteredProducts.length;
+  // FIX (auditoria Novidades 2026-06-20, P1): a paginação por scroll (`visibleCount`)
+  // só existe na GRADE virtualizada. Nas views list/table TODOS os filteredProducts
+  // são renderizados de uma vez, mas nada avança `visibleCount` nessas views — então
+  // o sentinel "Role para ver mais N novidades" ficava preso permanentemente (ex.:
+  // "mais 617 novidades") mesmo com tudo já visível. Restringir `hasMore` ao modo
+  // grid corrige o sentinel e mantém o comportamento do VirtualizedNoveltyGrid
+  // (renderizado apenas no modo grid) inalterado.
+  const hasMore = viewMode === 'grid' && visibleCount < filteredProducts.length;
   // Handler estável para carregar mais itens quando o wrapper virtualizado
   // chega perto do fim do scroll interno.
   const handleLoadMore = useCallback(() => {
@@ -750,7 +756,9 @@ export function NoveltyProductGrid() {
                 Atualizando novidades...
               </>
             ) : (
-              <span className="text-xs">Role para ver mais {filteredProducts.length - visibleCount} novidades</span>
+              <span className="text-xs">
+                Role para ver mais {filteredProducts.length - visibleCount} novidades
+              </span>
             )}
           </div>
         </div>
