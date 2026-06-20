@@ -418,6 +418,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 118: 6 zero-violation rules (removed: no-unsafe-member-access many, method-signature-style many, destructuring-assignment many, jsx-child-element-spacing many, jsx-props-no-multi-spaces 1v, jsx-boolean-value 5v)
+      'constructor-super': 'error',
+      'react/jsx-uses-react': 'error',
+      'react/jsx-sort-default-props': 'error',
+      'react/sort-prop-types': 'error',
+      'react/prefer-exact-props': 'error',
+      'react/forbid-dom-props': 'error',
       // Batch 117: 6 zero-violation rules (removed: no-unassigned-vars was NEW ✓, no-useless-assignment many, preserve-caught-error 1v, no-redundant-type-constituents many, consistent-this 1v, role-supports-aria-props 1v, void-dom-elements-no-children 1v, prefer-tag-over-role many, no-aria-hidden-on-focusable 2v, no-unnecessary-boolean-literal-compare 2v, consistent-type-exports many, class-methods-use-this 6v, prefer-readonly 3v, no-onchange 4v, iframe-has-title 1v, use-unknown-in-catch-callback-variable many, no-unsafe-enum-comparison 1v)
       'no-unassigned-vars': 'error',
       'react/no-invalid-html-attribute': 'error',
