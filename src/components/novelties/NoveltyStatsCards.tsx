@@ -9,11 +9,10 @@ import {
 } from 'lucide-react';
 import { useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { logger } from '@/lib/logger';
-import { useRef } from 'react';
 
 /**
  * ISSUE-28 FIX: animated count-up que começa do valor ATUAL exibido (não de 0)
