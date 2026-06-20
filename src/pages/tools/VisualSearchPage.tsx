@@ -23,7 +23,6 @@ import {
   AlertCircle,
   History,
   Trash2,
-  TrendingUp,
   Mic,
   MicOff,
   Eye
@@ -72,7 +71,7 @@ interface VisualSearchResult {
     relevance: number;
     matchRationale?: string;
     stock?: number;
-    totalFound?: number;
+    colors?: string[];
   }>;
   searchTerms: string;
 }
@@ -182,16 +181,57 @@ export default function VisualSearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategoryIds, colorSelection]);
 
-  const saveToHistory = (imageUrl: string, productType: string) => {
-    const newItem: SearchHistoryItem = {
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      imageUrl,
-      productType
-    };
-    const updatedHistory = [newItem, ...history.slice(0, 9)];
-    setHistory(updatedHistory);
-    localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
+  // Histórico guarda apenas miniaturas (não o base64 full) — uma imagem de 5MB
+  // estourava a cota do localStorage e derrubava o fluxo de sucesso.
+  const createThumbnail = (dataUrl: string, max = 256): Promise<string> =>
+    new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(dataUrl);
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      } catch {
+        resolve(dataUrl);
+      }
+    });
+
+  const saveToHistory = async (imageUrl: string, productType: string) => {
+    try {
+      const thumb = await createThumbnail(imageUrl);
+      const newItem: SearchHistoryItem = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        imageUrl: thumb,
+        productType,
+      };
+      const updatedHistory = [newItem, ...history.slice(0, 9)];
+      setHistory(updatedHistory);
+      try {
+        localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
+      } catch {
+        // Cota estourada: mantém só os mais recentes e tenta de novo.
+        const trimmed = updatedHistory.slice(0, 3);
+        try {
+          localStorage.setItem('visual-search-history', JSON.stringify(trimmed));
+          setHistory(trimmed);
+        } catch {
+          /* desiste silenciosamente — histórico é best-effort */
+        }
+      }
+    } catch (e) {
+      logger.warn('Falha ao salvar histórico de busca visual', e);
+    }
   };
 
 
@@ -267,7 +307,7 @@ export default function VisualSearchPage() {
 
       if (error) throw error;
       setResults(data);
-      saveToHistory(base64, data.analysis.productType);
+      void saveToHistory(base64, data.analysis?.productType ?? 'Produto');
       toast.success('Análise concluída com sucesso!');
     } catch (rawErr: unknown) {
       logger.error('Visual search error:', rawErr);
@@ -343,7 +383,9 @@ export default function VisualSearchPage() {
       const { error } = await supabase
         .from('visual_search_feedback')
         .insert({
-          image_url: previewUrl,
+          // Não persistimos o data URL base64 (poderia ter MBs por linha);
+          // a análise + termos já identificam o contexto do feedback.
+          image_url: null,
           original_analysis: results.analysis,
           is_correct: isCorrect,
           feedback_notes: notes,
@@ -356,6 +398,7 @@ export default function VisualSearchPage() {
       toast.success(isCorrect ? 'Obrigado pelo feedback!' : 'Feedback registrado. Isso ajudará a melhorar a IA.');
     } catch (err) {
       logger.error('Feedback error:', err);
+      toast.error('Não foi possível registrar seu feedback agora.');
     }
   };
 
@@ -697,7 +740,7 @@ export default function VisualSearchPage() {
                     )}
 
                     <div className="flex flex-wrap gap-1.5">
-                      {results.analysis.keywords.map((kw, i) => (
+                      {(results.analysis.keywords ?? []).map((kw, i) => (
                         <motion.div
                           key={`${kw}-${i}`}
                           initial={{ opacity: 0, scale: 0.9 }}
@@ -1154,12 +1197,6 @@ export default function VisualSearchPage() {
                               </div>
                             )}
 
-                            {product.totalFound && product.totalFound > 10 && (
-                              <div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                                <TrendingUp className="h-3 w-3" /> Tendência: Encontrado {product.totalFound} vezes esta semana
-                              </div>
-                            )}
-                            
                             <div className="flex items-center justify-between border-t border-border/50 pt-4 mt-auto">
                               <div className="flex flex-col flex-1 gap-1">
                                 <div className="flex items-center justify-between pr-4">
