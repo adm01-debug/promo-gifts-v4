@@ -5203,7 +5203,6 @@ export type Database = {
           client_response: string | null
           client_response_at: string | null
           client_response_notes: string | null
-          contact_id: string | null
           conversion_notes: string | null
           converted_at: string | null
           converted_to_order_id: string | null
@@ -5263,7 +5262,6 @@ export type Database = {
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
-          contact_id?: string | null
           conversion_notes?: string | null
           converted_at?: string | null
           converted_to_order_id?: string | null
@@ -5323,7 +5321,6 @@ export type Database = {
           client_response?: string | null
           client_response_at?: string | null
           client_response_notes?: string | null
-          contact_id?: string | null
           conversion_notes?: string | null
           converted_at?: string | null
           converted_to_order_id?: string | null
@@ -7831,10 +7828,6 @@ export type Database = {
       reset_optimization_queue: {
         Args: { _only_running?: boolean }
         Returns: number
-      }
-      restore_favorite_from_trash: {
-        Args: { _trash_id: string; _user_id: string; _fallback_list_id?: string | null }
-        Returns: Json
       }
       retry_failed_webhook_deliveries: { Args: never; Returns: Json }
       revoke_all_user_tokens: { Args: { _user_id: string }; Returns: undefined }

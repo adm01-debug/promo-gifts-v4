@@ -36,7 +36,19 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
     (data: MockupDraftData) => {
       try {
         const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
-        localStorage.setItem(key, JSON.stringify(data));
+        // BUG-DRAFT-LOCAL-STORAGE-QUOTA FIX: strip data URL logos before writing to
+        // localStorage — a single 5MB upload encodes to ~7MB base64 which easily
+        // blows the 5-10MB per-origin quota and causes a silent DOMException.
+        // Only keep http(s) URLs (already-uploaded logos); the loadDraft
+        // re-hydration path restores data URLs from the backend when available.
+        const safeData: MockupDraftData = {
+          ...data,
+          personalizationAreas: data.personalizationAreas.map((a) => ({
+            ...a,
+            logoPreview: a.logoPreview?.startsWith('http') ? a.logoPreview : null,
+          })),
+        };
+        localStorage.setItem(key, JSON.stringify(safeData));
       } catch (err) {
         logger.error('Erro ao salvar no localStorage:', err);
       }
@@ -279,11 +291,12 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
     if (user) {
       try {
-        await supabase
+        const { error: deleteError } = await supabase
           .from('mockup_drafts')
           .delete()
           .eq('user_id', user.id)
           .eq('draft_key', draftKey);
+        if (deleteError) throw deleteError;
       } catch (err) {
         logger.error('Erro ao limpar rascunho do backend:', err);
       }

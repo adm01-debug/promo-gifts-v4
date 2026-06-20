@@ -12,7 +12,7 @@
  *    estão implementadas aqui com a mesma arquitetura de variante/cor:
  *    Favoritar, Comparar, Coleção, Share, Orçamento, Carrinho, QuickView
  */
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect, useId } from 'react';
 import { Package, Building2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { NoveltyBadge } from './NoveltyBadge';
@@ -67,6 +67,7 @@ interface ProductListItemProps {
   activeColorFilter?: ActiveColorFilter | null;
   isNovelty?: boolean;
   noveltyDaysRemaining?: number;
+  noveltyDaysElapsed?: number;
   onStatusClick?: (type: string, value?: string | number) => void;
   /** Carrega imagem com alta prioridade (LCP) — true para itens above-the-fold */
   priority?: boolean;
@@ -87,10 +88,15 @@ export const ProductListItem = memo(
     activeColorFilter,
     isNovelty = false,
     noveltyDaysRemaining,
+    noveltyDaysElapsed,
     onStatusClick,
     priority = false,
   }: ProductListItemProps) => {
     const navigate = useNavigate();
+    const uid = useId();
+    const stockLabelId = `stock-label-${uid}`;
+    const colorsLabelId = `colors-label-${uid}`;
+    const priceLabelId = `price-label-${uid}`;
     const detectedIsKit = isProductKit(product);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
@@ -103,6 +109,7 @@ export const ProductListItem = memo(
       | undefined
     >(undefined);
     const [quickViewOpen, setQuickViewOpen] = useState(false);
+    const quickViewTriggerRef = useRef<HTMLDivElement | null>(null);
     const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const [shareVariant, setShareVariant] = useState<{
       variantName?: string | null;
@@ -367,7 +374,7 @@ export const ProductListItem = memo(
       <>
         <article
           className={cn(
-            'group relative flex h-[72px] items-center gap-3 px-3 py-2 sm:h-[88px] sm:gap-4 sm:px-4 sm:py-2.5',
+            'group relative flex min-h-[72px] items-start gap-2 px-3 py-2 sm:min-h-[96px] sm:gap-2.5 sm:px-4 sm:py-2.5 md:items-center',
             'cursor-pointer rounded-xl bg-card',
             'transition-all duration-200 ease-out',
             'touch-manipulation active:scale-[0.997]',
@@ -387,19 +394,42 @@ export const ProductListItem = memo(
         >
           {/* Thumbnail — compact square */}
           <div
-            className="group/thumb relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/30 bg-muted/30 sm:h-[72px] sm:w-[72px]"
+            ref={quickViewTriggerRef}
+            className="group/thumb relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary sm:h-[72px] sm:w-[72px]"
             role="button"
             tabIndex={0}
             aria-label={`Visualização rápida de ${product.name}`}
+            aria-haspopup="dialog"
+            aria-expanded={quickViewOpen}
             data-testid="product-list-item-thumb"
+            data-product-id={product.id}
+            style={{ touchAction: 'manipulation' }}
             onClick={(e) => {
               e.stopPropagation();
+              if (
+                actionBusyRef.current ||
+                variantPickerOpen ||
+                collectionModalOpen ||
+                shareDialogOpen ||
+                quickViewOpen
+              ) {
+                return;
+              }
               setQuickViewOpen(true);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
+                if (
+                  actionBusyRef.current ||
+                  variantPickerOpen ||
+                  collectionModalOpen ||
+                  shareDialogOpen ||
+                  quickViewOpen
+                ) {
+                  return;
+                }
                 setQuickViewOpen(true);
               }
             }}
@@ -480,7 +510,7 @@ export const ProductListItem = memo(
           </div>
 
           {/* Info — main content block */}
-          <div className="min-w-0 flex-1 py-0.5 md:flex-[0_1_42%]">
+          <div className="min-w-0 flex-1 py-0.5 md:max-w-[34%] md:flex-[0_1_34%]">
             {/* Top meta row */}
             <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
               {product.featured && (
@@ -493,6 +523,7 @@ export const ProductListItem = memo(
               {isNovelty && noveltyDaysRemaining !== undefined && (
                 <NoveltyBadge
                   daysRemaining={noveltyDaysRemaining}
+                  daysElapsed={noveltyDaysElapsed}
                   size="sm"
                   onClick={() => handleStatusClick('novelty')}
                 />
@@ -541,7 +572,7 @@ export const ProductListItem = memo(
             {/* Product name */}
             <h3
               data-testid="product-list-name"
-              className="line-clamp-1 font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
+              className="line-clamp-2 break-words font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
             >
               {product.name}
             </h3>
@@ -556,8 +587,8 @@ export const ProductListItem = memo(
               </Badge>
             )}
 
-            {/* SKU + Stock row — SKU em destaque, antes do estoque */}
-            <div className="mt-0.5 flex items-center gap-2">
+            {/* SKU + Stock row (estoque inline só no mobile; em md+ vira coluna própria) */}
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               {product.sku && (
                 <span className="rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide text-primary sm:text-xs">
                   {product.sku}
@@ -565,35 +596,101 @@ export const ProductListItem = memo(
               )}
               <span
                 className={cn(
-                  'flex items-center gap-1 text-[10px] font-medium sm:text-xs',
+                  'flex items-center gap-1 text-[10px] font-medium md:hidden',
                   getStockColor(displayStatus),
                 )}
+                aria-label={`Estoque: ${displayStock.toLocaleString('pt-BR')} unidades`}
               >
-                <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
+                <Package className="h-2.5 w-2.5" aria-hidden="true" />
+                {displayStock.toLocaleString('pt-BR')} Unid
+
               </span>
             </div>
           </div>
 
-          {/* Center — full color swatches, sempre iniciam na mesma posição (esquerda) */}
-          <div className="hidden min-w-0 flex-1 items-center justify-start pl-4 pr-2 md:flex">
-            <ProductColorSwatches
-              colors={product.colors}
-              max={product.colors?.length || 0}
-              size="sm"
-              hideWhenEmpty
-              className="flex-wrap justify-start"
-              selectedName={activeColorName}
-              onSelect={(c) => {
-                setUserSelectedColorName((prev) =>
-                  prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
-                );
-              }}
-            />
+          {/* Estoque column — entre Produto e Cores (md+) */}
+          <div
+            role="group"
+            aria-labelledby={stockLabelId}
+            className="-ml-1 hidden shrink-0 flex-col items-start justify-center md:flex md:w-[140px]"
+          >
+            <span
+              id={stockLabelId}
+              className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
+              Estoque
+            </span>
+            <span
+              className={cn(
+                'flex items-center gap-1 text-[11px] font-medium sm:text-xs',
+                getStockColor(displayStatus),
+              )}
+            >
+              <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
+              <span className="whitespace-nowrap">
+                {displayStock.toLocaleString('pt-BR')} Unid
+              </span>
+
+            </span>
           </div>
 
+          {/* Cores column — todas as cores, sem clipping (md+) */}
+          <div
+            role="group"
+            aria-labelledby={colorsLabelId}
+            className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-1 pr-2 md:flex"
+          >
+            <span
+              id={colorsLabelId}
+              className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
+              Cores
+            </span>
+            {/*
+              Cap visual: até 3 linhas em md (telas estreitas), 2 linhas em lg+.
+              Respiro de 6px acomoda ring-offset-1 + shadow 12px do swatch selecionado
+              sem cortar o glow.
+            */}
+            <div
+              className="w-full overflow-hidden md:[--swatch-rows:3] lg:[--swatch-rows:2]"
+              style={{
+                maxHeight:
+                  'calc(var(--swatch-size-sm) * var(--swatch-rows, 2) + var(--swatch-gap-y) * (var(--swatch-rows, 2) - 1) + var(--swatch-container-py) * 2 + 6px)',
+              }}
+            >
+              <ProductColorSwatches
+                colors={product.colors}
+                max={product.colors?.length || 0}
+                size="sm"
+                wrap
+                hideWhenEmpty
+                className="justify-start"
+                selectedName={activeColorName}
+                onSelect={(c) => {
+                  setUserSelectedColorName((prev) =>
+                    prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
+                  );
+                }}
+                onClear={() => setUserSelectedColorName(null)}
+              />
+
+            </div>
+          </div>
+
+
+
           {/* Price column — right-aligned, always visible */}
-          <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
+          <div
+            role="group"
+            aria-labelledby={priceLabelId}
+            className="flex min-w-[90px] shrink-0 flex-col items-end text-right sm:min-w-[110px]"
+          >
+            <span
+              id={priceLabelId}
+              className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+            >
+              A partir de
+            </span>
             <div className="flex items-center justify-end gap-1.5">
               <PriceFreshnessBadge
                 priceUpdatedAt={product.priceUpdatedAt}
@@ -650,7 +747,14 @@ export const ProductListItem = memo(
         <ProductQuickView
           product={product}
           open={quickViewOpen}
-          onOpenChange={setQuickViewOpen}
+          onOpenChange={(open) => {
+            setQuickViewOpen(open);
+            if (!open) {
+              requestAnimationFrame(() => {
+                quickViewTriggerRef.current?.focus({ preventScroll: true });
+              });
+            }
+          }}
           isFavorited={isFavorited}
           onToggleFavorite={onToggleFavorite}
           isInCompare={isInCompare}

@@ -48,8 +48,11 @@ export interface MaterialComplete {
 
 // Service para chamadas à API de materiais
 class MaterialService {
-  // Lazy getter: SUPABASE_URL is only read when a method is actually called,
-  // not at module initialization time. Avoids mock failures in unit tests.
+  // GAP (auditoria 200-commits): resolvido sob demanda (lazy), NÃO no construtor.
+  // Ler SUPABASE_URL em tempo de import fazia `export const materialService =
+  // new MaterialService()` acessar o export no module-load, quebrando todo teste
+  // que mocka o client sem SUPABASE_URL. O getter preserva a URL canônica (com
+  // fallback) e remove o efeito colateral de import.
   private get baseUrl(): string {
     return `${SUPABASE_URL}/functions/v1/materials-api`;
   }

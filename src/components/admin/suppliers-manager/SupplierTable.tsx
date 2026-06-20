@@ -149,7 +149,7 @@ export function SupplierTable({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Carregando"
+                        aria-label="Excluir fornecedor"
                         className="h-7 w-7 text-destructive hover:text-destructive"
                         data-testid="admin-delete-btn"
                         onClick={(e) => {

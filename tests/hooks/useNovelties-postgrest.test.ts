@@ -1,9 +1,13 @@
 /**
- * Verifies the `invokeExternalDb → supabase.from()` migration of
- * `useNoveltiesWithDetails` preserves the exact PostgREST query contract:
- * the products table alias (products → v_products_public), the active +
- * created_at cutoff filters, descending created_at ordering and the limit
- * mapped to `.range(0, limit-1)`.
+ * Verifies the PostgREST query contract of `useNoveltiesWithDetails`.
+ *
+ * FONTE DA VERDADE = pipeline DB (auditoria Novidades 2026-06-18, P0): a
+ * pertinência de "novidade" deixou de ser uma janela `created_at + 30d` e passou
+ * a ser as flags da pipeline — `is_new = true` E `novelty_expires_at > now` —
+ * ordenadas por `novelty_detected_at` desc. Este contrato exercita justamente
+ * essa query (não mais o cutoff por `created_at`), além dos filtros de qualidade
+ * (is_active, is_stockout=false, imagem não-nula, sale_price>0) e do limite
+ * mapeado para `.range(0, limit-1)`.
  *
  * The hook queries via `untypedFrom(resolveTable(table))` (the supabase-direct
  * pattern), so we mock `@/lib/supabase-untyped` and record the builder chain.
@@ -64,7 +68,7 @@ beforeEach(() => {
 });
 
 describe('useNoveltiesWithDetails — PostgREST contract', () => {
-  it('queries products (→ v_products_public) with active + created_at cutoff, descending order and limit', async () => {
+  it('queries products (→ v_products_public) via pipeline flags (is_new + novelty_expires_at>now), detection-desc order and limit', async () => {
     const { result } = renderHook(() => useNoveltiesWithDetails({ limit: 25 }), {
       wrapper: createWrapper(),
     });
@@ -73,18 +77,34 @@ describe('useNoveltiesWithDetails — PostgREST contract', () => {
 
     // products resolves to the public view
     expect(recorded.map((r) => r.table)).toContain('v_products_public');
-    // is_active filter
-    expect(callArgs('v_products_public', 'eq')).toContainEqual(['is_active', true]);
-    // created_at cutoff via .gte(column, ISO date)
-    const gteArgs = callArgs('v_products_public', 'gte')[0];
-    expect(gteArgs[0]).toBe('created_at');
-    expect(String(gteArgs[1])).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    // descending created_at ordering
+
+    // pertinência da pipeline + filtros de qualidade via .eq(...)
+    const eqArgs = callArgs('v_products_public', 'eq');
+    expect(eqArgs).toContainEqual(['is_active', true]);
+    expect(eqArgs).toContainEqual(['is_new', true]);
+    expect(eqArgs).toContainEqual(['is_stockout', false]);
+
+    // qualidade: imagem não-nula e preço > 0
+    expect(callArgs('v_products_public', 'not')).toContainEqual(['primary_image_url', 'is', null]);
+    const gtArgs = callArgs('v_products_public', 'gt');
+    expect(gtArgs).toContainEqual(['sale_price', 0]);
+
+    // janela REAL da pipeline: novelty_expires_at > now (ISO), não mais created_at
+    const expiresGt = gtArgs.find((a) => a[0] === 'novelty_expires_at');
+    expect(expiresGt).toBeDefined();
+    expect(String((expiresGt ?? [])[1])).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+    // ordenação: detecção desc + id asc (paginação estável)
     expect(callArgs('v_products_public', 'order')[0]).toEqual([
-      'created_at',
+      'novelty_detected_at',
       { ascending: false },
     ]);
+    expect(callArgs('v_products_public', 'order')[1]).toEqual(['id', { ascending: true }]);
+
     // limit 25 → range(0, 24)
     expect(callArgs('v_products_public', 'range')[0]).toEqual([0, 24]);
+
+    // contrato antigo (cutoff por created_at) foi REMOVIDO de propósito
+    expect(callArgs('v_products_public', 'gte')).toHaveLength(0);
   });
 });

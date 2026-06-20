@@ -418,6 +418,29 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 119: 3 zero-violation rules (removed: jsx-newline many, forbid-component-props many, jsx-max-props-per-line many, jsx-closing-tag-location 3v)
+      'react/jsx-equals-spacing': 'error',
+      'react/jsx-tag-spacing': 'error',
+      'react/forbid-elements': 'error',
+      // Batch 118: 6 zero-violation rules (removed: no-unsafe-member-access many, method-signature-style many, destructuring-assignment many, jsx-child-element-spacing many, jsx-props-no-multi-spaces 1v, jsx-boolean-value 5v)
+      'constructor-super': 'error',
+      'react/jsx-uses-react': 'error',
+      'react/jsx-sort-default-props': 'error',
+      'react/sort-prop-types': 'error',
+      'react/prefer-exact-props': 'error',
+      'react/forbid-dom-props': 'error',
+      // Batch 117: 6 zero-violation rules (removed: no-unassigned-vars was NEW ✓, no-useless-assignment many, preserve-caught-error 1v, no-redundant-type-constituents many, consistent-this 1v, role-supports-aria-props 1v, void-dom-elements-no-children 1v, prefer-tag-over-role many, no-aria-hidden-on-focusable 2v, no-unnecessary-boolean-literal-compare 2v, consistent-type-exports many, class-methods-use-this 6v, prefer-readonly 3v, no-onchange 4v, iframe-has-title 1v, use-unknown-in-catch-callback-variable many, no-unsafe-enum-comparison 1v)
+      'no-unassigned-vars': 'error',
+      'react/no-invalid-html-attribute': 'error',
+      'react/forward-ref-uses-ref': 'error',
+      'react/forbid-foreign-prop-types': 'error',
+      'react/jsx-filename-extension': ['error', { extensions: ['.tsx', '.jsx'] }],
+      'react/jsx-uses-vars': 'error',
+      // Batch 116: 4 zero-violation rules (removed: multiline-comment-style many, new-cap many, no-inline-comments many, no-mixed-operators many, prefer-named-capture-group many, no-continue many, no-negated-condition many, no-underscore-dangle many, sort-vars many, spaced-comment 1v, jsx-fragments many, no-noninteractive-element-interactions many, no-noninteractive-element-to-interactive-role many, etc.)
+      'block-scoped-var': 'error',
+      'func-name-matching': 'error',
+      'react/boolean-prop-naming': 'error',
+      'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error',
       // Batch 115: 5 zero-violation rules (removed: parameter-properties many, prefer-function-type many, prefer-object-has-own many, no-unused-prop-types many, require-atomic-updates many, sort-type-constituents many, no-loop-func 1v, require-optimization 1v, vars-on-top 1v)
       '@typescript-eslint/default-param-last': 'error',
       'react/require-render-return': 'error',

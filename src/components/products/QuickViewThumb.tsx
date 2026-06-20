@@ -17,7 +17,7 @@
 import { useState } from 'react';
 import { ProductQuickView } from './ProductQuickView';
 import { useProduct } from '@/hooks/products/useProducts';
-import { useFavorites } from '@/hooks/favorites/useFavorites';
+import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/hooks/products';
@@ -52,7 +52,8 @@ export function QuickViewThumb({
   const { data: product } = useProduct(open ? productId : '');
 
   // Estado global: paridade com o ProductCard do catálogo.
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const isInCompare = useComparisonStore((s) => s.isInCompare);
   const toggleCompare = useComparisonStore((s) => s.toggleCompare);
 

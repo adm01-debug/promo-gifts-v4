@@ -98,13 +98,47 @@ Deno.serve(async (req) => {
       return totalCleaned;
     }
 
-    // 1) Limpar novidades expiradas no banco LOCAL via RPC legado (best-effort)
+    // 1) Sincronizar product_novelties: desativar registros expirados antes de limpar products.
+    //    BUG-FIX: o passo anterior usava a RPC cleanup_expired_novelties (best-effort DELETE)
+    //    que poderia falhar silenciosamente. Sem este passo, produtos que expiram na janela
+    //    03:00–04:05 ficavam com product_novelties.is_active=true enquanto products.is_new
+    //    já era false (passo 2 abaixo), causando reativação indevida pela
+    //    fn_reactivate_valid_novelties (Frente 3) na hora seguinte — ghost novelty de ~22h.
     try {
-      const { data } = await supabase.rpc('cleanup_expired_novelties');
-      results.local_novelties_rpc = data || 0;
-      console.log(`✅ Novidades locais via RPC: ${results.local_novelties_rpc}`);
-    } catch {
-      console.log('ℹ️ cleanup_expired_novelties RPC não disponível (ok se não existir)');
+      let pnCleaned = 0;
+      while (true) {
+        const { data: expiredPn, error: pnSelectErr } = await supabase
+          .from('product_novelties')
+          .select('id')
+          .eq('is_active', true)
+          .not('expires_at', 'is', null)
+          .lt('expires_at', now)
+          .limit(PAGE);
+        if (pnSelectErr) {
+          console.log('⚠️ product_novelties select error:', safeErrorFields(pnSelectErr));
+          break;
+        }
+        if (!expiredPn || expiredPn.length === 0) break;
+        const pnIds = (expiredPn as { id: string }[]).map((r) => r.id);
+        for (let i = 0; i < pnIds.length; i += UPDATE_BATCH) {
+          const batch = pnIds.slice(i, i + UPDATE_BATCH);
+          const { error: pnUpdateErr } = await supabase
+            .from('product_novelties')
+            .update({ is_active: false, updated_at: now })
+            .in('id', batch);
+          if (pnUpdateErr) {
+            console.error('❌ Erro desativando product_novelties:', safeErrorFields(pnUpdateErr));
+          } else {
+            pnCleaned += batch.length;
+          }
+        }
+        if (expiredPn.length < PAGE) break;
+      }
+      results.product_novelties_synced = pnCleaned;
+      console.log(`✅ product_novelties sincronizados: ${pnCleaned} registros`);
+    } catch (err) {
+      console.error('❌ Erro sincronizando product_novelties:', safeErrorFields(err));
+      results.product_novelties_synced = 0;
     }
 
     // 2) Limpar is_new expirado no banco LOCAL via novelty_expires_at

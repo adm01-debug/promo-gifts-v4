@@ -114,6 +114,10 @@ export function getActionHistory(cartId: string): CartAction[] {
   return actionHistoryMap.get(cartId) || [];
 }
 
+export function clearActionHistory(cartId: string) {
+  actionHistoryMap.delete(cartId);
+}
+
 // ============================================
 // SKELETON LOADER
 // ============================================
@@ -143,11 +147,11 @@ export function SuggestionSkeleton() {
 // FOLLOW-UP TIMER
 // ============================================
 
-export function FollowUpTimer({ createdAt }: { createdAt: string }) {
+export function FollowUpTimer({ createdAt, status }: { createdAt: string; status?: string }) {
   const days = differenceInDays(new Date(), new Date(createdAt));
   const hours = differenceInHours(new Date(), new Date(createdAt));
 
-  if (days < 1) return null;
+  if (days < 1 || status === 'pronto_orcamento') return null;
 
   const isUrgent = days >= 3;
   const isWarning = days >= 2;
@@ -224,10 +228,12 @@ export function SmartSuggestions({
     }
 
     if (allProducts.length > 0 && cart.items.length > 0) {
+      // O(n+m): build a Map once instead of O(n*m) repeated .find() calls
+      const productMap = new Map(allProducts.map((p) => [p.id, p]));
       const cartCategoryNames = new Set(
         cart.items
           .map((i) => {
-            const prod = allProducts.find((p) => p.id === i.product_id);
+            const prod = productMap.get(i.product_id);
             return prod?.category_name || prod?.category?.name;
           })
           .filter(Boolean),

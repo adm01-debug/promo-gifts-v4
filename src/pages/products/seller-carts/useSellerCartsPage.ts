@@ -45,6 +45,7 @@ export function useSellerCartsPage() {
     updateItemNotes,
     updateItemSortOrder,
     updateCartNotes,
+    flushCartNotes,
     updateCartStatus,
     duplicateCart,
     moveItemToCart,
@@ -68,6 +69,9 @@ export function useSellerCartsPage() {
   const [cartNotesOpen, setCartNotesOpen] = useState(false);
   const [localCartNotes, setLocalCartNotes] = useState('');
   const debounceNotesRef = useRef<ReturnType<typeof setTimeout>>();
+  // Always mirrors localCartNotes without stale-closure risk in effects/timers.
+  const localCartNotesRef = useRef(localCartNotes);
+  localCartNotesRef.current = localCartNotes;
 
   const stockMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -79,13 +83,13 @@ export function useSellerCartsPage() {
 
   const weightVolume = useMemo(() => {
     if (!activeCart) return null;
+    // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
+    const dimMap = new Map(allProducts.map((p) => [p.id, p]));
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
-      const product = allProducts.find((p: { id: string }) => p.id === item.product_id) as
-        | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
-        | undefined;
+      const product = dimMap.get(item.product_id);
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
@@ -130,19 +134,54 @@ export function useSellerCartsPage() {
     navigate('/carrinhos', { replace: true });
   }, [routeCartId, carts, isLoading, setActiveCartId, navigate]);
 
+  // Tracks previous cartId so we can flush notes to the OLD cart when switching.
+  const prevCartIdRef = useRef<string | undefined>(undefined);
+
+  // On cart switch: flush pending debounce to PREVIOUS cart, then reset local state.
+  // Early-return when notes-only change (same cart id) avoids double-flush with the
+  // server-sync effect below. activeCart?.notes is in the dep array to satisfy
+  // exhaustive-deps; the guard ensures the body only runs on actual cart switch.
   useEffect(() => {
-    if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
+    if (activeCart?.id === prevCartIdRef.current) return;
+    if (debounceNotesRef.current && prevCartIdRef.current) {
+      clearTimeout(debounceNotesRef.current);
+      debounceNotesRef.current = undefined;
+      updateCartNotes(prevCartIdRef.current, localCartNotesRef.current);
+    }
+    prevCartIdRef.current = activeCart?.id;
     setLocalCartNotes(activeCart?.notes ?? '');
     setCartNotesOpen(!!activeCart?.notes);
-  }, [activeCart?.id, activeCart?.notes]);
+  }, [activeCart?.id, activeCart?.notes, updateCartNotes]);
 
-  // FIX: cleanup debounceNotesRef no unmount — sem isso, o timer dispara
-  // e chama updateCartNotes após a navegação para fora da página.
+  // On server-side notes update: sync local state only when user is not typing
+  // (debounce pending = user is mid-edit; overwriting would discard in-flight keystrokes).
+  useEffect(() => {
+    if (!debounceNotesRef.current) {
+      setLocalCartNotes(activeCart?.notes ?? '');
+    }
+  }, [activeCart?.notes]);
+
+  // Cleanup debounceNotesRef no unmount — evita disparo após navegar para outra página.
   useEffect(() => {
     return () => {
       if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
     };
   }, []);
+
+  // Flush do debounce de notas quando o usuário fecha/recarrega a aba (beforeunload).
+  // Sem isso, notas editadas nos últimos 800ms antes do fechamento são perdidas.
+  const activeCartIdForFlush = activeCart?.id;
+  useEffect(() => {
+    const flush = () => {
+      if (debounceNotesRef.current && activeCartIdForFlush) {
+        clearTimeout(debounceNotesRef.current);
+        debounceNotesRef.current = undefined;
+        updateCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, [activeCartIdForFlush, updateCartNotes]);
 
   const handleCartNotesChange = (value: string) => {
     setLocalCartNotes(value);
@@ -253,10 +292,15 @@ export function useSellerCartsPage() {
     [duplicateItemToCart, activeCart, carts],
   );
 
-  const handleClearCart = useCallback(() => {
+  const handleClearCart = useCallback(async () => {
     if (!activeCart) return;
     const itemsToRestore = [...activeCart.items];
-    clearCart(activeCart.id);
+    try {
+      await clearCart(activeCart.id);
+    } catch {
+      toast.error('Erro ao limpar carrinho. Tente novamente.');
+      return;
+    }
     recordAction(activeCart.id, { type: 'clear', itemName: 'todos os itens', time: new Date() });
 
     showUndoToast({
@@ -327,6 +371,12 @@ export function useSellerCartsPage() {
   const [confirmClearCart, setConfirmClearCart] = useState(false);
 
   const handleGenerateQuote = useCallback((cart: SellerCart) => {
+    if (cart.items.length === 0) {
+      toast.error('Carrinho vazio', {
+        description: 'Adicione ao menos um produto antes de gerar o orçamento.',
+      });
+      return;
+    }
     setConfirmQuoteCart(cart);
   }, []);
 
@@ -338,16 +388,22 @@ export function useSellerCartsPage() {
     // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
     // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const ids = [...new Set(cart.items.map((i) => i.product_id))].filter((id) => uuidRe.test(id));
-    let validIds = new Set<string>();
-    if (ids.length > 0) {
+    const allIds = [...new Set(cart.items.map((i) => i.product_id))];
+    const uuidIds = allIds.filter((id) => uuidRe.test(id));
+    // Non-UUID IDs (legacy) bypass server validation — fail-open.
+    const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
+    let validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
+    if (uuidIds.length > 0) {
       try {
-        const { data, error } = await supabase.from('products').select('id').in('id', ids);
-        validIds = error
-          ? new Set(cart.items.map((i) => i.product_id.toLowerCase())) // fail-open: nao bloqueia em erro
-          : new Set((data ?? []).map((row) => String(row.id).toLowerCase()));
+        const { data, error } = await supabase.from('products').select('id').in('id', uuidIds);
+        if (error) {
+          // fail-open: don't block quote on DB error
+          uuidIds.forEach((id) => validIds.add(id.toLowerCase()));
+        } else {
+          (data ?? []).forEach((row) => validIds.add(String(row.id).toLowerCase()));
+        }
       } catch {
-        validIds = new Set(cart.items.map((i) => i.product_id.toLowerCase())); // fail-open
+        uuidIds.forEach((id) => validIds.add(id.toLowerCase())); // fail-open
       }
     }
     const validItems = cart.items.filter((i) => validIds.has(i.product_id.toLowerCase()));
@@ -365,6 +421,13 @@ export function useSellerCartsPage() {
       });
     }
     setConfirmQuoteCart(null);
+    // Flush das notas em debounce antes de navegar — evita perda de notas editadas
+    // nos últimos 800ms (o cleanup do unmount cancela o timer sem disparar).
+    if (debounceNotesRef.current && activeCartIdForFlush) {
+      clearTimeout(debounceNotesRef.current);
+      debounceNotesRef.current = undefined;
+      await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+    }
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
     // consome número de orçamento — o orçamento só se torna real quando o vendedor
@@ -387,7 +450,7 @@ export function useSellerCartsPage() {
         })),
       },
     });
-  }, [confirmQuoteCart, navigate]);
+  }, [confirmQuoteCart, navigate, activeCartIdForFlush, flushCartNotes]);
 
   const otherCarts = useMemo(
     () => carts.filter((c) => c.id !== activeCartId),
@@ -398,12 +461,6 @@ export function useSellerCartsPage() {
     ? activeCart.items.reduce((s, i) => s + i.product_price * i.quantity, 0)
     : 0;
   const cartTotalQty = activeCart ? activeCart.items.reduce((s, i) => s + i.quantity, 0) : 0;
-
-  const companyAccentColor = useMemo(() => {
-    if (!activeCart) return null;
-    const cart = activeCart as SellerCart & { company_primary_color?: string };
-    return cart.company_primary_color || null;
-  }, [activeCart]);
 
   return {
     navigate,
@@ -451,7 +508,6 @@ export function useSellerCartsPage() {
     cartAge,
     cartSubtotal,
     cartTotalQty,
-    companyAccentColor,
     isLoadingProducts,
     exportCartToCSV,
     exportCartToPDF,

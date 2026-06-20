@@ -2,7 +2,7 @@
  * Hook for managing product supplier sources via external DB bridge.
  * FIX-BRIDGE-01 (2026-06-01): migrated from supabase.functions.invoke to dbInvoke.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { dbInvoke } from '@/lib/db/postgrest';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
@@ -80,12 +80,16 @@ async function bridgeInvoke(body: Record<string, unknown>) {
 export function useProductSupplierSources(productId?: string) {
   const [sources, setSources] = useState<SupplierSource[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Supersede guard: when productId changes mid-flight, a stale response for the
+  // previous product must not overwrite the current one (wrong-entity race).
+  const fetchTokenRef = useRef(0);
 
   const fetchSources = useCallback(async () => {
     if (!productId) {
       setSources([]);
       return;
     }
+    const token = ++fetchTokenRef.current;
     setIsLoading(true);
     try {
       const result = await bridgeInvoke({
@@ -100,11 +104,11 @@ export function useProductSupplierSources(productId?: string) {
         if (a.is_preferred !== b.is_preferred) return a.is_preferred ? -1 : 1;
         return (a.sale_price ?? 0) - (b.sale_price ?? 0);
       });
-      setSources(records);
+      if (token === fetchTokenRef.current) setSources(records);
     } catch (err: unknown) {
       logger.error('Error fetching supplier sources:', err);
     } finally {
-      setIsLoading(false);
+      if (token === fetchTokenRef.current) setIsLoading(false);
     }
   }, [productId]);
 

@@ -27,6 +27,8 @@
     "lint:check": "eslint src --max-warnings=0",
     "lint:baseline": "node scripts/check-eslint-baseline.mjs",
     "lint:baseline:update": "node scripts/eslint-baseline-generate.mjs",
+    "lint:any": "node scripts/check-any-type-baseline.mjs",
+    "lint:any:update": "node scripts/update-any-type-baseline.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
     "qa:lint": "eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
@@ -120,7 +122,8 @@
     "test:replenishment:e2e": "npx playwright test e2e/replenishment/",
     "test:replenishment:dashboard": "node scripts/replenishment-ci/metrics-dashboard.mjs",
     "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts",
-    "build:verify": "npm run typecheck && npm run lint:baseline && npm run build"
+    "build:verify": "npm run typecheck && npm run lint:baseline && npm run build",
+    "test:e2e:card-parity": "playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts --project=chromium-authed --reporter=list"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

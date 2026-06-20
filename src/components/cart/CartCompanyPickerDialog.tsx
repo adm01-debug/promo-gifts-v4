@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { selectCrm, searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import type { CreateCartInput } from '@/hooks/products';
 
 interface CompanyItem {
@@ -33,8 +34,8 @@ interface CompanyItem {
   logo_url: string | null;
 }
 
-const RECENT_KEY = 'cart-companies-recent';
-const FAV_KEY = 'cart-companies-favorites';
+const RECENT_KEY_BASE = 'cart-companies-recent';
+const FAV_KEY_BASE = 'cart-companies-favorites';
 const MAX_RECENT = 5;
 
 function readList(key: string): CompanyItem[] {
@@ -67,15 +68,24 @@ export function CartCompanyPickerDialog({
   const [tab, setTab] = useState<'recent' | 'favorites' | 'search'>('recent');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [recents, setRecents] = useState<CompanyItem[]>(() => readList(RECENT_KEY));
-  const [favorites, setFavorites] = useState<CompanyItem[]>(() => readList(FAV_KEY));
+  const [recents, setRecents] = useState<CompanyItem[]>([]);
+  const [favorites, setFavorites] = useState<CompanyItem[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { createCart, canCreateCart } = useSellerCartContext();
+  const { user } = useAuth();
+  const uid = user?.id ?? '';
+  const recentKey = uid ? `${RECENT_KEY_BASE}:${uid}` : RECENT_KEY_BASE;
+  const favKey = uid ? `${FAV_KEY_BASE}:${uid}` : FAV_KEY_BASE;
 
   useEffect(() => {
-    if (!open) return;
-    setRecents(readList(RECENT_KEY));
-    setFavorites(readList(FAV_KEY));
+    if (!open) {
+      setSearchTerm('');
+      setIsCreating(false);
+      return;
+    }
+    setRecents(readList(recentKey));
+    setFavorites(readList(favKey));
     // Sempre abre na aba "Todas" (busca) para o usuário poder digitar imediatamente.
     setTab('search');
     // Aguarda a aba "search" montar para garantir que inputRef.current exista.
@@ -84,7 +94,7 @@ export function CartCompanyPickerDialog({
       inputRef.current?.select();
     }, 120);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [open, recentKey, favKey]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 280);
@@ -173,13 +183,14 @@ export function CartCompanyPickerDialog({
       const next = prev.some((f) => f.id === company.id)
         ? prev.filter((f) => f.id !== company.id)
         : [company, ...prev].slice(0, 20);
-      writeList(FAV_KEY, next);
+      writeList(favKey, next);
       return next;
     });
-  }, []);
+  }, [favKey]);
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {
+      if (isCreating) return;
       const input: CreateCartInput = {
         company_id: company.id,
         company_name: company.name,
@@ -192,29 +203,39 @@ export function CartCompanyPickerDialog({
           0,
           MAX_RECENT,
         );
-        writeList(RECENT_KEY, nextRecents);
+        writeList(recentKey, nextRecents);
         setRecents(nextRecents);
         onCreated?.(result.id);
         onOpenChange(false);
       }
     },
-    [createCart, onCreated, onOpenChange, recents],
+    [createCart, onCreated, onOpenChange, recents, recentKey, isCreating],
   );
 
   const isLoading = loadingLocal || loadingServer;
 
+  const canSelect = canCreateCart && !isCreating;
+
   const renderRow = (company: CompanyItem) => (
-    <button
+    <div
       key={company.id}
-      type="button"
+      role="button"
+      tabIndex={canSelect ? 0 : -1}
+      aria-disabled={!canSelect}
       data-testid="cart-company-picker-select"
       data-company-id={company.id}
       className={cn(
-        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left',
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
         'group transition-colors hover:bg-accent/60',
+        !canSelect && 'pointer-events-none opacity-50',
       )}
-      onClick={() => handleSelect(company)}
-      disabled={!canCreateCart}
+      onClick={() => canSelect && handleSelect(company)}
+      onKeyDown={(e) => {
+        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleSelect(company);
+        }
+      }}
     >
       {company.logo_url ? (
         <img
@@ -247,7 +268,7 @@ export function CartCompanyPickerDialog({
       >
         <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
       </button>
-    </button>
+    </div>
   );
 
   return (

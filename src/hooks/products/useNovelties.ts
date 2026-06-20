@@ -1,8 +1,10 @@
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
+import { logger } from '@/lib/logger';
 const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -50,8 +52,7 @@ const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
  *    descarta flags vencidas mesmo antes do `cleanup-novelties` rodar).
  * Os filtros de qualidade continuam aplicados.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const applyNoveltyPredicate = (query: any, nowIso: string): any =>
+const applyNoveltyPredicate = (query: NoveltyQuery, nowIso: string): NoveltyQuery =>
   applyNoveltyQualityFilters(query.eq('is_active', true))
     .eq('is_new', true)
     .gt('novelty_expires_at', nowIso);
@@ -173,23 +174,40 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const categoryIds = [...new Set(novelties.map((n) => n.category_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(novelties.map((n) => n.supplier_id).filter(Boolean))] as string[];
 
+  // ISSUE-12 FIX: falha de enriquecimento não derruba o grid todo. Erros nas
+  // queries secundárias (categories/suppliers) retornam [] — as novidades são
+  // exibidas sem nome de categoria/fornecedor em vez de mostrar a tela de erro.
   const [catRecords, supRecords] = await Promise.all([
     categoryIds.length > 0
       ? (async () => {
-          const { data, error } = await fromTable('categories')
-            .select('id, name')
-            .in('id', categoryIds);
-          if (error) return handleQueryError('useNovelties', 'categories', error);
-          return (data ?? []) as unknown as CategoryRecord[];
+          try {
+            const { data, error } = await fromTable('categories')
+              .select('id, name')
+              .in('id', categoryIds);
+            if (error) {
+              logger.warn('[enrichNovelties] categories lookup failed:', error.message);
+              return [] as CategoryRecord[];
+            }
+            return (data ?? []) as unknown as CategoryRecord[];
+          } catch {
+            return [] as CategoryRecord[];
+          }
         })()
       : Promise.resolve([] as CategoryRecord[]),
     supplierIds.length > 0
       ? (async () => {
-          const { data, error } = await fromTable('suppliers')
-            .select('id, name, code')
-            .in('id', supplierIds);
-          if (error) return handleQueryError('useNovelties', 'suppliers', error);
-          return (data ?? []) as unknown as SupplierRecord[];
+          try {
+            const { data, error } = await fromTable('suppliers')
+              .select('id, name, code')
+              .in('id', supplierIds);
+            if (error) {
+              logger.warn('[enrichNovelties] suppliers lookup failed:', error.message);
+              return [] as SupplierRecord[];
+            }
+            return (data ?? []) as unknown as SupplierRecord[];
+          } catch {
+            return [] as SupplierRecord[];
+          }
         })()
       : Promise.resolve([] as SupplierRecord[]),
   ]);
@@ -213,7 +231,10 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
  * - `days_as_novelty`       = dias desde a detecção (idade do badge)
  */
 export function toNovelty(p: RawProduct): NoveltyWithDetails {
-  const detectedAt = p.novelty_detected_at ?? p.created_at;
+  // ISSUE-1 FIX: guard null created_at. If both novelty_detected_at and
+  // created_at are null/undefined (should not happen in prod but seen in
+  // test fixtures), fallback to now to avoid new Date(null) → 1970 date.
+  const detectedAt = p.novelty_detected_at ?? p.created_at ?? new Date().toISOString();
   const expiresAt =
     p.novelty_expires_at ??
     new Date(
@@ -262,9 +283,10 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
 }
 
 /**
- * Ordena novidades pelos campos REAIS de NoveltyWithDetails (mutação in-place).
- * Nota: diferente de sortProducts (não-mutante desde PR #915), sortNovelties
- * modifica o array passado diretamente e o retorna.
+ * Ordena novidades pelos campos REAIS de NoveltyWithDetails.
+ * ISSUE-4 FIX: não-mutante — cria cópia com spread antes de ordenar, assim o
+ * caller não precisa passar um array descartável. Alinha o comportamento com
+ * sortProducts (não-mutante desde PR #915).
  *
  * FIX (auditoria Novidades 2026-06-18, P1): o grid antes fazia
  * `sortProducts(novelties as unknown as Product[])`, mas as formas divergem
@@ -275,6 +297,8 @@ export function sortNovelties(
   novelties: NoveltyWithDetails[],
   sortBy: string,
 ): NoveltyWithDetails[] {
+  const sorted = [...novelties]; // ISSUE-4: cópia para não mutar o original
+
   const byNameThenId = (a: NoveltyWithDetails, b: NoveltyWithDetails): number => {
     const byName = compareNamePtBR(a.product_name, b.product_name);
     if (byName !== 0) return byName;
@@ -282,35 +306,34 @@ export function sortNovelties(
   };
 
   switch (sortBy) {
-    case 'newest':
-      novelties.sort((a, b) => {
-        const bt = new Date(b.detected_at).getTime();
-        const at = new Date(a.detected_at).getTime();
-        if (bt !== at) return bt - at;
-        return byNameThenId(a, b);
-      });
-      break;
+    case 'newest': {
+      // ISSUE-3 FIX: Schwartzian transform — pré-computa getTime() uma vez por item
+      // (O(n)) em vez de criar new Date() dentro do comparador (O(n log n) alocações).
+      const withTs = sorted.map((n) => [n, new Date(n.detected_at).getTime()] as const);
+      withTs.sort((a, b) => (b[1] !== a[1] ? b[1] - a[1] : byNameThenId(a[0], b[0])));
+      return withTs.map(([n]) => n);
+    }
     case 'name':
     case 'name-asc':
-      novelties.sort(byNameThenId);
+      sorted.sort(byNameThenId);
       break;
     case 'name-desc':
-      novelties.sort((a, b) => byNameThenId(b, a));
+      sorted.sort((a, b) => byNameThenId(b, a));
       break;
     case 'price-asc':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const d = (a.base_price ?? 0) - (b.base_price ?? 0);
         return d !== 0 ? d : byNameThenId(a, b);
       });
       break;
     case 'price-desc':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const d = (b.base_price ?? 0) - (a.base_price ?? 0);
         return d !== 0 ? d : byNameThenId(a, b);
       });
       break;
     case 'stock':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const d = (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0);
         return d !== 0 ? d : byNameThenId(a, b);
       });
@@ -319,7 +342,7 @@ export function sortNovelties(
       // Valor desconhecido → no-op (preserva ordem), igual a sortProducts.
       break;
   }
-  return novelties;
+  return sorted;
 }
 
 export interface UseNoveltiesOptions {
@@ -364,6 +387,9 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         const rows = (data ?? []) as unknown as RawProduct[];
         records.push(...rows);
         from += rows.length;
+        // ISSUE-6 FIX: para quando atingiu o hardCap exato — evita uma página
+        // extra desnecessária quando a última página preenche exatamente `want`.
+        if (records.length >= hardCap) break;
         // Para em página vazia OU página incompleta (ambos indicam fim dos dados).
         if (rows.length < want) break;
       }
@@ -393,9 +419,15 @@ export function useExpiringNovelties(maxDays = 7) {
 
       // Busca paginada — sem hardcap para não perder produtos expirando
       const PAGE_SIZE = 500;
+      // ISSUE-8 FIX: guarda anti-loop — 100 páginas × 500 = 50k novidades max.
+      // Sem esse limite, se novelty_expires_at for null em todas as linhas o early-exit
+      // nunca dispara e o while(true) vira loop infinito até timeout do cliente.
+      const MAX_PAGES = 100;
       const allRaw: RawProduct[] = [];
       let offset = 0;
-      while (true) {
+      let page = 0;
+      while (page < MAX_PAGES) {
+        page++;
         const { data, error } = await applyNoveltyPredicate(
           fromTable('products').select(NOVELTY_SELECT),
           nowIso,
@@ -408,55 +440,97 @@ export function useExpiringNovelties(maxDays = 7) {
         allRaw.push(...rows);
         if (rows.length < PAGE_SIZE) break;
         // early exit: todos os restantes têm novelty_expires_at além de maxDays
+        // ISSUE-10 FIX: guarda contra novelty_expires_at null — new Date(null).getTime()
+        // = 0 (1970), que faria a comparação NaN e desabilitaria o early-exit,
+        // causando loop infinito até SUP_MAX_PAGES. Só quebra quando a data é válida.
         const lastRow = rows[rows.length - 1] as RawProduct & { novelty_expires_at?: string };
         if (lastRow?.novelty_expires_at) {
-          const daysLeft =
-            (new Date(lastRow.novelty_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-          if (daysLeft > maxDays) break;
+          const expTime = new Date(lastRow.novelty_expires_at).getTime();
+          if (!Number.isNaN(expTime)) {
+            const daysLeft = (expTime - Date.now()) / (1000 * 60 * 60 * 24);
+            if (daysLeft > maxDays) break;
+          }
         }
         offset += PAGE_SIZE;
       }
 
       return allRaw
         .map(toNovelty)
-        .filter((n) => n.is_active && n.days_remaining <= maxDays)
+        .filter((n) => n.days_remaining <= maxDays) // is_active já garantido pelo predicado DB
         .sort((a, b) => a.days_remaining - b.days_remaining);
     },
-    staleTime: 5 * 60 * 1000,
+    // ISSUE-40 FIX: expiração iminente — staletime curto garante que um produto
+    // que cruzou o limite de `maxDays` saia do widget antes do cleanup cron rodar.
+    staleTime: 60 * 1000,
     retry: 2,
   });
 }
 
 /**
- * Hook para estatísticas de novidades — contagens 100% server-side, sem limite artificial.
- * Filtros de qualidade aplicados: is_stockout=false, sale_price>0, primary_image_url IS NOT NULL.
- * Alinha os counts do frontend com a fonte canonica is_new (product_novelties via trigger).
+ * Hook para estatísticas de novidades — HEAD counts server-side (6 queries paralelas)
+ * + supplier breakdown derivado do cache compartilhado de useNoveltiesWithDetails.
+ *
+ * ISSUE-9 FIX: o loop de paginação de fornecedores (até 25 páginas × 1000 linhas
+ * = 25k rows) foi removido. O ranking agora é computado client-side a partir do
+ * dataset já enriquecido em ['novelties-details','all',false], eliminando:
+ *  - o teto artificial de 25k produtos;
+ *  - as 1–25 requisições sequenciais extras ao banco;
+ *  - a segunda query de nomes de fornecedores (join após agrupamento).
+ * Os nomes já vêm via enrichNovelties() e o agrupamento é O(n) em memória.
  */
 export function useNoveltyStats() {
-  return useQuery<NoveltyStatsDisplay>({
+  // Reusa o dataset enriquecido já carregado (cache key ['novelties-details','all',false]).
+  // Se o cache estiver vazio, allNovelties será undefined — o breakdown fica [].
+  const { data: allNovelties } = useNoveltiesWithDetails();
+
+  // GROUP BY supplier_id client-side — O(n) sobre o dataset em memória.
+  const supplierBreakdown = useMemo<NoveltySupplierBreakdown[]>(() => {
+    if (!allNovelties || allNovelties.length === 0) return [];
+    const countMap = new Map<string, { id: string; name: string; count: number }>();
+    for (const n of allNovelties) {
+      if (!n.supplier_id) continue;
+      const entry = countMap.get(n.supplier_id);
+      if (entry) {
+        entry.count++;
+      } else {
+        countMap.set(n.supplier_id, {
+          id: n.supplier_id,
+          name: n.supplier_name ?? `…${n.supplier_id.slice(-4)}`,
+          count: 1,
+        });
+      }
+    }
+    const total = allNovelties.length;
+    return [...countMap.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6)
+      .map((s) => ({
+        ...s,
+        percentage: total > 0 ? Math.round((s.count / total) * 100) : 0,
+      }));
+  }, [allNovelties]);
+
+  const query = useQuery<Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierName' | 'topSupplierCount'>>({
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
       const nowIso = now.toISOString();
-      // Janelas de "chegada" ancoradas na DETECÇÃO como novidade (pipeline),
-      // não na criação no catálogo — consistente com o grid e os badges.
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      // ISSUE-25 FIX: janelas de "chegada" em UTC — evita off-by-one quando o
+      // cliente está em fuso UTC+N e a meia-noite local cruza o dia UTC anterior.
+      const todayStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      ).toISOString();
       const weekStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() - 6,
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 6),
       ).toISOString();
       const fifteenStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() - 14,
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 14),
       ).toISOString();
-      // "Expirando em breve" = expira dentro dos próximos N dias (expiração real).
       const expiringSoonLimit = new Date(
         now.getTime() + NOVELTY_EXPIRING_SOON_DAYS * MS_PER_DAY,
       ).toISOString();
 
-      const emptyStats: NoveltyStatsDisplay = {
+      const emptyBase = {
         totalNovelties: 0,
         activeNovelties: 0,
         expiringSoon: 0,
@@ -465,9 +539,6 @@ export function useNoveltyStats() {
         arrivedToday: 0,
         arrivedThisWeek: 0,
         arrivedLast15Days: 0,
-        topSupplierName: null,
-        topSupplierCount: 0,
-        supplierBreakdown: [],
       };
 
       // Helper: query base de NOVIDADE (pipeline + qualidade) para HEAD counts.
@@ -479,131 +550,52 @@ export function useNoveltyStats() {
 
       const [todayRes, weekRes, fifteenRes, activeRes, expiringSoonRes, totalRes] =
         await Promise.all([
-          // Detectadas como novidade hoje
           noveltyBase().gte('novelty_detected_at', todayStart),
-          // Detectadas nos últimos 7 dias
           noveltyBase().gte('novelty_detected_at', weekStart),
-          // Detectadas nos últimos 15 dias
           noveltyBase().gte('novelty_detected_at', fifteenStart),
-          // Novidades ativas (conjunto da pipeline, sem janela artificial)
           noveltyBase(),
-          // Expirando em breve (expira dentro dos próximos N dias)
           noveltyBase().lte('novelty_expires_at', expiringSoonLimit),
-          // Total do catálogo ativo (sem filtros — denominador real)
           fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
         ]);
 
-      if (todayRes.error) {
-        handleQueryError('useNovelties', 'products', todayRes.error);
-        return emptyStats;
-      }
-      if (weekRes.error) {
-        handleQueryError('useNovelties', 'products', weekRes.error);
-        return emptyStats;
-      }
-      if (fifteenRes.error) {
-        handleQueryError('useNovelties', 'products', fifteenRes.error);
-        return emptyStats;
-      }
-      if (activeRes.error) {
-        handleQueryError('useNovelties', 'products', activeRes.error);
-        return emptyStats;
-      }
-      if (totalRes.error) {
-        handleQueryError('useNovelties', 'products', totalRes.error);
-        return emptyStats;
-      }
+      if (todayRes.error) { handleQueryError('useNovelties', 'products', todayRes.error); return emptyBase; }
+      if (weekRes.error) { handleQueryError('useNovelties', 'products', weekRes.error); return emptyBase; }
+      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyBase; }
+      if (activeRes.error) { handleQueryError('useNovelties', 'products', activeRes.error); return emptyBase; }
+      if (totalRes.error) { handleQueryError('useNovelties', 'products', totalRes.error); return emptyBase; }
 
-      const arrivedToday = todayRes.count ?? 0;
-      const arrivedThisWeek = weekRes.count ?? 0;
-      const arrivedLast15Days = fifteenRes.count ?? 0;
       const activeCount = activeRes.count ?? 0;
-      const expiringSoon = expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0);
       const totalProducts = totalRes.count ?? 0;
-
-      // FIX (auditoria Novidades, P1-A/P1-C): ranking de fornecedores 100%
-      // server-side sobre TODO o conjunto de novidades da pipeline, paginado. Antes:
-      //  (1) o card "Top Fornecedor" usava 1 SELECT sem .range() -> sujeito ao
-      //      teto db-max-rows (~1000) e mudo em escala;
-      //  (2) o painel "Por Fornecedor" (ExpiringNoveltiesWidget) derivava o
-      //      ranking de apenas 200 itens -> contradizia o card (ex.: painel
-      //      dizia "Só Marcas 54%" quando a verdade era "XBZ 58%").
-      const SUP_PAGE = 1000;
-      const SUP_MAX_PAGES = 25; // anti-loop: teto ~25k
-      const supplierCounts = new Map<string, number>();
-      {
-        let supFrom = 0;
-        for (let page = 0; page < SUP_MAX_PAGES; page += 1) {
-          const { data: supPage, error: supPageErr } = await applyNoveltyPredicate(
-            fromTable('products').select('supplier_id'),
-            nowIso,
-          )
-            .order('id', { ascending: true })
-            .range(supFrom, supFrom + SUP_PAGE - 1);
-          if (supPageErr) {
-            handleQueryError('useNovelties', 'products', supPageErr);
-            break;
-          }
-          const rows = (supPage ?? []) as unknown as { supplier_id: string | null }[];
-          for (const row of rows) {
-            if (row.supplier_id) {
-              supplierCounts.set(row.supplier_id, (supplierCounts.get(row.supplier_id) ?? 0) + 1);
-            }
-          }
-          supFrom += rows.length;
-          if (rows.length < SUP_PAGE) break; // última página
-        }
-      }
-
-      const sortedSuppliers = [...supplierCounts.entries()].sort((a, b) => b[1] - a[1]);
-      const topSupplierIds = sortedSuppliers.slice(0, 8).map(([id]) => id);
-
-      const supplierNameById = new Map<string, string>();
-      if (topSupplierIds.length > 0) {
-        const { data: supData, error: supErr } = await fromTable('suppliers')
-          .select('id, name')
-          .in('id', topSupplierIds)
-          .range(0, topSupplierIds.length - 1);
-        if (!supErr && supData) {
-          for (const sup of supData as unknown as { id: string; name: string }[]) {
-            supplierNameById.set(sup.id, sup.name);
-          }
-        }
-      }
-
-      const supplierBreakdown: NoveltySupplierBreakdown[] = sortedSuppliers
-        .slice(0, 6)
-        .map(([id, count]) => ({
-          id,
-          name: supplierNameById.get(id) ?? '—',
-          count,
-          percentage: activeCount > 0 ? Math.round((count / activeCount) * 100) : 0,
-        }));
-
-      const topSupplierId: string | null =
-        sortedSuppliers.length > 0 ? sortedSuppliers[0][0] : null;
-      const topSupplierCount = sortedSuppliers.length > 0 ? sortedSuppliers[0][1] : 0;
-      const topSupplierName: string | null = topSupplierId
-        ? (supplierNameById.get(topSupplierId) ?? null)
-        : null;
 
       return {
         totalNovelties: activeCount,
         activeNovelties: activeCount,
-        expiringSoon,
+        expiringSoon: expiringSoonRes.error ? 0 : (expiringSoonRes.count ?? 0),
         totalProducts,
         noveltyRate: totalProducts > 0 ? Math.round((activeCount / totalProducts) * 100) : 0,
-        arrivedToday,
-        arrivedThisWeek,
-        arrivedLast15Days,
-        topSupplierName,
-        topSupplierCount,
-        supplierBreakdown,
+        arrivedToday: todayRes.count ?? 0,
+        arrivedThisWeek: weekRes.count ?? 0,
+        arrivedLast15Days: fifteenRes.count ?? 0,
       };
     },
-    staleTime: 5 * 60 * 1000,
+    // ISSUE-40 FIX: stats alinhadas ao staleTime de useNoveltiesWithDetails (2 min).
+    staleTime: 2 * 60 * 1000,
     retry: 2,
   });
+
+  // Mescla contagens do servidor com breakdown computado do cache.
+  const data = useMemo<NoveltyStatsDisplay | undefined>(() => {
+    if (!query.data) return undefined;
+    const top = supplierBreakdown[0];
+    return {
+      ...query.data,
+      topSupplierName: top?.name ?? null,
+      topSupplierCount: top?.count ?? 0,
+      supplierBreakdown,
+    };
+  }, [query.data, supplierBreakdown]);
+
+  return { ...query, data };
 }
 
 /**

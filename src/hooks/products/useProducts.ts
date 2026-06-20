@@ -24,9 +24,9 @@ export function useProducts(
 ) {
   return useQuery<Product[]>({
     queryKey: ['promobrind-products', filters],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       try {
-        return await productService.fetchProducts(filters);
+        return await productService.fetchProducts(filters, { signal });
       } catch (error) {
         logger.error('[useProducts] Error fetching products:', error);
         throw error;

@@ -40,6 +40,12 @@ export function useProfileRoles() {
           authService.queryRoles(userId),
         ]);
 
+        // Aborted while in flight (e.g. signOut → clearProfileRoles): do NOT
+        // repopulate the profile/roles that were just cleared. fetchCancelledRef
+        // is reset to false at the start of each new fetch, so a subsequent
+        // login re-enables state updates.
+        if (fetchCancelledRef.current) return;
+
         if (profileResult.error) {
           log.error('profile_error', { error: profileResult.error });
           // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
@@ -79,9 +85,12 @@ export function useProfileRoles() {
       } finally {
         fetchPromiseRef.current = null;
         // BUG-FIX: Ensure loading is ALWAYS disabled after first attempt
-        // to prevent white-screen of death if DB calls fail.
-        setIsLoading(false);
-        setRolesLoaded(true);
+        // to prevent white-screen of death if DB calls fail. Skipped when the
+        // fetch was aborted (clearProfileRoles already set the cleared state).
+        if (!fetchCancelledRef.current) {
+          setIsLoading(false);
+          setRolesLoaded(true);
+        }
         resolvePromise();
       }
     };
