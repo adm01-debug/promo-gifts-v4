@@ -952,7 +952,7 @@ export const DEFAULT_FONT_SANS = "'Plus Jakarta Sans', system-ui, sans-serif";
 export const DEFAULT_FONT_DISPLAY = "'Outfit', system-ui, sans-serif";
 
 export function getDefaultConfig(): ThemeConfig {
-  return { presetId: 'corporate', radius: 14, mode: 'dark' };
+  return { presetId: 'corporate', radius: 14, mode: 'auto' };
 }
 
 export function loadThemeConfig(): ThemeConfig {
@@ -960,8 +960,7 @@ export function loadThemeConfig(): ThemeConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
-      // Support both light/dark if ever expanded, but default to dark for now
-      parsed.mode = parsed.mode || 'dark';
+      parsed.mode = parsed.mode || 'auto';
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }
@@ -989,20 +988,6 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dar
   const actualMode = mode === 'light' ? 'light' : 'dark';
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
   if (!preset) {
-    if (import.meta.env.DEV) {
-      console.warn(`[applyThemePreset] Preset '${presetId}' not found, falling back to corporate.`);
-    }
-    const fallback = THEME_PRESETS.find((p) => p.id === 'corporate');
-    if (!fallback) return;
-
-    const root = document.documentElement;
-    root.classList.add('theme-transitioning');
-    const colors = fallback[mode];
-    CSS_VARS_TO_APPLY.forEach((key) => {
-      const value = colors[key];
-      if (value !== undefined) root.style.setProperty(`--${key}`, value);
-    });
-    setTimeout(() => root.classList.remove('theme-transitioning'), 500);
     return;
   }
 

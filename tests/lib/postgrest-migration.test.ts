@@ -18,7 +18,7 @@ let nextResult: { data: unknown[] | null; error: { message: string } | null; cou
 vi.mock('@/integrations/supabase/client', () => {
   const CHAIN_METHODS = [
     'select', 'eq', 'in', 'is', 'gte', 'lte', 'gt', 'lt', 'like', 'ilike', 'neq',
-    'not', 'order', 'range', 'insert', 'update', 'delete', 'upsert',
+    'not', 'or', 'order', 'range', 'insert', 'update', 'delete', 'upsert',
   ];
   return {
     supabase: {
@@ -116,9 +116,12 @@ describe('postgrest helper — PT↔EN column remap', () => {
 });
 
 describe('postgrest helper — _search', () => {
-  it('translates _search into an ilike on the table search column', async () => {
+  it('translates _search into an .or(ilike) for multi-column tables', async () => {
     await dbInvoke({ table: 'products', operation: 'select', filters: { _search: 'caneta' } });
-    expect(callArgs('v_products_public', 'ilike')).toContainEqual(['name', '%caneta%']);
+    // v_products_public has 3 search columns (name, sku, supplier_reference) → uses .or()
+    const orCalls = callArgs('v_products_public', 'or');
+    expect(orCalls.length).toBeGreaterThan(0);
+    expect(orCalls[0][0]).toContain('name.ilike.*caneta*');
   });
 });
 

@@ -27,13 +27,10 @@ describe('NotFound Page', () => {
     expect(container.querySelector('.min-h-screen')).toBeInTheDocument();
   });
 
-  it('logs 404 error on mount', () => {
+  it('does not log to console.error on mount (avoids production noise)', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderWithProviders(<NotFound />, { route: '/bad-route' });
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('404'),
-      expect.any(String)
-    );
+    expect(consoleSpy).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 });
