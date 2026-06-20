@@ -480,3 +480,50 @@ describe('Analise estatica — ArtFileUpload.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — ShareMenu.tsx
+// =====================================================================
+
+describe('Analise estatica — ShareMenu.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ShareMenu.tsx');
+  });
+
+  describe('catch blocks — erros de clipboard/download/pdf nao silenciados', () => {
+    it('importa logger de @/lib/logger', () => {
+      expect(src).toContain("from '@/lib/logger'");
+    });
+    it('handleCopyLink catch captura err como unknown', () => {
+      const copyBlock =
+        src.split('const handleCopyLink')[1]?.split('const handleDownloadPNG')[0] ?? '';
+      expect(copyBlock).toMatch(/catch\s*\(\s*err\s*:\s*unknown\s*\)/);
+    });
+    it('handleCopyLink catch loga o erro', () => {
+      const copyBlock =
+        src.split('const handleCopyLink')[1]?.split('const handleDownloadPNG')[0] ?? '';
+      expect(copyBlock).toContain('logger.error');
+    });
+    it('handleDownloadPNG catch captura err como unknown', () => {
+      const pngBlock =
+        src.split('const handleDownloadPNG')[1]?.split('const handleDownloadPDF')[0] ?? '';
+      expect(pngBlock).toMatch(/catch\s*\(\s*err\s*:\s*unknown\s*\)/);
+    });
+    it('handleDownloadPNG catch loga o erro', () => {
+      const pngBlock =
+        src.split('const handleDownloadPNG')[1]?.split('const handleDownloadPDF')[0] ?? '';
+      expect(pngBlock).toContain('logger.error');
+    });
+    it('handleDownloadPDF catch captura err como unknown', () => {
+      const pdfBlock =
+        src.split('const handleDownloadPDF')[1]?.split('const handleWhatsApp')[0] ?? '';
+      expect(pdfBlock).toMatch(/catch\s*\(\s*err\s*:\s*unknown\s*\)/);
+    });
+    it('handleDownloadPDF catch loga o erro', () => {
+      const pdfBlock =
+        src.split('const handleDownloadPDF')[1]?.split('const handleWhatsApp')[0] ?? '';
+      expect(pdfBlock).toContain('logger.error');
+    });
+  });
+});

@@ -55,11 +55,6 @@ function safeFormatDistance(dateStr: string): string {
   return formatDistanceToNow(d, { addSuffix: true, locale: ptBR });
 }
 
-interface Technique {
-  id: string;
-  name: string;
-  code: string | null;
-}
 interface Client {
   id: string;
   name: string;
@@ -69,7 +64,6 @@ interface MockupHistoryPanelProps {
   mockupHistory: GeneratedMockup[];
   isLoading: boolean;
   clients: Client[];
-  techniques: Technique[];
   onLoadFromHistory: (mockup: GeneratedMockup) => void;
   onDownload: (url: string) => void;
   onDelete: (id: string) => void;

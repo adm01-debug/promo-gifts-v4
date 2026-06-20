@@ -233,3 +233,4 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
     );
   },
 );
+MockupWizard.displayName = 'MockupWizard';

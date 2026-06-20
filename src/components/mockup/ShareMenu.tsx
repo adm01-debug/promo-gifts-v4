@@ -3,6 +3,7 @@
  */
 
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,8 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
     try {
       await navigator.clipboard.writeText(mockupUrl);
       toast.success('Link copiado!');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('[ShareMenu] Falha ao copiar link:', err);
       toast.error('Erro ao copiar link');
     }
   };
@@ -49,7 +51,8 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success('PNG baixado!');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('[ShareMenu] Falha ao baixar PNG:', err);
       toast.error('Erro ao baixar PNG');
     }
   };
@@ -85,7 +88,8 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
 
       pdf.save(`${fileName}.pdf`);
       toast.success('PDF gerado!');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('[ShareMenu] Falha ao gerar PDF:', err);
       toast.error('Erro ao gerar PDF');
     }
   };
