@@ -174,6 +174,7 @@ export const ProductCard = memo(
         | undefined
       >(undefined);
       const [quickViewOpen, setQuickViewOpen] = useState(false);
+      const quickViewTriggerRef = useRef<HTMLDivElement | null>(null);
       const [shareDialogOpen, setShareDialogOpen] = useState(false);
       const [shareVariant, setShareVariant] = useState<{
         variantName?: string | null;
@@ -290,6 +291,29 @@ export const ProductCard = memo(
       const actionBusyRef = useRef(false);
       const [variantPickerOpen, setVariantPickerOpen] = useState(false);
       const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
+
+      // QuickView (foto do card) — guards de empilhamento + foco restaurado
+      const openQuickView = useCallback(() => {
+        if (
+          actionsOpen ||
+          actionBusyRef.current ||
+          variantPickerOpen ||
+          collectionModalOpen ||
+          shareDialogOpen ||
+          quickViewOpen
+        ) {
+          return;
+        }
+        setQuickViewOpen(true);
+      }, [actionsOpen, variantPickerOpen, collectionModalOpen, shareDialogOpen, quickViewOpen]);
+      const handleQuickViewOpenChange = useCallback((open: boolean) => {
+        setQuickViewOpen(open);
+        if (!open) {
+          requestAnimationFrame(() => {
+            quickViewTriggerRef.current?.focus({ preventScroll: true });
+          });
+        }
+      }, []);
 
       const addFavorite = useFavoritesStore((s) => s.addFavorite);
       const addToCompare = useComparisonStore((s) => s.addToCompare);
@@ -582,21 +606,25 @@ export const ProductCard = memo(
         >
           {/* Image Section — clique na FOTO abre QuickView (não navega p/ PDP) */}
           <div
+            ref={quickViewTriggerRef}
             role="button"
             tabIndex={0}
             aria-label={`Visualização rápida de ${product.name}`}
             aria-haspopup="dialog"
+            aria-expanded={quickViewOpen}
             data-testid="product-card-image-quickview"
+            data-product-id={product.id}
             className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            style={{ touchAction: 'manipulation' }}
             onClick={(e) => {
               e.stopPropagation();
-              setQuickViewOpen(true);
+              openQuickView();
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
-                setQuickViewOpen(true);
+                openQuickView();
               }
             }}
           >
@@ -976,7 +1004,7 @@ export const ProductCard = memo(
               <ProductQuickView
                 product={product}
                 open={quickViewOpen}
-                onOpenChange={setQuickViewOpen}
+                onOpenChange={handleQuickViewOpenChange}
                 isFavorited={isFavorited}
                 onToggleFavorite={onToggleFavorite}
                 isInCompare={isInCompare}
