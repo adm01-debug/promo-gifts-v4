@@ -1251,6 +1251,29 @@ describe('Analise estatica — MockupLightbox.tsx', () => {
 });
 
 // =====================================================================
+// Analise estatica — prefers-reduced-motion
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (reduced-motion)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('a11y — animacoes respeitam preferencia de reducao de movimento', () => {
+    it('importa useReducedMotion para respeitar preferencia do SO', () => {
+      expect(src).toContain('useReducedMotion');
+    });
+    it('duracao de animacao e zero quando reducedMotion esta ativo', () => {
+      expect(src).toContain('reducedMotion ? 0 :');
+    });
+    it('animacoes de y e scale sao suprimidas com reducedMotion', () => {
+      expect(src).toContain('reducedMotion ? { opacity: 0 }');
+    });
+  });
+});
+
+// =====================================================================
 // Analise estatica — aria-live para regioes de status assincrono
 // =====================================================================
 

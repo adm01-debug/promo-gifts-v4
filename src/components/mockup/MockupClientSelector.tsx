@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCrmInfiniteCompanySelector } from '@/hooks/crm';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
 import type { MockupClient } from './MockupConfigPanel';
 
 interface MockupClientSelectorProps {
@@ -64,6 +65,7 @@ export function MockupClientSelector({
   const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const reducedMotion = useReducedMotion();
 
   const {
     data,
@@ -177,7 +179,7 @@ export function MockupClientSelector({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: reducedMotion ? 0 : 0.15 }}
             className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[2px]"
             onClick={() => setIsFocused(false)}
           />
@@ -188,10 +190,10 @@ export function MockupClientSelector({
       <AnimatePresence>
         {showDropdown && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
             className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-primary/30 bg-popover shadow-xl shadow-black/25 ring-1 ring-primary/10"
           >
             {/* Header com contagem */}
