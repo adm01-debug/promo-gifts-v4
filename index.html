@@ -137,14 +137,19 @@
   <body style="background-color: #0a0a0a; margin: 0;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Inline critical: previne FOUC em temas escuros sem JS -->
+    <!-- Inline critical: previne FOUC — aplica preset-id salvo antes do React montar -->
     <script>
       (function(){
+        // App sempre roda em dark mode
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
         try {
-          var t = localStorage.getItem('gifts-store-theme') || localStorage.getItem('vibe-theme');
-          if (t && t !== 'system') {
-            document.documentElement.setAttribute('data-theme', t);
-            if (t === 'light') document.documentElement.classList.remove('dark');
+          var raw = localStorage.getItem('gifts-store-theme-config');
+          if (raw) {
+            var cfg = JSON.parse(raw);
+            if (cfg && cfg.presetId) {
+              document.documentElement.setAttribute('data-preset-id', cfg.presetId);
+            }
           }
         } catch(e) {}
       })();

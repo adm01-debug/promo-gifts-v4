@@ -945,7 +945,7 @@ export const THEME_PRESETS: ThemePreset[] = [
 // STORAGE & APPLICATION
 // =====================================================
 
-const STORAGE_KEY = 'gifts-store-theme-config';
+export const STORAGE_KEY = 'gifts-store-theme-config';
 
 /** Valor padrão das variáveis de fonte do projeto (igual ao index.css). */
 export const DEFAULT_FONT_SANS = "'Plus Jakarta Sans', system-ui, sans-serif";
@@ -974,7 +974,11 @@ export function loadThemeConfig(): ThemeConfig {
 }
 
 export function saveThemeConfig(config: ThemeConfig): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  } catch {
+    // QuotaExceededError — localStorage full or unavailable (private browsing)
+  }
 }
 
 // Module-level timer to prevent orphaned setTimeout handles when the user
@@ -1066,7 +1070,11 @@ export function exportThemeConfig(config: ThemeConfig): string {
 export function importThemeConfig(json: string): ThemeConfig | null {
   try {
     const parsed = JSON.parse(json);
-    if (parsed.presetId && typeof parsed.radius === 'number') {
+    if (
+      parsed.presetId &&
+      typeof parsed.radius === 'number' &&
+      THEME_PRESETS.some((p) => p.id === parsed.presetId)
+    ) {
       // Backfill defaults para configs antigas sem mode (compat retroativa)
       return { ...getDefaultConfig(), ...parsed } as ThemeConfig;
     }
