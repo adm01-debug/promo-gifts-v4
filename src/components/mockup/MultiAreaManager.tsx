@@ -84,10 +84,12 @@ export function MultiAreaManager({
         setIsDraggingOver(false);
         const file = e.dataTransfer.files?.[0];
         if (!file) return;
-        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+        // SVG excluded: the generate-mockup edge function rejects SVGs (assertNotSvg),
+        // so accepting them here would succeed at upload but fail at generation — confusing UX.
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
         const MAX_SIZE_BYTES = 10 * 1024 * 1024;
         if (!ALLOWED_TYPES.includes(file.type)) {
-          toast.error('Formato não suportado. Use JPG, PNG, WebP ou SVG.');
+          toast.error('Formato não suportado. Use JPG, PNG ou WebP.');
           return;
         }
         if (file.size > MAX_SIZE_BYTES) {
