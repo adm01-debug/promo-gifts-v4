@@ -241,6 +241,17 @@ export default [
       'operator-assignment': 'error',
       'no-useless-catch': 'error',
       'no-unsafe-finally': 'error',
+      // Batch 83: 10 zero-violation rules
+      'no-label-var': 'error',
+      'no-shadow-restricted-names': 'error',
+      'no-octal-escape': 'error',
+      'no-compare-neg-zero': 'error',
+      'no-duplicate-case': 'error',
+      'no-empty-character-class': 'error',
+      'no-ex-assign': 'error',
+      'no-inner-declarations': 'error',
+      'no-invalid-regexp': 'error',
+      'no-irregular-whitespace': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
