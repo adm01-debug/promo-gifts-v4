@@ -27,6 +27,7 @@ import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
+import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
 
 const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -290,25 +291,56 @@ export const NoveltyGridCard = memo(
             className="mt-auto flex min-h-[2.75rem] items-end justify-between gap-2 pt-2"
           >
             {isPriceStockLoading ? (
-              <div
-                data-testid="novelty-card-price-skeleton"
-                className="h-4 w-20 animate-pulse rounded bg-muted"
-              />
-            ) : typeof product.base_price === 'number' &&
-              Number.isFinite(product.base_price) &&
-              product.base_price > 0 ? (
-              <div data-testid="novelty-card-price" className="flex min-w-0 flex-col leading-tight">
-                <span
-                  data-testid="novelty-card-price-prefix"
-                  className="text-[10px] font-medium text-muted-foreground"
-                >
-                  A partir de
-                </span>
-                <p className="truncate text-sm font-semibold text-primary">
-                  {BRL_FORMATTER.format(product.base_price)}
-                </p>
-              </div>
-            ) : null}
+              <>
+                <div
+                  data-testid="novelty-card-price-skeleton"
+                  aria-busy="true"
+                  aria-label="Carregando preço"
+                  className="h-4 w-20 animate-pulse rounded bg-muted"
+                />
+                <div
+                  data-testid="novelty-card-stock-skeleton"
+                  aria-label="Carregando estoque"
+                  className="h-4 w-12 animate-pulse rounded bg-muted"
+                />
+              </>
+            ) : (
+              <>
+                {typeof product.base_price === 'number' &&
+                Number.isFinite(product.base_price) &&
+                product.base_price > 0 ? (
+                  <div
+                    data-testid="novelty-card-price"
+                    className="flex min-w-0 flex-col leading-tight"
+                  >
+                    <span
+                      data-testid="novelty-card-price-prefix"
+                      className="text-[10px] font-medium text-muted-foreground"
+                    >
+                      A partir de
+                    </span>
+                    <p className="truncate text-sm font-semibold text-primary">
+                      {BRL_FORMATTER.format(product.base_price)}
+                    </p>
+                  </div>
+                ) : (
+                  <span
+                    data-testid="novelty-card-price-unavailable"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Sob consulta
+                  </span>
+                )}
+                {product.stock_quantity !== null && product.stock_quantity !== undefined && (
+                  <StockBadge
+                    status={getStockStatus(product.stock_quantity)}
+                    quantity={product.stock_quantity}
+                    showQuantity
+                    size="sm"
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
       </article>

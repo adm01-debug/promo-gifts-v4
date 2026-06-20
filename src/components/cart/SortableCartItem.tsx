@@ -80,22 +80,11 @@ export const SortableCartItem = memo(
       setQtyDraft(String(item.quantity));
     }, [item.quantity]);
 
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  const commitQty = () => {
-    const val = parseInt(qtyDraft, 10);
-    if (isNaN(val) || val < 1) {
-      setQtyDraft(String(item.quantity)); // reverte entrada vazia/invalida
-      return;
-    }
-    const clamped = Math.min(val, 999999);
-    if (clamped !== item.quantity) onUpdateQuantity(item.id, clamped);
-    setQtyDraft(String(clamped));
-  };
+    useEffect(() => {
+      return () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+      };
+    }, []);
 
     const commitQty = () => {
       const val = parseInt(qtyDraft, 10);
@@ -340,28 +329,16 @@ export const SortableCartItem = memo(
                     {item.product_sku}
                   </span>
                 )}
-              </button>
-              <input
-                type="number"
-                data-testid="cart-qty-input"
-                value={qtyDraft}
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => setQtyDraft(e.target.value)}
-                onBlur={commitQty}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur();
-                }}
-                className="m-0 h-9 w-12 appearance-none border-x border-border/30 bg-transparent text-center text-sm font-bold tabular-nums transition-all [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-              <button
-                data-testid="cart-qty-increment"
-                aria-label="Aumentar quantidade"
-                disabled={item.quantity >= 999999}
-                className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90 active:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-40"
-                onClick={() => {
-                  if (item.quantity >= 999999) return;
-                  onUpdateQuantity(item.id, item.quantity + 1);
-                }}
+                {isLowStock && !isOutOfStock && (
+                  <span className="text-[9px] font-bold uppercase tracking-tight text-warning">
+                    Estoque Crítico
+                  </span>
+                )}
+              </div>
+              <h4
+                data-testid="cart-item-name"
+                className="line-clamp-2 min-h-[2.5rem] cursor-pointer text-sm font-semibold leading-tight transition-colors group-hover:text-primary"
+                onClick={() => onNavigate(`/produto/${item.product_id}`)}
               >
                 {item.product_name}
               </h4>
