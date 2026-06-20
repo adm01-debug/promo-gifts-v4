@@ -209,6 +209,13 @@ export default [
       'no-throw-literal': 'error',
       'prefer-promise-reject-errors': 'error',
       'symbol-description': 'error',
+      // Batch 79: standard code quality rules (zero-violation confirmed)
+      'no-extra-boolean-cast': 'error',
+      'guard-for-in': 'error',
+      'eqeqeq': 'error',
+      'default-case-last': 'error',
+      'default-param-last': 'error',
+      'grouped-accessor-pairs': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
