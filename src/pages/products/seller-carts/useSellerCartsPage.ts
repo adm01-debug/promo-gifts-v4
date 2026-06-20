@@ -393,7 +393,7 @@ export function useSellerCartsPage() {
     // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
     // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const allIds = [...new Set(cart.items.map((i) => i.product_id))];
+    const allIds = [...new Set(cart.items.map((i) => i.product_id as string))];
     const uuidIds = allIds.filter((id) => uuidRe.test(id));
     // Non-UUID IDs (legacy) bypass server validation — fail-open.
     const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));

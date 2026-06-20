@@ -249,7 +249,6 @@ export function CartSidebar({
           if (!open) {
             setTplName('');
             setTplDesc('');
-            setIsSavingTemplate(false);
           }
         }}
       >
