@@ -128,13 +128,14 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+        const { seller_cart_items: rowItems, ...cart } = row as Omit<SellerCart, 'items'> & {
+          seller_cart_items: SellerCartItem[] | null;
+        };
         return {
           ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
-          items: (rowItems ?? []) as SellerCartItem[],
+          notes: cart.notes ?? null,
+          status: (cart.status ?? 'novo') as CartStatus,
+          items: rowItems ?? [],
         };
       });
     },
