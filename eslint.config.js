@@ -274,6 +274,18 @@ export default [
       '@typescript-eslint/no-namespace': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
       '@typescript-eslint/no-wrapper-object-types': 'error',
+      // Batch 86: 11 zero-violation TypeScript + standard rules
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
+      '@typescript-eslint/no-misused-new': 'error',
+      '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      '@typescript-eslint/no-this-alias': 'error',
+      '@typescript-eslint/no-unnecessary-type-constraint': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
+      '@typescript-eslint/prefer-as-const': 'error',
+      '@typescript-eslint/prefer-namespace-keyword': 'error',
+      '@typescript-eslint/triple-slash-reference': 'error',
+      'no-fallthrough': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
