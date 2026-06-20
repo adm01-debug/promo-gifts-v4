@@ -414,6 +414,14 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 110: 7 zero-violation rules (removed: no-set-state 11v, no-noninteractive-tabindex 9v, alt-text 1v)
+      'react/no-did-mount-set-state': 'error',
+      'react/no-did-update-set-state': 'error',
+      'react/no-unsafe': 'error',
+      'react/style-prop-object': 'error',
+      'jsx-a11y/aria-activedescendant-has-tabindex': 'error',
+      'no-empty': 'error',
+      'no-constant-condition': 'error',
       // Batch 109: 8 zero-violation rules (removed: no-plusplus massive, jsx-pascal-case 15v, no-redundant-roles 2v)
       'no-caller': 'error',
       'no-case-declarations': 'error',
