@@ -44,7 +44,10 @@ interface SupplierBreakdown {
 
 export function ExpiringNoveltiesWidget() {
   const navigate = useNavigate();
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 200 });
+  // GAP-FIX: remover limit:200 compartilha a cache key ['novelties-details','all',false] com
+  // NoveltyProductGrid — elimina a segunda round-trip ao servidor. O componente usa apenas
+  // os top-10 mais recentes, mas o React Query devolve os dados já carregados pelo grid.
+  const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
 
   // Novidades que estão prestes a sair da janela (≤ 7 dias restantes). Fonte:
   // expiração REAL da pipeline (novelty_expires_at). Renderizado só quando há

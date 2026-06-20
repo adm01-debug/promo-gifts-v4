@@ -33,6 +33,8 @@ vi.mock('@/integrations/supabase/client', () => {
       },
       from: mockFrom,
     },
+    SUPABASE_URL: 'https://doufsxqlfjyuvxuezpln.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'mock-anon-key',
   };
 });
 
