@@ -1121,4 +1121,76 @@ describe('Analise estatica — MockupProductSelector.tsx (teclado)', () => {
       expect(src).toContain("e.key === ' '");
     });
   });
+
+  describe('a11y — botao de limpar busca no dialog tem type e aria-label', () => {
+    it('botao de limpar busca de produto tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+    it('botao de limpar busca de produto tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Limpar busca de produto"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — type="button" em botoes nativos (previne submit)
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('html — botao nativo de limpar busca tem type explicito', () => {
+    it('botao de limpar tem type="button" para nao ser submit acidental', () => {
+      expect(src).toContain('type="button"');
+    });
+  });
+});
+
+describe('Analise estatica — LogoColorAnalyzer.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  describe('html — botoes nativos tem type="button" explicito', () => {
+    it('PopoverTrigger button tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+    it('ambos os botoes nativos tem type="button" (trigger + item lista)', () => {
+      const count = (src.match(/type="button"/g) ?? []).length;
+      expect(count).toBeGreaterThanOrEqual(2);
+    });
+  });
+});
+
+describe('Analise estatica — MockupColorSelector.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupColorSelector.tsx');
+  });
+
+  describe('html — botao de variante de cor tem type="button"', () => {
+    it('botao de selecao de cor/variante tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+  });
+});
+
+describe('Analise estatica — TemplatePreview.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TemplatePreview.tsx');
+  });
+
+  describe('html — marcador de area tem type="button"', () => {
+    it('botao marcador de area tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+    it('marcador de area tem aria-label contextual', () => {
+      expect(src).toContain('aria-label={`Selecionar');
+    });
+  });
 });

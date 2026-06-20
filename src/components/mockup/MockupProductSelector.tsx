@@ -244,6 +244,8 @@ export function MockupProductSelector({
                 />
                 {searchQuery && (
                   <button
+                    type="button"
+                    aria-label="Limpar busca de produto"
                     onClick={() => setSearchQuery('')}
                     className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                   >

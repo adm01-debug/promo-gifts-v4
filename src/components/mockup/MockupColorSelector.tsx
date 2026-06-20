@@ -128,6 +128,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
           return (
             <button
               key={variant.id}
+              type="button"
               onClick={() => onSelect(variant, fullProduct)}
               className={cn(
                 'group relative flex flex-col items-center gap-1.5 rounded-lg border p-2 text-left transition-all duration-200',

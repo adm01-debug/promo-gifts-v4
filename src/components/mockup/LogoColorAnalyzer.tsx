@@ -166,6 +166,7 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          type="button"
           className="flex w-full items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/50"
           aria-label={`Selecionar cor Pantone (atual: ${selectedCode})`}
           aria-expanded={open}
@@ -196,6 +197,7 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
             {results.map((p) => (
               <button
                 key={p.code}
+                type="button"
                 onClick={() => {
                   onChange(p.code);
                   setOpen(false);

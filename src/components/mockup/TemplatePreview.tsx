@@ -156,6 +156,7 @@ export function TemplatePreviewExpanded({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                type="button"
                 onClick={() => onAreaClick?.(index, area)}
                 className={cn(
                   'absolute -translate-x-1/2 -translate-y-1/2 transform',
