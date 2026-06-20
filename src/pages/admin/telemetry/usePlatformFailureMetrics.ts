@@ -46,7 +46,7 @@ export function usePlatformFailureMetrics(windowMinutes = 60) {
         totalColdStarts: num('total_cold_starts'),
         rate503Pct: num('rate_503_pct'),
         rateColdStartPct: num('rate_cold_start_pct'),
-        lastColdStartAt: (raw['last_cold_start_at'] as string | null) ?? null,
+        lastColdStartAt: (raw.last_cold_start_at as string | null) ?? null,
         prevWindow503: num('prev_window_503'),
         delta503: num('delta_503'),
       };
