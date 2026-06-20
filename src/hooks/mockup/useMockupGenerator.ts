@@ -230,11 +230,13 @@ export function useMockupGenerator() {
   }, [selectedTechnique]);
 
   useEffect(() => {
+    let isMounted = true;
     const restoreDraft = async () => {
       if (isLoadingData || hasDraftRestored || isRestoringDraft.current) return;
       isRestoringDraft.current = true;
       try {
         const draft = await loadDraft();
+        if (!isMounted) return;
         if (
           draft &&
           (draft.productId ||
@@ -265,13 +267,17 @@ export function useMockupGenerator() {
           draftNoticeTimeoutRef.current = setTimeout(() => setShowDraftRestoredNotice(false), 5000);
         }
       } catch (err) {
+        if (!isMounted) return;
         logger.error('Erro ao restaurar rascunho:', err);
       } finally {
-        setHasDraftRestored(true);
+        if (isMounted) setHasDraftRestored(true);
         isRestoringDraft.current = false;
       }
     };
     restoreDraft();
+    return () => {
+      isMounted = false;
+    };
   }, [isLoadingData, techniques, loadDraft, hasDraftRestored, getProductById]);
 
   const urlParamsApplied = useRef(false);
