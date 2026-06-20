@@ -57,7 +57,14 @@ function makeBuilder(table: string) {
     );
 
   const resolveList = () => {
-    if (table === 'seller_carts') return { data: cartsTable, error: null };
+    if (table === 'seller_carts') {
+      // Simula o nested join PostgREST select('*, seller_cart_items(*)').
+      const withItems = cartsTable.map((cart) => ({
+        ...cart,
+        seller_cart_items: itemsTable.filter((it) => it.cart_id === cart.id),
+      }));
+      return { data: withItems, error: null };
+    }
     return { data: applyFilters(itemsTable), error: null };
   };
   const resolveSingle = () => ({ data: applyFilters(itemsTable)[0] ?? null, error: null });
@@ -86,7 +93,7 @@ function makeBuilder(table: string) {
     eq(col: string, val: unknown) { state.filters.push(['eq', col, val]); return b; },
     is(col: string, val: unknown) { state.filters.push(['is', col, val]); return b; },
     in(col: string, val: unknown) { state.filters.push(['in', col, val]); return b; },
-    order() { return Promise.resolve(resolveList()); },
+    order() { return b; },
     maybeSingle() { return Promise.resolve(resolveSingle()); },
     single() { return Promise.resolve(resolveSingle()); },
     then(onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) {

@@ -143,10 +143,8 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       const cellW = (pageW - margin * 2) / cols;
       const cellH = (pageH - margin * 2 - 20) / rowsPerPage;
 
-      // Strip non-Latin-1 chars for jsPDF Helvetica (Latin-1 only). The \x00-\xFF
-      // range intentionally includes control chars — this is the Latin-1 boundary.
-      // eslint-disable-next-line no-control-regex
-      const sanitize = (s: string) => s.replace(/[^\x00-\xFF]/g, '?');
+      // Strip non-Latin-1 chars for jsPDF Helvetica (Latin-1 only)
+      const sanitize = (s: string) => s.replace(/[\u0100-\uFFFF]/g, '?');
       // Header
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
@@ -212,9 +210,8 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
         const note = item?.note;
         if (variant) doc.text(`Cor: ${variant}`, x + 4, y + cellH * 0.6 + 28);
         if (note) {
-          // Strip non-Latin-1 chars (jsPDF built-in Helvetica is Latin-1 only).
-          // eslint-disable-next-line no-control-regex
-          const safeNote = note.replace(/[^\x00-\xFF]/g, '?');
+          // Strip non-Latin-1 chars (jsPDF built-in Helvetica is Latin-1 only)
+          const safeNote = note.replace(/[^ -\xFF]/g, '?');
           const noteLines = doc.splitTextToSize(`Nota: ${safeNote}`, cellW - 8).slice(0, 2);
           doc.text(noteLines, x + 4, y + cellH * 0.6 + 33);
         }

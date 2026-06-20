@@ -55,15 +55,31 @@ export function useProductsByCategory({
     // categorias com 0 produtos, re-fetch extra em cada render. Agora: lastFetchedKey
     // sozinho é suficiente — muda após fetch bem-sucedido ou erro marcado.
     // Forçar re-fetch explícito: chamar refetch(), que reseta lastFetchedKey.current.
-    if (lastFetchedKey.current === categoryIdsKey) return;
-
+    // FIX RENDER-LOOP (2026-06-20): a checagem de desabilitado/sem-filtro vem
+    // ANTES do guard de chave. Caso contrário, ao desabilitar (enabled true→false)
+    // após um fetch bem-sucedido — quando lastFetchedKey.current === categoryIdsKey —
+    // o guard de chave retornava cedo e o estado NUNCA era limpo.
     if (!hasFilter || !enabled) {
-      setProductIds(new Set());
-      setCategoriesCount(0);
-      setSource(null);
-      lastFetchedKey.current = '';
+      // FIX RENDER-LOOP (2026-06-20): setState CONDICIONAL. A versão anterior
+      // chamava setProductIds/setCategoriesCount/setSource incondicionalmente e
+      // resetava lastFetchedKey.current = '' — com filtro ativo + enabled=false,
+      // o useEffect (key !== lastFetchedKey, 'cat-1' !== '') re-disparava após
+      // cada setState, gerando render-loop infinito (82+ renders → timeout no
+      // teste e travamento no browser). Agora: só atualiza estado se mudou de
+      // fato, e marca a chave com sentinela '\0disabled' (distinto de qualquer
+      // categoryIdsKey real) para o effect estabilizar. Ao reabilitar (enabled
+      // true) ou trocar categorias, fetchProductIds muda de identidade e o
+      // effect reavalia: sentinela !== categoryIdsKey → fetch dispara.
+      setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
+      setCategoriesCount((prev) => (prev === 0 ? prev : 0));
+      setSource((prev) => (prev === null ? prev : null));
+      lastFetchedKey.current = '\0disabled:' + categoryIdsKey;
       return;
     }
+
+    // Guard de chave: evita re-fetch de categoria já buscada com sucesso (ou já
+    // marcada como tentada após erro). Forçar re-fetch: refetch() reseta a chave.
+    if (lastFetchedKey.current === categoryIdsKey) return;
 
     const token = ++fetchTokenRef.current;
     setIsLoading(true);
@@ -108,12 +124,18 @@ export function useProductsByCategory({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryIdsKey, includeDescendants, hasFilter, enabled, categoryIds]);
 
-  // Buscar quando a chave de categorias muda
+  // Buscar quando a chave de categorias muda, ou quando enabled/hasFilter mudam.
+  // FIX RENDER-LOOP (2026-06-20): `enabled` e `!enabled` adicionados à condição
+  // E às deps. Sem isto, ao desabilitar (true→false) com filtro ativo, a condição
+  // (key !== lastFetchedKey || !hasFilter) era falsa (key estável + hasFilter true)
+  // e o estado nunca era limpo. fetchProductIds() é idempotente nos guards internos
+  // (bloco !enabled limpa via setState condicional; guard de chave evita re-fetch),
+  // então chamá-lo aqui é seguro e não reintroduz loop.
   useEffect(() => {
-    if (categoryIdsKey !== lastFetchedKey.current || !hasFilter) {
+    if (categoryIdsKey !== lastFetchedKey.current || !hasFilter || !enabled) {
       fetchProductIds();
     }
-  }, [categoryIdsKey, hasFilter, fetchProductIds]);
+  }, [categoryIdsKey, hasFilter, enabled, fetchProductIds]);
 
   return {
     productIds,
@@ -144,12 +166,21 @@ export function useCategoryDescendants(categoryIds: string[]) {
   // Verificações após cada await descartam respostas de chamadas supersedidas.
   const fetchTokenRef = useRef(0);
 
+  // FIX RENDER-LOOP (2026-06-20): estabilizar a dependência do effect. A versão
+  // anterior usava deps [categoryIds] (array bruto, referência nova a cada render
+  // do pai): com array inline não-memoizado, o effect re-disparava a cada render,
+  // e setDescendantIds([]) no ramo vazio criava um array novo a cada vez,
+  // realimentando o ciclo. Agora a chave string é estável e o setState do ramo
+  // vazio é condicional (bail-out do React quando já está vazio).
+  const categoryIdsKey = useMemo(() => [...categoryIds].sort().join(','), [categoryIds]);
+
   useEffect(() => {
-    if (categoryIds.length === 0) {
-      setDescendantIds([]);
+    if (categoryIdsKey === '') {
+      setDescendantIds((prev) => (prev.length === 0 ? prev : []));
       return;
     }
 
+    const idsForFetch = categoryIdsKey.split(',');
     const fetchDescendants = async () => {
       const token = ++fetchTokenRef.current;
       setIsLoading(true);
@@ -157,7 +188,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
         const { data, error } = await supabase.functions.invoke('categories-api', {
           body: {
             action: 'descendants',
-            categoryIds,
+            categoryIds: idsForFetch,
           },
         });
 
@@ -174,7 +205,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
     };
 
     fetchDescendants();
-  }, [categoryIds]);
+  }, [categoryIdsKey]);
 
   return { descendantIds, isLoading };
 }
