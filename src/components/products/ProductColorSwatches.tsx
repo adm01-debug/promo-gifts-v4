@@ -86,6 +86,7 @@ export const ProductColorSwatches = memo(
     wrap = false,
     onSelect,
     selectedName,
+    onClear,
   }: ProductColorSwatchesProps) => {
 
     const idPrefix = useId();
