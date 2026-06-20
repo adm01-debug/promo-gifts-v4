@@ -62,6 +62,30 @@ function normalizeMarketingTags(rawTags: unknown): Product['tags'] {
   };
 }
 
+/**
+ * Extrai tags descritivas planas da coluna `products.tags`.
+ *
+ * No catálogo de produção a coluna `tags` é frequentemente um array plano de
+ * palavras-chave (["caneta", "metal"]). Esse formato não casa com a estrutura
+ * de marketing esperada por `normalizeMarketingTags`, então preservamos os
+ * termos aqui para que o Match de Produtos possa usá-los como sinal de
+ * similaridade. Suporta também o formato objeto `{ descritivas: [...] }`.
+ */
+function extractDescriptiveTags(rawTags: unknown): string[] {
+  let list: string[];
+  if (Array.isArray(rawTags)) {
+    list = parseTagList(rawTags);
+  } else if (rawTags && typeof rawTags === 'object') {
+    const t = rawTags as Record<string, unknown>;
+    list = parseTagList(t.descritivas ?? t.descriptive ?? t.keywords ?? t.palavrasChave);
+  } else if (typeof rawTags === 'string') {
+    list = parseTagList(rawTags);
+  } else {
+    return [];
+  }
+  return list.map((t) => t.trim()).filter(Boolean);
+}
+
 /** Converte produto Promobrind para formato interno */
 export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   const imageUrl = getProductImageUrl(p);
@@ -152,6 +176,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
       name: p.supplier_name || p.brand || 'Fornecedor',
     },
     tags: normalizeMarketingTags(p.tags),
+    descriptiveTags: extractDescriptiveTags(p.tags),
     dimensions: {
       height_cm: p.height_cm,
       width_cm: p.width_cm,

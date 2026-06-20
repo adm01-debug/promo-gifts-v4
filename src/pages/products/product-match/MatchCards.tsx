@@ -11,12 +11,13 @@ import { getCdnUrl } from '@/utils/image-utils';
 import { ExternalLink, Users, Tag, Layers, Equal, Link2, FileText } from 'lucide-react';
 
 function formatPrice(value: number) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Sob consulta';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 export const MATCH_TYPE_CONFIG = {
   identical: { label: 'Idêntico', icon: Equal, color: 'bg-primary text-primary-foreground' },
-  similar: { label: 'Semelhante', icon: Layers, color: 'bg-info text-info-foreground' },
+  similar: { label: 'Similar', icon: Layers, color: 'bg-info text-info-foreground' },
   complementary: {
     label: 'Complementar',
     icon: Link2,
