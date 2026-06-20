@@ -27,7 +27,7 @@ export function AppBootstrap({ children }: { children: ReactNode }) {
           return;
         }
 
-        if (data && data.value === 'true') {
+        if (data?.value === 'true') {
           setMaintenanceMode(true);
         }
       } catch (e) {

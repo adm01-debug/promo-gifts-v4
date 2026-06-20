@@ -136,7 +136,7 @@ function appendCacheBust(url: string): string {
 export function extractChunkUrl(error: unknown): string | undefined {
   const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
   if (!message) return undefined;
-  const match = message.match(/https?:\/\/[^\s)'"]+/);
+  const match = /https?:\/\/[^\s)'"]+/.exec(message);
   return match?.[0];
 }
 

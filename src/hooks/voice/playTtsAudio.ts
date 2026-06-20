@@ -59,7 +59,7 @@ export function playTtsAudio(
 
   const clearPrimingUrl = () => {
     if (!primingUrl) return;
-    if (audio && audio.src === primingUrl) {
+    if (audio?.src === primingUrl) {
       audio.removeAttribute('src');
       audio.load();
     }

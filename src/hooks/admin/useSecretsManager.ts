@@ -222,7 +222,7 @@ export function useSecretsManager() {
           error: normalizeError(payload ?? { message: error.message }, error.message),
         };
       }
-      if (data && data.ok === false) {
+      if (data?.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
       return {
@@ -255,7 +255,7 @@ export function useSecretsManager() {
           error: normalizeError(payload ?? { message: error.message }, error.message),
         };
       }
-      if (data && data.ok === false) {
+      if (data?.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
       return {
@@ -285,7 +285,7 @@ export function useSecretsManager() {
       if (error) {
         return { ok: false, error: normalizeError({ message: error.message }, error.message) };
       }
-      if (data && data.ok === false) {
+      if (data?.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
       return { ok: true, message: data?.message };

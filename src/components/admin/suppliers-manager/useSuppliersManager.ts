@@ -234,12 +234,13 @@ export function useSuppliersManager() {
 
     // Parse financial data (still in notes for payment/pix)
     const notesStr = supplier.notes || '';
-    const finMatchNew = notesStr.match(
-      /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/,
+    const finMatchNew = /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/.exec(
+      notesStr,
     );
-    const finMatchLegacy = notesStr.match(
-      /\[Financeiro: Forma: (.*?), PIX Tipo: (.*?), PIX Número: (.*?), PIX Favorecido: (.*?), PIX Atualizado: (.*?)\]/,
-    );
+    const finMatchLegacy =
+      /\[Financeiro: Forma: (.*?), PIX Tipo: (.*?), PIX Número: (.*?), PIX Favorecido: (.*?), PIX Atualizado: (.*?)\]/.exec(
+        notesStr,
+      );
     if (finMatchNew) {
       setFormaPagamento(finMatchNew[1] !== '-' ? finMatchNew[1].split(',').filter(Boolean) : []);
       const pixData = finMatchNew[2];
@@ -291,8 +292,8 @@ export function useSuppliersManager() {
 
     // ── Backward compat: migrate legacy notes data if dedicated columns are empty ──
     if (!supplier.inscricao_estadual && !supplier.tax_regime && !supplier.state_uf) {
-      const fiscalMatch = notesStr.match(
-        /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/,
+      const fiscalMatch = /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/.exec(
+        notesStr,
       );
       if (fiscalMatch) {
         setInscricaoEstadual(fiscalMatch[1] !== '-' ? fiscalMatch[1] : '');
@@ -301,13 +302,13 @@ export function useSuppliersManager() {
       }
     }
     if (!supplier.phone2) {
-      const foneMatch = notesStr.match(/\[Fones Fixos: 01: (.*?), 02: (.*?)\]/);
+      const foneMatch = /\[Fones Fixos: 01: (.*?), 02: (.*?)\]/.exec(notesStr);
       if (foneMatch) {
         setFoneFixo2(foneMatch[2] !== '-' ? foneMatch[2] : '');
       }
     }
 
-    const carrierMatch = notesStr.match(/\[Transportadora: (.*?), ID: (.*?)\]/);
+    const carrierMatch = /\[Transportadora: (.*?), ID: (.*?)\]/.exec(notesStr);
     if (carrierMatch) {
       setTransportadoraPadrao(carrierMatch[1] !== '-' ? carrierMatch[1] : '');
       setTransportadoraId(carrierMatch[2] !== '-' ? carrierMatch[2] : '');

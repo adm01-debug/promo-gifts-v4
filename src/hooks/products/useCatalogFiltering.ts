@@ -182,10 +182,10 @@ export function useCatalogFiltering({
     // SF-A parity: estes flags foram corrigidos no mapeamento leve mas estavam
     // ausentes do pipeline de filtragem do catálogo Index — Quick Options inertes
     // em /produtos (mesmo bug que SF-A corrigiu em /filtros via applyProductFilters).
-    if (filters.featured) result = result.filter((p) => p.featured === true);
-    if (filters.isNew) result = result.filter((p) => p.newArrival === true);
+    if (filters.featured) result = result.filter((p) => p.featured);
+    if (filters.isNew) result = result.filter((p) => p.newArrival);
     if (filters.hasPersonalization) result = result.filter((p) => p.hasPersonalization === true);
-    if (filters.onSale) result = result.filter((p) => p.onSale === true);
+    if (filters.onSale) result = result.filter((p) => p.onSale);
 
     // FIX-16 parity: products without gender defined are neutral — included in any gender filter
     // (applyProductFilters.ts FIX-16). Anterior: gender=null zerava o produto do resultado.

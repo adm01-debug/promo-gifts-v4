@@ -328,7 +328,7 @@ export function useCustomizationPriceReactiveLegacy(
     })
       .then((data) => {
         if (!isMounted) return;
-        if (data && data.success) {
+        if (data?.success) {
           setPrice(adaptPriceResponse(data));
         } else {
           setError('Erro no cálculo');

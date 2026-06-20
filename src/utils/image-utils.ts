@@ -97,7 +97,7 @@ export function getCdnUrl(url: string | null | undefined, variant: CdnVariant = 
  * Gera srcSet para imagens responsivas.
  */
 export function getSrcSet(url: string | null | undefined): string | undefined {
-  if (!url || !url.includes('imagedelivery.net')) return undefined;
+  if (!url?.includes('imagedelivery.net')) return undefined;
   const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
   return [
     `${base}/thumbnail 150w`,

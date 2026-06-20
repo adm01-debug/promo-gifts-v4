@@ -87,7 +87,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         }));
 
         const firstLogo = data.personalizationAreas.find((a) => a.logoPreview)?.logoPreview || null;
-        const safeLogoData = firstLogo && firstLogo.startsWith('http') ? firstLogo : null;
+        const safeLogoData = firstLogo?.startsWith('http') ? firstLogo : null;
 
         // BUG-A FIX: IDs used directly — no pre-validation queries.
         // FK violations are caught below and handled via fallback.
@@ -124,24 +124,22 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
             // save (no row exists yet), while still calling setLastSaved and
             // returning true. Using `.upsert()` guarantees the row is created
             // even when the FK-violating draft has never been persisted before.
-            const { error: updateError } = await supabase
-              .from('mockup_drafts')
-              .upsert(
-                {
-                  user_id: payload.user_id,
-                  draft_key: payload.draft_key,
-                  product_name: payload.product_name,
-                  technique_name: payload.technique_name,
-                  client_name: payload.client_name,
-                  personalization_areas: payload.personalization_areas,
-                  logo_data: payload.logo_data,
-                  updated_at: payload.updated_at,
-                  product_id: null,
-                  technique_id: null,
-                  client_id: null,
-                },
-                { onConflict: 'user_id,draft_key' },
-              );
+            const { error: updateError } = await supabase.from('mockup_drafts').upsert(
+              {
+                user_id: payload.user_id,
+                draft_key: payload.draft_key,
+                product_name: payload.product_name,
+                technique_name: payload.technique_name,
+                client_name: payload.client_name,
+                personalization_areas: payload.personalization_areas,
+                logo_data: payload.logo_data,
+                updated_at: payload.updated_at,
+                product_id: null,
+                technique_id: null,
+                client_id: null,
+              },
+              { onConflict: 'user_id,draft_key' },
+            );
 
             if (updateError) throw updateError;
           } else {
