@@ -703,6 +703,8 @@ export const ProductTableView = memo(
                       'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
                       stockColor(displayStatus),
                     )}
+                    data-testid="product-stock-value"
+                    data-stock-qty={displayStock ?? 0}
                   >
                     <div
                       className={cn(
