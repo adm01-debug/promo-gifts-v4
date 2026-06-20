@@ -414,6 +414,11 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 114: 4 zero-violation rules (removed: no-redeclare 1v, no-var-requires 1v, prefer-promise-reject-errors many, prefer-regexp-exec many, return-await 1v)
+      '@typescript-eslint/no-misused-spread': 'error',
+      '@typescript-eslint/related-getter-setter-pairs': 'error',
+      '@typescript-eslint/no-dupe-class-members': 'error',
+      '@typescript-eslint/no-invalid-this': 'error',
       // Batch 113: 7 zero-violation rules (removed: prefer-nullish-coalescing many, prefer-optional-chain 1v, prefer-for-of 1v, consistent-generic-constructors 1v, no-unnecessary-type-conversion many, no-useless-default-assignment many, no-unnecessary-type-parameters many, jsx-a11y rule-set many, react/button-has-type many, react/no-multi-comp many, etc.)
       'jsx-a11y/anchor-ambiguous-text': 'error',
       'react/no-unused-class-component-methods': 'error',
