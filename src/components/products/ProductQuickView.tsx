@@ -507,40 +507,40 @@ export const ProductQuickView = React.memo(
                     </Button>
                   </QuickViewTooltip>
 
-                  {onAddToQuote && (
-                    <QuickViewTooltip label="Adicionar ao orçamento">
+                  <QuickViewTooltip label="Adicionar ao orçamento">
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => onAddToQuote(product)}
+                      onClick={() => onAddToQuote?.(product)}
+                      disabled={!onAddToQuote}
                       className="flex-shrink-0"
                       aria-label="Adicionar ao orçamento"
+                      data-testid="product-quickview-quote"
                     >
                       <FileText className="h-4 w-4" />
                     </Button>
-                    </QuickViewTooltip>
-                  )}
+                  </QuickViewTooltip>
 
-                  {onAddToCollection && (
-                    <QuickViewTooltip label="Adicionar à coleção">
+                  <QuickViewTooltip label="Adicionar à coleção">
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => onAddToCollection(product)}
+                      onClick={() => onAddToCollection?.(product)}
+                      disabled={!onAddToCollection}
                       className="flex-shrink-0"
                       aria-label="Adicionar à coleção"
+                      data-testid="product-quickview-collection"
                     >
                       <FolderPlus className="h-4 w-4" />
                     </Button>
-                    </QuickViewTooltip>
-                  )}
+                  </QuickViewTooltip>
 
-                  {onToggleFavorite && (
-                    <QuickViewTooltip label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
+                  <QuickViewTooltip label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={handleFavorite}
+                      disabled={!onToggleFavorite}
                       className={cn(
                         'flex-shrink-0',
                         isFavorited && 'border-red-200 bg-red-50 text-red-500',
@@ -550,16 +550,14 @@ export const ProductQuickView = React.memo(
                     >
                       <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
                     </Button>
-                    </QuickViewTooltip>
-                  )}
+                  </QuickViewTooltip>
 
-                  {onToggleCompare && (
-                    <QuickViewTooltip label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}>
+                  <QuickViewTooltip label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}>
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={handleCompare}
-                      disabled={!isInCompare && !canAddToCompare}
+                      disabled={!onToggleCompare || (!isInCompare && !canAddToCompare)}
                       className={cn(
                         'flex-shrink-0',
                         isInCompare && 'border-primary/30 bg-primary/5 text-primary',
@@ -569,8 +567,8 @@ export const ProductQuickView = React.memo(
                     >
                       <BarChart2 className="h-4 w-4" />
                     </Button>
-                    </QuickViewTooltip>
-                  )}
+                  </QuickViewTooltip>
+
 
                   <QuickViewTooltip label="Compartilhar">
                   <Button
