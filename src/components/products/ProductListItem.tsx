@@ -644,12 +644,16 @@ export const ProductListItem = memo(
             >
               Cores
             </span>
-            {/* Cap visual em ~2 linhas de swatches: max-h = 2 * tamanho + gap + 2px de respiro p/ ring */}
+            {/*
+              Cap visual: até 3 linhas em md (telas estreitas), 2 linhas em lg+.
+              Respiro de 6px acomoda ring-offset-1 + shadow 12px do swatch selecionado
+              sem cortar o glow.
+            */}
             <div
-              className="w-full overflow-hidden"
+              className="w-full overflow-hidden md:[--swatch-rows:3] lg:[--swatch-rows:2]"
               style={{
                 maxHeight:
-                  'calc(var(--swatch-size-sm) * 2 + var(--swatch-gap-y) + var(--swatch-container-py) * 2 + 2px)',
+                  'calc(var(--swatch-size-sm) * var(--swatch-rows, 2) + var(--swatch-gap-y) * (var(--swatch-rows, 2) - 1) + var(--swatch-container-py) * 2 + 6px)',
               }}
             >
               <ProductColorSwatches
