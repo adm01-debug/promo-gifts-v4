@@ -12,10 +12,7 @@
  *   - datas no passado — contabilizam `overdueCount`
  */
 import { describe, it, expect } from 'vitest';
-import {
-  computeFutureStockStats,
-  dedupeFutureEntries,
-} from '@/lib/inventory/future-stock-stats';
+import { computeFutureStockStats, dedupeFutureEntries } from '@/lib/inventory/future-stock-stats';
 import type { FutureStockEntry } from '@/types/stock';
 
 const STATUSES: FutureStockEntry['status'][] = [
@@ -32,7 +29,7 @@ function mulberry32(seed: number) {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
@@ -44,7 +41,8 @@ function makeEntry(rand: () => number, idx: number): FutureStockEntry {
       : STATUSES[Math.floor(rand() * STATUSES.length)];
   const qtyRoll = rand();
   let expectedQuantity: number;
-  if (qtyRoll < 0.05) expectedQuantity = -Math.floor(rand() * 100); // negativo
+  if (qtyRoll < 0.05)
+    expectedQuantity = -Math.floor(rand() * 100); // negativo
   else if (qtyRoll < 0.07) expectedQuantity = Number.NaN;
   else if (qtyRoll < 0.09) expectedQuantity = Number.POSITIVE_INFINITY;
   else expectedQuantity = Math.floor(rand() * 1000);

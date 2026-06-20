@@ -27,11 +27,11 @@ function rng(seed: number) {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-const pick = <T,>(r: () => number, arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
+const pick = <T>(r: () => number, arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
 
 const CDN_BASES = [
   'https://imagedelivery.net/AbC123xYz/0f1e2d3c-4b5a-6789-abcd-ef0123456789',
@@ -129,7 +129,20 @@ describe('getImageSizes', () => {
 });
 
 // ───────────────── Geração aleatória de ProductImageMeta ─────────────────
-const TYPES = ['main', 'gallery', 'logo', 'ambient', 'box', 'pouch', 'location', 'area', 'component', 'detail', 'product', 'set'] as const;
+const TYPES = [
+  'main',
+  'gallery',
+  'logo',
+  'ambient',
+  'box',
+  'pouch',
+  'location',
+  'area',
+  'component',
+  'detail',
+  'product',
+  'set',
+] as const;
 function randomImage(r: () => number, idx: number): ProductImageMeta {
   const applies = r() < 0.5;
   return {
@@ -175,8 +188,12 @@ describe('groupImages — partição correta sob 100 conjuntos aleatórios', () 
       const g = groupImages(imgs);
       expect(g.hero).toBe(imgs.find((i) => i.is_primary) ?? null);
       expect(g.main.every((i) => i.image_type === 'main')).toBe(true);
-      expect(g.packaging.every((i) => i.image_type === 'box' || i.image_type === 'pouch')).toBe(true);
-      expect(g.technical.every((i) => ['location', 'area', 'component'].includes(i.image_type))).toBe(true);
+      expect(g.packaging.every((i) => i.image_type === 'box' || i.image_type === 'pouch')).toBe(
+        true,
+      );
+      expect(
+        g.technical.every((i) => ['location', 'area', 'component'].includes(i.image_type)),
+      ).toBe(true);
       // contagem bate com filtro independente
       expect(g.gallery.length).toBe(imgs.filter((i) => i.image_type === 'gallery').length);
       expect(g.logo.length).toBe(imgs.filter((i) => i.image_type === 'logo').length);

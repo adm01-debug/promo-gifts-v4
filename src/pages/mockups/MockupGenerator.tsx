@@ -116,9 +116,9 @@ export default function MockupGenerator() {
     setTechniqueColorConfig: mg.setTechniqueColorConfig,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleTechniqueSelect = useCallback<(t: any) => void>(
-    (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
+  const handleTechniqueSelect = useCallback(
+    (t: { id: string; name: string; code: string | null } | null) =>
+      technique.handleTechniqueChange(t as unknown as MockupTechnique | null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [technique.handleTechniqueChange],
   );
@@ -493,7 +493,9 @@ export default function MockupGenerator() {
                                 }
                               } catch (err) {
                                 toast.error('Erro ao salvar mockup no histórico');
-                                log.error('save_history_failed', { error: err instanceof Error ? err.message : String(err) });
+                                log.error('save_history_failed', {
+                                  error: err instanceof Error ? err.message : String(err),
+                                });
                               }
                             }
                           }}
