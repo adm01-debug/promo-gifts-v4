@@ -12,6 +12,7 @@
  * Pesos podem ser sobrescritos pelo consumidor (popover de ajuste).
  */
 import { useMemo } from 'react';
+import { leadTimeProxy } from '@/lib/comparison-utils';
 
 export interface ComparisonScoreWeights {
   price: number;
@@ -37,20 +38,6 @@ export interface ProductScore {
   breakdown: Record<keyof ComparisonScoreWeights, number>;
   isWinner: boolean;
   rank: number;
-}
-
-function leadTimeProxy(stockStatus: string | null | undefined): number {
-  // Lower is better → in-stock=1, low-stock=2, out-of-stock=4
-  switch (stockStatus) {
-    case 'in-stock':
-      return 1;
-    case 'low-stock':
-      return 2;
-    case 'out-of-stock':
-      return 4;
-    default:
-      return 2;
-  }
 }
 
 function normalizeLowerBetter(value: number, min: number, max: number): number {

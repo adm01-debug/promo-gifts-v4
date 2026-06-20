@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Crown, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useComparisonScore } from '@/hooks/comparison';
+import { leadTimeProxy, leadTimeLabel } from '@/lib/comparison-utils';
 import type { Product } from '@/types/product-catalog';
 
 interface Props {
@@ -15,35 +16,6 @@ interface Props {
   formatCurrency: (v: number) => string;
   onRemove: (idx: number) => void;
   onProductClick?: (id: string) => void;
-}
-
-// Lead time is derived from stock status (same proxy used by the score + table),
-// so the duel's "Lead time" row agrees with the radar/score instead of relying on
-// the usually-empty `leadTimeDays` field.
-function leadTimeProxy(status: string | undefined): number {
-  switch (status) {
-    case 'in-stock':
-      return 1;
-    case 'low-stock':
-      return 2;
-    case 'out-of-stock':
-      return 4;
-    default:
-      return 2;
-  }
-}
-
-function leadTimeLabel(status: string | undefined): string {
-  switch (status) {
-    case 'in-stock':
-      return '1-3 dias';
-    case 'low-stock':
-      return '5-10 dias';
-    case 'out-of-stock':
-      return 'Sob consulta';
-    default:
-      return '—';
-  }
 }
 
 const ROWS: Array<{
