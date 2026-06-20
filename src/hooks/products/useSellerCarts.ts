@@ -127,14 +127,19 @@ export function useSellerCarts() {
       if (error) throw error;
       if (!data?.length) return [];
 
-      return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+      // PostgREST nested-join row shape (the generated types.ts does not model the
+      // `seller_cart_items(*)` embed). Typed precisely so the destructure + spread
+      // below stay checked, instead of `as any`.
+      type SellerCartRow = Omit<SellerCart, 'items'> & {
+        seller_cart_items: SellerCartItem[] | null;
+      };
+      return (data as unknown as SellerCartRow[]).map((row) => {
+        const { seller_cart_items: rowItems, ...cart } = row;
         return {
           ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
-          items: (rowItems ?? []) as SellerCartItem[],
+          notes: cart.notes ?? null,
+          status: (cart.status ?? 'novo') as CartStatus,
+          items: rowItems ?? [],
         };
       });
     },
