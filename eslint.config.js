@@ -389,7 +389,10 @@ export default [
       '@typescript-eslint/ban-ts-comment': 'error',
       'no-floating-decimal': 'error',
       'jsx-a11y/tabindex-no-positive': 'error',
-      'jsx-a11y/anchor-is-valid': 'warn',
+      // Batch 98: 3 zero-violation rules (removed: react/button-has-type 21v, @typescript-eslint/array-type 14v, @typescript-eslint/consistent-type-definitions 9v, react/jsx-no-useless-fragment 2v, no-multi-spaces 2v, @typescript-eslint/prefer-optional-chain 2v, consistent-indexed-object-style 5v)
+      '@typescript-eslint/prefer-string-starts-ends-with': 'error',
+      '@typescript-eslint/prefer-includes': 'error',
+      'no-negated-in-lhs': 'error',
     },
     settings: {
       react: { version: 'detect' },
