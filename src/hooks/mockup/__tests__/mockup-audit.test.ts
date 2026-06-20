@@ -1029,3 +1029,37 @@ describe('Analise estatica — MockupResultCard.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// Analise estatica — ShareMenu.tsx
+// =====================================================================
+
+describe('Analise estatica — ShareMenu.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ShareMenu.tsx');
+  });
+
+  describe('a11y — botao de compartilhar com label acessivel', () => {
+    it('botao trigger do menu de compartilhar tem aria-label', () => {
+      expect(src).toContain('aria-label="Compartilhar mockup"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupSuccessToast.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupSuccessToast.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupSuccessToast.tsx');
+  });
+
+  describe('a11y — botao de abrir mockup com label acessivel', () => {
+    it('botao de abrir em nova aba tem aria-label (ExternalLink nao e apenas icone)', () => {
+      expect(src).toContain('aria-label="Abrir mockup em nova aba"');
+    });
+  });
+});

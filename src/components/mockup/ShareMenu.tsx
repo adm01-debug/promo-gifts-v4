@@ -110,7 +110,7 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
+        <Button variant="outline" size="sm" aria-label="Compartilhar mockup" className={className}>
           <Share2 className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
