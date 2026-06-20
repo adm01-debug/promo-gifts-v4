@@ -80,9 +80,7 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const finalBeforeShipping = subtotal - discountAmount;
   // Negative value is valid: means markup > apparent discount (seller has margin).
   const realDiscountPercent =
-    realSubtotal > 0
-      ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100)
-      : 0;
+    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
 
   return {
     subtotal: round2(subtotal),
@@ -99,7 +97,9 @@ export function buildInsertPayload(
   userId: string,
   orgId: string | null,
   totals: { subtotal: number; discountAmount: number; total: number },
-): TablesInsert<'quotes'> {
+): TablesInsert<'quotes'> & { contact_id?: string | null } {
+  // contact_id: coluna real de `quotes` ausente do types.ts gerado (stale). A intersecção
+  // mantém o payload tipado e evita TS2353. Ver src/lib/supabase-untyped.ts.
   validateDiscount(quote, totals);
   return {
     quote_number: quote.quote_number ?? '',
@@ -131,7 +131,8 @@ export function buildInsertPayload(
 export function buildUpdatePayload(
   quote: Partial<Quote>,
   totals: { subtotal: number; discountAmount: number; total: number },
-): TablesUpdate<'quotes'> {
+): TablesUpdate<'quotes'> & { contact_id?: string | null } {
+  // contact_id: idem buildInsertPayload — coluna real ausente do types.ts gerado (stale).
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
