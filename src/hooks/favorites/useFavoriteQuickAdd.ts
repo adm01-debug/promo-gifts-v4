@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
 import { useFavoriteLists } from '@/hooks/favorites';
 import type { Json } from '@/integrations/supabase/types';
-import type { Product } from '@/types/product';
+import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
