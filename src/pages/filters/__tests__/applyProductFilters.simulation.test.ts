@@ -1248,3 +1248,47 @@ describe('SIM — FIX-10: gaps de cobertura identificados na análise exaustiva'
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// SF-MATERIAIS-INERT — Regressão: o catálogo leve do Super Filtro NÃO hidrata
+// product.materials (sempre []). Selecionar filters.materiais (texto livre vindo
+// de voz / URL ?materiais= / preset salvo) NÃO pode zerar a grade silenciosamente.
+// ---------------------------------------------------------------------------
+describe('SF-MATERIAIS-INERT: materiais não zera a grade quando produtos não têm materiais', () => {
+  // Catálogo "leve" representativo: materials sempre vazio (como mapLightweightToProduct).
+  const lightweight = [
+    makeProduct({ id: 'L1', name: 'Caneta', materials: [] }),
+    makeProduct({ id: 'L2', name: 'Caderno', materials: [] }),
+    makeProduct({ id: 'L3', name: 'Squeeze', materials: [] }),
+  ];
+  const runLite = (filters: FilterState) =>
+    applyProductFilters(lightweight, filters, filters.sortBy, baseCtx());
+
+  it('materiais via texto livre com catálogo sem materiais → mantém a grade (não zera)', () => {
+    // Antes do fix: ''.includes('metal') === false para todos → grade zerava silenciosamente.
+    expect(runLite(f({ materiais: ['metal'] })).length).toBe(lightweight.length);
+    expect(runLite(f({ materiais: ['plastico', 'aluminio'] })).length).toBe(lightweight.length);
+  });
+
+  it('quando os produtos TÊM materiais, o filtro materiais volta a discriminar (sem regressão)', () => {
+    const withMaterials = [
+      makeProduct({ id: 'M1', materials: ['metal'] }),
+      makeProduct({ id: 'M2', materials: ['plastico'] }),
+    ];
+    const out = applyProductFilters(withMaterials, f({ materiais: ['metal'] }), 'name', baseCtx());
+    expect(ids(out)).toEqual(['M1']);
+  });
+
+  it('o filtro de materiais REAL (server-side via Set) continua zerando corretamente quando vazio', () => {
+    // hasMaterialFilter + Set vazio + sem loading/erro = zero legítimo (grupos/tipos).
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: undefined,
+    });
+    expect(
+      applyProductFilters(lightweight, f({ materialTypes: ['inexistente'] }), 'name', ctx),
+    ).toHaveLength(0);
+  });
+});
