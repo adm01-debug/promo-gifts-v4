@@ -1,24 +1,16 @@
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
-import type { Database } from '@/integrations/supabase/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
-type PublicTables = Database['public']['Tables'];
-type TableName = keyof PublicTables;
-type DynamicTableName = TableName | (string & {});
-type TableInsert<T extends TableName> = PublicTables[T]['Insert'];
-type TableUpdate<T extends TableName> = PublicTables[T]['Update'];
-type OrgScopedInsert<T extends TableName> = Omit<TableInsert<T>, 'organization_id'>;
-type OrgScopedUpdate<T extends TableName> = Omit<TableUpdate<T>, 'organization_id'>;
 
 /**
  * Hook to fetch generic data scoped to the current organization.
  * Automatically adds organization_id filter if currentOrg is available.
  */
-export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName>(
-  tableName: TTable,
+export function useOrgData<T>(
+  tableName: string,
   options: {
     enabled?: boolean;
     select?: string;
@@ -63,16 +55,12 @@ export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName
  * Hook to create data scoped to the current organization.
  * Automatically adds organization_id to the payload.
  */
-export function useOrgCreate<TTable extends DynamicTableName>(tableName: TTable) {
+export function useOrgCreate(tableName: string) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      payload: TTable extends TableName
-        ? OrgScopedInsert<Extract<TTable, TableName>>
-        : Record<string, unknown>,
-    ) => {
+    mutationFn: async (payload: Record<string, unknown>) => {
       if (!currentOrg) throw new Error('No organization selected');
 
       const { data, error } = await untypedFrom(tableName)
@@ -98,17 +86,12 @@ export function useOrgCreate<TTable extends DynamicTableName>(tableName: TTable)
 /**
  * Hook to update data. RLS will handle organization check.
  */
-export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable) {
+export function useOrgUpdate(tableName: string) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...payload
-    }: { id: string } & (TTable extends TableName
-      ? OrgScopedUpdate<Extract<TTable, TableName>>
-      : Record<string, unknown>)) => {
+    mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
       const { data, error } = await untypedFrom(tableName)
         .update(payload)
         .eq('id', id)
@@ -133,7 +116,7 @@ export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable)
 /**
  * Hook to delete data. RLS will handle organization check.
  */
-export function useOrgDelete<TTable extends DynamicTableName>(tableName: TTable) {
+export function useOrgDelete(tableName: string) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 

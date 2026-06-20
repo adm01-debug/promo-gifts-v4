@@ -206,8 +206,7 @@ export async function fetchAuditHistory(
   entityType: AuditEntityType,
   entityId: string,
 ): Promise<AuditLogEntry[]> {
-  const { data, error } = await db
-    .from('audit_log')
+  const { data, error } = await untypedFrom<AuditLogEntry>('audit_log')
     .select(
       `
       *,
@@ -242,8 +241,7 @@ export async function fetchAllAuditLogs(
   },
   limit = 100,
 ): Promise<AuditLogEntry[]> {
-  let query = db
-    .from('audit_log')
+  let query = untypedFrom<AuditLogEntry>('audit_log')
     .select(
       `
       *,
