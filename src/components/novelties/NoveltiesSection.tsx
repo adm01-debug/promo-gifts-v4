@@ -115,6 +115,8 @@ export function NoveltiesSection() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="7">Últimos 7 dias</SelectItem>
                 <SelectItem value="15">Últimos 15 dias</SelectItem>
+                {/* ISSUE-29 FIX: adiciona opção 30 dias para cobrir toda a janela de novidade */}
+                <SelectItem value="30">Últimos 30 dias</SelectItem>
               </SelectContent>
             </Select>
 

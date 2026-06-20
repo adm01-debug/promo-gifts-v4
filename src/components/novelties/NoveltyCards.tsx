@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Package, Building2, FolderTree, Clock } from 'lucide-react';
+import { Package, Building2, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
@@ -348,150 +348,6 @@ export const NoveltyGridCard = memo(
   },
 );
 
-// ── List Card ────────────────────────────────────────────────────────────────
-export const NoveltyListCard = memo(
-  ({
-    product,
-    selectionMode = false,
-    isSelected = false,
-    onSelect,
-    onStatusClick,
-    colors,
-  }: NoveltyCardProps) => {
-    // ISSUE-5 FIX: computar freshness ao renderizar — mesma correção do NoveltyGridCard.
-    const fresh = getRecencyVariant(product.detected_at) === 'hot';
-
-    // Mini-carrossel de variantes — mesmo comportamento do grid.
-    const [activeColorName, setActiveColorName] = useState<string | null>(null);
-    const activeImage = useMemo(() => {
-      if (!activeColorName || !colors?.length) return product.product_image;
-      const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
-      return match?.image || product.product_image;
-    }, [activeColorName, colors, product.product_image]);
-
-    return (
-      <article
-        role="button"
-        tabIndex={0}
-        aria-label={`Novidade: ${product.product_name ?? 'Produto'}`}
-        aria-pressed={isSelected}
-        className={cn(
-          'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 transition-all',
-          'hover:border-primary/40 hover:shadow-sm',
-          isSelected && 'border-primary ring-2 ring-primary/20',
-        )}
-        onClick={() => onSelect?.(product.product_id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect?.(product.product_id);
-          }
-        }}
-      >
-        {selectionMode && (
-          <div
-            className={cn(
-              'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
-              isSelected
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-muted-foreground bg-card',
-            )}
-          >
-            {isSelected && (
-              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
-                <path
-                  d="M2 6L5 9L10 3"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </div>
-        )}
-
-        {/* Image */}
-        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted/20">
-          <QuickViewThumb
-            productId={product.product_id}
-            productName={product.product_name ?? 'Produto'}
-            testId="novelty-list-card-thumb"
-            className="h-full w-full"
-          >
-            <HoverSetImage
-              key={activeImage ?? product.product_image ?? 'placeholder'}
-              primary={activeImage}
-              set={activeColorName ? null : product.product_set_image}
-              alt={product.product_name}
-              fallbackIconClassName="h-5 w-5 text-muted-foreground/30"
-            />
-          </QuickViewThumb>
-        </div>
-
-        {/* Info */}
-        <div className="min-w-0 flex-1">
-          <div className="mb-0.5 flex items-center gap-2">
-            <NoveltyBadge
-              daysRemaining={product.days_remaining}
-              daysElapsed={product.days_as_novelty}
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStatusClick?.('novelty');
-              }}
-            />
-            {fresh && (
-              <ProductStatusBadge
-                type="novelty"
-                value="NEW"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusClick?.('novelty');
-                }}
-              />
-            )}
-          </div>
-          <p className="truncate text-sm font-medium">{product.product_name ?? '—'}</p>
-          <p className="text-xs text-muted-foreground">{product.product_sku ?? '—'}</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            {product.category_name && (
-              <span className="flex items-center gap-0.5">
-                <FolderTree className="h-3 w-3" />
-                {product.category_name}
-              </span>
-            )}
-            {product.supplier_name && (
-              <span className="flex items-center gap-0.5">
-                <Building2 className="h-3 w-3" />
-                {product.supplier_name}
-              </span>
-            )}
-            <ProductColorSwatches
-              colors={colors}
-              max={5}
-              size="xs"
-              hideWhenEmpty={false}
-              selectedName={activeColorName}
-              onSelect={(c) => setActiveColorName(c.name)}
-            />
-          </div>
-        </div>
-
-        {/* Price */}
-        {typeof product.base_price === 'number' &&
-          Number.isFinite(product.base_price) &&
-          product.base_price > 0 && (
-            <span className="flex-shrink-0 text-sm font-semibold text-primary">
-              {BRL_FORMATTER.format(product.base_price)}
-            </span>
-          )}
-      </article>
-    );
-  },
-);
-
 // ── Table View ───────────────────────────────────────────────────────────────
 export function NoveltyTableView({
   products,
@@ -634,15 +490,14 @@ export function NoveltyTableView({
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
                   {product.supplier_name ?? '—'}
                 </TableCell>
-                <TableCell className="px-2 py-1.5 text-right text-sm">
-                  <span
-                    className={cn(
-                      'font-medium',
-                      product.stock_quantity === 0 ? 'text-destructive' : 'text-foreground',
-                    )}
-                  >
-                    {product.stock_quantity ?? 0}
-                  </span>
+                {/* ISSUE-15 FIX: usa StockBadge consistente com ProductListItem */}
+                <TableCell className="px-2 py-1.5 text-right">
+                  <StockBadge
+                    status={product.stock_status}
+                    quantity={product.stock_quantity ?? 0}
+                    showQuantity
+                    size="sm"
+                  />
                 </TableCell>
               </TableRow>
             );

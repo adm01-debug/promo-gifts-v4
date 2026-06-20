@@ -86,6 +86,8 @@ export function NoveltyProductGrid() {
 
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ISSUE-24 FIX: ref para focar o input de busca via atalho `/`
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isFetching) {
@@ -107,6 +109,21 @@ export function NoveltyProductGrid() {
       if (progressRef.current) clearInterval(progressRef.current);
     };
   }, [isFetching]);
+
+  // ISSUE-24 FIX: atalho `/` foca o input de busca (mesmo padrão do CatalogHeader).
+  // Só dispara se o foco não estiver em input/textarea/select/contenteditable.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = (e.target as HTMLElement)?.tagName?.toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   // ISSUE-37 FIX: counts de fornecedor e categoria usam o conjunto filtrado pelo
   // OUTRO filtro ativo — padrão de "faceted filtering". Antes os counts vinham de
@@ -464,7 +481,7 @@ export function NoveltyProductGrid() {
         onProductClick={handleProductClick}
         colorsByProduct={colorsByProduct}
         hasMore={hasMore}
-        isLoadingMore={isFetching}
+        isLoadingMore={false}
         onLoadMore={handleLoadMore}
         scrollToTopToken={scrollToken}
         onStatusClick={(type) => {
@@ -531,6 +548,7 @@ export function NoveltyProductGrid() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  ref={searchInputRef}
                   placeholder="Buscar novidades…  /"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

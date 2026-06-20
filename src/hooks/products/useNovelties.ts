@@ -307,14 +307,13 @@ export function sortNovelties(
   };
 
   switch (sortBy) {
-    case 'newest':
-      sorted.sort((a, b) => {
-        const bt = new Date(b.detected_at).getTime();
-        const at = new Date(a.detected_at).getTime();
-        if (bt !== at) return bt - at;
-        return byNameThenId(a, b);
-      });
-      break;
+    case 'newest': {
+      // ISSUE-3 FIX: Schwartzian transform — pré-computa getTime() uma vez por item
+      // (O(n)) em vez de criar new Date() dentro do comparador (O(n log n) alocações).
+      const withTs = sorted.map((n) => [n, new Date(n.detected_at).getTime()] as const);
+      withTs.sort((a, b) => (b[1] !== a[1] ? b[1] - a[1] : byNameThenId(a[0], b[0])));
+      return withTs.map(([n]) => n);
+    }
     case 'name':
     case 'name-asc':
       sorted.sort(byNameThenId);
@@ -421,9 +420,15 @@ export function useExpiringNovelties(maxDays = 7) {
 
       // Busca paginada — sem hardcap para não perder produtos expirando
       const PAGE_SIZE = 500;
+      // ISSUE-8 FIX: guarda anti-loop — 100 páginas × 500 = 50k novidades max.
+      // Sem esse limite, se novelty_expires_at for null em todas as linhas o early-exit
+      // nunca dispara e o while(true) vira loop infinito até timeout do cliente.
+      const MAX_PAGES = 100;
       const allRaw: RawProduct[] = [];
       let offset = 0;
-      while (true) {
+      let page = 0;
+      while (page < MAX_PAGES) {
+        page++;
         const { data, error } = await applyNoveltyPredicate(
           fromTable('products').select(NOVELTY_SELECT),
           nowIso,

@@ -87,11 +87,12 @@ export function ExpiringNoveltiesWidget() {
             <CardTitle className="flex items-center gap-1.5 text-sm">
               <Hourglass className="h-4 w-4 text-warning" />
               <span className="font-bold text-warning">Expirando em breve</span>
+              {/* ISSUE-14 FIX: mostra total real (expiring.length) — não o cap de 8 */}
               <Badge
                 variant="secondary"
                 className="border border-warning/30 bg-warning/20 px-1.5 py-0 text-[9px] font-bold tabular-nums text-warning"
               >
-                {expiringItems.length}
+                {expiring.length}
               </Badge>
             </CardTitle>
           </CardHeader>
