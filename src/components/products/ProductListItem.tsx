@@ -667,6 +667,9 @@ export const ProductListItem = memo(
                 }}
               />
             </div>
+          </div>
+
+
 
           {/* Price column — right-aligned, always visible */}
           <div
