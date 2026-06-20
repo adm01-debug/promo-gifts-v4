@@ -524,20 +524,35 @@ export const ProductTableView = memo(
                 );
               }
 
+              // Cor selecionada manualmente pelo usuário nesta linha (store global, SSOT).
+              const userSelectedColorName = selectedColorsMap[product.id] || null;
+              const userSelectedColor =
+                userSelectedColorName && product.colors?.length
+                  ? product.colors.find(
+                      (c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase(),
+                    ) || null
+                  : null;
               // primary_image_url (é a imagem com is_primary=true, campo canônico) — exibida primeiro
               const colorSpecificImage = resolveColorImage(product, activeColorFilter);
               const rawImg =
+                (userSelectedColor as { image?: string | null } | null)?.image ||
                 colorSpecificImage ||
                 product.primary_image_url ||
                 product.og_image_url ||
                 product.images[0] ||
                 null;
               const thumbUrl = rawImg ? getCdnUrl(rawImg, 'card') : '/placeholder.svg';
-              const colorStock = resolveColorStock(product, activeColorFilter);
+              const colorStock = resolveColorStock(
+                product,
+                activeColorFilter,
+                userSelectedColorName,
+              );
               const displayStock = colorStock?.stock ?? product.stock;
               const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
-              const activeColorName = getActiveColorName(product, activeColorFilter);
+              const activeColorName =
+                userSelectedColorName || getActiveColorName(product, activeColorFilter);
               const isSelected = selectionMode && selectedIds?.has(product.id);
+
 
               return (
                 <div
