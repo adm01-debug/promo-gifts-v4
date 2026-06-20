@@ -172,7 +172,10 @@ export function CartHeaderButton() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/40 bg-muted/5 px-4 pb-3 pt-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 shadow-inner">
+                <div
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 shadow-inner"
+                >
                   <ShoppingCart className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex flex-col">
