@@ -218,7 +218,7 @@ export const MockupResultCard = memo(
                     className="h-7 w-7"
                     onClick={handleZoomOut}
                     disabled={zoom <= 0.5}
-                    aria-label="Reduzir"
+                    aria-label="Diminuir zoom"
                   >
                     <ZoomOut className="h-4 w-4" />
                   </Button>
@@ -227,7 +227,7 @@ export const MockupResultCard = memo(
                   </span>
                   <Button
                     size="icon"
-                    aria-label="Ampliar"
+                    aria-label="Aumentar zoom"
                     variant="ghost"
                     className="h-7 w-7"
                     onClick={handleZoomIn}
@@ -240,7 +240,7 @@ export const MockupResultCard = memo(
                     variant="ghost"
                     className="h-7 w-7"
                     onClick={handleZoomReset}
-                    aria-label="Rotacionar"
+                    aria-label="Resetar zoom para 100%"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                   </Button>
@@ -336,7 +336,7 @@ export const MockupResultCard = memo(
                   <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-lg border bg-background/90 p-1.5 shadow-lg backdrop-blur-sm">
                     <Button
                       size="icon"
-                      aria-label="Reduzir"
+                      aria-label="Diminuir zoom"
                       variant="ghost"
                       className="h-8 w-8"
                       onClick={() => setFullscreenZoom((z) => Math.max(z - 0.25, 0.25))}
@@ -349,7 +349,7 @@ export const MockupResultCard = memo(
                     </span>
                     <Button
                       size="icon"
-                      aria-label="Ampliar"
+                      aria-label="Aumentar zoom"
                       variant="ghost"
                       className="h-8 w-8"
                       onClick={() => setFullscreenZoom((z) => Math.min(z + 0.25, 5))}
@@ -358,7 +358,7 @@ export const MockupResultCard = memo(
                     </Button>
                     <Button
                       size="icon"
-                      aria-label="Desfazer"
+                      aria-label="Resetar zoom para 100%"
                       variant="ghost"
                       className="h-8 w-8"
                       onClick={() => setFullscreenZoom(1)}

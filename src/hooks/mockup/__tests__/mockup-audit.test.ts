@@ -730,3 +730,95 @@ describe('Analise estatica — LogoSizeControls.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — MockupResultCard.tsx (zoom controls)
+// =====================================================================
+
+describe('Analise estatica — MockupResultCard.tsx (zoom controls)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  describe('a11y — aria-label correto nos controles de zoom', () => {
+    it('botoes de zoom usam "Diminuir zoom" (nao "Reduzir" generico)', () => {
+      expect(src).toContain('aria-label="Diminuir zoom"');
+      expect(src).not.toContain('aria-label="Reduzir"');
+    });
+    it('botoes de zoom usam "Aumentar zoom" (nao "Ampliar" generico)', () => {
+      expect(src).toContain('aria-label="Aumentar zoom"');
+      expect(src).not.toContain('aria-label="Ampliar"');
+    });
+    it('botao de reset de zoom nao usa aria-label="Rotacionar" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Rotacionar"');
+    });
+    it('botao de reset de zoom nao usa aria-label="Desfazer" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Desfazer"');
+    });
+    it('botoes de reset de zoom usam label descritivo', () => {
+      expect(src).toContain('aria-label="Resetar zoom para 100%"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ProductSearchCombobox.tsx
+// =====================================================================
+
+describe('Analise estatica — ProductSearchCombobox.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ProductSearchCombobox.tsx');
+  });
+
+  describe('a11y — aria-label semantico no botao de limpar selecao', () => {
+    it('botao de limpar nao usa aria-label="Fechar" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+    it('botao de limpar usa aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Remover produto selecionado"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — TemplateSelector.tsx
+// =====================================================================
+
+describe('Analise estatica — TemplateSelector.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TemplateSelector.tsx');
+  });
+
+  describe('a11y — aria-label contextual no botao de excluir template', () => {
+    it('botao de excluir usa aria-label com nome do template', () => {
+      expect(src).toContain('aria-label={`Excluir template ');
+      expect(src).toContain('template.name}`}');
+    });
+    it('aria-label generico "Excluir" nao existe mais', () => {
+      expect(src).not.toContain('aria-label="Excluir"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupProductSelector.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupProductSelector.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  describe('a11y — aria-label semantico no botao de limpar selecao', () => {
+    it('botao de limpar nao usa aria-label="Fechar" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+    it('botao de limpar usa aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Remover produto selecionado"');
+    });
+  });
+});

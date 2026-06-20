@@ -182,7 +182,7 @@ export function MockupProductSelector({
           className="h-7 w-7 shrink-0 hover:bg-destructive/10 hover:text-destructive"
           onClick={handleClear}
           disabled={disabled}
-          aria-label="Fechar"
+          aria-label="Remover produto selecionado"
         >
           <X className="h-3.5 w-3.5" />
         </Button>
@@ -342,7 +342,9 @@ export function MockupProductSelector({
                             >
                               <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-muted">
                                 <img
-                                  src={product.image_url || product.images?.[0] || '/placeholder.svg'}
+                                  src={
+                                    product.image_url || product.images?.[0] || '/placeholder.svg'
+                                  }
                                   alt={product.name}
                                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                   loading="lazy"
