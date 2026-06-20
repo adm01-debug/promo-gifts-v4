@@ -414,6 +414,14 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 108: 7 zero-violation rules (removed: radix 16v, no-dynamic-delete many, wrap-iife 2v, heading-has-content 2v)
+      'jsx-a11y/aria-role': 'error',
+      'no-extra-label': 'error',
+      'react/jsx-no-undef': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      'react/no-access-state-in-setstate': 'error',
+      'react/no-redundant-should-component-update': 'error',
+      'react/no-this-in-sfc': 'error',
       // Batch 107: 5 zero-violation rules (removed: camelcase massive, no-confusing-void-expression 55v, no-redundant-type-constituents 18v+, no-unnecessary-type-assertion many, consistent-return 3v, no-base-to-string 3v, prefer-regexp-exec 24v, prefer-for-of 1v)
       'no-useless-backreference': 'error',
       'no-constant-binary-expression': 'error',
