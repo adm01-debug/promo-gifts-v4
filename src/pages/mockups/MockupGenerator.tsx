@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTechniqueHandlers } from '@/pages/mockups/mockup-generator/MockupTechniqueHandlers';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
+import { toast } from 'sonner';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const log = createClientLogger('mockup-generator');
