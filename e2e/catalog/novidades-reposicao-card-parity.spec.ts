@@ -247,12 +247,20 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       const min = Math.min(...heights);
       const max = Math.max(...heights);
       const expected = vp.w < 640 ? 400 : 430;
+      const tol = tolForViewport(vp.w);
       // eslint-disable-next-line no-console
       console.log(
-        `[card-parity:viewport ${vp.label}] expected=${expected}px min=${min} max=${max} spread=${(max - min).toFixed(2)}px`,
+        `[card-parity:viewport ${vp.label}] expected=${expected}px min=${min} max=${max} spread=${(max - min).toFixed(2)}px tol=${tol}px`,
       );
-      expect(max - min, `cards variam em ${vp.label}: spread=${(max - min).toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
-      expect(Math.abs(min - expected), `altura ${min}px ≠ esperada ${expected}px em ${vp.label}`).toBeLessThanOrEqual(TOL_PX);
+      expect(max - min, `cards variam em ${vp.label}: spread=${(max - min).toFixed(2)}px`).toBeLessThanOrEqual(tol);
+      expect(Math.abs(min - expected), `altura ${min}px ≠ esperada ${expected}px em ${vp.label}`).toBeLessThanOrEqual(tol);
+
+      // Baseline screenshot diff por viewport (snapshot persistente).
+      const card = items.first();
+      await expect(card).toHaveScreenshot(`card-reposicao-${vp.label}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+      });
     });
   }
 
