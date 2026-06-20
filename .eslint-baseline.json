@@ -1,5 +1,9 @@
 {
-  "generatedAt": "2026-06-20T06:34:15.901Z",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-06-20T16:27:20.354Z",
+  "totalErrors": 1,
+  "counts": {
+    "src/components/novelties/NoveltyCards.tsx": {
+      "<no-rule>": 1
+    }
+  }
 }
