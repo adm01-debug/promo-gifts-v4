@@ -192,15 +192,10 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
       );
     }
 
-    let safeProductId: string | null = null;
-    if (product.id) {
-      const { data: productRow } = await supabase
-        .from('products')
-        .select('id')
-        .eq('id', product.id)
-        .maybeSingle();
-      if (productRow) safeProductId = product.id;
-    }
+    // BUG-PRODUCT-EXTRA-SELECT FIX: use product.id directly — no pre-validation SELECT.
+    // Same pattern as BUG-A fix in useMockupDraft. The FK violation (23503) is
+    // caught below and retried with product_id: null (~200ms saved on every save).
+    const safeProductId = product.id || null;
 
     // BUG-10 FIX: generated_mockups.technique_id has a FK constraint pointing to
     // `personalization_techniques`, but the techniques shown in the UI come from
@@ -215,48 +210,61 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     const safeClientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
+    const insertPayload = {
+      user_id: userId,
+      product_id: safeProductId,
+      product_name: product.name,
+      product_sku: product.sku || null,
+      technique_id: safeTechniqueId,
+      technique_name: technique.name,
+      mockup_url: mockupUrl,
+      thumbnail_url: mockupUrl,
+      logo_url: logoUrl,
+      layout_url: extra?.layoutUrl || null,
+      position_x: area.positionX,
+      position_y: area.positionY,
+      logo_width_cm: area.logoWidth,
+      logo_height_cm: area.logoHeight,
+      // BUG-MISSING-COLS FIX: persist logo_rotation/scale as top-level columns
+      // (migration 20260620000001) so they survive without JSONB archaeology.
+      logo_rotation: area.logoRotation ?? 0,
+      logo_scale: area.logoScale ?? 100,
+      // BUG-CLIENT-ID FIX: persist client_id/name as top-level columns.
+      client_id: safeClientId,
+      client_name: clientName,
+      area_name: extra?.locationName || area.name || 'Frente',
+      ai_model_used: technique.code || technique.name || 'custom',
+      area_config: {
+        positionX: area.positionX,
+        positionY: area.positionY,
+        logoWidth: area.logoWidth,
+        logoHeight: area.logoHeight,
+        logoRotation: area.logoRotation ?? null,
+        logoScale: area.logoScale ?? null,
+        logoUrl,
+        clientName,
+        colorsCount: extra?.colorsCount || null,
+        annotations: annotations && annotations.length > 0 ? annotations : null,
+      },
+    };
+
     const { data: insertedRow, error } = await untypedFrom('generated_mockups')
-      .insert({
-        user_id: userId,
-        product_id: safeProductId,
-        product_name: product.name,
-        product_sku: product.sku || null,
-        technique_id: safeTechniqueId,
-        technique_name: technique.name,
-        mockup_url: mockupUrl,
-        thumbnail_url: mockupUrl,
-        logo_url: logoUrl,
-        layout_url: extra?.layoutUrl || null,
-        position_x: area.positionX,
-        position_y: area.positionY,
-        logo_width_cm: area.logoWidth,
-        logo_height_cm: area.logoHeight,
-        // BUG-MISSING-COLS FIX: persist logo_rotation/scale as top-level columns
-        // (migration 20260620000001) so they survive without JSONB archaeology.
-        logo_rotation: area.logoRotation ?? 0,
-        logo_scale: area.logoScale ?? 100,
-        // BUG-CLIENT-ID FIX: persist client_id/name as top-level columns.
-        client_id: safeClientId,
-        client_name: clientName,
-        area_name: extra?.locationName || area.name || 'Frente',
-        ai_model_used: technique.code || technique.name || 'custom',
-        area_config: {
-          positionX: area.positionX,
-          positionY: area.positionY,
-          logoWidth: area.logoWidth,
-          logoHeight: area.logoHeight,
-          logoRotation: area.logoRotation ?? null,
-          logoScale: area.logoScale ?? null,
-          logoUrl,
-          clientName,
-          colorsCount: extra?.colorsCount || null,
-          annotations: annotations && annotations.length > 0 ? annotations : null,
-        },
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
 
     if (error) {
+      if (error.code === '23503' && safeProductId) {
+        // product_id FK violation — product UUID not in products table; retry with null.
+        logger.warn('[saveMockupToDb] FK violation on product_id — retrying with null', {
+          productId: safeProductId,
+        });
+        const { data: retryRow, error: retryError } = await untypedFrom('generated_mockups')
+          .insert({ ...insertPayload, product_id: null })
+          .select('id')
+          .single();
+        if (!retryError) return retryRow?.id || null;
+      }
       logger.error('Error saving to history:', error);
       toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
       return null;
@@ -489,28 +497,37 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   // BUG-22 FIX: fetch logo_url before deleting the row so we can clean up
   // the uploaded logo from storage. Best-effort — storage failure must not
   // prevent the DB delete from proceeding.
+  // BUG-DELETE-ORPHANED-MOCKUP-PNG FIX: also fetch mockup_url so the composite
+  // PNG (${userId}/mockups/${ts}-${uuid}.png) is removed — previously leaked.
   let selectQuery = untypedFrom<Record<string, unknown>>('generated_mockups')
-    .select('logo_url')
+    .select('logo_url, mockup_url')
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const logoUrl =
-    (rows as unknown as Array<{ logo_url: string | null }> | null)?.[0]?.logo_url ?? null;
+  const row = (rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null)?.[0] ?? null;
+  const logoUrl = row?.logo_url ?? null;
+  const mockupUrl = row?.mockup_url ?? null;
 
   let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
   if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
   const { error } = await deleteQuery;
   if (error) throw error;
 
-  // Remove logo from storage after successful DB delete (best-effort)
-  if (logoUrl) {
+  // Remove both logo and composite mockup PNG from storage after successful DB
+  // delete (best-effort — storage failures must not surface to the caller).
+  const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
+  const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
+
+  const pathsToRemove: string[] = [];
+  for (const url of [logoUrl, mockupUrl]) {
+    if (url && bucketPublicBase && url.startsWith(`${bucketPublicBase}/`)) {
+      pathsToRemove.push(url.slice(bucketPublicBase.length + 1));
+    }
+  }
+
+  if (pathsToRemove.length > 0) {
     try {
-      const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
-      const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
-      if (bucketPublicBase && logoUrl.startsWith(`${bucketPublicBase}/`)) {
-        const storagePath = logoUrl.slice(bucketPublicBase.length + 1);
-        await supabase.storage.from('mockup-assets').remove([storagePath]);
-      }
+      await supabase.storage.from('mockup-assets').remove(pathsToRemove);
     } catch (storageErr) {
       logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
     }
