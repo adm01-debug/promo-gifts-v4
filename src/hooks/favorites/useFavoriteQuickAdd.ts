@@ -147,7 +147,9 @@ export function useFavoriteQuickAdd() {
         toggleFavorite(product.id, opts?.variant);
         return { resolved: true };
       }
-      const alreadyFav = isFavorite(product.id);
+      // BUG-FE-3 fix: use remote membership (not localStorage) when authenticated.
+      // localStorage is stale on new devices and after clearing site data.
+      const alreadyFav = membership.has(product.id) && (membership.get(product.id)?.size ?? 0) > 0;
       if (alreadyFav) {
         // Toggle off: remove de tudo
         void removeFromAll(product.id);

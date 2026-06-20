@@ -80,17 +80,17 @@ export function useFavoriteLists() {
 
       if (error) throw error;
 
-      // Counts em paralelo
+      // Counts via RPC – single GROUP BY instead of fetching all rows (BUG-FE-4 fix)
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: rows } = await supabase
-          .from('favorite_items')
-          .select('list_id')
-          .in('list_id', ids);
-        (rows ?? []).forEach((r: { list_id: string }) => {
-          counts[r.list_id] = (counts[r.list_id] ?? 0) + 1;
-        });
+        const { data: countRows } = await supabase.rpc(
+          'get_favorite_list_counts' as never,
+          { _user_id: user.id } as never,
+        );
+        ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
+          (r) => { counts[r.list_id] = Number(r.item_count); },
+        );
       }
 
       setLastSyncedAt(new Date());
@@ -331,6 +331,7 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       if (!user) return;
       toast.success('Item removido', {
         description: 'Você tem 30 dias para restaurar pela Lixeira.',
@@ -383,6 +384,7 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`, {
         description: 'Restaure pela Lixeira em até 30 dias.',
       });
@@ -396,10 +398,14 @@ export function useFavoriteListItems(listId: string | null) {
         .from('favorite_items')
         .update({ list_id: toListId })
         .eq('id', id);
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') throw new Error('Este produto já está na lista de destino.');
+        throw error;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['favorite-items'] });
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+      qc.invalidateQueries({ queryKey: ITEMS_KEY(vars.toListId) });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       toast.success('Item movido');
     },
