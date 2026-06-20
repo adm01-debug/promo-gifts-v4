@@ -18,7 +18,7 @@ let nextResult: { data: unknown[] | null; error: { message: string } | null; cou
 vi.mock('@/integrations/supabase/client', () => {
   const CHAIN_METHODS = [
     'select', 'eq', 'in', 'is', 'gte', 'lte', 'gt', 'lt', 'like', 'ilike', 'neq',
-    'not', 'order', 'range', 'insert', 'update', 'delete', 'upsert',
+    'not', 'order', 'range', 'insert', 'update', 'delete', 'upsert', 'or', 'textSearch',
   ];
   return {
     supabase: {
@@ -116,9 +116,12 @@ describe('postgrest helper — PT↔EN column remap', () => {
 });
 
 describe('postgrest helper — _search', () => {
-  it('translates _search into an ilike on the table search column', async () => {
+  it('translates _search into a textSearch on the search_vector column (FTS)', async () => {
     await dbInvoke({ table: 'products', operation: 'select', filters: { _search: 'caneta' } });
-    expect(callArgs('v_products_public', 'ilike')).toContainEqual(['name', '%caneta%']);
+    const textSearchCalls = callArgs('v_products_public', 'textSearch');
+    expect(textSearchCalls.length).toBeGreaterThan(0);
+    expect(textSearchCalls[0][0]).toBe('search_vector');
+    expect(textSearchCalls[0][1]).toBe('caneta');
   });
 });
 
