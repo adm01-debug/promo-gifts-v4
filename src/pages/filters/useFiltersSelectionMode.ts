@@ -30,7 +30,7 @@ export function useFiltersSelectionMode({
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // BUG-SM-01 FIX: Use a ref to track filteredProducts to avoid stale closures in effects 
+  // BUG-SM-01 FIX: Use a ref to track filteredProducts to avoid stale closures in effects
   // and ensure we only remove IDs that actually became invalid.
   const prevFilteredProductsRef = useRef<Product[]>([]);
   useEffect(() => {
@@ -42,12 +42,12 @@ export function useFiltersSelectionMode({
 
     // Only clean if products changed significantly (length change or different first ID)
     // This is a heuristic to avoid over-cleaning during scroll/lazy-load
-    const currentValidIds = new Set(filteredProducts.map(p => p.id));
-    
+    const currentValidIds = new Set(filteredProducts.map((p) => p.id));
+
     setSelectedIds((prev) => {
       const next = new Set<string>();
       let changed = false;
-      
+
       for (const id of prev) {
         if (currentValidIds.has(id)) {
           next.add(id);
@@ -55,7 +55,7 @@ export function useFiltersSelectionMode({
           changed = true;
         }
       }
-      
+
       return changed ? next : prev;
     });
 
@@ -185,11 +185,10 @@ export function useFiltersSelectionMode({
   );
 
   const bulkCartProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
-    return filteredProducts.filter((p) => ids.includes(p.id));
+    return filteredProducts.filter((p) => selectedIds.has(p.id));
   }, [selectedIds, filteredProducts]);
 
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedId = selectedIds.size > 0 ? (selectedIds.values().next().value ?? '') : '';
   const firstSelectedProduct = filteredProducts.find((p) => p.id === firstSelectedId);
 
   return {
