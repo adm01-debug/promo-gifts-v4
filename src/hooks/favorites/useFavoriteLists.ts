@@ -174,6 +174,7 @@ export function useFavoriteLists() {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-items'] });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       const msg =
         itemCount > 0
           ? `Lista excluída. ${itemCount} ${itemCount === 1 ? 'item movido' : 'itens movidos'} para a Lixeira.`
