@@ -353,7 +353,7 @@ function buildMockupPayload(params: GenerateMockupParams, area: PersonalizationA
 }
 
 /** Single invocation attempt with 60s timeout. */
-async function _invokeMockupOnce(
+async function invokeMockupOnce(
   params: GenerateMockupParams,
   area: PersonalizationArea,
 ): Promise<string> {
@@ -383,7 +383,7 @@ async function _invokeMockupOnce(
  * Returns true for transient infrastructure errors that warrant a retry.
  * User/payload errors (bad logo format, SVG, missing logo) propagate immediately.
  */
-function _isTransientError(msg: string): boolean {
+function isTransientError(msg: string): boolean {
   const lower = msg.toLowerCase();
   return (
     lower.includes('esgotado') ||      // pt-BR timeout message
@@ -408,13 +408,13 @@ async function invokeMockupForArea(
   area: PersonalizationArea,
 ): Promise<string> {
   try {
-    return await _invokeMockupOnce(params, area);
+    return await invokeMockupOnce(params, area);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (_isTransientError(msg)) {
+    if (isTransientError(msg)) {
       logger.warn('[invokeMockupForArea] Transient error, retrying in 2 s:', msg);
       await new Promise<void>((resolve) => setTimeout(resolve, 2000));
-      return _invokeMockupOnce(params, area);
+      return invokeMockupOnce(params, area);
     }
     throw err;
   }
