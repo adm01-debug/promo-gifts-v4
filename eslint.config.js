@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 136: 5 rules (2 zero-violation + 3 with manual fixes)
+      'no-undef-init': 'error',
+      'vars-on-top': 'error',
+      'no-warning-comments': ['error', { terms: ['fixme', 'xxx'], location: 'start' }],
+      'max-classes-per-file': 'error',
+      'react/no-multi-comp': ['error', { ignoreStateless: true }],
       // Batch 135: 5 rules (2 zero-violation + 3 with manual fixes — removed: no-loop-func 7v, no-autofocus 36v)
       'spaced-comment': ['error', 'always', { markers: ['/'] }],
       'consistent-this': 'error',

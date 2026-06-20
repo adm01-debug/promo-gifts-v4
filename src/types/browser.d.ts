@@ -53,7 +53,7 @@ interface SpeechRecognition extends EventTarget {
   onspeechend: (() => void) | null;
 }
 
-// eslint-disable-next-line no-var -- browser global declaration requires var for assignability
+// eslint-disable-next-line no-var, vars-on-top -- browser global declaration requires var for assignability
 declare var SpeechRecognition: {
   prototype: SpeechRecognition;
   new (): SpeechRecognition;
