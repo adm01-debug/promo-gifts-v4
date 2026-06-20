@@ -17,7 +17,7 @@ import {
   type CartTableDensity,
 } from '@/components/cart/CartTablePreferences';
 
-import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
+import { type CartStatus } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
@@ -571,14 +571,12 @@ function SellerCartsContent() {
             {s.activeCart.items.length === 0 ? (
               <CartEmptyStateSmart
                 activeCart={s.activeCart}
-                templates={
-                  s.templates as {
-                    id: string;
-                    name: string;
-                    description?: string;
-                    items: CartTemplateItem[];
-                  }[]
-                }
+                templates={s.templates.map(({ id, name, description, items }) => ({
+                  id,
+                  name,
+                  description: description ?? undefined,
+                  items,
+                }))}
                 otherCarts={s.otherCarts}
                 onApplyTemplate={s.handleLoadTemplate}
                 onDuplicateLast={handleDuplicateLast}
