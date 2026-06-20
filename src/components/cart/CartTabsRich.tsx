@@ -48,11 +48,9 @@ export function CartTabsRich({
   }
 
   return (
-    <div
-      role="tablist"
-      aria-label="Carrinhos"
-      className="scrollbar-none flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
-    >
+    <div className="flex items-center gap-2">
+      {/* tablist contains ONLY role="tab" children — "Novo" button lives outside to satisfy WCAG 4.1.2 */}
+      <div role="tablist" aria-label="Carrinhos" className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2">
       {carts.map((cart) => {
         const isActive = cart.id === activeCartId;
         const statusCfg = getStatusCfg(cart.status);
@@ -146,22 +144,26 @@ export function CartTabsRich({
         );
       })}
 
+      </div>
+
       {canCreateCart && (
-        <button
-          data-testid="cart-tab-new"
-          onClick={onNew}
-          className={cn(
-            'group/new flex flex-shrink-0 items-center gap-2 rounded-2xl border-2 border-dashed border-border/40 px-5 py-2.5 transition-all',
-            'hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-95',
-            'text-sm font-bold text-muted-foreground/60',
-          )}
-          aria-label="Criar novo carrinho"
-        >
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors group-hover/new:bg-primary/20">
-            <Plus className="h-4 w-4 transition-transform duration-300 group-hover/new:rotate-90" />
-          </div>
-          <span>Novo</span>
-        </button>
+        <div className="flex-shrink-0 pb-2 pr-1">
+          <button
+            data-testid="cart-tab-new"
+            onClick={onNew}
+            className={cn(
+              'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed border-border/40 px-5 py-2.5 transition-all',
+              'hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-95',
+              'text-sm font-bold text-muted-foreground/60',
+            )}
+            aria-label="Criar novo carrinho"
+          >
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors group-hover/new:bg-primary/20">
+              <Plus className="h-4 w-4 transition-transform duration-300 group-hover/new:rotate-90" />
+            </div>
+            <span>Novo</span>
+          </button>
+        </div>
       )}
     </div>
   );

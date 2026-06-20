@@ -103,10 +103,12 @@ export function buildInsertPayload(
   return {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
+    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
+    client_cnpj: quote.client_cnpj || null,
     seller_id: userId,
     organization_id: orgId,
     status: quote.status || 'draft',
@@ -133,10 +135,12 @@ export function buildUpdatePayload(
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
+    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
+    client_cnpj: quote.client_cnpj || null,
     status: quote.status,
     subtotal: round2(totals.subtotal),
     discount_percent: round2(quote.discount_percent || 0),
