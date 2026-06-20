@@ -97,7 +97,7 @@ export function CartTabsRich({
               role="tab"
               aria-selected={isActive}
               tabIndex={isActive ? 0 : -1}
-              aria-label={`${cart.company_name} — ${cart.items.length} ${cart.items.length === 1 ? 'item' : 'itens'}${needsFollowUp ? ', aguardando follow-up' : ''}`}
+              aria-label={`${cart.company_name} — ${statusCfg.label} — ${cart.items.length} ${cart.items.length === 1 ? 'item' : 'itens'}${needsFollowUp ? ', aguardando follow-up' : ''}`}
               className={cn(
                 'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
                 isActive
@@ -150,6 +150,7 @@ export function CartTabsRich({
               <span
                 data-testid="cart-tab-count"
                 data-count={cart.items.length}
+                aria-hidden="true"
                 className={cn(
                   'ml-1 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums transition-all duration-500',
                   hasItems
