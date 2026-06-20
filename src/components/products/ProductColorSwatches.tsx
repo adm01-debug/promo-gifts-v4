@@ -77,6 +77,7 @@ export const ProductColorSwatches = memo(
     size = 'sm',
     className,
     hideWhenEmpty = true,
+    wrap = false,
     onSelect,
     selectedName,
   }: ProductColorSwatchesProps) => {
