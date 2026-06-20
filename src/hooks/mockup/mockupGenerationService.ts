@@ -182,13 +182,11 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // BUG-7 FIX: was `|| ''` which stored empty string when upload fails or preview is
     // absent. Use null so the column receives a proper SQL NULL instead of a
     // semantically-invalid empty string for a URL field.
-    let logoUrl: string | null = area.logoPreview?.startsWith('data:')
-      ? null
-      : (area.logoPreview ?? null);
-    if (area.logoPreview?.startsWith('data:')) {
+    let logoUrl: string | null = area.logoPreview ?? null;
+    if (logoUrl?.startsWith('data:')) {
       logoUrl = await uploadLogoToStorage(
         userId,
-        area.logoPreview,
+        area.logoPreview!,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
