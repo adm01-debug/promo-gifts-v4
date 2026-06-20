@@ -314,15 +314,20 @@ export function useSellerCarts() {
   // Update item sort order
   const updateItemSortOrder = useMutation({
     mutationFn: async (items: { id: string; sort_order: number }[]) => {
-      // Aplica em série e aborta no primeiro erro: evita reordenação parcial
-      // silenciosa (Promise.all engolia falhas individuais sem propagar).
-      for (const { id, sort_order } of items) {
-        const { error } = await supabase
-          .from('seller_cart_items')
-          .update({ sort_order })
-          .eq('id', id);
-        if (error) throw error;
-      }
+      // Promise.all envia todos os UPDATEs em paralelo e rejeita com o primeiro
+      // erro — O(max_latency) vs O(N×latency) do loop serial. Em caso de falha
+      // parcial, onError já invalida a query para restaurar a ordem do servidor.
+      await Promise.all(
+        items.map(({ id, sort_order: sortOrder }) =>
+          supabase
+            .from('seller_cart_items')
+            .update({ sort_order: sortOrder })
+            .eq('id', id)
+            .then(({ error }) => {
+              if (error) throw error;
+            }),
+        ),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
