@@ -572,7 +572,7 @@ export const ProductListItem = memo(
             {/* Product name */}
             <h3
               data-testid="product-list-name"
-              className="line-clamp-1 font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
+              className="line-clamp-2 break-words font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
             >
               {product.name}
             </h3>
