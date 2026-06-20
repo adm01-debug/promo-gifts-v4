@@ -67,6 +67,7 @@ interface ProductListItemProps {
   activeColorFilter?: ActiveColorFilter | null;
   isNovelty?: boolean;
   noveltyDaysRemaining?: number;
+  noveltyDaysElapsed?: number;
   onStatusClick?: (type: string, value?: string | number) => void;
   /** Carrega imagem com alta prioridade (LCP) — true para itens above-the-fold */
   priority?: boolean;
@@ -87,6 +88,7 @@ export const ProductListItem = memo(
     activeColorFilter,
     isNovelty = false,
     noveltyDaysRemaining,
+    noveltyDaysElapsed,
     onStatusClick,
     priority = false,
   }: ProductListItemProps) => {
@@ -493,6 +495,7 @@ export const ProductListItem = memo(
               {isNovelty && noveltyDaysRemaining !== undefined && (
                 <NoveltyBadge
                   daysRemaining={noveltyDaysRemaining}
+                  daysElapsed={noveltyDaysElapsed}
                   size="sm"
                   onClick={() => handleStatusClick('novelty')}
                 />

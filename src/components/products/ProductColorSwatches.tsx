@@ -84,7 +84,7 @@ export const ProductColorSwatches = memo(
       return (
         <div
           className={cn(
-            'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden',
+            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] py-[var(--swatch-container-py)]',
             className,
           )}
           aria-busy="true"
@@ -106,14 +106,14 @@ export const ProductColorSwatches = memo(
       if (hideWhenEmpty) {
         return (
           <div
-            className={cn('min-h-[var(--swatch-size-sm)]', className)}
+            className={cn('min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]', className)}
             data-testid="colors-empty-hidden"
           />
         );
       }
       return (
         <div
-          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
+          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 py-[var(--swatch-container-py)] opacity-40"
           role="status"
           aria-live="polite"
           data-testid="colors-unavailable"
@@ -267,4 +267,3 @@ export const ProductColorSwatches = memo(
     );
   },
 );
-

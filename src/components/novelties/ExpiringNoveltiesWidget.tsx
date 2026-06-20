@@ -6,27 +6,14 @@ import { Flame, Sparkles, ChevronRight, Package, Building2, Hourglass } from 'lu
 import { useExpiringNovelties, useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { formatDaysAgoFromTs, getRecencyVariant } from '@/lib/novelty-dates';
 
 /** Rótulo curto de quanto tempo resta como novidade. */
 function formatDaysLeft(daysRemaining: number): string {
   if (daysRemaining <= 0) return 'Expira hoje';
   if (daysRemaining === 1) return 'Resta 1 dia';
   return `Restam ${daysRemaining} dias`;
-}
-
-function formatDaysAgo(createdAt: string): string {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days === 0) return 'Hoje!';
-  if (days === 1) return 'Ontem';
-  return `${days}d atrás`;
-}
-
-function getRecencyVariant(createdAt: string): 'hot' | 'warm' | 'normal' {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days <= 2) return 'hot';
-  if (days <= 5) return 'warm';
-  return 'normal';
 }
 
 const recencyStyles = {
@@ -49,6 +36,15 @@ export function ExpiringNoveltiesWidget() {
   // os top-10 mais recentes, mas o React Query devolve os dados já carregados pelo grid.
   const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
 
+  // ISSUE-34 FIX: tick a cada 60s para recalcular recência — sem isso, uma
+  // novidade detectada "há 2 dias" continuaria mostrando badge 'hot' enquanto a
+  // página fica aberta, mesmo depois de virar 'warm' (dias 3-5).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Novidades que estão prestes a sair da janela (≤ 7 dias restantes). Fonte:
   // expiração REAL da pipeline (novelty_expires_at). Renderizado só quando há
   // itens — sem ruído quando nada está expirando.
@@ -57,9 +53,14 @@ export function ExpiringNoveltiesWidget() {
 
   const recentItems = useMemo(() => {
     if (!allNovelties) return [];
-    return [...allNovelties]
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-      .slice(0, 10);
+    // ISSUE-19 FIX: Schwartzian transform — pré-computa getTime() uma vez por
+    // item (O(n)) em vez de criar new Date() a cada chamada do comparador
+    // (O(n log n) alocações). Relevante quando allNovelties tem centenas de itens.
+    return allNovelties
+      .map((n) => [n, new Date(n.detected_at).getTime()] as const)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([n]) => n);
   }, [allNovelties]);
 
   // FIX (auditoria Novidades, P1-A): o ranking "Por Fornecedor" vem agora do
@@ -86,11 +87,12 @@ export function ExpiringNoveltiesWidget() {
             <CardTitle className="flex items-center gap-1.5 text-sm">
               <Hourglass className="h-4 w-4 text-warning" />
               <span className="font-bold text-warning">Expirando em breve</span>
+              {/* ISSUE-14 FIX: mostra total real (expiring.length) — não o cap de 8 */}
               <Badge
                 variant="secondary"
                 className="border border-warning/30 bg-warning/20 px-1.5 py-0 text-[9px] font-bold tabular-nums text-warning"
               >
-                {expiringItems.length}
+                {expiring.length}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -169,11 +171,17 @@ export function ExpiringNoveltiesWidget() {
                   const isVeryNew = idx < 3;
                   const variant = getRecencyVariant(item.detected_at);
                   return (
-                    <div
+                    // ISSUE-11 FIX: usa <button> em vez de <div> para acessibilidade
+                    // por teclado. Div+onClick não é alcançável com Tab nem ativável
+                    // com Enter/Space por leitores de tela (WCAG 2.1 SC 2.1.1).
+                    <button
                       key={item.novelty_id}
+                      type="button"
+                      aria-label={`Abrir novidade: ${item.product_name}`}
                       className={cn(
-                        'group flex cursor-pointer items-center gap-2 rounded-md p-1.5',
+                        'group flex w-full cursor-pointer items-center gap-2 rounded-md p-1.5 text-left',
                         'transition-all duration-150 hover:bg-success/10',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success',
                         isVeryNew
                           ? 'border border-success/20 bg-success/5 hover:border-success/40'
                           : 'border border-transparent',
@@ -207,13 +215,13 @@ export function ExpiringNoveltiesWidget() {
                         <div className="flex items-center gap-1">
                           <Sparkles className={cn('h-2.5 w-2.5', recencyStyles[variant])} />
                           <span className={cn('text-[10px] font-medium', recencyStyles[variant])}>
-                            {formatDaysAgo(item.detected_at)}
+                            {formatDaysAgoFromTs(item.detected_at)}
                           </span>
                         </div>
                       </div>
 
                       <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary" />
-                    </div>
+                    </button>
                   );
                 })}
               </div>
