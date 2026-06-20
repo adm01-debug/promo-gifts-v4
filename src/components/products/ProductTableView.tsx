@@ -219,6 +219,16 @@ export const ProductTableView = memo(
 
     const favStore = useFavoritesStore();
     const compStore = useComparisonStore();
+    // SSOT por-produto: mapa de cor selecionada (zustand global), idêntico ao Card/Lista.
+    const selectedColorsMap = useProductSelectionStore((s) => s.selectedColors);
+    const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
+    const clearSelectedColor = useCallback((productId: string) => {
+      useProductSelectionStore.setState((state) => {
+        const next = { ...state.selectedColors };
+        delete next[productId];
+        return { selectedColors: next };
+      });
+    }, []);
 
     // FIX(catalog-table-cores): o fetch lightweight do catalogo NAO traz `colors`
     // (chega `[]`), entao a tabela caia no placeholder "–". Grid/Lista ja hidratam
