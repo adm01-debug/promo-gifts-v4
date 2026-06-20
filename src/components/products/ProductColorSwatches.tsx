@@ -62,6 +62,12 @@ interface ProductColorSwatchesProps {
   onSelect?: (color: ColorDotLike, index: number) => void;
   /** Nome da cor atualmente selecionada — recebe ring de destaque. */
   selectedName?: string | null;
+  /**
+   * Handler opcional de "limpar seleção" (botão "Todos"). Quando definido E
+   * existir `selectedName`, é renderizado um chip inline ao lado das bolinhas
+   * que dispara o handler. stopPropagation já aplicado.
+   */
+  onClear?: () => void;
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
@@ -80,6 +86,7 @@ export const ProductColorSwatches = memo(
     wrap = false,
     onSelect,
     selectedName,
+    onClear,
   }: ProductColorSwatchesProps) => {
 
     const idPrefix = useId();
@@ -269,6 +276,27 @@ export const ProductColorSwatches = memo(
           >
             +{overflow}
           </span>
+        )}
+        {onClear && normalizedSelected && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onClear();
+              }
+            }}
+            aria-label="Mostrar todas as variações"
+            data-testid="color-swatches-clear"
+            className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/50 bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            Todos
+          </button>
         )}
       </div>
     );

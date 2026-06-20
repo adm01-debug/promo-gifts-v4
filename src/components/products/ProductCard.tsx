@@ -799,7 +799,26 @@ export const ProductCard = memo(
                   window.history.replaceState({}, '', currentUrl.toString());
                 }
               }}
+              onClear={() => {
+                feedback.light();
+                setActiveVariantIdx(0);
+                // Limpa a cor desse produto no store (reset por produto)
+                useProductSelectionStore.setState((state) => {
+                  const next = { ...state.selectedColors };
+                  delete next[product.id];
+                  return { selectedColors: next };
+                });
+                setImageLoaded(false);
+                const currentUrl = new URL(window.location.href);
+                // Só limpa parâmetros se eles pertencem a este produto
+                if (currentUrl.searchParams.get('pid') === product.id) {
+                  currentUrl.searchParams.delete('cor');
+                  currentUrl.searchParams.delete('pid');
+                  window.history.replaceState({}, '', currentUrl.toString());
+                }
+              }}
             />
+
 
             <div className="flex-1" />
 
