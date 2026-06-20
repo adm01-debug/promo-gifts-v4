@@ -306,6 +306,12 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       );
       expect(hSpread, `altura varia em ${cols} colunas: ${hSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
       expect(wSpread, `largura varia em ${cols} colunas: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+
+      // Baseline screenshot diff por modo de colunas.
+      await expect(items.first()).toHaveScreenshot(`card-reposicao-cols-${cols}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+      });
     });
   }
 
