@@ -376,8 +376,6 @@ export function NoveltyTableView({
           {products.map((product) => {
             const isSelected = selectedSet.has(product.product_id);
             return (
-              {/* ISSUE-38 FIX: tabIndex + onKeyDown — TableRow com onClick mas sem teclado
-                  viola WCAG 2.1 SC 2.1.1. tr não é natively focusable/activatable. */}
               <TableRow
                 key={product.novelty_id}
                 tabIndex={0}
