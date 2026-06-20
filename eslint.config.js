@@ -414,6 +414,15 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 109: 8 zero-violation rules (removed: no-plusplus massive, jsx-pascal-case 15v, no-redundant-roles 2v)
+      'no-caller': 'error',
+      'no-case-declarations': 'error',
+      'react/jsx-no-script-url': 'error',
+      'react/no-namespace': 'error',
+      'jsx-a11y/lang': 'error',
+      'jsx-a11y/no-distracting-elements': 'error',
+      'jsx-a11y/scope': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
       // Batch 108: 7 zero-violation rules (removed: radix 16v, no-dynamic-delete many, wrap-iife 2v, heading-has-content 2v)
       'jsx-a11y/aria-role': 'error',
       'no-extra-label': 'error',
