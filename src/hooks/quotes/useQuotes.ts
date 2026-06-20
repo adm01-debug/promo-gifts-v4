@@ -66,7 +66,13 @@ export function useQuotes() {
           queryClient.invalidateQueries({ queryKey: ['quotes'] });
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useQuotes] realtime channel error — falling back to poll', { status, err });
+          // Invalidate once so stale data is refreshed immediately on reconnect
+          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
