@@ -128,14 +128,14 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+        const r = row as Record<string, unknown>;
+        const { seller_cart_items: rowItems, ...cartFields } = r;
         return {
-          ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
-          items: (rowItems ?? []) as SellerCartItem[],
-        };
+          ...cartFields,
+          notes: (cartFields.notes as string | null) ?? null,
+          status: ((cartFields.status as string) ?? 'novo') as CartStatus,
+          items: ((rowItems as SellerCartItem[] | null) ?? []) as SellerCartItem[],
+        } as SellerCart;
       });
     },
     enabled: !!userId,
