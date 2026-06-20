@@ -98,6 +98,7 @@ export function useFavoriteLists() {
     },
     enabled: !!user,
     staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const createList = useMutation({
@@ -268,6 +269,7 @@ export function useFavoriteListItems(listId: string | null) {
     },
     enabled: !!listId && !!user,
     staleTime: 15_000,
+    refetchOnWindowFocus: true,
   });
 
   const addItem = useMutation({
@@ -481,6 +483,7 @@ export function useFavoriteTrash() {
     },
     enabled: !!user,
     staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const restoreItem = useMutation({

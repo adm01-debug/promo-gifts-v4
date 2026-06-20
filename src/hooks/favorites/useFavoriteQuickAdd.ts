@@ -43,6 +43,7 @@ export function useFavoriteQuickAdd() {
     },
     enabled: !!user,
     staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // Intentionally NOT memoised — must read fresh on every click so that
