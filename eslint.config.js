@@ -414,6 +414,10 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 104: 3 zero-violation rules (removed: jsx-no-leaked-render 28v, no-bitwise 12v, control-has-associated-label 23v, switch-exhaustiveness-check 13v, react/hook-use-state 8v, react/no-multi-comp 3v, no-unnecessary-type-parameters 3v, prefer-reduce-type-parameter 2v, no-nested-ternary 2v, no-unnecessary-template-expression 1v, promise-function-async 5v, require-array-sort-compare 1v)
+      '@typescript-eslint/prefer-find': 'error',
+      'jsx-a11y/autocomplete-valid': 'error',
+      'no-restricted-globals': 'error',
       // Batch 103: 8 zero-violation rules (removed: click-events-have-key-events 16v, no-static-element-interactions 15v, label-has-associated-control 14v, react/no-unstable-nested-components 4v, react/iframe-missing-sandbox 1v, array-callback-return 1v, anchor-has-content 1v, react/sort-comp 1v, interactive-supports-focus 1v)
       'no-promise-executor-return': 'error',
       '@typescript-eslint/no-require-imports': 'error',
