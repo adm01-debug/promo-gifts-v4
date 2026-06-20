@@ -70,20 +70,23 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
         const item = itemMap.get(p.id);
         const variant = item?.variant_info;
         const cat = p.category_name ?? p.category?.name ?? '';
+        // Use comma as decimal separator (pt-BR) because column sep is semicolon
+        const ptBrPrice = (p.price ?? 0).toFixed(2).replace('.', ',');
+        const ptBrSaved = item?.price_at_save?.toFixed(2).replace('.', ',') ?? '';
         return [
           p.sku ?? '',
           p.name,
-          (p.price ?? 0).toFixed(2),
+          ptBrPrice,
           cat,
           variant?.color_name ?? '',
           item?.note ?? '',
-          item?.price_at_save?.toFixed(2) ?? '',
+          ptBrSaved,
           item?.added_at ?? '',
         ]
           .map(csvEscape)
-          .join(',');
+          .join(';');
       });
-      const csv = [headers.join(','), ...rows].join('\n');
+      const csv = [headers.join(';'), ...rows].join('\n');
       const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
       downloadBlob(blob, `${safeName}-${date}.csv`);
       toast.success('CSV exportado');
@@ -140,10 +143,13 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       const cellW = (pageW - margin * 2) / cols;
       const cellH = (pageH - margin * 2 - 20) / rowsPerPage;
 
+      // Strip non-Latin-1 chars for jsPDF Helvetica (Latin-1 only)
+      // eslint-disable-next-line no-control-regex
+      const sanitize = (s: string) => s.replace(/[^\x00-\xFF]/g, '?');
       // Header
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
-      doc.text(listName, margin, margin + 6);
+      doc.text(sanitize(listName), margin, margin + 6);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(120);
@@ -184,7 +190,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
         // nome
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        const name = doc.splitTextToSize(p.name, cellW - 8).slice(0, 2);
+        const name = doc.splitTextToSize(sanitize(p.name), cellW - 8).slice(0, 2);
         doc.text(name, x + 4, y + cellH * 0.6 + 4);
 
         // sku + preço
@@ -205,7 +211,10 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
         const note = item?.note;
         if (variant) doc.text(`Cor: ${variant}`, x + 4, y + cellH * 0.6 + 28);
         if (note) {
-          const noteLines = doc.splitTextToSize(`✎ ${note}`, cellW - 8).slice(0, 2);
+          // Strip non-Latin-1 chars (jsPDF built-in Helvetica is Latin-1 only)
+          // eslint-disable-next-line no-control-regex
+          const safeNote = note.replace(/[^\x00-\xFF]/g, '?');
+          const noteLines = doc.splitTextToSize(`Nota: ${safeNote}`, cellW - 8).slice(0, 2);
           doc.text(noteLines, x + 4, y + cellH * 0.6 + 33);
         }
 
