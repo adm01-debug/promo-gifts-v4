@@ -213,11 +213,13 @@ export const BaseProductGridCard = memo(
 
           {/* 4 — Nome do produto */}
           <p
-            className="line-clamp-2 min-h-[2.5rem] break-words text-sm font-medium leading-tight"
+            data-testid="product-card-name"
+            className="line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] break-words font-display text-[11.2px] font-bold leading-tight tracking-tight sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]"
             title={productName}
           >
             {productName || '—'}
           </p>
+
 
           {/* 5 — Bolinhas de cores */}
           <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
