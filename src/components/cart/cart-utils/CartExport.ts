@@ -84,8 +84,10 @@ export function exportCartToCSV(cart: SellerCart) {
 }
 
 export async function exportCartToPDF(cart: SellerCart) {
-  const { default: jsPDF } = await import('jspdf');
-  const { default: autoTable } = await import('jspdf-autotable');
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
 
   const doc = new jsPDF();
   const total = cart.items.reduce(
