@@ -25,26 +25,27 @@ export function useFavoriteQuickAdd() {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Index global de membership: produto X está em quais listas?
-  const { data: membership = new Map<string, Set<string>>() } = useQuery({
-    queryKey: ['favorite-membership', user?.id],
-    queryFn: async () => {
-      if (!user) return new Map<string, Set<string>>();
-      const { data, error } = await supabase
-        .from('favorite_items')
-        .select('product_id, list_id')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      const map = new Map<string, Set<string>>();
-      (data ?? []).forEach((row: { product_id: string; list_id: string }) => {
-        if (!map.has(row.product_id)) map.set(row.product_id, new Set());
-        map.get(row.product_id)?.add(row.list_id);
-      });
-      return map;
-    },
-    enabled: !!user,
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-  });
+  const { data: membership = new Map<string, Set<string>>(), isFetched: membershipFetched } =
+    useQuery({
+      queryKey: ['favorite-membership', user?.id],
+      queryFn: async () => {
+        if (!user) return new Map<string, Set<string>>();
+        const { data, error } = await supabase
+          .from('favorite_items')
+          .select('product_id, list_id')
+          .eq('user_id', user.id);
+        if (error) throw error;
+        const map = new Map<string, Set<string>>();
+        (data ?? []).forEach((row: { product_id: string; list_id: string }) => {
+          if (!map.has(row.product_id)) map.set(row.product_id, new Set());
+          map.get(row.product_id)?.add(row.list_id);
+        });
+        return map;
+      },
+      enabled: !!user,
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+    });
 
   // Intentionally NOT memoised — must read fresh on every click so that
   // a Shift+click immediately after a regular-click uses the updated list.
@@ -164,7 +165,12 @@ export function useFavoriteQuickAdd() {
       }
       // BUG-FE-3 fix: use remote membership (not localStorage) when authenticated.
       // localStorage is stale on new devices and after clearing site data.
-      const alreadyFav = membership.has(product.id) && (membership.get(product.id)?.size ?? 0) > 0;
+      // ...but only once the membership query has loaded — during the initial fetch the
+      // Map is empty, so fall back to the local store to avoid misclassifying an
+      // already-favorited product as "add" (toggle inversion) until the query resolves.
+      const alreadyFav = membershipFetched
+        ? membership.has(product.id) && (membership.get(product.id)?.size ?? 0) > 0
+        : isFavorite(product.id);
       if (alreadyFav) {
         // Toggle off: remove de tudo
         void removeFromAll(product.id);
@@ -194,6 +200,8 @@ export function useFavoriteQuickAdd() {
     [
       user,
       membership,
+      membershipFetched,
+      isFavorite,
       hasMultipleLists,
       getLastUsedListId,
       defaultList,
