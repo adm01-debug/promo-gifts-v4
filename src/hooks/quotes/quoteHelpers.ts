@@ -20,14 +20,16 @@ export const round2 = (n: number | null | undefined): number => {
 };
 
 /**
- * Markup persistido sempre dentro de [0, MARKUP_MAX_PERCENT].
- * O banco agora REJEITA (CHECK valid_negotiation_markup_range) markup fora de faixa em vez de
- * clampar em silêncio; calculateQuoteTotals já lança erro acima do teto, mas markup negativo
- * escapava e seria gravado cru. Este clamp garante que o valor enviado nunca dispare o CHECK
- * e que o markup gravado seja exatamente o usado no cálculo.
+ * Clamp markup to [0, ∞) — negative markup makes no semantic sense and would
+ * slip past calculateQuoteTotals (which only throws for > MARKUP_MAX_PERCENT).
+ * The upper bound is intentionally NOT enforced here: calculateQuoteTotals
+ * already throws before buildInsertPayload is reached, and the DB CHECK
+ * (valid_negotiation_markup_range) acts as the final guard. Capping silently
+ * at 50 here would persist a different value than what the user entered, which
+ * is a worse outcome than letting the DB reject it with an explicit error.
  */
 const clampMarkup = (v: number | null | undefined): number =>
-  round2(Math.max(0, Math.min(MARKUP_MAX_PERCENT, v || 0)));
+  round2(Math.max(0, v || 0));
 
 export function validateDiscount(
   quote: Partial<Quote>,
