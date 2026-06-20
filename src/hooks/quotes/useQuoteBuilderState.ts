@@ -869,6 +869,10 @@ export function useQuoteBuilderState() {
     } else if (template.discount_amount > 0) {
       setDiscountType('amount');
       setDiscountValue(template.discount_amount);
+    } else {
+      // Template has no discount — reset any previously applied discount.
+      setDiscountType('percent');
+      setDiscountValue(0);
     }
     if (template.notes) setNotes(template.notes);
     if (template.internal_notes) setInternalNotes(template.internal_notes);
@@ -1207,10 +1211,19 @@ export function useQuoteBuilderState() {
       // bypassed. Without this, handleSaveQuote would re-detect the same conflict
       // (baseline still points to the old timestamp) and abort again — the user would
       // be permanently stuck in the conflict dialog.
+      const previousBaseline = baselineUpdatedAtRef.current;
       baselineUpdatedAtRef.current = null;
-      await handleSaveQuote(effectiveStatus, sellerNotes);
-      // Re-arm baseline after save so future concurrent edits are detected.
-      baselineUpdatedAtRef.current = new Date().toISOString();
+      try {
+        await handleSaveQuote(effectiveStatus, sellerNotes);
+        // Re-arm baseline after save so future concurrent edits are detected.
+        baselineUpdatedAtRef.current = new Date().toISOString();
+      } catch (err) {
+        // Restore previous baseline so the next save attempt still performs
+        // conflict detection — without this, a failed overwrite leaves baseline
+        // null permanently and all subsequent saves bypass concurrency checks.
+        baselineUpdatedAtRef.current = previousBaseline;
+        throw err;
+      }
     },
   };
 }

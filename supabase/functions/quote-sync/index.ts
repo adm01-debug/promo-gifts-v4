@@ -136,7 +136,16 @@ Deno.serve(async (req) => {
         let n8nResponse: Record<string, unknown> = {};
         if (n8nWebhookUrl) {
           try { n8nResponse = await sendToN8N(quoteData, n8nWebhookUrl); }
-          catch (err) { console.error("N8N sync failed (non-blocking):", err); }
+          catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            const errType = err instanceof Error ? err.constructor.name : typeof err;
+            console.error("N8N sync failed (non-blocking):", {
+              error: errMsg,
+              type: errType,
+              quoteId,
+              timestamp: new Date().toISOString(),
+            });
+          }
         }
 
         await sendToSalesPro(quoteData);
