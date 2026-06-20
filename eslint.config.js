@@ -414,6 +414,14 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 113: 7 zero-violation rules (removed: prefer-nullish-coalescing many, prefer-optional-chain 1v, prefer-for-of 1v, consistent-generic-constructors 1v, no-unnecessary-type-conversion many, no-useless-default-assignment many, no-unnecessary-type-parameters many, jsx-a11y rule-set many, react/button-has-type many, react/no-multi-comp many, etc.)
+      'jsx-a11y/anchor-ambiguous-text': 'error',
+      'react/no-unused-class-component-methods': 'error',
+      'react/jsx-props-no-spread-multi': 'error',
+      'require-yield': 'error',
+      '@typescript-eslint/ban-tslint-comment': 'error',
+      '@typescript-eslint/no-unnecessary-parameter-property-assignment': 'error',
+      '@typescript-eslint/no-unused-private-class-members': 'error',
       // Batch 112: 4 zero-violation rules (removed: react/no-unescaped-entities many, react/no-unstable-nested-components many, unicode-bom many, no-undef-init 1v, plus many duplicates from earlier batches)
       'react/prefer-es6-class': 'error',
       '@typescript-eslint/no-unsafe-unary-minus': 'error',
