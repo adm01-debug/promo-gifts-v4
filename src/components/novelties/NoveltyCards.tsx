@@ -307,23 +307,30 @@ export const NoveltyGridCard = memo(
             ) : (
               <>
                 {typeof product.base_price === 'number' &&
-                  Number.isFinite(product.base_price) &&
-                  product.base_price > 0 && (
-                    <div
-                      data-testid="novelty-card-price"
-                      className="flex min-w-0 flex-col leading-tight"
+                Number.isFinite(product.base_price) &&
+                product.base_price > 0 ? (
+                  <div
+                    data-testid="novelty-card-price"
+                    className="flex min-w-0 flex-col leading-tight"
+                  >
+                    <span
+                      data-testid="novelty-card-price-prefix"
+                      className="text-[10px] font-medium text-muted-foreground"
                     >
-                      <span
-                        data-testid="novelty-card-price-prefix"
-                        className="text-[10px] font-medium text-muted-foreground"
-                      >
-                        A partir de
-                      </span>
-                      <p className="truncate text-sm font-semibold text-primary">
-                        {BRL_FORMATTER.format(product.base_price)}
-                      </p>
-                    </div>
-                  )}
+                      A partir de
+                    </span>
+                    <p className="truncate text-sm font-semibold text-primary">
+                      {BRL_FORMATTER.format(product.base_price)}
+                    </p>
+                  </div>
+                ) : (
+                  <span
+                    data-testid="novelty-card-price-unavailable"
+                    className="text-[10px] italic text-muted-foreground"
+                  >
+                    Sob consulta
+                  </span>
+                )}
                 <StockBadge
                   status={(product.stock_status as StockStatus) ?? 'in-stock'}
                   quantity={product.stock_quantity ?? 0}
