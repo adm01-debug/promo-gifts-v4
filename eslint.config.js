@@ -418,6 +418,17 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 121: 10 zero-violation rules (removed: jsx-no-useless-fragment many, no-object-type-as-default-prop many, consistent-indexed-object-style 2v, no-import-type-side-effects 1v+, no-autofocus 1v+, no-await-in-loop many, no-deprecated many, no-duplicate-type-constituents many, no-redeclare many, no-useless-constructor many)
+      '@typescript-eslint/no-restricted-types': 'error',
+      '@typescript-eslint/no-restricted-imports': 'error',
+      '@typescript-eslint/no-implied-eval': 'error',
+      'no-extra-boolean-cast': 'error',
+      'no-useless-escape': 'error',
+      'no-regex-spaces': 'error',
+      'prefer-rest-params': 'error',
+      'prefer-spread': 'error',
+      'require-yield': 'error',
+      'use-isnan': 'error',
       // Batch 119: 3 zero-violation rules (removed: jsx-newline many, forbid-component-props many, jsx-max-props-per-line many, jsx-closing-tag-location 3v)
       'react/jsx-equals-spacing': 'error',
       'react/jsx-tag-spacing': 'error',
