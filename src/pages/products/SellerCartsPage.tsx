@@ -459,7 +459,7 @@ function SellerCartsContent() {
                   <div
                     className={cn(
                       'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background',
-                      getStatusCfg(s.activeCart.status).color.split(' ')[0],
+                      getStatusCfg(s.activeCart.status).bg,
                     )}
                   />
                 </div>
@@ -496,7 +496,7 @@ function SellerCartsContent() {
                     <span
                       className={cn(
                         'inline-block h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                        getStatusCfg(s.activeCart.status).color.split(' ')[0],
+                        getStatusCfg(s.activeCart.status).bg,
                       )}
                     />
                     <SelectValue />
@@ -513,7 +513,7 @@ function SellerCartsContent() {
                           <span
                             className={cn(
                               'h-2 w-2 rounded-full shadow-sm',
-                              cfg.color.split(' ')[0],
+                              cfg.bg,
                             )}
                           />
                           <span className="font-medium">{cfg.label}</span>

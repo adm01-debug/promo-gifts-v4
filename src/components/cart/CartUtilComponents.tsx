@@ -37,16 +37,27 @@ export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }> = {
-  novo: { label: 'Novo', color: 'bg-primary/10 text-primary border-primary/20' },
-  em_negociacao: { label: 'Em negociação', color: 'bg-warning/10 text-warning border-warning/20' },
+export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string; bg: string }> = {
+  novo: {
+    label: 'Novo',
+    color: 'bg-primary/10 text-primary border-primary/20',
+    bg: 'bg-primary/10',
+  },
+  em_negociacao: {
+    label: 'Em negociação',
+    color: 'bg-warning/10 text-warning border-warning/20',
+    bg: 'bg-warning/10',
+  },
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
     color: 'bg-success/10 text-success border-success/20',
+    bg: 'bg-success/10',
   },
 };
 
-export function getStatusCfg(status: string | undefined | null): { label: string; color: string } {
+export function getStatusCfg(
+  status: string | undefined | null,
+): { label: string; color: string; bg: string } {
   return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.novo;
 }
 

@@ -137,7 +137,7 @@ export function CartTabsRich({
                   <span
                     className={cn(
                       'h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                      statusCfg.color.split(' ')[0],
+                      statusCfg.bg,
                     )}
                     aria-hidden
                   />
