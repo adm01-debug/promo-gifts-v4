@@ -659,3 +659,36 @@ describe('Analise estatica — MockupAnnotations.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — LogoColorAnalyzer.tsx
+// =====================================================================
+
+describe('Analise estatica — LogoColorAnalyzer.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  describe('a11y — aria-label semantico e aria-expanded no PantoneDropdown', () => {
+    it('botao do dropdown nao usa aria-label="Recolher" (label enganoso)', () => {
+      expect(src).not.toContain('aria-label="Recolher"');
+    });
+    it('botao do dropdown tem aria-label descritivo com selectedCode', () => {
+      expect(src).toContain('aria-label={`Selecionar cor Pantone (atual:');
+      expect(src).toContain('selectedCode})`}');
+    });
+    it('botao do dropdown expoe estado aberto com aria-expanded', () => {
+      expect(src).toContain('aria-expanded={open}');
+    });
+  });
+
+  describe('React keys — ColorRow usa hex como key (nao index)', () => {
+    it('key de ColorRow e color.hex (nao index)', () => {
+      expect(src).toContain('key={color.hex}');
+    });
+    it('key de ColorRow nao e somente index', () => {
+      expect(src).not.toContain('key={index}');
+    });
+  });
+});

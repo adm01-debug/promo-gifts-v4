@@ -92,7 +92,7 @@ export function LogoColorAnalyzer({
         </div>
 
         {colors.map((color, index) => (
-          <ColorRow key={index} color={color} index={index} onPantoneChange={onPantoneChange} />
+          <ColorRow key={color.hex} color={color} index={index} onPantoneChange={onPantoneChange} />
         ))}
       </div>
     </div>
@@ -167,7 +167,8 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
       <PopoverTrigger asChild>
         <button
           className="flex w-full items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/50"
-          aria-label="Recolher"
+          aria-label={`Selecionar cor Pantone (atual: ${selectedCode})`}
+          aria-expanded={open}
         >
           <div
             className="h-6 w-6 shrink-0 rounded border border-border/50"
