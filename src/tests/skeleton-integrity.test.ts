@@ -112,9 +112,9 @@ describe('Integridade do Sistema de Skeletons', () => {
       'src/components/common/LoadingOverlay.tsx',
     ];
 
-    const globExclusions = excludeDirs.map((e) => `--glob '!${e}'`).join(' ') +
-      ' ' + excludeFiles.map((e) => `--glob '!${e}'`).join(' ') +
-      " --glob '!src/components/**/*.test.tsx' --glob '!src/components/**/*.test.ts'";
+    const excludeDirGlobs = excludeDirs.map((e) => `--glob '!${e}'`).join(' ');
+    const excludeFileGlobs = excludeFiles.map((e) => `--glob '!${e}'`).join(' ');
+    const globExclusions = `${excludeDirGlobs} ${excludeFileGlobs} --glob '!src/components/**/*.test.tsx' --glob '!src/components/**/*.test.ts'`;
     const command = `rg -l "Skeleton" src/ --glob "*.tsx" ${globExclusions}`;
     const rgResult = tryRg(command);
 
