@@ -636,7 +636,7 @@ export const ProductListItem = memo(
           <div
             role="group"
             aria-labelledby={colorsLabelId}
-            className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-3 pr-2 md:flex"
+            className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-1 pr-2 md:flex"
           >
             <span
               id={colorsLabelId}
@@ -644,21 +644,29 @@ export const ProductListItem = memo(
             >
               Cores
             </span>
-            <ProductColorSwatches
-              colors={product.colors}
-              max={product.colors?.length || 0}
-              size="sm"
-              wrap
-              hideWhenEmpty
-              className="justify-start"
-              selectedName={activeColorName}
-              onSelect={(c) => {
-                setUserSelectedColorName((prev) =>
-                  prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
-                );
+            {/* Cap visual em ~2 linhas de swatches: max-h = 2 * tamanho + gap + 2px de respiro p/ ring */}
+            <div
+              className="w-full overflow-hidden"
+              style={{
+                maxHeight:
+                  'calc(var(--swatch-size-sm) * 2 + var(--swatch-gap-y) + var(--swatch-container-py) * 2 + 2px)',
               }}
-            />
-          </div>
+            >
+              <ProductColorSwatches
+                colors={product.colors}
+                max={product.colors?.length || 0}
+                size="sm"
+                wrap
+                hideWhenEmpty
+                className="justify-start"
+                selectedName={activeColorName}
+                onSelect={(c) => {
+                  setUserSelectedColorName((prev) =>
+                    prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
+                  );
+                }}
+              />
+            </div>
 
           {/* Price column — right-aligned, always visible */}
           <div
