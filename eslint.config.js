@@ -414,6 +414,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 107: 5 zero-violation rules (removed: camelcase massive, no-confusing-void-expression 55v, no-redundant-type-constituents 18v+, no-unnecessary-type-assertion many, consistent-return 3v, no-base-to-string 3v, prefer-regexp-exec 24v, prefer-for-of 1v)
+      'no-useless-backreference': 'error',
+      'no-constant-binary-expression': 'error',
+      '@typescript-eslint/adjacent-overload-signatures': 'error',
+      '@typescript-eslint/no-mixed-enums': 'error',
+      'no-implicit-globals': 'error',
       // Batch 106: 7 zero-violation rules (removed: no-extra-parens 50v, consistent-generic-constructors 1v, no-unnecessary-boolean-literal-compare 1v)
       '@typescript-eslint/dot-notation': 'error',
       'prefer-template': 'error',
