@@ -48,6 +48,14 @@ export interface FavoriteListItem {
 const LISTS_KEY = ['favorite-lists'];
 const ITEMS_KEY = (listId: string) => ['favorite-items', listId];
 
+type RestoreResult = {
+  ok: boolean;
+  list_id: string;
+  item_id: string | null;
+  original_list_changed: boolean;
+  error?: string;
+};
+
 /** Hook principal — gerencia listas do usuário autenticado (sync com Supabase). */
 export function useFavoriteLists() {
   const { user } = useAuth();
@@ -329,13 +337,7 @@ export function useFavoriteListItems(listId: string | null) {
         action: {
           label: 'Desfazer',
           onClick: async () => {
-            // Use original_id to find exactly this item in trash (not just the latest)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: result, error: rpcErr } = await (supabase.rpc as any)(
-              'restore_favorite_from_trash',
-              { _trash_id: null, _user_id: user.id },
-            );
-            // Fallback: find by original_id
+            // Find the exact item by original_id before calling restore
             const { data: trashed } = await supabase
               .from('favorite_items_trash')
               .select('id')
@@ -346,13 +348,11 @@ export function useFavoriteListItems(listId: string | null) {
               toast.error('Item não encontrado na lixeira');
               return;
             }
-            void result;
-            void rpcErr;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data: restored } = await (supabase.rpc as any)('restore_favorite_from_trash', {
+            const { data: rawRestored } = await supabase.rpc('restore_favorite_from_trash', {
               _trash_id: trashed.id,
               _user_id: user.id,
             });
+            const restored = rawRestored as RestoreResult | null;
             if (restored?.ok) {
               qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
               qc.invalidateQueries({ queryKey: LISTS_KEY });
@@ -444,12 +444,12 @@ export function useFavoriteTrash() {
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
       // Atomic RPC: handles missing original list by falling back to default list
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)('restore_favorite_from_trash', {
+      const { data: rawData, error } = await supabase.rpc('restore_favorite_from_trash', {
         _trash_id: trashId,
         _user_id: user.id,
       });
       if (error) throw error;
+      const data = rawData as RestoreResult | null;
       if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
       return data as {
         ok: boolean;

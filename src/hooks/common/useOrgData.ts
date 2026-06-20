@@ -85,6 +85,7 @@ export function useOrgCreate<TTable extends DynamicTableName>(tableName: TTable)
         .single();
 
       if (error) throw error;
+      if (!data) throw new Error('Registro não retornado após criação');
       return data;
     },
     onSuccess: () => {
@@ -120,6 +121,7 @@ export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable)
         .single();
 
       if (error) throw error;
+      if (!data) throw new Error('Registro não retornado após atualização');
       return data;
     },
     onSuccess: () => {

@@ -33,7 +33,7 @@ o asset exista no CF, e porque imagens são removidas do CF sem limpar a referê
 - **5** produtos ativos sem imagem → fila `product_no_active_image`.
 - Verificação que `produtos_ativos_sem_primaria = 0` após as desativações.
 
-## Sessão 2026-06-19 — Melhorias P1–P5
+## Sessão 2026-06-19 — Melhorias P1–P8
 
 ### P1 — Fechar 56 remediações `broken_active_no_replacement` obsoletas
 Migration `20260619140000`: o pipeline re-verificou todos os 56 `cloudflare_image_id`
@@ -71,6 +71,80 @@ detecção de órfãos.
 - Páginas 1–8 = 800 imagens reais confirmadas (`status='partial'`)
 - 0 órfãs nas 800 amostras (esperado: imagens `spot-*` têm donos no DB)
 - CF reporta 72 199 imagens totais; crawl completo = 722 páginas (job agendado)
+
+### P7 — Fechar 135 remediações `recover_url_original` obsoletas
+Migration `20260619140400`.
+
+**Diagnóstico:** 135 remediações criadas em 2026-06-17 somente com `cf_image_id`
+(`image_db_id = NULL`). Hoje, todos os 135 `cf_image_id` possuem `product_images`
+correspondente com `cf_sync_status = 'verified'` e `is_active = true` — a URL já
+foi recuperada pelo pipeline de sync.
+
+**Ações realizadas:**
+- Backfill de `image_db_id` via `product_images.cloudflare_image_id = remediation.cf_image_id`
+- Backfill de `product_id` a partir do `product_images` resolvido
+- 135 entradas em `action_log` com evidência `pipeline_verified_since_remediation_opened`
+- `status = 'done'` para todas
+
+**Estado final:** `remediation_open = 0` no health dashboard.
+
+### P8 — Referência circular em `v_divergence`
+Migration `20260619140500`.
+
+**Causa raiz:** Mesmo padrão do P5 — `cf_recon.cf_image` foi populada por backfill de
+`product_images WHERE cf_sync_status = 'verified'`. O LEFT JOIN em `v_divergence`
+(`ci.image_id = pi.cloudflare_image_id`) sempre retornava match para imagens
+verificadas, tornando `divergence_class = 'ok'` circular e inútil para detectar drift.
+
+**Correção:** nova coluna `exists_in_cf_confirmed` (`crawl_run_id IS NOT NULL`) e
+nova classe `ok_pending_crawl_confirmation` para imagens confirmadas apenas por
+backfill (não por crawl real).
+
+**Impacto atual (antes do crawl completo):**
+- 799 linhas → `ok` (páginas 1–8, crawl-confirmadas)
+- 71 139 linhas → `ok_pending_crawl_confirmation` (backfill, aguardam crawl completo)
+- 0 linhas → `broken_*` (nenhuma imagem ausente da `cf_image`)
+
+**Após crawl completo:** as 71 139 linhas `ok_pending_crawl_confirmation` migrarão
+para `ok` (ou para `broken_*` se o crawl não as confirmar — drift real).
+
+### P9 — Enriquecer `v_health_dashboard` com métricas de crawl
+Migration `20260619140600`.
+
+Adicionadas 5 novas colunas ao dashboard (preservando as 10 existentes):
+
+| Nova coluna | Significado |
+|---|---|
+| `cf_backfill_only` | Rows em `cf_image` com `crawl_run_id IS NULL` (backfill, sem confirmação) |
+| `cf_crawl_confirmed` | Rows confirmadas por crawl real da API CF |
+| `divergence_ok` | Imagens com `divergence_class = 'ok'` (crawl-confirmadas) |
+| `divergence_pending` | Imagens com `divergence_class = 'ok_pending_crawl_confirmation'` |
+| `divergence_broken` | Imagens com `divergence_class LIKE 'broken%'` (problema ativo) |
+
+**Estado pós-P9:**
+`cf_backfill_only=71280`, `cf_crawl_confirmed=799`, `divergence_ok=799`,
+`divergence_pending=71139`, `divergence_broken=0`.
+
+### P10 — Fechar 141 remediações `cf_orphan_no_pi` falsas
+Migration `20260619140700`.
+
+**Origem:** Migration gap `auto_detected_migration_20260619` (aplicada direto no DB, fora
+do repo) criou 141 remediações `cf_orphan_no_pi` às 20:15:05 UTC usando a lógica de
+detecção circular pré-P5 — mesma referência que `v_cf_orphans` resolvia antes.
+
+**Por que são falsas:**
+- Todas as 141 têm `crawl_run_id IS NULL` em `cf_image` (backfill, sem confirmação CF)
+- Nenhuma tem `product_images` correspondente (nem ativo, nem inativo, nem deletado)
+- Sem crawl real confirmando que esses IDs existem no CF, qualquer ação de deleção é
+  proibida pela regra de segurança
+
+**Ações realizadas:** 141 entradas em `action_log` com evidência
+`backfill_only_circular_detection_pre_p5` e `action_required='re_evaluate_after_full_crawl_v_cf_orphans'`;
+`status = 'done'` para todas.
+
+**Após crawl completo:** `v_cf_orphans` (já com filtro `crawl_run_id IS NOT NULL` do P5)
+re-detectará automaticamente os verdadeiros órfãos confirmados.
+
 
 ---
 
