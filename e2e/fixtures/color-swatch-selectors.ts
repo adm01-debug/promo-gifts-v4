@@ -1,46 +1,36 @@
 /**
- * SSOT de seletores E2E para a feature "seleção de cor + estoque + imagem".
- * Único ponto de verdade — qualquer mudança de testid em src/components/products/*
- * DEVE ser refletida aqui e os specs DEVEM importar exclusivamente daqui.
+ * SSOT — Seletores e atributos para testes E2E de bolinhas de cor.
  *
- * Usado por: e2e/color-swatch-sweep.spec.ts, e2e/color-swatch-selection.spec.ts
+ * Sempre que um data-testid ou data-attr ligado a variações de cor mudar,
+ * altere AQUI. Specs nunca devem hardcodar strings desses seletores.
  */
 
-/** Atributos `data-*` aplicados em componentes de produto/cor. */
 export const ATTR = {
-  /** Wrapper de produto em qualquer view (Card, ListItem, TableView). */
   productId: 'data-product-id',
-  /** Nome da cor da bolinha (case-preservado, igual ao backend). */
   colorName: 'data-color-name',
-  /** Estado de estoque do swatch — 'in-stock' | 'out' | 'upcoming' | undefined. */
   stockState: 'data-stock-state',
-  /** Quantidade numérica de estoque exibida (segue cor selecionada quando houver). */
   stockQty: 'data-stock-qty',
 } as const;
 
-/** Testids estáveis para asserts E2E. */
 export const TID = {
-  // Container raiz das bolinhas (role="radiogroup")
-  colorsContainer: 'product-colors-container',
-  // Botão "Todos" — limpa seleção
-  colorsClear: 'color-swatches-clear',
-  // Chip "+N" overflow no modo legado
-  colorsOverflow: 'color-swatches-overflow',
-  // Tooltip de cor (Radix)
-  colorTooltip: 'color-tooltip-content',
-  // Badge "reposição prevista"
-  swatchUpcomingDot: 'swatch-upcoming-dot',
-  // Bolinha individual: `${TID.swatch}${slug(colorName)}`
-  swatch: 'color-swatch-',
-  // Valor de estoque exibido (Card, ListItem md+, TableView)
-  productStockValue: 'product-stock-value',
-  // Imagem principal do produto (Card, ListItem, TableView)
+  productCard: 'product-card',
   productImage: 'product-image',
-  // Toolbar/popover de troca de view
+  productStockValue: 'product-stock-value',
+  colorsContainer: 'product-color-swatches',
+  colorsClear: 'color-swatches-clear',
+  colorsOverflow: 'color-swatches-overflow',
+  colorTooltip: 'color-swatch-tooltip',
+  swatchUpcomingDot: 'color-swatch-upcoming-dot',
+  /** Seletor CSS para qualquer swatch (prefix-match). */
+  swatch: 'color-swatch-',
   layoutPopoverTrigger: 'layout-popover-trigger',
   viewMode: (mode: 'grid' | 'list' | 'table') => `view-mode-${mode}`,
 } as const;
 
-/** Constrói o slug usado no testid de cada bolinha. */
-export const swatchTestId = (colorName: string): string =>
-  `${TID.swatch}${colorName.toLowerCase().replace(/\s+/g, '-')}`;
+/** Helpers de seletor CSS pré-formatados. */
+export const SEL = {
+  byTid: (tid: string) => `[data-testid="${tid}"]`,
+  byTidPrefix: (prefix: string) => `[data-testid^="${prefix}"]`,
+  byAttr: (attr: string, value?: string) =>
+    value === undefined ? `[${attr}]` : `[${attr}="${value}"]`,
+} as const;

@@ -9,10 +9,12 @@
  *     parâmetros da URL.
  *  4. Cores sem estoque continuam clicáveis e mantêm o layout estável.
  *
+ * Seletores e atributos vêm do SSOT `e2e/fixtures/color-swatch-selectors.ts`.
  * Login: usa `requireAuth` (closed platform).
  */
 import { test, expect, requireAuth } from './fixtures/test-base';
 import { gotoAndSettle, waitForRouteIdle } from './helpers/nav';
+import { ATTR, TID, SEL } from './fixtures/color-swatch-selectors';
 
 test.describe('Color swatch selection — Grid view', () => {
   test.beforeEach(async ({ page }) => {
@@ -22,72 +24,66 @@ test.describe('Color swatch selection — Grid view', () => {
   });
 
   test('clicar em cor seleciona, persiste na URL e botão Todos limpa', async ({ page }) => {
-    const cards = page.locator('[data-testid="product-card"]');
+    const cards = page.locator(SEL.byTid(TID.productCard));
     await expect(cards.first()).toBeVisible();
 
     const firstCard = cards.nth(0);
-    const productId = await firstCard.getAttribute('data-product-id');
+    const productId = await firstCard.getAttribute(ATTR.productId);
     expect(productId).toBeTruthy();
 
-    const swatches = firstCard.locator('[data-testid^="color-swatch-"]');
+    const swatches = firstCard.locator(SEL.byTidPrefix(TID.swatch));
     const swatchCount = await swatches.count();
     test.skip(swatchCount < 2, 'Produto sem variações suficientes para teste');
 
-    // Captura src da imagem antes do clique para comparação posterior.
-    const imgBefore = await firstCard.locator('img').first().getAttribute('src');
+    const imgBefore = await firstCard
+      .locator(`${SEL.byTid(TID.productImage)}, img`)
+      .first()
+      .getAttribute('src');
 
-    // Clica na segunda bolinha (evita coincidir com cor default).
     const targetSwatch = swatches.nth(1);
-    const colorName = await targetSwatch.getAttribute('data-color-name');
+    const colorName = await targetSwatch.getAttribute(ATTR.colorName);
     expect(colorName).toBeTruthy();
     await targetSwatch.click();
 
-    // 1) aria-checked atualizado
     await expect(targetSwatch).toHaveAttribute('aria-checked', 'true');
 
-    // 2) URL persistida
     await expect(page).toHaveURL(new RegExp(`cor=${encodeURIComponent(colorName!)}`));
     await expect(page).toHaveURL(new RegExp(`pid=${productId}`));
 
-    // 3) Botão Todos visível dentro deste card
-    const clearBtn = firstCard.locator('[data-testid="color-swatches-clear"]');
+    const clearBtn = firstCard.locator(SEL.byTid(TID.colorsClear));
     await expect(clearBtn).toBeVisible();
 
-    // 4) Imagem do card pode trocar (quando a cor tem imagem própria);
-    //    o layout NÃO deve quebrar — caixa do card mantém dimensões.
     const cardBox = await firstCard.boundingBox();
     expect(cardBox?.height).toBeGreaterThan(0);
-
-    // 5) Estoque do card renderizado sem erro
     await expect(firstCard).toBeVisible();
 
-    // 6) Reload → seleção persiste (via store + URL)
     await page.reload();
     await waitForRouteIdle(page);
-    const cardAfter = page.locator(`[data-product-id="${productId}"]`).first();
+    const cardAfter = page.locator(SEL.byAttr(ATTR.productId, productId!)).first();
     const selectedAfter = cardAfter.locator('[aria-checked="true"]').first();
-    await expect(selectedAfter).toHaveAttribute('data-color-name', colorName!);
+    await expect(selectedAfter).toHaveAttribute(ATTR.colorName, colorName!);
 
-    // 7) Clicar em "Todos" limpa seleção + URL
-    await cardAfter.locator('[data-testid="color-swatches-clear"]').click();
+    await cardAfter.locator(SEL.byTid(TID.colorsClear)).click();
     await expect(cardAfter.locator('[aria-checked="true"]')).toHaveCount(0);
     await expect(page).not.toHaveURL(/[?&]pid=/);
 
-    // Imagem volta ao estado original quando havia troca real
     if (imgBefore) {
-      const imgAfter = await cardAfter.locator('img').first().getAttribute('src');
+      const imgAfter = await cardAfter
+        .locator(`${SEL.byTid(TID.productImage)}, img`)
+        .first()
+        .getAttribute('src');
       expect(typeof imgAfter).toBe('string');
     }
   });
 
   test('cor sem estoque mantém layout e indica estado out', async ({ page }) => {
-    const card = page.locator('[data-testid="product-card"]').first();
+    const card = page.locator(SEL.byTid(TID.productCard)).first();
     await expect(card).toBeVisible();
-    const swatches = card.locator('[data-testid^="color-swatch-"]');
+    const swatches = card.locator(SEL.byTidPrefix(TID.swatch));
     const total = await swatches.count();
     let found = false;
     for (let i = 0; i < total; i++) {
-      const state = await swatches.nth(i).getAttribute('data-stock-state');
+      const state = await swatches.nth(i).getAttribute(ATTR.stockState);
       if (state === 'out') {
         const box = await swatches.nth(i).boundingBox();
         expect(box?.width).toBeGreaterThan(0);
@@ -106,13 +102,13 @@ test.describe('Color swatch selection — Table view', () => {
     await gotoAndSettle(page, '/produtos?view=table');
     await waitForRouteIdle(page);
 
-    const swatch = page.locator('[data-testid^="color-swatch-"]').nth(1);
+    const swatch = page.locator(SEL.byTidPrefix(TID.swatch)).nth(1);
     await expect(swatch).toBeVisible();
-    const colorName = await swatch.getAttribute('data-color-name');
+    const colorName = await swatch.getAttribute(ATTR.colorName);
     await swatch.click();
 
     await expect(page).toHaveURL(new RegExp(`cor=${encodeURIComponent(colorName!)}`));
-    const clearBtn = page.locator('[data-testid="color-swatches-clear"]').first();
+    const clearBtn = page.locator(SEL.byTid(TID.colorsClear)).first();
     await expect(clearBtn).toBeVisible();
     await clearBtn.click();
     await expect(page).not.toHaveURL(/[?&]pid=/);

@@ -190,7 +190,6 @@ export const ProductCardImage = memo(
                   src={activeSrc}
                   alt={product.name}
                   srcSet={cardSrcSet}
-                  data-testid="product-image"
                   className={cn(
                     'h-full w-full object-contain',
                     'transition-opacity duration-300 ease-in-out',
