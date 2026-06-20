@@ -307,12 +307,20 @@ async function updateCRMSyncStatus(quoteId: string, n8nResponse: Record<string, 
   if (error) console.error("Error updating CRM sync status:", error);
 }
 
+// BUG-043 FIX: strip internal_* fields before sending to any external webhook.
+// negotiation_markup_percent must NEVER reach external systems — the prefix alone
+// provides no protection once the payload crosses the application boundary.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function toExternalPayload({ internal_real_subtotal, internal_real_discount_percent, internal_negotiation_markup_percent, ...safe }: QuoteData): Omit<QuoteData, "internal_real_subtotal" | "internal_real_discount_percent" | "internal_negotiation_markup_percent"> {
+  return safe;
+}
+
 // BUG-010 FIX: sendToN8N now receives webhookUrl as parameter (no more module-scope closure).
 async function sendToN8N(quoteData: QuoteData, webhookUrl: string): Promise<Record<string, unknown>> {
   const response = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, timestamp: new Date().toISOString() }),
+    body: JSON.stringify({ action: "create_or_update_quote", quote: toExternalPayload(quoteData), timestamp: new Date().toISOString() }),
   });
   if (!response.ok) {
     await response.text();
@@ -331,7 +339,7 @@ async function sendToSalesPro(quoteData: QuoteData): Promise<void> {
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey },
-      body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, source: "gifts-store", timestamp: new Date().toISOString() }),
+      body: JSON.stringify({ action: "create_or_update_quote", quote: toExternalPayload(quoteData), source: "gifts-store", timestamp: new Date().toISOString() }),
     });
     if (!response.ok) {
       await response.text();
