@@ -124,9 +124,9 @@ export const BaseProductGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA (não min-h): garante cards idênticos mesmo quando
-          // swatches têm +N que quebra linha ou título ocupa só 1 linha.
-          'h-[430px] max-h-[430px] overflow-hidden',
+          // Altura FIXA por breakpoint (não min-h). Mobile = 400px, ≥sm = 430px.
+          // Garante cards idênticos mesmo com +N nos swatches ou título 1↔2 linhas.
+          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
           isSelected && 'border-primary ring-2 ring-primary/20',
           className,
         )}
