@@ -428,3 +428,57 @@ describe('useProductMatch (hook)', () => {
     expect(result.current.matches.length).toBeLessThanOrEqual(1000);
   });
 });
+
+// ======================================================
+// Regressions from code-review (single-token identical, double-count, word boundary)
+// ======================================================
+describe('code-review regressions', () => {
+  it('classifies a byte-identical SINGLE-token product as identical (near-exact)', () => {
+    expect(getMatchType({ hasComplementary: false, nameSim: 1, sharedTokens: 1 })).toBe('identical');
+    const source = makeProduct({ id: 's', name: 'Squeeze', category_id: 'cat-1', supplier: { id: 'a', name: 'A' } });
+    const dup = makeProduct({ id: 'd', name: 'Squeeze', category_id: 'cat-1', supplier: { id: 'b', name: 'B' } });
+    const { result } = renderHook(() => useProductMatch(source, [dup], { minScore: 1 }));
+    expect(result.current.matches[0]?.matchType).toBe('identical');
+  });
+
+  it('still does NOT classify "Caneta" vs "Caneta Premium" as identical (1 token, nameSim 0.5)', () => {
+    expect(getMatchType({ hasComplementary: false, nameSim: 0.5, sharedTokens: 1 })).toBe('similar');
+  });
+
+  it('does not double-count a term present in both descriptiveTags and materials', () => {
+    const source = makeProduct({
+      id: '1', name: 'X', descriptiveTags: ['metal'], materials: ['Metal'],
+      supplier: { id: 'a', name: 'A' }, category_id: 'c1',
+    });
+    const candidate = makeProduct({
+      id: '2', name: 'Y', descriptiveTags: ['metal'], materials: ['Metal'],
+      supplier: { id: 'b', name: 'B' }, category_id: 'c2',
+    });
+    // descriptor 'metal' (+8) only; material 'metal' is excluded as already counted.
+    expect(calculateMatchScore(source, candidate).score).toBe(8);
+  });
+
+  it('complementary matching does not false-positive inside a longer word (bone ∉ trombone)', () => {
+    const source = makeProduct({ id: '1', name: 'Camiseta Polo', supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Trombone Musical', supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    const { reasons } = calculateMatchScore(source, candidate);
+    expect(reasons.some((r) => r.startsWith('Complementar'))).toBe(false);
+  });
+
+  it('complementary matching still accepts plural by prefix (canudo → canudos)', () => {
+    const source = makeProduct({ id: '1', name: 'Squeeze Fitness', supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Canudos Inox', supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    const { reasons } = calculateMatchScore(source, candidate);
+    expect(reasons.some((r) => r.startsWith('Complementar'))).toBe(true);
+  });
+
+  it('results carry nameSim and ties break by name similarity', () => {
+    const source = makeProduct({ id: 's', name: 'Caneta Metal Azul', category_id: 'cat-1', supplier: { id: 'a', name: 'A' } });
+    // Same score (category match only) but different name similarity to source.
+    const closer = makeProduct({ id: 'closer', name: 'Caneta Metal Verde', category_id: 'cat-1', supplier: { id: 'b', name: 'B' } });
+    const farther = makeProduct({ id: 'farther', name: 'Mochila Nylon', category_id: 'cat-1', supplier: { id: 'b', name: 'B' } });
+    const { result } = renderHook(() => useProductMatch(source, [farther, closer], { minScore: 1 }));
+    expect(typeof result.current.matches[0]?.nameSim).toBe('number');
+    expect(result.current.matches[0]?.product.id).toBe('closer');
+  });
+});

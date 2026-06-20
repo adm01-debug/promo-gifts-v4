@@ -31,6 +31,9 @@ export interface MatchResult {
   score: number;
   reasons: string[];
   matchType: 'identical' | 'similar' | 'complementary';
+  /** Similaridade de tokens do nome com o produto-fonte (0..1) — usada como
+   *  critério de desempate na ordenação. */
+  nameSim: number;
 }
 
 // Complementary product keyword pairs (Portuguese)
@@ -190,6 +193,18 @@ const MATERIAL_POINTS = 6;
 const MATERIAL_MAX = 12;
 
 /**
+ * Casamento de palavra-chave por fronteira de palavra (`\b`), não por substring.
+ * Evita falsos positivos como 'bone' (de boné) dentro de 'trombone', mas ainda
+ * aceita plurais por prefixo ('copo' casa 'copos'). `needleNorm` já vem
+ * normalizado (minúsculo, sem acento).
+ */
+function wordBoundaryMatch(haystack: string, needleNorm: string): boolean {
+  if (needleNorm.length === 0) return false;
+  const escaped = needleNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}`).test(haystack);
+}
+
+/**
  * Igualdade de identificadores tolerante a tipo. A bridge externa pode devolver
  * `category_id`/`supplier_id` como número ou string conforme o fornecedor, então
  * comparar com `===` cru perderia matches legítimos (5 !== "5"). Ids vazios/nulos
@@ -264,33 +279,41 @@ export function calculateMatchScore(
     reasons.push(`Descritor: ${sharedDescriptors.slice(0, 3).join(', ')}`);
   }
 
-  // Shared materials
+  // Shared materials (excluindo termos já pontuados como descritor — no catálogo
+  // real `tags` e `materials` repetem o mesmo termo, ex.: "metal"; sem isto o
+  // mesmo sinal contaria duas vezes, +8 e +6).
   const sharedMaterials = sharedTerms(
     normalizeTermList(source.materials),
     normalizeTermList(candidate.materials),
-  );
+  ).filter((m) => !sharedDescriptors.includes(m));
   if (sharedMaterials.length > 0) {
     score += Math.min(MATERIAL_POINTS * sharedMaterials.length, MATERIAL_MAX);
     reasons.push(`Material: ${sharedMaterials.slice(0, 2).join(', ')}`);
   }
 
-  // Complementary name keywords (exclude self-matching)
+  // Complementary name keywords — casamento por fronteira de palavra, dedup por
+  // forma normalizada (tábua/tabua = mesma palavra), exclui o que já está no
+  // nome do source (evita complementar de si mesmo).
   const complements = precomputedComplements ?? findComplementaryKeywords(source.name);
   if (complements.length > 0) {
     const candNormalized = normalizeText(candidate.name);
     const sourceNormalized = normalizeText(source.name);
-    const matchedKeywords = complements.filter((kw) => {
+    const seen = new Set<string>();
+    const matchedKeywords: string[] = [];
+    for (const kw of complements) {
       const kwNorm = normalizeText(kw);
-      // Only count if keyword matches candidate but NOT source (avoid self-match)
-      return (
-        kwNorm.length > 0 && candNormalized.includes(kwNorm) && !sourceNormalized.includes(kwNorm)
-      );
-    });
+      if (kwNorm.length === 0 || seen.has(kwNorm)) continue;
+      seen.add(kwNorm);
+      if (
+        wordBoundaryMatch(candNormalized, kwNorm) &&
+        !wordBoundaryMatch(sourceNormalized, kwNorm)
+      ) {
+        matchedKeywords.push(kw);
+      }
+    }
     if (matchedKeywords.length > 0) {
-      // dedup
-      const unique = [...new Set(matchedKeywords)];
-      score += 20 * unique.length;
-      reasons.push(`Complementar: ${unique.join(', ')}`);
+      score += 20 * matchedKeywords.length;
+      reasons.push(`Complementar: ${matchedKeywords.join(', ')}`);
     }
   }
 
@@ -304,6 +327,12 @@ export const IDENTICAL_NAME_SIMILARITY = 0.5;
  *  falsos positivos quando ambos os nomes têm poucos termos genéricos). */
 export const IDENTICAL_MIN_SHARED_TOKENS = 2;
 
+/** Acima deste limiar o nome é praticamente idêntico (ex.: brindes de palavra
+ *  única "Squeeze"/"Powerbank") e classificamos como "Idêntico" mesmo com 1
+ *  token em comum — caso contrário produtos byte-idênticos de nome único nunca
+ *  seriam "Idêntico". */
+export const IDENTICAL_NEAR_EXACT_SIMILARITY = 0.8;
+
 export function getMatchType(args: {
   hasComplementary: boolean;
   nameSim: number;
@@ -312,7 +341,12 @@ export function getMatchType(args: {
 }): MatchResult['matchType'] {
   if (args.hasComplementary) return 'complementary';
   const sharedTokens = args.sharedTokens ?? IDENTICAL_MIN_SHARED_TOKENS;
-  if (args.nameSim >= IDENTICAL_NAME_SIMILARITY && sharedTokens >= IDENTICAL_MIN_SHARED_TOKENS) {
+  // Idêntico: nome quase exato (cobre nomes de 1 token), OU forte sobreposição
+  // (≥2 tokens em comum acima do limiar) para evitar "Caneta" ⇄ "Caneta Premium".
+  const nearExact = args.nameSim >= IDENTICAL_NEAR_EXACT_SIMILARITY;
+  const strongOverlap =
+    args.nameSim >= IDENTICAL_NAME_SIMILARITY && sharedTokens >= IDENTICAL_MIN_SHARED_TOKENS;
+  if (nearExact || strongOverlap) {
     return 'identical';
   }
   return 'similar';
@@ -380,11 +414,15 @@ export function useProductMatch(
 
       if (!mergedFilters.matchTypes.includes(matchType)) continue;
 
-      results.push({ product: candidate, score, reasons, matchType });
+      results.push({ product: candidate, score, reasons, matchType, nameSim });
     }
 
-    // Ordena por score; desempata por similaridade de nome (mais "igual" primeiro).
-    return results.sort((a, b) => b.score - a.score);
+    // Ordena por score; desempata por similaridade de nome (mais "igual" primeiro)
+    // e, por fim, por id para uma ordem determinística estável.
+    return results.sort(
+      (a, b) =>
+        b.score - a.score || b.nameSim - a.nameSim || a.product.id.localeCompare(b.product.id),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     sourceProduct,

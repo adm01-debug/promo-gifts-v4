@@ -416,16 +416,13 @@ export function useFavoriteListItems(listId: string | null) {
               return;
             }
             const results = await Promise.allSettled(
+              // RPC real (verificado no BD) ainda ausente de types.ts; usa o helper
+              // `untypedRpc` do projeto — mesmo padrão das chamadas acima neste arquivo.
               trashed.map((t) =>
-                // RPC real (verificado no BD) ainda ausente de types.ts; segue o
-                // padrão do projeto de cast `as never` para RPCs não tipados.
-                supabase.rpc(
-                  'restore_favorite_from_trash' as never,
-                  {
-                    _trash_id: t.id,
-                    _user_id: user.id,
-                  } as never,
-                ),
+                untypedRpc('restore_favorite_from_trash', {
+                  _trash_id: t.id,
+                  _user_id: user.id,
+                }),
               ),
             );
             const restoredCount = results.filter((r) => r.status === 'fulfilled').length;
