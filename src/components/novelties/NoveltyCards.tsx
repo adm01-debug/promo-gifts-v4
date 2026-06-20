@@ -311,7 +311,14 @@ export const NoveltyGridCard = memo(
                   {BRL_FORMATTER.format(product.base_price)}
                 </p>
               </div>
-            ) : null}
+            ) : (
+              <p
+                data-testid="novelty-card-price-unavailable"
+                className="text-xs text-muted-foreground"
+              >
+                Sob consulta
+              </p>
+            )}
             {isPriceStockLoading ? (
               <div
                 data-testid="novelty-card-stock-skeleton"
