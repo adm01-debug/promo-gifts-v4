@@ -10,7 +10,11 @@ export function useProfileRoles() {
   const [isLoading, setIsLoading] = useState(true);
   const [rolesLoaded, setRolesLoaded] = useState(false);
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
-  const fetchCancelledRef = useRef(false);
+  // Generation token: bumped on every fresh fetch and on clearProfileRoles, so a fetch
+  // aborted by sign-out — or a stale one racing a subsequent sign-in — neither repopulates
+  // nor clobbers the current login's state. Replaces a boolean cancel flag that left
+  // rolesLoaded stuck false on a quick sign-out → sign-in (admin pages stuck loading).
+  const fetchGenerationRef = useRef(0);
 
   const fetchUserData = useCallback(async (userId: string) => {
     // BUG-FIX: Previne race condition setando a Promise síncronamente
@@ -25,8 +29,7 @@ export function useProfileRoles() {
     }
 
     fetchPromiseRef.current = fetchPromise;
-
-    fetchCancelledRef.current = false;
+    const myGeneration = ++fetchGenerationRef.current;
 
     const log = createClientLogger('useProfileRoles.fetchUserData');
     const doFetch = async () => {
@@ -40,11 +43,10 @@ export function useProfileRoles() {
           authService.queryRoles(userId),
         ]);
 
-        // Aborted while in flight (e.g. signOut → clearProfileRoles): do NOT
-        // repopulate the profile/roles that were just cleared. fetchCancelledRef
-        // is reset to false at the start of each new fetch, so a subsequent
-        // login re-enables state updates.
-        if (fetchCancelledRef.current) return;
+        // Superseded while in flight (signOut → clearProfileRoles, or a newer fetch for a
+        // fresh login): do NOT repopulate the profile/roles. A newer generation owns the
+        // state from here on.
+        if (fetchGenerationRef.current !== myGeneration) return;
 
         if (profileResult.error) {
           log.error('profile_error', { error: profileResult.error });
@@ -83,11 +85,12 @@ export function useProfileRoles() {
       } catch (error) {
         log.error('exception', { error });
       } finally {
-        fetchPromiseRef.current = null;
-        // BUG-FIX: Ensure loading is ALWAYS disabled after first attempt
-        // to prevent white-screen of death if DB calls fail. Skipped when the
-        // fetch was aborted (clearProfileRoles already set the cleared state).
-        if (!fetchCancelledRef.current) {
+        // Only the current generation owns the shared state/handle. A superseded fetch must
+        // not null the new fetch's promise handle nor flip loading flags — doing so is what
+        // left the white-screen / stuck-loading bug on a quick sign-out → sign-in. The
+        // current generation ALWAYS disables loading so a failed DB call can't hang the UI.
+        if (fetchGenerationRef.current === myGeneration) {
+          fetchPromiseRef.current = null;
           setIsLoading(false);
           setRolesLoaded(true);
         }
@@ -100,7 +103,10 @@ export function useProfileRoles() {
   }, []);
 
   const clearProfileRoles = useCallback(() => {
-    fetchCancelledRef.current = true;
+    // Invalidate any in-flight fetch and release the dedup handle so a later sign-in starts
+    // a fresh fetch instead of awaiting (and piggy-backing on) the aborted one.
+    fetchGenerationRef.current++;
+    fetchPromiseRef.current = null;
     setProfile(null);
     setUserRoles([]);
     setIsLoading(false);
