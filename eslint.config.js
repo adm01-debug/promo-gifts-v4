@@ -235,6 +235,12 @@ export default [
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-sequences': 'error',
+      // Batch 82: 5 zero-violation rules
+      'no-multi-assign': 'error',
+      'no-restricted-globals': 'error',
+      'operator-assignment': 'error',
+      'no-useless-catch': 'error',
+      'no-unsafe-finally': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
