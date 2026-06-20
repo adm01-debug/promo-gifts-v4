@@ -59,8 +59,11 @@ export default function AdminTemasPage() {
       }
     }
     setConfig(next);
-    // Auto-save on every change for instant feedback
+    // Auto-save on every change for instant feedback.
+    // Also sync savedConfig so hasUnsavedChanges stays false after auto-save
+    // (BUG-THEME-04: pulsating red dot was shown even when data was already saved).
     saveThemeConfig(next);
+    setSavedConfig(next);
   };
 
   const handleSave = () => {
@@ -79,14 +82,6 @@ export default function AdminTemasPage() {
     saveThemeConfig(def);
     // setAppTheme removed as theme is fixed
     toast.success('Tema restaurado ao padrão');
-  };
-
-  // Reservado para uso futuro pelo botão de importação de tema
-  const _handleImport = (imported: ThemeConfig) => {
-    setConfig(imported);
-    saveThemeConfig(imported);
-    setSavedConfig(imported);
-    // setAppTheme removed as theme is fixed
   };
 
   return (

@@ -24,7 +24,9 @@ export function ThemeInitializer() {
     }
 
     const cfg = loadThemeConfig();
-    applyThemePreset(cfg.presetId, cfg.mode);
+    // Dark mode is locked app-wide; never resolve 'auto' here to avoid
+    // applying light tokens when the OS is in light mode.
+    applyThemePreset(cfg.presetId, 'dark');
     applyRadius(cfg.radius);
   }, [ctx, ctx?.actualTheme]);
 

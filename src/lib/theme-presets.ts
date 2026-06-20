@@ -977,6 +977,10 @@ export function saveThemeConfig(config: ThemeConfig): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
 }
 
+// Module-level timer to prevent orphaned setTimeout handles when the user
+// switches presets rapidly (BUG-THEME-03).
+let _transitionTimer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Aplica todos os tokens visuais de um preset:
  *   • CSS vars de cor (light ou dark)
@@ -1032,8 +1036,12 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' | 'aut
     root.style.setProperty('--radius', `${preset.borderRadius / 16}rem`);
   }
 
-  // Remove transition class after animation completes
-  setTimeout(() => root.classList.remove('theme-transitioning'), 500);
+  // Cancel any pending transition cleanup before scheduling a new one (BUG-THEME-03).
+  if (_transitionTimer !== null) clearTimeout(_transitionTimer);
+  _transitionTimer = setTimeout(() => {
+    root.classList.remove('theme-transitioning');
+    _transitionTimer = null;
+  }, 500);
 }
 
 export function applyRadius(px: number): void {
@@ -1046,6 +1054,9 @@ export function clearThemeOverrides(): void {
   root.style.removeProperty('--radius');
   root.style.removeProperty('--font-sans');
   root.style.removeProperty('--font-display');
+  // Clear data-preset-id so CSS selectors (e.g. diversity-overrides.css) and
+  // MutationObserver listeners (AppLogo) react correctly (BUG-THEME-02).
+  delete root.dataset.presetId;
 }
 
 export function exportThemeConfig(config: ThemeConfig): string {
