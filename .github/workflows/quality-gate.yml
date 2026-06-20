@@ -48,6 +48,10 @@ jobs:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
 
+      # GATE 2.3: `as any` gate — freeze baseline, prevent regressions
+      - name: Gate 2.3 — as any baseline (zero regressions)
+        run: node scripts/check-any-type-baseline.mjs
+
       # GATE 2.5: Product type fields — campos críticos nunca podem ser removidos
       # Previne: remoção de price/shortDescription/category_id durante merge (gap C2)
       # Previne: renomeação silenciosa pelo Lovable como price→sale_price (gap L3)

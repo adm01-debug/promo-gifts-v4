@@ -27,6 +27,8 @@
     "lint:check": "eslint src --max-warnings=0",
     "lint:baseline": "node scripts/check-eslint-baseline.mjs",
     "lint:baseline:update": "node scripts/eslint-baseline-generate.mjs",
+    "lint:any": "node scripts/check-any-type-baseline.mjs",
+    "lint:any:update": "node scripts/update-any-type-baseline.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
     "qa:lint": "eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
