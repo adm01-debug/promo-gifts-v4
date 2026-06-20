@@ -7639,7 +7639,9 @@ export type Database = {
         | { Args: { _user_id?: string }; Returns: boolean }
       is_admin_strict: { Args: { _user_id?: string }; Returns: boolean }
       is_dev: { Args: { _user_id?: string }; Returns: boolean }
-      is_dnd_active: { Args: never; Returns: boolean }
+      is_dnd_active:
+        | { Args: never; Returns: boolean }
+        | { Args: { p_user_id: string }; Returns: boolean }
       is_kit_collaborator: {
         Args: { _kit_id: string; _user_id: string }
         Returns: boolean

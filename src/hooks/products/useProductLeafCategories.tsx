@@ -139,14 +139,14 @@ function useGlobalLeafCategories(): LeafCategoryMap {
     queryFn: async (): Promise<Map<string, LeafCategory>> => {
       // fn_get_all_leaf_categories é SECURITY DEFINER e não está nos tipos gerados pelo Lovable.
       type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
-      const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
+      const { data: rpcData, error } = await (supabase.rpc as unknown as AnyRpc)(
         'fn_get_all_leaf_categories',
       );
       if (error) {
         logger.warn('[useProductLeafCategories] RPC falhou; usando fallback vazio', error);
         throw error;
       }
-      const rows = (data ?? []) as unknown as LeafCategoryRow[];
+      const rows = (rpcData ?? []) as unknown as LeafCategoryRow[];
       const map = new Map<string, LeafCategory>();
       for (const row of rows) {
         if (!row.product_id || !row.leaf_category_id) continue;

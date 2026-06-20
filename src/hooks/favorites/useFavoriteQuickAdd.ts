@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,7 +45,9 @@ export function useFavoriteQuickAdd() {
     staleTime: 30_000,
   });
 
-  const lastUsedListId = useMemo(() => {
+  // Intentionally NOT memoised — must read fresh on every click so that
+  // a Shift+click immediately after a regular-click uses the updated list.
+  const getLastUsedListId = useCallback((): string | null => {
     try {
       return localStorage.getItem(LAST_LIST_KEY);
     } catch {
@@ -67,7 +69,13 @@ export function useFavoriteQuickAdd() {
             product_id: product.id,
             variant_id: variant?.variant_id ?? null,
             variant_info: (variant ?? null) as never,
-            price_at_save: typeof product.price === 'number' ? product.price : null,
+            // Snapshot the effective selling price (sale_price when available, otherwise price)
+            price_at_save:
+              typeof (product as { sale_price?: number }).sale_price === 'number'
+                ? ((product as { sale_price?: number }).sale_price ?? null)
+                : typeof product.price === 'number'
+                  ? product.price
+                  : null,
           },
           { onConflict: 'list_id,product_id,variant_id', ignoreDuplicates: false },
         );
@@ -97,18 +105,20 @@ export function useFavoriteQuickAdd() {
     async (productId: string) => {
       if (!user) return;
       try {
-        await supabase
+        const { error } = await supabase
           .from('favorite_items')
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId);
+        if (error) throw error;
         if (isFavorite(productId)) toggleFavorite(productId);
         qc.invalidateQueries({ queryKey: ['favorite-membership'] });
         qc.invalidateQueries({ queryKey: ['favorite-items'] });
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
       } catch (e) {
         logger.warn('[favoriteQuickAdd] remove failed', e);
-        if (isFavorite(productId)) toggleFavorite(productId);
+        toast.error('Não foi possível remover dos favoritos');
+        // Do NOT toggle — deletion failed, keep local state consistent with DB
       }
     },
     [user, qc, isFavorite, toggleFavorite],
@@ -150,6 +160,7 @@ export function useFavoriteQuickAdd() {
       }
       // Sem múltiplas listas OU shift pressionado → vai para a default
       if (!hasMultipleLists || opts?.shiftKey) {
+        const lastUsedListId = getLastUsedListId();
         const target =
           (lastUsedListId && lists.find((l) => l.id === lastUsedListId)) || defaultList;
         if (target) {
@@ -167,7 +178,7 @@ export function useFavoriteQuickAdd() {
       user,
       isFavorite,
       hasMultipleLists,
-      lastUsedListId,
+      getLastUsedListId,
       defaultList,
       lists,
       toggleFavorite,

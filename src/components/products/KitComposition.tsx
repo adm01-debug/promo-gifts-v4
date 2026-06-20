@@ -9,6 +9,7 @@ import {
   ChevronUp,
   ChevronDown,
   Box,
+  Info,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -153,6 +154,19 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
 
           <ScrollArea className="max-h-[calc(72vh-160px)]">
             <div className="space-y-5 px-6 py-4">
+              {/* Nota informativa: kits nativos são vendidos como conjunto único. */}
+              <div
+                role="note"
+                className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground"
+              >
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>
+                  Este kit é vendido como <strong className="text-foreground">conjunto único</strong>{' '}
+                  pelo fornecedor. Os componentes abaixo são informativos — não estão disponíveis
+                  para compra avulsa.
+                </span>
+              </div>
+
               {packagingItems.length > 0 && (
                 <Collapsible
                   open={expandedSections.packaging}

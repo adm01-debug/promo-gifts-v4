@@ -195,7 +195,7 @@ describe('createNewVersion', () => {
     });
 
     expect(outcome).toBeNull();
-    // createNewVersion lança Error quando original é null; catch chama toast.error, não logger.error
+    // Hook catch block calls toast.error, not logger.error
     expect(vi.mocked(toast.error)).toHaveBeenCalled();
   });
 });

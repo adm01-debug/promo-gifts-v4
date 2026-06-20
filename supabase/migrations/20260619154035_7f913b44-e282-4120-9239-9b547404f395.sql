@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.increment_webhook_stats(uuid, boolean) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.record_mcp_access_violation(uuid, text, text, text, uuid, text, text, text, jsonb) FROM PUBLIC, anon, authenticated;

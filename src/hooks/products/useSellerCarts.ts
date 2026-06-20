@@ -393,7 +393,7 @@ export function useSellerCarts() {
           product_sku: i.product_sku,
           product_image_url: i.product_image_url,
           product_price: i.product_price,
-          quantity: i.quantity,
+          quantity: clampQuantity(i.quantity),
           color_name: i.color_name,
           color_hex: i.color_hex,
           notes: i.notes,
@@ -533,7 +533,7 @@ export function useSellerCarts() {
         product_sku: item.product_sku,
         product_image_url: item.product_image_url,
         product_price: item.product_price,
-        quantity: item.quantity,
+        quantity: clampQuantity(item.quantity),
         color_name: item.color_name,
         color_hex: item.color_hex,
         notes: item.notes,
@@ -573,13 +573,18 @@ export function useSellerCarts() {
         product_sku: item.product_sku || null,
         product_image_url: item.product_image_url || null,
         product_price: item.product_price,
-        quantity: item.quantity || 1,
+        quantity: clampQuantity(item.quantity || 1),
         color_name: item.color_name || null,
         color_hex: item.color_hex || null,
         notes: item.notes ?? null,
       }));
 
-      const { error } = await supabase.from('seller_cart_items').insert(itemsToInsert);
+      // Upsert instead of insert so that if the user added an item during the undo
+      // window (after clear, before undo), we restore the snapshot quantity rather
+      // than failing with 23505 (unique constraint on cart_id, product_id, color_name).
+      const { error } = await supabase
+        .from('seller_cart_items')
+        .upsert(itemsToInsert, { onConflict: 'cart_id,product_id,color_name' });
       if (error) throw error;
 
       // updated_at do carrinho-pai é propagado pelo trigger

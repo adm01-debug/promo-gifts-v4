@@ -62,7 +62,9 @@ export function MultiAreaManager({
       toast.error('Selecione uma área com logo primeiro');
       return;
     }
-    onAreasChange(areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview })));
+    onAreasChange(
+      areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview, logoFile: activeArea.logoFile ?? null })),
+    );
     toast.success(`Logo aplicado em ${areas.length} áreas`);
   };
 
@@ -81,14 +83,23 @@ export function MultiAreaManager({
         e.preventDefault();
         setIsDraggingOver(false);
         const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-          const targetAreaId = activeAreaId || areas[0]?.id;
-          if (targetAreaId) {
-            onLogoUpload(targetAreaId, file);
-            toast.success(
-              `Logo aplicado na área "${areas.find((a) => a.id === targetAreaId)?.name || 'ativa'}"`,
-            );
-          }
+        if (!file) return;
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+        const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          toast.error('Formato não suportado. Use JPG, PNG, WebP ou SVG.');
+          return;
+        }
+        if (file.size > MAX_SIZE_BYTES) {
+          toast.error('Arquivo muito grande. Tamanho máximo: 10 MB.');
+          return;
+        }
+        const targetAreaId = activeAreaId || areas[0]?.id;
+        if (targetAreaId) {
+          onLogoUpload(targetAreaId, file);
+          toast.success(
+            `Logo aplicado na área "${areas.find((a) => a.id === targetAreaId)?.name || 'ativa'}"`,
+          );
         }
       }}
       className={cn(
@@ -140,7 +151,7 @@ export function MultiAreaManager({
                   onLogoUpload={(file) => onLogoUpload(area.id, file)}
                   onLogoRemove={() => {
                     const updated = areas.map((a) =>
-                      a.id === area.id ? { ...a, logoData: null, logoPreview: null } : a,
+                      a.id === area.id ? { ...a, logoPreview: null, logoFile: null } : a,
                     );
                     onAreasChange(updated);
                     onLogoRemove?.(area.id);

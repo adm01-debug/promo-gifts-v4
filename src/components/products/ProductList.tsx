@@ -83,215 +83,222 @@ function ProductListItemWrapper({
   );
 }
 
-export const ProductList = memo(function ProductList({
-  products,
-  isLoading = false,
-  isError,
-  onRetry,
-  onProductClick,
-  onViewProduct,
-  onShareProduct,
-  onFavoriteProduct,
-  isFavorite,
-  onToggleFavorite,
-  isInCompare,
-  onToggleCompare,
-  canAddToCompare = true,
-  highlightColors,
-  activeColorFilter,
-  selectionMode: externalSelectionMode,
-  externalSelectedIds,
-  onToggleSelect: externalToggleSelect,
-}: ProductListProps) {
-  // Determine if we're using external or internal selection state
-  const isExternallyControlled =
-    externalSelectedIds !== undefined && externalToggleSelect !== undefined;
+export const ProductList = memo(
+  ({
+    products,
+    isLoading = false,
+    isError,
+    onRetry,
+    onProductClick,
+    onViewProduct,
+    onShareProduct,
+    onFavoriteProduct,
+    isFavorite,
+    onToggleFavorite,
+    isInCompare,
+    onToggleCompare,
+    canAddToCompare = true,
+    highlightColors,
+    activeColorFilter,
+    selectionMode: externalSelectionMode,
+    externalSelectedIds,
+    onToggleSelect: externalToggleSelect,
+  }: ProductListProps) => {
+    // Determine if we're using external or internal selection state
+    const isExternallyControlled =
+      externalSelectedIds !== undefined && externalToggleSelect !== undefined;
 
-  // Internal fallback state (only used when NOT externally controlled)
-  const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
-  const [collectionModalOpen, setCollectionModalOpen] = useState(false);
+    // Internal fallback state (only used when NOT externally controlled)
+    const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
+    const [collectionModalOpen, setCollectionModalOpen] = useState(false);
 
-  // Resolve which state to use
-  const selectedIds = isExternallyControlled ? externalSelectedIds : internalSelectedIds;
-  const selectionMode = isExternallyControlled
-    ? (externalSelectionMode ?? false)
-    : internalSelectedIds.size > 0;
+    // Resolve which state to use
+    const selectedIds = isExternallyControlled ? externalSelectedIds : internalSelectedIds;
+    const selectionMode = isExternallyControlled
+      ? (externalSelectionMode ?? false)
+      : internalSelectedIds.size > 0;
 
-  // Clear internal selection when products change significantly
-  useEffect(() => {
-    if (!isExternallyControlled) setInternalSelectedIds(new Set());
-  }, [products.length, isExternallyControlled]);
+    // Clear internal selection when products change significantly
+    useEffect(() => {
+      if (!isExternallyControlled) setInternalSelectedIds(new Set());
+    }, [products.length, isExternallyControlled]);
 
-  const toggleSelect = useCallback(
-    (id: string) => {
-      if (isExternallyControlled) {
-        externalToggleSelect?.(id);
-      } else {
-        setInternalSelectedIds((prev) => {
-          const next = new Set(prev);
-          if (next.has(id)) next.delete(id);
-          else next.add(id);
-          return next;
-        });
+    const toggleSelect = useCallback(
+      (id: string) => {
+        if (isExternallyControlled) {
+          externalToggleSelect?.(id);
+        } else {
+          setInternalSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+          });
+        }
+      },
+      [isExternallyControlled, externalToggleSelect],
+    );
+
+    const selectAll = useCallback(() => {
+      if (!isExternallyControlled) {
+        setInternalSelectedIds(new Set(products.map((p) => p.id)));
       }
-    },
-    [isExternallyControlled, externalToggleSelect],
-  );
+    }, [products, isExternallyControlled]);
 
-  const selectAll = useCallback(() => {
-    if (!isExternallyControlled) {
-      setInternalSelectedIds(new Set(products.map((p) => p.id)));
-    }
-  }, [products, isExternallyControlled]);
-
-  const clearSelection = useCallback(() => {
-    if (!isExternallyControlled) {
-      setInternalSelectedIds(new Set());
-    }
-  }, [isExternallyControlled]);
-
-  const handleBulkFavorite = useCallback(() => {
-    if (!onToggleFavorite) return;
-    let added = 0;
-    selectedIds.forEach((id) => {
-      if (!isFavorite?.(id)) {
-        onToggleFavorite(id);
-        added++;
+    const clearSelection = useCallback(() => {
+      if (!isExternallyControlled) {
+        setInternalSelectedIds(new Set());
       }
-    });
-    toast.success(
-      `${added} produto${added > 1 ? 's' : ''} adicionado${added > 1 ? 's' : ''} aos favoritos`,
-    );
-    clearSelection();
-  }, [selectedIds, onToggleFavorite, isFavorite, clearSelection]);
+    }, [isExternallyControlled]);
 
-  const handleBulkCompare = useCallback(() => {
-    if (!onToggleCompare) return;
-    const ids = Array.from(selectedIds).slice(0, 4);
-    ids.forEach((id) => {
-      if (!isInCompare?.(id)) onToggleCompare(id);
-    });
-    toast.success(
-      `${ids.length} produto${ids.length > 1 ? 's' : ''} adicionado${ids.length > 1 ? 's' : ''} à comparação`,
-    );
-    clearSelection();
-  }, [selectedIds, onToggleCompare, isInCompare, clearSelection]);
+    const handleBulkFavorite = useCallback(() => {
+      if (!onToggleFavorite) return;
+      let added = 0;
+      selectedIds.forEach((id) => {
+        if (!isFavorite?.(id)) {
+          onToggleFavorite(id);
+          added++;
+        }
+      });
+      toast.success(
+        `${added} produto${added > 1 ? 's' : ''} adicionado${added > 1 ? 's' : ''} aos favoritos`,
+      );
+      clearSelection();
+    }, [selectedIds, onToggleFavorite, isFavorite, clearSelection]);
 
-  const handleBulkCollection = useCallback(() => {
-    setCollectionModalOpen(true);
-  }, []);
+    const handleBulkCompare = useCallback(() => {
+      if (!onToggleCompare) return;
+      const ids = Array.from(selectedIds).slice(0, 4);
+      ids.forEach((id) => {
+        if (!isInCompare?.(id)) onToggleCompare(id);
+      });
+      toast.success(
+        `${ids.length} produto${ids.length > 1 ? 's' : ''} adicionado${ids.length > 1 ? 's' : ''} à comparação`,
+      );
+      clearSelection();
+    }, [selectedIds, onToggleCompare, isInCompare, clearSelection]);
 
-  if (isError) {
-    return (
-      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-          <AlertTriangle className="h-8 w-8" />
+    const handleBulkCollection = useCallback(() => {
+      setCollectionModalOpen(true);
+    }, []);
+
+    if (isError) {
+      return (
+        <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <AlertTriangle className="h-8 w-8" />
+          </div>
+          <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+            Ops! Falha ao carregar lista
+          </h3>
+          <p className="mb-6 max-w-md text-sm text-muted-foreground">
+            Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
+          </p>
+          {onRetry && (
+            <Button onClick={onRetry} variant="outline" className="gap-2">
+              <RotateCw className="h-4 w-4" />
+              Tentar novamente
+            </Button>
+          )}
         </div>
-        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
-          Ops! Falha ao carregar lista
-        </h3>
-        <p className="mb-6 max-w-md text-sm text-muted-foreground">
-          Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
-        </p>
-        {onRetry && (
-          <Button onClick={onRetry} variant="outline" className="gap-2">
-            <RotateCw className="h-4 w-4" />
-            Tentar novamente
-          </Button>
-        )}
-      </div>
-    );
-  }
+      );
+    }
 
-  if (products.length === 0 && !isLoading) {
-    return (
-      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <span className="text-3xl">📦</span>
+    if (products.length === 0 && !isLoading) {
+      return (
+        <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <span className="text-3xl">📦</span>
+          </div>
+          <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+            Nenhum produto encontrado
+          </h3>
+          <p className="max-w-md text-muted-foreground">
+            Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos
+            desejados.
+          </p>
         </div>
-        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
-          Nenhum produto encontrado
-        </h3>
-        <p className="max-w-md text-muted-foreground">
-          Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos desejados.
-        </p>
-      </div>
-    );
-  }
+      );
+    }
 
-  type SkeletonEntry = { id: string; isSkeleton: true };
-  const displayProducts: Array<Product | SkeletonEntry> =
-    isLoading && products.length === 0
-      ? Array.from({ length: 8 }).map((_, i) => ({
-          id: `skeleton-${i}`,
-          isSkeleton: true as const,
-        }))
-      : products;
+    type SkeletonEntry = { id: string; isSkeleton: true };
+    const displayProducts: Array<Product | SkeletonEntry> =
+      isLoading && products.length === 0
+        ? Array.from({ length: 8 }).map((_, i) => ({
+            id: `skeleton-${i}`,
+            isSkeleton: true as const,
+          }))
+        : products;
 
-  // Get first selected product for collection modal
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
-  const firstSelectedProduct = products.find((p) => p.id === firstSelectedId);
+    // Get first selected product for collection modal
+    const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+    const firstSelectedProduct = products.find((p) => p.id === firstSelectedId);
 
-  return (
-    <>
-      <div className="mb-3 hidden items-center px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 sm:flex md:text-xs">
-        <div className="w-[72px] shrink-0 text-center">Produto</div>
-        <div className="ml-4 flex-1">Detalhes</div>
-        <div className="min-w-[100px] pr-4 text-right">Preço</div>
-        <div className="w-[160px] shrink-0 text-center">Ações</div>
-      </div>
-      <div className="flex flex-col gap-2">
-        {displayProducts.map((product, index) =>
-          'isSkeleton' in product && product.isSkeleton ? (
-            <ProductCardSkeleton key={product.id} variant="compact" selectionMode={selectionMode} />
-          ) : (
-            <ProductListItemWrapper
-              key={(product as Product).id}
-              product={product as Product}
-              index={index}
-              isSelected={selectedIds.has((product as Product).id)}
-              selectionMode={selectionMode}
-              onToggleSelect={toggleSelect}
-              onClick={onProductClick ? () => onProductClick((product as Product).id) : undefined}
-              onView={onViewProduct}
-              onShare={onShareProduct}
-              onFavorite={onFavoriteProduct}
-              isFavorited={isFavorite ? isFavorite((product as Product).id) : false}
-              onToggleFavorite={onToggleFavorite}
-              isInCompare={isInCompare ? isInCompare((product as Product).id) : false}
-              onToggleCompare={onToggleCompare}
-              canAddToCompare={canAddToCompare}
-              highlightColors={highlightColors}
-              activeColorFilter={activeColorFilter}
-            />
-          ),
+    return (
+      <>
+        <div className="mb-3 hidden items-center px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 sm:flex md:text-xs">
+          <div className="w-[72px] shrink-0 text-center">Produto</div>
+          <div className="ml-4 flex-1">Detalhes</div>
+          <div className="min-w-[100px] pr-4 text-right">Preço</div>
+          <div className="w-[160px] shrink-0 text-center">Ações</div>
+        </div>
+        <div className="flex flex-col gap-2">
+          {displayProducts.map((product, index) =>
+            'isSkeleton' in product && product.isSkeleton ? (
+              <ProductCardSkeleton
+                key={product.id}
+                variant="compact"
+                selectionMode={selectionMode}
+              />
+            ) : (
+              <ProductListItemWrapper
+                key={(product as Product).id}
+                product={product as Product}
+                index={index}
+                isSelected={selectedIds.has((product as Product).id)}
+                selectionMode={selectionMode}
+                onToggleSelect={toggleSelect}
+                onClick={onProductClick ? () => onProductClick((product as Product).id) : undefined}
+                onView={onViewProduct}
+                onShare={onShareProduct}
+                onFavorite={onFavoriteProduct}
+                isFavorited={isFavorite ? isFavorite((product as Product).id) : false}
+                onToggleFavorite={onToggleFavorite}
+                isInCompare={isInCompare ? isInCompare((product as Product).id) : false}
+                onToggleCompare={onToggleCompare}
+                canAddToCompare={canAddToCompare}
+                highlightColors={highlightColors}
+                activeColorFilter={activeColorFilter}
+              />
+            ),
+          )}
+        </div>
+
+        {/* Only render internal BulkActionBar when NOT externally controlled */}
+        {!isExternallyControlled && (
+          <BulkActionBar
+            selectedCount={selectedIds.size}
+            totalCount={products.length}
+            onSelectAll={selectAll}
+            onClearSelection={clearSelection}
+            onBulkFavorite={handleBulkFavorite}
+            onBulkCompare={handleBulkCompare}
+            onBulkCollection={handleBulkCollection}
+          />
         )}
-      </div>
 
-      {/* Only render internal BulkActionBar when NOT externally controlled */}
-      {!isExternallyControlled && (
-        <BulkActionBar
-          selectedCount={selectedIds.size}
-          totalCount={products.length}
-          onSelectAll={selectAll}
-          onClearSelection={clearSelection}
-          onBulkFavorite={handleBulkFavorite}
-          onBulkCompare={handleBulkCompare}
-          onBulkCollection={handleBulkCollection}
-        />
-      )}
-
-      {!isExternallyControlled && firstSelectedProduct && (
-        <AddToCollectionModal
-          open={collectionModalOpen}
-          onOpenChange={(open) => {
-            setCollectionModalOpen(open);
-            if (!open) clearSelection();
-          }}
-          productId={firstSelectedId}
-          productName={`${selectedIds.size} produtos selecionados`}
-        />
-      )}
-    </>
-  );
-});
+        {!isExternallyControlled && firstSelectedProduct && (
+          <AddToCollectionModal
+            open={collectionModalOpen}
+            onOpenChange={(open) => {
+              setCollectionModalOpen(open);
+              if (!open) clearSelection();
+            }}
+            productId={firstSelectedId}
+            productName={`${selectedIds.size} produtos selecionados`}
+          />
+        )}
+      </>
+    );
+  },
+);

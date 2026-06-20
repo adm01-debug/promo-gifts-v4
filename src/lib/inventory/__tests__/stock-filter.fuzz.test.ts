@@ -138,7 +138,7 @@ describe('stock-filter — fuzz (500 simulações)', () => {
     const rnd = mulberry32(20260616);
     const universe = Array.from({ length: 60 }, (_, i) => makeProduct(rnd, i));
     const universeIds = new Set(universe.map((p) => p.productId));
-    const indexes = buildStockIndexes(universe, []);
+    const indexes = buildStockIndexes(universe);
 
     const report: SimReport = {
       total: 0,
@@ -241,7 +241,7 @@ describe('stock-filter — fuzz (500 simulações)', () => {
   it('cor inexistente sempre retorna lista vazia (fast-path via índice)', () => {
     const rnd = mulberry32(1);
     const universe = Array.from({ length: 30 }, (_, i) => makeProduct(rnd, i));
-    const indexes = buildStockIndexes(universe, []);
+    const indexes = buildStockIndexes(universe);
     for (let i = 0; i < 50; i++) {
       const out = applyStockFilters(
         universe,

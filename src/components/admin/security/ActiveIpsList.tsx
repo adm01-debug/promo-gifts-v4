@@ -176,7 +176,14 @@ export function ActiveIpsList() {
               <SelectItem value="expired">Expirados</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              load();
+            }}
+            disabled={loading}
+          >
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </Button>
         </div>
@@ -254,7 +261,9 @@ export function ActiveIpsList() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 px-2 text-xs"
-                                onClick={() => void extend(i.id, i.expires_at)}
+                                onClick={() => {
+                                  extend(i.id, i.expires_at);
+                                }}
                                 title="Estender +24h"
                               >
                                 <CalendarPlus className="h-3.5 w-3.5" />
@@ -263,7 +272,9 @@ export function ActiveIpsList() {
                                 size="sm"
                                 variant="ghost"
                                 className="h-7 px-2 text-xs"
-                                onClick={() => void makePermanent(i.id)}
+                                onClick={() => {
+                                  makePermanent(i.id);
+                                }}
                                 title="Tornar permanente"
                               >
                                 <InfinityIcon className="h-3.5 w-3.5" />
@@ -274,7 +285,9 @@ export function ActiveIpsList() {
                             size="sm"
                             variant="ghost"
                             className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-                            onClick={() => void revoke(i.id)}
+                            onClick={() => {
+                              revoke(i.id);
+                            }}
                             title="Revogar"
                           >
                             <Trash2 className="h-3.5 w-3.5" />

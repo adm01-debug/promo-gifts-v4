@@ -223,7 +223,7 @@ export function useUserManagement() {
         .upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      const publicUrl = urlData.publicUrl + `?t=${Date.now()}`;
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', userId);
       setUsers((prev) =>
         prev.map((u) => (u.user_id === userId ? { ...u, avatar_url: publicUrl } : u)),

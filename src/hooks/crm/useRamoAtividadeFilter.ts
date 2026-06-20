@@ -159,10 +159,10 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
     (ramoSlug: string) => {
       const segmentosDoRamo = getSegmentosForRamo(ramoSlug);
       if (segmentosDoRamo.length === 0) return false;
-      const selectedCount = segmentosDoRamo.filter((s) =>
+      const ramoSelectedCount = segmentosDoRamo.filter((s) =>
         filterState.selectedSegmentos.includes(s.segmento_slug),
       ).length;
-      return selectedCount > 0 && selectedCount < segmentosDoRamo.length;
+      return ramoSelectedCount > 0 && ramoSelectedCount < segmentosDoRamo.length;
     },
     [getSegmentosForRamo, filterState.selectedSegmentos],
   );

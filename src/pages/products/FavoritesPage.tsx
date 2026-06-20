@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
 import {
@@ -100,6 +100,7 @@ function loadSort(): FavoritesSort {
 
 export default function FavoritesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useFavoritesGlobalShortcuts();
   useUndoStack();
@@ -133,7 +134,15 @@ export default function FavoritesPage() {
     }
   }, [selectedListId]);
 
-  const { enriched, rawItems, removeItem, updateItem } = useEnrichedFavoriteItems(selectedListId);
+  // Auto-select the default list when none is selected (first visit or after list deletion)
+  useEffect(() => {
+    if (selectedListId === null && lists.length > 0) {
+      const def = lists.find((l) => l.is_default) ?? lists[0];
+      setSelectedListId(def.id);
+    }
+  }, [lists, selectedListId]);
+
+  const { enriched, rawItems, removeItem, removeItems, updateItem } = useEnrichedFavoriteItems(selectedListId);
   const isRemoteListView = !!selectedListId && !showTrash;
 
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
@@ -145,6 +154,8 @@ export default function FavoritesPage() {
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
   const [removeSelectedDialogOpen, setRemoveSelectedDialogOpen] = useState(false);
   const [onlyPriceDrops, setOnlyPriceDrops] = useState<boolean>(() => {
+    // URL ?filter=drops takes precedence (arrival from notification)
+    if (searchParams.get('filter') === 'drops') return true;
     try {
       return localStorage.getItem(PRICE_DROP_FILTER_KEY) === '1';
     } catch {
@@ -338,16 +349,16 @@ export default function FavoritesPage() {
   };
 
   const handleRemoveSelected = () => {
-    const ids = Array.from(selectedIds);
+    const pids = Array.from(selectedIds);
     if (isRemoteListView) {
-      ids.forEach((pid) => {
-        const meta = noteMap.get(pid);
-        if (meta) removeItem.mutate(meta.itemId);
-      });
+      const itemIds = pids
+        .map((pid) => noteMap.get(pid)?.itemId)
+        .filter((id): id is string => !!id);
+      removeItems.mutate(itemIds); // single DB query; toast fired by onSuccess
     } else {
-      ids.forEach((id) => toggleFavorite(id));
+      pids.forEach((id) => toggleFavorite(id));
+      toast.success(`${pids.length} ${pids.length === 1 ? 'item removido' : 'itens removidos'}`);
     }
-    toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`);
     sel.clearSelection();
     setSelectionMode(false);
   };

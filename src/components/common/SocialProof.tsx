@@ -154,50 +154,49 @@ const trustBadges: Record<
   },
 };
 
-export const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(function TrustBadge(
-  { type, tooltip, className },
-  ref,
-) {
-  const { icon: Icon, label, color, bg } = trustBadges[type];
-  const isHighlighted = HIGHLIGHTED_BADGES.has(type);
+export const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
+  ({ type, tooltip, className }, ref) => {
+    const { icon: Icon, label, color, bg } = trustBadges[type];
+    const isHighlighted = HIGHLIGHTED_BADGES.has(type);
 
-  const content = (
-    <div
-      ref={!tooltip ? ref : undefined}
-      className={cn(
-        'flex cursor-default items-center gap-1.5 transition-all duration-300',
-        isHighlighted && 'animate-scale-in',
-        isHighlighted
-          ? cn(
-              'rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm hover:scale-105 hover:shadow-md hover:brightness-110',
-              bg,
-            )
-          : 'text-sm text-muted-foreground hover:text-foreground',
-        className,
-      )}
-    >
-      <Icon className={cn('h-3.5 w-3.5 shrink-0', !isHighlighted && color)} />
-      <span>{label}</span>
-    </div>
-  );
+    const content = (
+      <div
+        ref={!tooltip ? ref : undefined}
+        className={cn(
+          'flex cursor-default items-center gap-1.5 transition-all duration-300',
+          isHighlighted && 'animate-scale-in',
+          isHighlighted
+            ? cn(
+                'rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm hover:scale-105 hover:shadow-md hover:brightness-110',
+                bg,
+              )
+            : 'text-sm text-muted-foreground hover:text-foreground',
+          className,
+        )}
+      >
+        <Icon className={cn('h-3.5 w-3.5 shrink-0', !isHighlighted && color)} />
+        <span>{label}</span>
+      </div>
+    );
 
-  if (!tooltip) return content;
+    if (!tooltip) return content;
 
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div ref={ref} className="inline-flex">
-          {content}
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">{tooltip}</TooltipContent>
-    </Tooltip>
-  );
-});
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div ref={ref} className="inline-flex">
+            {content}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{tooltip}</TooltipContent>
+      </Tooltip>
+    );
+  },
+);
 
 // Trust badges row
 export const TrustBadgesRow = React.forwardRef<HTMLDivElement, { className?: string }>(
-  function TrustBadgesRow({ className }, ref) {
+  ({ className }, ref) => {
     return (
       <div ref={ref} className={cn('flex flex-wrap gap-4', className)}>
         <TrustBadge type="verified" />

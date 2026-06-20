@@ -32,6 +32,7 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'product_images',
   'product_videos',
   'product_kit_components',
+  'v_kit_component_complete', // 2026-06-19: view enriquecida — fonte primária para PDP de kits
   'kit_component_print_areas',
   'component_media', // FIX 2026-06-11: nome real no SSOT (kit_component_media nunca existiu)
   'product_materials',

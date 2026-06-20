@@ -252,7 +252,7 @@ export function useCatalogState() {
     } else {
       newParams.set('sort', sortBy);
     }
-    const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+    const newPath = `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
     navigate(newPath, { replace: true });
 
     // 3. Analytics
@@ -382,6 +382,7 @@ export function useCatalogState() {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
@@ -391,6 +392,7 @@ export function useCatalogState() {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
+    error: categoryFilterError,
   } = useProductsByCategory({
     categoryIds: filters.categories?.map(String) ?? [],
     includeDescendants: true,
@@ -404,6 +406,7 @@ export function useCatalogState() {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
@@ -419,6 +422,7 @@ export function useCatalogState() {
     productIds: metadataFilteredProductIds,
     hasFilter: hasMetadataFilter,
     isLoading: isLoadingMetadataFilter,
+    error: metadataFilterError,
   } = useProductsByMetadata({
     datas: filters.datasComemorativas,
     tags: filters.tags,
@@ -436,6 +440,7 @@ export function useCatalogState() {
     productIds: sizeFilteredProductIds,
     hasFilter: hasSizeFilter,
     isLoading: isLoadingSizeFilter,
+    error: sizeFilterError,
   } = useProductsBySize(filters.sizes || []);
 
   useExternalCategoriesQuery();
@@ -501,7 +506,7 @@ export function useCatalogState() {
         } else {
           newParams.set('sort', validated);
         }
-        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+        const newPath = `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
         navigate(newPath, { replace: true });
       }
     }
@@ -572,18 +577,23 @@ export function useCatalogState() {
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    categoryFilterError,
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
     hasMetadataFilter,
     metadataFilteredProductIds,
     isLoadingMetadataFilter,
+    metadataFilterError,
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
+    sizeFilterError,
     promoSalesMap,
     promoSales90dMap,
     supplierSalesMap,

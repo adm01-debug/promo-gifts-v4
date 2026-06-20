@@ -127,9 +127,7 @@ export function useClientBI(clientId?: string): ClientBI {
         const totals = valid.map((o) => o.total ?? 0).filter((t) => t > 0);
         const mean = totals.length > 0 ? totals.reduce((s, v) => s + v, 0) / totals.length : 0;
         const variance =
-          totals.length > 1
-            ? totals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / totals.length
-            : 0;
+          totals.length > 1 ? totals.reduce((s, v) => s + (v - mean) ** 2, 0) / totals.length : 0;
         const sigma = Math.sqrt(variance);
         return data.orders.slice(0, 5).map((o) => {
           const total = o.total ?? 0;

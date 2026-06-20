@@ -1,0 +1,11 @@
+REVOKE EXECUTE ON FUNCTION public.check_auth_throttling(text, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.check_edge_rate_limit(text, integer, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.check_ip_access(text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.check_mcp_abuse_threshold(uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.check_rate_limit(text, text, integer, integer, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.clear_auth_attempts(text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.record_app_vital(text, double precision, text, text, text, text, uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.record_app_vital(text, numeric, text, text, text, text, uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.record_auth_attempt(text, text, boolean, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.record_platform_failure(text, text, text, integer, text, boolean, boolean, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.record_public_token_failure(text, text, text, text, text, text) FROM PUBLIC, anon, authenticated;

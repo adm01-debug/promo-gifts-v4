@@ -53,9 +53,9 @@ export function FailedDeliveriesPanel() {
         .order('delivered_at', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
-      const { data, count, error } = await q;
+      const { data: rows, count, error } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as FailedDelivery[], count: count ?? 0 };
+      return { rows: (rows ?? []) as FailedDelivery[], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });

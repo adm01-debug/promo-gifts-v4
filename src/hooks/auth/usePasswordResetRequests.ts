@@ -132,12 +132,13 @@ export function usePasswordResetRequests() {
 
   const createRequest = async (email: string) => {
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       // Verificar se já existe uma solicitação pendente para este email
       const supabase = await getSupabaseClient();
       const { data: existing } = await supabase
         .from('password_reset_requests')
         .select('id')
-        .eq('email', email)
+        .eq('email', normalizedEmail)
         .eq('status', 'pending')
         .single();
 
@@ -149,7 +150,10 @@ export function usePasswordResetRequests() {
         };
       }
 
-      const { error } = await supabase.from('password_reset_requests').insert({ email });
+      const { error } = await supabase.from('password_reset_requests').insert({
+        email: normalizedEmail,
+        status: 'pending',
+      });
 
       if (error) throw error;
 

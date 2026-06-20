@@ -152,12 +152,12 @@ export function useAIRecommendations() {
           }
 
           if (attempt > 0) {
-            await delay(INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1));
+            await delay(INITIAL_BACKOFF_MS * 2 ** (attempt - 1));
           }
 
           try {
             // Usa supabase.functions.invoke para garantir que a URL e o token
-            // pertencem ao MESMO projeto (canônico pqpdolkaeqlyzpdpbizo). Se
+            // pertencem ao MESMO projeto (canônico doufsxqlfjyuvxuezpln). Se
             // usássemos VITE_SUPABASE_URL diretamente, um .env regenerado
             // poderia apontar para outro projeto e invalidar o JWT (401
             // "Token inválido ou expirado").

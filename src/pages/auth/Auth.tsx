@@ -173,6 +173,13 @@ export default function Auth() {
     };
   }, []);
 
+  // Cleanup rate-limit countdown timer on unmount to prevent state updates after unmount.
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+    };
+  }, []);
+
   // Redirect if already logged in (only on initial load)
   const navigatedRef = useRef(false);
   useEffect(() => {
@@ -301,7 +308,7 @@ export default function Auth() {
 
         toast({
           variant: 'destructive',
-          title: title,
+          title,
           description: (
             <div className="space-y-3">
               <p className="font-medium leading-relaxed">{description}</p>
