@@ -55,8 +55,11 @@ function loadFromStorage(): CompareItem[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
     const parsed = JSON.parse(stored);
+    // Corrupted/legacy non-array payload (e.g. `{}`) would crash at store init
+    // when `.map` runs over it — fall back to empty instead of white-screening.
+    if (!Array.isArray(parsed)) return [];
     // Migrate old format (string[]) to new format (CompareItem[])
-    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'string') {
+    if (parsed.length > 0 && typeof parsed[0] === 'string') {
       return parsed.map((id: string) => ({ productId: id }));
     }
     return parsed;

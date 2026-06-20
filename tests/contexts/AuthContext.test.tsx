@@ -67,15 +67,25 @@ describe('AuthContext', () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null } } as any);
   });
 
-  it('throws error when useAuth is used outside AuthProvider', () => {
+  it('returns a safe fallback (does not throw) when useAuth is used outside AuthProvider', () => {
+    // useAuth deliberately returns FALLBACK_AUTH outside a provider to survive
+    // HMR module-duplication races (see AuthContext.tsx useAuth). It must NOT
+    // throw — that previously blanked the whole app on an HMR reorder.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<AuthConsumer />)).toThrow('useAuth must be used within an AuthProvider');
+    expect(() => render(<AuthConsumer />)).not.toThrow();
+    expect(screen.getByTestId('authenticated').textContent).toBe('false');
+    expect(screen.getByTestId('loading').textContent).toBe('false');
+    expect(screen.getByTestId('role').textContent).toBe('none');
     spy.mockRestore();
   });
 
   it('starts with isLoading=true then sets false when no session', async () => {
     await act(async () => {
-      render(<AuthProvider><AuthConsumer /></AuthProvider>);
+      render(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      );
     });
 
     await waitFor(() => {
@@ -87,7 +97,11 @@ describe('AuthContext', () => {
 
   it('sets up auth listener and calls getSession', async () => {
     await act(async () => {
-      render(<AuthProvider><AuthConsumer /></AuthProvider>);
+      render(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      );
     });
 
     expect(supabase.auth.onAuthStateChange).toHaveBeenCalledTimes(1);
@@ -114,7 +128,10 @@ describe('AuthContext', () => {
           }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              then: vi.fn((cb?: any) => { cb?.({ error: null }); return Promise.resolve({ error: null }); }),
+              then: vi.fn((cb?: any) => {
+                cb?.({ error: null });
+                return Promise.resolve({ error: null });
+              }),
             }),
           }),
         } as any;
@@ -128,26 +145,39 @@ describe('AuthContext', () => {
           eq: vi.fn().mockResolvedValue({ data: [{ role: 'admin' }], error: null }),
         } as any;
       }
-      return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockResolvedValue({ data: [], error: null }), single: vi.fn().mockResolvedValue({ data: null, error: null }) } as any;
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      } as any;
     });
 
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: mockSession } } as any);
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: mockSession },
+    } as any);
 
     await act(async () => {
-      render(<AuthProvider><AuthConsumer /></AuthProvider>);
+      render(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      );
     });
 
     // Trigger auth state
     await act(async () => {
       const cb = (globalThis as any).__authCb;
       cb?.('SIGNED_IN', mockSession);
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
     });
 
-    await waitFor(() => {
-      expect(screen.getByTestId('loading').textContent).toBe('false');
-      expect(screen.getByTestId('authenticated').textContent).toBe('true');
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+        expect(screen.getByTestId('authenticated').textContent).toBe('true');
+      },
+      { timeout: 3000 },
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('isAdmin').textContent).toBe('true');
@@ -170,7 +200,10 @@ describe('AuthContext', () => {
           }),
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              then: vi.fn((cb?: any) => { cb?.({ error: null }); return Promise.resolve({ error: null }); }),
+              then: vi.fn((cb?: any) => {
+                cb?.({ error: null });
+                return Promise.resolve({ error: null });
+              }),
             }),
           }),
         } as any;
@@ -182,29 +215,42 @@ describe('AuthContext', () => {
           eq: vi.fn().mockResolvedValue({ data: [], error: { message: 'not found' } }),
         } as any;
       }
-      return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockResolvedValue({ data: [], error: null }), single: vi.fn().mockResolvedValue({ data: null, error: null }) } as any;
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      } as any;
     });
 
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: mockSession } } as any);
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: mockSession },
+    } as any);
 
     await act(async () => {
-      render(<AuthProvider><AuthConsumer /></AuthProvider>);
+      render(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      );
     });
 
     await act(async () => {
       const cb = (globalThis as any).__authCb;
       cb?.('SIGNED_IN', mockSession);
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
     });
 
-    await waitFor(() => {
-      expect(screen.getByTestId('loading').textContent).toBe('false');
-      // Política atual: NÃO chutar fallback 'vendedor' quando fetch falha,
-      // mantém estado indeterminado (role:'none', userRoles vazio). Decisão
-      // de UX: melhor mostrar "carregando/indisponível" do que dar acesso
-      // assumido. Ver src/contexts/AuthContext.tsx ~linha 220.
-      expect(screen.getByTestId('role').textContent).toBe('none');
-      expect(screen.getByTestId('isSeller').textContent).toBe('false');
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('loading').textContent).toBe('false');
+        // Política atual: NÃO chutar fallback 'vendedor' quando fetch falha,
+        // mantém estado indeterminado (role:'none', userRoles vazio). Decisão
+        // de UX: melhor mostrar "carregando/indisponível" do que dar acesso
+        // assumido. Ver src/contexts/AuthContext.tsx ~linha 220.
+        expect(screen.getByTestId('role').textContent).toBe('none');
+        expect(screen.getByTestId('isSeller').textContent).toBe('false');
+      },
+      { timeout: 3000 },
+    );
   });
 });

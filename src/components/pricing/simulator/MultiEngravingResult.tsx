@@ -59,6 +59,10 @@ export function MultiEngravingResult({
 
   // Recalcular quando quantidade ou gravações mudam
   useEffect(() => {
+    // Supersede guard: a slow Promise.all for an old quantity must not overwrite
+    // calculations for the newer quantity once the cleanup has flipped `cancelled`.
+    let cancelled = false;
+
     const calculateAll = async () => {
       if (engravings.length === 0) {
         setCalculations([]);
@@ -93,12 +97,16 @@ export function MultiEngravingResult({
         }),
       );
 
+      if (cancelled) return;
       setCalculations(results);
       setIsCalculating(false);
     };
 
     const debounce = setTimeout(calculateAll, 300);
-    return () => clearTimeout(debounce);
+    return () => {
+      cancelled = true;
+      clearTimeout(debounce);
+    };
   }, [engravings, quantity, calculatePrice]);
 
   // Totais
