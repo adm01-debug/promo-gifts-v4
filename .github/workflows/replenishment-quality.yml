@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, master, develop ]
 
+# Cancela runs antigos do mesmo branch/PR — evita gastar slots em commits superados.
+concurrency:
+  group: replenishment-quality-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
