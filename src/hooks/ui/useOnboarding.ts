@@ -163,35 +163,36 @@ export function useOnboarding() {
             setShowTour(true);
           }
         } else {
-          // Double check if record was created in the meantime to avoid race conditions
-          const { data: retryData } = await supabase
+          const { data: newData, error: insertError } = await supabase
             .from('user_onboarding')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .insert({
+              user_id: user.id,
+              has_completed_tour: false,
+              current_step: 0,
+            })
+            .select()
+            .single();
 
-          if (retryData) {
-            setOnboardingId(retryData.id);
-            setHasCompletedTour(retryData.has_completed_tour || false);
-            setCurrentStep(retryData.current_step || 0);
-            if (!retryData.has_completed_tour) setShowTour(true);
-          } else {
-            const { data: newData, error: insertError } = await supabase
-              .from('user_onboarding')
-              .insert({
-                user_id: user.id,
-                has_completed_tour: false,
-                current_step: 0,
-              })
-              .select()
-              .single();
-
-            if (insertError) {
+          if (insertError) {
+            if (insertError.code === '23505') {
+              // Race condition: another tab inserted concurrently — fetch the winner row
+              const { data: raceData } = await supabase
+                .from('user_onboarding')
+                .select('*')
+                .eq('user_id', user.id)
+                .maybeSingle();
+              if (raceData) {
+                setOnboardingId(raceData.id);
+                setHasCompletedTour(raceData.has_completed_tour || false);
+                setCurrentStep(raceData.current_step || 0);
+                if (!raceData.has_completed_tour) setShowTour(true);
+              }
+            } else {
               logger.error('Error creating onboarding:', insertError);
-            } else if (newData) {
-              setOnboardingId(newData.id);
-              setShowTour(true);
             }
+          } else if (newData) {
+            setOnboardingId(newData.id);
+            setShowTour(true);
           }
         }
       } catch (err) {
