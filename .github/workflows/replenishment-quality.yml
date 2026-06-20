@@ -42,14 +42,27 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: E2E — Paridade visual /novidades vs /reposicao
-        # Garante que cards permaneçam com mesma largura/altura/aspect ratio.
-        # continue-on-error: depende de dados reais e sessão autenticada; informativo
-        # até estabilizarmos auth.setup neste workflow (E2E_USER_EMAIL/PASSWORD).
+      - name: E2E — Paridade visual /novidades vs /reposicao (informativo)
+        # Roda primeiro em modo informativo para coletar artefatos mesmo se falhar.
+        id: card_parity_info
         continue-on-error: true
         run: |
           bunx playwright install --with-deps chromium
           npm run test:e2e:card-parity -- --pass-with-no-tests
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - name: Card parity — gate estrito (tolerância 4px)
+        # Falha o workflow se widthDiff/heightDiff > 4px ou ratio fora de [0.9, 1.1].
+        # Só ativa quando os secrets de auth estão presentes (do contrário, skipa).
+        if: ${{ env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != '' }}
+        run: |
+          echo "::group::Card parity strict run (sem --pass-with-no-tests)"
+          npm run test:e2e:card-parity
+          echo "::endgroup::"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
