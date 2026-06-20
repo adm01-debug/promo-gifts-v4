@@ -967,7 +967,9 @@ export function PromoFlixPlayer({
         preload="auto"
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
-      />
+      >
+        <track kind="captions" />
+      </video>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.45)_100%)]" />
 
       {(isLoading || isReconnecting) && !hlsError && (

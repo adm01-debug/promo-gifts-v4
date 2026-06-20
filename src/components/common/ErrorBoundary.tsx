@@ -17,15 +17,15 @@ interface State {
  * doesn't crash the entire page. Provides a retry button to reset state.
  */
 export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, errorMessage: '' };
-  }
-
   static getDerivedStateFromError(error: unknown): State {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao renderizar este componente.';
     return { hasError: true, errorMessage: message };
+  }
+
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
   }
 
   handleRetry = () => {
