@@ -985,7 +985,12 @@ export function saveThemeConfig(config: ThemeConfig): void {
  * voltar de uma skin GX para uma clássica desfaça os overrides.
  */
 export function applyThemePreset(presetId: string, mode: 'light' | 'dark' | 'auto' = 'auto'): void {
-  const actualMode = mode === 'light' ? 'light' : 'dark';
+  const actualMode =
+    mode === 'auto'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : mode;
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
   if (!preset) {
     return;
