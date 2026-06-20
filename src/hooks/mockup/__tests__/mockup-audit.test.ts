@@ -312,6 +312,31 @@ describe('Analise estatica — useMockupGenerator.ts', () => {
       expect(src).toContain('isLoading: isDraftLoading,');
     });
   });
+
+  describe('FileReader.onerror em handleAreaLogoUpload', () => {
+    it('reader.onerror está definido', () => {
+      // Regression guard: missing onerror means corrupted/unreadable files fail silently.
+      const uploadBlock =
+        src.split('const handleAreaLogoUpload')[1]?.split('const getProductImage')[0] ?? '';
+      expect(uploadBlock).toContain('reader.onerror');
+    });
+    it('reader.onerror exibe toast de erro', () => {
+      const uploadBlock =
+        src.split('const handleAreaLogoUpload')[1]?.split('const getProductImage')[0] ?? '';
+      expect(uploadBlock).toMatch(/reader\.onerror[\s\S]*?toast\.error/);
+    });
+  });
+
+  describe('loadFromHistory — clearDraft awaited', () => {
+    it('loadFromHistory é async', () => {
+      expect(src).toMatch(/const\s+loadFromHistory\s*=\s*useCallback\s*\(\s*async/);
+    });
+    it('clearDraft é awaited dentro de loadFromHistory', () => {
+      const block =
+        src.split('const loadFromHistory')[1]?.split('const wizardStep')[0] ?? '';
+      expect(block).toContain('await clearDraft()');
+    });
+  });
 });
 
 // =====================================================================
@@ -350,6 +375,20 @@ describe('Analise estatica — useMockupDraft.ts', () => {
     });
     it('mensagem de warn menciona FK violation', () => {
       expect(src).toContain('FK violation on draft save');
+    });
+  });
+
+  describe('clearDraft — surface Supabase delete errors', () => {
+    it('clearDraft destructura { error: deleteError } da chamada delete', () => {
+      // Regression guard: ensures the delete result is NOT silently ignored.
+      // Before fix: `await supabase...delete()...` — no error check.
+      // After fix:  `const { error: deleteError } = await supabase...delete()...`
+      const clearBlock = src.split('const clearDraft')[1]?.split('const saveDraft')[0] ?? '';
+      expect(clearBlock).toContain('error: deleteError');
+    });
+    it('clearDraft lança deleteError quando presente', () => {
+      const clearBlock = src.split('const clearDraft')[1]?.split('const saveDraft')[0] ?? '';
+      expect(clearBlock).toContain('if (deleteError) throw deleteError');
     });
   });
 });
