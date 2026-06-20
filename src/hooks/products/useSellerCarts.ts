@@ -567,38 +567,41 @@ export function useSellerCarts() {
     mutationFn: async ({ cartId, items }: { cartId: string; items: AddToCartInput[] }) => {
       if (items.length === 0) return;
 
-      // Mirrors the addItem pattern (findVariantInCart + conditional update/insert) to
-      // safely handle NULL color_name. A bulk upsert with onConflict column list works on
-      // PG15+ with NULLS NOT DISTINCT, but per-item find+update/insert is more portable
-      // and avoids the PostgREST NULL-inference edge case entirely.
-      for (const item of items) {
-        const colorName = item.color_name ?? null;
-        const safeQty = clampQuantity(item.quantity ?? 1);
+      // Promise.all é seguro aqui: o constraint unique_cart_item_variant garante que
+      // o carrinho origem nunca tinha itens duplicados por (product_id, color_name),
+      // portanto não há disputa de linha entre as corrotinas paralelas.
+      // Per-item find+update/insert (em vez de upsert) mantém compatibilidade com
+      // NULL color_name (PostgREST não infere IS NULL em onConflict).
+      await Promise.all(
+        items.map(async (item) => {
+          const colorName = item.color_name ?? null;
+          const safeQty = clampQuantity(item.quantity ?? 1);
 
-        const existing = await findVariantInCart(cartId, item.product_id, colorName);
-        if (existing) {
-          const { error } = await supabase
-            .from('seller_cart_items')
-            .update({ quantity: safeQty, updated_at: new Date().toISOString() })
-            .eq('id', existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('seller_cart_items').insert({
-            cart_id: cartId,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            product_sku: item.product_sku || null,
-            product_image_url: item.product_image_url || null,
-            product_price: item.product_price,
-            quantity: safeQty,
-            color_name: colorName,
-            color_hex: item.color_hex || null,
-            notes: item.notes ?? null,
-            sort_order: item.sort_order ?? null,
-          });
-          if (error) throw error;
-        }
-      }
+          const existing = await findVariantInCart(cartId, item.product_id, colorName);
+          if (existing) {
+            const { error } = await supabase
+              .from('seller_cart_items')
+              .update({ quantity: safeQty, updated_at: new Date().toISOString() })
+              .eq('id', existing.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from('seller_cart_items').insert({
+              cart_id: cartId,
+              product_id: item.product_id,
+              product_name: item.product_name,
+              product_sku: item.product_sku || null,
+              product_image_url: item.product_image_url || null,
+              product_price: item.product_price,
+              quantity: safeQty,
+              color_name: colorName,
+              color_hex: item.color_hex || null,
+              notes: item.notes ?? null,
+              sort_order: item.sort_order ?? null,
+            });
+            if (error) throw error;
+          }
+        }),
+      );
 
       // updated_at do carrinho-pai é propagado pelo trigger
       // trg_touch_seller_cart_on_item_change (migration 20260617130000).
