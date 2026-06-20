@@ -1,10 +1,9 @@
 /**
- * Garante que o card de Novidades NÃO usa altura fixa (`h-[420px]`) nem
- * `max-h-*`, de modo que conteúdo longo + skeleton de preço/estoque
- * não sejam recortados — o que invalida a medição do virtualizer e
- * quebra o scroll do módulo /novidades.
+ * NoveltyGridCard — altura fixa por breakpoint (paridade com BaseProductGridCard).
+ * O card usa h-[400px]/max-h-[400px] (mobile) e sm:h-[430px]/sm:max-h-[430px] (≥sm)
+ * para garantir uniformidade visual entre Novidades e Reposição em todos os viewports.
  *
- * Cobre o regressivo introduzido pelo fix "min-h-[420px] only".
+ * Regressivo de paridade: evita remoção acidental das classes de altura fixa.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -26,7 +25,6 @@ vi.mock('@/components/inventory/StockBadge', () => ({
   StockBadge: () => null,
   getStockStatus: () => 'in-stock' as const,
 }));
-vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
@@ -67,27 +65,28 @@ function getArticle(container: HTMLElement): HTMLElement {
   return el as HTMLElement;
 }
 
-describe('NoveltyGridCard › altura flexível (sem max-h / h fixo)', () => {
-  it('não aplica max-h-* nem h-[420px] no estado normal com nome longo', () => {
+describe('NoveltyGridCard › altura fixa por breakpoint (paridade com BaseProductGridCard)', () => {
+  it('aplica h-[400px] e max-h-[400px] no estado normal', () => {
     const { container } = render(<NoveltyGridCard product={product} />);
     const cls = getArticle(container).className;
-    expect(cls).toMatch(/min-h-\[420px\]/);
-    expect(cls).not.toMatch(/(^|\s)max-h-/);
-    expect(cls).not.toMatch(/(^|\s)h-\[420px\]/);
-    expect(cls).not.toMatch(/(^|\s)h-\[\d+px\]/);
+    expect(cls).toMatch(/h-\[400px\]/);
+    expect(cls).toMatch(/max-h-\[400px\]/);
+    expect(cls).toMatch(/sm:h-\[430px\]/);
+    expect(cls).toMatch(/sm:max-h-\[430px\]/);
   });
 
-  it('mantém min-h-[420px] (sem h/max-h fixo) também com skeleton de preço/estoque', () => {
+  it('mantém h-[400px] e max-h-[400px] também com skeleton de preço/estoque', () => {
     const { container } = render(<NoveltyGridCard product={product} isPriceStockLoading />);
     const cls = getArticle(container).className;
-    expect(cls).toMatch(/min-h-\[420px\]/);
-    expect(cls).not.toMatch(/(^|\s)max-h-/);
-    expect(cls).not.toMatch(/(^|\s)h-\[\d+px\]/);
+    expect(cls).toMatch(/h-\[400px\]/);
+    expect(cls).toMatch(/max-h-\[400px\]/);
+    expect(cls).toMatch(/sm:h-\[430px\]/);
+    expect(cls).toMatch(/sm:max-h-\[430px\]/);
   });
 
-  it('não usa overflow-hidden no article (que recortaria conteúdo e quebraria measureElement)', () => {
+  it('aplica overflow-hidden para conter conteúdo na altura fixa', () => {
     const { container } = render(<NoveltyGridCard product={product} />);
     const cls = getArticle(container).className;
-    expect(cls).not.toMatch(/(^|\s)overflow-hidden/);
+    expect(cls).toMatch(/(^|\s)overflow-hidden/);
   });
 });
