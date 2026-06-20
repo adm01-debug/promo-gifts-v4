@@ -325,6 +325,7 @@ export function CartHeaderButton() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button
+                                      aria-label={`Limpar itens do carrinho de ${cart.company_name}`}
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                                       onClick={async (e) => {
                                         e.stopPropagation();
@@ -388,6 +389,7 @@ export function CartHeaderButton() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button
+                                      aria-label={`Excluir carrinho de ${cart.company_name}`}
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
                                       style={{ opacity: isActive ? 1 : undefined }}
                                       onClick={(e) => {
