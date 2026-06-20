@@ -189,6 +189,9 @@ Deno.serve(async (req) => {
 
     return json(200, { ok: true, stats });
   } catch (e) {
-    return json(500, { ok: false, error: String(e), stats });
+    // Log full detail to function logs (server-side only); never expose the
+    // error/stack in the HTTP response (CodeQL: information exposure).
+    console.error("comparison-price-watcher exception:", e);
+    return json(500, { ok: false, error: "internal_error", stats });
   }
 });
