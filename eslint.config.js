@@ -418,6 +418,17 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 120: 10 zero-violation rules
+      'react/forbid-dom-props': 'error',
+      'react/forbid-foreign-prop-types': 'error',
+      'react/no-invalid-html-attribute': 'error',
+      'react/sort-default-props': 'error',
+      'react/forward-ref-uses-ref': 'error',
+      'no-constructor-return': 'error',
+      'no-promise-executor-return': 'error',
+      'no-useless-computed-key': 'error',
+      'no-useless-rename': 'error',
+      'no-import-assign': 'error',
       // Batch 116: 4 zero-violation rules (removed: multiline-comment-style many, new-cap many, no-inline-comments many, no-mixed-operators many, prefer-named-capture-group many, no-continue many, no-negated-condition many, no-underscore-dangle many, sort-vars many, spaced-comment 1v, jsx-fragments many, no-noninteractive-element-interactions many, no-noninteractive-element-to-interactive-role many, etc.)
       'block-scoped-var': 'error',
       'func-name-matching': 'error',
