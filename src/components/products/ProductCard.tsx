@@ -174,6 +174,30 @@ export const ProductCard = memo(
         | undefined
       >(undefined);
       const [quickViewOpen, setQuickViewOpen] = useState(false);
+      const quickViewTriggerRef = useRef<HTMLDivElement | null>(null);
+      const openQuickView = useCallback(() => {
+        // Guards de defesa em camadas: não empilhar sobre outro modal.
+        if (
+          actionsOpen ||
+          actionBusyRef.current ||
+          variantPickerOpen ||
+          collectionModalOpen ||
+          shareDialogOpen ||
+          quickViewOpen
+        ) {
+          return;
+        }
+        setQuickViewOpen(true);
+      }, [actionsOpen, variantPickerOpen, collectionModalOpen, shareDialogOpen, quickViewOpen]);
+      const handleQuickViewOpenChange = useCallback((open: boolean) => {
+        setQuickViewOpen(open);
+        if (!open) {
+          // Restauração explícita de foco no trigger (defesa além do Radix).
+          requestAnimationFrame(() => {
+            quickViewTriggerRef.current?.focus({ preventScroll: true });
+          });
+        }
+      }, []);
       const [shareDialogOpen, setShareDialogOpen] = useState(false);
       const [shareVariant, setShareVariant] = useState<{
         variantName?: string | null;
