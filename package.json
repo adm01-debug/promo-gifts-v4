@@ -8,6 +8,8 @@
     "e2e:watch-fixtures": "npx chokidar-cli \"e2e/fixtures/permissions-matrix.ts\" -c \"npm run e2e:generate-fixtures\"",
     "dev": "npm run e2e:generate-fixtures && vite",
     "build": "node scripts/guard-canonical-project.mjs && node scripts/validate-supabase-config.mjs && vite build",
+    "check:bundle-size": "node scripts/check-bundle-size.mjs",
+    "check:bundle-size:update": "node scripts/check-bundle-size.mjs --update-baseline",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test": "TZ=America/Sao_Paulo vitest run",
