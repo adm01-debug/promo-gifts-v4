@@ -25,10 +25,6 @@ import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-function isRecent(replenishedAt: string): boolean {
-  return Math.floor((Date.now() - new Date(replenishedAt).getTime()) / 86_400_000) <= 2;
-}
-
 function formatPrice(price: number): string {
   return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -63,7 +59,7 @@ export const ReplenishmentGridCard = memo(
     colors,
     priority = false,
   }: ReplenishmentCardProps) => {
-    const recent = isRecent(product.replenished_at);
+    const recent = product.days_since <= 2;
 
     const handleClick = useCallback(() => {
       if (selectionMode) onToggleSelect();
@@ -177,7 +173,7 @@ export function ReplenishmentTableView({
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const recent = isRecent(product.replenished_at);
+            const recent = product.days_since <= 2;
             const isSelected = selectedIds.has(product.product_id);
             const stockConfig = STOCK_CONFIG[product.stock_status];
             const stockQty = product.stock_quantity;
