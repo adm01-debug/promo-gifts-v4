@@ -78,9 +78,10 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
+  // Negative value is valid: means markup > apparent discount (seller has margin).
   const realDiscountPercent =
     realSubtotal > 0
-      ? round2(Math.max(0, ((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
+      ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100)
       : 0;
 
   return {

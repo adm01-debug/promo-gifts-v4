@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     const { data: quotes, error: qErr } = await supabase
       .from("quotes")
       .select("id, quote_number, client_name, seller_id, updated_at")
-      .in("status", ["sent", "pending"])
+      .in("status", ["sent"])
       .lte("updated_at", twoDaysAgo)
       .limit(500);
 

@@ -27,6 +27,7 @@ export interface QuoteTemplateItem {
     positionsCount?: number;
     unitCost?: number;
     setupCost?: number;
+    totalCost?: number;
   }[];
 }
 

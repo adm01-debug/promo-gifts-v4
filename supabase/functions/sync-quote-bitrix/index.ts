@@ -3,7 +3,7 @@ import { z } from '../_shared/zod-validate.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 import { authorize } from '../_shared/authorize.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
 
 // BUG-A09 FIX (26/05/2026): SELLER_EMAIL_MAP era hardcoded no código.
 // Novo vendedor exigia PR + deploy. Vendedor demitido = ID órfão.
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       filename: filename || null,
       shipping_type: shippingType || null,
       shipping_cost: shippingCost ?? null,
-      total: proposalData?.total || quote?.total_amount || 0,
+      total: proposalData?.total || quote?.total || 0,
       sent_at: new Date().toISOString(),
     };
 

@@ -358,14 +358,22 @@ export default function QuoteViewPage() {
                         </div>
                       </div>
                     )}
-                    {quote.shipping_method && (
+                    {quote.shipping_type && (
                       <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
                         <Truck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                         <div>
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                             Frete
                           </p>
-                          <p className="mt-0.5 text-sm font-medium">{quote.shipping_method}</p>
+                          <p className="mt-0.5 text-sm font-medium">
+                            {quote.shipping_type === 'cif'
+                              ? 'CIF — Cortesia'
+                              : quote.shipping_type === 'fob'
+                                ? 'FOB — Por conta do cliente'
+                                : quote.shipping_type === 'fob_pre'
+                                  ? `FOB Pré-negociado${quote.shipping_cost ? ` (${quote.shipping_cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})` : ''}`
+                                  : quote.shipping_type}
+                          </p>
                         </div>
                       </div>
                     )}
