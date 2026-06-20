@@ -963,3 +963,46 @@ describe('Analise estatica — MockupHistoryPanel.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// Analise estatica — MockupClientSelector.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('a11y — botao de limpar busca acessivel', () => {
+    it('botao nativo de limpar busca tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Limpar busca de cliente"');
+    });
+    it('componente ainda possui logica de limpar busca (setSearchQuery)', () => {
+      expect(src).toContain('setSearchQuery');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupAnnotations.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupAnnotations.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupAnnotations.tsx');
+  });
+
+  describe('a11y — botao de remover anotacao em todas as vistas', () => {
+    it('aria-label "Remover anotacao" aparece pelo menos duas vezes (lista e popup)', () => {
+      const matches = src.match(/aria-label="Remover anota/g);
+      expect(matches).not.toBeNull();
+      expect((matches ?? []).length).toBeGreaterThanOrEqual(2);
+    });
+    it('botao destructive de remover tem aria-label (nao e apenas icone Trash2)', () => {
+      expect(src).toContain('variant="destructive"');
+      expect(src).toContain('aria-label="Remover anota');
+    });
+  });
+});

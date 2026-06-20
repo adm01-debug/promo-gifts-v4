@@ -159,6 +159,7 @@ export function MockupAnnotations({
                       size="sm"
                       variant="destructive"
                       className="h-7 w-7 p-0"
+                      aria-label="Remover anotação"
                       onClick={() => removeAnnotation(ann.id)}
                     >
                       <Trash2 className="h-3 w-3" />
