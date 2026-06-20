@@ -4,6 +4,8 @@
  * rest-native layer used to own: table aliases, PT↔EN column remapping (filters
  * + returned rows), `_search` → `.ilike`, `.range()` pagination, the empty-`in()`
  * short-circuit and count mode.
+ *
+ * @see src/lib/db/postgrest.ts
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
