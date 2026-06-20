@@ -129,9 +129,9 @@ export const ProductColorSwatches = memo(
     }
 
     // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
-    // Garante altura uniforme dos cards entre módulos (Novidades/Reposição/Catálogo).
-    const effectiveMax = Math.max(1, max);
-    const overflow = Math.max(0, colors.length - effectiveMax);
+    // Em modo `wrap`, exibe todas as cores sem chip de overflow.
+    const effectiveMax = wrap ? colors.length : Math.max(1, max);
+    const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
     const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
 
     // Resolve o estado selecionado o mais cedo possível
@@ -143,9 +143,12 @@ export const ProductColorSwatches = memo(
     return (
       <div
         className={cn(
-          // flex-nowrap + overflow-hidden: garante UMA única linha e impede
-          // que o chip "+N" empurre a altura do card em qualquer viewport.
-          'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
+          wrap
+            ? // Modo wrap: múltiplas linhas, altura automática, sem clipping nas bordas.
+              //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
+              'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+            : // Modo legado: uma única linha + chip "+N".
+              'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"
