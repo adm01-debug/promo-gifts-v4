@@ -178,6 +178,7 @@ export function useFavoriteQuickAdd() {
     },
     [
       user,
+      membership,
       isFavorite,
       hasMultipleLists,
       getLastUsedListId,
