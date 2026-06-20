@@ -73,7 +73,10 @@ export function CartCompanyPickerDialog({
   const { createCart, canCreateCart } = useSellerCartContext();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSearchTerm('');
+      return;
+    }
     setRecents(readList(RECENT_KEY));
     setFavorites(readList(FAV_KEY));
     // Sempre abre na aba "Todas" (busca) para o usuário poder digitar imediatamente.
@@ -204,17 +207,25 @@ export function CartCompanyPickerDialog({
   const isLoading = loadingLocal || loadingServer;
 
   const renderRow = (company: CompanyItem) => (
-    <button
+    <div
       key={company.id}
-      type="button"
+      role="button"
+      tabIndex={canCreateCart ? 0 : -1}
+      aria-disabled={!canCreateCart}
       data-testid="cart-company-picker-select"
       data-company-id={company.id}
       className={cn(
-        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left',
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
         'group transition-colors hover:bg-accent/60',
+        !canCreateCart && 'pointer-events-none opacity-50',
       )}
-      onClick={() => handleSelect(company)}
-      disabled={!canCreateCart}
+      onClick={() => canCreateCart && handleSelect(company)}
+      onKeyDown={(e) => {
+        if (canCreateCart && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleSelect(company);
+        }
+      }}
     >
       {company.logo_url ? (
         <img
@@ -247,7 +258,7 @@ export function CartCompanyPickerDialog({
       >
         <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
       </button>
-    </button>
+    </div>
   );
 
   return (

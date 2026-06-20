@@ -143,11 +143,11 @@ export function SuggestionSkeleton() {
 // FOLLOW-UP TIMER
 // ============================================
 
-export function FollowUpTimer({ createdAt }: { createdAt: string }) {
+export function FollowUpTimer({ createdAt, status }: { createdAt: string; status?: string }) {
   const days = differenceInDays(new Date(), new Date(createdAt));
   const hours = differenceInHours(new Date(), new Date(createdAt));
 
-  if (days < 1) return null;
+  if (days < 1 || status === 'pronto_orcamento') return null;
 
   const isUrgent = days >= 3;
   const isWarning = days >= 2;

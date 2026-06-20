@@ -59,7 +59,8 @@ export function CartTabsRich({
           const isActive = cart.id === activeCartId;
           const statusCfg = getStatusCfg(cart.status);
           const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
-          const needsFollowUp = ageDays >= 3 && cart.items.length > 0;
+          const needsFollowUp =
+            ageDays >= 3 && cart.items.length > 0 && cart.status !== 'pronto_orcamento';
           const hasItems = cart.items.length > 0;
           return (
             <button

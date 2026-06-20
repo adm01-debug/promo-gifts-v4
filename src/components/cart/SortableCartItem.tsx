@@ -44,7 +44,6 @@ interface SortableCartItemProps {
   item: SellerCartItem;
   index: number;
   otherCarts: SellerCart[];
-  companyAccentColor?: string | null;
   stockMap: Map<string, number>;
   onRemove: (id: string, name: string) => void;
   onUpdateQuantity: (id: string, qty: number) => void;
@@ -59,7 +58,6 @@ export const SortableCartItem = memo(
     item,
     index,
     otherCarts,
-    companyAccentColor,
     stockMap,
     onRemove,
     onUpdateQuantity,
@@ -138,10 +136,6 @@ export const SortableCartItem = memo(
             isOutOfStock && 'opacity-60',
           )}
         >
-          {companyAccentColor && (
-            <div className="h-1 w-full" style={{ backgroundColor: companyAccentColor }} />
-          )}
-
           {/* Product image */}
           <div className="group/img-container relative aspect-square overflow-hidden bg-muted/20">
             <button
