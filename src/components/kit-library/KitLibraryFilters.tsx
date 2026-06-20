@@ -115,7 +115,7 @@ export function KitLibraryFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="recent">{SORT_LABELS['recent']}</SelectItem>
+            <SelectItem value="recent">{SORT_LABELS.recent}</SelectItem>
             {showLastUsedSort && (
               <SelectItem value="last-used">{SORT_LABELS['last-used']}</SelectItem>
             )}
