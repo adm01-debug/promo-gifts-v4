@@ -85,7 +85,9 @@ export const NoveltyGridCard = memo(
     const [activeColorName, setActiveColorName] = useState<string | null>(null);
     // Reset swatch selection when a different product is rendered into the same
     // component slot (can happen in non-virtualised list views after filter change).
-    useEffect(() => { setActiveColorName(null); }, [product.product_id]);
+    useEffect(() => {
+      setActiveColorName(null);
+    }, [product.product_id]);
     const activeImage = useMemo(() => {
       if (!activeColorName || !colors?.length) return product.product_image;
       const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
@@ -105,7 +107,7 @@ export const NoveltyGridCard = memo(
           // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
           // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
           // Reposição em todos os viewports.
-          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
+          'h-[400px] max-h-[400px] overflow-hidden sm:h-[430px] sm:max-h-[430px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
@@ -262,12 +264,12 @@ export const NoveltyGridCard = memo(
             {product.product_name ?? '—'}
           </p>
 
-
           <div className="mt-0.5">
             <ProductColorSwatches
               colors={colors}
               max={5}
               size="sm"
+              wrap
               hideWhenEmpty={false}
               selectedName={activeColorName}
               onSelect={(c) => setActiveColorName(c.name)}
@@ -356,8 +358,7 @@ export function NoveltyTableView({
   // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()
   // quando há muitos produtos selecionados. NoveltyProductGrid.tsx já tem sel.selectedIds
   // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
-  const selectedSet: Set<string> =
-    selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+  const selectedSet: Set<string> = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
 
   return (
     <div className="overflow-x-auto rounded-lg border">

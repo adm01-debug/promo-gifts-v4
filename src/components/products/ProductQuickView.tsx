@@ -32,20 +32,9 @@ import {
 import { type Product } from '@/types/product-catalog';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const QuickViewTooltip = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) => (
+const QuickViewTooltip = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <span className="inline-flex">{children}</span>
@@ -492,124 +481,126 @@ export const ProductQuickView = React.memo(
               {/* Actions */}
               <div className="mt-auto flex flex-col gap-2 pt-2">
                 <TooltipProvider delayDuration={200}>
-                <div className="flex flex-wrap gap-2" data-testid="product-quickview-actions">
-                  <QuickViewTooltip label="Adicionar ao carrinho">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleAddToCart()}
-                      disabled={product.stockStatus === 'out-of-stock'}
-                      className="flex-shrink-0"
-                      aria-label="Adicionar ao carrinho"
-                      data-testid="product-quickview-cart"
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  </QuickViewTooltip>
+                  <div className="flex flex-wrap gap-2" data-testid="product-quickview-actions">
+                    <QuickViewTooltip label="Adicionar ao carrinho">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleAddToCart()}
+                        disabled={product.stockStatus === 'out-of-stock'}
+                        className="flex-shrink-0"
+                        aria-label="Adicionar ao carrinho"
+                        data-testid="product-quickview-cart"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                    </QuickViewTooltip>
 
-                  {onAddToQuote && (
                     <QuickViewTooltip label="Adicionar ao orçamento">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onAddToQuote(product)}
-                      className="flex-shrink-0"
-                      aria-label="Adicionar ao orçamento"
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onAddToQuote?.(product)}
+                        disabled={!onAddToQuote}
+                        className="flex-shrink-0"
+                        aria-label="Adicionar ao orçamento"
+                        data-testid="product-quickview-quote"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
                     </QuickViewTooltip>
-                  )}
 
-                  {onAddToCollection && (
                     <QuickViewTooltip label="Adicionar à coleção">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onAddToCollection(product)}
-                      className="flex-shrink-0"
-                      aria-label="Adicionar à coleção"
-                    >
-                      <FolderPlus className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onAddToCollection?.(product)}
+                        disabled={!onAddToCollection}
+                        className="flex-shrink-0"
+                        aria-label="Adicionar à coleção"
+                        data-testid="product-quickview-collection"
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                      </Button>
                     </QuickViewTooltip>
-                  )}
 
-                  {onToggleFavorite && (
-                    <QuickViewTooltip label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleFavorite}
-                      className={cn(
-                        'flex-shrink-0',
-                        isFavorited && 'border-red-200 bg-red-50 text-red-500',
-                      )}
-                      aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                      data-testid="product-quickview-favorite"
+                    <QuickViewTooltip
+                      label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                     >
-                      <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
-                    </Button>
-                    </QuickViewTooltip>
-                  )}
-
-                  {onToggleCompare && (
-                    <QuickViewTooltip label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleCompare}
-                      disabled={!isInCompare && !canAddToCompare}
-                      className={cn(
-                        'flex-shrink-0',
-                        isInCompare && 'border-primary/30 bg-primary/5 text-primary',
-                      )}
-                      aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
-                      data-testid="product-quickview-compare"
-                    >
-                      <BarChart2 className="h-4 w-4" />
-                    </Button>
-                    </QuickViewTooltip>
-                  )}
-
-                  <QuickViewTooltip label="Compartilhar">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={async () => {
-                      if (onShare) {
-                        onShare(product);
-                        return;
-                      }
-                      const url = typeof window !== 'undefined' ? window.location.href : '';
-                      const nav: Navigator | undefined =
-                        typeof navigator !== 'undefined' ? navigator : undefined;
-                      try {
-                        if (nav && typeof nav.share === 'function') {
-                          await nav.share({ title: product.name, url });
-                        } else if (nav?.clipboard) {
-                          await nav.clipboard.writeText(url);
-                          toast.success('Link copiado');
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleFavorite}
+                        disabled={!onToggleFavorite}
+                        className={cn(
+                          'flex-shrink-0',
+                          isFavorited && 'border-red-200 bg-red-50 text-red-500',
+                        )}
+                        aria-label={
+                          isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'
                         }
-                      } catch {
-                        /* user cancelled */
-                      }
-                    }}
-                    className="flex-shrink-0"
-                    aria-label="Compartilhar"
-                    data-testid="product-quickview-share"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  </QuickViewTooltip>
+                        data-testid="product-quickview-favorite"
+                      >
+                        <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
+                      </Button>
+                    </QuickViewTooltip>
 
+                    <QuickViewTooltip
+                      label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                    >
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCompare}
+                        disabled={!onToggleCompare || (!isInCompare && !canAddToCompare)}
+                        className={cn(
+                          'flex-shrink-0',
+                          isInCompare && 'border-primary/30 bg-primary/5 text-primary',
+                        )}
+                        aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                        data-testid="product-quickview-compare"
+                      >
+                        <BarChart2 className="h-4 w-4" />
+                      </Button>
+                    </QuickViewTooltip>
 
-                  {onNavigateToProduct && (
-                    <Button variant="outline" onClick={handleNavigate} className="flex-1">
-                      Ver produto completo
-                    </Button>
-                  )}
-                </div>
+                    <QuickViewTooltip label="Compartilhar">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={async () => {
+                          if (onShare) {
+                            onShare(product);
+                            return;
+                          }
+                          const url = typeof window !== 'undefined' ? window.location.href : '';
+                          const nav: Navigator | undefined =
+                            typeof navigator !== 'undefined' ? navigator : undefined;
+                          try {
+                            if (nav && typeof nav.share === 'function') {
+                              await nav.share({ title: product.name, url });
+                            } else if (nav?.clipboard) {
+                              await nav.clipboard.writeText(url);
+                              toast.success('Link copiado');
+                            }
+                          } catch {
+                            /* user cancelled */
+                          }
+                        }}
+                        className="flex-shrink-0"
+                        aria-label="Compartilhar"
+                        data-testid="product-quickview-share"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </QuickViewTooltip>
+
+                    {onNavigateToProduct && (
+                      <Button variant="outline" onClick={handleNavigate} className="flex-1">
+                        Ver produto completo
+                      </Button>
+                    )}
+                  </div>
                 </TooltipProvider>
               </div>
 
