@@ -580,35 +580,56 @@ export const ProductCard = memo(
             }
           }}
         >
-          {/* Image Section */}
-          <ProductCardImage
-            product={product}
-            cardImageUrl={cardImageUrl}
-            cardSrcSet={cardSrcSet}
-            activeColorName={activeColorName ?? null}
-            colorSpecificImage={colorSpecificImage ?? null}
-            imageLoaded={imageLoaded}
-            isHovered={isHovered}
-            computedImageScale={computedImageScale}
-            isNovelty={isNovelty}
-            noveltyDaysRemaining={noveltyDaysRemaining}
-            highlightColors={highlightColors}
-            activeColorFilter={activeColorFilter}
-            allMatchingVariants={allMatchingVariants}
-            hasMultipleVariants={hasMultipleVariants}
-            safeVariantIdx={safeVariantIdx}
-            onImageLoad={() => setImageLoaded(true)}
-            onVariantChange={(idx) => {
-              setActiveVariantIdx(idx);
-              setImageLoaded(false);
+          {/* Image Section — clique na FOTO abre QuickView (não navega p/ PDP) */}
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={`Visualização rápida de ${product.name}`}
+            aria-haspopup="dialog"
+            data-testid="product-card-image-quickview"
+            className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setQuickViewOpen(true);
             }}
-            priority={priority}
-            cardImageBlurhash={product.primary_image_blurhash}
-            onStatusClick={handleStatusClick}
-            isUpdatingColor={isUpdatingColor}
-            categoryName={leafCategory?.name}
-            categoryPath={leafCategory?.path}
-          />
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                setQuickViewOpen(true);
+              }
+            }}
+          >
+            <ProductCardImage
+              product={product}
+              cardImageUrl={cardImageUrl}
+              cardSrcSet={cardSrcSet}
+              activeColorName={activeColorName ?? null}
+              colorSpecificImage={colorSpecificImage ?? null}
+              imageLoaded={imageLoaded}
+              isHovered={isHovered}
+              computedImageScale={computedImageScale}
+              isNovelty={isNovelty}
+              noveltyDaysRemaining={noveltyDaysRemaining}
+              highlightColors={highlightColors}
+              activeColorFilter={activeColorFilter}
+              allMatchingVariants={allMatchingVariants}
+              hasMultipleVariants={hasMultipleVariants}
+              safeVariantIdx={safeVariantIdx}
+              onImageLoad={() => setImageLoaded(true)}
+              onVariantChange={(idx) => {
+                setActiveVariantIdx(idx);
+                setImageLoaded(false);
+              }}
+              priority={priority}
+              cardImageBlurhash={product.primary_image_blurhash}
+              onStatusClick={handleStatusClick}
+              isUpdatingColor={isUpdatingColor}
+              categoryName={leafCategory?.name}
+              categoryPath={leafCategory?.path}
+            />
+          </div>
+
 
           {/* Word Magic Badge — visível quando AI está ativa */}
           <WordMagicBadge visible={isAIActive} />
