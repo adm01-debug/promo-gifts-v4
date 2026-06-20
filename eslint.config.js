@@ -183,6 +183,10 @@ export default [
       'object-shorthand': 'error',
       // Batch 74: 1 rule — prefer-exponentiation-operator (20 fixes, auto-fixed in 17 files)
       'prefer-exponentiation-operator': 'error',
+      // Batch 75: 1 rule — dot-notation (24 fixes, auto-fixed in 7 files)
+      'dot-notation': 'error',
+      // Batch 76: 1 rule — operator-assignment (7 fixes in 7 files, mixed auto/manual)
+      'operator-assignment': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {

@@ -33,9 +33,14 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const applyNoveltyQualityFilters = (query: any): any =>
-  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase filter builder after .select(); ReturnType<...['select']> hits TS2589.
+type NoveltyQuery = any;
+
+const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
+  query
+    .eq('is_stockout', false)
+    .not('primary_image_url', 'is', null)
+    .gt('sale_price', 0) as NoveltyQuery;
 
 /**
  * Predicado de PERTINÊNCIA de novidade (fonte da verdade = pipeline DB).

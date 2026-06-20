@@ -39,7 +39,7 @@ interface SellerCartContextType {
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
   duplicateItemToCart: (itemId: string, targetCartId: string) => void;
-  clearCart: (cartId: string) => void;
+  clearCart: (cartId: string) => Promise<void>;
   restoreItems: (cartId: string, items: AddToCartInput[]) => void;
 }
 
