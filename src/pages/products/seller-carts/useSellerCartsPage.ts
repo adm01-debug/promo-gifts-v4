@@ -69,6 +69,9 @@ export function useSellerCartsPage() {
   const [cartNotesOpen, setCartNotesOpen] = useState(false);
   const [localCartNotes, setLocalCartNotes] = useState('');
   const debounceNotesRef = useRef<ReturnType<typeof setTimeout>>();
+  // Always mirrors localCartNotes without stale-closure risk in effects/timers.
+  const localCartNotesRef = useRef(localCartNotes);
+  localCartNotesRef.current = localCartNotes;
 
   const stockMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -80,11 +83,15 @@ export function useSellerCartsPage() {
 
   const weightVolume = useMemo(() => {
     if (!activeCart) return null;
+    // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
+    const dimMap = new Map(
+      allProducts.map((p: { id: string; dimensions?: { weight_g?: number }; boxVolumeCm3?: number }) => [p.id, p]),
+    );
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
-      const product = allProducts.find((p: { id: string }) => p.id === item.product_id) as
+      const product = dimMap.get(item.product_id) as
         | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
         | undefined;
       if (!product) return;
@@ -131,11 +138,30 @@ export function useSellerCartsPage() {
     navigate('/carrinhos', { replace: true });
   }, [routeCartId, carts, isLoading, setActiveCartId, navigate]);
 
+  // Tracks previous cartId so we can flush notes to the OLD cart when switching.
+  const prevCartIdRef = useRef<string | undefined>(undefined);
+
+  // On cart switch: flush pending debounce to PREVIOUS cart, then reset local state.
+  // Separated from the notes-sync effect below to avoid double-flush when the server
+  // saves notes (which fires activeCart.notes change, not activeCart.id change).
   useEffect(() => {
-    if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
+    if (debounceNotesRef.current && prevCartIdRef.current) {
+      clearTimeout(debounceNotesRef.current);
+      debounceNotesRef.current = undefined;
+      updateCartNotes(prevCartIdRef.current, localCartNotesRef.current);
+    }
+    prevCartIdRef.current = activeCart?.id;
     setLocalCartNotes(activeCart?.notes ?? '');
     setCartNotesOpen(!!activeCart?.notes);
-  }, [activeCart?.id, activeCart?.notes]);
+  }, [activeCart?.id, updateCartNotes]);
+
+  // On server-side notes update: sync local state only when user is not typing
+  // (debounce pending = user is mid-edit; overwriting would discard in-flight keystrokes).
+  useEffect(() => {
+    if (!debounceNotesRef.current) {
+      setLocalCartNotes(activeCart?.notes ?? '');
+    }
+  }, [activeCart?.notes]);
 
   // Cleanup debounceNotesRef no unmount — evita disparo após navegar para outra página.
   useEffect(() => {
@@ -147,8 +173,6 @@ export function useSellerCartsPage() {
   // Flush do debounce de notas quando o usuário fecha/recarrega a aba (beforeunload).
   // Sem isso, notas editadas nos últimos 800ms antes do fechamento são perdidas.
   const activeCartIdForFlush = activeCart?.id;
-  const localCartNotesRef = useRef(localCartNotes);
-  localCartNotesRef.current = localCartNotes;
   useEffect(() => {
     const flush = () => {
       if (debounceNotesRef.current && activeCartIdForFlush) {

@@ -604,8 +604,9 @@ function SellerCartsContent() {
                       label: string,
                       align: 'left' | 'right',
                     ) => (
-                      // aria-sort belongs on <th>, not on the inner <button> (WCAG 1.3.1)
+                      // aria-sort on <th> + scope="col" (WCAG 1.3.1)
                       <th
+                        scope="col"
                         aria-sort={
                           sortKey === key
                             ? sortDir === 'asc'
@@ -642,12 +643,12 @@ function SellerCartsContent() {
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
                               {visibleColumns.color && (
-                                <th className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
+                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
                               )}
-                              <th className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
                               {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
                               {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
-                              <th className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -663,7 +664,7 @@ function SellerCartsContent() {
                                     <div className="flex items-center gap-2.5">
                                       <img
                                         src={item.product_image_url || '/placeholder.svg'}
-                                        alt={item.product_name}
+                                        alt=""
                                         className={cn(
                                           'flex-shrink-0 rounded-md border border-border/30 object-cover',
                                           density === 'compact' ? 'h-8 w-8' : 'h-10 w-10',
@@ -817,11 +818,12 @@ function SellerCartsContent() {
                               className="h-7 px-2"
                               disabled={safePage <= 1}
                               onClick={() => setPage((p) => Math.max(1, p - 1))}
+                              aria-label="Página anterior"
                               data-testid="cart-page-prev"
                             >
                               ‹
                             </Button>
-                            <span className="tabular-nums">
+                            <span className="tabular-nums" aria-live="polite" aria-atomic>
                               {safePage} / {totalPages}
                             </span>
                             <Button
@@ -830,6 +832,7 @@ function SellerCartsContent() {
                               className="h-7 px-2"
                               disabled={safePage >= totalPages}
                               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                              aria-label="Próxima página"
                               data-testid="cart-page-next"
                             >
                               ›
