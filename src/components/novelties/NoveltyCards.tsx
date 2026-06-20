@@ -3,7 +3,7 @@
  * Follows the same info pattern as ProductCard (catalog).
  */
 
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -83,6 +83,9 @@ export const NoveltyGridCard = memo(
     // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
     // num swatch troca a foto principal pela imagem da variante selecionada.
     const [activeColorName, setActiveColorName] = useState<string | null>(null);
+    // Reset swatch selection when a different product is rendered into the same
+    // component slot (can happen in non-virtualised list views after filter change).
+    useEffect(() => { setActiveColorName(null); }, [product.product_id]);
     const activeImage = useMemo(() => {
       if (!activeColorName || !colors?.length) return product.product_image;
       const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
