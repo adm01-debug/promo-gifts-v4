@@ -338,38 +338,36 @@ export function useFavoriteListItems(listId: string | null) {
         action: {
           label: 'Desfazer',
           onClick: async () => {
-            // Use original_id to find exactly this item in trash (not just the latest)
-            const { data: result, error: rpcErr } = (await supabase.rpc(
-              'restore_favorite_from_trash' as never,
-              { _trash_id: null, _user_id: user.id } as never,
-            )) as unknown as { data: RestoreRpcResult | null; error: Error | null };
-            // Fallback: find by original_id
-            const { data: trashed } = await supabase
-              .from('favorite_items_trash')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('original_id', deletedId)
-              .maybeSingle();
-            if (!trashed) {
-              toast.error('Item não encontrado na lixeira');
-              return;
-            }
-            void result;
-            void rpcErr;
-            const { data: restored } = (await supabase.rpc(
-              'restore_favorite_from_trash' as never,
-              { _trash_id: trashed.id, _user_id: user.id } as never,
-            )) as unknown as { data: RestoreRpcResult | null; error: Error | null };
-            if (restored?.ok) {
-              qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
-              qc.invalidateQueries({ queryKey: LISTS_KEY });
-              qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-              const msg = restored.original_list_changed
-                ? 'Item restaurado na lista padrão (lista original foi excluída)'
-                : 'Item restaurado';
-              toast.success(msg);
-            } else {
-              toast.error('Não foi possível restaurar');
+            try {
+              const { data: trashed, error: findErr } = await supabase
+                .from('favorite_items_trash')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('original_id', deletedId)
+                .maybeSingle();
+              if (findErr) throw findErr;
+              if (!trashed) {
+                toast.error('Item não encontrado na lixeira');
+                return;
+              }
+              const { data: restored, error: restoreErr } = (await supabase.rpc(
+                'restore_favorite_from_trash' as never,
+                { _trash_id: trashed.id, _user_id: user.id } as never,
+              )) as unknown as { data: RestoreRpcResult | null; error: Error | null };
+              if (restoreErr) throw restoreErr;
+              if (restored?.ok) {
+                qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+                qc.invalidateQueries({ queryKey: LISTS_KEY });
+                qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+                const msg = restored.original_list_changed
+                  ? 'Item restaurado na lista padrão (lista original foi excluída)'
+                  : 'Item restaurado';
+                toast.success(msg);
+              } else {
+                toast.error('Não foi possível restaurar');
+              }
+            } catch (e) {
+              toast.error('Erro ao restaurar item', { description: sanitizeError(e as Error) });
             }
           },
         },

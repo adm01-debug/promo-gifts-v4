@@ -101,7 +101,7 @@ export function buildInsertPayload(
 ): TablesInsert<'quotes'> {
   validateDiscount(quote, totals);
   // contact_id exists in the DB but is absent from generated types (schema drift).
-  // The cast is safe — the column is defined in the quotes table.
+  // Narrow cast: only contact_id is exempted from type-checking; all other fields are verified.
   const payload = {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
@@ -127,7 +127,9 @@ export function buildInsertPayload(
     internal_notes: quote.internal_notes || null,
     valid_until: quote.valid_until || null,
   };
-  return payload as unknown as TablesInsert<'quotes'>;
+  return payload as Omit<TablesInsert<'quotes'>, 'contact_id'> & {
+    contact_id?: string | null;
+  } as TablesInsert<'quotes'>;
 }
 
 export function buildUpdatePayload(
@@ -158,7 +160,9 @@ export function buildUpdatePayload(
     valid_until: quote.valid_until || null,
     updated_at: new Date().toISOString(),
   };
-  return updatePayload as unknown as TablesUpdate<'quotes'>;
+  return updatePayload as Omit<TablesUpdate<'quotes'>, 'contact_id'> & {
+    contact_id?: string | null;
+  } as TablesUpdate<'quotes'>;
 }
 
 export function buildItemsInsertPayload(
