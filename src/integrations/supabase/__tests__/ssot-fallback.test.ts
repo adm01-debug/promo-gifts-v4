@@ -86,6 +86,12 @@ describe('SSOT Supabase — fallback em runtime', () => {
       url.includes('localhost') || url.includes('127.0.0.1') || url.includes('placeholder');
     if (!isLocalDev) {
       expect(url).toContain(CANONICAL);
+      expect(url).not.toContain(FORBIDDEN);
+    } else {
+      // Fallback: valida via supabase client interno
+      const client = (mod as unknown as { supabase?: { supabaseUrl?: string } }).supabase;
+      expect(client?.supabaseUrl ?? '').toContain(CANONICAL);
+
     }
   });
 
