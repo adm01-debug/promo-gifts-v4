@@ -202,25 +202,24 @@ export function useSupplierFiscalData(
         };
       }
 
-      // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults
-      try {
-        const branchesResult = await untypedFrom('supplier_branches')
-          .select(BRANCH_SELECT)
-          .eq('supplier_id', supplierId)
-          .eq('is_active', true)
-          .limit(5);
+      // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults.
+      // Errors here are NOT swallowed: this is the only data source when no override
+      // exists, so a fetch failure should surface to TanStack Query's retry logic.
+      const branchesResult = await untypedFrom('supplier_branches')
+        .select(BRANCH_SELECT)
+        .eq('supplier_id', supplierId)
+        .eq('is_active', true)
+        .limit(5);
 
-        if (branchesResult.data?.length) {
-          const branch = branchesResult.data[0] as BranchRecord;
-          const result = buildFromBranch(branch);
-          result._variantId = matchedVariantId || undefined;
-          return result;
-        }
-      } catch (err) {
-        logger.warn(
-          '[useSupplierFiscalData] Failed to fetch branch defaults for inheritance:',
-          err,
-        );
+      if (branchesResult.error) {
+        throw branchesResult.error;
+      }
+
+      if (branchesResult.data?.length) {
+        const branch = branchesResult.data[0] as BranchRecord;
+        const result = buildFromBranch(branch);
+        result._variantId = matchedVariantId || undefined;
+        return result;
       }
 
       return null;
