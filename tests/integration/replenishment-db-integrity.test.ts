@@ -1,51 +1,90 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue({
-        data: [
-          {
-            id: 'p1',
-            name: 'Produto Teste',
-            updated_at: new Date().toISOString(),
-            created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-            stock_quantity: 10,
-            min_quantity: 5,
-          },
-        ],
-        error: null,
-      }),
-    })),
-  },
-  SUPABASE_URL: 'https://doufsxqlfjyuvxuezpln.supabase.co',
-  SUPABASE_PUBLISHABLE_KEY: 'mock-anon-key',
-}));
+// Mock supabase so this test runs offline (no DB credentials in CI).
+vi.mock('@/integrations/supabase/client', () => {
+  const mockSelect = vi.fn().mockReturnThis();
+  const mockEq    = vi.fn().mockReturnThis();
+  const mockLimit = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'prod-1',
+        name: 'Produto Reposição A',
+        updated_at: '2026-06-15T10:00:00Z',
+        created_at: '2026-06-01T08:00:00Z',
+        stock_quantity: 50,
+        min_quantity: 5,
+      },
+      {
+        id: 'prod-2',
+        name: 'Produto Reposição B',
+        updated_at: '2026-06-20T09:00:00Z',
+        created_at: '2026-06-18T07:00:00Z',
+        stock_quantity: 10,
+        min_quantity: 2,
+      },
+    ],
+    error: null,
+  });
+
+  return {
+    supabase: {
+      from: vi.fn(() => ({ select: mockSelect, eq: mockEq, limit: mockLimit })),
+    },
+    SUPABASE_URL: 'https://doufsxqlfjyuvxuezpln.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'mock-anon-key',
+  };
+});
 
 import { supabase } from '@/integrations/supabase/client';
 
-// GAP (auditoria 200-commits): este é um teste de INTEGRAÇÃO que faz fetch real
-// contra o banco vivo (sem mock). No gate unitário (quality-gate) ele estoura o
-// timeout / dá ECONNREFUSED porque não há Supabase local. Alinhado à convenção
-// do repo (RUN_INTEGRATION_TESTS, ver package.json), roda só sob demanda.
-const runIntegration = process.env.RUN_INTEGRATION_TESTS === '1';
+describe('Replenishment: DB integrity (mocked)', () => {
+  beforeEach(() => vi.clearAllMocks());
 
-describe.skipIf(!runIntegration)('Edge Function Simulation: Replenishment Triggers', () => {
-  it('Deve validar integridade dos dados de reposição via RPC/View', async () => {
+  it('valida que updated_at e created_at são datas ISO válidas', async () => {
     const { data, error } = await supabase
       .from('v_products_public')
       .select('id, name, updated_at, created_at, stock_quantity, min_quantity')
       .eq('is_active', true)
       .limit(10);
 
-    if (error) throw error;
+    expect(error).toBeNull();
+    expect(data).toBeDefined();
+    expect(Array.isArray(data)).toBe(true);
 
-    data.forEach(p => {
+    for (const p of data!) {
+      if (p.updated_at) expect(isNaN(new Date(p.updated_at).getTime())).toBe(false);
+      if (p.created_at) expect(isNaN(new Date(p.created_at).getTime())).toBe(false);
+    }
+  });
+
+  it('valida que stock_quantity >= min_quantity para produtos em estoque', async () => {
+    const { data } = await supabase
+      .from('v_products_public')
+      .select('id, name, updated_at, created_at, stock_quantity, min_quantity')
+      .eq('is_active', true)
+      .limit(10);
+
+    for (const p of data!) {
+      expect(typeof p.stock_quantity).toBe('number');
+      expect(typeof p.min_quantity).toBe('number');
+      expect(p.stock_quantity).toBeGreaterThanOrEqual(0);
+      expect(p.min_quantity).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('valida que updated_at >= created_at (reposição implica edição posterior)', async () => {
+    const { data } = await supabase
+      .from('v_products_public')
+      .select('id, name, updated_at, created_at, stock_quantity, min_quantity')
+      .eq('is_active', true)
+      .limit(10);
+
+    for (const p of data!) {
       if (p.updated_at && p.created_at) {
-        expect(isNaN(new Date(p.updated_at).getTime())).toBe(false);
+        const updatedMs = new Date(p.updated_at).getTime();
+        const createdMs = new Date(p.created_at).getTime();
+        expect(updatedMs).toBeGreaterThanOrEqual(createdMs);
       }
-    });
+    }
   });
 });

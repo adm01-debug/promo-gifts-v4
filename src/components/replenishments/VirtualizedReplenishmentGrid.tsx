@@ -41,7 +41,7 @@ export function VirtualizedReplenishmentGrid({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 430,
     overscan: 3,
-    measureElement: (el) => el.getBoundingClientRect().height,
+    measureElement: (el) => el?.getBoundingClientRect().height ?? 430,
   });
 
   const effectiveCols = gridColumns;
@@ -49,10 +49,13 @@ export function VirtualizedReplenishmentGrid({
   return (
     <div
       ref={parentRef}
-      className="overflow-auto"
+      className="overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       style={SCROLL_CONTAINER_STYLE}
       role="list"
-      aria-label="Grade de produtos repostos"
+      aria-label={`Grade de produtos repostos — ${products.length} item${products.length !== 1 ? 's' : ''}`}
+      aria-live="polite"
+      aria-relevant="additions removals"
+      tabIndex={0}
     >
       <div
         style={{

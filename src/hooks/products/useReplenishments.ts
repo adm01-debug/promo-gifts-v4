@@ -201,7 +201,10 @@ async function fetchReposicao(limit: number): Promise<ReplenishmentWithDetails[]
   });
 
   if (error) {
-    if (isGoneError(error)) return [];
+    if (isGoneError(error)) {
+      console.warn('[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.', error.message);
+      return [];
+    }
     throw error;
   }
 
@@ -244,6 +247,7 @@ export function useReplenishmentStats() {
 
       if (error) {
         if (isGoneError(error)) {
+          console.warn('[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.', error.message);
           return {
             totalReplenishments:    0,
             activeReplenishments:   0,
