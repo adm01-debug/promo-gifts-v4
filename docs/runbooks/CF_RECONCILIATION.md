@@ -108,6 +108,43 @@ backfill (não por crawl real).
 **Após crawl completo:** as 71 139 linhas `ok_pending_crawl_confirmation` migrarão
 para `ok` (ou para `broken_*` se o crawl não as confirmar — drift real).
 
+### P9 — Enriquecer `v_health_dashboard` com métricas de crawl
+Migration `20260619140600`.
+
+Adicionadas 5 novas colunas ao dashboard (preservando as 10 existentes):
+
+| Nova coluna | Significado |
+|---|---|
+| `cf_backfill_only` | Rows em `cf_image` com `crawl_run_id IS NULL` (backfill, sem confirmação) |
+| `cf_crawl_confirmed` | Rows confirmadas por crawl real da API CF |
+| `divergence_ok` | Imagens com `divergence_class = 'ok'` (crawl-confirmadas) |
+| `divergence_pending` | Imagens com `divergence_class = 'ok_pending_crawl_confirmation'` |
+| `divergence_broken` | Imagens com `divergence_class LIKE 'broken%'` (problema ativo) |
+
+**Estado pós-P9:**
+`cf_backfill_only=71280`, `cf_crawl_confirmed=799`, `divergence_ok=799`,
+`divergence_pending=71139`, `divergence_broken=0`.
+
+### P10 — Fechar 141 remediações `cf_orphan_no_pi` falsas
+Migration `20260619140700`.
+
+**Origem:** Migration gap `auto_detected_migration_20260619` (aplicada direto no DB, fora
+do repo) criou 141 remediações `cf_orphan_no_pi` às 20:15:05 UTC usando a lógica de
+detecção circular pré-P5 — mesma referência que `v_cf_orphans` resolvia antes.
+
+**Por que são falsas:**
+- Todas as 141 têm `crawl_run_id IS NULL` em `cf_image` (backfill, sem confirmação CF)
+- Nenhuma tem `product_images` correspondente (nem ativo, nem inativo, nem deletado)
+- Sem crawl real confirmando que esses IDs existem no CF, qualquer ação de deleção é
+  proibida pela regra de segurança
+
+**Ações realizadas:** 141 entradas em `action_log` com evidência
+`backfill_only_circular_detection_pre_p5` e `action_required='re_evaluate_after_full_crawl_v_cf_orphans'`;
+`status = 'done'` para todas.
+
+**Após crawl completo:** `v_cf_orphans` (já com filtro `crawl_run_id IS NOT NULL` do P5)
+re-detectará automaticamente os verdadeiros órfãos confirmados.
+
 ---
 
 ## Crawl completo CF→DB (pendente — job agendado)
