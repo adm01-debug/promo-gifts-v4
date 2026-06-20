@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 // ─── Count Up Animation ─────────────────────────────────────────
 
-function useCountUp(end: number, duration: number = 800): number {
+function useCountUp(end: number, duration = 800): number {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (end === 0) {

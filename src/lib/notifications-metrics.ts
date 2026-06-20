@@ -293,7 +293,7 @@ export const notificationsMetrics = {
     };
   },
 
-  logBadgeBudgetSummary(reason: string = 'unmount') {
+  logBadgeBudgetSummary(reason = 'unmount') {
     if (!isDebugEnabled()) return;
     const budget = buildBudget();
     if (budget.total === 0) return;

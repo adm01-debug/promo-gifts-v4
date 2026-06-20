@@ -187,6 +187,13 @@ export default [
       'dot-notation': 'error',
       // Batch 76: 1 rule — operator-assignment (7 fixes in 7 files, mixed auto/manual)
       'operator-assignment': 'error',
+      // Batch 77: 6 zero-violation rules — logical operators + TS type-safety extensions
+      'logical-assignment-operators': 'error',
+      'no-unmodified-loop-condition': 'error',
+      '@typescript-eslint/prefer-includes': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {

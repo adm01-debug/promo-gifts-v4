@@ -203,7 +203,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // Solution: always null-out technique_id (the technique name is already persisted
     // in the `technique_name` text column, which is what all read paths use). The FK
     // column should only be set once the UI loads techniques from `personalization_techniques`.
-    const safeTechniqueId: null = null;
+    const safeTechniqueId = null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
     const { data: insertedRow, error } = await untypedFrom('generated_mockups')

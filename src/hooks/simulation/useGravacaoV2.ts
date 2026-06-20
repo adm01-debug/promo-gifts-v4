@@ -138,7 +138,7 @@ export function useCustomizationPriceLegacy() {
     async (
       areaId: string,
       quantidade: number,
-      numCores: number = 1,
+      numCores = 1,
       larguraCm?: number | null,
       alturaCm?: number | null,
     ): Promise<CustomizationPriceV2 | null> => {

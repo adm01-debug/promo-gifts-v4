@@ -9,7 +9,7 @@ import { ptBR } from 'date-fns/locale';
  * @param pattern - Padrão de formatação (default: dd/MM/yyyy)
  * @returns String formatada em português
  */
-export function formatDate(date: Date | string | number, pattern: string = 'dd/MM/yyyy'): string {
+export function formatDate(date: Date | string | number, pattern = 'dd/MM/yyyy'): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   return format(parsedDate, pattern, { locale: ptBR });
 }

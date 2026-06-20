@@ -386,7 +386,7 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
  * Hook para buscar novidades expirando em breve (≤ maxDays restantes).
  * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
-export function useExpiringNovelties(maxDays: number = 7) {
+export function useExpiringNovelties(maxDays = 7) {
   return useQuery<NoveltyWithDetails[]>({
     queryKey: ['expiring-novelties', maxDays],
     queryFn: async () => {

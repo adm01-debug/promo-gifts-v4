@@ -28,7 +28,7 @@ export function useExternalDbInspect() {
   const [isLoading, setIsLoading] = useState(false);
 
   const inspect = useCallback(
-    async (action: string = 'list_tables', params: Record<string, unknown> = {}) => {
+    async (action = 'list_tables', params: Record<string, unknown> = {}) => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('external-db-inspect', {
