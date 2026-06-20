@@ -66,6 +66,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
                         key={mode.value}
                         type="button"
                         aria-pressed={isActive}
+                        data-testid={`view-mode-${mode.value}`}
                         className={cn(
                           'relative flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all duration-200',
                           isActive
