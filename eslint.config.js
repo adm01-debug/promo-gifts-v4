@@ -262,6 +262,18 @@ export default [
       'use-isnan': 'error',
       'valid-typeof': 'error',
       'dot-notation': 'error',
+      // Batch 85: 11 zero-violation rules
+      'no-constant-condition': 'error',
+      'no-constructor-return': 'error',
+      'no-new': 'error',
+      'no-return-assign': 'error',
+      'no-self-assign': 'error',
+      'no-unreachable': 'error',
+      'no-unused-labels': 'error',
+      '@typescript-eslint/no-duplicate-enum-values': 'error',
+      '@typescript-eslint/no-namespace': 'error',
+      '@typescript-eslint/no-unsafe-function-type': 'error',
+      '@typescript-eslint/no-wrapper-object-types': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
