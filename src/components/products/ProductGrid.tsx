@@ -172,195 +172,191 @@ const columnClasses: Record<number, string> = {
   8: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
 };
 
-export const ProductGrid = memo(
-  ({
-    products,
-    isLoading,
-    isError,
-    onRetry,
-    onProductClick,
-    onViewProduct,
-    onShareProduct,
-    onFavoriteProduct,
-    isFavorite,
-    onToggleFavorite,
-    isInCompare,
-    onToggleCompare,
-    canAddToCompare = true,
-    highlightColors,
-    hideCategoryBadges = false,
-    activeColorFilter,
-    columns = 5,
-    selectionMode,
-    selectedIds,
-    onToggleSelect,
-    onStatusClick,
-  }: ProductGridProps) => {
-    const [isGridVisible, setIsGridVisible] = useState(false);
-    const gridRef = useRef<HTMLDivElement>(null);
+// eslint-disable-next-line prefer-arrow-callback
+export const ProductGrid = memo(function ProductGrid({
+  products,
+  isLoading,
+  isError,
+  onRetry,
+  onProductClick,
+  onViewProduct,
+  onShareProduct,
+  onFavoriteProduct,
+  isFavorite,
+  onToggleFavorite,
+  isInCompare,
+  onToggleCompare,
+  canAddToCompare = true,
+  highlightColors,
+  hideCategoryBadges = false,
+  activeColorFilter,
+  columns = 5,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
+  onStatusClick,
+}: ProductGridProps) {
+  const [isGridVisible, setIsGridVisible] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-      if (isLoading) return;
-      // Reset animation state when products change
-      setIsGridVisible(false);
-      const timer = setTimeout(() => setIsGridVisible(true), 50);
-      return () => clearTimeout(timer);
-    }, [products, isLoading]);
+  useEffect(() => {
+    if (isLoading) return;
+    // Reset animation state when products change
+    setIsGridVisible(false);
+    const timer = setTimeout(() => setIsGridVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, [products, isLoading]);
 
-    // Hidrata cores nos cards cujo fetch principal não trouxe `colors`
-    // (fallback unificado p/ catálogo/super filtro/etc — mesmo padrão de Novidades).
-    // RULES-OF-HOOKS FIX: hooks DEVEM rodar antes dos early returns (isError/empty)
-    // abaixo — senão a contagem de hooks muda quando o componente alterna entre
-    // estado de erro/vazio e estado normal, e o React crasha com "Rendered fewer
-    // hooks than expected".
-    const idsNeedingColors = useMemo(
-      () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
-      [products],
-    );
-    const { data: colorsByProduct, hasError: colorsError } =
-      useProductsColorsBatch(idsNeedingColors);
+  // Hidrata cores nos cards cujo fetch principal não trouxe `colors`
+  // (fallback unificado p/ catálogo/super filtro/etc — mesmo padrão de Novidades).
+  // RULES-OF-HOOKS FIX: hooks DEVEM rodar antes dos early returns (isError/empty)
+  // abaixo — senão a contagem de hooks muda quando o componente alterna entre
+  // estado de erro/vazio e estado normal, e o React crasha com "Rendered fewer
+  // hooks than expected".
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct, hasError: colorsError } = useProductsColorsBatch(idsNeedingColors);
 
-    // FIX ISSUE-02 2026-06-09: useColorEnrichment — resolve imagem real da variante de cor
-    // quando filtro de cor está ativo no catálogo lightweight (batch colors = {name,hex} sem images[]).
-    // RULES-OF-HOOKS: chamado incondicionalmente ANTES dos early returns abaixo.
-    // Quando não há filtro ativo, productIds=[] desabilita as queries internas do hook.
-    const hasActiveColorFilter = !!(
-      activeColorFilter &&
-      ((activeColorFilter.groups?.length ?? 0) > 0 ||
-        (activeColorFilter.variations?.length ?? 0) > 0)
-    );
-    const allProductIds = useMemo(
-      () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
-      [products, hasActiveColorFilter],
-    );
-    const { data: colorEnrichmentMap } = useColorEnrichment({
-      productIds: allProductIds,
-      colorGroups: activeColorFilter?.groups ?? [],
-      colorVariations: activeColorFilter?.variations ?? [],
-    });
+  // FIX ISSUE-02 2026-06-09: useColorEnrichment — resolve imagem real da variante de cor
+  // quando filtro de cor está ativo no catálogo lightweight (batch colors = {name,hex} sem images[]).
+  // RULES-OF-HOOKS: chamado incondicionalmente ANTES dos early returns abaixo.
+  // Quando não há filtro ativo, productIds=[] desabilita as queries internas do hook.
+  const hasActiveColorFilter = !!(
+    activeColorFilter &&
+    ((activeColorFilter.groups?.length ?? 0) > 0 || (activeColorFilter.variations?.length ?? 0) > 0)
+  );
+  const allProductIds = useMemo(
+    () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
+    [products, hasActiveColorFilter],
+  );
+  const { data: colorEnrichmentMap } = useColorEnrichment({
+    productIds: allProductIds,
+    colorGroups: activeColorFilter?.groups ?? [],
+    colorVariations: activeColorFilter?.variations ?? [],
+  });
 
-    useEffect(() => {
-      if (colorsError) {
-        logger.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
-      }
-    }, [colorsError, idsNeedingColors]);
-
-    if (isError) {
-      return (
-        <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <AlertTriangle className="h-8 w-8" />
-          </div>
-          <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
-            Ops! Falha ao carregar produtos
-          </h3>
-          <p className="mb-6 max-w-md text-sm text-muted-foreground">
-            Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
-          </p>
-          {onRetry && (
-            <Button onClick={onRetry} variant="outline" className="gap-2">
-              <RotateCw className="h-4 w-4" />
-              Tentar novamente
-            </Button>
-          )}
-        </div>
-      );
+  useEffect(() => {
+    if (colorsError) {
+      logger.error('[ProductGrid] Falha ao hidratar cores dos produtos:', idsNeedingColors);
     }
+  }, [colorsError, idsNeedingColors]);
 
-    const showEmptyState = !isLoading && products.length === 0;
-
-    if (showEmptyState) {
-      return (
-        <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <span className="text-3xl">📦</span>
-          </div>
-          <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
-            Nenhum produto encontrado
-          </h3>
-          <p className="max-w-md text-muted-foreground">
-            Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos
-            desejados.
-          </p>
-        </div>
-      );
-    }
-
-    type SkeletonEntry = { id: string; isSkeleton: true };
-    const displayProducts: Array<Product | SkeletonEntry> =
-      isLoading && products.length === 0
-        ? Array.from({ length: 15 }).map((_, i) => ({
-            id: `skeleton-${i}`,
-            isSkeleton: true as const,
-          }))
-        : products;
-
+  if (isError) {
     return (
-      <div
-        ref={gridRef}
-        className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
-      >
-        {displayProducts.map((product, index) =>
-          'isSkeleton' in product && product.isSkeleton ? (
-            <ProductCardSkeleton
-              key={product.id}
-              variant="default"
-              selectionMode={selectionMode}
-              hideCategoryBadges={hideCategoryBadges}
-            />
-          ) : (
-            (() => {
-              const p = product as Product;
-              const isHydrating =
-                idsNeedingColors.includes(p.id) && !colorsByProduct?.has(p.id) && !colorsError;
-              const batchColors =
-                !p.colors || p.colors.length === 0 ? colorsByProduct?.get(p.id) : undefined;
-
-              const enriched: Product = {
-                ...p,
-                // Durante hydration as cores ainda não chegaram → [] (o card trata
-                // colors vazio/ausente defensivamente; populam ao re-renderizar).
-                colors: isHydrating
-                  ? []
-                  : batchColors && batchColors.length > 0
-                    ? batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' }))
-                    : p.colors,
-              };
-
-              // FIX ISSUE-02: imagem real da variante de cor via useColorEnrichment
-              const enrichmentData = hasActiveColorFilter ? colorEnrichmentMap?.get(p.id) : null;
-              const colorEnrichmentImage = enrichmentData?.image ?? null;
-
-              return (
-                <ProductCardWrapper
-                  key={p.id}
-                  product={enriched}
-                  index={index}
-                  isVisible={isGridVisible}
-                  priority={index < 8}
-                  onClick={onProductClick ? () => onProductClick(p.id) : undefined}
-                  onView={onViewProduct}
-                  onShare={onShareProduct}
-                  onFavorite={onFavoriteProduct}
-                  isFavorited={isFavorite ? isFavorite(p.id) : false}
-                  onToggleFavorite={onToggleFavorite}
-                  isInCompare={isInCompare ? isInCompare(p.id) : false}
-                  onToggleCompare={onToggleCompare}
-                  canAddToCompare={canAddToCompare}
-                  highlightColors={highlightColors}
-                  hideCategoryBadges={hideCategoryBadges}
-                  activeColorFilter={activeColorFilter}
-                  selectionMode={selectionMode}
-                  selectedIds={selectedIds}
-                  onToggleSelect={onToggleSelect}
-                  onStatusClick={onStatusClick}
-                  colorEnrichmentImage={colorEnrichmentImage}
-                />
-              );
-            })()
-          ),
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-8 w-8" />
+        </div>
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+          Ops! Falha ao carregar produtos
+        </h3>
+        <p className="mb-6 max-w-md text-sm text-muted-foreground">
+          Não conseguimos conectar ao catálogo agora. Verifique sua conexão ou tente novamente.
+        </p>
+        {onRetry && (
+          <Button onClick={onRetry} variant="outline" className="gap-2">
+            <RotateCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
         )}
       </div>
     );
-  },
-);
+  }
+
+  const showEmptyState = !isLoading && products.length === 0;
+
+  if (showEmptyState) {
+    return (
+      <div className="flex animate-fade-in flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <span className="text-3xl">📦</span>
+        </div>
+        <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
+          Nenhum produto encontrado
+        </h3>
+        <p className="max-w-md text-muted-foreground">
+          Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos desejados.
+        </p>
+      </div>
+    );
+  }
+
+  type SkeletonEntry = { id: string; isSkeleton: true };
+  const displayProducts: Array<Product | SkeletonEntry> =
+    isLoading && products.length === 0
+      ? Array.from({ length: 15 }).map((_, i) => ({
+          id: `skeleton-${i}`,
+          isSkeleton: true as const,
+        }))
+      : products;
+
+  return (
+    <div
+      ref={gridRef}
+      className={`grid ${columnClasses[columns] || columnClasses[5]} ${columns >= 8 ? 'gap-x-4 gap-y-8' : columns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 gap-y-8 sm:gap-x-6 lg:gap-x-8'}`}
+    >
+      {displayProducts.map((product, index) =>
+        'isSkeleton' in product && product.isSkeleton ? (
+          <ProductCardSkeleton
+            key={product.id}
+            variant="default"
+            selectionMode={selectionMode}
+            hideCategoryBadges={hideCategoryBadges}
+          />
+        ) : (
+          (() => {
+            const p = product as Product;
+            const isHydrating =
+              idsNeedingColors.includes(p.id) && !colorsByProduct?.has(p.id) && !colorsError;
+            const batchColors =
+              !p.colors || p.colors.length === 0 ? colorsByProduct?.get(p.id) : undefined;
+
+            const enriched: Product = {
+              ...p,
+              // Durante hydration as cores ainda não chegaram → [] (o card trata
+              // colors vazio/ausente defensivamente; populam ao re-renderizar).
+              colors: isHydrating
+                ? []
+                : batchColors && batchColors.length > 0
+                  ? batchColors.map((c) => ({ name: c.name, hex: c.hex || '', group: '' }))
+                  : p.colors,
+            };
+
+            // FIX ISSUE-02: imagem real da variante de cor via useColorEnrichment
+            const enrichmentData = hasActiveColorFilter ? colorEnrichmentMap?.get(p.id) : null;
+            const colorEnrichmentImage = enrichmentData?.image ?? null;
+
+            return (
+              <ProductCardWrapper
+                key={p.id}
+                product={enriched}
+                index={index}
+                isVisible={isGridVisible}
+                priority={index < 8}
+                onClick={onProductClick ? () => onProductClick(p.id) : undefined}
+                onView={onViewProduct}
+                onShare={onShareProduct}
+                onFavorite={onFavoriteProduct}
+                isFavorited={isFavorite ? isFavorite(p.id) : false}
+                onToggleFavorite={onToggleFavorite}
+                isInCompare={isInCompare ? isInCompare(p.id) : false}
+                onToggleCompare={onToggleCompare}
+                canAddToCompare={canAddToCompare}
+                highlightColors={highlightColors}
+                hideCategoryBadges={hideCategoryBadges}
+                activeColorFilter={activeColorFilter}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+                onStatusClick={onStatusClick}
+                colorEnrichmentImage={colorEnrichmentImage}
+              />
+            );
+          })()
+        ),
+      )}
+    </div>
+  );
+});
