@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -89,7 +90,9 @@ export function useFavoriteLists() {
           { _user_id: user.id } as never,
         );
         ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
-          (r) => { counts[r.list_id] = Number(r.item_count); },
+          (r) => {
+            counts[r.list_id] = Number(r.item_count);
+          },
         );
       }
 
@@ -349,7 +352,7 @@ export function useFavoriteListItems(listId: string | null) {
               toast.error('Item não encontrado na lixeira');
               return;
             }
-            const { data: rawRestored } = await supabase.rpc('restore_favorite_from_trash', {
+            const { data: rawRestored } = await untypedRpc('restore_favorite_from_trash', {
               _trash_id: trashed.id,
               _user_id: user.id,
             });
@@ -450,7 +453,7 @@ export function useFavoriteTrash() {
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
       // Atomic RPC: handles missing original list by falling back to default list
-      const { data: rawData, error } = await supabase.rpc('restore_favorite_from_trash', {
+      const { data: rawData, error } = await untypedRpc('restore_favorite_from_trash', {
         _trash_id: trashId,
         _user_id: user.id,
       });
