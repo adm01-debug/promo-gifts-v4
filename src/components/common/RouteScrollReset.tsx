@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { NavigationType, useLocation, useNavigationType } from 'react-router-dom';
 import { forceReleaseScrollLock } from '@/lib/dom/scroll-lock';
 
 /**
@@ -29,12 +29,11 @@ export function RouteScrollReset() {
     // Libera scroll-lock residual do Radix em toda troca de rota.
     forceReleaseScrollLock();
 
-
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
     }
-    if (navType === 'POP') return;
+    if (navType === NavigationType.Pop) return;
     if (hash) return;
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
