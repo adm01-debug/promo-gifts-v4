@@ -169,19 +169,10 @@ describe('respondToApproval', () => {
       requested_discount_percent: 20,
       max_allowed_percent: 15,
     };
-    const singleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
-    const selectAfterEq = vi.fn().mockReturnValue({ single: singleFn });
-    const eqUpdate = vi.fn().mockReturnValue({ select: selectAfterEq });
-    const _chainUpdate = { update: vi.fn().mockReturnValue({ eq: eqUpdate }) };
-    // Quote status update
-    const eqQuote = vi.fn().mockReturnValue({ error: null });
-    const _chainQuote = { update: vi.fn().mockReturnValue({ eq: eqQuote }) };
-    // Activity log insert + workspace_notifications insert
-    const _chainLog = { insert: vi.fn().mockReturnValue({ error: null }) };
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'discount_approval_requests') {
-        const innerSingleFn = vi.fn().mockResolvedValue({ data: mockReq, error: null });
+        const innerSingleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
         const innerSelectAfterEq = vi.fn().mockReturnValue({ single: innerSingleFn });
         const eqFn = vi.fn().mockReturnValue({ select: innerSelectAfterEq });
         return { update: vi.fn().mockReturnValue({ eq: eqFn }) } as never;
