@@ -17,7 +17,7 @@ import {
   type CartTableDensity,
 } from '@/components/cart/CartTablePreferences';
 
-import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
+import { type CartStatus } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
@@ -109,7 +109,8 @@ function SellerCartsContent() {
   const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
   // Tabela: colunas visíveis + densidade (persistidos, namespaced por user)
-  const [visibleColumns, setVisibleColumns] = useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
+  const [visibleColumns, setVisibleColumns] =
+    useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
   const [density, setDensity] = useState<CartTableDensity>('comfortable');
 
   // Ordenação + paginação (persistidas, namespaced por user)
@@ -136,7 +137,9 @@ function SellerCartsContent() {
         const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
         setVisibleColumns({ ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true });
       }
-    } catch { /* ignore corrupt stored value */ }
+    } catch {
+      /* ignore corrupt stored value */
+    }
 
     const dn = localStorage.getItem(ns('cart-table-density'));
     if (dn === 'comfortable' || dn === 'compact') setDensity(dn as CartTableDensity);
@@ -314,12 +317,14 @@ function SellerCartsContent() {
     [s.carts],
   );
 
-  // Stable rotating placeholder per cart
+  // Stable rotating placeholder per cart — deps reduzida ao ID para evitar
+  // recálculo quando outros campos do activeCart mudam (ex: notes, status).
+  const activeCartId = s.activeCart?.id;
   const notesPlaceholder = useMemo(() => {
-    if (!s.activeCart) return NOTES_PLACEHOLDERS[0];
-    const seed = s.activeCart.id.charCodeAt(0) % NOTES_PLACEHOLDERS.length;
+    if (!activeCartId) return NOTES_PLACEHOLDERS[0];
+    const seed = activeCartId.charCodeAt(0) % NOTES_PLACEHOLDERS.length;
     return NOTES_PLACEHOLDERS[seed];
-  }, [s.activeCart]);
+  }, [activeCartId]);
 
   const handleDuplicateLast = useCallback(
     (sourceCart: typeof s.activeCart) => {
@@ -581,14 +586,12 @@ function SellerCartsContent() {
             {s.activeCart.items.length === 0 ? (
               <CartEmptyStateSmart
                 activeCart={s.activeCart}
-                templates={
-                  s.templates as {
-                    id: string;
-                    name: string;
-                    description?: string;
-                    items: CartTemplateItem[];
-                  }[]
-                }
+                templates={s.templates.map(({ id, name, description, items }) => ({
+                  id,
+                  name,
+                  description: description ?? undefined,
+                  items,
+                }))}
                 otherCarts={s.otherCarts}
                 onApplyTemplate={s.handleLoadTemplate}
                 onDuplicateLast={handleDuplicateLast}
@@ -729,6 +732,7 @@ function SellerCartsContent() {
                                       step={1}
                                       defaultValue={item.quantity}
                                       key={`${item.id}-${item.quantity}`}
+                                      aria-label={`Quantidade de ${item.product_name}`}
                                       data-testid={`cart-qty-input-${item.id}`}
                                       aria-invalid={err ? true : undefined}
                                       aria-describedby={err ? `qty-err-${item.id}` : undefined}

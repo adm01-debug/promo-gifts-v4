@@ -257,7 +257,13 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(
     async (cartId: string) => {
-      await clearCartMutation(cartId);
+      try {
+        await clearCartMutation(cartId);
+        setActiveCartId(cartId);
+      } catch (err) {
+        toast.error('Erro ao limpar carrinho');
+        throw err; // propaga para o caller poder abortar o fluxo pós-clear (ex: undo toast)
+      }
     },
     [clearCartMutation],
   );
