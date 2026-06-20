@@ -40,6 +40,26 @@ export function wizardReducer(
         selectedComparison: null,
       };
 
+    case 'LOAD_DRAFT': {
+      // Restore a saved draft ATOMICALLY (product + quantity + personalizations).
+      // Must NOT go through SELECT_PRODUCT, which wipes personalizations — that was
+      // the bug where drafts saved personalizations but could never restore them.
+      const pers = action.payload.personalizations ?? [];
+      return {
+        ...state,
+        selectedProduct: action.payload.product,
+        quantity: action.payload.quantity,
+        personalizations: pers.map((p, idx) => ({ ...p, index: idx + 1 })),
+        currentPersonalizationIndex: pers.length > 0 ? pers.length - 1 : 0,
+        isEditingPersonalization: false,
+        selectedLocation: null,
+        availableLocations: [],
+        comparisonResults: [],
+        selectedComparison: null,
+        currentStep: pers.length > 0 ? 'comparison' : 'location',
+      };
+    }
+
     case 'SET_QUANTITY':
       return {
         ...state,
@@ -82,11 +102,19 @@ export function wizardReducer(
     case 'SELECT_COMPARISON':
       return { ...state, selectedComparison: action.payload };
 
-    case 'ADD_PERSONALIZATION':
+    case 'ADD_PERSONALIZATION': {
+      // Re-index from the reducer's own array (not the caller's payload.index): when
+      // several techniques are confirmed in one synchronous loop (Selecionar Todas →
+      // Confirmar), every confirmTechnique reads the same stale closure and would
+      // otherwise emit identical indices. Re-mapping here keeps them 1..N.
+      const personalizations = [...state.personalizations, action.payload].map((p, idx) => ({
+        ...p,
+        index: idx + 1,
+      }));
       return {
         ...state,
-        personalizations: [...state.personalizations, action.payload],
-        currentPersonalizationIndex: state.personalizations.length,
+        personalizations,
+        currentPersonalizationIndex: personalizations.length - 1,
         isEditingPersonalization: false,
         selectedLocation: null,
         selectedComparison: null,
@@ -94,6 +122,7 @@ export function wizardReducer(
         engravingSpecs: { colors: 1, width: 5, height: 5 },
         currentStep: 'comparison',
       };
+    }
 
     case 'REMOVE_PERSONALIZATION': {
       const newPersonalizations = state.personalizations
@@ -179,7 +208,7 @@ export function wizardReducer(
       if (!source) return state;
       const newPers = {
         ...source,
-        id: `pers-${Date.now()}`,
+        id: `pers-${Date.now()}-dup-${targetLocation.id}`,
         index: state.personalizations.length + 1,
         location: targetLocation,
         pricing: { ...source.pricing, _needsRecalc: true },

@@ -123,7 +123,11 @@ export function useExternalProductSearch(searchQuery: string) {
       const normalizedSearch = searchQuery.trim();
       if (!normalizedSearch || normalizedSearch.length < 2) return [];
 
-      const [prefixResult, broadResult] = await Promise.all([
+      // Two-layer search: prefix (fast "starts-with" on name/sku/supplier_reference)
+      // + broad (FTS on search_vector). allSettled — NOT all — so one layer failing
+      // degrades gracefully instead of nuking every result (the prefix 400 that
+      // produced "0 produtos encontrados"). Mirrors the quote builder's resilience.
+      const [prefixSettled, broadSettled] = await Promise.allSettled([
         dbInvokeLocal<ExternalProduct>('products', 'select', {
           filters: {
             _name_prefix: normalizedSearch,
@@ -144,7 +148,17 @@ export function useExternalProductSearch(searchQuery: string) {
         }),
       ]);
 
-      const mergedProducts = dedupeById([...prefixResult.records, ...broadResult.records]);
+      if (prefixSettled.status === 'rejected') {
+        logger.warn('[simulator-search] prefix layer failed:', prefixSettled.reason);
+      }
+      if (broadSettled.status === 'rejected') {
+        logger.warn('[simulator-search] broad layer failed:', broadSettled.reason);
+      }
+
+      const prefixRecords = prefixSettled.status === 'fulfilled' ? prefixSettled.value.records : [];
+      const broadRecords = broadSettled.status === 'fulfilled' ? broadSettled.value.records : [];
+
+      const mergedProducts = dedupeById([...prefixRecords, ...broadRecords]);
       const fuse = new Fuse(mergedProducts, createProductFuseOptions<ExternalProduct>());
       const products = rankProductSearchResults(mergedProducts, normalizedSearch, fuse);
 
