@@ -364,6 +364,9 @@ function SellerCartsContent() {
     return { sorted, totalPages, safePage, start, pageItems };
   }, [s.activeCart?.items, sortKey, sortDir, page, pageSize]);
 
+  // Padding de célula da tabela conforme densidade (compacto vs confortável).
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2';
+
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
       {/* Header compactado */}
@@ -407,7 +410,11 @@ function SellerCartsContent() {
             disabled={!s.canCreateCart}
             size="sm"
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
-            title={!s.canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+            title={
+              !s.canCreateCart
+                ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+                : undefined
+            }
           >
             <Plus className="h-3.5 w-3.5" /> Novo Carrinho
           </Button>
@@ -670,12 +677,18 @@ function SellerCartsContent() {
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
                               {visibleColumns.color && (
-                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
+                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
+                                  Cor
+                                </th>
                               )}
-                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
+                                Qtd
+                              </th>
                               {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
                               {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
-                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
+                                Ações
+                              </th>
                             </tr>
                           </thead>
                           <tbody>

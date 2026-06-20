@@ -75,16 +75,46 @@ const COMPLEMENTARY_PAIRS: [string[], string[]][] = [
 
 /** Stopwords PT-BR para tokenização de nomes (evita falsos positivos de similaridade). */
 const STOPWORDS_PT = new Set([
-  'a', 'o', 'as', 'os', 'um', 'uma', 'uns', 'umas', 'de', 'da', 'do', 'das', 'dos',
-  'em', 'no', 'na', 'nos', 'nas', 'para', 'por', 'pra', 'com', 'sem', 'sob', 'sobre',
-  'e', 'ou', 'que', 'se', 'ml', 'cm', 'mm', 'kg', 'g', 'pcs', 'kit',
+  'a',
+  'o',
+  'as',
+  'os',
+  'um',
+  'uma',
+  'uns',
+  'umas',
+  'de',
+  'da',
+  'do',
+  'das',
+  'dos',
+  'em',
+  'no',
+  'na',
+  'nos',
+  'nas',
+  'para',
+  'por',
+  'pra',
+  'com',
+  'sem',
+  'sob',
+  'sobre',
+  'e',
+  'ou',
+  'que',
+  'se',
+  'ml',
+  'cm',
+  'mm',
+  'kg',
+  'g',
+  'pcs',
+  'kit',
 ]);
 
 export function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
+  return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
 /** Tokeniza um nome de produto em termos significativos (sem acento, sem stopword). */
@@ -166,7 +196,8 @@ const MATERIAL_MAX = 12;
  * nunca casam.
  */
 export function eqId(a: unknown, b: unknown): boolean {
-  if (a == null || b == null || a === '' || b === '') return false;
+  const blank = (v: unknown) => v === null || v === undefined || v === '';
+  if (blank(a) || blank(b)) return false;
   return String(a) === String(b);
 }
 
@@ -251,7 +282,9 @@ export function calculateMatchScore(
     const matchedKeywords = complements.filter((kw) => {
       const kwNorm = normalizeText(kw);
       // Only count if keyword matches candidate but NOT source (avoid self-match)
-      return kwNorm.length > 0 && candNormalized.includes(kwNorm) && !sourceNormalized.includes(kwNorm);
+      return (
+        kwNorm.length > 0 && candNormalized.includes(kwNorm) && !sourceNormalized.includes(kwNorm)
+      );
     });
     if (matchedKeywords.length > 0) {
       // dedup
@@ -326,7 +359,8 @@ export function useProductMatch(
 
       // Pre-filters
       if (mergedFilters.onlyInStock && candidate.stockStatus === 'out-of-stock') continue;
-      if (mergedFilters.categoryId && !eqId(candidate.category_id, mergedFilters.categoryId)) continue;
+      if (mergedFilters.categoryId && !eqId(candidate.category_id, mergedFilters.categoryId))
+        continue;
       if (mergedFilters.categoryFilter && candidate.category?.name !== mergedFilters.categoryFilter)
         continue;
       if (mergedFilters.supplierFilter && candidate.supplier?.name !== mergedFilters.supplierFilter)

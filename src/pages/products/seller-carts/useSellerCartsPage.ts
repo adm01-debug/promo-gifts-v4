@@ -85,14 +85,20 @@ export function useSellerCartsPage() {
     if (!activeCart) return null;
     // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
     const dimMap = new Map(
-      allProducts.map((p: { id: string; dimensions?: { weight_g?: number }; boxVolumeCm3?: number }) => [p.id, p]),
+      allProducts.map(
+        (p: {
+          id: string;
+          dimensions?: { weight_g?: number | null };
+          boxVolumeCm3?: number | null;
+        }) => [p.id, p],
+      ),
     );
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
       const product = dimMap.get(item.product_id) as
-        | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
+        | { dimensions?: { weight_g?: number | null }; boxVolumeCm3?: number | null }
         | undefined;
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
@@ -396,7 +402,7 @@ export function useSellerCartsPage() {
     const uuidIds = allIds.filter((id) => uuidRe.test(id));
     // Non-UUID IDs (legacy) bypass server validation — fail-open.
     const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
-    let validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
+    const validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
     if (uuidIds.length > 0) {
       try {
         const { data, error } = await supabase.from('products').select('id').in('id', uuidIds);
