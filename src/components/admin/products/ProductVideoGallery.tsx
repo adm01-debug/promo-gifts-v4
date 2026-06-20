@@ -215,6 +215,7 @@ export function ProductVideoGallery({ productId }: ProductVideoGalleryProps) {
                   return embedUrl ? (
                     <iframe
                       src={embedUrl}
+                      title="Video player"
                       className="h-full w-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen

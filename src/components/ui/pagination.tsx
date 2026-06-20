@@ -32,6 +32,7 @@ type PaginationLinkProps = {
   React.ComponentProps<'a'>;
 
 const PaginationLink = ({ className, isActive, size = 'icon', ...props }: PaginationLinkProps) => (
+  // eslint-disable-next-line jsx-a11y/anchor-has-content -- children are forwarded via {...props} at call sites
   <a
     aria-current={isActive ? 'page' : undefined}
     className={cn(

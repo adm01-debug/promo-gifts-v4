@@ -13,7 +13,6 @@ class MockIntersectionObserver {
   unobserve = vi.fn();
   disconnect = vi.fn();
   takeRecords = vi.fn(() => []);
-  constructor(_cb?: unknown) {}
 }
 window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 

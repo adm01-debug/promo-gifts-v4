@@ -18,7 +18,15 @@ function daysSinceNoon(dateStr: string): number {
   const [y, m, d] = parts;
   const restockNoon = new Date(y, m - 1, d, 12, 0, 0, 0).getTime();
   const now = new Date();
-  const todayNoon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0).getTime();
+  const todayNoon = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    12,
+    0,
+    0,
+    0,
+  ).getTime();
   return Math.max(0, Math.round((todayNoon - restockNoon) / 86_400_000));
 }
 
@@ -123,7 +131,7 @@ export function RecentReplenishmentsWidget() {
           ) : recentItems.length > 0 ? (
             <ScrollArea className="h-auto max-h-[280px]">
               <nav aria-label="Lista de produtos repostos recentemente">
-                <ul className="space-y-1" role="list">
+                <ul className="space-y-1">
                   {recentItems.map((item, idx) => {
                     const isVeryNew = idx < 3;
                     const variant = getRecencyVariant(item.replenished_at);
