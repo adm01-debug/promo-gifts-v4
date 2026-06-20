@@ -12,7 +12,7 @@ describe('structuredLogger (client)', () => {
   });
 
   it('emite payload JSON com campos canônicos', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
     const log = createClientLogger('test.scope', { requestId: 'rid-123' });
     log.info('hello', { foo: 'bar' });
 

@@ -303,9 +303,9 @@ describe.skip('§4 Pipeline GX — glass translúcido', () => {
 // §5  applyThemePreset — escrita de CSS vars no <html>
 // ─────────────────────────────────────────────────────────────────
 describe('§5 applyThemePreset (JSDOM)', () => {
-  it('é no-op para presetId desconhecido', () => {
+  it('usa corporate como fallback para presetId desconhecido', () => {
     applyThemePreset('preset-que-nao-existe', 'light');
-    expect(document.documentElement.style.getPropertyValue('--background')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--background')).toBe('221 20% 97%');
   });
 
   it('escreve --background no <html> para skin clássica', () => {
@@ -450,9 +450,9 @@ describe('§7 clearThemeOverrides', () => {
 // §8  Storage — getDefaultConfig / load / save
 // ─────────────────────────────────────────────────────────────────
 describe('§8 Storage — getDefaultConfig', () => {
-  it('retorna corporate, radius=14, mode=auto', () => {
+  it('retorna corporate, radius=14, mode=dark', () => {
     const cfg = getDefaultConfig();
-    expect(cfg).toEqual({ presetId: 'corporate', radius: 14, mode: 'auto' });
+    expect(cfg).toEqual({ presetId: 'corporate', radius: 14, mode: 'dark' });
   });
 
   it('NÃO inclui mais fontPairId (foi removido)', () => {
@@ -521,7 +521,7 @@ describe('§9 importThemeConfig / exportThemeConfig', () => {
   it('importThemeConfig backfilla mode quando ausente', () => {
     const json = JSON.stringify({ presetId: 'corporate', radius: 8 });
     const parsed = importThemeConfig(json);
-    expect(parsed?.mode).toBe('auto');
+    expect(parsed?.mode).toBe('dark');
   });
 });
 

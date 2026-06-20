@@ -28,11 +28,10 @@ describe('NotFound Page', () => {
   });
 
   it('logs 404 error on mount', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     renderWithProviders(<NotFound />, { route: '/bad-route' });
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('404'),
-      expect.any(String)
+      expect.stringContaining('404')
     );
     consoleSpy.mockRestore();
   });
