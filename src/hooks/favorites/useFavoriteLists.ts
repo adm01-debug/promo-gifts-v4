@@ -394,6 +394,7 @@ export function useFavoriteListItems(listId: string | null) {
 
   const moveItem = useMutation({
     mutationFn: async ({ id, toListId }: { id: string; toListId: string }) => {
+      if (toListId === listId) throw new Error('O item já está nesta lista.');
       const { error } = await supabase
         .from('favorite_items')
         .update({ list_id: toListId })
@@ -407,6 +408,7 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: ITEMS_KEY(vars.toListId) });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
+      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       toast.success('Item movido');
     },
     onError: (e: Error) => toast.error('Erro ao mover', { description: sanitizeError(e) }),
