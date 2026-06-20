@@ -883,7 +883,11 @@ export const ProductCard = memo(
                       </span>
                     </span>
 
-                    <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">
+                    <span
+                      className="text-[10px] font-medium text-muted-foreground sm:text-xs"
+                      data-testid="product-stock-value"
+                      data-stock-qty={displayStock ?? 0}
+                    >
                       {(displayStock ?? 0).toLocaleString('pt-BR')} un.
                     </span>
                   </div>
