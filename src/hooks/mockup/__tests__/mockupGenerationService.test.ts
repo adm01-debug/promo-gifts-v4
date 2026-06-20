@@ -61,6 +61,9 @@ import {
   fetchMockupHistory,
   deleteMockupFromDb,
   generateMockupApi,
+  validateSvgLogo,
+  buildTechniqueList,
+  buildMockupToastMessage,
   type Technique,
 } from '@/hooks/mockup/mockupGenerationService';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
@@ -411,6 +414,120 @@ describe('generateMockupApi', () => {
         areas: [area({ name: 'Frente' }), area({ name: 'Costas' })],
       }),
     ).rejects.toThrow(/Nenhum mockup gerado/);
+  });
+});
+
+// ─── validateSvgLogo (pure) ───────────────────────────────────────
+describe('validateSvgLogo', () => {
+  it('accepts a non-SVG data URL', () => {
+    expect(validateSvgLogo('data:image/png;base64,AAAA').valid).toBe(true);
+  });
+
+  it('accepts a plain SVG with no scripts', () => {
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>';
+    const b64 = btoa(svgText);
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects an SVG that contains <script>', () => {
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+    const b64 = btoa(svgText);
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/script/i);
+  });
+
+  it('rejects an SVG that contains javascript: URLs', () => {
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"/></svg>';
+    const b64 = btoa(svgText);
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/script/i);
+  });
+
+  it('rejects a data URL that claims to be SVG but has no <svg> element', () => {
+    const b64 = btoa('not an svg at all');
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/<svg>/i);
+  });
+
+  it('returns invalid (not throw) when the base64 is undecodeable', () => {
+    const result = validateSvgLogo('data:image/svg+xml;base64,!!!not-valid-base64!!!');
+    expect(result.valid).toBe(false);
+  });
+});
+
+// ─── buildTechniqueList (pure) ────────────────────────────────────
+describe('buildTechniqueList', () => {
+  it('filters out items without id or name', () => {
+    const raw = [
+      { id: '1', name: 'Silk', code: 'silk' },
+      { id: '2' },           // no name
+      { name: 'Laser' },     // no id
+      null,
+      undefined,
+      42,
+    ];
+    const list = buildTechniqueList(raw as unknown[]);
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe('1');
+    expect(list[0].name).toBe('Silk');
+  });
+
+  it('coerces id/name to strings', () => {
+    const list = buildTechniqueList([{ id: 99, name: 'Bordado', code: null }]);
+    expect(typeof list[0].id).toBe('string');
+    expect(list[0].id).toBe('99');
+  });
+
+  it('sets code to null when absent', () => {
+    const list = buildTechniqueList([{ id: '1', name: 'X' }]);
+    expect(list[0].code).toBeNull();
+  });
+
+  it('preserves extra properties via spread', () => {
+    const list = buildTechniqueList([{ id: '1', name: 'X', price: 9.99 }]);
+    expect((list[0] as Record<string, unknown>).price).toBe(9.99);
+  });
+});
+
+// ─── buildMockupToastMessage (pure) ──────────────────────────────
+describe('buildMockupToastMessage', () => {
+  it('returns the technique name in the title', () => {
+    const { title } = buildMockupToastMessage('Bordado');
+    expect(title).toContain('Bordado');
+  });
+
+  it('reports revisions remaining when revisionsLeft > 0', () => {
+    const { description } = buildMockupToastMessage('Silk', 3);
+    expect(description).toMatch(/3 revisões/);
+  });
+
+  it('reports "Resultado final" when revisionsLeft is 0', () => {
+    const { description } = buildMockupToastMessage('Silk', 0);
+    expect(description).toMatch(/final/i);
+  });
+
+  it('reports "Resultado final" when revisionsLeft is absent', () => {
+    const { description } = buildMockupToastMessage('Silk');
+    expect(description).toMatch(/final/i);
+  });
+});
+
+// ─── generateMockupApi SVG pre-validation (BUG-E) ────────────────
+describe('generateMockupApi SVG pre-validation', () => {
+  it('throws before calling the edge function when a logo is a data:image/svg URL', async () => {
+    await expect(
+      generateMockupApi({
+        productImage: 'https://cdn.example.com/product.png',
+        productName: 'Caneca',
+        technique: silk,
+        areas: [area({ logoPreview: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz...' })],
+      }),
+    ).rejects.toThrow(/SVG não são suportados/i);
+    expect(invoke).not.toHaveBeenCalled();
   });
 });
 

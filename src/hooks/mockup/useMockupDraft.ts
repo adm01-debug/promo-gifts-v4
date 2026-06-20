@@ -291,11 +291,12 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
     if (user) {
       try {
-        await supabase
+        const { error: deleteError } = await supabase
           .from('mockup_drafts')
           .delete()
           .eq('user_id', user.id)
           .eq('draft_key', draftKey);
+        if (deleteError) throw deleteError;
       } catch (err) {
         logger.error('Erro ao limpar rascunho do backend:', err);
       }
