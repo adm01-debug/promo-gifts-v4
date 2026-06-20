@@ -80,7 +80,10 @@ export function useQuotes() {
     refetch: fetchQuotes,
   } = useQuery({
     queryKey: ['quotes', userId, scope],
-    queryFn: () => quoteService.fetchQuotes(userId ?? '', scope),
+    queryFn: () => {
+      if (!userId) return Promise.resolve([]);
+      return quoteService.fetchQuotes(userId, scope);
+    },
     enabled: !!userId,
   });
 
