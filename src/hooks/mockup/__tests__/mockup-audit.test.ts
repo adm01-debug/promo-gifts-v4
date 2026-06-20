@@ -618,3 +618,44 @@ describe('Analise estatica — MockupResultCard.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — SaveTemplateDialog.tsx
+// =====================================================================
+
+describe('Analise estatica — SaveTemplateDialog.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/SaveTemplateDialog.tsx');
+  });
+
+  describe('a11y — label associado ao input via htmlFor/id', () => {
+    it('Input tem id="template-name-input"', () => {
+      expect(src).toContain('id="template-name-input"');
+    });
+    it('label tem htmlFor="template-name-input"', () => {
+      expect(src).toContain('htmlFor="template-name-input"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupAnnotations.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupAnnotations.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupAnnotations.tsx');
+  });
+
+  describe('a11y — aria-label semantico no botao de remover anotacao', () => {
+    it('botao de remover tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Remover anotação"');
+    });
+    it('aria-label "Fechar" nao e usado no botao de remover anotacao', () => {
+      const beforeRemove = src.split('removeAnnotation(ann.id)')[0] ?? '';
+      expect(beforeRemove).not.toContain('aria-label="Fechar"');
+    });
+  });
+});

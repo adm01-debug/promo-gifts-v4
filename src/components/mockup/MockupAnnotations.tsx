@@ -185,7 +185,7 @@ export function MockupAnnotations({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Fechar"
+                aria-label="Remover anotação"
                 className="h-5 w-5"
                 onClick={() => removeAnnotation(ann.id)}
               >
