@@ -122,7 +122,9 @@ describe('user=null — queries desabilitadas', () => {
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
 
     expect(supabase.channel).not.toHaveBeenCalled();
   });
@@ -141,14 +143,18 @@ describe('BUG-NEW-02 — Realtime subscription', () => {
   it('cria channel supabase quando user autenticado', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
     expect(supabase.channel).toHaveBeenCalledWith('quotes-realtime');
   });
 
   it('cancela channel ao desmontar (cleanup BUG-NEW-02)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
     const { unmount } = renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
     unmount();
     expect(supabase.removeChannel).toHaveBeenCalled();
   });

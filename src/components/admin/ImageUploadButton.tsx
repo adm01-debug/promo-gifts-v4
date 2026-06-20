@@ -91,7 +91,9 @@ export function ImageUploadButton({
               `Tentativa ${retryCount} falhou. Tentando novamente em ${delay}ms...`,
               error,
             );
-            await new Promise((resolve) => setTimeout(resolve, delay));
+            await new Promise((resolve) => {
+              setTimeout(resolve, delay);
+            });
           }
         }
       }
