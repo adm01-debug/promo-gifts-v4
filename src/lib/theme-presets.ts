@@ -34,6 +34,7 @@ export interface ThemeModeColors {
 
   // === BORDAS & INPUTS ===
   border: string;
+  'border-strong': string;
   input: string;
   ring: string;
 
@@ -118,6 +119,7 @@ export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
   'accent',
   'accent-foreground',
   'border',
+  'border-strong',
   'input',
   'ring',
   'surface',
@@ -255,6 +257,7 @@ function buildPreset(p: PresetParams): ThemePreset {
     accent: `${h} 14% 92%`,
     'accent-foreground': '222 25% 13%',
     border: `${h} 14% 86%`,
+    'border-strong': `${h} ${s}% ${l}% / 0.45`,
     input: `${h} 14% 90%`,
     ring: primary,
     surface: `${h} 14% 98%`,
@@ -325,6 +328,7 @@ function buildPreset(p: PresetParams): ThemePreset {
     accent: '240 5% 16%',
     'accent-foreground': '210 40% 98%',
     border: '240 4% 18%',
+    'border-strong': `${h} ${s}% ${l}% / 0.55`,
     input: '240 5% 14%',
     ring: primary,
     surface: '240 5% 9%',
