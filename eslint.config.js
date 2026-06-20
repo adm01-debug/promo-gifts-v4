@@ -414,6 +414,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 111: 6 zero-violation rules (removed: no-void 9v+, no-unnecessary-type-arguments many, no-unnecessary-template-expression 3v)
+      'react/no-adjacent-inline-elements': 'error',
+      'react/no-arrow-function-lifecycle': 'error',
+      'react/no-typos': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      'no-nonoctal-decimal-escape': 'error',
+      'jsx-a11y/html-has-lang': 'error',
       // Batch 110: 7 zero-violation rules (removed: no-set-state 11v, no-noninteractive-tabindex 9v, alt-text 1v)
       'react/no-did-mount-set-state': 'error',
       'react/no-did-update-set-state': 'error',
