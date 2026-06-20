@@ -1,10 +1,6 @@
 import { logger } from '@/lib/logger';
-import { type createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-
-// 'audit_log' table not yet in generated schema — bypass type checking via raw client cast
-const db = supabase as unknown as ReturnType<typeof createClient>;
+import { untypedFrom } from '@/lib/supabase-untyped';
 
 export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';
 
@@ -67,16 +63,16 @@ export function useAuditLog() {
     newValues = null,
   }: AuditLogParams): Promise<{ success: boolean; error?: Error }> => {
     try {
-      const { error } = await db.from('audit_log').insert({
+      const { error } = await untypedFrom<AuditLogEntry>('audit_log').insert({
         user_id: user?.id || null,
         action,
         entity_type: entityType,
         entity_id: entityId,
         old_values: oldValues,
         new_values: newValues,
-        ip_address: null, // Pode ser capturado via API externa se necessário
+        ip_address: null,
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-      } as never);
+      });
 
       if (error) {
         logger.error('Erro ao registrar audit log:', error);
