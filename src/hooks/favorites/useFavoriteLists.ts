@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedRpc } from '@/lib/supabase-untyped';
-import type { TablesUpdate } from '@/integrations/supabase/types';
+import type { Json, TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -291,7 +291,7 @@ export function useFavoriteListItems(listId: string | null) {
             user_id: user.id,
             product_id: input.productId,
             variant_id: input.variantId ?? null,
-            variant_info: (input.variantInfo ?? null) as never,
+            variant_info: (input.variantInfo ?? null) as unknown as Json,
             note: input.note ?? null,
             price_at_save: input.priceAtSave ?? null,
           },
@@ -313,7 +313,7 @@ export function useFavoriteListItems(listId: string | null) {
     mutationFn: async ({ id, ...patch }: Partial<FavoriteListItem> & { id: string }) => {
       const { data, error } = await supabase
         .from('favorite_items')
-        .update(patch as never)
+        .update(patch as unknown as TablesUpdate<'favorite_items'>)
         .eq('id', id)
         .select()
         .single();
@@ -581,10 +581,10 @@ export function useLegacyFavoritesMigration() {
         user_id: user.id,
         product_id: f.productId,
         variant_id: (f.variant?.variant_id as string | undefined) ?? null,
-        variant_info: f.variant ?? null,
+        variant_info: (f.variant ?? null) as unknown as Json,
         position: idx,
       }));
-      const { error } = await supabase.from('favorite_items').upsert(rows as never, {
+      const { error } = await supabase.from('favorite_items').upsert(rows, {
         onConflict: 'list_id,product_id,variant_id',
         ignoreDuplicates: true,
       });
