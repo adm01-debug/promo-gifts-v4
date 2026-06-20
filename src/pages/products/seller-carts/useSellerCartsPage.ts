@@ -97,12 +97,13 @@ export function useSellerCartsPage() {
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
+      const qty = Number(item.quantity) || 0;
       if (weight > 0) {
-        totalWeightG += weight * item.quantity;
+        totalWeightG += weight * qty;
         hasData = true;
       }
       if (volume > 0) {
-        totalVolumeCm3 += volume * item.quantity;
+        totalVolumeCm3 += volume * qty;
         hasData = true;
       }
     });
@@ -467,9 +468,14 @@ export function useSellerCartsPage() {
   );
   const cartAge = activeCart ? differenceInDays(new Date(), new Date(activeCart.created_at)) : 0;
   const cartSubtotal = activeCart
-    ? activeCart.items.reduce((s, i) => s + i.product_price * i.quantity, 0)
+    ? activeCart.items.reduce(
+        (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+        0,
+      )
     : 0;
-  const cartTotalQty = activeCart ? activeCart.items.reduce((s, i) => s + i.quantity, 0) : 0;
+  const cartTotalQty = activeCart
+    ? activeCart.items.reduce((s, i) => s + (Number(i.quantity) || 0), 0)
+    : 0;
 
   return {
     navigate,

@@ -39,8 +39,11 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
         <ScrollArea className="max-h-[65vh]">
           <div className={cn('grid gap-4', carts.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
             {carts.map((cart) => {
-              const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
-              const totalQty = cart.items.reduce((s, i) => s + i.quantity, 0);
+              const subtotal = cart.items.reduce(
+                (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+                0,
+              );
+              const totalQty = cart.items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
               const statusCfg = getStatusCfg(cart.status);
               return (
                 <Card key={cart.id} className="space-y-3 p-4">
