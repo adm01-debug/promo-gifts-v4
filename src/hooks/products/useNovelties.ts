@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
+import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
 const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
@@ -33,10 +34,18 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-type NoveltyQuery = ReturnType<typeof fromTable>;
+// PostgrestFilterBuilder (post-select) exposes eq/not/gt/gte/lte/order/range.
+// Using direct import avoids TS2589 (excessive type instantiation depth) from
+// ReturnType<ReturnType<typeof fromTable>['select']> nesting.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NoveltyQuery = PostgrestFilterBuilder<any, any, any, any, any, unknown, 'GET'>;
 
 const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
-  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0) as NoveltyQuery;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (query as any)
+    .eq('is_stockout', false)
+    .not('primary_image_url', 'is', null)
+    .gt('sale_price', 0) as NoveltyQuery;
 
 /**
  * Predicado de PERTINÊNCIA de novidade (fonte da verdade = pipeline DB).

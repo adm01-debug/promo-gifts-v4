@@ -1,7 +1,7 @@
 /**
  * useQuotes — Hook de orçamentos (Refatorado para usar React Query e quoteService)
  */
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
@@ -147,14 +147,14 @@ export function useQuotes() {
     },
   });
 
-  const fetchQuote = async (quoteId: string) => {
+  const fetchQuote = useCallback(async (quoteId: string) => {
     try {
       return await quoteService.fetchQuote(quoteId);
     } catch (err: unknown) {
       toast.error('Erro ao carregar orçamento', { description: getErrorMessage(err) });
       return null;
     }
-  };
+  }, []);
 
   const createQuote = async (quote: Partial<Quote>, items: QuoteItem[]) => {
     if (!user) return null;
