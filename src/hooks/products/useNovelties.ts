@@ -244,15 +244,16 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
   const daysRemaining = calcDaysRemaining(expiresAt);
   const daysAsNovelty = calcDaysAsNovelty(detectedAt);
   const stock = p.stock_quantity ?? 0;
+  const minQty = p.min_quantity ?? 10;
   // FIX (2026-06-20): min_quantity é o mínimo PEDÍVEL, não o limiar de low-stock.
   // Antes passado como 2º arg (lowStockThreshold) → estoque positivo abaixo do
   // mínimo aparecia como "low-stock" (pedível) em vez de "out-of-stock". Agora vai
   // ao 3º arg da SSOT (order-gate), alinhando Novidades ao catálogo principal.
-  const minQty = p.min_quantity ?? undefined;
+  // Passamos o valor BRUTO (não o default 10): ausência de min = sem gate.
   const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(
     stock,
     undefined,
-    minQty,
+    p.min_quantity,
   );
 
   return {
@@ -518,7 +519,9 @@ export function useNoveltyStats() {
       }));
   }, [allNovelties]);
 
-  const query = useQuery<Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierName' | 'topSupplierCount'>>({
+  const query = useQuery<
+    Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierName' | 'topSupplierCount'>
+  >({
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
@@ -566,11 +569,26 @@ export function useNoveltyStats() {
           fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
         ]);
 
-      if (todayRes.error) { handleQueryError('useNovelties', 'products', todayRes.error); return emptyBase; }
-      if (weekRes.error) { handleQueryError('useNovelties', 'products', weekRes.error); return emptyBase; }
-      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyBase; }
-      if (activeRes.error) { handleQueryError('useNovelties', 'products', activeRes.error); return emptyBase; }
-      if (totalRes.error) { handleQueryError('useNovelties', 'products', totalRes.error); return emptyBase; }
+      if (todayRes.error) {
+        handleQueryError('useNovelties', 'products', todayRes.error);
+        return emptyBase;
+      }
+      if (weekRes.error) {
+        handleQueryError('useNovelties', 'products', weekRes.error);
+        return emptyBase;
+      }
+      if (fifteenRes.error) {
+        handleQueryError('useNovelties', 'products', fifteenRes.error);
+        return emptyBase;
+      }
+      if (activeRes.error) {
+        handleQueryError('useNovelties', 'products', activeRes.error);
+        return emptyBase;
+      }
+      if (totalRes.error) {
+        handleQueryError('useNovelties', 'products', totalRes.error);
+        return emptyBase;
+      }
 
       const activeCount = activeRes.count ?? 0;
       const totalProducts = totalRes.count ?? 0;
