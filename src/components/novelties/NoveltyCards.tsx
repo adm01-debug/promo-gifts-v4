@@ -85,7 +85,9 @@ export const NoveltyGridCard = memo(
     const [activeColorName, setActiveColorName] = useState<string | null>(null);
     // Reset swatch selection when a different product is rendered into the same
     // component slot (can happen in non-virtualised list views after filter change).
-    useEffect(() => { setActiveColorName(null); }, [product.product_id]);
+    useEffect(() => {
+      setActiveColorName(null);
+    }, [product.product_id]);
     const activeImage = useMemo(() => {
       if (!activeColorName || !colors?.length) return product.product_image;
       const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
@@ -102,10 +104,9 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
-          // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
-          // Reposição em todos os viewports.
-          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
+          // min-h apenas: o virtualizer precisa medir a altura real do card.
+          // Nunca usar h-fixo, max-h nem overflow-hidden aqui.
+          'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
@@ -262,7 +263,6 @@ export const NoveltyGridCard = memo(
             {product.product_name ?? '—'}
           </p>
 
-
           <div className="mt-0.5">
             <ProductColorSwatches
               colors={colors}
@@ -357,8 +357,7 @@ export function NoveltyTableView({
   // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()
   // quando há muitos produtos selecionados. NoveltyProductGrid.tsx já tem sel.selectedIds
   // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
-  const selectedSet: Set<string> =
-    selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+  const selectedSet: Set<string> = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
 
   return (
     <div className="overflow-x-auto rounded-lg border">
