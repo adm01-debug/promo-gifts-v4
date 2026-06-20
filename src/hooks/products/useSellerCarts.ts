@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -13,6 +14,11 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 // ============================================
 // TYPES
 // ============================================
+
+// Row type for the nested PostgREST query `seller_carts.select('*, seller_cart_items(*)')`.
+type SellerCartRowWithItems = Database['public']['Tables']['seller_carts']['Row'] & {
+  seller_cart_items: Database['public']['Tables']['seller_cart_items']['Row'][];
+};
 
 export interface SellerCart {
   id: string;
@@ -127,9 +133,8 @@ export function useSellerCarts() {
       if (error) throw error;
       if (!data?.length) return [];
 
-      return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+      return (data as unknown as SellerCartRowWithItems[]).map((row) => {
+        const { seller_cart_items: rowItems, ...cart } = row;
         return {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
