@@ -411,4 +411,27 @@ describe('clearDraft', () => {
     expect(eqMock).toHaveBeenCalledWith('user_id', 'user-test-001');
     expect(eqMock).toHaveBeenCalledWith('draft_key', 'default');
   });
+
+  it('quando Supabase delete retorna erro, loga o erro mas clearDraft não lança exceção', async () => {
+    const { useMockupDraft } = await import('../useMockupDraft');
+    const { logger } = await import('@/lib/logger');
+
+    const deleteErr = { code: 'PGRST301', message: 'JWT expired' };
+    // Two .eq() calls in the chain: first is chainable, second resolves to { error }
+    const secondEq = vi.fn().mockResolvedValue({ error: deleteErr });
+    const firstEq = vi.fn().mockReturnValue({ eq: secondEq });
+    mockDelete.mockReturnValue({ eq: firstEq });
+
+    const { result } = renderHook(() => useMockupDraft());
+
+    // clearDraft must NOT throw even when Supabase returns an API error
+    await act(async () => {
+      await result.current.clearDraft();
+    });
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('limpar rascunho'),
+      expect.objectContaining({ code: 'PGRST301' }),
+    );
+  });
 });
