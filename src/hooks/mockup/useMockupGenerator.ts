@@ -459,6 +459,9 @@ export function useMockupGenerator() {
         );
         logoColorAnalysis.analyzeImage(logoData);
       };
+      reader.onerror = () => {
+        toast.error('Erro ao ler o arquivo de imagem. Tente novamente.');
+      };
       reader.readAsDataURL(processedFile);
     },
     [logoColorAnalysis],
@@ -677,7 +680,7 @@ export function useMockupGenerator() {
   }, []);
 
   const loadFromHistory = useCallback(
-    (mockup: GeneratedMockup) => {
+    async (mockup: GeneratedMockup) => {
       const product = mockup.product_id ? getProductById(mockup.product_id) : null;
       // BUG-11 FIX: technique_id is now always null (BUG-10 fix) because the FK points to
       // personalization_techniques but the UI loads from tabela_preco_gravacao_oficial.
@@ -708,10 +711,7 @@ export function useMockupGenerator() {
       );
       const restoredArea: PersonalizationArea = {
         id: crypto.randomUUID(),
-        name:
-          ((mockup as unknown as Record<string, unknown>).location_name as string) ??
-          ((mockup as unknown as Record<string, unknown>).area_name as string) ??
-          'Frente',
+        name: mockup.location_name ?? 'Frente',
         positionX: mockup.position_x ?? 50,
         positionY: mockup.position_y ?? 50,
         logoWidth: mockup.logo_width_cm ?? 5,
@@ -728,7 +728,9 @@ export function useMockupGenerator() {
       setActiveTab('generator');
       if (mockup.logo_url) logoColorAnalysis.analyzeImage(mockup.logo_url);
       // BUG-04 FIX: clear stale draft.
-      clearDraft();
+      // BUG-F-LOADHISTORY FIX: await clearDraft() — same race as resetForm (BUG-F).
+      // Without await, the 1 s auto-save debounce can fire and re-persist the old draft.
+      await clearDraft();
       toast.success('Configurações carregadas!');
     },
     [techniques, getProductById, logoColorAnalysis, clearDraft, positionHistory],

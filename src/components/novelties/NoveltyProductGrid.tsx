@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import {
   useNoveltiesSelectionMode,
+  noveltyToProduct,
   useNoveltiesWithDetails,
   sortNovelties,
 } from '@/hooks/products';
@@ -86,6 +87,8 @@ export function NoveltyProductGrid() {
 
   const [loadingProgress, setLoadingProgress] = useState(0);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ISSUE-24 FIX: ref para focar o input de busca via atalho `/`
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isFetching) {
@@ -108,17 +111,52 @@ export function NoveltyProductGrid() {
     };
   }, [isFetching]);
 
+  // ISSUE-24 FIX: atalho `/` foca o input de busca (mesmo padrão do CatalogHeader).
+  // Só dispara se o foco não estiver em input/textarea/select/contenteditable.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = (e.target as HTMLElement)?.tagName?.toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // ISSUE-37 FIX: counts de fornecedor e categoria usam o conjunto filtrado pelo
+  // OUTRO filtro ativo — padrão de "faceted filtering". Antes os counts vinham de
+  // `products` (total geral), gerando counts inflados que não refletiam a seleção.
+  // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
+    const normSearch = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
+    const searchMatch = (p: (typeof products)[0]) =>
+      !q ||
+      normSearch(p.product_name).includes(q) ||
+      (p.product_sku && normSearch(p.product_sku).includes(q)) ||
+      (p.supplier_name && normSearch(p.supplier_name).includes(q));
+
     const supMap = new Map<string, { id: string; name: string; count: number }>();
     const catMap = new Map<string, { id: string; name: string; count: number }>();
     products.forEach((p) => {
-      if (p.supplier_id) {
+      if (!searchMatch(p)) return;
+      // supplier counts: filtered by category (not supplier)
+      if (p.supplier_id && (selectedCategory === 'all' || p.category_id === selectedCategory)) {
         const name = p.supplier_name || `Fornecedor ${p.supplier_id.slice(0, 6)}`;
         const e = supMap.get(p.supplier_id);
         if (e) e.count++;
         else supMap.set(p.supplier_id, { id: p.supplier_id, name, count: 1 });
       }
-      if (p.category_id && p.category_name) {
+      // category counts: filtered by supplier (not category)
+      if (
+        p.category_id &&
+        p.category_name &&
+        (selectedSupplier === 'all' || p.supplier_id === selectedSupplier)
+      ) {
         const e = catMap.get(p.category_id);
         if (e) e.count++;
         else catMap.set(p.category_id, { id: p.category_id, name: p.category_name, count: 1 });
@@ -128,7 +166,7 @@ export function NoveltyProductGrid() {
       suppliers: [...supMap.values()].sort((a, b) => b.count - a.count),
       categories: [...catMap.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
     };
-  }, [products]);
+  }, [products, searchQuery, selectedSupplier, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
@@ -158,13 +196,16 @@ export function NoveltyProductGrid() {
     // FIX (auditoria Novidades, P1): ordena pelos campos REAIS de
     // NoveltyWithDetails. Antes `sortProducts(... as Product[])` era no-op
     // silencioso (formas divergentes) e "Mais recentes" caía em A-Z.
-    sortNovelties(filtered, sortMode);
-    return filtered;
+    // ISSUE-4: sortNovelties agora é não-mutante — usar o valor retornado.
+    return sortNovelties(filtered, sortMode);
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
-  // Reset visible count when filters change
+  // ISSUE-39 FIX: split into two focused effects to avoid responsibility mix-up.
+  // Effect 1: Reset scroll/visibility/guard when filters change.
   useEffect(() => {
-    setVisibleCount(40);
+    // ISSUE-16 FIX: reset to actual set size (not hardcoded 40) to avoid
+    // showing a "load more" sentinel when the filtered set is smaller than 40.
+    setVisibleCount(Math.min(40, filteredProducts.length));
     setScrollToken((prev) => prev + 1);
     // GAP-11 FIX: libera o guard ao trocar de filtro para que o primeiro
     // load-more do novo conjunto não fique bloqueado pelos 150ms residuais.
@@ -173,14 +214,18 @@ export function NoveltyProductGrid() {
       guardTimerRef.current = null;
     }
     isLoadingMoreLocalRef.current = false;
-    // GAP-SEL FIX: descarta seleção stale ao mudar filtros em modo de seleção.
-    // Sem isso, produtos selecionados antes do filtro continuam marcados após
-    // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
-    if (selectionMode) sel.clearSelection();
-    // sel is derived from filteredProducts (already a dep); adding sel would
-    // create a circular update loop (sel → filteredProducts → sel → …).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
+
+  // Effect 2: Clear stale selection when the filtered set changes (ISSUE-7/ISSUE-39).
+  // Separated from Effect 1 to avoid stale `sel` closure — at this point
+  // filteredProducts has been recomputed and sel is current.
+  useEffect(() => {
+    if (selectionMode) sel.clearSelection();
+    // sel is derived from filteredProducts so we depend on filteredProducts.length
+    // (a stable scalar) rather than sel itself to avoid circular dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredProducts.length, selectionMode]);
 
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);
@@ -192,17 +237,21 @@ export function NoveltyProductGrid() {
     if (isLoadingMoreLocalRef.current) return; // Guard: evita cascata de increments
     isLoadingMoreLocalRef.current = true;
     setVisibleCount((prev) => prev + pageSize);
-    // Libera o guard após o próximo ciclo de render (suficiente para o
-    // IntersectionObserver recalcular com o DOM atualizado). GAP-8: o timer
-    // fica em ref para ser limpo no unmount.
-    if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
-    guardTimerRef.current = setTimeout(() => {
-      isLoadingMoreLocalRef.current = false;
-      guardTimerRef.current = null;
-    }, 150);
+    // ISSUE-21 FIX: o guard agora é liberado via useLayoutEffect (abaixo), que
+    // dispara sincronamente após a mutação do DOM do re-render. Antes o timer de
+    // 150ms podia liberar o guard enquanto o render ainda estava pendente em
+    // dispositivos lentos, causando incrementos cascata de visibleCount.
   }, [pageSize]);
 
-  // GAP-8 FIX: limpa o timer do guard ao desmontar para evitar callback órfão.
+  // ISSUE-21 FIX: libera o guard APÓS o re-render que aplicou o novo visibleCount.
+  // useLayoutEffect dispara sincronamente após todas as mutações do DOM, garantindo
+  // que o IntersectionObserver recalcule com o grid já atualizado antes de permitir
+  // o próximo load-more. O timer de 150ms era uma heurística frágil.
+  useLayoutEffect(() => {
+    isLoadingMoreLocalRef.current = false;
+  }, [visibleCount]);
+
+  // Limpa o timer do guard ao desmontar (GAP-8: previne set-state após unmount).
   useEffect(() => {
     return () => {
       if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
@@ -245,11 +294,14 @@ export function NoveltyProductGrid() {
   );
 
   // Convert novelties to Product for list view
+  // ISSUE-35 FIX: usa noveltyToProduct importado diretamente (função estável de módulo)
+  // em vez de sel.noveltyToProduct — sel é um objeto novo a cada render ({...spread})
+  // então a dependência em sel causava recomputação do Map em todo render, O(n) desnecessário.
   const productMap = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof sel.noveltyToProduct>>();
-    filteredProducts.forEach((n) => map.set(n.product_id, sel.noveltyToProduct(n)));
+    const map = new Map<string, ReturnType<typeof noveltyToProduct>>();
+    filteredProducts.forEach((n) => map.set(n.product_id, noveltyToProduct(n)));
     return map;
-  }, [filteredProducts, sel]);
+  }, [filteredProducts]);
 
   // Batch-load cores das variantes para os produtos visíveis (visualização atual).
   // Grid: apenas paginatedProducts (virtualizados). List/table: todos filtrados,
@@ -337,7 +389,7 @@ export function NoveltyProductGrid() {
         <NoveltyTableView
           products={filteredProducts}
           selectionMode={selectionMode}
-          selectedIds={[...sel.selectedIds]}
+          selectedIds={sel.selectedIds}
           onSelect={(id) => {
             if (selectionMode) {
               sel.toggleSelect(id);
@@ -411,6 +463,7 @@ export function NoveltyProductGrid() {
                       canAddToCompare={canAddToCompare}
                       isNovelty={novelty.is_active && novelty.days_remaining > 0}
                       noveltyDaysRemaining={novelty.days_remaining}
+                      noveltyDaysElapsed={novelty.days_as_novelty}
                       priority={index < 6}
                     />
                   </div>
@@ -432,7 +485,7 @@ export function NoveltyProductGrid() {
         onProductClick={handleProductClick}
         colorsByProduct={colorsByProduct}
         hasMore={hasMore}
-        isLoadingMore={isFetching}
+        isLoadingMore={false}
         onLoadMore={handleLoadMore}
         scrollToTopToken={scrollToken}
         onStatusClick={(type) => {
@@ -499,6 +552,7 @@ export function NoveltyProductGrid() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  ref={searchInputRef}
                   placeholder="Buscar novidades…  /"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -682,12 +736,22 @@ export function NoveltyProductGrid() {
         </AnimatePresence>
       </div>
 
-      {/* Sentinela do scroll infinito + indicador de carregamento */}
+      {/* ISSUE-30 FIX: sentinela de scroll infinito com estado correto.
+          hasMore=true indica produtos em memória ainda não renderizados (não
+          um fetch em andamento). O spinner aparece só quando isFetching=true
+          para não transmitir ao usuário que há I/O quando os dados já estão
+          no cache. O texto varia conforme a causa real do estado. */}
       {hasMore && (
         <div className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Carregando mais novidades...
+            {isFetching ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Atualizando novidades...
+              </>
+            ) : (
+              <span className="text-xs">Role para ver mais {filteredProducts.length - visibleCount} novidades</span>
+            )}
           </div>
         </div>
       )}

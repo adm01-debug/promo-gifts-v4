@@ -80,7 +80,10 @@ export function useQuotes() {
     refetch: fetchQuotes,
   } = useQuery({
     queryKey: ['quotes', userId, scope],
-    queryFn: () => quoteService.fetchQuotes(userId ?? '', scope),
+    queryFn: () => {
+      if (!userId) return Promise.resolve([]);
+      return quoteService.fetchQuotes(userId, scope);
+    },
     enabled: !!userId,
   });
 
@@ -200,10 +203,21 @@ export function useQuotes() {
           unit_price: item.unit_price,
           color_name: item.color_name,
           color_hex: item.color_hex,
+          size_code: item.size_code,
+          gender: item.gender,
           notes: item.notes,
+          kit_group_id: item.kit_group_id,
+          kit_name: item.kit_name,
+          bitrix_product_id: item.bitrix_product_id,
+          price_updated_at: item.price_updated_at,
+          price_freshness_threshold_days: item.price_freshness_threshold_days,
+          // price_confirmed_at omitted intentionally: seller must re-confirm for the new quote
           personalizations: item.personalizations?.map((p) => ({
             technique_id: p.technique_id,
             technique_name: p.technique_name,
+            location_code: p.location_code,
+            location_name: p.location_name,
+            personalized_quantity: p.personalized_quantity,
             colors_count: p.colors_count,
             positions_count: p.positions_count,
             area_cm2: p.area_cm2,

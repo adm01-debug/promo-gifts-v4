@@ -11,6 +11,12 @@ export function FavoritesTrashView() {
   const { items, isLoading, restoreItem, purgeItem, purgeAll } = useFavoriteTrash();
   const { getProductsByIds } = useProductsContext();
   const [confirmEmpty, setConfirmEmpty] = useState(false);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  const markPending = (id: string) =>
+    setPendingIds((prev) => new Set(prev).add(id));
+  const unmarkPending = (id: string) =>
+    setPendingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
 
   const productMap = useMemo(() => {
     const ids = items.map((i) => i.product_id);
@@ -90,8 +96,11 @@ export function FavoritesTrashView() {
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs"
-                    onClick={() => restoreItem.mutate(it.id)}
-                    disabled={restoreItem.isPending}
+                    onClick={() => {
+                      markPending(it.id);
+                      restoreItem.mutate(it.id, { onSettled: () => unmarkPending(it.id) });
+                    }}
+                    disabled={pendingIds.has(it.id)}
                   >
                     <RotateCcw className="mr-1 h-3 w-3" /> Restaurar
                   </Button>
@@ -99,8 +108,11 @@ export function FavoritesTrashView() {
                     size="sm"
                     variant="ghost"
                     className="h-7 text-xs text-destructive hover:text-destructive"
-                    onClick={() => purgeItem.mutate(it.id)}
-                    disabled={purgeItem.isPending}
+                    onClick={() => {
+                      markPending(it.id);
+                      purgeItem.mutate(it.id, { onSettled: () => unmarkPending(it.id) });
+                    }}
+                    disabled={pendingIds.has(it.id)}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

@@ -51,6 +51,7 @@ export async function fetchPromobrindProducts(options?: {
   offset?: number;
   orderBy?: { column: string; ascending?: boolean };
   filters?: Record<string, unknown>;
+  signal?: AbortSignal;
 }): Promise<PromobrindProduct[]>;
 export async function fetchPromobrindProducts(options?: {
   search?: string;
@@ -59,6 +60,7 @@ export async function fetchPromobrindProducts(options?: {
   orderBy?: { column: string; ascending?: boolean };
   filters?: Record<string, unknown>;
   returnCount?: true;
+  signal?: AbortSignal;
 }): Promise<{ products: PromobrindProduct[]; count: number | null }>;
 export async function fetchPromobrindProducts(options?: {
   search?: string;
@@ -67,6 +69,7 @@ export async function fetchPromobrindProducts(options?: {
   orderBy?: { column: string; ascending?: boolean };
   filters?: Record<string, unknown>;
   returnCount?: boolean;
+  signal?: AbortSignal;
 }): Promise<PromobrindProduct[] | { products: PromobrindProduct[]; count: number | null }> {
   const filters: Record<string, unknown> = {
     ...(options?.filters?.active === undefined && options?.filters?.is_active === undefined
@@ -86,6 +89,7 @@ export async function fetchPromobrindProducts(options?: {
 
   if (typeof options?.limit === 'number' && options.limit > 0) {
     const fetchOffset = options?.offset ?? 0;
+    const signal = options.signal;
     let result: InvokeResult<PromobrindProduct>;
     try {
       result = await dbInvoke<PromobrindProduct>({
@@ -97,6 +101,7 @@ export async function fetchPromobrindProducts(options?: {
         limit: options.limit,
         offset: fetchOffset,
         countMode: shouldRequestCount ? 'planned' : 'none',
+        signal,
       });
     } catch (err) {
       if (!shouldFallbackSelect(err)) throw err;
@@ -110,6 +115,7 @@ export async function fetchPromobrindProducts(options?: {
           limit: options.limit,
           offset: fetchOffset,
           countMode: shouldRequestCount ? 'planned' : 'none',
+          signal,
         });
       } catch (fallbackErr) {
         if (!shouldFallbackSelect(fallbackErr)) throw fallbackErr;
@@ -122,6 +128,7 @@ export async function fetchPromobrindProducts(options?: {
           limit: options.limit,
           offset: fetchOffset,
           countMode: shouldRequestCount ? 'planned' : 'none',
+          signal,
         });
       }
     }
@@ -138,6 +145,7 @@ export async function fetchPromobrindProducts(options?: {
     const PAGINATION_TIMEOUT_MS = 30_000;
 
     while (offset < HARD_MAX) {
+      if (options?.signal?.aborted) break;
       if (Date.now() - PAGINATION_START > PAGINATION_TIMEOUT_MS) {
         logger.warn(
           `[external-db] Pagination time budget exceeded (${PAGINATION_TIMEOUT_MS}ms). Got ${products.length} products at offset=${offset}.`,

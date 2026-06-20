@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { logger } from '@/lib/logger';
 
 const STORAGE_KEY = 'recently-viewed-products';
 const MAX_ITEMS = 10;
@@ -27,7 +28,8 @@ function loadFromStorage(): RecentlyViewedItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch {
+  } catch (err) {
+    logger.warn('[useRecentlyViewedStore] Failed to load from localStorage', err);
     return [];
   }
 }
@@ -35,8 +37,8 @@ function loadFromStorage(): RecentlyViewedItem[] {
 function saveToStorage(items: RecentlyViewedItem[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // silently fail
+  } catch (err) {
+    logger.warn('[useRecentlyViewedStore] Failed to save to localStorage (quota exceeded?)', err);
   }
 }
 

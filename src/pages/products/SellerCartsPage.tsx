@@ -17,7 +17,7 @@ import {
   type CartTableDensity,
 } from '@/components/cart/CartTablePreferences';
 
-import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
+import { type CartStatus } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
@@ -56,6 +56,7 @@ import { ptBR } from 'date-fns/locale';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 export default function SellerCartsPage() {
   return (
@@ -66,7 +67,9 @@ export default function SellerCartsPage() {
         path="/carrinhos"
         noIndex
       />
-      <SellerCartsContent />
+      <ErrorBoundary>
+        <SellerCartsContent />
+      </ErrorBoundary>
     </>
   );
 }
@@ -106,7 +109,8 @@ function SellerCartsContent() {
   const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
   // Tabela: colunas visíveis + densidade (persistidos, namespaced por user)
-  const [visibleColumns, setVisibleColumns] = useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
+  const [visibleColumns, setVisibleColumns] =
+    useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
   const [density, setDensity] = useState<CartTableDensity>('comfortable');
 
   // Ordenação + paginação (persistidas, namespaced por user)
@@ -133,7 +137,9 @@ function SellerCartsContent() {
         const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
         setVisibleColumns({ ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true });
       }
-    } catch { /* ignore corrupt stored value */ }
+    } catch {
+      /* ignore corrupt stored value */
+    }
 
     const dn = localStorage.getItem(ns('cart-table-density'));
     if (dn === 'comfortable' || dn === 'compact') setDensity(dn as CartTableDensity);
@@ -179,6 +185,22 @@ function SellerCartsContent() {
   }, [pageSize, uid]);
 
   const [page, setPage] = useState(1);
+  // Reset to page 1 whenever the active cart changes so the user doesn't land
+  // on a page that doesn't exist in the new cart's item count.
+  useEffect(() => {
+    setPage(1);
+  }, [s.activeCartId]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-key', sortKey);
+  }, [sortKey]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-dir', sortDir);
+  }, [sortDir]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-page-size', String(pageSize));
+  }, [pageSize]);
+
+  // Densidade da tabela: compact reduz o padding das células.
   const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
   const toggleSort = useCallback((key: SortKey) => {
@@ -299,12 +321,14 @@ function SellerCartsContent() {
     [s.carts],
   );
 
-  // Stable rotating placeholder per cart
+  // Stable rotating placeholder per cart — deps reduzida ao ID para evitar
+  // recálculo quando outros campos do activeCart mudam (ex: notes, status).
+  const activeCartId = s.activeCart?.id;
   const notesPlaceholder = useMemo(() => {
-    if (!s.activeCart) return NOTES_PLACEHOLDERS[0];
-    const seed = s.activeCart.id.charCodeAt(0) % NOTES_PLACEHOLDERS.length;
+    if (!activeCartId) return NOTES_PLACEHOLDERS[0];
+    const seed = activeCartId.charCodeAt(0) % NOTES_PLACEHOLDERS.length;
     return NOTES_PLACEHOLDERS[seed];
-  }, [s.activeCart]);
+  }, [activeCartId]);
 
   const handleDuplicateLast = useCallback(
     (sourceCart: typeof s.activeCart) => {
@@ -382,15 +406,15 @@ function SellerCartsContent() {
         </div>
         <div className="flex items-center gap-2">
           {s.carts.length >= 2 && <CompareCartsDialog carts={s.carts} />}
-          {s.canCreateCart && (
-            <Button
-              onClick={() => s.setShowNewCart(true)}
-              size="sm"
-              className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-3.5 w-3.5" /> Novo Carrinho
-            </Button>
-          )}
+          <Button
+            onClick={() => s.setShowNewCart(true)}
+            disabled={!s.canCreateCart}
+            size="sm"
+            className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
+            title={!s.canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo Carrinho
+          </Button>
         </div>
       </header>
 
@@ -566,14 +590,12 @@ function SellerCartsContent() {
             {s.activeCart.items.length === 0 ? (
               <CartEmptyStateSmart
                 activeCart={s.activeCart}
-                templates={
-                  s.templates as {
-                    id: string;
-                    name: string;
-                    description?: string;
-                    items: CartTemplateItem[];
-                  }[]
-                }
+                templates={s.templates.map(({ id, name, description, items }) => ({
+                  id,
+                  name,
+                  description: description ?? undefined,
+                  items,
+                }))}
                 otherCarts={s.otherCarts}
                 onApplyTemplate={s.handleLoadTemplate}
                 onDuplicateLast={handleDuplicateLast}
@@ -612,7 +634,16 @@ function SellerCartsContent() {
                       label: string,
                       align: 'left' | 'right',
                     ) => (
+                      // aria-sort on <th> + scope="col" (WCAG 1.3.1)
                       <th
+                        scope="col"
+                        aria-sort={
+                          sortKey === key
+                            ? sortDir === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : 'none'
+                        }
                         className={cn(
                           rowPad,
                           align === 'right' ? 'text-right' : 'text-left',
@@ -622,18 +653,12 @@ function SellerCartsContent() {
                         <button
                           type="button"
                           onClick={() => toggleSort(key)}
+                          aria-label={`Ordenar por ${label}${sortKey === key ? `, ${sortDir === 'asc' ? 'decrescente' : 'crescente'}` : ''}`}
                           className="inline-flex items-center gap-1 hover:text-primary"
                           data-testid={`cart-sort-${key}`}
-                          aria-sort={
-                            sortKey === key
-                              ? sortDir === 'asc'
-                                ? 'ascending'
-                                : 'descending'
-                              : 'none'
-                          }
                         >
                           {label}
-                          <span className="text-[10px] opacity-70">
+                          <span className="text-[10px] opacity-70" aria-hidden="true">
                             {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
                           </span>
                         </button>
@@ -649,12 +674,12 @@ function SellerCartsContent() {
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
                               {visibleColumns.color && (
-                                <th className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
+                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
                               )}
-                              <th className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
                               {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
                               {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
-                              <th className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -670,7 +695,7 @@ function SellerCartsContent() {
                                     <div className="flex items-center gap-2.5">
                                       <img
                                         src={item.product_image_url || '/placeholder.svg'}
-                                        alt={item.product_name}
+                                        alt=""
                                         className={cn(
                                           'flex-shrink-0 rounded-md border border-border/30 object-cover',
                                           density === 'compact' ? 'h-8 w-8' : 'h-10 w-10',
@@ -711,6 +736,7 @@ function SellerCartsContent() {
                                       step={1}
                                       defaultValue={item.quantity}
                                       key={`${item.id}-${item.quantity}`}
+                                      aria-label={`Quantidade de ${item.product_name}`}
                                       data-testid={`cart-qty-input-${item.id}`}
                                       aria-invalid={err ? true : undefined}
                                       aria-describedby={err ? `qty-err-${item.id}` : undefined}
@@ -824,11 +850,12 @@ function SellerCartsContent() {
                               className="h-7 px-2"
                               disabled={safePage <= 1}
                               onClick={() => setPage((p) => Math.max(1, p - 1))}
+                              aria-label="Página anterior"
                               data-testid="cart-page-prev"
                             >
                               ‹
                             </Button>
-                            <span className="tabular-nums">
+                            <span className="tabular-nums" aria-live="polite" aria-atomic>
                               {safePage} / {totalPages}
                             </span>
                             <Button
@@ -837,6 +864,7 @@ function SellerCartsContent() {
                               className="h-7 px-2"
                               disabled={safePage >= totalPages}
                               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                              aria-label="Próxima página"
                               data-testid="cart-page-next"
                             >
                               ›
@@ -885,6 +913,7 @@ function SellerCartsContent() {
           {/* Sidebar */}
           {s.activeCart.items.length > 0 && (
             <CartSidebar
+              key={s.activeCart.id}
               cart={s.activeCart}
               otherCarts={s.otherCarts}
               cartSubtotal={s.cartSubtotal}
@@ -915,8 +944,8 @@ function SellerCartsContent() {
         </div>
       ) : null}
 
-      {/* Mobile summary */}
-      {s.activeCart && (
+      {/* Mobile summary — só mostra quando há itens para gerar orçamento */}
+      {s.activeCart && s.activeCart.items.length > 0 && (
         <MobileSummarySheet
           cart={s.activeCart}
           subtotal={s.cartSubtotal}

@@ -91,6 +91,7 @@ export function CartSidebar({
   const [loadOpen, setLoadOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
@@ -248,6 +249,7 @@ export function CartSidebar({
           if (!open) {
             setTplName('');
             setTplDesc('');
+            setIsSavingTemplate(false);
           }
         }}
       >
@@ -276,12 +278,14 @@ export function CartSidebar({
               Cancelar
             </Button>
             <Button
-              disabled={!tplName.trim()}
+              disabled={!tplName.trim() || isSavingTemplate}
               onClick={() => {
+                setIsSavingTemplate(true);
                 onSaveTemplate(tplName.trim(), tplDesc.trim());
                 setSaveOpen(false);
                 setTplName('');
                 setTplDesc('');
+                setIsSavingTemplate(false);
               }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
@@ -331,6 +335,7 @@ export function CartSidebar({
                         <Button
                           size="sm"
                           variant="ghost"
+                          aria-label={`Excluir template ${t.name}`}
                           className="h-7 text-xs text-destructive"
                           onClick={() => onDeleteTemplate.mutate(t.id)}
                         >

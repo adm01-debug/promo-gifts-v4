@@ -18,7 +18,7 @@
  */
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const log = createClientLogger('reposicao.variants-summary');
@@ -31,7 +31,10 @@ export interface VariantSummaryEntry {
 }
 
 /** Map<productId, Map<colorNameKey, VariantSummaryEntry>> */
-export type VariantsSummaryByProduct = ReadonlyMap<string, ReadonlyMap<string, VariantSummaryEntry>>;
+export type VariantsSummaryByProduct = ReadonlyMap<
+  string,
+  ReadonlyMap<string, VariantSummaryEntry>
+>;
 
 /** Normaliza nome de cor para casamento estável (lowercase + trim + sem diacríticos). */
 export function normalizeColorKey(name: string | null | undefined): string {
@@ -77,11 +80,9 @@ export function useReposicaoVariantsSummary(productIds: readonly string[]) {
     gcTime: 5 * 60_000,
     queryFn: async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC ainda não tipada em types.ts (será regenerada no próximo deploy)
-        const { data, error } = await (supabase as any).rpc(
-          'fn_get_reposicao_variants_summary',
-          { p_product_ids: sortedIds },
-        );
+        const { data, error } = await untypedRpc('fn_get_reposicao_variants_summary', {
+          p_product_ids: sortedIds,
+        });
         if (error) {
           log.warn('rpc_failed', { error: error.message, ids: sortedIds.length });
           return EMPTY;

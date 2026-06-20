@@ -212,6 +212,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={`Remover ${item.label} do histórico`}
                     className="absolute right-1 top-1/2 h-5 w-5 -translate-y-1/2 opacity-0 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -239,7 +240,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
               {company.logo_url ? (
                 <img
                   src={company.logo_url}
-                  alt="Logo da empresa"
+                  alt={company.name}
                   className="h-6 w-6 flex-shrink-0 rounded-full border border-border bg-background object-cover"
                   loading="lazy"
                 />

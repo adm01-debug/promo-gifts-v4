@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,19 +19,26 @@ import {
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-
-function formatDaysAgo(daysElapsed: number): string {
-  if (daysElapsed === 0) return 'Hoje!';
-  if (daysElapsed === 1) return 'Ontem';
-  return `${daysElapsed}d atrás`;
-}
+import { formatDaysAgoFromCount } from '@/lib/novelty-dates';
 
 export function NoveltiesSection() {
   const navigate = useNavigate();
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
 
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 100 });
+  // ISSUE-34 FIX: tick a cada 60s — garante que recência recalculada ao passar
+  // do limite de 2 dias (hot→warm) ou 5 dias (warm→normal) enquanto a página
+  // está aberta (sem refresh).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ISSUE-22 FIX: sem limit → cache key ['novelties-details','all',false] compartilhada
+  // com ExpiringNoveltiesWidget e NoveltyProductGrid. Elimina round-trip redundante.
+  // A fatia de 8 cards acontece no useMemo de `novelties` via .slice(0, 8).
+  const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
   const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
 
   // Extract unique suppliers from data
@@ -62,9 +69,12 @@ export function NoveltiesSection() {
       filtered = filtered.filter((p) => p.supplier_id === selectedSupplier);
     }
 
+    // ISSUE-32 FIX: Schwartzian transform — pré-computa timestamps antes de ordenar.
     return filtered
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-      .slice(0, 8);
+      .map((n) => [n, new Date(n.detected_at).getTime()] as const)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([n]) => n);
   }, [allNovelties, periodFilter, selectedSupplier]);
 
   const handleProductClick = (productId: string) => {
@@ -105,6 +115,8 @@ export function NoveltiesSection() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="7">Últimos 7 dias</SelectItem>
                 <SelectItem value="15">Últimos 15 dias</SelectItem>
+                {/* ISSUE-29 FIX: adiciona opção 30 dias para cobrir toda a janela de novidade */}
+                <SelectItem value="30">Últimos 30 dias</SelectItem>
               </SelectContent>
             </Select>
 
@@ -225,7 +237,7 @@ export function NoveltiesSection() {
                         </h4>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span className={cn(fresh ? 'font-medium text-brand-primary' : '')}>
-                            {formatDaysAgo(item.days_as_novelty)}
+                            {formatDaysAgoFromCount(item.days_as_novelty)}
                           </span>
                           {item.supplier_name && (
                             <span className="ml-1 max-w-[80px] truncate">{item.supplier_name}</span>

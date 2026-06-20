@@ -44,7 +44,8 @@ export interface ColorDotLike {
 
 interface ProductColorSwatchesProps {
   colors: readonly ColorDotLike[] | undefined;
-  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5. */
+  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5.
+   *  Ignorado quando `wrap` é true (exibe todas as cores). */
   max?: number;
   /** Tamanho do dot. Ver tabela na JSDoc do arquivo. */
   size?: 'xs' | 'sm' | 'md';
@@ -52,10 +53,12 @@ interface ProductColorSwatchesProps {
   /** Esconde quando vazio. Default true. */
   hideWhenEmpty?: boolean;
   /**
-   * Handler disparado ao clicar/teclar Enter numa bolinha.
-   * Recebe a cor selecionada. Sempre chamado com `event.stopPropagation()`
-   * já aplicado (evita ativar o onClick do card pai).
+   * Quando true: exibe TODAS as cores em múltiplas linhas (flex-wrap), sem
+   * truncar nem mostrar chip "+N". Usado nos cards de grid de Catálogo,
+   * Super Filtro, Novidades e Reposição. Default false (legado).
    */
+  wrap?: boolean;
+  /** Handler de seleção. Recebe a cor e o índice. stopPropagation já aplicado. */
   onSelect?: (color: ColorDotLike, index: number) => void;
   /** Nome da cor atualmente selecionada — recebe ring de destaque. */
   selectedName?: string | null;
@@ -74,6 +77,7 @@ export const ProductColorSwatches = memo(
     size = 'sm',
     className,
     hideWhenEmpty = true,
+    wrap = false,
     onSelect,
     selectedName,
   }: ProductColorSwatchesProps) => {
@@ -84,7 +88,7 @@ export const ProductColorSwatches = memo(
       return (
         <div
           className={cn(
-            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] py-[var(--swatch-container-py)]',
             className,
           )}
           aria-busy="true"
@@ -106,14 +110,14 @@ export const ProductColorSwatches = memo(
       if (hideWhenEmpty) {
         return (
           <div
-            className={cn('min-h-[var(--swatch-size-sm)]', className)}
+            className={cn('min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]', className)}
             data-testid="colors-empty-hidden"
           />
         );
       }
       return (
         <div
-          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
+          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 py-[var(--swatch-container-py)] opacity-40"
           role="status"
           aria-live="polite"
           data-testid="colors-unavailable"
@@ -125,9 +129,9 @@ export const ProductColorSwatches = memo(
     }
 
     // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
-    // Garante altura uniforme dos cards entre módulos (Novidades/Reposição/Catálogo).
-    const effectiveMax = Math.max(1, max);
-    const overflow = Math.max(0, colors.length - effectiveMax);
+    // Em modo `wrap`, exibe todas as cores sem chip de overflow.
+    const effectiveMax = wrap ? colors.length : Math.max(1, max);
+    const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
     const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
 
     // Resolve o estado selecionado o mais cedo possível
@@ -139,7 +143,12 @@ export const ProductColorSwatches = memo(
     return (
       <div
         className={cn(
-          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
+          wrap
+            ? // Modo wrap: múltiplas linhas, altura automática, sem clipping nas bordas.
+              //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
+              'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+            : // Modo legado: uma única linha + chip "+N".
+              'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"
@@ -265,4 +274,3 @@ export const ProductColorSwatches = memo(
     );
   },
 );
-

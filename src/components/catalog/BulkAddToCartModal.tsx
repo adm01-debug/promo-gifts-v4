@@ -9,6 +9,7 @@ import { Check, ShoppingBag, Loader2 } from 'lucide-react';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPicker } from '@/components/cart/CartCompanyPicker';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { Product } from '@/hooks/products';
 import type { BulkVariantSelection } from './BulkVariantWizard';
 
@@ -92,7 +93,8 @@ export function BulkAddToCartModal({
           onDone?.();
         }
       }, 1000);
-    } catch {
+    } catch (err) {
+      logger.error('[BulkAddToCartModal] addToActiveCart failed', err);
       toast.error('Erro ao adicionar produtos ao carrinho');
     } finally {
       if (mountedRef.current) setAdding(false);

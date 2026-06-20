@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { TrendingDown, TrendingUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -28,8 +28,7 @@ export function PriceDropBadge({
   if (Math.abs(priceDiffPct) < threshold) return null;
 
   const isDrop = priceDiffPct < 0;
-  const isFlat = Math.abs(priceDiffPct) < threshold;
-  const Icon = isFlat ? Minus : isDrop ? TrendingDown : TrendingUp;
+  const Icon = isDrop ? TrendingDown : TrendingUp;
   const label = `${isDrop ? '−' : '+'}${Math.abs(priceDiffPct).toFixed(0)}%`;
 
   const savedAtLabel = savedAt

@@ -124,7 +124,9 @@ export const BaseProductGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          'min-h-[420px]',
+          // Altura FIXA por breakpoint (não min-h). Mobile = 400px, ≥sm = 430px.
+          // Garante cards idênticos mesmo com +N nos swatches ou título 1↔2 linhas.
+          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
           isSelected && 'border-primary ring-2 ring-primary/20',
           className,
         )}
@@ -227,6 +229,7 @@ export const BaseProductGridCard = memo(
               colors={colors}
               max={5}
               size="sm"
+              wrap
               hideWhenEmpty={false}
               selectedName={activeColorName}
               onSelect={(c) => setActiveColorName(c.name)}

@@ -122,8 +122,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
 
+      - name: ⏱️ Job start
+        id: t_job
+        run: echo "ts=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       # Cache do store do Bun (~/.bun/install/cache) por bun.lockb.
       - name: Cache Bun store
+        id: bun-cache
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
@@ -131,7 +136,11 @@ jobs:
           restore-keys: bun-store-${{ runner.os }}-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        id: bun-install
+        run: |
+          T0=$(date +%s)
+          bun install --frozen-lockfile
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
 
       # Resolve a versão do Playwright para chavear o cache de browsers.
       - name: Resolve Playwright version
@@ -139,7 +148,6 @@ jobs:
         run: |
           PW_VER=$(node -p "require('./node_modules/@playwright/test/package.json').version")
           echo "version=$PW_VER" >> "$GITHUB_OUTPUT"
-          # Engine a instalar para este shard (chromium/firefox/webkit).
           ENGINE_VAR="PW_BROWSER_${{ matrix.project }}"
           ENGINE="${!ENGINE_VAR}"
           echo "engine=$ENGINE" >> "$GITHUB_OUTPUT"
@@ -152,24 +160,26 @@ jobs:
           key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ steps.pw.outputs.engine }}
 
       - name: Install Playwright browser (${{ steps.pw.outputs.engine }})
-        # Só baixa o engine específico do shard; se cache hit, instala apenas as deps de sistema.
+        id: pw-install
         run: |
+          T0=$(date +%s)
           if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
             bunx playwright install-deps ${{ steps.pw.outputs.engine }}
           else
             bunx playwright install --with-deps ${{ steps.pw.outputs.engine }}
           fi
-
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
 
       - name: Run card-parity (${{ matrix.project }}) — informativo
-        # Sem secrets de auth, a spec é pulada por requireAuth(); ainda
-        # assim coletamos artefatos para inspeção.
+        id: pw-info
         continue-on-error: true
         run: |
+          T0=$(date +%s)
           bunx playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts \
             --project=${{ matrix.project }} \
             --reporter=list \
             --pass-with-no-tests
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -177,16 +187,78 @@ jobs:
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
       - name: Run card-parity (${{ matrix.project }}) — gate estrito 4px
+        id: pw-strict
         if: ${{ env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != '' }}
         run: |
+          T0=$(date +%s)
           bunx playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts \
             --project=${{ matrix.project }} \
             --reporter=list
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - name: 📊 Timing report (cold vs warm)
+        if: always()
+        run: |
+          BUN_HIT="${{ steps.bun-cache.outputs.cache-hit }}"
+          PW_HIT="${{ steps.pw-cache.outputs.cache-hit }}"
+          [ "$BUN_HIT" = "true" ] && BUN_STATE="warm ♻️" || BUN_STATE="cold ❄️"
+          [ "$PW_HIT" = "true" ]  && PW_STATE="warm ♻️"  || PW_STATE="cold ❄️"
+          [ "$BUN_HIT" = "true" ] && [ "$PW_HIT" = "true" ] && OVERALL="warm ♻️" || OVERALL="cold ❄️"
+
+          JOB_TOTAL=$(( $(date +%s) - ${{ steps.t_job.outputs.ts }} ))
+          BUN_DUR="${{ steps.bun-install.outputs.duration }}"
+          PW_DUR="${{ steps.pw-install.outputs.duration }}"
+          INFO_DUR="${{ steps.pw-info.outputs.duration }}"
+          STRICT_DUR="${{ steps.pw-strict.outputs.duration }}"
+
+          {
+            echo "### ⏱️ card-parity-matrix · \`${{ matrix.project }}\` ($OVERALL)"
+            echo ""
+            echo "| Etapa | Cache | Duração (s) |"
+            echo "|---|---|---|"
+            echo "| Bun install | $BUN_STATE | ${BUN_DUR:-n/a} |"
+            echo "| Playwright install (${{ steps.pw.outputs.engine }}) | $PW_STATE | ${PW_DUR:-n/a} |"
+            echo "| Playwright run (informativo) | — | ${INFO_DUR:-n/a} |"
+            echo "| Playwright run (gate estrito 4px) | — | ${STRICT_DUR:-skipped} |"
+            echo "| **Job total** | — | **$JOB_TOTAL** |"
+            echo ""
+            echo "_Compare runs cold vs warm na aba **Summary** do workflow para medir o ganho do cache._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Também emite JSON como artefato p/ análise histórica.
+          mkdir -p timing-reports
+          cat > "timing-reports/${{ matrix.project }}.json" <<EOF
+          {
+            "project": "${{ matrix.project }}",
+            "engine": "${{ steps.pw.outputs.engine }}",
+            "playwright_version": "${{ steps.pw.outputs.version }}",
+            "cache": { "bun": "$BUN_STATE", "playwright": "$PW_STATE", "overall": "$OVERALL" },
+            "durations_s": {
+              "bun_install": ${BUN_DUR:-null},
+              "playwright_install": ${PW_DUR:-null},
+              "run_info": ${INFO_DUR:-null},
+              "run_strict": ${STRICT_DUR:-null},
+              "job_total": $JOB_TOTAL
+            },
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "sha": "${{ github.sha }}"
+          }
+          EOF
+
+      - name: Upload timing report (${{ matrix.project }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-parity-timing-${{ matrix.project }}
+          path: timing-reports/
+          retention-days: 30
+          if-no-files-found: ignore
 
       - name: Upload artifacts (${{ matrix.project }})
         if: always()
@@ -198,3 +270,4 @@ jobs:
             test-results/
           retention-days: 7
           if-no-files-found: ignore
+

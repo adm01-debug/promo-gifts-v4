@@ -99,11 +99,14 @@ async function loadQuoteSearchProducts(search: string): Promise<Product[]> {
     return productsData.map((p) => mapQuoteSearchProduct(p, getProductImageUrl));
   }
 
-  // Two-layer search: prefix matches (1st layer) + broad matches (2nd layer)
-  const [prefixMatches, broadMatches] = await Promise.all([
+  // Two-layer search: prefix matches (1st layer) + broad matches (2nd layer).
+  // allSettled instead of all: one layer failing should not discard the other's results.
+  const [prefixResult, broadResult] = await Promise.allSettled([
     fetchPromobrindProducts({ filters: { _name_prefix: normalizedSearch }, limit: 200 }),
     fetchPromobrindProducts({ search: normalizedSearch, limit: 500 }),
   ]);
+  const prefixMatches = prefixResult.status === 'fulfilled' ? prefixResult.value : [];
+  const broadMatches = broadResult.status === 'fulfilled' ? broadResult.value : [];
 
   const mergedProducts = dedupeById([...prefixMatches, ...broadMatches]).map((product) =>
     mapQuoteSearchProduct(product, getProductImageUrl),
@@ -848,11 +851,18 @@ export function useQuoteBuilderState() {
       personalizations: item.personalizations?.map((p) => ({
         technique_id: p.techniqueId,
         technique_name: p.techniqueName,
+        location_code: p.locationCode,
+        location_name: p.locationName,
+        personalized_quantity: p.personalizedQuantity,
         colors_count: p.colorsCount,
         positions_count: p.positionsCount,
+        area_cm2: p.areaCm2,
+        width_cm: p.widthCm,
+        height_cm: p.heightCm,
         unit_cost: p.unitCost,
         setup_cost: p.setupCost,
         total_cost: p.totalCost,
+        notes: p.notes,
       })),
     }));
     setItems(newItems);
@@ -885,11 +895,18 @@ export function useQuoteBuilderState() {
       personalizations: item.personalizations?.map((p) => ({
         techniqueId: p.technique_id,
         techniqueName: p.technique_name || '',
+        locationCode: p.location_code,
+        locationName: p.location_name,
+        personalizedQuantity: p.personalized_quantity,
         colorsCount: p.colors_count,
         positionsCount: p.positions_count,
+        areaCm2: p.area_cm2,
+        widthCm: p.width_cm,
+        heightCm: p.height_cm,
         unitCost: p.unit_cost,
         setupCost: p.setup_cost,
         totalCost: p.total_cost,
+        notes: p.notes,
       })),
     }));
   }, [items]);

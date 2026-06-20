@@ -174,13 +174,17 @@ export function useCatalogSelection(
           }
         });
 
-        void import('@/lib/export-collection-pdf').then(({ exportCollectionPDF }) =>
-          exportCollectionPDF({
-            collectionName: `Catálogo Personalizado - ${new Date().toLocaleDateString('pt-BR')}`,
-            products: selections.map((s) => s.product),
-            variantMap,
-          }),
-        );
+        import('@/lib/export-collection-pdf')
+          .then(({ exportCollectionPDF }) =>
+            exportCollectionPDF({
+              collectionName: `Catálogo Personalizado - ${new Date().toLocaleDateString('pt-BR')}`,
+              products: selections.map((s) => s.product),
+              variantMap,
+            }),
+          )
+          .catch((err) => {
+            toast.error('Erro ao gerar PDF', { description: String(err?.message ?? err) });
+          });
 
         toast.success(`PDF gerado com ${selections.length} produtos`);
         clearSelection();
