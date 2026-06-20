@@ -628,8 +628,9 @@ export const ProductListItem = memo(
             >
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
               <span className="whitespace-nowrap">
-                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
+                {displayStock.toLocaleString('pt-BR')} Unid
               </span>
+
             </span>
           </div>
 
