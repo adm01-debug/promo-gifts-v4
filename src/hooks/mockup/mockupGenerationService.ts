@@ -206,7 +206,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // Solution: always null-out technique_id (the technique name is already persisted
     // in the `technique_name` text column, which is what all read paths use). The FK
     // column should only be set once the UI loads techniques from `personalization_techniques`.
-    const safeTechniqueId: null = null;
+    const safeTechniqueId = null;
     // BUG-CLIENT-ID FIX: persist client_id and client_name as top-level columns.
     const safeClientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
@@ -423,7 +423,7 @@ async function invokeMockupForArea(
     const msg = err instanceof Error ? err.message : String(err);
     if (isTransientError(msg)) {
       logger.warn('[invokeMockupForArea] Transient error, retrying in 2 s:', msg);
-      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      await new Promise<void>((resolve) => { setTimeout(resolve, 2000); });
       return invokeMockupOnce(params, area);
     }
     throw err;
