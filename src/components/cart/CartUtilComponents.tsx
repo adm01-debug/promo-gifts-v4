@@ -33,7 +33,7 @@ import { ptBR } from 'date-fns/locale';
 // HELPERS
 // ============================================
 
-export function formatCurrency(value: number) {
+export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
@@ -46,7 +46,7 @@ export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }>
   },
 };
 
-export function getStatusCfg(status: string | undefined | null) {
+export function getStatusCfg(status: string | undefined | null): { label: string; color: string } {
   return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.novo;
 }
 
@@ -103,7 +103,7 @@ export interface CartAction {
 
 const actionHistoryMap = new Map<string, CartAction[]>();
 
-export function recordAction(cartId: string, action: CartAction) {
+export function recordAction(cartId: string, action: CartAction): void {
   const list = actionHistoryMap.get(cartId) || [];
   list.unshift(action);
   if (list.length > 20) list.pop();
@@ -114,7 +114,7 @@ export function getActionHistory(cartId: string): CartAction[] {
   return actionHistoryMap.get(cartId) || [];
 }
 
-export function clearActionHistory(cartId: string) {
+export function clearActionHistory(cartId: string): void {
   actionHistoryMap.delete(cartId);
 }
 
