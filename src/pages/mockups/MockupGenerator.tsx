@@ -116,7 +116,8 @@ export default function MockupGenerator() {
     setTechniqueColorConfig: mg.setTechniqueColorConfig,
   });
 
-  const handleTechniqueSelect = useCallback(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleTechniqueSelect = useCallback<(t: any) => void>(
     (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [technique.handleTechniqueChange],

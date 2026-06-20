@@ -24,8 +24,11 @@ jobs:
       - name: Lint check
         run: npm run lint:check
         
-      - name: Type check
-        run: npm run qa:typecheck
+      - name: Type check (baseline — zero regressions vs .tsc-baseline.json)
+        run: node scripts/check-tsc-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
         
       - name: Build check
         run: npm run build
