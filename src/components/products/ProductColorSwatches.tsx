@@ -70,14 +70,14 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
 export const ProductColorSwatches = memo(
   ({
     colors,
-    // `max` permanece na interface (API pública) mas não é mais consumido —
-    // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
+    max = 5,
     size = 'sm',
     className,
     hideWhenEmpty = true,
     onSelect,
     selectedName,
   }: ProductColorSwatchesProps) => {
+
     const idPrefix = useId();
 
     if (colors === undefined) {
