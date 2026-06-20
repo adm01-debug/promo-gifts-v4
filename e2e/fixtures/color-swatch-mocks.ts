@@ -32,7 +32,7 @@ export async function installColorStockMock(
   const { productId } = opts;
 
   await page
-    .route(/\/rest\/v1\/(product_variants|variant_stock|stock)[^a-z]/i, async (route) => {
+    .route(/\/rest\/v1\/(product_variants|variant_stock|stock)(?:[^a-z]|$)/i, async (route) => {
       try {
         const response = await route.fetch();
         const text = await response.text();
