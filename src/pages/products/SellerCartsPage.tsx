@@ -89,8 +89,6 @@ const DEFAULT_CART_TABLE_COLS: Record<CartTableColumnKey, boolean> = {
   actions: true,
 } as const;
 
-const rowPad = 'px-3 py-2 align-middle';
-
 function SellerCartsContent() {
   const s = useSellerCartsPage();
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -201,6 +199,10 @@ function SellerCartsContent() {
   useEffect(() => {
     localStorage.setItem('cart-table-page-size', String(pageSize));
   }, [pageSize]);
+
+  // Densidade da tabela: compact reduz o padding das células.
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {
