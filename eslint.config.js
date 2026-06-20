@@ -418,6 +418,14 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 140: 7 rules (all zero-violation)
+      'no-lone-blocks': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-escape': 'error',
+      '@typescript-eslint/no-unsafe-declaration-merging': 'error',
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
       // Batch 139: 6 rules (all zero-violation)
       'no-constructor-return': 'error',
       'no-promise-executor-return': 'error',
