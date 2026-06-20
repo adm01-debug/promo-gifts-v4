@@ -122,7 +122,7 @@ export async function syncQuoteToBitrix({
     },
   });
 
-  if (error || !data?.success) {
+  if (error || !data?.ok) {
     const msg = data?.error || error?.message || 'Erro desconhecido';
     await logQuoteHistory(quoteId, 'sync_error', `Falha: ${msg}`);
     throw new Error(msg);

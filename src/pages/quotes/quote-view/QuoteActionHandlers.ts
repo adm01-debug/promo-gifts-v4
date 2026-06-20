@@ -155,7 +155,7 @@ export async function handleSyncBitrix(params: {
     },
   });
 
-  if (error || !data?.success)
+  if (error || !data?.ok)
     throw new Error(data?.error || error?.message || 'Erro desconhecido');
 
   const result = data.result;
