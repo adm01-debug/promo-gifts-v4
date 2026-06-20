@@ -291,11 +291,14 @@ function SellerCartsContent() {
     [s.carts],
   );
 
-  // Stable rotating placeholder per cart
+  // Stable rotating placeholder per cart — XOR hash over full UUID for even distribution
+  // (charCodeAt(0) alone gives only 16 values for hex UUIDs, skewing to 4 buckets)
   const notesPlaceholder = useMemo(() => {
     if (!s.activeCart) return NOTES_PLACEHOLDERS[0];
-    const seed = s.activeCart.id.charCodeAt(0) % NOTES_PLACEHOLDERS.length;
-    return NOTES_PLACEHOLDERS[seed];
+    const hash = s.activeCart.id
+      .split('')
+      .reduce((acc, ch) => (acc ^ ch.charCodeAt(0)) & 0xff, 0);
+    return NOTES_PLACEHOLDERS[hash % NOTES_PLACEHOLDERS.length];
   }, [s.activeCart]);
 
   const handleDuplicateLast = useCallback(
