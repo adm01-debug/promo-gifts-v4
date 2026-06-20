@@ -40,11 +40,20 @@ function loadFromStorage(): FavoriteItem[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
     const parsed = JSON.parse(stored);
-    // Corrupted non-array payload would crash at store init (`.map`/`.length`) —
-    // fall back to empty instead of white-screening the app.
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Filter out corrupted entries missing the required productId field
+    return parsed.filter(
+      (item): item is FavoriteItem =>
+        item !== null && typeof item === 'object' && typeof item.productId === 'string',
+    );
   } catch (err) {
     logger.warn('[useFavoritesStore] Failed to load from localStorage', err);
+    // Clear the corrupted entry so the next load starts fresh
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* quota full or private mode — ignore */
+    }
     return [];
   }
 }

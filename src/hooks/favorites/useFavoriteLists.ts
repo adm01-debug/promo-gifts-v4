@@ -576,14 +576,16 @@ export function useLegacyFavoritesMigration() {
         setMigrated(true);
         return;
       }
-      const rows = legacy.map((f, idx) => ({
-        list_id: defaultList.id,
-        user_id: user.id,
-        product_id: f.productId,
-        variant_id: (f.variant?.variant_id as string | undefined) ?? null,
-        variant_info: (f.variant ?? null) as unknown as Json,
-        position: idx,
-      }));
+      const rows = legacy
+        .filter((f) => typeof f.productId === 'string' && f.productId.length > 0)
+        .map((f, idx) => ({
+          list_id: defaultList.id,
+          user_id: user.id,
+          product_id: f.productId,
+          variant_id: (f.variant?.variant_id as string | undefined) ?? null,
+          variant_info: (f.variant ?? null) as unknown as Json,
+          position: idx,
+        }));
       const { error } = await supabase.from('favorite_items').upsert(rows, {
         onConflict: 'list_id,product_id,variant_id',
         ignoreDuplicates: true,
