@@ -31,6 +31,7 @@ export function MobileSummarySheet({
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
       >
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
           aria-label={expanded ? 'Recolher resumo do carrinho' : 'Expandir resumo do carrinho'}

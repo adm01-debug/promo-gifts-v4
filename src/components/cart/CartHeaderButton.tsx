@@ -269,53 +269,60 @@ export function CartHeaderButton() {
                         <div
                           key={cart.id}
                           className={cn(
-                            'group cursor-pointer rounded-xl border transition-all duration-200',
+                            'group rounded-xl border transition-all duration-200',
                             isActive
                               ? 'border-primary/30 bg-primary/5'
                               : 'border-border/40 hover:border-border/60 hover:bg-muted/30',
                           )}
-                          onClick={() => {
-                            setPendingDeleteId(null);
-                            setActiveCartId(cart.id);
-                          }}
                         >
                           {/* Cart header */}
                           <div className="flex items-center gap-2.5 px-3 py-2.5">
-                            {cart.company_logo_url ? (
-                              <img
-                                src={cart.company_logo_url}
-                                alt={`Logo de ${cart.company_name}`}
-                                className="h-9 w-9 flex-shrink-0 rounded-full border border-border/50 bg-background object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div
-                                className={cn(
-                                  'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
-                                  isActive
-                                    ? 'bg-primary/15 text-primary'
-                                    : 'bg-muted text-muted-foreground',
-                                )}
-                              >
-                                <Building2 className="h-4 w-4" />
-                              </div>
-                            )}
-
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className={cn(
-                                  'truncate text-[13px] font-semibold leading-tight',
-                                  isActive && 'text-primary',
-                                )}
-                              >
-                                {cart.company_name}
-                              </p>
-                              {cart.company_location && (
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                  {cart.company_location}
-                                </p>
+                            <button
+                              type="button"
+                              aria-label={`Selecionar carrinho de ${cart.company_name}`}
+                              aria-pressed={isActive}
+                              className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                              onClick={() => {
+                                setPendingDeleteId(null);
+                                setActiveCartId(cart.id);
+                              }}
+                            >
+                              {cart.company_logo_url ? (
+                                <img
+                                  src={cart.company_logo_url}
+                                  alt={`Logo de ${cart.company_name}`}
+                                  className="h-9 w-9 flex-shrink-0 rounded-full border border-border/50 bg-background object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div
+                                  className={cn(
+                                    'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                                    isActive
+                                      ? 'bg-primary/15 text-primary'
+                                      : 'bg-muted text-muted-foreground',
+                                  )}
+                                >
+                                  <Building2 className="h-4 w-4" />
+                                </div>
                               )}
-                            </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  className={cn(
+                                    'truncate text-[13px] font-semibold leading-tight',
+                                    isActive && 'text-primary',
+                                  )}
+                                >
+                                  {cart.company_name}
+                                </p>
+                                {cart.company_location && (
+                                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                    {cart.company_location}
+                                  </p>
+                                )}
+                              </div>
+                            </button>
 
                             <div className="flex flex-shrink-0 items-center gap-1.5">
                               {cart.items.length > 0 && (
@@ -458,16 +465,18 @@ export function CartHeaderButton() {
                                   </div>
 
                                   <div className="min-w-0 flex-1">
-                                    <p
-                                      className="line-clamp-2 cursor-pointer text-[11px] font-medium leading-tight text-foreground/90 transition-colors hover:text-primary"
+                                    <button
+                                      type="button"
+                                      className="line-clamp-2 min-h-0 w-full cursor-pointer text-left text-[11px] font-medium leading-tight text-foreground/90 transition-colors hover:text-primary"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         navigate(`/produto/${item.product_id}`);
                                         setOpen(false);
                                       }}
+                                      aria-label={`Ver produto ${item.product_name}`}
                                     >
                                       {item.product_name}
-                                    </p>
+                                    </button>
                                     {item.color_name && (
                                       <div className="mt-1 flex items-center gap-1.5 opacity-80">
                                         <div
