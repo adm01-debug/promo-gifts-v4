@@ -12,11 +12,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ─── Supabase client mock (chainable, thenable query builder) ────────────────
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
 let tableResults: Record<string, { data: unknown; error: unknown }> = {};
+// Per-call result queues (consumed FIFO). Lets a single table return e.g.
+// [error, success] across consecutive calls — needed to exercise the FK-violation
+// retry path. Falls back to `tableResults[table]` when no queue is set, so every
+// existing test is unaffected.
+let tableQueues: Record<string, Array<{ data: unknown; error: unknown }>> = {};
 const captured: { insert?: Record<string, unknown> } = {};
 
 vi.mock('@/integrations/supabase/client', () => {
   const makeBuilder = (table: string) => {
-    const result = () => tableResults[table] ?? { data: null, error: null };
+    const result = () => {
+      const queue = tableQueues[table];
+      if (queue && queue.length > 0) return queue.shift()!;
+      return tableResults[table] ?? { data: null, error: null };
+    };
     const q: Record<string, unknown> = {};
     const chain = (method: string) =>
       vi.fn((...args: unknown[]) => {
@@ -101,6 +110,7 @@ const silk: Technique = { id: 'tech-1', name: 'Serigrafia', code: 'silk' };
 beforeEach(() => {
   calls.length = 0;
   tableResults = {};
+  tableQueues = {};
   captured.insert = undefined;
   invoke.mockReset();
   (uploadLogoToStorage as unknown as ReturnType<typeof vi.fn>).mockClear();
@@ -177,9 +187,14 @@ describe('saveMockupToDb', () => {
     expect(captured.insert!.technique_name).toBe('Serigrafia');
   });
 
-  it('uploads data: logos and nulls product_id when the product is unknown', async () => {
-    tableResults.products = { data: null, error: null };
-    tableResults.generated_mockups = { data: { id: 'rec-2' }, error: null };
+  it('uploads data: logos and retries with product_id null on FK violation (unknown product)', async () => {
+    // New contract (BUG-PRODUCT-EXTRA-SELECT FIX): no pre-validation SELECT — the
+    // insert is attempted with product.id directly; a 23503 FK violation triggers a
+    // retry with product_id: null. Queue: first insert errors, retry succeeds.
+    tableQueues.generated_mockups = [
+      { data: null, error: { code: '23503' } },
+      { data: { id: 'rec-2' }, error: null },
+    ];
 
     const recordId = await saveMockupToDb({
       userId: 'user-1',
@@ -193,6 +208,7 @@ describe('saveMockupToDb', () => {
     expect(recordId).toBe('rec-2');
     expect(uploadLogoToStorage).toHaveBeenCalledTimes(1);
     expect(captured.insert!.logo_url).toBe('https://storage/uploaded-logo.png');
+    // The captured (retry) payload nulls product_id after the FK violation.
     expect(captured.insert!.product_id).toBeNull();
   });
 
@@ -464,8 +480,8 @@ describe('buildTechniqueList', () => {
   it('filters out items without id or name', () => {
     const raw = [
       { id: '1', name: 'Silk', code: 'silk' },
-      { id: '2' },           // no name
-      { name: 'Laser' },     // no id
+      { id: '2' }, // no name
+      { name: 'Laser' }, // no id
       null,
       undefined,
       42,

@@ -185,7 +185,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     if (logoUrl?.startsWith('data:')) {
       logoUrl = await uploadLogoToStorage(
         userId,
-        area.logoPreview!,
+        logoUrl,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
@@ -505,7 +505,10 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const row = (rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null)?.[0] ?? null;
+  const row =
+    (
+      rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null
+    )?.[0] ?? null;
   const logoUrl = row?.logo_url ?? null;
   const mockupUrl = row?.mockup_url ?? null;
 
@@ -575,10 +578,13 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
+      // `...t` PRIMEIRO; os campos coeridos abaixo precisam sobrescrever os
+      // valores crus (senão o spread devolvia id/name como número, contrariando
+      // o tipo `Technique` que exige string).
+      ...t,
       id: String(t.id),
       name: String(t.name),
       code: t.code ? String(t.code) : null,
-      ...t,
     }));
 }
 
