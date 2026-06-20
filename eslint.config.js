@@ -414,6 +414,14 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 106: 7 zero-violation rules (removed: no-extra-parens 50v, consistent-generic-constructors 1v, no-unnecessary-boolean-literal-compare 1v)
+      '@typescript-eslint/dot-notation': 'error',
+      'prefer-template': 'error',
+      'accessor-pairs': 'error',
+      'no-iterator': 'error',
+      'no-label-var': 'error',
+      'no-unused-labels': 'error',
+      'no-restricted-syntax': 'error',
       // Batch 105: 11 zero-violation rules (removed: react/jsx-handler-names 38v, react/jsx-no-constructed-context-values 7v, no-implicit-coercion 3v, jsx-a11y/media-has-caption 2v)
       '@typescript-eslint/no-unsafe-unary-minus': 'error',
       '@typescript-eslint/no-meaningless-void-operator': 'error',
