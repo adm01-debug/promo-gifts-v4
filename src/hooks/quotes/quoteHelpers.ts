@@ -3,6 +3,7 @@
  */
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
+import type { QuoteStatus } from '@/types/quote';
 
 /**
  * Hard limit on negotiation markup (%). Attempting to exceed this is a user
@@ -230,7 +231,7 @@ export function buildPersonalizationsInsertPayload(
  * FIX: versão anterior omitia pending_approval, viewed, converted e cancelled,
  * fazendo a UI exibir o valor cru do banco para esses status.
  */
-export const STATUS_LABELS: Record<string, string> = {
+export const STATUS_LABELS: Record<QuoteStatus, string> = {
   draft: 'Rascunho',
   pending: 'Pendente',
   pending_approval: 'Aguardando Aprovação',
