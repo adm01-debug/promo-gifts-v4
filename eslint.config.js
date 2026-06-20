@@ -192,6 +192,11 @@ export default [
       'prefer-object-spread': 'error',
       'no-useless-rename': 'error',
       'no-unneeded-ternary': 'error',
+      // Batch 78: 4 rules — zero violations (no code changes needed)
+      'no-else-return': 'error',
+      'no-constructor-return': 'error',
+      'no-unreachable-loop': 'error',
+      'no-useless-backreference': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
