@@ -108,17 +108,37 @@ export function NoveltyProductGrid() {
     };
   }, [isFetching]);
 
+  // ISSUE-37 FIX: counts de fornecedor e categoria usam o conjunto filtrado pelo
+  // OUTRO filtro ativo — padrão de "faceted filtering". Antes os counts vinham de
+  // `products` (total geral), gerando counts inflados que não refletiam a seleção.
+  // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
+    const normSearch = (s: string) =>
+      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
+    const searchMatch = (p: (typeof products)[0]) =>
+      !q ||
+      normSearch(p.product_name).includes(q) ||
+      (p.product_sku && normSearch(p.product_sku).includes(q)) ||
+      (p.supplier_name && normSearch(p.supplier_name).includes(q));
+
     const supMap = new Map<string, { id: string; name: string; count: number }>();
     const catMap = new Map<string, { id: string; name: string; count: number }>();
     products.forEach((p) => {
-      if (p.supplier_id) {
+      if (!searchMatch(p)) return;
+      // supplier counts: filtered by category (not supplier)
+      if (p.supplier_id && (selectedCategory === 'all' || p.category_id === selectedCategory)) {
         const name = p.supplier_name || `Fornecedor ${p.supplier_id.slice(0, 6)}`;
         const e = supMap.get(p.supplier_id);
         if (e) e.count++;
         else supMap.set(p.supplier_id, { id: p.supplier_id, name, count: 1 });
       }
-      if (p.category_id && p.category_name) {
+      // category counts: filtered by supplier (not category)
+      if (
+        p.category_id &&
+        p.category_name &&
+        (selectedSupplier === 'all' || p.supplier_id === selectedSupplier)
+      ) {
         const e = catMap.get(p.category_id);
         if (e) e.count++;
         else catMap.set(p.category_id, { id: p.category_id, name: p.category_name, count: 1 });
@@ -128,7 +148,7 @@ export function NoveltyProductGrid() {
       suppliers: [...supMap.values()].sort((a, b) => b.count - a.count),
       categories: [...catMap.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
     };
-  }, [products]);
+  }, [products, searchQuery, selectedSupplier, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
@@ -422,6 +442,7 @@ export function NoveltyProductGrid() {
                       canAddToCompare={canAddToCompare}
                       isNovelty={novelty.is_active && novelty.days_remaining > 0}
                       noveltyDaysRemaining={novelty.days_remaining}
+                      noveltyDaysElapsed={novelty.days_as_novelty}
                       priority={index < 6}
                     />
                   </div>

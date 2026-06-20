@@ -35,7 +35,10 @@ export function NoveltiesSection() {
     return () => clearInterval(id);
   }, []);
 
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 100 });
+  // ISSUE-22 FIX: sem limit → cache key ['novelties-details','all',false] compartilhada
+  // com ExpiringNoveltiesWidget e NoveltyProductGrid. Elimina round-trip redundante.
+  // A fatia de 8 cards acontece no useMemo de `novelties` via .slice(0, 8).
+  const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
   const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
 
   // Extract unique suppliers from data

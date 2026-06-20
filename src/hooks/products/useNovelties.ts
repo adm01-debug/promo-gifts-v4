@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
+import { logger } from '@/lib/logger';
 const fromTable = (table: string) => untypedFrom(resolveTable(table));
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -173,23 +174,40 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
   const categoryIds = [...new Set(novelties.map((n) => n.category_id).filter(Boolean))] as string[];
   const supplierIds = [...new Set(novelties.map((n) => n.supplier_id).filter(Boolean))] as string[];
 
+  // ISSUE-12 FIX: falha de enriquecimento não derruba o grid todo. Erros nas
+  // queries secundárias (categories/suppliers) retornam [] — as novidades são
+  // exibidas sem nome de categoria/fornecedor em vez de mostrar a tela de erro.
   const [catRecords, supRecords] = await Promise.all([
     categoryIds.length > 0
       ? (async () => {
-          const { data, error } = await fromTable('categories')
-            .select('id, name')
-            .in('id', categoryIds);
-          if (error) return handleQueryError('useNovelties', 'categories', error);
-          return (data ?? []) as unknown as CategoryRecord[];
+          try {
+            const { data, error } = await fromTable('categories')
+              .select('id, name')
+              .in('id', categoryIds);
+            if (error) {
+              logger.warn('[enrichNovelties] categories lookup failed:', error.message);
+              return [] as CategoryRecord[];
+            }
+            return (data ?? []) as unknown as CategoryRecord[];
+          } catch {
+            return [] as CategoryRecord[];
+          }
         })()
       : Promise.resolve([] as CategoryRecord[]),
     supplierIds.length > 0
       ? (async () => {
-          const { data, error } = await fromTable('suppliers')
-            .select('id, name, code')
-            .in('id', supplierIds);
-          if (error) return handleQueryError('useNovelties', 'suppliers', error);
-          return (data ?? []) as unknown as SupplierRecord[];
+          try {
+            const { data, error } = await fromTable('suppliers')
+              .select('id, name, code')
+              .in('id', supplierIds);
+            if (error) {
+              logger.warn('[enrichNovelties] suppliers lookup failed:', error.message);
+              return [] as SupplierRecord[];
+            }
+            return (data ?? []) as unknown as SupplierRecord[];
+          } catch {
+            return [] as SupplierRecord[];
+          }
         })()
       : Promise.resolve([] as SupplierRecord[]),
   ]);
@@ -433,10 +451,12 @@ export function useExpiringNovelties(maxDays = 7) {
 
       return allRaw
         .map(toNovelty)
-        .filter((n) => n.is_active && n.days_remaining <= maxDays)
+        .filter((n) => n.days_remaining <= maxDays) // is_active já garantido pelo predicado DB
         .sort((a, b) => a.days_remaining - b.days_remaining);
     },
-    staleTime: 5 * 60 * 1000,
+    // ISSUE-40 FIX: expiração iminente — staletime curto garante que um produto
+    // que cruzou o limite de `maxDays` saia do widget antes do cleanup cron rodar.
+    staleTime: 60 * 1000,
     retry: 2,
   });
 }
@@ -614,7 +634,8 @@ export function useNoveltyStats() {
         supplierBreakdown,
       };
     },
-    staleTime: 5 * 60 * 1000,
+    // ISSUE-40 FIX: stats alinhadas ao staleTime de useNoveltiesWithDetails (2 min).
+    staleTime: 2 * 60 * 1000,
     retry: 2,
   });
 }
