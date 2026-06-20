@@ -64,6 +64,15 @@ interface RpcRow {
 
 const EMPTY: VariantsSummaryByProduct = new Map();
 
+function isRpcRow(obj: unknown): obj is RpcRow {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'product_id' in obj &&
+    typeof (obj as Record<string, unknown>).product_id === 'string'
+  );
+}
+
 /**
  * Busca o sumário de variantes para um conjunto de productIds.
  * Retorna Map vazio quando productIds for vazio (não dispara a RPC).
@@ -87,7 +96,7 @@ export function useReposicaoVariantsSummary(productIds: readonly string[]) {
           log.warn('rpc_failed', { error: error.message, ids: sortedIds.length });
           return EMPTY;
         }
-        const rows = (data ?? []) as RpcRow[];
+        const rows = ((data ?? []) as unknown[]).filter(isRpcRow);
         const out = new Map<string, Map<string, VariantSummaryEntry>>();
         for (const row of rows) {
           const inner = new Map<string, VariantSummaryEntry>();
