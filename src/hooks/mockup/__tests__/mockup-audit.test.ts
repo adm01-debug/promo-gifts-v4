@@ -1083,3 +1083,42 @@ describe('Analise estatica — MockupConfigPanel.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// Analise estatica — teclado: role=button ativa com Enter E Space
+// =====================================================================
+
+describe('Analise estatica — AreaCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  describe('a11y — role=button responde a Enter e Space', () => {
+    it('onKeyDown trata Enter para ativar a area', () => {
+      expect(src).toContain("e.key === 'Enter'");
+    });
+    it('onKeyDown trata Space para ativar a area (ARIA spec)', () => {
+      expect(src).toContain("e.key === ' '");
+    });
+    it('Space e Enter estao no mesmo handler (nao branches separadas)', () => {
+      expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+    });
+  });
+});
+
+describe('Analise estatica — MockupProductSelector.tsx (teclado)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  describe('a11y — cards de produto respondem a Enter e Space', () => {
+    it('onKeyDown trata Enter para selecionar produto', () => {
+      expect(src).toContain("e.key === 'Enter'");
+    });
+    it('onKeyDown trata Space para selecionar produto (ARIA spec)', () => {
+      expect(src).toContain("e.key === ' '");
+    });
+  });
+});

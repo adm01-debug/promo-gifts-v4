@@ -54,7 +54,12 @@ export const AreaCard = memo(
         tabIndex={0}
         data-testid={`mockup-area-card-${area.id}`}
         aria-pressed={isActive}
-        onKeyDown={(e) => e.key === 'Enter' && onSelect()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
       >
         {/* Step number */}
         <div

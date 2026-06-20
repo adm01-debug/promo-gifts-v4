@@ -338,7 +338,12 @@ export function MockupProductSelector({
                               className="group relative flex cursor-pointer flex-col rounded-2xl border border-border/30 bg-card p-3 outline-none transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
                               role="button"
                               tabIndex={0}
-                              onKeyDown={(e) => e.key === 'Enter' && handleProductPick(product)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleProductPick(product);
+                                }
+                              }}
                             >
                               <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-muted">
                                 <img
