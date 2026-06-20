@@ -941,4 +941,25 @@ describe('Analise estatica — MockupHistoryPanel.tsx', () => {
       expect(src).not.toContain('aria-label="Excluir"');
     });
   });
+
+  describe('a11y — filtros com labels associados via htmlFor/id', () => {
+    it('filtro de cliente tem Label com htmlFor="filter-client"', () => {
+      expect(src).toContain('htmlFor="filter-client"');
+    });
+    it('SelectTrigger de cliente tem id="filter-client"', () => {
+      expect(src).toContain('id="filter-client"');
+    });
+    it('filtro de produto tem Label com htmlFor="filter-product"', () => {
+      expect(src).toContain('htmlFor="filter-product"');
+    });
+    it('Input de produto tem id="filter-product"', () => {
+      expect(src).toContain('id="filter-product"');
+    });
+    it('filtro de tecnica tem Label com htmlFor="filter-technique"', () => {
+      expect(src).toContain('htmlFor="filter-technique"');
+    });
+    it('filtro de periodo tem Label com htmlFor="filter-date-range"', () => {
+      expect(src).toContain('htmlFor="filter-date-range"');
+    });
+  });
 });

@@ -208,7 +208,9 @@ export function MockupHistoryPanel({
         {/* Filters */}
         <div className="grid grid-cols-1 gap-4 rounded-lg bg-muted/30 p-4 md:grid-cols-4">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Cliente</Label>
+            <Label htmlFor="filter-client" className="text-xs text-muted-foreground">
+              Cliente
+            </Label>
             <Select
               value={filterClient}
               onValueChange={(v) => {
@@ -216,7 +218,7 @@ export function MockupHistoryPanel({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-9">
+              <SelectTrigger id="filter-client" className="h-9" aria-label="Filtrar por cliente">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -231,8 +233,11 @@ export function MockupHistoryPanel({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Produto</Label>
+            <Label htmlFor="filter-product" className="text-xs text-muted-foreground">
+              Produto
+            </Label>
             <Input
+              id="filter-product"
               placeholder="Buscar por nome ou SKU..."
               value={filterProduct}
               onChange={(e) => {
@@ -243,7 +248,9 @@ export function MockupHistoryPanel({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Técnica</Label>
+            <Label htmlFor="filter-technique" className="text-xs text-muted-foreground">
+              Técnica
+            </Label>
             <Select
               value={filterTechnique}
               onValueChange={(v) => {
@@ -251,7 +258,7 @@ export function MockupHistoryPanel({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-9">
+              <SelectTrigger id="filter-technique" className="h-9" aria-label="Filtrar por técnica">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
@@ -265,7 +272,10 @@ export function MockupHistoryPanel({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Label
+              htmlFor="filter-date-range"
+              className="flex items-center gap-1 text-xs text-muted-foreground"
+            >
               <Calendar className="h-3 w-3" /> Período
             </Label>
             <Select
@@ -275,7 +285,11 @@ export function MockupHistoryPanel({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-9">
+              <SelectTrigger
+                id="filter-date-range"
+                className="h-9"
+                aria-label="Filtrar por período"
+              >
                 <SelectValue placeholder="Todo período" />
               </SelectTrigger>
               <SelectContent>
