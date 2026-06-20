@@ -256,7 +256,11 @@ export function MockupProductSelector({
 
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-4">
-                  <p className="text-xs font-medium text-muted-foreground">
+                  <p
+                    className="text-xs font-medium text-muted-foreground"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
                     {isLoadingProducts
                       ? 'Carregando catálogo...'
                       : isSearching

@@ -1250,6 +1250,42 @@ describe('Analise estatica — MockupLightbox.tsx', () => {
   });
 });
 
+// =====================================================================
+// Analise estatica — aria-live para regioes de status assincrono
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (aria-live)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('a11y — contagem de resultados anunciada para leitores de tela', () => {
+    it('span de contagem tem aria-live="polite"', () => {
+      expect(src).toContain('aria-live="polite"');
+    });
+    it('span de contagem tem aria-atomic="true" para anuncio completo', () => {
+      expect(src).toContain('aria-atomic="true"');
+    });
+  });
+});
+
+describe('Analise estatica — MockupProductSelector.tsx (aria-live)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  describe('a11y — contagem de resultados de produto anunciada para leitores de tela', () => {
+    it('paragrafo de contagem tem aria-live="polite"', () => {
+      expect(src).toContain('aria-live="polite"');
+    });
+    it('paragrafo de contagem tem aria-atomic="true"', () => {
+      expect(src).toContain('aria-atomic="true"');
+    });
+  });
+});
+
 describe('Analise estatica — LogoPreviewCanvas.tsx', () => {
   let src: string;
   beforeEach(() => {
