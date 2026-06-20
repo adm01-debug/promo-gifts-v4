@@ -73,7 +73,7 @@ export function useProductsByCategory({
       setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       setCategoriesCount((prev) => (prev === 0 ? prev : 0));
       setSource((prev) => (prev === null ? prev : null));
-      lastFetchedKey.current = '\0disabled:' + categoryIdsKey;
+      lastFetchedKey.current = `\0disabled:${categoryIdsKey}`;
       return;
     }
 
