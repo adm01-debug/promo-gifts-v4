@@ -418,6 +418,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 117: 6 zero-violation rules (removed: no-unassigned-vars was NEW ✓, no-useless-assignment many, preserve-caught-error 1v, no-redundant-type-constituents many, consistent-this 1v, role-supports-aria-props 1v, void-dom-elements-no-children 1v, prefer-tag-over-role many, no-aria-hidden-on-focusable 2v, no-unnecessary-boolean-literal-compare 2v, consistent-type-exports many, class-methods-use-this 6v, prefer-readonly 3v, no-onchange 4v, iframe-has-title 1v, use-unknown-in-catch-callback-variable many, no-unsafe-enum-comparison 1v)
+      'no-unassigned-vars': 'error',
+      'react/no-invalid-html-attribute': 'error',
+      'react/forward-ref-uses-ref': 'error',
+      'react/forbid-foreign-prop-types': 'error',
+      'react/jsx-filename-extension': ['error', { extensions: ['.tsx', '.jsx'] }],
+      'react/jsx-uses-vars': 'error',
       // Batch 116: 4 zero-violation rules (removed: multiline-comment-style many, new-cap many, no-inline-comments many, no-mixed-operators many, prefer-named-capture-group many, no-continue many, no-negated-condition many, no-underscore-dangle many, sort-vars many, spaced-comment 1v, jsx-fragments many, no-noninteractive-element-interactions many, no-noninteractive-element-to-interactive-role many, etc.)
       'block-scoped-var': 'error',
       'func-name-matching': 'error',
