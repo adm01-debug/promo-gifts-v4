@@ -124,7 +124,10 @@ export function ReplenishmentProductGrid() {
         case 'stock':
           return b.stock_quantity - a.stock_quantity;
         default:
-          return new Date(b.replenished_at).getTime() - new Date(a.replenished_at).getTime();
+          return (
+            new Date(b.replenished_at).getTime() - new Date(a.replenished_at).getTime() ||
+            a.product_id.localeCompare(b.product_id)
+          );
       }
     });
     return filtered;
