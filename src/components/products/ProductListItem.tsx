@@ -599,10 +599,11 @@ export const ProductListItem = memo(
                   'flex items-center gap-1 text-[10px] font-medium md:hidden',
                   getStockColor(displayStatus),
                 )}
-                aria-label={`Estoque: ${getStockLabel(displayStatus)} ${displayStock.toLocaleString('pt-BR')} unidades`}
+                aria-label={`Estoque: ${displayStock.toLocaleString('pt-BR')} unidades`}
               >
                 <Package className="h-2.5 w-2.5" aria-hidden="true" />
-                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
+                {displayStock.toLocaleString('pt-BR')} Unid
+
               </span>
             </div>
           </div>
