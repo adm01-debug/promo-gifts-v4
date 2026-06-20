@@ -70,14 +70,14 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
 export const ProductColorSwatches = memo(
   ({
     colors,
-    // `max` permanece na interface (API pública) mas não é mais consumido —
-    // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
+    max = 5,
     size = 'sm',
     className,
     hideWhenEmpty = true,
     onSelect,
     selectedName,
   }: ProductColorSwatchesProps) => {
+
     const idPrefix = useId();
 
     if (colors === undefined) {
@@ -124,7 +124,12 @@ export const ProductColorSwatches = memo(
       );
     }
 
-    const visible = colors;
+    // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
+    // Garante altura uniforme dos cards entre módulos (Novidades/Reposição/Catálogo).
+    const effectiveMax = Math.max(1, max);
+    const overflow = Math.max(0, colors.length - effectiveMax);
+    const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
+
     // Resolve o estado selecionado o mais cedo possível
     const queryParams =
       typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -243,7 +248,21 @@ export const ProductColorSwatches = memo(
             </Tooltip>
           );
         })}
+        {overflow > 0 && (
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-semibold leading-none text-muted-foreground',
+              SIZE_CLASS[size],
+            )}
+            aria-label={`Mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+            data-testid="color-swatches-overflow"
+            title={`+${overflow}`}
+          >
+            +{overflow}
+          </span>
+        )}
       </div>
     );
   },
 );
+
