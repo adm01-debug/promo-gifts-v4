@@ -217,8 +217,8 @@ export function useProductRecommendations(productId?: string, productSku?: strin
             reason: 'Em alta nas cotações',
           };
         });
-      } catch (error) {
-        logger.error('Error fetching trending products:', error);
+      } catch (fetchErr) {
+        logger.error('Error fetching trending products:', fetchErr);
         return [];
       }
     },

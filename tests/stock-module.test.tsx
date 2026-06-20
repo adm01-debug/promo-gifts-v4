@@ -265,11 +265,11 @@ describe('aggregateVariantsToProduct', () => {
       makeVariant({ id: 'v6', status: 'incoming' }),
     ];
     const result = aggregateVariantsToProduct(variants);
-    expect(result.variantsInStock).toBe(1);
+    // incoming + overstocked are counted as healthy (variantsInStock) since BUG-C fix
+    expect(result.variantsInStock).toBe(3);
     expect(result.variantsLowStock).toBe(1);
     expect(result.variantsCritical).toBe(1);
     expect(result.variantsOutOfStock).toBe(1);
-    // overstocked and incoming are not counted in the switch
   });
 
   it('handles empty variants array', () => {

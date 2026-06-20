@@ -42,7 +42,7 @@ export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }>
   em_negociacao: { label: 'Em negociação', color: 'bg-warning/10 text-warning border-warning/20' },
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
-    color: 'bg-primary/10 text-primary border-primary/20',
+    color: 'bg-success/10 text-success border-success/20',
   },
 };
 

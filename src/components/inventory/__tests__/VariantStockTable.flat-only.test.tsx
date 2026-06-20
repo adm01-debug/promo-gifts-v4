@@ -13,6 +13,27 @@ import { render, screen } from '@testing-library/react';
 import { VariantStockTable } from '@/components/inventory/VariantStockTable';
 import type { ProductStockSummary, VariantStock } from '@/types/stock';
 
+// Render all virtual items so the DOM reflects full row state (jsdom has height=0
+// so the real useVirtualizer would render nothing).
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: ({ count, estimateSize }: { count: number; estimateSize?: () => number }) => {
+    const sz = estimateSize?.() ?? 56;
+    return {
+      getVirtualItems: () =>
+        Array.from({ length: count }, (_, i) => ({
+          index: i,
+          start: i * sz,
+          end: (i + 1) * sz,
+          size: sz,
+          key: i,
+          lane: 0,
+        })),
+      getTotalSize: () => count * sz,
+      scrollToIndex: vi.fn(),
+    };
+  },
+}));
+
 vi.mock('@/utils/color-group-hex', () => ({
   COLOR_GROUP_HEX: {},
   resolveHighlightHex: () => '#000',

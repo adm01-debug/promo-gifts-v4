@@ -71,14 +71,14 @@ export function ClientLookalikes({ clientId, ramoAtividade }: Props) {
       if (ids.length === 0) return { products: [], lookalikeCount: 0 };
 
       // 2) Top produtos do setor (90 dias)
-      const { data, error } = await supabase.rpc('get_industry_top_products', {
+      const { data: queryRows, error } = await supabase.rpc('get_industry_top_products', {
         _company_ids: ids,
         _days: 90,
         _limit: 30,
       });
       if (error) return { products: [], lookalikeCount: ids.length };
 
-      const rows = (data ?? []) as IndustryProductRow[];
+      const rows = (queryRows ?? []) as IndustryProductRow[];
       // Filtra produtos que o cliente JÁ compra (gap puro)
       const gap = rows.filter((r) => {
         if (r.product_id && ownProductIds.has(r.product_id)) return false;

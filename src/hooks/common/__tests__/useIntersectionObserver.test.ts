@@ -20,7 +20,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useRef } from 'react';
-import { useIntersectionObserver } from '../useIntersectionObserver';
+import { useIntersectionObserver, clearObserverCacheForTest } from '../useIntersectionObserver';
 
 // Mock IntersectionObserver
 type IOCallback = (entries: IntersectionObserverEntry[]) => void;
@@ -55,10 +55,13 @@ beforeEach(() => {
   // so that cache-hit paths are exercised correctly.
   MockIntersectionObserver.instances = [];
   vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  // Limpa o cache singleton para cada teste ter um observer fresco
+  clearObserverCacheForTest();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  clearObserverCacheForTest();
 });
 
 describe('useIntersectionObserver', () => {

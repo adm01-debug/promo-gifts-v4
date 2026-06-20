@@ -5,6 +5,7 @@ import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgr
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
 import { getCachedByIds, getFreshFromCacheSafe, putInCacheSafe } from './immutableCache';
+import { computeKitCoverage } from './kit-coverage';
 import {
   type PromobrindProduct,
   PRODUCT_SELECT_FIELDS_WITH_SALE,
@@ -245,44 +246,119 @@ export async function fetchPromobrindProductById(
       return [] as Video[];
     });
 
+  // Schema validado: product_kit_components tem 26 campos (ver DOC_product_kit_components_COMPLETO.md).
+  // Para kits NATIVOS (component_product_id = NULL), TODOS os atributos vivem nesta tabela.
   type KitComponent = {
     id: string;
     component_name: string | null;
     component_code: string | null;
     component_product_id: string | null;
     component_sku: string | null;
+    component_description: string | null;
     quantity: number | null;
     display_order: number | null;
     is_optional: boolean | null;
     is_packaging: boolean | null;
     is_replaceable: boolean | null;
     allows_personalization: boolean | null;
+    personalization_notes: string | null;
     material: string | null;
+    color: string | null;
     primary_image_url: string | null;
     primary_image_fallback_url?: string | null;
+    images: unknown | null; // jsonb[] — galeria de fotos do componente
     height_mm: number | null;
     width_mm: number | null;
     length_mm: number | null;
+    diameter_mm: number | null;
+    circumference_mm: number | null;
     weight_g: number | null;
+    capacity_ml: number | null;
+    supplier_component_code: string | null;
+    component_type_code: string | null;
     notes: string | null;
   };
+  // Estratégia: tenta `v_kit_component_complete` (view enriquecida com JOINs de
+  // enrichment_raw + media_public + typical_dims + types). Se vazia ou falhar,
+  // cai para a tabela base `product_kit_components` (26 campos crus).
+  const fetchKitFromView = (): Promise<KitComponent[]> =>
+    dbInvoke<KitComponent>({
+      table: 'v_kit_component_complete',
+      operation: 'select',
+      select: '*',
+      filters: { kit_product_id: productId },
+      orderBy: { column: 'display_order', ascending: true },
+      limit: 200,
+    }).then((r) => r.records);
+
+  const fetchKitFromBase = (): Promise<KitComponent[]> =>
+    dbInvoke<KitComponent>({
+      table: 'product_kit_components',
+      operation: 'select',
+      select:
+        'id, component_name, component_code, component_product_id, component_sku, component_description, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, personalization_notes, material, color, primary_image_url, images, height_mm, width_mm, length_mm, diameter_mm, circumference_mm, weight_g, capacity_ml, supplier_component_code, component_type_code, notes',
+      filters: { kit_product_id: productId },
+      orderBy: { column: 'display_order', ascending: true },
+      limit: 200,
+    }).then((r) => r.records);
+
+  // Campos críticos auditados em todo fetch de kit (view OU base).
+  // Lógica pura extraída para `./kit-coverage.ts` (testável sem rede/bridge).
+  const auditKitFields = (source: 'view' | 'base', rows: KitComponent[]): void => {
+    if (rows.length === 0) return;
+    const report = computeKitCoverage(rows as unknown as Array<Record<string, unknown>>);
+    logger.info(
+      `[product:${productId}] kit-components source=${source} rows=${report.rows} ` +
+        `avg=${report.avgPct}% fully_null=[${report.fullyNullFields.join(',') || '—'}]`,
+      { coverage: report.coverage },
+    );
+    if (report.fullyNullFields.length > 0) {
+      logger.warn(
+        `[product:${productId}] kit-components source=${source} — ${report.fullyNullFields.length} ` +
+          `campo(s) 100% null: ${report.fullyNullFields.join(', ')}. ` +
+          `Provável gap de ETL no SSOT (não de fetch).`,
+      );
+    }
+  };
+
   const kitPromise: Promise<KitComponent[]> = product.is_kit
-    ? dbInvoke<KitComponent>({
-        table: 'product_kit_components',
-        operation: 'select',
-        select:
-          'id, component_name, component_code, component_product_id, component_sku, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, material, primary_image_url, height_mm, width_mm, length_mm, weight_g, notes',
-        filters: { kit_product_id: productId },
-        orderBy: { column: 'display_order', ascending: true },
-        limit: 50,
-      })
-        .then((r) => r.records)
-        .catch((err) => {
-          logger.warn(`[product:${productId}] Não foi possível buscar componentes do kit:`, err);
-          return [] as KitComponent[];
+    ? fetchKitFromView()
+        .then(async (rows) => {
+          if (rows.length > 0) {
+            auditKitFields('view', rows);
+            return rows;
+          }
+          logger.info(
+            `[product:${productId}] view v_kit_component_complete vazia — fallback para tabela base`,
+          );
+          const baseRows = await fetchKitFromBase();
+          auditKitFields('base', baseRows);
+          if (baseRows.length > 0) {
+            logger.warn(
+              `[product:${productId}] FALLBACK ATIVO: view retornou 0 linhas mas base retornou ${baseRows.length}. ` +
+                `View pode estar com filtro RLS divergente ou JOIN excluindo linhas.`,
+            );
+          }
+          return baseRows;
+        })
+        .catch(async (err) => {
+          logger.warn(
+            `[product:${productId}] view v_kit_component_complete falhou, fallback para tabela base:`,
+            err,
+          );
+          try {
+            const baseRows = await fetchKitFromBase();
+            auditKitFields('base', baseRows);
+            return baseRows;
+          } catch (err2) {
+            logger.warn(`[product:${productId}] Não foi possível buscar componentes do kit:`, err2);
+            return [] as KitComponent[];
+          }
         })
     : Promise.resolve([]);
 
+  // NOTA DE NEGÓCIO: kits nativos do fornecedor são vendidos como conjunto único.
+  // Componentes NÃO são SKUs vendáveis avulsos — portanto não buscamos preço/estoque por componente.
   const [allProductImages, enrichment, variants, videos, kitComponents] = await Promise.all([
     imagesPromise,
     enrichmentPromise,

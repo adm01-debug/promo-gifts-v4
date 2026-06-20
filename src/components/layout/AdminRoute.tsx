@@ -80,8 +80,11 @@ export function AdminRoute({ children }: AdminRouteProps) {
     );
   }
 
-  // Admin/manager com MFA mas sessão em aal1 → exige challenge antes de renderizar filhos
-  if (mfaRequired && currentAAL === 'aal1') {
+  // Admin/manager com MFA mas sessão ainda não está em AAL2 → exige challenge
+  // antes de renderizar filhos. `currentAAL` pode ser `null` enquanto a consulta
+  // de AAL hidrata; tratar apenas `aal1` liberava painel admin por uma janela
+  // curta em rotas críticas.
+  if (hasMFA && mfaRequired && currentAAL !== 'aal2') {
     return (
       <>
         <div className="flex min-h-screen items-center justify-center bg-background">

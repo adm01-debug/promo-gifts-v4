@@ -273,13 +273,13 @@ export function ProductFormFullscreen({
   const stepReady = useMemo(
     () => [
       Boolean(formValues.supplier_id && formValues.sku && formValues.name), // 0: essentials
-      Boolean((formValues.sale_price ?? 0) > 0),                           // 1: fiscal
-      true,                                                                  // 2: classification
-      true,                                                                  // 3: commercial
-      isEdit && !!productId,                                                 // 4: engraving
-      Boolean(formValues.packing_type),                                      // 5: packaging
-      true,                                                                  // 6: kits
-      images.length > 0 || Boolean(formValues.video_url),                   // 7: media
+      Boolean((formValues.sale_price ?? 0) > 0), // 1: fiscal
+      true, // 2: classification
+      true, // 3: commercial
+      isEdit && !!productId, // 4: engraving
+      Boolean(formValues.packing_type), // 5: packaging
+      true, // 6: kits
+      images.length > 0 || Boolean(formValues.video_url), // 7: media
       Boolean(formValues.meta_title || formValues.meta_description || formValues.key_benefits), // 8: content/SEO
     ],
     [formValues, images.length, isEdit, productId],

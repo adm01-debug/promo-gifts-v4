@@ -2,6 +2,7 @@
 // TIPOS PARA FILTROS AVANÇADOS
 // ============================================
 
+/** Opção de cor disponível em filtros avançados, com hex real e contagem de produtos. */
 export interface ColorOption {
   id: string;
   name: string;
@@ -9,6 +10,7 @@ export interface ColorOption {
   count?: number;
 }
 
+/** Opção de categoria hierárquica com nível e caminho para filtros de catálogo. */
 export interface CategoryOption {
   id: string;
   name: string;
@@ -19,6 +21,7 @@ export interface CategoryOption {
   children?: CategoryOption[];
 }
 
+/** Opção de técnica de personalização (gravação, bordado, etc.) com prazo e mínimo. */
 export interface TechniqueOption {
   id: string;
   name: string;
@@ -27,6 +30,7 @@ export interface TechniqueOption {
   minQuantity?: number;
 }
 
+/** Opção de fornecedor com código e prazo de lead time para filtros avançados. */
 export interface SupplierOption {
   id: string;
   name: string;
@@ -34,16 +38,19 @@ export interface SupplierOption {
   leadTimeDays?: number;
 }
 
+/** Opção de material disponível como filtro de catálogo (ex.: metal, couro, plástico). */
 export interface MaterialOption {
   name: string;
   count?: number;
 }
 
+/** Opção de status de estoque para o filtro de disponibilidade no catálogo. */
 export interface StockFilterOption {
   value: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'future';
   label: string;
 }
 
+/** Estado completo dos filtros avançados do Super Filtro e catálogo B2B. */
 export interface AdvancedFilterState {
   // Filtros básicos
   search: string;
@@ -104,6 +111,7 @@ export interface AdvancedFilterState {
     | string;
 }
 
+/** Grupo canônico de cor (ex.: Azul, Vermelho) vindo da tabela `color_groups`. */
 export interface ColorGroupData {
   id: string;
   name: string;
@@ -111,6 +119,7 @@ export interface ColorGroupData {
   is_active?: boolean;
 }
 
+/** Tag de produto (público-alvo, datas comemorativas, endomarketing, nicho). */
 export interface TagData {
   id: string;
   name: string;

@@ -182,20 +182,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange((event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      } = supabase.auth.onAuthStateChange((event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
 
-        if (session?.user) {
+        if (newSession?.user) {
           if (event === 'SIGNED_IN') {
-            const name = session.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
+            const name = newSession.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
             toast.success(`🤖 Flow`, { description: getRandomGreeting(name), duration: 3000 });
           }
 
           // BUG-3 FIX: só rebuscar perfil/roles em eventos que efetivamente
           // alteram os dados do usuário. TOKEN_REFRESHED ocorre a cada ~5min e
           // troca apenas o JWT — não precisa rebater no banco toda vez.
-          const uid = session.user.id;
+          const uid = newSession.user.id;
           if (EVENTS_THAT_NEED_PROFILE_FETCH.has(event)) {
             initialFetchScheduled = true;
             // Use Promise.resolve().then to avoid potential issues with immediate state updates in event handler
@@ -226,11 +226,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       unsubscribe = () => subscription.unsubscribe();
 
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session: authSession } }) => {
         if (cancelled) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
+        setSession(authSession);
+        setUser(authSession?.user ?? null);
+        if (authSession?.user) {
           // BUG-CRÍTICO FIX: revalida o token no boot. Se o kid foi rotacionado
           // enquanto a aba estava fechada, getUser() retorna bad_jwt e disparamos
           // recovery antes de hidratar dados/papéis com um token quebrado.
@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // se o listener ainda não disparou (ex.: Supabase não emitiu
           // INITIAL_SESSION antes de getSession() resolver).
           if (!initialFetchScheduled) {
-            fetchUserData(session.user.id);
+            fetchUserData(authSession.user.id);
             fetchAAL();
           }
         } else {

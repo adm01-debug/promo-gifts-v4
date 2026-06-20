@@ -113,6 +113,7 @@ export function useSellerCartsPage() {
 
   useEffect(() => {
     if (!routeCartId || isLoading) return;
+    if (routeCartId === 'novo') return;
     const found = carts.some((c) => c.id === routeCartId);
     if (found) {
       lastResolvedCartIdRef.current = routeCartId;
@@ -130,6 +131,7 @@ export function useSellerCartsPage() {
   }, [routeCartId, carts, isLoading, setActiveCartId, navigate]);
 
   useEffect(() => {
+    if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
     setLocalCartNotes(activeCart?.notes ?? '');
     setCartNotesOpen(!!activeCart?.notes);
   }, [activeCart?.id, activeCart?.notes]);
@@ -358,7 +360,7 @@ export function useSellerCartsPage() {
       return;
     }
     if (staleCount > 0) {
-      toast.warning(staleCount + ' item(ns) fora do catalogo ignorado(s)', {
+      toast.warning(`${staleCount} item(ns) fora do catalogo ignorado(s)`, {
         description: 'Produtos descontinuados nao entram no orcamento.',
       });
     }

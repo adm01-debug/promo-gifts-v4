@@ -47,7 +47,7 @@ export function useRegressionGuardrail() {
     refetchInterval: 60_000,
     staleTime: 30_000,
     queryFn: async (): Promise<GuardrailReport> => {
-      const { data, error } = await supabase.rpc('check_telemetry_regression');
+      const { data: rpcData, error } = await supabase.rpc('check_telemetry_regression');
       if (error) {
         return {
           status: 'error',
@@ -55,7 +55,7 @@ export function useRegressionGuardrail() {
           errorMessage: error.message,
         };
       }
-      const payload = data as Record<string, unknown>;
+      const payload = rpcData as Record<string, unknown>;
       if (payload?.error) {
         return {
           status: 'error',

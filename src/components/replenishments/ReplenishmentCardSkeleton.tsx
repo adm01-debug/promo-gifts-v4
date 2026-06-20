@@ -16,9 +16,7 @@ export interface ReplenishmentCardSkeletonProps {
   readonly className?: string;
 }
 
-export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton({
-  className,
-}: ReplenishmentCardSkeletonProps) {
+export const ReplenishmentCardSkeleton = memo(({ className }: ReplenishmentCardSkeletonProps) => {
   return (
     <Card
       className={cn(
@@ -81,7 +79,6 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
             <Skeleton className="mb-1 h-2 w-20" />
             <Skeleton className="h-8 w-full" />
           </div>
-
         </div>
       </CardContent>
     </Card>

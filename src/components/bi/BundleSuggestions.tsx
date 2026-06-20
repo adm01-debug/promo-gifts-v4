@@ -71,11 +71,11 @@ export function BundleSuggestions({ clientId }: Props) {
     staleTime: 10 * 60 * 1000,
     queryFn: async (): Promise<BundleRow[]> => {
       if (!anchorId) return [];
-      const { data, error } = await supabase.rpc('get_bundle_suggestions', {
+      const { data: queryRows, error } = await supabase.rpc('get_bundle_suggestions', {
         _product_id: anchorId,
       });
-      if (error || !Array.isArray(data)) return [];
-      return data as BundleRow[];
+      if (error || !Array.isArray(queryRows)) return [];
+      return queryRows as BundleRow[];
     },
   });
 

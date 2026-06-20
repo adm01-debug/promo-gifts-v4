@@ -10,8 +10,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { PostgrestError } from '@supabase/supabase-js';
 
+/** Tipo de operação SQL cujo acesso foi negado pela política RLS do Supabase. */
 export type RlsOperation = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
 
+/** Contexto de rastreabilidade para registrar qual endpoint/tabela disparou a negação RLS. */
 export interface LogRlsDenialContext {
   table: string;
   op: RlsOperation;

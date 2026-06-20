@@ -24,12 +24,12 @@ export function DiscountApprovalHeaderBadge() {
   const { data: count = 0 } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      const { count } = await supabase
+      const { count: rawCount } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-      return count || 0;
+      return rawCount || 0;
     },
     enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto
     retry: 0, // sem retries: falha = falha, não flood de HEAD requests

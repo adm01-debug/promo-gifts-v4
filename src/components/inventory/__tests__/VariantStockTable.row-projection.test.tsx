@@ -92,7 +92,7 @@ const product: ProductStockSummary = {
 
 describe('VariantStockTable row — projeção SSOT', () => {
   it('após aplicar filtro de cor, o produto projetado contém só a variação Azul', () => {
-    const idx = buildStockIndexes([product], []);
+    const idx = buildStockIndexes([product]);
     const [projected] = applyStockFilters(
       [product],
       { ...defaultStockFilters, colorName: 'Azul' },
@@ -110,7 +110,7 @@ describe('VariantStockTable row — projeção SSOT', () => {
   });
 
   it("a string '1 variação' aparece em vez de '3 variações' (regra de UI)", () => {
-    const idx = buildStockIndexes([product], []);
+    const idx = buildStockIndexes([product]);
     const [projected] = applyStockFilters(
       [product],
       { ...defaultStockFilters, colorName: 'Azul' },
@@ -124,7 +124,7 @@ describe('VariantStockTable row — projeção SSOT', () => {
   });
 
   it('filtro Verde → contadores recalculados (300, não 1000) — não há vazamento', () => {
-    const idx = buildStockIndexes([product], []);
+    const idx = buildStockIndexes([product]);
     const [projected] = applyStockFilters(
       [product],
       { ...defaultStockFilters, colorName: 'Verde' },

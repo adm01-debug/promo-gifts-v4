@@ -10,7 +10,7 @@
  *  - desconto_real = desconto efetivo vs subtotal_real (validado pela alçada)
  *  - NUNCA aparece no PDF / quote pública / e-mail do cliente
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,11 @@ export function NegotiationMarkupCard({
   className,
 }: Props) {
   const [enabled, setEnabled] = useState(value > 0);
+
+  // Sync switch state when an existing quote with markup > 0 is loaded externally
+  useEffect(() => {
+    if (value > 0) setEnabled(true);
+  }, [value]);
 
   const presentedSubtotal = realSubtotal * (1 + value / 100);
   const finalPrice = presentedSubtotal * (1 - apparentDiscountPercent / 100);

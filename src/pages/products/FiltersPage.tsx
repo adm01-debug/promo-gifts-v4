@@ -527,61 +527,61 @@ export default function FiltersPage() {
                     data-testid="superfiltro-toolbar-actions"
                     className="order-last ml-auto flex shrink-0 items-center gap-2"
                   >
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={state.selectionMode ? 'default' : 'outline'}
-                            size="sm"
-                            className={cn(
-                              'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
-                              state.selectionMode
-                                ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
-                                : 'hover:border-primary/50',
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={state.selectionMode ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                            state.selectionMode
+                              ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+                              : 'hover:border-primary/50',
+                          )}
+                          onClick={toggleSelectionMode}
+                          aria-label={
+                            state.selectionMode
+                              ? 'Cancelar seleção'
+                              : 'Ativar modo de seleção em massa'
+                          }
+                        >
+                          <CheckSquare className="h-3.5 w-3.5" />
+                          <span className="hidden text-xs sm:inline">
+                            {state.selectionMode ? 'Cancelar' : 'Selecionar'}
+                          </span>
+                          <AnimatePresence>
+                            {state.selectionMode && sel.selectedCount > 0 && (
+                              <motion.div
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                className="absolute -right-2 -top-2"
+                              >
+                                <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
+                                  {sel.selectedCount}
+                                </Badge>
+                              </motion.div>
                             )}
-                            onClick={toggleSelectionMode}
-                            aria-label={
-                              state.selectionMode
-                                ? 'Cancelar seleção'
-                                : 'Ativar modo de seleção em massa'
-                            }
-                          >
-                            <CheckSquare className="h-3.5 w-3.5" />
-                            <span className="hidden text-xs sm:inline">
-                              {state.selectionMode ? 'Cancelar' : 'Selecionar'}
-                            </span>
-                            <AnimatePresence>
-                              {state.selectionMode && sel.selectedCount > 0 && (
-                                <motion.div
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  exit={{ scale: 0, opacity: 0 }}
-                                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                                  className="absolute -right-2 -top-2"
-                                >
-                                  <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
-                                    {sel.selectedCount}
-                                  </Badge>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {state.selectionMode
-                            ? 'Sair do modo de seleção'
-                            : 'Selecionar vários produtos para ações em massa'}
-                        </TooltipContent>
-                      </Tooltip>
+                          </AnimatePresence>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {state.selectionMode
+                          ? 'Sair do modo de seleção'
+                          : 'Selecionar vários produtos para ações em massa'}
+                      </TooltipContent>
+                    </Tooltip>
 
-                      <div className="shrink-0">
-                        <LayoutPopover
-                          viewMode={state.viewMode}
-                          setViewMode={state.setViewMode}
-                          gridColumns={state.gridColumns}
-                          setGridColumns={state.setGridColumns}
-                        />
-                      </div>
+                    <div className="shrink-0">
+                      <LayoutPopover
+                        viewMode={state.viewMode}
+                        setViewMode={state.setViewMode}
+                        gridColumns={state.gridColumns}
+                        setGridColumns={state.setGridColumns}
+                      />
                     </div>
+                  </div>
 
                   {state.activeFiltersSummary.length > 0 && (
                     <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">

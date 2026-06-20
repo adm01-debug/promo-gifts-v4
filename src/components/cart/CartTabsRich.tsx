@@ -48,7 +48,11 @@ export function CartTabsRich({
   }
 
   return (
-    <div className="scrollbar-none flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2">
+    <div
+      role="tablist"
+      aria-label="Carrinhos"
+      className="scrollbar-none flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
+    >
       {carts.map((cart) => {
         const isActive = cart.id === activeCartId;
         const statusCfg = getStatusCfg(cart.status);

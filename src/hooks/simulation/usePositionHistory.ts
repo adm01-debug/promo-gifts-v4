@@ -139,7 +139,6 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
         if (state && onUndoRedoRef.current) {
           onUndoRedoRef.current.onApply(state);
         }
-        return;
       }
     };
 

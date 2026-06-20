@@ -38,7 +38,7 @@ import { gotoAndSettle } from '../helpers/nav';
 import { expectVisibleByTestId } from '../helpers/waits';
 
 const SUPABASE_URL = (
-  process.env.VITE_SUPABASE_URL ?? 'https://pqpdolkaeqlyzpdpbizo.supabase.co'
+  process.env.VITE_SUPABASE_URL ?? 'https://doufsxqlfjyuvxuezpln.supabase.co'
 ).replace(/\/+$/, '');
 const AUTHORIZE_GLOB = `${SUPABASE_URL}/auth/v1/authorize*`;
 const TOKEN_GLOB = `${SUPABASE_URL}/auth/v1/token*`;

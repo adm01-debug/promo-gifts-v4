@@ -75,7 +75,7 @@ export default function OptimizedImageDemo() {
     setKey((prev) => prev + 1);
 
     setTimeout(() => {
-      setCurrentSrc(showError ? ERROR_IMAGE : SAMPLE_IMAGE + `?t=${Date.now()}`);
+      setCurrentSrc(showError ? ERROR_IMAGE : `${SAMPLE_IMAGE}?t=${Date.now()}`);
       setIsLoading(false);
     }, delay);
   }, [showError, delay]);

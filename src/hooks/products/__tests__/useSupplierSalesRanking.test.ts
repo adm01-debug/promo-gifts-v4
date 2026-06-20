@@ -12,7 +12,7 @@ import React from 'react';
 import { useSupplierSalesRanking } from '../useSupplierSalesRanking';
 import { logger } from '@/lib/logger';
 
-const mockRpc = vi.fn();
+const mockRpc = vi.hoisted(() => vi.fn());
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -145,7 +145,7 @@ describe('defaults e limpeza', () => {
 
 describe('graceful fallback MV nao populada', () => {
   it.each([['not been populated'], ['não mapeada'], ['does not exist']])(
-    'retorna Map vazia quando erro: %s',
+    'retorna Map vazia quando erro RPC: %s',
     async (errMsg) => {
       mockRpc.mockResolvedValue({ data: null, error: { message: errMsg } });
       const { result } = renderHook(() => useSupplierSalesRanking(), { wrapper: makeWrapper() });

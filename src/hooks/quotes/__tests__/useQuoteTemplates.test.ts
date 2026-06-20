@@ -50,6 +50,8 @@ vi.mock('@/lib/logger', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Restaura useAuth: clearAllMocks preserva mockReturnValue entre testes
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
   // Default: DB retorna lista vazia
   const orderFn = vi.fn().mockReturnValue({
     limit: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -81,9 +83,9 @@ describe('estado inicial', () => {
 // ── user=null guard ────────────────────────────────────────────────────────
 describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: null, isAdmin: false } as never);
+    const { supabase: _supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {
@@ -92,18 +94,21 @@ describe('user=null guard', () => {
 
     expect(result.current.templates).toEqual([]);
     expect(result.current.loading).toBe(false);
-    expect(supabase.from).not.toHaveBeenCalled();
+    expect(_supabase.from).not.toHaveBeenCalled();
   });
 });
 
 // ── fetchTemplates ─────────────────────────────────────────────────────────
 describe('fetchTemplates', () => {
+  beforeEach(async () => {
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+  });
+
   it('carrega templates do DB com order updated_at DESC e limit 200', async () => {
     const mockLimitFn = vi.fn().mockResolvedValue({ data: [], error: null });
     const mockOrderFn = vi.fn().mockReturnValue({ limit: mockLimitFn });
     mockSelect.mockReturnValue({ order: mockOrderFn });
-    const { supabase } = await import('@/integrations/supabase/client');
-
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {
       await result.current.fetchTemplates();
@@ -158,14 +163,21 @@ describe('fetchTemplates', () => {
 // ── isAdmin guard em fetchAllTemplates ───────────────────────────────────
 describe('fetchAllTemplates — isAdmin guard', () => {
   it('nao chama DB quando user nao e admin', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
 
     const { result } = renderHook(() => useQuoteTemplates());
+    const callsBefore = vi.mocked((await import('@/integrations/supabase/client')).supabase.from)
+      .mock.calls.length;
     await act(async () => {
       await result.current.fetchAllTemplates?.();
     });
 
+    // allTemplates permanece vazio (isAdmin=false → guard bloqueia)
     expect(result.current.allTemplates ?? []).toEqual([]);
+    // fetchAllTemplates não deve ter adicionado chamadas extras ao DB
+    const callsAfter = vi.mocked((await import('@/integrations/supabase/client')).supabase.from)
+      .mock.calls.length;
+    expect(callsAfter).toBe(callsBefore);
   });
 });

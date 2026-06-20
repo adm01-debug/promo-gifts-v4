@@ -90,6 +90,8 @@ export function useCartTemplates() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Template excluído');
     },
+    onError: (err: Error) =>
+      toast.error('Não foi possível excluir o template', { description: sanitizeError(err) }),
   });
 
   return {
