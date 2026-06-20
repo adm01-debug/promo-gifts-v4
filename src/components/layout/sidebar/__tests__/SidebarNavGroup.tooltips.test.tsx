@@ -7,7 +7,15 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, UNSAFE_DataRouterContext } from 'react-router-dom';
-import { Plus, FileText, ShoppingCart, ShieldCheck, Users, FolderOpen, Package } from 'lucide-react';
+import {
+  Plus,
+  FileText,
+  ShoppingCart,
+  ShieldCheck,
+  Users,
+  FolderOpen,
+  Package,
+} from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarNavGroup, type NavGroup } from '../SidebarNavGroup';
 
@@ -48,13 +56,13 @@ const FUTURE_FLAGS = {
 
 const PUBLIC_TOOLTIPS = {
   'Novo Orçamento': 'Monte uma proposta em poucos cliques e envie para o cliente.',
-  'Orçamentos': 'Acompanhe propostas abertas, aprovadas e em negociação.',
-  'Carrinhos': 'Retome carrinhos salvos e converta em orçamento sem perder tempo.',
+  Orçamentos: 'Acompanhe propostas abertas, aprovadas e em negociação.',
+  Carrinhos: 'Retome carrinhos salvos e converta em orçamento sem perder tempo.',
 };
 
 const ADMIN_TOOLTIPS = {
-  'Usuários': 'Gerencie a equipe: cadastre vendedores e defina permissões.',
-  'Segurança': 'Controle acessos e proteja os dados sensíveis dos seus clientes.',
+  Usuários: 'Gerencie a equipe: cadastre vendedores e defina permissões.',
+  Segurança: 'Controle acessos e proteja os dados sensíveis dos seus clientes.',
 };
 
 function makeGroup(): NavGroup {
@@ -64,11 +72,39 @@ function makeGroup(): NavGroup {
     icon: FileText,
     defaultOpen: true,
     items: [
-      { icon: Plus, label: 'Novo Orçamento', href: '/orcamentos/novo', tooltip: PUBLIC_TOOLTIPS['Novo Orçamento'] },
-      { icon: FileText, label: 'Orçamentos', href: '/orcamentos', exact: true, tooltip: PUBLIC_TOOLTIPS['Orçamentos'] },
-      { icon: ShoppingCart, label: 'Carrinhos', href: '/carrinhos', tooltip: PUBLIC_TOOLTIPS['Carrinhos'] },
-      { icon: Users, label: 'Usuários', href: '/admin/usuarios', adminOnly: true, tooltip: ADMIN_TOOLTIPS['Usuários'] },
-      { icon: ShieldCheck, label: 'Segurança', href: '/admin/seguranca', devOnly: true, tooltip: ADMIN_TOOLTIPS['Segurança'] },
+      {
+        icon: Plus,
+        label: 'Novo Orçamento',
+        href: '/orcamentos/novo',
+        tooltip: PUBLIC_TOOLTIPS['Novo Orçamento'],
+      },
+      {
+        icon: FileText,
+        label: 'Orçamentos',
+        href: '/orcamentos',
+        exact: true,
+        tooltip: PUBLIC_TOOLTIPS['Orçamentos'],
+      },
+      {
+        icon: ShoppingCart,
+        label: 'Carrinhos',
+        href: '/carrinhos',
+        tooltip: PUBLIC_TOOLTIPS.Carrinhos,
+      },
+      {
+        icon: Users,
+        label: 'Usuários',
+        href: '/admin/usuarios',
+        adminOnly: true,
+        tooltip: ADMIN_TOOLTIPS['Usuários'],
+      },
+      {
+        icon: ShieldCheck,
+        label: 'Segurança',
+        href: '/admin/seguranca',
+        devOnly: true,
+        tooltip: ADMIN_TOOLTIPS['Segurança'],
+      },
       {
         icon: FolderOpen,
         label: 'Cadastros',
@@ -76,7 +112,12 @@ function makeGroup(): NavGroup {
         adminOnly: true,
         tooltip: 'Mantenha produtos, fornecedores e gravações sempre atualizados.',
         children: [
-          { icon: Package, label: 'Produtos', href: '/admin/cadastros?tab=products', tooltip: 'Cadastre e edite os produtos do catálogo de vendas.' },
+          {
+            icon: Package,
+            label: 'Produtos',
+            href: '/admin/cadastros?tab=products',
+            tooltip: 'Cadastre e edite os produtos do catálogo de vendas.',
+          },
         ],
       },
     ],
