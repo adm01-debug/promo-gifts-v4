@@ -30,6 +30,8 @@ import type { Product } from '@/types/product-catalog';
 import { compareNamePtBR } from '@/utils/product-sorting';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { ProductColorSwatches } from './ProductColorSwatches';
+import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 
 type SkeletonRow = { id: string; isSkeleton: true };
 function isSkeletonRow(row: Product | SkeletonRow): row is SkeletonRow {
