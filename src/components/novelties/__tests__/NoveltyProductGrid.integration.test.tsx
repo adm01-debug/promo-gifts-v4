@@ -20,102 +20,112 @@ function getByPlaceholderPartial(text: string): HTMLInputElement {
 }
 
 // Mock dependencies
-vi.mock('@/hooks/products', () => ({
-  useNoveltiesWithDetails: vi.fn(() => ({
-    data: [
-      {
-        product_id: '1',
-        novelty_id: 'n1',
-        product_name: 'Caneta A',
-        base_price: 10,
-        supplier_id: 'sup1',
-        supplier_name: 'Sup A',
-        category_id: 'cat1',
-        category_name: 'Cat A',
-        detected_at: '2026-06-01T10:00:00Z',
-        stock_quantity: 100,
-        min_quantity: 10,
-        days_remaining: 30,
-        status: 'active',
-      },
-      {
-        product_id: '2',
-        novelty_id: 'n2',
-        product_name: 'Caneta B',
-        base_price: 5,
-        supplier_id: 'sup2',
-        supplier_name: 'Sup B',
-        category_id: 'cat1',
-        category_name: 'Cat A',
-        detected_at: '2026-06-02T10:00:00Z',
-        stock_quantity: 50,
-        min_quantity: 10,
-        days_remaining: 30,
-        status: 'active',
-      },
-    ],
-    isLoading: false,
-    isFetching: false,
-    error: null,
-  })),
-  // Faithful-enough local sort used by the grid (the real one lives in
-  // useNovelties.ts and sorts by the real NoveltyWithDetails fields).
-  sortNovelties: (arr: NoveltyWithDetails[], sortBy: string) => {
-    // Espelha o desempate estável por product_id do contrato real (sortNovelties).
-    const byNameThenId = (a: NoveltyWithDetails, b: NoveltyWithDetails) => {
-      const byName = (a.product_name || '').localeCompare(b.product_name || '', 'pt-BR');
-      if (byName !== 0) return byName;
-      return a.product_id < b.product_id ? -1 : a.product_id > b.product_id ? 1 : 0;
-    };
-    switch (sortBy) {
-      case 'newest':
-        arr.sort(
-          (a, b) =>
-            new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime() ||
-            byNameThenId(a, b),
-        );
-        break;
-      case 'name':
-      case 'name-asc':
-        arr.sort(byNameThenId);
-        break;
-      case 'name-desc':
-        arr.sort((a, b) => byNameThenId(b, a));
-        break;
-      case 'price-asc':
-        arr.sort((a, b) => (a.base_price ?? 0) - (b.base_price ?? 0) || byNameThenId(a, b));
-        break;
-      case 'price-desc':
-        arr.sort((a, b) => (b.base_price ?? 0) - (a.base_price ?? 0) || byNameThenId(a, b));
-        break;
-      case 'stock':
-        arr.sort((a, b) => (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0) || byNameThenId(a, b));
-        break;
-      default:
-        break;
-    }
-    return arr;
-  },
-  useNoveltiesSelectionMode: vi.fn(() => ({
-    selectedIds: new Set(),
-    toggleSelect: vi.fn(),
-    clearSelection: vi.fn(),
-    noveltyToProduct: (n: NoveltyWithDetails) => ({
-      id: n.product_id,
-      name: n.product_name || '',
-      product_name: n.product_name || '',
-      price: n.base_price,
-      sku: n.product_sku || '',
-      stock: n.stock_quantity,
-      supplier: { id: n.supplier_id, name: n.supplier_name },
-      category: { id: n.category_id, name: n.category_name },
-      images: [n.product_image],
-      colors: [],
-      materials: [],
-      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-    }),
-  })),
-}));
+vi.mock('@/hooks/products', () => {
+  // noveltyToProduct must be a TOP-LEVEL named export AND in the hook return value:
+  // NoveltyProductGrid.tsx imports it directly (line 26) AND useNoveltiesSelectionMode
+  // exposes it in its return. Sharing the same impl keeps both consistent.
+  const noveltyToProductImpl = (n: NoveltyWithDetails) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    product_name: n.product_name || '',
+    price: n.base_price,
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id, name: n.supplier_name },
+    category: { id: n.category_id, name: n.category_name },
+    images: [n.product_image],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  });
+
+  return {
+    useNoveltiesWithDetails: vi.fn(() => ({
+      data: [
+        {
+          product_id: '1',
+          novelty_id: 'n1',
+          product_name: 'Caneta A',
+          base_price: 10,
+          supplier_id: 'sup1',
+          supplier_name: 'Sup A',
+          category_id: 'cat1',
+          category_name: 'Cat A',
+          detected_at: '2026-06-01T10:00:00Z',
+          stock_quantity: 100,
+          min_quantity: 10,
+          days_remaining: 30,
+          status: 'active',
+        },
+        {
+          product_id: '2',
+          novelty_id: 'n2',
+          product_name: 'Caneta B',
+          base_price: 5,
+          supplier_id: 'sup2',
+          supplier_name: 'Sup B',
+          category_id: 'cat1',
+          category_name: 'Cat A',
+          detected_at: '2026-06-02T10:00:00Z',
+          stock_quantity: 50,
+          min_quantity: 10,
+          days_remaining: 30,
+          status: 'active',
+        },
+      ],
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    })),
+    // Faithful-enough local sort used by the grid (the real one lives in
+    // useNovelties.ts and sorts by the real NoveltyWithDetails fields).
+    sortNovelties: (arr: NoveltyWithDetails[], sortBy: string) => {
+      // Espelha o desempate estável por product_id do contrato real (sortNovelties).
+      const byNameThenId = (a: NoveltyWithDetails, b: NoveltyWithDetails) => {
+        const byName = (a.product_name || '').localeCompare(b.product_name || '', 'pt-BR');
+        if (byName !== 0) return byName;
+        return a.product_id < b.product_id ? -1 : a.product_id > b.product_id ? 1 : 0;
+      };
+      switch (sortBy) {
+        case 'newest':
+          arr.sort(
+            (a, b) =>
+              new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime() ||
+              byNameThenId(a, b),
+          );
+          break;
+        case 'name':
+        case 'name-asc':
+          arr.sort(byNameThenId);
+          break;
+        case 'name-desc':
+          arr.sort((a, b) => byNameThenId(b, a));
+          break;
+        case 'price-asc':
+          arr.sort((a, b) => (a.base_price ?? 0) - (b.base_price ?? 0) || byNameThenId(a, b));
+          break;
+        case 'price-desc':
+          arr.sort((a, b) => (b.base_price ?? 0) - (a.base_price ?? 0) || byNameThenId(a, b));
+          break;
+        case 'stock':
+          arr.sort(
+            (a, b) => (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0) || byNameThenId(a, b),
+          );
+          break;
+        default:
+          break;
+      }
+      return arr;
+    },
+    noveltyToProduct: noveltyToProductImpl,
+    useNoveltiesSelectionMode: vi.fn(() => ({
+      selectedIds: new Set(),
+      toggleSelect: vi.fn(),
+      clearSelection: vi.fn(),
+      noveltyToProduct: noveltyToProductImpl,
+    })),
+  };
+});
 
 vi.mock('@/stores/useFavoritesStore', () => ({
   useFavoritesStore: vi.fn(() => ({
