@@ -327,6 +327,14 @@ function SellerCartsContent() {
     [s],
   );
 
+  const handleDuplicateCart = useCallback(
+    (id: string) => {
+      if (s.canCreateCart) s.duplicateCart(id);
+      else toast.error('Limite de 3 carrinhos atingido');
+    },
+    [s.canCreateCart, s.duplicateCart],
+  );
+
   const cartTableData = useMemo(() => {
     const items = s.activeCart?.items ?? [];
     const sorted = [...items].sort((a, b) => {
@@ -909,10 +917,7 @@ function SellerCartsContent() {
               canCreateCart={s.canCreateCart}
               onGenerateQuote={s.handleGenerateQuote}
               onShareCart={s.shareCartLink}
-              onDuplicateCart={(id) => {
-                if (s.canCreateCart) s.duplicateCart(id);
-                else toast.error('Limite de 3 carrinhos atingido');
-              }}
+              onDuplicateCart={handleDuplicateCart}
               onExportCSV={s.exportCartToCSV}
               onExportPDF={s.exportCartToPDF}
               onSaveTemplate={s.handleSaveTemplate}

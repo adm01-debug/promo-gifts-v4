@@ -467,15 +467,20 @@ export function useSellerCartsPage() {
     [carts, activeCartId],
   );
   const cartAge = activeCart ? differenceInDays(new Date(), new Date(activeCart.created_at)) : 0;
-  const cartSubtotal = activeCart
-    ? activeCart.items.reduce(
-        (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
-        0,
-      )
-    : 0;
-  const cartTotalQty = activeCart
-    ? activeCart.items.reduce((s, i) => s + (Number(i.quantity) || 0), 0)
-    : 0;
+  const cartSubtotal = useMemo(
+    () =>
+      activeCart
+        ? activeCart.items.reduce(
+            (sum, i) => sum + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+            0,
+          )
+        : 0,
+    [activeCart],
+  );
+  const cartTotalQty = useMemo(
+    () => (activeCart ? activeCart.items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0) : 0),
+    [activeCart],
+  );
 
   return {
     navigate,
