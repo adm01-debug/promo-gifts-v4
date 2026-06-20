@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, Share2, Trash2, Check } from 'lucide-react';
+import { Copy, Share2, Trash2, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { FavoriteList } from '@/hooks/favorites';
 
@@ -27,9 +27,12 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = list.shared_token
-    ? `${window.location.origin}/lista-publica/${list.shared_token}`
-    : null;
+  const isExpired =
+    list.shared_expires_at != null && new Date(list.shared_expires_at) < new Date();
+  const shareUrl =
+    list.shared_token && !isExpired
+      ? `${window.location.origin}/lista-publica/${list.shared_token}`
+      : null;
 
   const handleGenerate = async () => {
     setBusy(true);
@@ -69,6 +72,15 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
           </DialogDescription>
         </DialogHeader>
 
+        {isExpired && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              O link expirou em{' '}
+              {new Date(list.shared_expires_at!).toLocaleDateString('pt-BR')}. Gere um novo abaixo.
+            </span>
+          </div>
+        )}
         {shareUrl ? (
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -113,8 +125,19 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
               />
             </div>
             <Button onClick={handleGenerate} className="w-full" disabled={busy}>
-              {busy ? 'Gerando…' : 'Gerar link público'}
+              {busy ? 'Gerando…' : isExpired ? 'Gerar novo link' : 'Gerar link público'}
             </Button>
+            {isExpired && list.shared_token && (
+              <Button
+                variant="outline"
+                className="w-full text-destructive hover:text-destructive"
+                onClick={handleRevoke}
+                disabled={busy}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Revogar link expirado
+              </Button>
+            )}
           </div>
         )}
 

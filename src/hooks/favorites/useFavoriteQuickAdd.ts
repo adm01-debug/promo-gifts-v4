@@ -21,7 +21,7 @@ const LAST_LIST_KEY = 'favorites-last-used-list-id';
 export function useFavoriteQuickAdd() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { lists, defaultList, createList } = useFavoriteLists();
+  const { lists, defaultList, createList, deleteList } = useFavoriteLists();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Index global de membership: produto X está em quais listas?
@@ -43,6 +43,7 @@ export function useFavoriteQuickAdd() {
     },
     enabled: !!user,
     staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // Intentionally NOT memoised — must read fresh on every click so that
@@ -104,6 +105,7 @@ export function useFavoriteQuickAdd() {
   const removeFromAll = useCallback(
     async (productId: string) => {
       if (!user) return;
+      const listCount = membership.get(productId)?.size ?? 0;
       try {
         const { error } = await supabase
           .from('favorite_items')
@@ -115,23 +117,36 @@ export function useFavoriteQuickAdd() {
         qc.invalidateQueries({ queryKey: ['favorite-membership'] });
         qc.invalidateQueries({ queryKey: ['favorite-items'] });
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
+        if (listCount > 1) {
+          toast.info(`Removido de ${listCount} listas simultaneamente`);
+        }
       } catch (e) {
         logger.warn('[favoriteQuickAdd] remove failed', e);
         toast.error('Não foi possível remover dos favoritos');
         // Do NOT toggle — deletion failed, keep local state consistent with DB
       }
     },
-    [user, qc, isFavorite, toggleFavorite],
+    [user, membership, qc, isFavorite, toggleFavorite],
   );
 
-  /** Cria lista nova e adiciona o produto nela. */
+  /** Cria lista nova e adiciona o produto nela. Faz rollback da lista se addToList falhar. */
   const createAndAdd = useCallback(
     async (name: string, product: Product, variant?: FavoriteVariantInfo) => {
       const list = await createList.mutateAsync({ name });
-      await addToList(list.id, product, variant);
+      try {
+        await addToList(list.id, product, variant);
+      } catch (e) {
+        // addToList already showed an error toast; clean up the orphan list silently
+        try {
+          await deleteList.mutateAsync(list.id);
+        } catch {
+          /* list cleanup is best-effort */
+        }
+        throw e;
+      }
       return list.id;
     },
-    [createList, addToList],
+    [createList, addToList, deleteList],
   );
 
   /**
