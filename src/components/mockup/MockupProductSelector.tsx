@@ -267,6 +267,7 @@ export function MockupProductSelector({
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    onBlur={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="cursor-pointer border-none bg-transparent text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus:ring-0"
                   >
                     <option value="default">Relevância</option>
@@ -342,7 +343,9 @@ export function MockupProductSelector({
                             >
                               <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-muted">
                                 <img
-                                  src={product.image_url || product.images?.[0] || '/placeholder.svg'}
+                                  src={
+                                    product.image_url || product.images?.[0] || '/placeholder.svg'
+                                  }
                                   alt={product.name}
                                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                   loading="lazy"

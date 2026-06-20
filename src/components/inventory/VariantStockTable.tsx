@@ -785,7 +785,7 @@ export function VariantStockTable({
               <>
                 {/* Spacer topo — mantém scrollbar calibrado sem renderizar linhas invisíveis */}
                 {virtualTopPad > 0 && (
-                  <tr aria-hidden="true">
+                  <tr>
                     <td
                       colSpan={colSpan}
                       style={{ height: virtualTopPad, padding: 0, border: 'none' }}
@@ -811,7 +811,7 @@ export function VariantStockTable({
                 })}
                 {/* Spacer base — garante que scroll total = rowVirtualizer.getTotalSize() */}
                 {virtualBottomPad > 0 && (
-                  <tr aria-hidden="true">
+                  <tr>
                     <td
                       colSpan={colSpan}
                       style={{ height: virtualBottomPad, padding: 0, border: 'none' }}
