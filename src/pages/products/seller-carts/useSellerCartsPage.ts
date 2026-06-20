@@ -142,9 +142,11 @@ export function useSellerCartsPage() {
   const prevCartIdRef = useRef<string | undefined>(undefined);
 
   // On cart switch: flush pending debounce to PREVIOUS cart, then reset local state.
-  // Separated from the notes-sync effect below to avoid double-flush when the server
-  // saves notes (which fires activeCart.notes change, not activeCart.id change).
+  // Early-return when notes-only change (same cart id) avoids double-flush with the
+  // server-sync effect below. activeCart?.notes is in the dep array to satisfy
+  // exhaustive-deps; the guard ensures the body only runs on actual cart switch.
   useEffect(() => {
+    if (activeCart?.id === prevCartIdRef.current) return;
     if (debounceNotesRef.current && prevCartIdRef.current) {
       clearTimeout(debounceNotesRef.current);
       debounceNotesRef.current = undefined;
@@ -153,7 +155,7 @@ export function useSellerCartsPage() {
     prevCartIdRef.current = activeCart?.id;
     setLocalCartNotes(activeCart?.notes ?? '');
     setCartNotesOpen(!!activeCart?.notes);
-  }, [activeCart?.id, updateCartNotes]);
+  }, [activeCart?.id, activeCart?.notes, updateCartNotes]);
 
   // On server-side notes update: sync local state only when user is not typing
   // (debounce pending = user is mid-edit; overwriting would discard in-flight keystrokes).
