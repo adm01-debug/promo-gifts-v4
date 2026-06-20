@@ -105,12 +105,13 @@ export function getTechniquePrompt(technique: Technique): string {
 // Explicit column list (incl. layout_url + area_config). Geometry now lives in
 // dedicated top-level columns (position_x/y, logo_width_cm/height_cm — added by
 // migration 20251215011449) AND mirrored in area_config for backward-compat with
-// older records. Uses untypedFrom because the generated types.ts is stale and does
-// not yet reflect those columns (pending `npm run types:generate:supabase`).
+// older records. client_id/client_name/logo_rotation/logo_scale added by
+// migration 20260620000001. Uses untypedFrom because the generated types.ts is stale.
 const MOCKUP_HISTORY_COLUMNS =
   'id, user_id, product_id, product_name, product_sku, technique_id, technique_name, ' +
   'mockup_url, thumbnail_url, layout_url, logo_url, position_x, position_y, ' +
-  'logo_width_cm, logo_height_cm, area_name, area_config, created_at';
+  'logo_width_cm, logo_height_cm, logo_rotation, logo_scale, ' +
+  'client_id, client_name, area_name, area_config, created_at';
 
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
   let query = untypedFrom<Record<string, unknown>>('generated_mockups')
@@ -139,10 +140,16 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
         (row.logo_width_cm as number | null) ?? (cfg.logoWidth as number | null) ?? null,
       logo_height_cm:
         (row.logo_height_cm as number | null) ?? (cfg.logoHeight as number | null) ?? null,
-      logo_rotation: (cfg.logoRotation as number | null) ?? null,
-      logo_scale: (cfg.logoScale as number | null) ?? null,
-      client_id: null,
-      client_name: (cfg.clientName as string | null) ?? null,
+      // BUG-MISSING-COLS FIX: read logo_rotation/logo_scale from top-level columns
+      // (added migration 20260620000001), falling back to area_config for older rows.
+      logo_rotation:
+        (row.logo_rotation as number | null) ?? (cfg.logoRotation as number | null) ?? null,
+      logo_scale: (row.logo_scale as number | null) ?? (cfg.logoScale as number | null) ?? null,
+      // BUG-CLIENT-ID FIX: client_id and client_name are now real columns
+      // (migration 20260620000001). Fall back to area_config for rows created before the migration.
+      client_id: (row.client_id as string | null) ?? null,
+      client_name:
+        (row.client_name as string | null) ?? (cfg.clientName as string | null) ?? null,
       location_name: (row.area_name as string | null) ?? null,
       colors_count: (cfg.colorsCount as number | null) ?? null,
       annotations: (cfg.annotations as Array<Record<string, unknown>> | null) ?? null,
@@ -204,6 +211,8 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // in the `technique_name` text column, which is what all read paths use). The FK
     // column should only be set once the UI loads techniques from `personalization_techniques`.
     const safeTechniqueId: null = null;
+    // BUG-CLIENT-ID FIX: persist client_id and client_name as top-level columns.
+    const safeClientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
     const { data: insertedRow, error } = await untypedFrom('generated_mockups')
@@ -222,6 +231,13 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
         position_y: area.positionY,
         logo_width_cm: area.logoWidth,
         logo_height_cm: area.logoHeight,
+        // BUG-MISSING-COLS FIX: persist logo_rotation/scale as top-level columns
+        // (migration 20260620000001) so they survive without JSONB archaeology.
+        logo_rotation: area.logoRotation ?? 0,
+        logo_scale: area.logoScale ?? 100,
+        // BUG-CLIENT-ID FIX: persist client_id/name as top-level columns.
+        client_id: safeClientId,
+        client_name: clientName,
         area_name: extra?.locationName || area.name || 'Frente',
         ai_model_used: technique.code || technique.name || 'custom',
         area_config: {
@@ -306,44 +322,43 @@ async function extractEdgeErrorMessage(error: unknown): Promise<string> {
   return error instanceof Error ? error.message : 'Falha ao gerar mockup.';
 }
 
-/** Invokes the edge function for a single area, enforcing the 60s timeout. */
-async function invokeMockupForArea(
-  params: GenerateMockupParams,
-  area: PersonalizationArea,
-): Promise<string> {
-  // BUG-400c FIX (2026-06-18): the edge function contract (see
-  // supabase/functions/generate-mockup/index.ts) expects:
+/** Builds the edge function body for a single area. */
+function buildMockupPayload(params: GenerateMockupParams, area: PersonalizationArea) {
+  // BUG-400c FIX (2026-06-18): the edge function contract expects:
   //   - `logoBase64` for inline data: URLs OR `logoUrl` for an https URL
   //     (it validates logoUrl with isValidHttpUrl, which REJECTS data: URLs);
   //   - `logoWidthCm` / `logoHeightCm` (NOT logoWidth/logoHeight);
   //   - `techniqueName` as a string (NOT a Technique object).
-  // The previous payload sent `logoUrl: area.logoPreview` (a base64 data: URL
-  // right after upload) → 400 "Either logoBase64 or a valid logoUrl is required",
-  // and sent logoWidth/logoHeight so the logo always fell back to the 5×3 cm
-  // defaults. This broke the primary "upload a logo → generate" flow outright.
   const logo = area.logoPreview ?? '';
   const isDataUrl = logo.startsWith('data:');
   const logoPayload = isDataUrl ? { logoBase64: logo } : { logoUrl: logo };
+  return {
+    productImageUrl: params.productImage,
+    productName: params.productName,
+    techniqueName: params.technique.name,
+    techniquePrompt: getTechniquePrompt(params.technique),
+    ...logoPayload,
+    areaName: area.name,
+    positionX: area.positionX,
+    positionY: area.positionY,
+    logoWidthCm: area.logoWidth,
+    logoHeightCm: area.logoHeight,
+    logoRotation: area.logoRotation ?? 0,
+    logoScale: area.logoScale ?? 100,
+    // WYSIWYG: repassa dimensoes fisicas do produto para a edge function.
+    // Sem esses valores, posX/posY sao calculados com prodW=0 → fallback /20.
+    productWidthCm: params.productWidthCm ?? undefined,
+    productHeightCm: params.productHeightCm ?? undefined,
+  };
+}
 
+/** Single invocation attempt with 60s timeout. */
+async function _invokeMockupOnce(
+  params: GenerateMockupParams,
+  area: PersonalizationArea,
+): Promise<string> {
   const generateCall = supabase.functions.invoke('generate-mockup', {
-    body: {
-      productImageUrl: params.productImage,
-      productName: params.productName,
-      techniqueName: params.technique.name,
-      techniquePrompt: getTechniquePrompt(params.technique),
-      ...logoPayload,
-      areaName: area.name,
-      positionX: area.positionX,
-      positionY: area.positionY,
-      logoWidthCm: area.logoWidth,
-      logoHeightCm: area.logoHeight,
-      logoRotation: area.logoRotation ?? 0,
-      logoScale: area.logoScale ?? 100,
-      // WYSIWYG: repassa dimensoes fisicas do produto para a edge function.
-      // Sem esses valores, posX/posY sao calculados com prodW=0 → fallback /20.
-      productWidthCm: params.productWidthCm ?? undefined,
-      productHeightCm: params.productHeightCm ?? undefined,
-    },
+    body: buildMockupPayload(params, area),
   });
 
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -361,6 +376,47 @@ async function invokeMockupForArea(
     return data.mockupUrl as string;
   } finally {
     if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * Returns true for transient infrastructure errors that warrant a retry.
+ * User/payload errors (bad logo format, SVG, missing logo) propagate immediately.
+ */
+function _isTransientError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('esgotado') ||      // pt-BR timeout message
+    lower.includes('timeout') ||
+    lower.includes('network') ||
+    lower.includes('fetch') ||
+    lower.includes('etimedout') ||
+    lower.includes('econnreset') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('503') ||
+    lower.includes('502')
+  );
+}
+
+/**
+ * Invokes the edge function for a single area with one automatic retry on
+ * transient infrastructure failures (timeout, network drop, 502/503).
+ * BUG-NO-RETRY FIX: previously a single network glitch aborted the whole generation.
+ */
+async function invokeMockupForArea(
+  params: GenerateMockupParams,
+  area: PersonalizationArea,
+): Promise<string> {
+  try {
+    return await _invokeMockupOnce(params, area);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (_isTransientError(msg)) {
+      logger.warn('[invokeMockupForArea] Transient error, retrying in 2 s:', msg);
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      return _invokeMockupOnce(params, area);
+    }
+    throw err;
   }
 }
 
