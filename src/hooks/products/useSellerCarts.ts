@@ -170,7 +170,7 @@ export function useSellerCarts() {
       return { ...data, notes: null, status: 'novo' as CartStatus, items: [] } as SellerCart;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Operação falhou', { description: sanitizeError(err) });
@@ -184,7 +184,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Carrinho removido');
     },
     onError: (err: Error) => {
@@ -246,7 +246,7 @@ export function useSellerCarts() {
       // INSERT/UPDATE/DELETE — não precisamos do round-trip manual aqui.
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível adicionar ao carrinho', { description: sanitizeError(err) });
@@ -260,7 +260,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível remover o item', { description: sanitizeError(err) });
@@ -281,7 +281,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível atualizar a quantidade', { description: sanitizeError(err) });
@@ -298,7 +298,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível salvar a observação', { description: sanitizeError(err) });
@@ -324,11 +324,11 @@ export function useSellerCarts() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       // Revalida do servidor para desfazer a ordem otimista que ficou parcial.
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.error('Não foi possível reordenar os itens', { description: sanitizeError(err) });
     },
   });
@@ -343,7 +343,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível salvar as observações', { description: sanitizeError(err) });
@@ -357,7 +357,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível atualizar o status', { description: sanitizeError(err) });
@@ -421,7 +421,7 @@ export function useSellerCarts() {
       return newCart.id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Carrinho duplicado com sucesso');
     },
     onError: (err: Error) => {
@@ -492,12 +492,12 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Item movido para outro carrinho');
     },
     onError: (err: Error) => {
       // Revalida do servidor: desfaz qualquer estado otimista/parcial da UI.
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.error('Não foi possível mover o item', { description: sanitizeError(err) });
     },
   });
@@ -544,7 +544,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Item duplicado para outro carrinho');
     },
     onError: (err: Error) => {
@@ -604,7 +604,7 @@ export function useSellerCarts() {
       // trg_touch_seller_cart_on_item_change (migration 20260617130000).
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível restaurar os itens', { description: sanitizeError(err) });
@@ -632,7 +632,7 @@ export function useSellerCarts() {
     clearCart: async (cartId: string) => {
       const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     refetch: cartsQuery.refetch,
   };
