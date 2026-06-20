@@ -55,18 +55,48 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       contentType: 'image/png',
     });
 
+    const widthDiff = Math.abs(novelty!.box!.width - repl!.box!.width);
+    const heightDiff = Math.abs(novelty!.box!.height - repl!.box!.height);
+    const ratios = [novelty!, repl!].map((m) =>
+      m.imgBox ? m.imgBox.width / Math.max(m.imgBox.height, 1) : null,
+    );
+
+    // Log diff para aparecer no --reporter=list e nos artefatos do CI.
+    // eslint-disable-next-line no-console
+    console.log(
+      `[card-parity] widthDiff=${widthDiff.toFixed(2)}px heightDiff=${heightDiff.toFixed(2)}px ` +
+        `ratios=[${ratios.map((r) => (r === null ? 'n/a' : r.toFixed(3))).join(', ')}] tolerance=${TOL_PX}px`,
+    );
+    await testInfo.attach('card-parity-diff.json', {
+      body: Buffer.from(
+        JSON.stringify(
+          {
+            tolerance_px: TOL_PX,
+            widthDiff_px: widthDiff,
+            heightDiff_px: heightDiff,
+            novelty_box: novelty!.box,
+            repl_box: repl!.box,
+            ratios,
+          },
+          null,
+          2,
+        ),
+      ),
+      contentType: 'application/json',
+    });
+
     // 1) Larguras devem ser idênticas (mesmo grid responsivo).
-    expect(Math.abs((novelty!.box!.width) - (repl!.box!.width))).toBeLessThanOrEqual(TOL_PX);
+    expect(widthDiff, `widthDiff=${widthDiff.toFixed(2)}px excede tolerância ${TOL_PX}px`).toBeLessThanOrEqual(TOL_PX);
 
     // 2) Alturas devem ser idênticas (mesmo min-h 420/430).
-    expect(Math.abs((novelty!.box!.height) - (repl!.box!.height))).toBeLessThanOrEqual(TOL_PX);
+    expect(heightDiff, `heightDiff=${heightDiff.toFixed(2)}px excede tolerância ${TOL_PX}px`).toBeLessThanOrEqual(TOL_PX);
 
     // 3) Imagem com proporção ~1:1 em ambos.
     for (const m of [novelty!, repl!]) {
       if (m.imgBox) {
         const ratio = m.imgBox.width / Math.max(m.imgBox.height, 1);
-        expect(ratio).toBeGreaterThan(0.9);
-        expect(ratio).toBeLessThan(1.1);
+        expect(ratio, `ratio=${ratio.toFixed(3)} fora de [0.9, 1.1]`).toBeGreaterThan(0.9);
+        expect(ratio, `ratio=${ratio.toFixed(3)} fora de [0.9, 1.1]`).toBeLessThan(1.1);
       }
     }
   });
