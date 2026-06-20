@@ -21,6 +21,22 @@ function getByPlaceholderPartial(text: string): HTMLInputElement {
 
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
+  // ISSUE-35: o grid importa noveltyToProduct como função estável de módulo
+  // (não mais via sel.noveltyToProduct). O mock precisa expô-la no nível raiz.
+  noveltyToProduct: (n: NoveltyWithDetails) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    product_name: n.product_name || '',
+    price: n.base_price,
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id, name: n.supplier_name },
+    category: { id: n.category_id, name: n.category_name },
+    images: [n.product_image],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  }),
   useNoveltiesWithDetails: vi.fn(() => ({
     data: [
       {

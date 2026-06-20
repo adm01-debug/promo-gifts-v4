@@ -22,7 +22,7 @@ export const NoveltyCardSkeleton = memo(({ className }: NoveltyCardSkeletonProps
     <Card
       className={cn(
         productCardStyles.container,
-        'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] cursor-default',
+        'h-[420px] max-h-[420px] min-h-[420px] cursor-default',
         className,
       )}
       aria-hidden="true"

@@ -26,7 +26,6 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
-import { getRecencyVariant } from '@/lib/novelty-dates';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
 
@@ -78,7 +77,7 @@ export const NoveltyGridCard = memo(
   }: NoveltyCardProps) => {
     // ISSUE-5 FIX: computar freshness ao renderizar (não do cache) — evita badge
     // "recém-chegado" exibido com dado stale por até 2 min após cruzar 5 dias.
-    const fresh = getRecencyVariant(product.detected_at) === 'hot';
+    const fresh = product.is_highlighted;
 
     // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
     // num swatch troca a foto principal pela imagem da variante selecionada.
@@ -99,10 +98,11 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
-          // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
-          // Reposição em todos os viewports.
-          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
+          // Altura MÍNIMA flexível (NÃO fixa, sem max-h, sem overflow-hidden no article):
+          // conteúdo longo + skeleton de preço/estoque pode crescer sem recorte. Altura
+          // fixa/max + overflow-hidden invalidam a medição do virtualizer (measureElement)
+          // e quebram o scroll do módulo /novidades. Paridade com BaseProductGridCard.
+          'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
@@ -259,7 +259,6 @@ export const NoveltyGridCard = memo(
             {product.product_name ?? '—'}
           </p>
 
-
           <div className="mt-0.5">
             <ProductColorSwatches
               colors={colors}
@@ -354,8 +353,7 @@ export function NoveltyTableView({
   // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()
   // quando há muitos produtos selecionados. NoveltyProductGrid.tsx já tem sel.selectedIds
   // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
-  const selectedSet: Set<string> =
-    selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+  const selectedSet: Set<string> = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
 
   return (
     <div className="overflow-x-auto rounded-lg border">
