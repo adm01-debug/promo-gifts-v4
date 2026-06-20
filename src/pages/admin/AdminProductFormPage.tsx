@@ -22,6 +22,7 @@ import {
 import { useAuditLog, fetchAuditHistory } from '@/hooks/admin';
 import { toast } from 'sonner';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
+import { ORGANIZATION_ID } from '@/components/admin/products/new-supplier/types';
 import { Loader2, ArrowLeft, History, Pencil, Copy, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,6 +52,20 @@ function withoutPriceFreshnessThreshold(data: Record<string, unknown>): Record<s
   const fallbackData = { ...data };
   delete fallbackData[PRICE_FRESHNESS_THRESHOLD_COLUMN];
   return fallbackData;
+}
+
+/**
+ * Convert a multi-line textarea value into a clean Postgres text[] (one entry per
+ * non-empty line). products.key_benefits and products.use_cases are ARRAY columns;
+ * sending a raw string makes PostgREST reject the write ("malformed array literal").
+ */
+function splitLines(value: string | null | undefined): string[] | null {
+  if (!value) return null;
+  const arr = value
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return arr.length > 0 ? arr : null;
 }
 
 export default function AdminProductFormPage() {
@@ -144,6 +159,7 @@ export default function AdminProductFormPage() {
       category_id: p.category_id ?? p.main_category_id ?? '',
       supplier_id: p.supplier_id ?? '',
       supplier_reference: p.supplier_reference ?? '',
+      supplier_product_url: p.supplier_product_url ?? '',
       sale_price: getProductPrice(p) ?? 0,
       cost_price: p.cost_price ?? 0,
       suggested_price: p.suggested_price ?? null,
@@ -169,6 +185,7 @@ export default function AdminProductFormPage() {
       box_length_mm: p.box_length_mm ?? null,
       box_weight_kg: p.box_weight_kg ?? null,
       box_quantity: p.box_quantity ?? null,
+      box_inner_quantity: p.box_inner_quantity ?? null,
       box_volume_cm3: p.box_volume_cm3 ?? null,
       packaging_material: p.packaging_material ?? '',
       packaging_color: p.packaging_color ?? '',
@@ -220,8 +237,10 @@ export default function AdminProductFormPage() {
       slug: p.slug ?? '',
       canonical_url: p.canonical_url ?? '',
       video_url: p.videos?.[0] ?? p.video_url ?? '',
-      key_benefits: p.key_benefits ?? '',
-      use_cases: p.use_cases ?? '',
+      key_benefits: Array.isArray(p.key_benefits)
+        ? p.key_benefits.join('\n')
+        : (p.key_benefits ?? ''),
+      use_cases: Array.isArray(p.use_cases) ? p.use_cases.join('\n') : (p.use_cases ?? ''),
     };
   }, []);
 
@@ -248,6 +267,10 @@ export default function AdminProductFormPage() {
       const productData: Record<string, unknown> = {
         sku: data.sku,
         name: data.name,
+        // REQUIRED by the products RLS INSERT/UPDATE policy, which gates on
+        // is_org_owner_or_admin(organization_id). Without it the row's org is NULL and
+        // the WITH CHECK fails → "new row violates row-level security policy".
+        organization_id: ORGANIZATION_ID,
         description: data.description || null,
         short_description: data.short_description || null,
         meta_description: data.meta_description || null,
@@ -259,7 +282,6 @@ export default function AdminProductFormPage() {
         cost_price: data.cost_price ?? null,
         suggested_price: data.suggested_price ?? null,
         stock_quantity: data.stock_quantity ?? 0,
-        stock_unit: data.stock_unit || 'un',
         product_type: data.product_type || 'product',
         is_kit: data.product_type === 'kit',
         min_quantity: data.min_quantity ?? 1,
@@ -298,6 +320,7 @@ export default function AdminProductFormPage() {
         box_length_mm: data.box_length_mm ?? null,
         box_weight_kg: data.box_weight_kg ?? null,
         box_quantity: data.box_quantity ?? null,
+        box_inner_quantity: data.box_inner_quantity ?? null,
         box_volume_cm3: data.box_volume_cm3 ?? null,
         packaging_material: data.packaging_material || null,
         packaging_color: data.packaging_color || null,
@@ -305,7 +328,7 @@ export default function AdminProductFormPage() {
         ncm_code: data.ncm_code || null,
         ean: data.ean || null,
         gtin: data.gtin || null,
-        country_of_origin: data.country_of_origin || null,
+        origin_country: data.country_of_origin || null,
         supplier_product_url: data.supplier_product_url || null,
         supply_mode: data.supply_mode || null,
         ipi_rate: data.ipi_rate ?? null,
@@ -321,14 +344,13 @@ export default function AdminProductFormPage() {
         slug: data.slug || null,
         canonical_url: data.canonical_url || null,
         videos: data.video_url ? [data.video_url] : [],
-        key_benefits: data.key_benefits || null,
-        use_cases: data.use_cases || null,
+        key_benefits: splitLines(data.key_benefits),
+        use_cases: splitLines(data.use_cases),
         updated_at: new Date().toISOString(),
       };
 
       if (images.length > 0) {
         productData.images = images;
-        productData.image_url = images[0];
         productData.primary_image_url = images[0];
       }
 

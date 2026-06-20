@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Loader2, Plus } from 'lucide-react';
+import { ORGANIZATION_ID } from './new-supplier/types';
 import { toast } from 'sonner';
 
 interface NewCategoryDialogProps {
@@ -88,6 +89,8 @@ export function NewCategoryDialog({ onCreated }: NewCategoryDialogProps) {
             .replace(/[^a-z0-9-]/g, ''),
           is_active: true,
           parent_id: parentId,
+          // Required by the categories RLS INSERT policy is_org_owner_or_admin(organization_id).
+          organization_id: ORGANIZATION_ID,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },

@@ -92,6 +92,12 @@ async function deleteVariantApi(id: string): Promise<void> {
 }
 
 function formToPayload(formData: VariantFormData, extra?: Record<string, unknown>) {
+  // product_variants has NO columns for ean / height_mm / width_mm / length_mm /
+  // weight_g. Including them makes PostgREST reject the entire write (PGRST204),
+  // which is why every variant create/edit was failing. They are omitted so the
+  // real columns persist. (These VariantForm inputs are non-persisted until
+  // dedicated columns — or an attributes-jsonb mapping — are added; tracked as a
+  // follow-up so we don't silently clobber the sync-managed attributes jsonb here.)
   return {
     ...extra,
     name: formData.name.trim(),
@@ -100,13 +106,8 @@ function formToPayload(formData: VariantFormData, extra?: Record<string, unknown
     color_hex: formData.color_hex || null,
     stock_quantity: formData.stock_quantity,
     supplier_sku: formData.supplier_sku.trim() || null,
-    ean: formData.ean.trim() || null,
     size_code: formData.size_code.trim() || null,
     capacity_ml: formData.capacity_ml,
-    height_mm: formData.height_mm,
-    width_mm: formData.width_mm,
-    length_mm: formData.length_mm,
-    weight_g: formData.weight_g,
   };
 }
 

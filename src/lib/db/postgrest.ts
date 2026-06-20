@@ -267,7 +267,120 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return true;
 }
 
+// ── WRITE support ─────────────────────────────────────────────────────────────
+// Writes target the REAL base table, never the Gold read-views (which expose no
+// DML grant). Only BRIDGE_ALIASES apply — mirrors dbInvokeDelete's resolution.
+type WriteResult = { data: unknown; error: { message?: string } | null };
+type WriteBuilder = PromiseLike<WriteResult> & {
+  insert(values: unknown): WriteBuilder;
+  update(values: unknown): WriteBuilder;
+  upsert(values: unknown): WriteBuilder;
+  delete(): WriteBuilder;
+  select(columns?: string): WriteBuilder;
+  eq(column: string, value: unknown): WriteBuilder;
+  in(column: string, values: readonly unknown[]): WriteBuilder;
+  is(column: string, value: null): WriteBuilder;
+};
+
+function remapWriteData(resolvedTable: string, data: unknown): unknown {
+  const map = COLUMN_MAP[resolvedTable];
+  const remapRow = (row: Record<string, unknown>): Record<string, unknown> => {
+    if (!map) return row;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(row)) out[map[k] ?? k] = v;
+    return out;
+  };
+  if (Array.isArray(data)) return (data as Record<string, unknown>[]).map(remapRow);
+  return remapRow((data ?? {}) as Record<string, unknown>);
+}
+
+/**
+ * Executes insert/update/upsert/delete/batch_insert via PostgREST.
+ *
+ * CRITICAL BUGFIX (cadastro-de-produtos audit): dbInvoke historically only ever
+ * built `untypedFrom(table).select(...)`, so EVERY caller passing a write
+ * `operation` (product create/edit, bulk activate/deactivate, new category, new
+ * supplier, técnicas, …) performed a silent no-op read that returned an unrelated
+ * row and reported success — no data was ever persisted. This executor issues the
+ * real DML, returning the affected row(s) via `.select()` so callers receive a
+ * genuine inserted/updated record (e.g. the new product id used for navigation).
+ */
+async function dbInvokeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  const table = BRIDGE_ALIASES[options.table] ?? options.table;
+  const op = options.operation;
+
+  // Mass-mutation guard: update/delete MUST be scoped by id or filters.
+  const hasScope = !!options.id || (!!options.filters && Object.keys(options.filters).length > 0);
+  if ((op === 'update' || op === 'delete') && !hasScope) {
+    throw new Error(
+      `[postgrest] ${op} on '${table}' without id/filter is forbidden (mass-mutation guard).`,
+    );
+  }
+  // Empty-array filter would silently match zero rows → fail loud (Issue #537 parity).
+  if (options.filters) {
+    for (const [k, v] of Object.entries(options.filters)) {
+      if (Array.isArray(v) && v.length === 0) {
+        throw new Error(
+          `[postgrest] ${op} on '${table}' with empty-array filter '${k}' would affect zero rows; fix the call site.`,
+        );
+      }
+    }
+  }
+
+  const applyScope = (builder: WriteBuilder): WriteBuilder => {
+    let scoped = builder;
+    if (options.id) scoped = scoped.eq('id', options.id);
+    if (options.filters) {
+      for (const [key, value] of Object.entries(remapFilters(table, options.filters))) {
+        if (Array.isArray(value)) scoped = scoped.in(key, value);
+        else if (value === null) scoped = scoped.is(key, null);
+        else scoped = scoped.eq(key, value);
+      }
+    }
+    return scoped;
+  };
+
+  const base = untypedFrom(table) as unknown as WriteBuilder;
+  const payload = remapWriteData(table, options.data);
+  let builder: WriteBuilder;
+  switch (op) {
+    case 'insert':
+    case 'batch_insert':
+      builder = base.insert(payload).select();
+      break;
+    case 'upsert':
+      builder = base.upsert(payload).select();
+      break;
+    case 'update':
+      builder = applyScope(base.update(payload)).select();
+      break;
+    case 'delete':
+      builder = applyScope(base.delete()).select();
+      break;
+    default:
+      throw new Error(`[postgrest] unsupported write operation '${String(op)}'`);
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    logger.warn(
+      `[postgrest] write error on table='${table}' (original='${options.table}') op='${op}': ${error.message ?? 'unknown'}`,
+    );
+    throw error;
+  }
+  const records = mapRows<T>(table, (data as T[]) ?? []);
+  return { records, count: records.length };
+}
+
 export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  // WRITE operations are delegated to the dedicated DML executor. Historically
+  // dbInvoke only ever issued SELECTs, so callers passing a write operation
+  // (insert/update/upsert/delete/batch_insert) silently performed a no-op read
+  // and reported a false success — see dbInvokeWrite for the full bug writeup.
+  if (options.operation && options.operation !== 'select') {
+    return dbInvokeWrite<T>(options);
+  }
+
   const table = TABLE_ALIASES[options.table] ?? options.table;
 
   // Extract _search before remapping (it's a meta-filter, not a column name)

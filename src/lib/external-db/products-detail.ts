@@ -23,6 +23,11 @@ async function fetchProductWithRetry(
   maxRetries = 2,
 ): Promise<InvokeResult<PromobrindProduct>> {
   const selectFields = [
+    // Full row first: the admin edit form round-trips ~90 columns and writes them all
+    // back, so it MUST load the complete record — otherwise unselected columns (ncm,
+    // fiscal, SEO, internal dims, packaging, marketing, flags…) would be overwritten
+    // with nulls on save. v_products_public is a 1:1 projection, so '*' is the full row.
+    '*',
     PRODUCT_SELECT_FIELDS_DETAIL,
     PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD,
     PRODUCT_SELECT_FIELDS_WITH_SALE,

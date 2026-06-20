@@ -457,12 +457,9 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         inscricao_estadual: inscricaoEstadual.trim() || null,
         tax_regime: regimeTributario || null,
         state_uf: estadoFaturamento || null,
-        // BUG-19 FIX: persist social media to dedicated columns
-        instagram: instagram.trim() || null,
-        facebook: facebook.trim() || null,
-        linkedin: linkedin.trim() || null,
-        youtube: youtube.trim() || null,
-        tiktok: tiktok.trim() || null,
+        // NOTE: the suppliers table has NO instagram/facebook/linkedin/youtube/tiktok
+        // columns, so sending them made PostgREST reject the whole insert (PGRST204).
+        // They are omitted here until dedicated columns exist; the UI inputs are kept.
         created_at: now,
         updated_at: now,
       };
