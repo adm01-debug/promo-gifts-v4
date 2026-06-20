@@ -332,8 +332,7 @@ describe('Analise estatica — useMockupGenerator.ts', () => {
       expect(src).toMatch(/const\s+loadFromHistory\s*=\s*useCallback\s*\(\s*async/);
     });
     it('clearDraft é awaited dentro de loadFromHistory', () => {
-      const block =
-        src.split('const loadFromHistory')[1]?.split('const wizardStep')[0] ?? '';
+      const block = src.split('const loadFromHistory')[1]?.split('const wizardStep')[0] ?? '';
       expect(block).toContain('await clearDraft()');
     });
   });
@@ -425,6 +424,59 @@ describe('Analise estatica — useMockupTechniques.ts', () => {
       expect(guardPos).toBeGreaterThan(-1);
       expect(setPos).toBeGreaterThan(-1);
       expect(guardPos).toBeLessThan(setPos);
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — useLogoProcessing.ts
+// =====================================================================
+
+describe('Analise estatica — useLogoProcessing.ts', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/logo-editor/useLogoProcessing.ts');
+  });
+
+  describe('catch block loga erros de processamento de logo', () => {
+    it('importa logger de @/lib/logger', () => {
+      expect(src).toContain("from '@/lib/logger'");
+    });
+    it('catch block chama logger.error', () => {
+      const catchBlock = src.split('.catch(')[1]?.split('.finally(')[0] ?? '';
+      expect(catchBlock).toContain('logger.error');
+    });
+    it('catch block ainda reseta processedLogoUrl para null', () => {
+      const catchBlock = src.split('.catch(')[1]?.split('.finally(')[0] ?? '';
+      expect(catchBlock).toContain('setProcessedLogoUrl(null)');
+    });
+    it('erro nao e silenciado — parametro tipado como unknown', () => {
+      expect(src).toMatch(/\.catch\s*\(\s*\(err\s*:\s*unknown\)/);
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ArtFileUpload.tsx
+// =====================================================================
+
+describe('Analise estatica — ArtFileUpload.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  describe('handleRemove — erro de storage nao silenciado', () => {
+    it('destructura { error: storageErr } do storage.remove', () => {
+      const removeBlock =
+        src.split('const handleRemove')[1]?.split('const handleDownload')[0] ?? '';
+      expect(removeBlock).toContain('error: storageErr');
+    });
+    it('storageErr e logado quando presente', () => {
+      const removeBlock =
+        src.split('const handleRemove')[1]?.split('const handleDownload')[0] ?? '';
+      expect(removeBlock).toContain('logger.error');
+      expect(removeBlock).toContain('storageErr');
     });
   });
 });

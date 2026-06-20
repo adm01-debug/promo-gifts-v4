@@ -28,7 +28,9 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
   const [copied, setCopied] = useState(false);
 
   const isExpired =
-    list.shared_expires_at != null && new Date(list.shared_expires_at) < new Date();
+    list.shared_expires_at !== null &&
+    list.shared_expires_at !== undefined &&
+    new Date(list.shared_expires_at) < new Date();
   const shareUrl =
     list.shared_token && !isExpired
       ? `${window.location.origin}/lista-publica/${list.shared_token}`
@@ -77,7 +79,9 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               O link expirou em{' '}
-              {new Date(list.shared_expires_at!).toLocaleDateString('pt-BR')}. Gere um novo abaixo.
+              {list.shared_expires_at &&
+                new Date(list.shared_expires_at).toLocaleDateString('pt-BR')}
+              . Gere um novo abaixo.
             </span>
           </div>
         )}

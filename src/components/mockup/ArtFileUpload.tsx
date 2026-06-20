@@ -154,7 +154,12 @@ export function ArtFileUpload({
         return;
       }
 
-      await supabase.storage.from('mockup-art-files').remove([att.file_path]);
+      const { error: storageErr } = await supabase.storage
+        .from('mockup-art-files')
+        .remove([att.file_path]);
+      if (storageErr) {
+        logger.error('[ArtFileUpload] Falha ao remover arquivo do storage:', storageErr);
+      }
       onAttachmentsChange(attachments.filter((a) => a.id !== att.id));
       toast.success('Arquivo removido');
     },
