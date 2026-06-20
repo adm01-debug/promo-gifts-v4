@@ -411,38 +411,22 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
     });
   }
 
-  // Modo de visualização em LISTA — só executa se o toggle existir na página.
-  test('modo lista (se existir) — dimensões do card permanecem consistentes', async ({ page }) => {
+  // Modo de visualização em LISTA — usa testid estável `view-mode-list`
+  // do LayoutPopover (sem fallback, sem skip por toggle ausente).
+  test('modo lista — dimensões do card permanecem consistentes', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await gotoAndSettle(page, '/reposicao');
     await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
 
-    const listToggle = page
-      .locator(
-        '[data-testid="view-mode-list"], [data-testid="viewmode-list"], [aria-label="Visualização em lista"], [aria-label="Lista"]',
-      )
-      .first();
-    if ((await listToggle.count()) === 0) {
-      test.skip(true, 'Toggle de modo lista não encontrado em /reposicao.');
-    }
-    await listToggle.click();
-    await page.waitForTimeout(400);
+    await openListMode(page);
 
     const items = page.locator(
       'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
     );
     const count = await items.count();
-    if (count === 0) test.skip(true, 'Sem reposições no modo lista.');
+    if (count === 0) test.skip(true, 'Sem reposições no dataset (modo lista).');
     const sampleSize = Math.min(count, 6);
-    const heights: number[] = [];
-    const widths: number[] = [];
-    for (let i = 0; i < sampleSize; i++) {
-      const b = await items.nth(i).boundingBox();
-      if (b) {
-        heights.push(b.height);
-        widths.push(b.width);
-      }
-    }
+    const { heights, widths } = await sampleHeights(items, sampleSize);
     const hSpread = Math.max(...heights) - Math.min(...heights);
     const wSpread = Math.max(...widths) - Math.min(...widths);
     // eslint-disable-next-line no-console
@@ -451,5 +435,12 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
     );
     expect(hSpread, `altura varia no modo lista: ${hSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
     expect(wSpread, `largura varia no modo lista: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+
+    // Baseline screenshot do modo lista.
+    await expect(items.first()).toHaveScreenshot('card-reposicao-list-mode.png', {
+      maxDiffPixelRatio: 0.02,
+      animations: 'disabled',
+    });
   });
+});
 });
