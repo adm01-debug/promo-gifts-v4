@@ -202,8 +202,11 @@ export function SmartSuggestions({
 }) {
   const suggestions = useMemo(() => {
     const tips: { icon: typeof Lightbulb; text: string }[] = [];
-    const totalQty = cart.items.reduce((s, i) => s + i.quantity, 0);
-    const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
+    const totalQty = cart.items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
+    const subtotal = cart.items.reduce(
+      (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+      0,
+    );
 
     if (cart.items.length === 1) {
       tips.push({ icon: Lightbulb, text: 'Carrinhos com 3+ SKUs distintos convertem 40% mais' });
@@ -316,7 +319,7 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
             const Icon = ACTION_HISTORY_ICONS[action.type] || Package;
             return (
               <div
-                key={i}
+                key={`${action.type}-${action.time.getTime()}-${i}`}
                 className="flex items-center gap-2 py-1 text-[10px] text-muted-foreground"
               >
                 <Icon className="h-3 w-3 flex-shrink-0" />
