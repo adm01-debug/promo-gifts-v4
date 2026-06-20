@@ -69,9 +69,12 @@ export function NoveltiesSection() {
       filtered = filtered.filter((p) => p.supplier_id === selectedSupplier);
     }
 
+    // ISSUE-32 FIX: Schwartzian transform — pré-computa timestamps antes de ordenar.
     return filtered
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-      .slice(0, 8);
+      .map((n) => [n, new Date(n.detected_at).getTime()] as const)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([n]) => n);
   }, [allNovelties, periodFilter, selectedSupplier]);
 
   const handleProductClick = (productId: string) => {

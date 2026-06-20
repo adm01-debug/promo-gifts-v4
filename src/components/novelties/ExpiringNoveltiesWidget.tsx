@@ -53,9 +53,14 @@ export function ExpiringNoveltiesWidget() {
 
   const recentItems = useMemo(() => {
     if (!allNovelties) return [];
-    return [...allNovelties]
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-      .slice(0, 10);
+    // ISSUE-19 FIX: Schwartzian transform — pré-computa getTime() uma vez por
+    // item (O(n)) em vez de criar new Date() a cada chamada do comparador
+    // (O(n log n) alocações). Relevante quando allNovelties tem centenas de itens.
+    return allNovelties
+      .map((n) => [n, new Date(n.detected_at).getTime()] as const)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([n]) => n);
   }, [allNovelties]);
 
   // FIX (auditoria Novidades, P1-A): o ranking "Por Fornecedor" vem agora do
@@ -165,11 +170,17 @@ export function ExpiringNoveltiesWidget() {
                   const isVeryNew = idx < 3;
                   const variant = getRecencyVariant(item.detected_at);
                   return (
-                    <div
+                    // ISSUE-11 FIX: usa <button> em vez de <div> para acessibilidade
+                    // por teclado. Div+onClick não é alcançável com Tab nem ativável
+                    // com Enter/Space por leitores de tela (WCAG 2.1 SC 2.1.1).
+                    <button
                       key={item.novelty_id}
+                      type="button"
+                      aria-label={`Abrir novidade: ${item.product_name}`}
                       className={cn(
-                        'group flex cursor-pointer items-center gap-2 rounded-md p-1.5',
+                        'group flex w-full cursor-pointer items-center gap-2 rounded-md p-1.5 text-left',
                         'transition-all duration-150 hover:bg-success/10',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success',
                         isVeryNew
                           ? 'border border-success/20 bg-success/5 hover:border-success/40'
                           : 'border border-transparent',
@@ -209,7 +220,7 @@ export function ExpiringNoveltiesWidget() {
                       </div>
 
                       <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary" />
-                    </div>
+                    </button>
                   );
                 })}
               </div>

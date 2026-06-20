@@ -503,11 +503,18 @@ export function NoveltyTableView({
 }: {
   products: NoveltyWithDetails[];
   selectionMode?: boolean;
-  selectedIds?: string[];
+  /** Aceita Set<string> (preferencial) ou string[] para retro-compatibilidade. */
+  selectedIds?: Set<string> | string[];
   onSelect?: (id: string) => void;
   onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
+  // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()
+  // quando há muitos produtos selecionados. NoveltyProductGrid.tsx já tem sel.selectedIds
+  // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
+  const selectedSet: Set<string> =
+    selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+
   return (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
@@ -526,7 +533,7 @@ export function NoveltyTableView({
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const isSelected = selectedIds.includes(product.product_id);
+            const isSelected = selectedSet.has(product.product_id);
             return (
               <TableRow
                 key={product.novelty_id}
