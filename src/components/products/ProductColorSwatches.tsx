@@ -248,7 +248,21 @@ export const ProductColorSwatches = memo(
             </Tooltip>
           );
         })}
+        {overflow > 0 && (
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-semibold leading-none text-muted-foreground',
+              SIZE_CLASS[size],
+            )}
+            aria-label={`Mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+            data-testid="color-swatches-overflow"
+            title={`+${overflow}`}
+          >
+            +{overflow}
+          </span>
+        )}
       </div>
     );
   },
 );
+
