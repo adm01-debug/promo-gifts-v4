@@ -67,7 +67,7 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
                   profile.preferences !== null &&
                   typeof profile.preferences === 'object' &&
                   !Array.isArray(profile.preferences)
-                    ? (profile.preferences as { [key: string]: Json | undefined })
+                    ? (profile.preferences as Record<string, Json | undefined>)
                     : {}),
                   badge_visibility: newRouteSettings,
                 } as unknown as Json,
@@ -111,7 +111,7 @@ export const useBadgeVisibilityStore = create<BadgeVisibilityStore>()(
                   profile.preferences !== null &&
                   typeof profile.preferences === 'object' &&
                   !Array.isArray(profile.preferences)
-                    ? (profile.preferences as { [key: string]: Json | undefined })
+                    ? (profile.preferences as Record<string, Json | undefined>)
                     : {}),
                   badge_visibility: newRouteSettings,
                 } as unknown as Json,
