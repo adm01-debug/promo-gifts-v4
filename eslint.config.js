@@ -414,6 +414,15 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 103: 8 zero-violation rules (removed: click-events-have-key-events 16v, no-static-element-interactions 15v, label-has-associated-control 14v, react/no-unstable-nested-components 4v, react/iframe-missing-sandbox 1v, array-callback-return 1v, anchor-has-content 1v, react/sort-comp 1v, interactive-supports-focus 1v)
+      'no-promise-executor-return': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      '@typescript-eslint/no-unsafe-function-type': 'error',
+      '@typescript-eslint/no-wrapper-object-types': 'error',
+      'react/checked-requires-onchange-or-readonly': 'error',
+      'react/jsx-curly-brace-presence': 'error',
+      'react/no-will-update-set-state': 'error',
+      'jsx-a11y/mouse-events-have-key-events': 'error',
       // Batch 102: 6 zero-violation rules (removed: react/no-array-index-key 21v, jsx-a11y/prefer-tag-over-role 16v, no-void 9v, no-return-await 1v, no-param-reassign 1v, jsx-a11y/no-aria-hidden-on-focusable 1v, @typescript-eslint/no-invalid-void-type 1v, only-throw-error 1v, react/no-object-type-as-default-prop 1v, react/void-dom-elements-no-children 1v)
       'no-implied-eval': 'error',
       'no-new': 'error',
