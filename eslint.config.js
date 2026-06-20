@@ -350,6 +350,16 @@ export default [
       '@typescript-eslint/no-empty-interface': 'error',
       '@typescript-eslint/unified-signatures': 'error',
       'no-div-regex': 'error',
+      // Batch 93: 9 zero-violation rules (no-import-type-side-effects 48v, no-duplicate-type-constituents 1v, void-dom-elements-no-children 1v)
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/no-unsafe-declaration-merging': 'error',
+      '@typescript-eslint/prefer-ts-expect-error': 'error',
+      'no-multi-str': 'error',
+      'no-unused-private-class-members': 'error',
+      'react/no-children-prop': 'error',
+      'react/no-namespace': 'error',
+      'react/no-typos': 'error',
+      'no-constant-binary-expression': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
