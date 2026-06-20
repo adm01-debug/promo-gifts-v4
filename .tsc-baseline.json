@@ -1,20 +1,10 @@
 {
-  "generatedAt": "2026-06-19T17:50:00.000000+00:00",
-  "totalErrors": 32,
+  "generatedAt": "2026-06-20T00:00:00.000000+00:00",
+  "totalErrors": 7,
   "counts": {
     "src/hooks/favorites/useFavoriteLists.ts": {
       "TS2345": 3,
       "TS2339": 4
-    },
-    "src/hooks/products/useNovelties.ts": {
-      "TS2339": 14,
-      "TS2345": 8
-    },
-    "src/hooks/quotes/quoteHelpers.ts": {
-      "TS2353": 2
-    },
-    "src/pages/mockups/MockupGenerator.tsx": {
-      "TS2322": 1
     }
   }
 }
