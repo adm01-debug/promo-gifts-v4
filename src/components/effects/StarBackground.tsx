@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 
-export const StarBackground = memo(function StarBackground() {
+export const StarBackground = memo(() => {
   const stars = useMemo(() => {
     return Array.from({ length: 150 }).map((_, i) => ({
       id: i,

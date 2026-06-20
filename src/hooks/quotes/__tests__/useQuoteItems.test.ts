@@ -287,6 +287,7 @@ describe('toggleExpanded', () => {
     act(() => {
       result.current.setExpandedItems(new Set());
     });
+    // addProductWithColor auto-expands index 0; reset then open explicitly
     act(() => {
       result.current.toggleExpanded(0); // open
     });

@@ -528,14 +528,10 @@ export function useMockupGenerator() {
         productWidthCm:
           selectedProduct?.dimensions?.width_cm ??
           selectedProduct?.dimensions?.diameter_cm ??
-          (selectedProduct?.metadata?.width_mm
-            ? selectedProduct.metadata.width_mm / 10
-            : null),
+          (selectedProduct?.metadata?.width_mm ? selectedProduct.metadata.width_mm / 10 : null),
         productHeightCm:
           selectedProduct?.dimensions?.height_cm ??
-          (selectedProduct?.metadata?.height_mm
-            ? selectedProduct.metadata.height_mm / 10
-            : null),
+          (selectedProduct?.metadata?.height_mm ? selectedProduct.metadata.height_mm / 10 : null),
       });
       if (result.singleUrl && result.batchResults.length === 0) {
         setGeneratedMockup(result.singleUrl);
@@ -653,13 +649,10 @@ export function useMockupGenerator() {
       // BUG-11 FIX: technique_id is now always null (BUG-10 fix) because the FK points to
       // personalization_techniques but the UI loads from tabela_preco_gravacao_oficial.
       // Fall back to name-matching so the technique is correctly pre-selected when loading from history.
-      const techniqueName = mockup.technique_name;
       const technique =
         (mockup.technique_id && techniques.find((t) => t.id === mockup.technique_id)) ||
-        (techniqueName &&
-          techniques.find(
-            (t) => t.name.toLowerCase() === techniqueName.toLowerCase(),
-          )) ||
+        (mockup.technique_name &&
+          techniques.find((t) => t.name.toLowerCase() === mockup.technique_name?.toLowerCase())) ||
         null;
       if (product)
         setProductSelection({
@@ -679,8 +672,8 @@ export function useMockupGenerator() {
         positionY: mockup.position_y ?? 50,
         logoWidth: mockup.logo_width_cm ?? 5,
         logoHeight: mockup.logo_height_cm ?? 3,
-        logoRotation: 0,
-        logoScale: 100,
+        logoRotation: mockup.logo_rotation ?? 0,
+        logoScale: mockup.logo_scale ?? 100,
         logoPreview: mockup.logo_url,
       };
       setPersonalizationAreas([restoredArea]);

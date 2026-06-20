@@ -164,6 +164,9 @@ export function ProductQuickActions({
                   <button
                     type="button"
                     disabled={disabled}
+                    title={
+                      disabled ? `Sem dados de ${label.toLowerCase()} para este produto` : undefined
+                    }
                     onClick={() => handleClick(key)}
                     className={cn(
                       'group relative inline-flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-lg border px-4 py-3 text-xs font-bold',

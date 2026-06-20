@@ -134,13 +134,14 @@ export function DevAccessDeniedPage({
   const viewedAtRef = useRef<number>(Date.now());
   const finalizedRef = useRef<boolean>(false);
   const sinceView = () => Date.now() - viewedAtRef.current;
-  const emit = (event: Parameters<typeof recordDevRouteTelemetry>[0]['event']) =>
-    void recordDevRouteTelemetry({
+  const emit = (event: Parameters<typeof recordDevRouteTelemetry>[0]['event']) => {
+    recordDevRouteTelemetry({
       event,
       blockedPath,
       userRole: typeof role === 'string' ? role : null,
       durationMs: sinceView(),
     });
+  };
   const finalize = useCallback(
     (event: Parameters<typeof recordDevRouteTelemetry>[0]['event']) => {
       if (finalizedRef.current) return;

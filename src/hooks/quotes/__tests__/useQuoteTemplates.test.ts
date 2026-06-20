@@ -15,6 +15,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useQuoteTemplates } from '../useQuoteTemplates';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -83,8 +84,9 @@ describe('estado inicial', () => {
 // ── user=null guard ────────────────────────────────────────────────────────
 describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
-    vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: null, isAdmin: false } as never);
+    const { supabase: _supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {
@@ -93,14 +95,15 @@ describe('user=null guard', () => {
 
     expect(result.current.templates).toEqual([]);
     expect(result.current.loading).toBe(false);
-    expect(supabase.from).not.toHaveBeenCalled();
+    expect(_supabase.from).not.toHaveBeenCalled();
   });
 });
 
 // ── fetchTemplates ─────────────────────────────────────────────────────────
 describe('fetchTemplates', () => {
-  beforeEach(() => {
-    vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+  beforeEach(async () => {
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
   });
 
   it('carrega templates do DB com order updated_at DESC e limit 200', async () => {
@@ -112,7 +115,6 @@ describe('fetchTemplates', () => {
       await result.current.fetchTemplates();
     });
 
-    const { supabase } = await import('@/integrations/supabase/client');
     expect(supabase.from).toHaveBeenCalledWith('quote_templates');
     expect(mockOrderFn).toHaveBeenCalledWith('updated_at', { ascending: false });
     expect(mockLimitFn).toHaveBeenCalledWith(200);
@@ -162,7 +164,8 @@ describe('fetchTemplates', () => {
 // ── isAdmin guard em fetchAllTemplates ───────────────────────────────────
 describe('fetchAllTemplates — isAdmin guard', () => {
   it('nao chama DB quando user nao e admin', async () => {
-    vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
 
     const { result } = renderHook(() => useQuoteTemplates());
     const callsBefore = vi.mocked((await import('@/integrations/supabase/client')).supabase.from)

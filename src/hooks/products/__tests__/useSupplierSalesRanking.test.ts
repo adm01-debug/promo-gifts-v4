@@ -12,7 +12,7 @@ import React from 'react';
 import { useSupplierSalesRanking } from '../useSupplierSalesRanking';
 import { logger } from '@/lib/logger';
 
-const mockRpc = vi.fn();
+const mockRpc = vi.hoisted(() => vi.fn());
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {

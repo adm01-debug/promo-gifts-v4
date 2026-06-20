@@ -16,9 +16,9 @@ function rgbToLab(r: number, g: number, b: number): [number, number, number] {
     bb = b / 255;
 
   // sRGB → linear
-  rr = rr > 0.04045 ? Math.pow((rr + 0.055) / 1.055, 2.4) : rr / 12.92;
-  gg = gg > 0.04045 ? Math.pow((gg + 0.055) / 1.055, 2.4) : gg / 12.92;
-  bb = bb > 0.04045 ? Math.pow((bb + 0.055) / 1.055, 2.4) : bb / 12.92;
+  rr = rr > 0.04045 ? ((rr + 0.055) / 1.055) ** 2.4 : rr / 12.92;
+  gg = gg > 0.04045 ? ((gg + 0.055) / 1.055) ** 2.4 : gg / 12.92;
+  bb = bb > 0.04045 ? ((bb + 0.055) / 1.055) ** 2.4 : bb / 12.92;
 
   // Linear RGB → XYZ (D65)
   const x = (rr * 0.4124564 + gg * 0.3575761 + bb * 0.1804375) / 0.95047;

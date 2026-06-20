@@ -33,6 +33,13 @@ export interface ColorDotLike {
   /** Imagem específica desta variante (opcional). Quando presente, módulos como
    *  Novidades/Reposição usam para trocar a foto principal ao clicar no swatch. */
   image?: string | null;
+  /** Onda 1 Reposição (opcional): estoque atual desta variante. Quando definido,
+   *  o swatch aplica overlay visual ("esgotado" / "previsto") e tooltip enriquecido.
+   *  Outros callers (Catálogo, Novidades) não passam estes campos — comportamento intacto. */
+  stockQty?: number;
+  hasUpcomingRestock?: boolean;
+  /** ISO date (YYYY-MM-DD) ou null. Mostrado no tooltip quando há reposição prevista. */
+  nextRestockDate?: string | null;
 }
 
 interface ProductColorSwatchesProps {
@@ -60,132 +67,183 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
   md: 'h-[var(--swatch-size-md)] w-[var(--swatch-size-md)]',
 };
 
-export const ProductColorSwatches = memo(function ProductColorSwatches({
-  colors,
-  // `max` permanece na interface (API pública) mas não é mais consumido —
-  // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
-  size = 'sm',
-  className,
-  hideWhenEmpty = true,
-  onSelect,
-  selectedName,
-}: ProductColorSwatchesProps) {
-  const idPrefix = useId();
+export const ProductColorSwatches = memo(
+  ({
+    colors,
+    // `max` permanece na interface (API pública) mas não é mais consumido —
+    // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
+    size = 'sm',
+    className,
+    hideWhenEmpty = true,
+    onSelect,
+    selectedName,
+  }: ProductColorSwatchesProps) => {
+    const idPrefix = useId();
 
-  if (colors === undefined) {
+    if (colors === undefined) {
+      return (
+        <div
+          className={cn(
+            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+            className,
+          )}
+          aria-busy="true"
+          aria-label="Carregando opções de cores"
+          data-testid="colors-loading-skeleton"
+        >
+          {Array.from({ length: 6 }, (_, i) => (
+            <div
+              key={i}
+              className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
+              data-testid="color-skeleton-dot"
+            />
+          ))}
+        </div>
+      );
+    }
+
+    if (colors.length === 0) {
+      if (hideWhenEmpty) {
+        return (
+          <div
+            className={cn('min-h-[var(--swatch-size-sm)]', className)}
+            data-testid="colors-empty-hidden"
+          />
+        );
+      }
+      return (
+        <div
+          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
+          role="status"
+          aria-live="polite"
+          data-testid="colors-unavailable"
+        >
+          <div className="h-1 w-2 rounded-full bg-muted-foreground/30" />
+          <span className="text-[9px] font-medium tracking-tight">N/A</span>
+        </div>
+      );
+    }
+
+    const visible = colors;
+    // Resolve o estado selecionado o mais cedo possível
+    const queryParams =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
+    const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
+
     return (
       <div
         className={cn(
-          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
           className,
         )}
-        aria-busy="true"
-        aria-label="Carregando opções de cores"
-        data-testid="colors-loading-skeleton"
-      >
-        {Array.from({ length: 6 }, (_, i) => (
-          <div
-            key={i}
-            className={cn('animate-pulse rounded-full bg-muted', SIZE_CLASS[size])}
-            data-testid="color-skeleton-dot"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (colors.length === 0) {
-    if (hideWhenEmpty) {
-      return (
-        <div
-          className={cn('min-h-[var(--swatch-size-sm)]', className)}
-          data-testid="colors-empty-hidden"
-        />
-      );
-    }
-    return (
-      <div
-        className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
-        role="status"
+        role="radiogroup"
         aria-live="polite"
-        data-testid="colors-unavailable"
+        aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
+          colors.length === 1 ? 'el' : 'eis'
+        }`}
+        data-testid="product-colors-container"
       >
-        <div className="h-1 w-2 rounded-full bg-muted-foreground/30" />
-        <span className="text-[9px] font-medium tracking-tight">N/A</span>
-      </div>
-    );
-  }
+        {visible.map((c, idx) => {
+          const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
+          const isSelected =
+            normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
 
-  const visible = colors;
-  // Resolve o estado selecionado o mais cedo possível
-  const queryParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
-  const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
+          // Onda 1: estado de estoque opcional por cor (somente Reposição passa esses campos)
+          const hasStockInfo = typeof c.stockQty === 'number';
+          const isOutOfStock = hasStockInfo && c.stockQty === 0 && !c.hasUpcomingRestock;
+          const isUpcoming = hasStockInfo && c.stockQty === 0 && c.hasUpcomingRestock === true;
+          const formattedRestock =
+            c.nextRestockDate
+              ? new Date(`${c.nextRestockDate}T00:00:00`).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'short',
+                })
+              : null;
 
-  return (
-    <div
-      className={cn(
-        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
-        className,
-      )}
-      role="radiogroup"
-      aria-live="polite"
-      aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
-        colors.length === 1 ? 'el' : 'eis'
-      }`}
-      data-testid="product-colors-container"
-    >
-      {visible.map((c, idx) => {
-        const tooltipId = `tooltip-color-${idPrefix}-${idx}`;
-        const isSelected =
-          normalizedSelected !== null && c.name.toLowerCase() === normalizedSelected;
-        return (
-          <Tooltip key={`${c.name}-${idx}`}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                role="radio"
-                className={cn(
-                  'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                  isSelected
-                    ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
-                    : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
-                  SIZE_CLASS[size],
-                )}
-                style={{ backgroundColor: c.hex || 'transparent' }}
-                aria-label={`Opção de cor: ${c.name}`}
-                aria-describedby={tooltipId}
-                aria-checked={isSelected}
-                data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
-                data-color-name={c.name}
-                onClick={(e) => {
-                  if (!onSelect) return;
-                  e.stopPropagation();
-                  onSelect(c, idx);
-                }}
-                onKeyDown={(e) => {
-                  if (!onSelect) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+          return (
+            <Tooltip key={`${c.name}-${idx}`}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  role="radio"
+                  className={cn(
+                    'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                    isSelected
+                      ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
+                      : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
+                    // Esgotado: visual atenuado (overlay "X" via ::before)
+                    isOutOfStock &&
+                      'opacity-40 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
+                    SIZE_CLASS[size],
+                  )}
+                  style={{ backgroundColor: c.hex || 'transparent' }}
+                  aria-label={
+                    isOutOfStock
+                      ? `Opção de cor: ${c.name} — esgotada`
+                      : isUpcoming
+                        ? `Opção de cor: ${c.name} — reposição prevista${formattedRestock ? ` em ${formattedRestock}` : ''}`
+                        : `Opção de cor: ${c.name}`
+                  }
+                  aria-describedby={tooltipId}
+                  aria-checked={isSelected}
+                  data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  data-color-name={c.name}
+                  data-stock-state={
+                    !hasStockInfo
+                      ? undefined
+                      : isOutOfStock
+                        ? 'out'
+                        : isUpcoming
+                          ? 'upcoming'
+                          : 'in-stock'
+                  }
+                  onClick={(e) => {
+                    if (!onSelect) return;
                     e.stopPropagation();
                     onSelect(c, idx);
-                  }
-                }}
-              />
-            </TooltipTrigger>
-            <TooltipContent
-              id={tooltipId}
-              side="top"
-              className="p-2 text-xs"
-              role="tooltip"
-              data-testid="color-tooltip-content"
-            >
-              <span className="font-bold">{c.name}</span>
-            </TooltipContent>
-          </Tooltip>
-        );
-      })}
-    </div>
-  );
-});
+                  }}
+                  onKeyDown={(e) => {
+                    if (!onSelect) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSelect(c, idx);
+                    }
+                  }}
+                >
+                  {/* Badge de reposição prevista (somente Onda 1, quando isUpcoming) */}
+                  {isUpcoming && (
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -right-0.5 -top-0.5 inline-flex h-[7px] w-[7px] items-center justify-center rounded-full bg-[hsl(var(--info))] ring-1 ring-background"
+                      data-testid="swatch-upcoming-dot"
+                    />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                id={tooltipId}
+                side="top"
+                className="p-2 text-xs"
+                role="tooltip"
+                data-testid="color-tooltip-content"
+              >
+                <span className="font-bold">{c.name}</span>
+                {hasStockInfo && (
+                  <span className="mt-1 block text-[10px] font-normal text-muted-foreground">
+                    {isOutOfStock
+                      ? 'Esgotado'
+                      : isUpcoming
+                        ? `Esgotado · reposição${formattedRestock ? ` em ${formattedRestock}` : ' prevista'}`
+                        : `${c.stockQty?.toLocaleString('pt-BR')} un. em estoque`}
+                  </span>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    );
+  },
+);

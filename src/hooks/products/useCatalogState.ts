@@ -252,7 +252,7 @@ export function useCatalogState() {
     } else {
       newParams.set('sort', sortBy);
     }
-    const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+    const newPath = `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
     navigate(newPath, { replace: true });
 
     // 3. Analytics
@@ -506,7 +506,7 @@ export function useCatalogState() {
         } else {
           newParams.set('sort', validated);
         }
-        const newPath = `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+        const newPath = `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
         navigate(newPath, { replace: true });
       }
     }

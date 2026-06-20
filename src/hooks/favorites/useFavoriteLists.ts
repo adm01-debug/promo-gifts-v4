@@ -48,6 +48,14 @@ export interface FavoriteListItem {
 const LISTS_KEY = ['favorite-lists'];
 const ITEMS_KEY = (listId: string) => ['favorite-items', listId];
 
+type RestoreResult = {
+  ok: boolean;
+  list_id: string;
+  item_id: string | null;
+  original_list_changed: boolean;
+  error?: string;
+};
+
 /** Hook principal — gerencia listas do usuário autenticado (sync com Supabase). */
 export function useFavoriteLists() {
   const { user } = useAuth();
@@ -329,12 +337,7 @@ export function useFavoriteListItems(listId: string | null) {
         action: {
           label: 'Desfazer',
           onClick: async () => {
-            // Use original_id to find exactly this item in trash (not just the latest)
-            const { data: result, error: rpcErr } = await supabase.rpc(
-              'restore_favorite_from_trash',
-              { _trash_id: null, _user_id: user.id },
-            );
-            // Fallback: find by original_id
+            // Find the exact item by original_id before calling restore
             const { data: trashed } = await supabase
               .from('favorite_items_trash')
               .select('id')
@@ -345,11 +348,11 @@ export function useFavoriteListItems(listId: string | null) {
               toast.error('Item não encontrado na lixeira');
               return;
             }
-            void result; void rpcErr;
-            const { data: restored } = await supabase.rpc('restore_favorite_from_trash', {
+            const { data: rawRestored } = await supabase.rpc('restore_favorite_from_trash', {
               _trash_id: trashed.id,
               _user_id: user.id,
             });
+            const restored = rawRestored as RestoreResult | null;
             if (restored?.ok) {
               qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
               qc.invalidateQueries({ queryKey: LISTS_KEY });
@@ -380,10 +383,9 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-      toast.success(
-        `${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`,
-        { description: 'Restaure pela Lixeira em até 30 dias.' },
-      );
+      toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`, {
+        description: 'Restaure pela Lixeira em até 30 dias.',
+      });
     },
     onError: (e: Error) => toast.error('Erro ao remover', { description: sanitizeError(e) }),
   });
@@ -442,13 +444,19 @@ export function useFavoriteTrash() {
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
       // Atomic RPC: handles missing original list by falling back to default list
-      const { data, error } = await supabase.rpc('restore_favorite_from_trash', {
+      const { data: rawData, error } = await supabase.rpc('restore_favorite_from_trash', {
         _trash_id: trashId,
         _user_id: user.id,
       });
       if (error) throw error;
+      const data = rawData as RestoreResult | null;
       if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
-      return data as { ok: boolean; list_id: string; item_id: string | null; original_list_changed: boolean };
+      return data as {
+        ok: boolean;
+        list_id: string;
+        item_id: string | null;
+        original_list_changed: boolean;
+      };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: KEY });

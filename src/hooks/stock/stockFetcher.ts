@@ -347,7 +347,7 @@ export async function fetchAndProcessStockData(): Promise<{
     ),
     fetchPaginatedFromBridge<ExternalVariantStock>(
       'product_variants',
-      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,color_group,size_code,size_name,stock_quantity,is_active,updated_at',
+      'id,product_id,sku,name,color_id,color_name,color_hex,color_code,size_code,stock_quantity,is_active,updated_at',
       1000,
       100000,
       { is_active: true },

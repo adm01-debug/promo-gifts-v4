@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { PriceFreshnessBadge, type PriceFreshnessBadgeProps } from '@/components/products/PriceFreshnessBadge';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 describe('PriceFreshnessBadge Component', () => {
@@ -13,7 +13,7 @@ describe('PriceFreshnessBadge Component', () => {
     vi.useRealTimers();
   });
 
-  const renderBadge = (props: any) => {
+  const renderBadge = (props: PriceFreshnessBadgeProps) => {
     return render(
       <TooltipProvider>
         <PriceFreshnessBadge {...props} />
@@ -37,7 +37,7 @@ describe('PriceFreshnessBadge Component', () => {
 
   it('renders "Data não informada" when date is missing in PDP variant', () => {
     renderBadge({ priceUpdatedAt: null, variant: 'pdp' });
-    expect(screen.getByText('Data não informada')).toBeInTheDocument();
+    expect(screen.getByText('Data de atualização não informada')).toBeInTheDocument();
   });
 
   it('handles timezone offsets correctly', () => {
@@ -50,15 +50,16 @@ describe('PriceFreshnessBadge Component', () => {
 
   it('verifies text at limit dates (threshold transition)', () => {
     const threshold = 10;
-    
+
     // Exactly at threshold (10 days ago) -> Aging
     const tenDaysAgo = new Date('2026-04-23T12:00:00Z');
-    renderBadge({ priceUpdatedAt: tenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
+    const { unmount } = renderBadge({ priceUpdatedAt: tenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
     expect(screen.getByText(/Atualizado em 23\/04\/2026/)).toBeInTheDocument();
+    unmount();
 
-    // Just past threshold (11 days ago) -> Stale
+    // Just past threshold (11 days ago) -> Stale — shows "Última atualização em"
     const elevenDaysAgo = new Date('2026-04-22T12:00:00Z');
     renderBadge({ priceUpdatedAt: elevenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
-    expect(screen.getByText(/Atualizado em 22\/04\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Última atualização em 22\/04\/2026/)).toBeInTheDocument();
   });
 });

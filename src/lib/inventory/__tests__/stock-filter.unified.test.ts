@@ -82,7 +82,7 @@ describe('stock-filter.unified — categoria/fornecedor seguem o SSOT', () => {
     mkProduct('p3', 'Caderno Azul', 'Cadernos', 'Fornecedor B', [mkVariant('p3-1', 'Azul')]),
     mkProduct('p4', 'Agenda Azul', 'Agêndas', 'Fornecedor C', [mkVariant('p4-1', 'Azul')]),
   ];
-  const indexes = buildStockIndexes(universe, []);
+  const indexes = buildStockIndexes(universe);
 
   it('categoria casa case-insensitive (Canetas == CANETAS)', () => {
     const out = applyStockFilters(

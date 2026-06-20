@@ -153,6 +153,40 @@ export default [
       // Batch 59: inner-scope shadowing
       'no-shadow': 'off',
       '@typescript-eslint/no-shadow': 'error',
+      // Batch 65: 2 rules — no-alert (3 code fixes) + no-div-regex (1 auto-fix)
+      'no-alert': 'error',
+      'no-div-regex': 'error',
+      // Batch 66: 1 rule — no-multi-assign (1 code fix in theme-presets.test.ts)
+      'no-multi-assign': 'error',
+      // Batch 67: 1 rule — no-script-url (4 code fixes: 1 prod + 3 test eslint-disable)
+      'no-script-url': 'error',
+      // Batch 68: 7 zero-violation rules (no code changes needed)
+      'no-octal': 'error',
+      'no-proto': 'error',
+      'no-sequences': 'error',
+      'no-template-curly-in-string': 'error',
+      'no-throw-literal': 'error',
+      'no-useless-catch': 'error',
+      'prefer-const': 'error',
+      // Batch 69: 3 rules — no-useless-concat (1 fix), no-var (1 fix), no-useless-return (4 fixes)
+      'no-useless-concat': 'error',
+      'no-var': 'error',
+      'no-useless-return': 'error',
+      // Batch 70: 1 rule — prefer-template (19 fixes in 15 files)
+      'prefer-template': 'error',
+      // Batch 71: 1 rule — prefer-arrow-callback (59 fixes, auto-fixed)
+      'prefer-arrow-callback': 'error',
+      // Batch 72: 1 rule — no-void allowAsStatement (24 fixes in 17 files)
+      'no-void': ['error', { allowAsStatement: true }],
+      // Batch 73: 2 rules — no-lonely-if (5 fixes in 4 files), object-shorthand (1 fix)
+      'no-lonely-if': 'error',
+      'object-shorthand': 'error',
+      // Batch 74: 1 rule — prefer-exponentiation-operator (20 fixes, auto-fixed in 17 files)
+      'prefer-exponentiation-operator': 'error',
+      // Batch 75: 1 rule — dot-notation (24 fixes, auto-fixed in 7 files)
+      'dot-notation': 'error',
+      // Batch 76: 1 rule — operator-assignment (7 fixes in 7 files, mixed auto/manual)
+      'operator-assignment': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {

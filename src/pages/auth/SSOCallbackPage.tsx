@@ -292,10 +292,7 @@ export default function SSOCallbackPage() {
         </div>
         {status === 'failed' && errorDetail && (
           <div
-            className={
-              'w-full rounded-lg border px-3 py-2 text-left text-xs ' +
-              SEVERITY_STYLES[errorDetail.severity]
-            }
+            className={`w-full rounded-lg border px-3 py-2 text-left text-xs ${SEVERITY_STYLES[errorDetail.severity]}`}
             data-testid="sso-callback-hint"
             data-severity={errorDetail.severity}
             data-error-code={errorDetail.code}
@@ -366,10 +363,7 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
             className={`flex flex-1 flex-col items-center gap-2 ${done ? 'text-white' : ''}`}
           >
             <span
-              className={
-                'h-1.5 w-full rounded-full transition-all duration-500 ' +
-                (done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5')
-              }
+              className={`h-1.5 w-full rounded-full transition-all duration-500 ${done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5'}`}
               aria-current={active ? 'step' : undefined}
             />
             <span>{s.label}</span>

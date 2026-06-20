@@ -26,6 +26,9 @@ import { useTechniqueHandlers } from '@/pages/mockups/mockup-generator/MockupTec
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
 import { toast } from 'sonner';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const log = createClientLogger('mockup-generator');
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import type { LayoutCaptureRequest } from '@/components/mockup/approval/OffscreenLayoutCapture';
 
@@ -114,7 +117,8 @@ export default function MockupGenerator() {
   });
 
   const handleTechniqueSelect = useCallback(
-    (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
+    (t: { id: string; name: string; code: string | null } | null) =>
+      technique.handleTechniqueChange(t as unknown as MockupTechnique | null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [technique.handleTechniqueChange],
   );
@@ -489,7 +493,9 @@ export default function MockupGenerator() {
                                 }
                               } catch (err) {
                                 toast.error('Erro ao salvar mockup no histórico');
-                                console.error('[MockupGenerator] saveMockupToHistory failed:', err);
+                                log.error('save_history_failed', {
+                                  error: err instanceof Error ? err.message : String(err),
+                                });
                               }
                             }
                           }}

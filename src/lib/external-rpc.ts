@@ -59,7 +59,7 @@ export async function invokeExternalRpc<T>(
       if (!error) return data as T;
       const msg = error?.message || 'Erro na RPC';
       if (attempt < MAX_RETRIES && isRetryableError(msg)) {
-        const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        const delay = INITIAL_BACKOFF_MS * 2 ** attempt;
         logger.warn(
           `[external-rpc] Retry ${attempt + 1}/${MAX_RETRIES} for ${rpcName} after ${delay}ms: ${msg}`,
         );

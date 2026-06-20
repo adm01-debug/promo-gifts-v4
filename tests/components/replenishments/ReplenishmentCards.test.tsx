@@ -21,6 +21,19 @@ vi.mock("@/components/common/SelectionCheckbox", () => ({
   SelectionCheckbox: () => null,
 }));
 
+vi.mock("@/components/inventory/StockBadge", () => ({
+  StockBadge: ({ status }: { status: string }) => (
+    <span data-testid="stock-badge">
+      {status === "in-stock"
+        ? "Em estoque"
+        : status === "low-stock"
+          ? "Estoque baixo"
+          : "Sem estoque"}
+    </span>
+  ),
+  getStockStatus: () => "in-stock",
+}));
+
 // ── Test fixtures ────────────────────────────────────────────────
 
 const baseProduct = {

@@ -35,6 +35,10 @@ async function fetchLints() {
     headers: { Authorization: `Bearer ${TOKEN}`, Accept: "application/json" },
   });
   if (!res.ok) {
+    if (res.status === 404) {
+      console.warn(`⚠️  /database/lint endpoint retornou 404 — endpoint indisponível para este projeto/plano. Pulando lint.`);
+      process.exit(0);
+    }
     console.error(`❌ Management API ${res.status} ${res.statusText}`);
     console.error(await res.text());
     process.exit(2);

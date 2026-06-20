@@ -11,7 +11,7 @@ interface RiskChartDataPoint {
 export const RiskTooltip = forwardRef<
   HTMLDivElement,
   { active?: boolean; payload?: { payload: RiskChartDataPoint }[] }
->(function RiskTooltip({ active, payload }, ref) {
+>(({ active, payload }, ref) => {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;

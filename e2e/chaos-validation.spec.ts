@@ -122,7 +122,7 @@ test.describe('Chaos & Performance Validation', () => {
       // Actually, since we are in the browser, let's just use the ones available in the window/env if possible
       // or try to fetch them from a common location.
       return { 
-        url: (window as any).env?.VITE_SUPABASE_URL || 'https://pqpdolkaeqlyzpdpbizo.supabase.co',
+        url: (window as any).env?.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co',
         key: (window as any).env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' 
       };
     });
