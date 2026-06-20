@@ -12,6 +12,39 @@ import { gotoAndSettle } from '../helpers/nav';
 
 const TOL_PX = 4;
 
+/**
+ * Tolerância por breakpoint — refletindo as regras do BaseProductGridCard:
+ *  - mobile  (< 640): h-[400px] — px-snap pode variar até 3px no DPR mobile.
+ *  - sm/md   (640–1023): h-[430px] — layout estável, ±2px.
+ *  - lg/xl   (≥ 1024): h-[430px] — layout estável, ±2px.
+ */
+function tolForViewport(w: number): number {
+  if (w < 640) return 3;
+  if (w < 1024) return 2;
+  return 2;
+}
+
+async function sampleHeights(items: import('@playwright/test').Locator, n: number) {
+  const heights: number[] = [];
+  const widths: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const b = await items.nth(i).boundingBox();
+    if (b) {
+      heights.push(b.height);
+      widths.push(b.width);
+    }
+  }
+  return { heights, widths };
+}
+
+async function openListMode(page: import('@playwright/test').Page) {
+  await page.getByTestId('layout-popover-trigger').click();
+  const listBtn = page.getByTestId('view-mode-list');
+  await listBtn.waitFor({ state: 'visible', timeout: 5_000 });
+  await listBtn.click();
+  await page.waitForTimeout(300);
+}
+
 async function measureFirstCard(page: import('@playwright/test').Page, listSelector: string) {
   const list = page.locator(listSelector);
   await expect(list).toBeVisible({ timeout: 15_000 });
