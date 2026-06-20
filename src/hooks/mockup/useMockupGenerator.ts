@@ -699,12 +699,15 @@ export function useMockupGenerator() {
       else setProductSelection(null);
       setSelectedTechnique(technique || null);
       // BUG-LOADFROMHISTORY-CLIENT FIX: client_id was always null (BUG-CLIENT-ID) so
-      // the client was never restored. Use client_name as fallback for old rows.
-      // After migration 20260620000001, new rows have a real client_id.
+      // the client was never restored. Restore the client for display when only the
+      // name exists (old rows), but keep `id` empty — NEVER fall back to client_name
+      // as the id, otherwise re-saving writes a human name into the client_id column
+      // (saveMockupToDb persists `client?.id`). After migration 20260620000001, new
+      // rows carry a real client_id.
       setSelectedClient(
         mockup.client_id || mockup.client_name
           ? {
-              id: mockup.client_id ?? mockup.client_name ?? '',
+              id: mockup.client_id ?? '',
               name: mockup.client_name || 'Cliente',
             }
           : null,

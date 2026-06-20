@@ -27,7 +27,12 @@ interface RecentlyViewedStore extends RecentlyViewedState, RecentlyViewedActions
 function loadFromStorage(): RecentlyViewedItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // Corrupted non-array payload would crash on the first add/remove (`items.filter`) —
+    // fall back to empty instead of breaking "recently viewed". Mirrors the guard in
+    // useFavoritesStore / useComparisonStore (same localStorage-corruption class).
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     logger.warn('[useRecentlyViewedStore] Failed to load from localStorage', err);
     return [];

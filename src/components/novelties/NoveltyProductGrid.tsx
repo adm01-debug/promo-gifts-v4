@@ -232,15 +232,16 @@ export function NoveltyProductGrid() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
-  // Effect 2: Clear stale selection when the filtered set changes (ISSUE-7/ISSUE-39).
-  // Separated from Effect 1 to avoid stale `sel` closure — at this point
-  // filteredProducts has been recomputed and sel is current.
+  // Effect 2: Clear stale selection when the visible SET changes (ISSUE-7/ISSUE-39).
+  // Keyed on the membership-changing filter VALUES (not filteredProducts.length):
+  // switching e.g. supplier A→B that both yield the same count would otherwise leave
+  // A's selection active and let a bulk action run over items invisible in B's view.
+  // sortMode is excluded on purpose — reordering keeps the same products selected.
+  // Depending on scalar filter values (not `sel`) also avoids a circular dependency.
   useEffect(() => {
     if (selectionMode) sel.clearSelection();
-    // sel is derived from filteredProducts so we depend on filteredProducts.length
-    // (a stable scalar) rather than sel itself to avoid circular dep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredProducts.length, selectionMode]);
+  }, [searchQuery, selectedSupplier, selectedCategory, selectionMode]);
 
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);

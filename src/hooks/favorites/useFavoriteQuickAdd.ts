@@ -60,8 +60,8 @@ export function useFavoriteQuickAdd() {
 
   /** Adiciona produto remotamente em uma lista específica + registra no store legado (sync local). */
   const addToList = useCallback(
-    async (listId: string, product: Product, variant?: FavoriteVariantInfo) => {
-      if (!user) return;
+    async (listId: string, product: Product, variant?: FavoriteVariantInfo): Promise<boolean> => {
+      if (!user) return false;
       try {
         const { error } = await supabase.from('favorite_items').upsert(
           {
@@ -93,9 +93,11 @@ export function useFavoriteQuickAdd() {
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
         const listName = lists.find((l) => l.id === listId)?.name ?? 'lista';
         toast.success(`Adicionado em "${listName}"`);
+        return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Erro ao salvar';
         toast.error(msg);
+        return false;
       }
     },
     [user, qc, lists, isFavorite, toggleFavorite],
@@ -133,16 +135,18 @@ export function useFavoriteQuickAdd() {
   const createAndAdd = useCallback(
     async (name: string, product: Product, variant?: FavoriteVariantInfo) => {
       const list = await createList.mutateAsync({ name });
-      try {
-        await addToList(list.id, product, variant);
-      } catch (e) {
+      // addToList resolves false (not throws) on failure — so check the result
+      // instead of relying on a catch that would never fire, otherwise the newly
+      // created list is left orphaned/empty when the item insert fails.
+      const added = await addToList(list.id, product, variant);
+      if (!added) {
         // addToList already showed an error toast; clean up the orphan list silently
         try {
           await deleteList.mutateAsync(list.id);
         } catch {
           /* list cleanup is best-effort */
         }
-        throw e;
+        throw new Error('Falha ao adicionar produto à nova lista');
       }
       return list.id;
     },

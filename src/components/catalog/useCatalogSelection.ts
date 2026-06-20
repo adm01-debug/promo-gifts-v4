@@ -31,9 +31,9 @@ export function useCatalogSelection(
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // BUG-CS-12: Stale ID removal must not drop products that were already loaded 
+  // BUG-CS-12: Stale ID removal must not drop products that were already loaded
   // and selected just because they are currently off-screen in the virtualized grid.
-  // We only remove IDs if they are confirmed as no longer available in the whole 
+  // We only remove IDs if they are confirmed as no longer available in the whole
   // catalog data or if selection mode was exited (handled above).
   //
   // Note: paginatedProducts here corresponds to the current viewport slice.
@@ -174,6 +174,9 @@ export function useCatalogSelection(
           }
         });
 
+        // Export is async/dynamic-imported: only show success + clear the selection
+        // AFTER it actually resolves, otherwise a failure shows both a success and an
+        // error toast and wipes the selection so the user cannot retry.
         import('@/lib/export-collection-pdf')
           .then(({ exportCollectionPDF }) =>
             exportCollectionPDF({
@@ -182,12 +185,13 @@ export function useCatalogSelection(
               variantMap,
             }),
           )
+          .then(() => {
+            toast.success(`PDF gerado com ${selections.length} produtos`);
+            clearSelection();
+          })
           .catch((err) => {
             toast.error('Erro ao gerar PDF', { description: String(err?.message ?? err) });
           });
-
-        toast.success(`PDF gerado com ${selections.length} produtos`);
-        clearSelection();
       }
     },
     [wizardMode, navigate, clearSelection, favStore, compStore],
