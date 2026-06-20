@@ -63,4 +63,48 @@ describe('ProductColorSwatches', () => {
 
     window.location = originalLocation;
   });
+
+  describe('modo wrap (grid de Catálogo/Super Filtro/Novidades/Reposição)', () => {
+    const manyColors = Array.from({ length: 12 }, (_, i) => ({
+      name: `Cor ${i + 1}`,
+      hex: `#${((i + 1) * 1118481).toString(16).padStart(6, '0').slice(0, 6)}`,
+    }));
+
+    it('renderiza TODAS as bolinhas sem chip "+N" quando wrap=true', () => {
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={manyColors} max={5} wrap hideWhenEmpty={false} />
+        </TooltipProvider>,
+      );
+
+      for (const c of manyColors) {
+        expect(screen.getByLabelText(`Opção de cor: ${c.name}`)).toBeInTheDocument();
+      }
+      expect(screen.queryByTestId('color-swatches-overflow')).toBeNull();
+    });
+
+    it('mantém comportamento legado com chip "+N" quando wrap=false', () => {
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={manyColors} max={5} hideWhenEmpty={false} />
+        </TooltipProvider>,
+      );
+
+      expect(screen.getAllByRole('radio')).toHaveLength(5);
+      expect(screen.getByTestId('color-swatches-overflow')).toHaveTextContent('+7');
+    });
+
+    it('container wrap usa flex-wrap e height automático (sem clipping)', () => {
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={manyColors} wrap hideWhenEmpty={false} />
+        </TooltipProvider>,
+      );
+
+      const container = screen.getByTestId('product-colors-container');
+      expect(container.className).toContain('flex-wrap');
+      expect(container.className).not.toContain('overflow-hidden');
+      expect(container.className).not.toContain('max-h-[var(--swatch-size-sm)]');
+    });
+  });
 });
