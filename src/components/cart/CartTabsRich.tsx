@@ -50,6 +50,8 @@ export function CartTabsRich({
     [onSelect],
   );
 
+  const now = new Date();
+
   if (isLoading) {
     return (
       <div className="flex animate-pulse gap-2 overflow-x-auto pb-1">
@@ -83,7 +85,7 @@ export function CartTabsRich({
         {carts.map((cart) => {
           const isActive = cart.id === activeCartId;
           const statusCfg = getStatusCfg(cart.status);
-          const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
+          const ageDays = differenceInDays(now, new Date(cart.created_at));
           const needsFollowUp =
             ageDays >= 3 && cart.items.length > 0 && cart.status !== 'pronto_orcamento';
           const hasItems = cart.items.length > 0;
@@ -168,10 +170,10 @@ export function CartTabsRich({
                   data-testid="cart-tab-followup"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  aria-label={`Sem movimento há ${ageDays} dias`}
+                  aria-hidden="true"
                   className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
                 >
-                  <Clock className="h-3 w-3" aria-hidden="true" />
+                  <Clock className="h-3 w-3" />
                 </motion.span>
               )}
             </button>
@@ -195,11 +197,18 @@ export function CartTabsRich({
           )}
           aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 3 carrinhos atingido'}
         >
-          <div className={cn(
-            'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
-            canCreateCart && 'group-hover/new:bg-primary/20',
-          )}>
-            <Plus className={cn('h-4 w-4 transition-transform duration-300', canCreateCart && 'group-hover/new:rotate-90')} />
+          <div
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
+              canCreateCart && 'group-hover/new:bg-primary/20',
+            )}
+          >
+            <Plus
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                canCreateCart && 'group-hover/new:rotate-90',
+              )}
+            />
           </div>
           <span>Novo</span>
         </button>
