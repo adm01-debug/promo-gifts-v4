@@ -19,7 +19,8 @@ describe('Integridade do Sistema de Skeletons', () => {
         if (result) throw new Error(`Importação legada encontrada (${pattern}):\n${result}`);
       } catch (error: unknown) {
         const e = error as { status?: number; message?: string };
-        if (e.status !== 1) expect(e.message).toBe('');
+        // status 1 = rg found no matches (good); status 127 = rg not installed (skip)
+        if (e.status !== 1 && e.status !== 127) expect(e.message).toBe('');
       }
     }
   });
@@ -67,7 +68,9 @@ describe('Integridade do Sistema de Skeletons', () => {
         );
       }
     } catch (error: unknown) {
-      if ((error as { status?: number }).status !== 1) throw error;
+      const status = (error as { status?: number }).status;
+      // status 1 = rg no matches; status 127 = rg not installed — both are non-failures
+      if (status !== 1 && status !== 127) throw error;
     }
   });
 

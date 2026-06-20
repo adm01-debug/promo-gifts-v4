@@ -80,7 +80,7 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const finalBeforeShipping = subtotal - discountAmount;
   const realDiscountPercent =
     realSubtotal > 0
-      ? round2(Math.max(0, ((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
+      ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100)
       : 0;
 
   return {

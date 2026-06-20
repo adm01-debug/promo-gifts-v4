@@ -33,6 +33,8 @@ vi.mock('@/integrations/supabase/client', () => {
       },
       from: mockFrom,
     },
+    SUPABASE_URL: 'https://doufsxqlfjyuvxuezpln.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'mock-anon-key',
   };
 });
 
@@ -67,10 +69,11 @@ describe('AuthContext', () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null } } as any);
   });
 
-  it('throws error when useAuth is used outside AuthProvider', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<AuthConsumer />)).toThrow('useAuth must be used within an AuthProvider');
-    spy.mockRestore();
+  it('returns safe fallback when useAuth is used outside AuthProvider', () => {
+    render(<AuthConsumer />);
+    expect(screen.getByTestId('authenticated').textContent).toBe('false');
+    expect(screen.getByTestId('isAdmin').textContent).toBe('false');
+    expect(screen.getByTestId('role').textContent).toBe('none');
   });
 
   it('starts with isLoading=true then sets false when no session', async () => {
