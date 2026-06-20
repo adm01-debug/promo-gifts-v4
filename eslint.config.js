@@ -310,6 +310,17 @@ export default [
       'no-dupe-else-if': 'error',
       'no-import-assign': 'error',
       'no-setter-return': 'error',
+      // Batch 89: 10 zero-violation rules (no-redeclare removed — 9 violations)
+      'no-class-assign': 'error',
+      'no-const-assign': 'error',
+      'no-control-regex': 'error',
+      'no-debugger': 'error',
+      'no-delete-var': 'error',
+      'no-dupe-args': 'error',
+      'no-dupe-keys': 'error',
+      'no-func-assign': 'error',
+      'no-var': 'error',
+      'no-shadow': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
