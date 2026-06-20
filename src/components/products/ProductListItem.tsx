@@ -374,7 +374,7 @@ export const ProductListItem = memo(
       <>
         <article
           className={cn(
-            'group relative flex min-h-[72px] items-center gap-3 px-3 py-2 sm:min-h-[96px] sm:gap-4 sm:px-4 sm:py-2.5',
+            'group relative flex min-h-[72px] items-start gap-2 px-3 py-2 sm:min-h-[96px] sm:gap-2.5 sm:px-4 sm:py-2.5 md:items-center',
             'cursor-pointer rounded-xl bg-card',
             'transition-all duration-200 ease-out',
             'touch-manipulation active:scale-[0.997]',
@@ -510,7 +510,7 @@ export const ProductListItem = memo(
           </div>
 
           {/* Info — main content block */}
-          <div className="min-w-0 flex-1 py-0.5 md:flex-[0_1_42%]">
+          <div className="min-w-0 flex-1 py-0.5 md:max-w-[34%] md:flex-[0_1_34%]">
             {/* Top meta row */}
             <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
               {product.featured && (
@@ -572,7 +572,7 @@ export const ProductListItem = memo(
             {/* Product name */}
             <h3
               data-testid="product-list-name"
-              className="line-clamp-1 font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
+              className="line-clamp-2 break-words font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
             >
               {product.name}
             </h3>
@@ -611,7 +611,7 @@ export const ProductListItem = memo(
           <div
             role="group"
             aria-labelledby={stockLabelId}
-            className="hidden shrink-0 flex-col items-start justify-center md:flex md:w-[150px]"
+            className="-ml-1 hidden shrink-0 flex-col items-start justify-center md:flex md:w-[140px]"
           >
             <span
               id={stockLabelId}
@@ -636,7 +636,7 @@ export const ProductListItem = memo(
           <div
             role="group"
             aria-labelledby={colorsLabelId}
-            className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-3 pr-2 md:flex"
+            className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-1 pr-2 md:flex"
           >
             <span
               id={colorsLabelId}
@@ -644,21 +644,32 @@ export const ProductListItem = memo(
             >
               Cores
             </span>
-            <ProductColorSwatches
-              colors={product.colors}
-              max={product.colors?.length || 0}
-              size="sm"
-              wrap
-              hideWhenEmpty
-              className="justify-start"
-              selectedName={activeColorName}
-              onSelect={(c) => {
-                setUserSelectedColorName((prev) =>
-                  prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
-                );
+            {/* Cap visual em ~2 linhas de swatches: max-h = 2 * tamanho + gap + 2px de respiro p/ ring */}
+            <div
+              className="w-full overflow-hidden"
+              style={{
+                maxHeight:
+                  'calc(var(--swatch-size-sm) * 2 + var(--swatch-gap-y) + var(--swatch-container-py) * 2 + 2px)',
               }}
-            />
+            >
+              <ProductColorSwatches
+                colors={product.colors}
+                max={product.colors?.length || 0}
+                size="sm"
+                wrap
+                hideWhenEmpty
+                className="justify-start"
+                selectedName={activeColorName}
+                onSelect={(c) => {
+                  setUserSelectedColorName((prev) =>
+                    prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
+                  );
+                }}
+              />
+            </div>
           </div>
+
+
 
           {/* Price column — right-aligned, always visible */}
           <div
