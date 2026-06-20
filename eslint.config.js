@@ -384,6 +384,11 @@ export default [
       '@typescript-eslint/no-array-delete': 'error',
       'prefer-arrow-callback': 'error',
       '@typescript-eslint/no-empty-object-type': 'error',
+      // Batch 97: 4 zero-violation rules (also removed: role-supports-aria-props 1v)
+      'jsx-a11y/role-has-required-aria-props': 'error',
+      '@typescript-eslint/ban-ts-comment': 'error',
+      'no-floating-decimal': 'error',
+      'jsx-a11y/tabindex-no-positive': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
