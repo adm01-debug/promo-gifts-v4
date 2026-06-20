@@ -159,6 +159,17 @@ const DESCRIPTOR_MAX = 24;
 const MATERIAL_POINTS = 6;
 const MATERIAL_MAX = 12;
 
+/**
+ * Igualdade de identificadores tolerante a tipo. A bridge externa pode devolver
+ * `category_id`/`supplier_id` como número ou string conforme o fornecedor, então
+ * comparar com `===` cru perderia matches legítimos (5 !== "5"). Ids vazios/nulos
+ * nunca casam.
+ */
+export function eqId(a: unknown, b: unknown): boolean {
+  if (a == null || b == null || a === '' || b === '') return false;
+  return String(a) === String(b);
+}
+
 export function calculateMatchScore(
   source: Product,
   candidate: Product,
@@ -169,7 +180,7 @@ export function calculateMatchScore(
   const reasons: string[] = [];
 
   // Same category
-  if (source.category_id && candidate.category_id && source.category_id === candidate.category_id) {
+  if (eqId(source.category_id, candidate.category_id)) {
     score += 30;
     reasons.push('Mesma categoria');
   }
@@ -207,7 +218,7 @@ export function calculateMatchScore(
   }
 
   // Same supplier
-  if (source.supplier?.id && candidate.supplier?.id && source.supplier.id === candidate.supplier.id) {
+  if (eqId(source.supplier?.id, candidate.supplier?.id)) {
     score += 5;
     reasons.push('Mesmo fornecedor');
   }
@@ -315,7 +326,7 @@ export function useProductMatch(
 
       // Pre-filters
       if (mergedFilters.onlyInStock && candidate.stockStatus === 'out-of-stock') continue;
-      if (mergedFilters.categoryId && candidate.category_id !== mergedFilters.categoryId) continue;
+      if (mergedFilters.categoryId && !eqId(candidate.category_id, mergedFilters.categoryId)) continue;
       if (mergedFilters.categoryFilter && candidate.category?.name !== mergedFilters.categoryFilter)
         continue;
       if (mergedFilters.supplierFilter && candidate.supplier?.name !== mergedFilters.supplierFilter)
