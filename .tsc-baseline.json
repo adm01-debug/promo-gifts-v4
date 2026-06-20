@@ -1,5 +1,13 @@
 {
-  "generatedAt": "2026-06-20T00:00:00.000000+00:00",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-06-20T12:00:00.000000+00:00",
+  "totalErrors": 5,
+  "counts": {
+    "src/hooks/favorites/useFavoriteLists.ts": {
+      "TS2345": 2,
+      "TS2352": 1
+    },
+    "src/hooks/quotes/quoteHelpers.ts": {
+      "TS2353": 2
+    }
+  }
 }

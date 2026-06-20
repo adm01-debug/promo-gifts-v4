@@ -708,7 +708,7 @@ export function useMockupGenerator() {
       );
       const restoredArea: PersonalizationArea = {
         id: crypto.randomUUID(),
-        name: (mockup as Record<string, unknown>).location_name as string ?? (mockup as Record<string, unknown>).area_name as string ?? 'Frente',
+        name: mockup.location_name ?? 'Frente',
         positionX: mockup.position_x ?? 50,
         positionY: mockup.position_y ?? 50,
         logoWidth: mockup.logo_width_cm ?? 5,
