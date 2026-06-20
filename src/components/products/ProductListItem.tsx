@@ -370,7 +370,7 @@ export const ProductListItem = memo(
       <>
         <article
           className={cn(
-            'group relative flex h-[72px] items-center gap-3 px-3 py-2 sm:h-[88px] sm:gap-4 sm:px-4 sm:py-2.5',
+            'group relative flex min-h-[72px] items-center gap-3 px-3 py-2 sm:min-h-[96px] sm:gap-4 sm:px-4 sm:py-2.5',
             'cursor-pointer rounded-xl bg-card',
             'transition-all duration-200 ease-out',
             'touch-manipulation active:scale-[0.997]',
