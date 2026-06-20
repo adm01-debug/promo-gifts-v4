@@ -166,8 +166,8 @@ describe('fetchPaginatedFromBridge', () => {
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
     expect(rows.map((r) => r.id)).toEqual(['a0', 'a1', 'b0', 'b1']);
-    // Keyset pagination always issues one extra round-trip to confirm end of data.
-    expect(calls.filter((c) => c.method === 'select')).toHaveLength(3);
+    // Optimization: when totalCount is known and satisfied, no extra round-trip is issued.
+    expect(calls.filter((c) => c.method === 'select')).toHaveLength(2);
   });
 
   it('breaks early on an empty page', async () => {
