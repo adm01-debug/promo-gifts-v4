@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import {
   useNoveltiesSelectionMode,
+  noveltyToProduct,
   useNoveltiesWithDetails,
   sortNovelties,
 } from '@/hooks/products';
@@ -293,11 +294,14 @@ export function NoveltyProductGrid() {
   );
 
   // Convert novelties to Product for list view
+  // ISSUE-35 FIX: usa noveltyToProduct importado diretamente (função estável de módulo)
+  // em vez de sel.noveltyToProduct — sel é um objeto novo a cada render ({...spread})
+  // então a dependência em sel causava recomputação do Map em todo render, O(n) desnecessário.
   const productMap = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof sel.noveltyToProduct>>();
-    filteredProducts.forEach((n) => map.set(n.product_id, sel.noveltyToProduct(n)));
+    const map = new Map<string, ReturnType<typeof noveltyToProduct>>();
+    filteredProducts.forEach((n) => map.set(n.product_id, noveltyToProduct(n)));
     return map;
-  }, [filteredProducts, sel]);
+  }, [filteredProducts]);
 
   // Batch-load cores das variantes para os produtos visíveis (visualização atual).
   // Grid: apenas paginatedProducts (virtualizados). List/table: todos filtrados,

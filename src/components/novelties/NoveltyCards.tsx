@@ -64,22 +64,6 @@ export function NoveltyGridSkeleton({ count = 6 }: { count?: number }) {
   );
 }
 
-export function NoveltyListSkeleton({ count = 5 }: { count?: number }) {
-  return (
-    <div className="flex flex-col gap-2">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-          <Skeleton className="h-16 w-16 flex-shrink-0 rounded-md" />
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── Grid Card ────────────────────────────────────────────────────────────────
 export const NoveltyGridCard = memo(
   ({
@@ -391,13 +375,23 @@ export function NoveltyTableView({
           {products.map((product) => {
             const isSelected = selectedSet.has(product.product_id);
             return (
+              {/* ISSUE-38 FIX: tabIndex + onKeyDown — TableRow com onClick mas sem teclado
+                  viola WCAG 2.1 SC 2.1.1. tr não é natively focusable/activatable. */}
               <TableRow
                 key={product.novelty_id}
+                tabIndex={0}
+                aria-label={`Produto: ${product.product_name ?? 'Sem nome'}`}
                 className={cn(
                   'cursor-pointer transition-colors hover:bg-muted/50',
                   isSelected && 'bg-primary/5',
                 )}
                 onClick={() => onSelect?.(product.product_id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect?.(product.product_id);
+                  }
+                }}
               >
                 {selectionMode && (
                   <TableCell className="px-2 py-1.5">
