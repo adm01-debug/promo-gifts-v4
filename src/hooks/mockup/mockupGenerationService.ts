@@ -515,14 +515,16 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
 
   // Remove both logo and composite mockup PNG from storage after successful DB
   // delete (best-effort — storage failures must not surface to the caller).
-  const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
-  const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
-
+  // Extract the storage path directly from the URL — avoids an extra getPublicUrl('')
+  // round-trip and is robust to base-URL format variations (trailing slash, etc.).
+  // Supabase storage public URLs follow the pattern:
+  //   .../storage/v1/object/public/mockup-assets/<path>
+  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/(.+)$/;
   const pathsToRemove: string[] = [];
   for (const url of [logoUrl, mockupUrl]) {
-    if (url && bucketPublicBase && url.startsWith(`${bucketPublicBase}/`)) {
-      pathsToRemove.push(url.slice(bucketPublicBase.length + 1));
-    }
+    if (!url) continue;
+    const match = url.match(STORAGE_PATH_RE);
+    if (match?.[1]) pathsToRemove.push(match[1]);
   }
 
   if (pathsToRemove.length > 0) {
