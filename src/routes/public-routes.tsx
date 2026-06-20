@@ -30,5 +30,6 @@ export const publicRoutes = (
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/privacidade" element={<PrivacyPage />} />
+    <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
   </>
 );
