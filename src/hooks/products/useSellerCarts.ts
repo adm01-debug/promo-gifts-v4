@@ -111,38 +111,32 @@ export function useSellerCarts() {
     return data ?? null;
   };
 
-  // Fetch all carts with items
+  // Fetch all carts with items — único round-trip via PostgREST nested select.
   const cartsQuery = useQuery<SellerCart[]>({
     queryKey: [QUERY_KEY, userId],
     queryFn: async () => {
       if (!userId) return [];
 
-      const { data: carts, error: cartsError } = await supabase
+      const { data, error } = await supabase
         .from('seller_carts')
-        .select('*')
+        .select('*, seller_cart_items(*)')
         .eq('seller_id', userId)
-        .order('updated_at', { ascending: false });
+        .order('updated_at', { ascending: false })
+        .order('sort_order', { ascending: true, foreignTable: 'seller_cart_items' });
 
-      if (cartsError) throw cartsError;
-      if (!carts?.length) return [];
+      if (error) throw error;
+      if (!data?.length) return [];
 
-      const { data: items, error: itemsError } = await supabase
-        .from('seller_cart_items')
-        .select('*')
-        .in(
-          'cart_id',
-          carts.map((c) => c.id),
-        )
-        .order('sort_order', { ascending: true });
-
-      if (itemsError) throw itemsError;
-
-      return carts.map((cart) => ({
-        ...cart,
-        notes: cart.notes ?? null,
-        status: (cart.status ?? 'novo') as CartStatus,
-        items: (items || []).filter((i) => i.cart_id === cart.id),
-      }));
+      return data.map((row) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { seller_cart_items: rowItems, ...cart } = row as any;
+        return {
+          ...cart,
+          notes: (cart.notes as string | null) ?? null,
+          status: ((cart.status as string) ?? 'novo') as CartStatus,
+          items: (rowItems ?? []) as SellerCartItem[],
+        };
+      });
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
