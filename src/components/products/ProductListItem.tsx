@@ -611,7 +611,7 @@ export const ProductListItem = memo(
           <div
             role="group"
             aria-labelledby={stockLabelId}
-            className="hidden shrink-0 flex-col items-start justify-center md:flex md:w-[150px]"
+            className="-ml-1 hidden shrink-0 flex-col items-start justify-center md:flex md:w-[140px]"
           >
             <span
               id={stockLabelId}
