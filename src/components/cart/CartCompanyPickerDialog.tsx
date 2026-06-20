@@ -190,6 +190,7 @@ export function CartCompanyPickerDialog({
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {
+      if (isCreating) return;
       const input: CreateCartInput = {
         company_id: company.id,
         company_name: company.name,
@@ -208,8 +209,7 @@ export function CartCompanyPickerDialog({
         onOpenChange(false);
       }
     },
-    [createCart, onCreated, onOpenChange, recents, recentKey],
-      if (isCreating) return;
+    [createCart, onCreated, onOpenChange, recents, recentKey, isCreating],
   );
 
   const isLoading = loadingLocal || loadingServer;
