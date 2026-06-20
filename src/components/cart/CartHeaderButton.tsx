@@ -81,7 +81,7 @@ export function CartHeaderButton() {
         aria-label="Abrir carrinhos"
         onClick={() => navigate('/carrinhos')}
       >
-        <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
+        <ShoppingCart aria-hidden="true" className="h-[17px] w-[17px]" strokeWidth={1.75} />
       </Button>
     );
   }
@@ -119,7 +119,7 @@ export function CartHeaderButton() {
                 }
                 aria-expanded={open}
               >
-                <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                <ShoppingCart aria-hidden="true" className="h-[17px] w-[17px]" strokeWidth={1.75} />
                 {totalItems > 0 && (
                   <span
                     aria-hidden="true"
@@ -159,7 +159,7 @@ export function CartHeaderButton() {
                 className="h-6 w-6"
                 onClick={() => setShowPicker(false)}
               >
-                <X className="h-3.5 w-3.5" />
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
               </Button>
             </div>
             <CartCompanyPicker
@@ -205,7 +205,7 @@ export function CartHeaderButton() {
                   className="h-8 gap-1.5 rounded-lg px-3 text-[11px] font-bold text-primary transition-all hover:scale-105 hover:bg-primary/10 active:scale-95"
                   onClick={() => setShowPicker(true)}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                   Novo
                 </Button>
               )}
@@ -255,7 +255,7 @@ export function CartHeaderButton() {
                   className="gap-1.5 rounded-lg text-xs"
                   onClick={() => setShowPicker(true)}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                   Criar Carrinho
                 </Button>
               </div>
@@ -371,7 +371,7 @@ export function CartHeaderButton() {
                                         }
                                       }}
                                     >
-                                      <Eraser className="h-3.5 w-3.5" />
+                                      <Eraser aria-hidden="true" className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Limpar itens</TooltipContent>
@@ -420,7 +420,7 @@ export function CartHeaderButton() {
                                         setPendingDeleteId(cart.id);
                                       }}
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
+                                      <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Excluir carrinho</TooltipContent>
@@ -460,7 +460,7 @@ export function CartHeaderButton() {
                                       aria-label={`Ver produto ${item.product_name}`}
                                       className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10 opacity-0 transition-opacity group-hover/img:opacity-100"
                                     >
-                                      <Eye className="h-3 w-3 text-primary" />
+                                      <Eye aria-hidden="true" className="h-3 w-3 text-primary" />
                                     </button>
                                   </div>
 
@@ -502,7 +502,11 @@ export function CartHeaderButton() {
                                       <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
                                         <button
                                           type="button"
-                                          aria-label={item.quantity <= 1 ? `Remover ${item.product_name}` : `Diminuir quantidade de ${item.product_name}`}
+                                          aria-label={
+                                            item.quantity <= 1
+                                              ? `Remover ${item.product_name}`
+                                              : `Diminuir quantidade de ${item.product_name}`
+                                          }
                                           className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -514,9 +518,12 @@ export function CartHeaderButton() {
                                           }}
                                         >
                                           {item.quantity <= 1 ? (
-                                            <Trash2 className="h-3 w-3 text-destructive" />
+                                            <Trash2
+                                              aria-hidden="true"
+                                              className="h-3 w-3 text-destructive"
+                                            />
                                           ) : (
-                                            <Minus className="h-3 w-3" />
+                                            <Minus aria-hidden="true" className="h-3 w-3" />
                                           )}
                                         </button>
                                         <span className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums">
@@ -533,7 +540,7 @@ export function CartHeaderButton() {
                                             updateItemQuantity(item.id, item.quantity + 1);
                                           }}
                                         >
-                                          <Plus className="h-3 w-3" />
+                                          <Plus aria-hidden="true" className="h-3 w-3" />
                                         </button>
                                       </div>
                                     </div>
@@ -556,7 +563,7 @@ export function CartHeaderButton() {
                                       removeItem(item.id);
                                     }}
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X aria-hidden="true" className="h-3 w-3" />
                                   </button>
                                 </div>
                               ))}
@@ -620,7 +627,7 @@ export function CartHeaderButton() {
                             });
                           }}
                         >
-                          <ArrowRight className="h-3.5 w-3.5" />
+                          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
                           Gerar Orçamento
                         </Button>
                       </div>
