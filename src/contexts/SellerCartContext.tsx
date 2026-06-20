@@ -13,6 +13,7 @@ import {
 } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { clearActionHistory } from '@/components/cart/CartUtilComponents';
 
 interface SellerCartContextType {
   // Data
@@ -35,6 +36,7 @@ interface SellerCartContextType {
   updateItemNotes: (itemId: string, notes: string) => void;
   updateItemSortOrder: (items: { id: string; sort_order: number }[]) => void;
   updateCartNotes: (cartId: string, notes: string) => void;
+  flushCartNotes: (cartId: string, notes: string) => Promise<void>;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
@@ -125,11 +127,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   const deleteCart = useCallback(
     (cartId: string) => {
       deleteCartMutation.mutate(cartId);
+      clearActionHistory(cartId);
       if (activeCartId === cartId) {
         setActiveCartId(null);
+        // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
+        if (user?.id) {
+          try {
+            localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
+          } catch {
+            // no-op: storage unavailable
+          }
+        }
       }
     },
-    [deleteCartMutation, activeCartId],
+    [deleteCartMutation, activeCartId, user?.id],
   );
 
   const addToActiveCart = useCallback(
@@ -202,6 +213,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [updateCartNotesMutation],
   );
 
+  // Awaitable version of updateCartNotes for the pre-navigation flush path.
+  // Errors are swallowed intentionally: a failed notes save must not block
+  // the navigation or quote generation flow.
+  const flushCartNotes = useCallback(
+    async (cartId: string, notes: string) => {
+      try {
+        await updateCartNotesMutation.mutateAsync({ cartId, notes });
+      } catch {
+        // non-blocking: navigation proceeds regardless
+      }
+    },
+    [updateCartNotesMutation],
+  );
+
   const updateCartStatus = useCallback(
     (cartId: string, status: CartStatus) => {
       updateCartStatusMutation.mutate({ cartId, status });
@@ -232,12 +257,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(
     async (cartId: string) => {
-      try {
-        await clearCartMutation(cartId);
-        setActiveCartId(cartId);
-      } catch {
-        toast.error('Erro ao limpar carrinho');
-      }
+      await clearCartMutation(cartId);
     },
     [clearCartMutation],
   );
@@ -267,6 +287,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         updateItemNotes,
         updateItemSortOrder,
         updateCartNotes,
+        flushCartNotes,
         updateCartStatus,
         duplicateCart: duplicateCartFn,
         moveItemToCart,

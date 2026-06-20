@@ -44,9 +44,12 @@ export function CartHealthChecklist({
     const isReady = cart.status === 'pronto_orcamento';
     const hasItemNotes =
       cart.items.length > 0 && cart.items.every((i) => !!i.notes && i.notes.trim().length > 5);
+    const noZeroPriceItems =
+      cart.items.length === 0 || cart.items.every((i) => i.product_price > 0);
 
     return [
       { id: 'company', label: 'Empresa vinculada', ok: !!cart.company_id },
+      { id: 'prices', label: 'Todos os itens com preço', ok: noZeroPriceItems, onFix: onAddProducts },
       { id: 'items', label: 'Mix de produtos (≥ 3 SKUs)', ok: hasMinItems, onFix: onAddProducts },
       { id: 'value', label: 'Valor mínimo (R$ 500,00)', ok: hasMinValue, onFix: onAddProducts },
       { id: 'notes', label: 'Observações do pedido', ok: hasNotes, onFix: onFocusNotes },

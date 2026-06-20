@@ -2,6 +2,7 @@
  * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente,
  * indicador de follow-up e botão "+" para criar novo.
  */
+import { useRef, useCallback } from 'react';
 import { type SellerCart } from '@/hooks/products';
 import { Building2, Plus, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,28 @@ export function CartTabsRich({
   onNew,
   isLoading,
 }: CartTabsRichProps) {
+  const tablistRef = useRef<HTMLDivElement>(null);
+
+  // WCAG 2.1 AA: arrow key navigation for role="tablist" (roving tabindex pattern)
+  const handleTablistKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      e.preventDefault();
+      const tabs = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+      if (!tabs || tabs.length === 0) return;
+      const current = Array.from(tabs).findIndex((t) => t === document.activeElement);
+      let next = current;
+      if (e.key === 'ArrowRight') next = (current + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      tabs[next]?.focus();
+      const cartId = tabs[next]?.dataset.cartId;
+      if (cartId) onSelect(cartId);
+    },
+    [onSelect],
+  );
+
   if (isLoading) {
     return (
       <div className="flex animate-pulse gap-2 overflow-x-auto pb-1">
@@ -51,8 +74,10 @@ export function CartTabsRich({
     <div className="flex items-center gap-2">
       {/* tablist contains ONLY role="tab" children — "Novo" button lives outside to satisfy WCAG 4.1.2 */}
       <div
+        ref={tablistRef}
         role="tablist"
         aria-label="Carrinhos"
+        onKeyDown={handleTablistKeyDown}
         className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
       >
         {carts.map((cart) => {
@@ -71,6 +96,7 @@ export function CartTabsRich({
               data-active={isActive ? 'true' : 'false'}
               role="tab"
               aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
               className={cn(
                 'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
                 isActive
@@ -150,25 +176,30 @@ export function CartTabsRich({
         })}
       </div>
 
-      {canCreateCart && (
-        <div className="flex-shrink-0 pb-2 pr-1">
-          <button
-            data-testid="cart-tab-new"
-            onClick={onNew}
-            className={cn(
-              'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed border-border/40 px-5 py-2.5 transition-all',
-              'hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-95',
-              'text-sm font-bold text-muted-foreground/60',
-            )}
-            aria-label="Criar novo carrinho"
-          >
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors group-hover/new:bg-primary/20">
-              <Plus className="h-4 w-4 transition-transform duration-300 group-hover/new:rotate-90" />
-            </div>
-            <span>Novo</span>
-          </button>
-        </div>
-      )}
+      <div className="flex-shrink-0 pb-2 pr-1">
+        <button
+          data-testid="cart-tab-new"
+          onClick={canCreateCart ? onNew : undefined}
+          disabled={!canCreateCart}
+          title={!canCreateCart ? 'Limite de 3 carrinhos atingido' : 'Criar novo carrinho'}
+          className={cn(
+            'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-2.5 transition-all',
+            canCreateCart
+              ? 'border-border/40 text-muted-foreground/60 hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-95'
+              : 'cursor-not-allowed border-border/20 text-muted-foreground/30 opacity-50',
+            'text-sm font-bold',
+          )}
+          aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 3 carrinhos atingido'}
+        >
+          <div className={cn(
+            'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
+            canCreateCart && 'group-hover/new:bg-primary/20',
+          )}>
+            <Plus className={cn('h-4 w-4 transition-transform duration-300', canCreateCart && 'group-hover/new:rotate-90')} />
+          </div>
+          <span>Novo</span>
+        </button>
+      </div>
     </div>
   );
 }

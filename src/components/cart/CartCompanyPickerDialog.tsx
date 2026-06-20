@@ -70,6 +70,7 @@ export function CartCompanyPickerDialog({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [recents, setRecents] = useState<CompanyItem[]>([]);
   const [favorites, setFavorites] = useState<CompanyItem[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { createCart, canCreateCart } = useSellerCartContext();
   const { user } = useAuth();
@@ -80,6 +81,7 @@ export function CartCompanyPickerDialog({
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
+      setIsCreating(false);
       return;
     }
     setRecents(readList(recentKey));
@@ -207,26 +209,29 @@ export function CartCompanyPickerDialog({
       }
     },
     [createCart, onCreated, onOpenChange, recents, recentKey],
+      if (isCreating) return;
   );
 
   const isLoading = loadingLocal || loadingServer;
+
+  const canSelect = canCreateCart && !isCreating;
 
   const renderRow = (company: CompanyItem) => (
     <div
       key={company.id}
       role="button"
-      tabIndex={canCreateCart ? 0 : -1}
-      aria-disabled={!canCreateCart}
+      tabIndex={canSelect ? 0 : -1}
+      aria-disabled={!canSelect}
       data-testid="cart-company-picker-select"
       data-company-id={company.id}
       className={cn(
         'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
         'group transition-colors hover:bg-accent/60',
-        !canCreateCart && 'pointer-events-none opacity-50',
+        !canSelect && 'pointer-events-none opacity-50',
       )}
-      onClick={() => canCreateCart && handleSelect(company)}
+      onClick={() => canSelect && handleSelect(company)}
       onKeyDown={(e) => {
-        if (canCreateCart && (e.key === 'Enter' || e.key === ' ')) {
+        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           handleSelect(company);
         }
