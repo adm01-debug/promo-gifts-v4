@@ -822,3 +822,25 @@ describe('Analise estatica — MockupProductSelector.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — MockupLightbox.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupLightbox.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupLightbox.tsx');
+  });
+
+  describe('a11y — aria-label correto nos controles de zoom', () => {
+    it('botao de diminuir zoom usa "Diminuir zoom" (nao "Reduzir" generico)', () => {
+      expect(src).toContain('aria-label="Diminuir zoom"');
+      expect(src).not.toContain('aria-label="Reduzir"');
+    });
+    it('botao de aumentar zoom usa "Aumentar zoom" (nao "Ampliar" generico)', () => {
+      expect(src).toContain('aria-label="Aumentar zoom"');
+      expect(src).not.toContain('aria-label="Ampliar"');
+    });
+  });
+});

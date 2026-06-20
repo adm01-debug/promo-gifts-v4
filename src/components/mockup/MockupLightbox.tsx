@@ -141,7 +141,7 @@ export function MockupLightbox({
               <div className="flex items-center gap-1">
                 <Button
                   size="icon"
-                  aria-label="Reduzir"
+                  aria-label="Diminuir zoom"
                   variant="ghost"
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))}
@@ -154,7 +154,7 @@ export function MockupLightbox({
                 </span>
                 <Button
                   size="icon"
-                  aria-label="Ampliar"
+                  aria-label="Aumentar zoom"
                   variant="ghost"
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom((z) => Math.min(z + 0.25, 5))}
