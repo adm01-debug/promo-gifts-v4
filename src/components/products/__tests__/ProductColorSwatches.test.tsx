@@ -107,4 +107,119 @@ describe('ProductColorSwatches', () => {
       expect(container.className).not.toContain('max-h-[var(--swatch-size-sm)]');
     });
   });
+
+  describe('botão "Todos" (limpar seleção)', () => {
+    it('não renderiza quando não há cor selecionada', () => {
+      const onClear = vi.fn();
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={mockColors} onClear={onClear} />
+        </TooltipProvider>,
+      );
+      expect(screen.queryByTestId('color-swatches-clear')).toBeNull();
+    });
+
+    it('renderiza e dispara onClear ao clicar quando há cor selecionada', () => {
+      const onClear = vi.fn();
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches
+            colors={mockColors}
+            selectedName="Amarelo"
+            onClear={onClear}
+          />
+        </TooltipProvider>,
+      );
+      fireEvent.click(screen.getByTestId('color-swatches-clear'));
+      expect(onClear).toHaveBeenCalledTimes(1);
+    });
+
+    it('dispara onClear via teclado (Enter/Space)', () => {
+      const onClear = vi.fn();
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={mockColors} selectedName="Amarelo" onClear={onClear} />
+        </TooltipProvider>,
+      );
+      const btn = screen.getByTestId('color-swatches-clear');
+      fireEvent.keyDown(btn, { key: 'Enter' });
+      fireEvent.keyDown(btn, { key: ' ' });
+      expect(onClear).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('acessibilidade por teclado nos swatches', () => {
+    it('dispara onSelect ao pressionar Enter ou Space', () => {
+      const onSelect = vi.fn();
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={mockColors} onSelect={onSelect} />
+        </TooltipProvider>,
+      );
+      const swatch = screen.getByLabelText('Opção de cor: Azul');
+      fireEvent.keyDown(swatch, { key: 'Enter' });
+      fireEvent.keyDown(swatch, { key: ' ' });
+      expect(onSelect).toHaveBeenCalledTimes(2);
+      expect(onSelect).toHaveBeenLastCalledWith(mockColors[1], 1);
+    });
+  });
+
+  describe('estado de estoque (Reposição)', () => {
+    const stockColors = [
+      { name: 'Verde', hex: '#00FF00', stockQty: 25 },
+      { name: 'Preto', hex: '#000000', stockQty: 0 },
+      {
+        name: 'Vermelho',
+        hex: '#FF0000',
+        stockQty: 0,
+        hasUpcomingRestock: true,
+        nextRestockDate: '2026-12-01',
+      },
+    ];
+
+    it('marca swatch sem estoque com data-stock-state="out" e visual atenuado', () => {
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={stockColors} />
+        </TooltipProvider>,
+      );
+      const oos = screen.getByLabelText(/Preto.*esgotada/);
+      expect(oos.getAttribute('data-stock-state')).toBe('out');
+      expect(oos.className).toContain('opacity-40');
+      expect(oos.className).toContain('grayscale');
+    });
+
+    it('marca swatch com reposição prevista como "upcoming" e exibe badge', () => {
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={stockColors} />
+        </TooltipProvider>,
+      );
+      const upcoming = screen.getByLabelText(/Vermelho.*reposição prevista/);
+      expect(upcoming.getAttribute('data-stock-state')).toBe('upcoming');
+      expect(screen.getByTestId('swatch-upcoming-dot')).toBeInTheDocument();
+    });
+
+    it('marca swatch com estoque positivo como "in-stock"', () => {
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={stockColors} />
+        </TooltipProvider>,
+      );
+      expect(
+        screen.getByLabelText('Opção de cor: Verde').getAttribute('data-stock-state'),
+      ).toBe('in-stock');
+    });
+
+    it('permanece clicável mesmo quando esgotado (não quebra layout)', () => {
+      const onSelect = vi.fn();
+      render(
+        <TooltipProvider>
+          <ProductColorSwatches colors={stockColors} onSelect={onSelect} />
+        </TooltipProvider>,
+      );
+      fireEvent.click(screen.getByLabelText(/Preto.*esgotada/));
+      expect(onSelect).toHaveBeenCalledWith(stockColors[1], 1);
+    });
+  });
 });

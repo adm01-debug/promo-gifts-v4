@@ -625,6 +625,8 @@ export const ProductListItem = memo(
                 'flex items-center gap-1 text-[11px] font-medium sm:text-xs',
                 getStockColor(displayStatus),
               )}
+              data-testid="product-stock-value"
+              data-stock-qty={displayStock}
             >
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
               <span className="whitespace-nowrap">
@@ -671,7 +673,9 @@ export const ProductListItem = memo(
                     prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
                   );
                 }}
+                onClear={() => setUserSelectedColorName(null)}
               />
+
             </div>
           </div>
 

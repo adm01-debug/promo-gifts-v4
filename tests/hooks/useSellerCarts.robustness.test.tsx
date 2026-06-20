@@ -66,7 +66,19 @@ function makeBuilder(table: string) {
     return null;
   };
 
-  const resolveList = () => ({ data: applyFilters(tableRows()), error: null });
+  const resolveList = () => {
+    const rows = applyFilters(tableRows());
+    // Simula o nested join PostgREST select('*, seller_cart_items(*)'):
+    // cada seller_carts retornado leva seus seller_cart_items aninhados.
+    if (table === 'seller_carts') {
+      const withItems = (rows as CartRow[]).map((cart) => ({
+        ...cart,
+        seller_cart_items: itemsTable.filter((it) => it.cart_id === cart.id),
+      }));
+      return { data: withItems, error: null };
+    }
+    return { data: rows, error: null };
+  };
   const resolveSingle = () => {
     const injected = consumeFail();
     if (injected) return injected;
@@ -107,7 +119,7 @@ function makeBuilder(table: string) {
     eq(col: string, val: unknown) { state.filters.push(['eq', col, val]); return b; },
     is(col: string, val: unknown) { state.filters.push(['is', col, val]); return b; },
     in(col: string, val: unknown) { state.filters.push(['in', col, val]); return b; },
-    order() { return Promise.resolve(resolveList()); },
+    order() { return b; },
     maybeSingle() { return Promise.resolve(resolveSingle()); },
     single() { return Promise.resolve(state.op === 'insert' ? runMutation() : resolveSingle()); },
     then(onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) {
