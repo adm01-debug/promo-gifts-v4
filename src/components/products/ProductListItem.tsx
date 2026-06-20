@@ -244,7 +244,7 @@ export const ProductListItem = memo(
       }
     };
 
-    const getStockLabel = (status: string) => {
+    const _getStockLabel = (status: string) => {
       switch (status) {
         case 'in-stock':
           return 'Em estoque';
@@ -603,7 +603,6 @@ export const ProductListItem = memo(
               >
                 <Package className="h-2.5 w-2.5" aria-hidden="true" />
                 {displayStock.toLocaleString('pt-BR')} Unid
-
               </span>
             </div>
           </div>
@@ -627,10 +626,7 @@ export const ProductListItem = memo(
               )}
             >
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
-              <span className="whitespace-nowrap">
-                {displayStock.toLocaleString('pt-BR')} Unid
-              </span>
-
+              <span className="whitespace-nowrap">{displayStock.toLocaleString('pt-BR')} Unid</span>
             </span>
           </div>
 
@@ -673,11 +669,8 @@ export const ProductListItem = memo(
                 }}
                 onClear={() => setUserSelectedColorName(null)}
               />
-
             </div>
           </div>
-
-
 
           {/* Price column — right-aligned, always visible */}
           <div
