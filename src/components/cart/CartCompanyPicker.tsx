@@ -45,7 +45,8 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
 
   // Focus input on mount
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 100);
+    const t = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
   }, []);
 
   // Local companies cache
