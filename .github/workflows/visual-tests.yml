@@ -46,7 +46,7 @@ jobs:
         CI: true
 
     - name: Commit new baselines if generated
-      if: always()
+      if: always() && github.event_name == 'push'
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
