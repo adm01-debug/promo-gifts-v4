@@ -1004,7 +1004,7 @@ export const ProductCard = memo(
               <ProductQuickView
                 product={product}
                 open={quickViewOpen}
-                onOpenChange={setQuickViewOpen}
+                onOpenChange={handleQuickViewOpenChange}
                 isFavorited={isFavorited}
                 onToggleFavorite={onToggleFavorite}
                 isInCompare={isInCompare}
