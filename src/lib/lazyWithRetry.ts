@@ -59,6 +59,6 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       }
     }
 
-    throw lastError;
+    throw lastError ?? new Error('Max retries exhausted');
   });
 }

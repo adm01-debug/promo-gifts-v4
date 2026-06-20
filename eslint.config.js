@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 129: 5 rules (1 zero-violation + 4 with manual fixes — removed: return-await 6v, no-onchange 6v, no-redeclare 8v, no-object-type-as-default-prop 23v, accessible-emoji 88v, no-empty-function 112v, prefer-tag-over-role 178v)
+      '@typescript-eslint/no-unused-expressions': 'error',
+      '@typescript-eslint/no-var-requires': 'error',
+      '@typescript-eslint/prefer-promise-reject-errors': 'error',
+      'react/iframe-missing-sandbox': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
       // Batch 128: 9 rules (1 zero-violation + 8 with ≤2 fixes each — removed: consistent-indexed-object-style 6v, no-useless-default-assignment 9v, jsx-no-constructed-context-values 14v, no-unnecessary-type-parameters 16v, no-unstable-nested-components 29v, non-nullable-type-assertion-style 38v, method-signature-style 50v, no-unnecessary-type-conversion 182v)
       '@typescript-eslint/no-implied-eval': 'error',
       '@typescript-eslint/no-duplicate-type-constituents': 'error',

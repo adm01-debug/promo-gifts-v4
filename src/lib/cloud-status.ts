@@ -113,7 +113,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
       },
       (e) => {
         clearTimeout(t);
-        reject(e);
+        reject(e instanceof Error ? e : new Error(String(e)));
       },
     );
   });

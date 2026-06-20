@@ -105,7 +105,7 @@ vi.mock('@/contexts/CollectionsContext', () => ({
   CollectionsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/contexts/ProductsContext', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const ReactMock = require('react');
   const mockValue = {
     registerProducts: vi.fn(),
