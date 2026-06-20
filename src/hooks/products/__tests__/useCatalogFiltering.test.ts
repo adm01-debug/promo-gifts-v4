@@ -1458,4 +1458,17 @@ describe('useCatalogFiltering — loading state guards', () => {
     );
     expect(result.current).toHaveLength(catalog.length);
   });
+
+  it('não filtra metadata enquanto isLoadingMetadataFilter=true', () => {
+    const { result } = renderHook(() =>
+      useCatalogFiltering({
+        ...baseArgs,
+        realProducts: catalog,
+        hasMetadataFilter: true,
+        metadataFilteredProductIds: new Set(['x1', 'x2']),
+        isLoadingMetadataFilter: true,
+      }),
+    );
+    expect(result.current).toHaveLength(catalog.length);
+  });
 });

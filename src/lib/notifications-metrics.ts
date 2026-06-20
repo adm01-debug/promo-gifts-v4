@@ -184,7 +184,8 @@ const throttleByEvent = new Map<string, ThrottleEntry>();
 
 function emit(event: string, payload: Record<string, unknown>) {
   if (!isDebugEnabled()) return;
-  logger.debug(`[notifications-metrics:${event}]`, payload);
+  // eslint-disable-next-line no-console
+  console.log(`[notifications-metrics:${event}]`, event, payload);
 }
 
 function debugLog(event: string, payload: Record<string, unknown>) {

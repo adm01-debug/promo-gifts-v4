@@ -152,7 +152,10 @@ function useAllTechniqueDimensions(shouldFetch: boolean) {
       }
 
       const codeMap = new Map<string, { maxWidth: number | null; maxHeight: number | null }>();
-      for (const [code, faixas] of faixasByCode.entries()) {
+      for (const [techCode, faixas] of faixasByCode.entries()) {
+        // BUG-D FIX: skip entries without a valid code to prevent null-key entries in codeMap.
+        const tech = { code: techCode };
+        if (!tech.code) continue;
         const larguras: number[] = [];
         const alturas: number[] = [];
         let lwS = false,
@@ -169,7 +172,7 @@ function useAllTechniqueDimensions(shouldFetch: boolean) {
           }
         }
 
-        codeMap.set(code, {
+        codeMap.set(tech.code, {
           maxWidth: lwS ? null : larguras.length ? Math.max(...larguras) : null,
           maxHeight: lhS ? null : alturas.length ? Math.max(...alturas) : null,
         });
