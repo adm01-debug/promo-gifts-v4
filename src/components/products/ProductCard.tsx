@@ -1010,6 +1010,14 @@ export const ProductCard = memo(
                 isInCompare={isInCompare}
                 onToggleCompare={onToggleCompare}
                 onShare={onShare}
+                onAddToQuote={() => {
+                  setVariantPickerMode('quote');
+                  setVariantPickerOpen(true);
+                }}
+                onAddToCollection={() => {
+                  setVariantPickerMode('collection');
+                  setVariantPickerOpen(true);
+                }}
               />
             </Suspense>
           )}
