@@ -7833,14 +7833,8 @@ export type Database = {
         Returns: number
       }
       restore_favorite_from_trash: {
-        Args: { _trash_id: string | null; _user_id: string }
-        Returns: {
-          ok: boolean
-          list_id: string
-          item_id: string | null
-          original_list_changed: boolean
-          error: string | null
-        }
+        Args: { _trash_id: string; _user_id: string; _fallback_list_id?: string | null }
+        Returns: Json
       }
       retry_failed_webhook_deliveries: { Args: never; Returns: Json }
       revoke_all_user_tokens: { Args: { _user_id: string }; Returns: undefined }
