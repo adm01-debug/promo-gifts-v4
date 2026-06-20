@@ -55,6 +55,7 @@ import { ptBR } from 'date-fns/locale';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 export default function SellerCartsPage() {
   return (
@@ -65,7 +66,9 @@ export default function SellerCartsPage() {
         path="/carrinhos"
         noIndex
       />
-      <SellerCartsContent />
+      <ErrorBoundary>
+        <SellerCartsContent />
+      </ErrorBoundary>
     </>
   );
 }
@@ -156,6 +159,11 @@ function SellerCartsContent() {
     return [10, 25, 50, 100].includes(v) ? v : 25;
   });
   const [page, setPage] = useState(1);
+  // Reset to page 1 whenever the active cart changes so the user doesn't land
+  // on a page that doesn't exist in the new cart's item count.
+  useEffect(() => {
+    setPage(1);
+  }, [s.activeCartId]);
   useEffect(() => {
     localStorage.setItem('cart-table-sort-key', sortKey);
   }, [sortKey]);
@@ -596,7 +604,15 @@ function SellerCartsContent() {
                       label: string,
                       align: 'left' | 'right',
                     ) => (
+                      // aria-sort belongs on <th>, not on the inner <button> (WCAG 1.3.1)
                       <th
+                        aria-sort={
+                          sortKey === key
+                            ? sortDir === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : 'none'
+                        }
                         className={cn(
                           rowPad,
                           align === 'right' ? 'text-right' : 'text-left',
@@ -608,13 +624,6 @@ function SellerCartsContent() {
                           onClick={() => toggleSort(key)}
                           className="inline-flex items-center gap-1 hover:text-primary"
                           data-testid={`cart-sort-${key}`}
-                          aria-sort={
-                            sortKey === key
-                              ? sortDir === 'asc'
-                                ? 'ascending'
-                                : 'descending'
-                              : 'none'
-                          }
                         >
                           {label}
                           <span className="text-[10px] opacity-70">

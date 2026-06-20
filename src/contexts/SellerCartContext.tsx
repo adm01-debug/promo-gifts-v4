@@ -36,6 +36,7 @@ interface SellerCartContextType {
   updateItemNotes: (itemId: string, notes: string) => void;
   updateItemSortOrder: (items: { id: string; sort_order: number }[]) => void;
   updateCartNotes: (cartId: string, notes: string) => void;
+  flushCartNotes: (cartId: string, notes: string) => Promise<void>;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
@@ -212,6 +213,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [updateCartNotesMutation],
   );
 
+  // Awaitable version of updateCartNotes for the pre-navigation flush path.
+  // Errors are swallowed intentionally: a failed notes save must not block
+  // the navigation or quote generation flow.
+  const flushCartNotes = useCallback(
+    async (cartId: string, notes: string) => {
+      try {
+        await updateCartNotesMutation.mutateAsync({ cartId, notes });
+      } catch {
+        // non-blocking: navigation proceeds regardless
+      }
+    },
+    [updateCartNotesMutation],
+  );
+
   const updateCartStatus = useCallback(
     (cartId: string, status: CartStatus) => {
       updateCartStatusMutation.mutate({ cartId, status });
@@ -272,6 +287,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         updateItemNotes,
         updateItemSortOrder,
         updateCartNotes,
+        flushCartNotes,
         updateCartStatus,
         duplicateCart: duplicateCartFn,
         moveItemToCart,

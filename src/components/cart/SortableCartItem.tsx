@@ -70,6 +70,15 @@ export const SortableCartItem = memo(
     const [localNotes, setLocalNotes] = useState(item.notes || '');
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
+    // Sync localNotes from server when no pending debounce (user not typing).
+    // Keeps the field current after React Query refetches without clobbering an
+    // in-progress edit.
+    useEffect(() => {
+      if (!debounceRef.current) {
+        setLocalNotes(item.notes || '');
+      }
+    }, [item.notes]);
+
     // C2: rascunho local da quantidade — permite digitar livremente (incl. multi-digito
     // e estado vazio transitorio) e so persiste no commit (blur/Enter), evitando uma
     // escrita no banco + invalidacao por tecla (ex.: '500' gerava 3 writes: 5, 50, 500).

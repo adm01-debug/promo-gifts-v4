@@ -228,10 +228,12 @@ export function SmartSuggestions({
     }
 
     if (allProducts.length > 0 && cart.items.length > 0) {
+      // O(n+m): build a Map once instead of O(n*m) repeated .find() calls
+      const productMap = new Map(allProducts.map((p) => [p.id, p]));
       const cartCategoryNames = new Set(
         cart.items
           .map((i) => {
-            const prod = allProducts.find((p) => p.id === i.product_id);
+            const prod = productMap.get(i.product_id);
             return prod?.category_name || prod?.category?.name;
           })
           .filter(Boolean),

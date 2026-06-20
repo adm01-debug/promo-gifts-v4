@@ -45,6 +45,7 @@ export function useSellerCartsPage() {
     updateItemNotes,
     updateItemSortOrder,
     updateCartNotes,
+    flushCartNotes,
     updateCartStatus,
     duplicateCart,
     moveItemToCart,
@@ -365,16 +366,22 @@ export function useSellerCartsPage() {
     // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
     // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const ids = [...new Set(cart.items.map((i) => i.product_id))].filter((id) => uuidRe.test(id));
-    let validIds = new Set<string>();
-    if (ids.length > 0) {
+    const allIds = [...new Set(cart.items.map((i) => i.product_id))];
+    const uuidIds = allIds.filter((id) => uuidRe.test(id));
+    // Non-UUID IDs (legacy) bypass server validation — fail-open.
+    const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
+    let validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
+    if (uuidIds.length > 0) {
       try {
-        const { data, error } = await supabase.from('products').select('id').in('id', ids);
-        validIds = error
-          ? new Set(cart.items.map((i) => i.product_id.toLowerCase())) // fail-open: nao bloqueia em erro
-          : new Set((data ?? []).map((row) => String(row.id).toLowerCase()));
+        const { data, error } = await supabase.from('products').select('id').in('id', uuidIds);
+        if (error) {
+          // fail-open: don't block quote on DB error
+          uuidIds.forEach((id) => validIds.add(id.toLowerCase()));
+        } else {
+          (data ?? []).forEach((row) => validIds.add(String(row.id).toLowerCase()));
+        }
       } catch {
-        validIds = new Set(cart.items.map((i) => i.product_id.toLowerCase())); // fail-open
+        uuidIds.forEach((id) => validIds.add(id.toLowerCase())); // fail-open
       }
     }
     const validItems = cart.items.filter((i) => validIds.has(i.product_id.toLowerCase()));
@@ -397,7 +404,7 @@ export function useSellerCartsPage() {
     if (debounceNotesRef.current && activeCartIdForFlush) {
       clearTimeout(debounceNotesRef.current);
       debounceNotesRef.current = undefined;
-      updateCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+      await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
     }
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
@@ -421,7 +428,7 @@ export function useSellerCartsPage() {
         })),
       },
     });
-  }, [confirmQuoteCart, navigate, activeCartIdForFlush, updateCartNotes]);
+  }, [confirmQuoteCart, navigate, activeCartIdForFlush, flushCartNotes]);
 
   const otherCarts = useMemo(
     () => carts.filter((c) => c.id !== activeCartId),
