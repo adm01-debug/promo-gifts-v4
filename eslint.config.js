@@ -360,6 +360,14 @@ export default [
       'react/no-namespace': 'error',
       'react/no-typos': 'error',
       'no-constant-binary-expression': 'error',
+      // Batch 94: 7 zero-violation rules (also removed: display-name 42v, self-closing-comp 8v)
+      'react/no-access-state-in-setstate': 'error',
+      'react/no-unused-state': 'error',
+      'react/jsx-no-comment-textnodes': 'error',
+      'react/no-adjacent-inline-elements': 'error',
+      '@typescript-eslint/prefer-enum-initializers': 'error',
+      'no-empty': 'error',
+      'no-extra-semi': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
