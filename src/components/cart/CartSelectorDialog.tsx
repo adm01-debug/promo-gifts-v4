@@ -55,6 +55,7 @@ export function CartSelectorDialog({
             {carts.map((cart) => (
               <button
                 key={cart.id}
+                type="button"
                 onClick={() => onSelect(cart.id)}
                 data-testid={`cart-selector-item-${cart.id}`}
                 className={cn(
