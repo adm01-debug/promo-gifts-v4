@@ -7,7 +7,8 @@ interface QuoteValidityBannerProps {
 }
 
 export function QuoteValidityBanner({ validUntil, status }: QuoteValidityBannerProps) {
-  if (!validUntil || status === 'approved' || status === 'rejected') return null;
+  if (!validUntil || ['approved', 'rejected', 'cancelled', 'converted'].includes(status))
+    return null;
 
   const expiryDate = parseISO(validUntil);
   if (!isValid(expiryDate)) return null;
