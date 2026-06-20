@@ -129,6 +129,26 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
     // 2) Alturas devem ser idênticas (mesmo min-h 420/430).
     expect(heightDiff, `heightDiff=${heightDiff.toFixed(2)}px excede tolerância ${TOL_PX}px`).toBeLessThanOrEqual(TOL_PX);
 
+    // 2b) Amostra dos 6 primeiros cards de cada módulo — reduz falso positivo
+    // quando o primeiro card é atípico (badge "novo", etc.).
+    const novItems = page.locator(
+      `div[role="list"][aria-label="Grade de novidades"] >> [role="listitem"]`,
+    );
+    await gotoAndSettle(page, '/novidades');
+    const { heights: novH } = await sampleHeights(novItems, Math.min(await novItems.count(), 6));
+    await gotoAndSettle(page, '/reposicao');
+    const replItems = page.locator(
+      `div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]`,
+    );
+    const { heights: replH } = await sampleHeights(replItems, Math.min(await replItems.count(), 6));
+    if (novH.length && replH.length) {
+      const all = [...novH, ...replH];
+      const spread = Math.max(...all) - Math.min(...all);
+      // eslint-disable-next-line no-console
+      console.log(`[card-parity:multi] sample=${all.length} spread=${spread.toFixed(2)}px`);
+      expect(spread, `spread inter-módulo (6 cards): ${spread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+    }
+
     // 3) Imagem com proporção ~1:1 em ambos.
     for (const m of [novelty!, repl!]) {
       if (m.imgBox) {
