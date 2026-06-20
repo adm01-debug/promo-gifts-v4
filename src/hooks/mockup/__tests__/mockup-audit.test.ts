@@ -572,3 +572,49 @@ describe('Analise estatica — useMockupGenerator.ts', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — MockupHistoryPanel.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupHistoryPanel.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  describe('displayName — componentes memo() identificaveis no React DevTools', () => {
+    it('MockupGridCard e exportado como memo()', () => {
+      expect(src).toContain('const MockupGridCard = memo(');
+    });
+    it('MockupGridCard define displayName', () => {
+      expect(src).toContain("MockupGridCard.displayName = 'MockupGridCard'");
+    });
+    it('MockupListRow e exportado como memo()', () => {
+      expect(src).toContain('const MockupListRow = memo(');
+    });
+    it('MockupListRow define displayName', () => {
+      expect(src).toContain("MockupListRow.displayName = 'MockupListRow'");
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupResultCard.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupResultCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  describe('displayName — memo() component identificavel no React DevTools', () => {
+    it('MockupResultCard e exportado como memo()', () => {
+      expect(src).toContain('export const MockupResultCard = memo(');
+    });
+    it('MockupResultCard define displayName', () => {
+      expect(src).toContain("MockupResultCard.displayName = 'MockupResultCard'");
+    });
+  });
+});

@@ -633,6 +633,8 @@ const MockupGridCard = memo(
   },
 );
 
+MockupGridCard.displayName = 'MockupGridCard';
+
 const MockupListRow = memo(
   ({
     mockup,
@@ -775,3 +777,4 @@ const MockupListRow = memo(
     );
   },
 );
+MockupListRow.displayName = 'MockupListRow';
