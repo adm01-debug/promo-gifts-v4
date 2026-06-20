@@ -43,8 +43,11 @@ export class EnvGateProvider implements GateFlagProvider {
 export class LocalStorageGateProvider implements GateFlagProvider {
   private lastValue: GateValue | null = null;
   private lastRaw: string | null = null;
+  private readonly key: string;
 
-  constructor(private readonly key = 'show_dev_infra_messages') {}
+  constructor(key = 'show_dev_infra_messages') {
+    this.key = key;
+  }
 
   getFlag(): GateValue {
     if (typeof window === 'undefined' || !window.localStorage) return 'auto';

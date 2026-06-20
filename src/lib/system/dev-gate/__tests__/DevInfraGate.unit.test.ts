@@ -4,7 +4,10 @@ import { type GateFlagProvider, type GateValue } from '../types';
 import { type AppRole } from '@/contexts/AuthContext';
 
 class MockProvider implements GateFlagProvider {
-  constructor(public value: GateValue = 'auto') {}
+  public value: GateValue;
+  constructor(value: GateValue = 'auto') {
+    this.value = value;
+  }
   getFlag() {
     return this.value;
   }
