@@ -36,7 +36,7 @@ interface SellerCartContextType {
   updateItemNotes: (itemId: string, notes: string) => void;
   updateItemSortOrder: (items: { id: string; sort_order: number }[]) => void;
   updateCartNotes: (cartId: string, notes: string) => void;
-  flushCartNotes: (cartId: string, notes: string) => Promise<void>;
+  flushCartNotes: (cartId: string, notes: string) => Promise<boolean>;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
@@ -214,14 +214,15 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   // Awaitable version of updateCartNotes for the pre-navigation flush path.
-  // Errors are swallowed intentionally: a failed notes save must not block
-  // the navigation or quote generation flow.
+  // Returns true when the save succeeds, false on error — caller decides
+  // whether to warn the user. Navigation always proceeds (non-blocking).
   const flushCartNotes = useCallback(
-    async (cartId: string, notes: string) => {
+    async (cartId: string, notes: string): Promise<boolean> => {
       try {
         await updateCartNotesMutation.mutateAsync({ cartId, notes });
+        return true;
       } catch {
-        // non-blocking: navigation proceeds regardless
+        return false;
       }
     },
     [updateCartNotesMutation],

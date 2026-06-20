@@ -430,7 +430,12 @@ export function useSellerCartsPage() {
     if (debounceNotesRef.current && activeCartIdForFlush) {
       clearTimeout(debounceNotesRef.current);
       debounceNotesRef.current = undefined;
-      await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+      const saved = await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+      if (!saved) {
+        toast.warning('Notas não foram salvas', {
+          description: 'As notas do carrinho podem não aparecer no orçamento.',
+        });
+      }
     }
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
