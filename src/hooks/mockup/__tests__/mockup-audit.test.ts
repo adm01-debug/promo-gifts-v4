@@ -377,15 +377,18 @@ describe('Analise estatica — useMockupTechniques.ts', () => {
   });
 
   describe('BUG-D — null guard antes de codeMap.set', () => {
-    it('guard if (!tech.code) continue presente', () => {
-      expect(src).toContain('if (!tech.code) continue;');
-    });
-    it('guard precede codeMap.set', () => {
-      const guardPos = src.indexOf('if (!tech.code) continue;');
-      const setPos = src.indexOf('codeMap.set(tech.code,');
+    // BUG-19 refactored the UUID-join approach: the iteration variable is now
+    // `code` (resolved via idToCode map) instead of `tech.code`.
+    // The null guard semantic is preserved: skip falsy codes before codeMap.set.
+    it('guard null para code presente antes de codeMap.set', () => {
+      const guardPos = src.indexOf('if (!code) continue;');
+      const setPos = src.indexOf('codeMap.set(code,');
       expect(guardPos).toBeGreaterThan(-1);
       expect(setPos).toBeGreaterThan(-1);
       expect(guardPos).toBeLessThan(setPos);
+    });
+    it('codeMap.set usa variavel code (nao tech.code apos refactor BUG-19)', () => {
+      expect(src).toContain('codeMap.set(code,');
     });
   });
 });
