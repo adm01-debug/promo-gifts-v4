@@ -247,26 +247,24 @@ export function useSupplierFiscalData(
             '[saveFiscalOverride] No variant found, creating default variant for product:',
             productId,
           );
-          try {
-            const createResult = await untypedFrom('product_variants')
-              .insert({
-                product_id: productId,
-                sku: `DEFAULT-${productId.substring(0, 8)}`,
-                is_active: true,
-                attributes: {},
-              })
-              .select('id');
-            if (createResult.data?.length) {
-              variantId = createResult.data[0].id;
-            }
-          } catch (err) {
-            logger.error('[saveFiscalOverride] Failed to create default variant:', err);
+          const createResult = await untypedFrom('product_variants')
+            .insert({
+              product_id: productId,
+              sku: `DEFAULT-${productId.substring(0, 8)}`,
+              is_active: true,
+              attributes: {},
+            })
+            .select('id');
+          if (createResult.error) {
+            throw new Error(
+              `Não foi possível criar variante padrão: ${createResult.error.message}`,
+            );
           }
+          variantId = createResult.data?.[0]?.id;
         }
 
         if (!variantId) {
-          logger.error('[saveFiscalOverride] No variant ID available even after creation attempt');
-          return false;
+          throw new Error('Nenhum ID de variante disponível para salvar dados fiscais');
         }
 
         // Check if VSS record already exists
