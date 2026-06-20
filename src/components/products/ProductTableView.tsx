@@ -222,12 +222,31 @@ export const ProductTableView = memo(
     // SSOT por-produto: mapa de cor selecionada (zustand global), idêntico ao Card/Lista.
     const selectedColorsMap = useProductSelectionStore((s) => s.selectedColors);
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
+    // Persiste a cor selecionada na URL (mesma estratégia do ProductCard) e atualiza o store.
+    const selectColorWithUrl = useCallback(
+      (productId: string, colorName: string) => {
+        setSelectedColor(productId, colorName);
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('cor', colorName);
+        url.searchParams.set('pid', productId);
+        window.history.replaceState({}, '', url.toString());
+      },
+      [setSelectedColor],
+    );
     const clearSelectedColor = useCallback((productId: string) => {
       useProductSelectionStore.setState((state) => {
         const next = { ...state.selectedColors };
         delete next[productId];
         return { selectedColors: next };
       });
+      if (typeof window === 'undefined') return;
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('pid') === productId) {
+        url.searchParams.delete('cor');
+        url.searchParams.delete('pid');
+        window.history.replaceState({}, '', url.toString());
+      }
     }, []);
 
     // FIX(catalog-table-cores): o fetch lightweight do catalogo NAO traz `colors`
