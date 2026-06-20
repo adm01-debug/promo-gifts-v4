@@ -97,6 +97,11 @@ export function useCustomizationPriceReactive(
 
     if (timerRef.current) clearTimeout(timerRef.current);
 
+    // Supersede guard: when inputs change while the debounced RPC is in flight,
+    // the cleanup flips `cancelled` so an out-of-order response cannot overwrite
+    // the price computed for the newer inputs.
+    let cancelled = false;
+
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
@@ -118,6 +123,7 @@ export function useCustomizationPriceReactive(
           rpcParams,
         );
 
+        if (cancelled) return;
         if (result?.success) {
           validateRpcPayload(PRICE_CONTRACT, result as unknown as Record<string, unknown>);
           setPrice(result);
@@ -126,14 +132,16 @@ export function useCustomizationPriceReactive(
           setPrice(null);
         }
       } catch (err) {
+        if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Erro ao calcular preço');
         setPrice(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }, 500); // debounce 500ms
 
     return () => {
+      cancelled = true;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [techniqueId, quantidade, numCores, larguraCm, alturaCm, usaDimensao]);

@@ -37,7 +37,11 @@ interface FavoritesStore extends FavoritesState, FavoritesActions {
 function loadFromStorage(): FavoriteItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // Corrupted non-array payload would crash at store init (`.map`/`.length`) —
+    // fall back to empty instead of white-screening the app.
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
