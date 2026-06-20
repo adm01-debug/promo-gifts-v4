@@ -285,7 +285,12 @@ function SellerCartsContent() {
   const aggregateTotal = useMemo(
     () =>
       s.carts.reduce(
-        (sum, c) => sum + c.items.reduce((a, i) => a + i.product_price * i.quantity, 0),
+        (sum, c) =>
+          sum +
+          c.items.reduce(
+            (a, i) => a + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+            0,
+          ),
         0,
       ),
     [s.carts],
@@ -327,9 +332,10 @@ function SellerCartsContent() {
     const sorted = [...items].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
       if (sortKey === 'name') return a.product_name.localeCompare(b.product_name, 'pt-BR') * dir;
-      if (sortKey === 'price') return (a.product_price - b.product_price) * dir;
-      const ta = a.product_price * a.quantity;
-      const tb = b.product_price * b.quantity;
+      if (sortKey === 'price')
+        return ((Number(a.product_price) || 0) - (Number(b.product_price) || 0)) * dir;
+      const ta = (Number(a.product_price) || 0) * (Number(a.quantity) || 0);
+      const tb = (Number(b.product_price) || 0) * (Number(b.quantity) || 0);
       return (ta - tb) * dir;
     });
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -753,7 +759,7 @@ function SellerCartsContent() {
                                         'text-right tabular-nums text-muted-foreground',
                                       )}
                                     >
-                                      {formatCurrency(item.product_price)}
+                                      {formatCurrency(Number(item.product_price) || 0)}
                                     </td>
                                   )}
                                   {visibleColumns.total && (
@@ -764,7 +770,10 @@ function SellerCartsContent() {
                                       )}
                                       data-testid={`cart-row-total-${item.id}`}
                                     >
-                                      {formatCurrency(item.product_price * item.quantity)}
+                                      {formatCurrency(
+                                        (Number(item.product_price) || 0) *
+                                          (Number(item.quantity) || 0),
+                                      )}
                                     </td>
                                   )}
                                   <td className={cn(rowPad, 'text-right')}>
