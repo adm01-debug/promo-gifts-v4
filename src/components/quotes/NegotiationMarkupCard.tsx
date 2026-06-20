@@ -47,9 +47,9 @@ export function NegotiationMarkupCard({
 }: Props) {
   const [enabled, setEnabled] = useState(value > 0);
 
-  // Sync switch state when an existing quote with markup > 0 is loaded externally
+  // Sync switch state when an existing quote is loaded or a template resets value to 0.
   useEffect(() => {
-    if (value > 0) setEnabled(true);
+    setEnabled(value > 0);
   }, [value]);
 
   const presentedSubtotal = realSubtotal * (1 + value / 100);
