@@ -12,6 +12,39 @@ import { gotoAndSettle } from '../helpers/nav';
 
 const TOL_PX = 4;
 
+/**
+ * Tolerância por breakpoint — refletindo as regras do BaseProductGridCard:
+ *  - mobile  (< 640): h-[400px] — px-snap pode variar até 3px no DPR mobile.
+ *  - sm/md   (640–1023): h-[430px] — layout estável, ±2px.
+ *  - lg/xl   (≥ 1024): h-[430px] — layout estável, ±2px.
+ */
+function tolForViewport(w: number): number {
+  if (w < 640) return 3;
+  if (w < 1024) return 2;
+  return 2;
+}
+
+async function sampleHeights(items: import('@playwright/test').Locator, n: number) {
+  const heights: number[] = [];
+  const widths: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const b = await items.nth(i).boundingBox();
+    if (b) {
+      heights.push(b.height);
+      widths.push(b.width);
+    }
+  }
+  return { heights, widths };
+}
+
+async function openListMode(page: import('@playwright/test').Page) {
+  await page.getByTestId('layout-popover-trigger').click();
+  const listBtn = page.getByTestId('view-mode-list');
+  await listBtn.waitFor({ state: 'visible', timeout: 5_000 });
+  await listBtn.click();
+  await page.waitForTimeout(300);
+}
+
 async function measureFirstCard(page: import('@playwright/test').Page, listSelector: string) {
   const list = page.locator(listSelector);
   await expect(list).toBeVisible({ timeout: 15_000 });
@@ -95,6 +128,26 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
 
     // 2) Alturas devem ser idênticas (mesmo min-h 420/430).
     expect(heightDiff, `heightDiff=${heightDiff.toFixed(2)}px excede tolerância ${TOL_PX}px`).toBeLessThanOrEqual(TOL_PX);
+
+    // 2b) Amostra dos 6 primeiros cards de cada módulo — reduz falso positivo
+    // quando o primeiro card é atípico (badge "novo", etc.).
+    const novItems = page.locator(
+      `div[role="list"][aria-label="Grade de novidades"] >> [role="listitem"]`,
+    );
+    await gotoAndSettle(page, '/novidades');
+    const { heights: novH } = await sampleHeights(novItems, Math.min(await novItems.count(), 6));
+    await gotoAndSettle(page, '/reposicao');
+    const replItems = page.locator(
+      `div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]`,
+    );
+    const { heights: replH } = await sampleHeights(replItems, Math.min(await replItems.count(), 6));
+    if (novH.length && replH.length) {
+      const all = [...novH, ...replH];
+      const spread = Math.max(...all) - Math.min(...all);
+      // eslint-disable-next-line no-console
+      console.log(`[card-parity:multi] sample=${all.length} spread=${spread.toFixed(2)}px`);
+      expect(spread, `spread inter-módulo (6 cards): ${spread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+    }
 
     // 3) Imagem com proporção ~1:1 em ambos.
     for (const m of [novelty!, repl!]) {
@@ -214,12 +267,20 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       const min = Math.min(...heights);
       const max = Math.max(...heights);
       const expected = vp.w < 640 ? 400 : 430;
+      const tol = tolForViewport(vp.w);
       // eslint-disable-next-line no-console
       console.log(
-        `[card-parity:viewport ${vp.label}] expected=${expected}px min=${min} max=${max} spread=${(max - min).toFixed(2)}px`,
+        `[card-parity:viewport ${vp.label}] expected=${expected}px min=${min} max=${max} spread=${(max - min).toFixed(2)}px tol=${tol}px`,
       );
-      expect(max - min, `cards variam em ${vp.label}: spread=${(max - min).toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
-      expect(Math.abs(min - expected), `altura ${min}px ≠ esperada ${expected}px em ${vp.label}`).toBeLessThanOrEqual(TOL_PX);
+      expect(max - min, `cards variam em ${vp.label}: spread=${(max - min).toFixed(2)}px`).toBeLessThanOrEqual(tol);
+      expect(Math.abs(min - expected), `altura ${min}px ≠ esperada ${expected}px em ${vp.label}`).toBeLessThanOrEqual(tol);
+
+      // Baseline screenshot diff por viewport (snapshot persistente).
+      const card = items.first();
+      await expect(card).toHaveScreenshot(`card-reposicao-${vp.label}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+      });
     });
   }
 
@@ -265,6 +326,12 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       );
       expect(hSpread, `altura varia em ${cols} colunas: ${hSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
       expect(wSpread, `largura varia em ${cols} colunas: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+
+      // Baseline screenshot diff por modo de colunas.
+      await expect(items.first()).toHaveScreenshot(`card-reposicao-cols-${cols}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+      });
     });
   }
 
@@ -364,38 +431,22 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
     });
   }
 
-  // Modo de visualização em LISTA — só executa se o toggle existir na página.
-  test('modo lista (se existir) — dimensões do card permanecem consistentes', async ({ page }) => {
+  // Modo de visualização em LISTA — usa testid estável `view-mode-list`
+  // do LayoutPopover (sem fallback, sem skip por toggle ausente).
+  test('modo lista — dimensões do card permanecem consistentes', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await gotoAndSettle(page, '/reposicao');
     await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
 
-    const listToggle = page
-      .locator(
-        '[data-testid="view-mode-list"], [data-testid="viewmode-list"], [aria-label="Visualização em lista"], [aria-label="Lista"]',
-      )
-      .first();
-    if ((await listToggle.count()) === 0) {
-      test.skip(true, 'Toggle de modo lista não encontrado em /reposicao.');
-    }
-    await listToggle.click();
-    await page.waitForTimeout(400);
+    await openListMode(page);
 
     const items = page.locator(
       'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
     );
     const count = await items.count();
-    if (count === 0) test.skip(true, 'Sem reposições no modo lista.');
+    if (count === 0) test.skip(true, 'Sem reposições no dataset (modo lista).');
     const sampleSize = Math.min(count, 6);
-    const heights: number[] = [];
-    const widths: number[] = [];
-    for (let i = 0; i < sampleSize; i++) {
-      const b = await items.nth(i).boundingBox();
-      if (b) {
-        heights.push(b.height);
-        widths.push(b.width);
-      }
-    }
+    const { heights, widths } = await sampleHeights(items, sampleSize);
     const hSpread = Math.max(...heights) - Math.min(...heights);
     const wSpread = Math.max(...widths) - Math.min(...widths);
     // eslint-disable-next-line no-console
@@ -404,5 +455,11 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
     );
     expect(hSpread, `altura varia no modo lista: ${hSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
     expect(wSpread, `largura varia no modo lista: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+
+    // Baseline screenshot do modo lista.
+    await expect(items.first()).toHaveScreenshot('card-reposicao-list-mode.png', {
+      maxDiffPixelRatio: 0.02,
+      animations: 'disabled',
+    });
   });
 });
