@@ -214,8 +214,8 @@ export const ProductTableView = memo(
       thumbnailUrl?: string | null;
     } | null>(null);
 
-    const favStore = useFavoritesStore();
-    const compStore = useComparisonStore();
+    const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+    const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
     // FIX(catalog-table-cores): o fetch lightweight do catalogo NAO traz `colors`
     // (chega `[]`), entao a tabela caia no placeholder "–". Grid/Lista ja hidratam
@@ -325,12 +325,12 @@ export const ProductTableView = memo(
           : undefined;
 
         if (variantPickerMode === 'favorite') {
-          favStore.addFavorite(variantPickerProduct.id, variantInfo);
+          favAddFavorite(variantPickerProduct.id, variantInfo);
           toast.success(
             `"${variantPickerProduct.name}" favoritado${variant?.color_name ? ` — ${variant.color_name}` : ''}`,
           );
         } else if (variantPickerMode === 'compare') {
-          const result = compStore.addToCompare(variantPickerProduct.id, variantInfo);
+          const result = compAddToCompare(variantPickerProduct.id, variantInfo);
           if (!result) showErrorToast({ title: 'Limite de 4 produtos para comparação atingido' });
           else
             toast.success(
@@ -365,7 +365,7 @@ export const ProductTableView = memo(
           setShareDialogOpen(true);
         }
       },
-      [variantPickerMode, variantPickerProduct, favStore, compStore, navigate],
+      [variantPickerMode, variantPickerProduct, favAddFavorite, compAddToCompare, navigate],
     );
 
     return (
