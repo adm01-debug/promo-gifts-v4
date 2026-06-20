@@ -21,7 +21,7 @@ const LAST_LIST_KEY = 'favorites-last-used-list-id';
 export function useFavoriteQuickAdd() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { lists, defaultList, createList } = useFavoriteLists();
+  const { lists, defaultList, createList, deleteList } = useFavoriteLists();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Index global de membership: produto X está em quais listas?
@@ -124,14 +124,24 @@ export function useFavoriteQuickAdd() {
     [user, qc, isFavorite, toggleFavorite],
   );
 
-  /** Cria lista nova e adiciona o produto nela. */
+  /** Cria lista nova e adiciona o produto nela. Faz rollback da lista se addToList falhar. */
   const createAndAdd = useCallback(
     async (name: string, product: Product, variant?: FavoriteVariantInfo) => {
       const list = await createList.mutateAsync({ name });
-      await addToList(list.id, product, variant);
+      try {
+        await addToList(list.id, product, variant);
+      } catch (e) {
+        // addToList already showed an error toast; clean up the orphan list silently
+        try {
+          await deleteList.mutateAsync(list.id);
+        } catch {
+          /* list cleanup is best-effort */
+        }
+        throw e;
+      }
       return list.id;
     },
-    [createList, addToList],
+    [createList, addToList, deleteList],
   );
 
   /**
