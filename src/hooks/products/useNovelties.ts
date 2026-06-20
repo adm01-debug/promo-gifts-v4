@@ -213,7 +213,10 @@ async function enrichNovelties(novelties: NoveltyWithDetails[]): Promise<Novelty
  * - `days_as_novelty`       = dias desde a detecção (idade do badge)
  */
 export function toNovelty(p: RawProduct): NoveltyWithDetails {
-  const detectedAt = p.novelty_detected_at ?? p.created_at;
+  // ISSUE-1 FIX: guard null created_at. If both novelty_detected_at and
+  // created_at are null/undefined (should not happen in prod but seen in
+  // test fixtures), fallback to now to avoid new Date(null) → 1970 date.
+  const detectedAt = p.novelty_detected_at ?? p.created_at ?? new Date().toISOString();
   const expiresAt =
     p.novelty_expires_at ??
     new Date(
@@ -262,9 +265,10 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
 }
 
 /**
- * Ordena novidades pelos campos REAIS de NoveltyWithDetails (mutação in-place).
- * Nota: diferente de sortProducts (não-mutante desde PR #915), sortNovelties
- * modifica o array passado diretamente e o retorna.
+ * Ordena novidades pelos campos REAIS de NoveltyWithDetails.
+ * ISSUE-4 FIX: não-mutante — cria cópia com spread antes de ordenar, assim o
+ * caller não precisa passar um array descartável. Alinha o comportamento com
+ * sortProducts (não-mutante desde PR #915).
  *
  * FIX (auditoria Novidades 2026-06-18, P1): o grid antes fazia
  * `sortProducts(novelties as unknown as Product[])`, mas as formas divergem
@@ -275,6 +279,8 @@ export function sortNovelties(
   novelties: NoveltyWithDetails[],
   sortBy: string,
 ): NoveltyWithDetails[] {
+  const sorted = [...novelties]; // ISSUE-4: cópia para não mutar o original
+
   const byNameThenId = (a: NoveltyWithDetails, b: NoveltyWithDetails): number => {
     const byName = compareNamePtBR(a.product_name, b.product_name);
     if (byName !== 0) return byName;
@@ -283,7 +289,7 @@ export function sortNovelties(
 
   switch (sortBy) {
     case 'newest':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const bt = new Date(b.detected_at).getTime();
         const at = new Date(a.detected_at).getTime();
         if (bt !== at) return bt - at;
@@ -292,25 +298,25 @@ export function sortNovelties(
       break;
     case 'name':
     case 'name-asc':
-      novelties.sort(byNameThenId);
+      sorted.sort(byNameThenId);
       break;
     case 'name-desc':
-      novelties.sort((a, b) => byNameThenId(b, a));
+      sorted.sort((a, b) => byNameThenId(b, a));
       break;
     case 'price-asc':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const d = (a.base_price ?? 0) - (b.base_price ?? 0);
         return d !== 0 ? d : byNameThenId(a, b);
       });
       break;
     case 'price-desc':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const d = (b.base_price ?? 0) - (a.base_price ?? 0);
         return d !== 0 ? d : byNameThenId(a, b);
       });
       break;
     case 'stock':
-      novelties.sort((a, b) => {
+      sorted.sort((a, b) => {
         const d = (b.stock_quantity ?? 0) - (a.stock_quantity ?? 0);
         return d !== 0 ? d : byNameThenId(a, b);
       });
@@ -319,7 +325,7 @@ export function sortNovelties(
       // Valor desconhecido → no-op (preserva ordem), igual a sortProducts.
       break;
   }
-  return novelties;
+  return sorted;
 }
 
 export interface UseNoveltiesOptions {
@@ -364,6 +370,9 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
         const rows = (data ?? []) as unknown as RawProduct[];
         records.push(...rows);
         from += rows.length;
+        // ISSUE-6 FIX: para quando atingiu o hardCap exato — evita uma página
+        // extra desnecessária quando a última página preenche exatamente `want`.
+        if (records.length >= hardCap) break;
         // Para em página vazia OU página incompleta (ambos indicam fim dos dados).
         if (rows.length < want) break;
       }
@@ -408,11 +417,16 @@ export function useExpiringNovelties(maxDays = 7) {
         allRaw.push(...rows);
         if (rows.length < PAGE_SIZE) break;
         // early exit: todos os restantes têm novelty_expires_at além de maxDays
+        // ISSUE-10 FIX: guarda contra novelty_expires_at null — new Date(null).getTime()
+        // = 0 (1970), que faria a comparação NaN e desabilitaria o early-exit,
+        // causando loop infinito até SUP_MAX_PAGES. Só quebra quando a data é válida.
         const lastRow = rows[rows.length - 1] as RawProduct & { novelty_expires_at?: string };
         if (lastRow?.novelty_expires_at) {
-          const daysLeft =
-            (new Date(lastRow.novelty_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-          if (daysLeft > maxDays) break;
+          const expTime = new Date(lastRow.novelty_expires_at).getTime();
+          if (!Number.isNaN(expTime)) {
+            const daysLeft = (expTime - Date.now()) / (1000 * 60 * 60 * 24);
+            if (daysLeft > maxDays) break;
+          }
         }
         offset += PAGE_SIZE;
       }
@@ -438,18 +452,17 @@ export function useNoveltyStats() {
     queryFn: async () => {
       const now = new Date();
       const nowIso = now.toISOString();
-      // Janelas de "chegada" ancoradas na DETECÇÃO como novidade (pipeline),
-      // não na criação no catálogo — consistente com o grid e os badges.
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      // ISSUE-25 FIX: janelas de "chegada" em UTC — evita off-by-one quando o
+      // cliente está em fuso UTC+N e a meia-noite local cruza o dia UTC anterior.
+      // O banco armazena novelty_detected_at em UTC, então a comparação deve ser UTC.
+      const todayStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      ).toISOString();
       const weekStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() - 6,
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 6),
       ).toISOString();
       const fifteenStart = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() - 14,
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 14),
       ).toISOString();
       // "Expirando em breve" = expira dentro dos próximos N dias (expiração real).
       const expiringSoonLimit = new Date(

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -158,13 +158,16 @@ export function NoveltyProductGrid() {
     // FIX (auditoria Novidades, P1): ordena pelos campos REAIS de
     // NoveltyWithDetails. Antes `sortProducts(... as Product[])` era no-op
     // silencioso (formas divergentes) e "Mais recentes" caía em A-Z.
-    sortNovelties(filtered, sortMode);
-    return filtered;
+    // ISSUE-4: sortNovelties agora é não-mutante — usar o valor retornado.
+    return sortNovelties(filtered, sortMode);
   }, [products, selectedSupplier, selectedCategory, sortMode, searchQuery]);
 
-  // Reset visible count when filters change
+  // ISSUE-39 FIX: split into two focused effects to avoid responsibility mix-up.
+  // Effect 1: Reset scroll/visibility/guard when filters change.
   useEffect(() => {
-    setVisibleCount(40);
+    // ISSUE-16 FIX: reset to actual set size (not hardcoded 40) to avoid
+    // showing a "load more" sentinel when the filtered set is smaller than 40.
+    setVisibleCount(Math.min(40, filteredProducts.length));
     setScrollToken((prev) => prev + 1);
     // GAP-11 FIX: libera o guard ao trocar de filtro para que o primeiro
     // load-more do novo conjunto não fique bloqueado pelos 150ms residuais.
@@ -173,14 +176,18 @@ export function NoveltyProductGrid() {
       guardTimerRef.current = null;
     }
     isLoadingMoreLocalRef.current = false;
-    // GAP-SEL FIX: descarta seleção stale ao mudar filtros em modo de seleção.
-    // Sem isso, produtos selecionados antes do filtro continuam marcados após
-    // trocar o conjunto visível, criando ação em lote sobre itens invisíveis.
-    if (selectionMode) sel.clearSelection();
-    // sel is derived from filteredProducts (already a dep); adding sel would
-    // create a circular update loop (sel → filteredProducts → sel → …).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
+
+  // Effect 2: Clear stale selection when the filtered set changes (ISSUE-7/ISSUE-39).
+  // Separated from Effect 1 to avoid stale `sel` closure — at this point
+  // filteredProducts has been recomputed and sel is current.
+  useEffect(() => {
+    if (selectionMode) sel.clearSelection();
+    // sel is derived from filteredProducts so we depend on filteredProducts.length
+    // (a stable scalar) rather than sel itself to avoid circular dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredProducts.length, selectionMode]);
 
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);
@@ -192,17 +199,21 @@ export function NoveltyProductGrid() {
     if (isLoadingMoreLocalRef.current) return; // Guard: evita cascata de increments
     isLoadingMoreLocalRef.current = true;
     setVisibleCount((prev) => prev + pageSize);
-    // Libera o guard após o próximo ciclo de render (suficiente para o
-    // IntersectionObserver recalcular com o DOM atualizado). GAP-8: o timer
-    // fica em ref para ser limpo no unmount.
-    if (guardTimerRef.current) clearTimeout(guardTimerRef.current);
-    guardTimerRef.current = setTimeout(() => {
-      isLoadingMoreLocalRef.current = false;
-      guardTimerRef.current = null;
-    }, 150);
+    // ISSUE-21 FIX: o guard agora é liberado via useLayoutEffect (abaixo), que
+    // dispara sincronamente após a mutação do DOM do re-render. Antes o timer de
+    // 150ms podia liberar o guard enquanto o render ainda estava pendente em
+    // dispositivos lentos, causando incrementos cascata de visibleCount.
   }, [pageSize]);
 
-  // GAP-8 FIX: limpa o timer do guard ao desmontar para evitar callback órfão.
+  // ISSUE-21 FIX: libera o guard APÓS o re-render que aplicou o novo visibleCount.
+  // useLayoutEffect dispara sincronamente após todas as mutações do DOM, garantindo
+  // que o IntersectionObserver recalcule com o grid já atualizado antes de permitir
+  // o próximo load-more. O timer de 150ms era uma heurística frágil.
+  useLayoutEffect(() => {
+    isLoadingMoreLocalRef.current = false;
+  }, [visibleCount]);
+
+  // Limpa o timer do guard ao desmontar (GAP-8: previne set-state após unmount).
   useEffect(() => {
     return () => {
       if (guardTimerRef.current) clearTimeout(guardTimerRef.current);

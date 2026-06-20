@@ -6,27 +6,14 @@ import { Flame, Sparkles, ChevronRight, Package, Building2, Hourglass } from 'lu
 import { useExpiringNovelties, useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { formatDaysAgoFromTs, getRecencyVariant } from '@/lib/novelty-dates';
 
 /** Rótulo curto de quanto tempo resta como novidade. */
 function formatDaysLeft(daysRemaining: number): string {
   if (daysRemaining <= 0) return 'Expira hoje';
   if (daysRemaining === 1) return 'Resta 1 dia';
   return `Restam ${daysRemaining} dias`;
-}
-
-function formatDaysAgo(createdAt: string): string {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days === 0) return 'Hoje!';
-  if (days === 1) return 'Ontem';
-  return `${days}d atrás`;
-}
-
-function getRecencyVariant(createdAt: string): 'hot' | 'warm' | 'normal' {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days <= 2) return 'hot';
-  if (days <= 5) return 'warm';
-  return 'normal';
 }
 
 const recencyStyles = {
@@ -48,6 +35,15 @@ export function ExpiringNoveltiesWidget() {
   // NoveltyProductGrid — elimina a segunda round-trip ao servidor. O componente usa apenas
   // os top-10 mais recentes, mas o React Query devolve os dados já carregados pelo grid.
   const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
+
+  // ISSUE-34 FIX: tick a cada 60s para recalcular recência — sem isso, uma
+  // novidade detectada "há 2 dias" continuaria mostrando badge 'hot' enquanto a
+  // página fica aberta, mesmo depois de virar 'warm' (dias 3-5).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Novidades que estão prestes a sair da janela (≤ 7 dias restantes). Fonte:
   // expiração REAL da pipeline (novelty_expires_at). Renderizado só quando há
@@ -207,7 +203,7 @@ export function ExpiringNoveltiesWidget() {
                         <div className="flex items-center gap-1">
                           <Sparkles className={cn('h-2.5 w-2.5', recencyStyles[variant])} />
                           <span className={cn('text-[10px] font-medium', recencyStyles[variant])}>
-                            {formatDaysAgo(item.detected_at)}
+                            {formatDaysAgoFromTs(item.detected_at)}
                           </span>
                         </div>
                       </div>

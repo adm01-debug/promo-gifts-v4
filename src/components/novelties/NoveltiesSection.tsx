@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,17 +19,21 @@ import {
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-
-function formatDaysAgo(daysElapsed: number): string {
-  if (daysElapsed === 0) return 'Hoje!';
-  if (daysElapsed === 1) return 'Ontem';
-  return `${daysElapsed}d atrás`;
-}
+import { formatDaysAgoFromCount } from '@/lib/novelty-dates';
 
 export function NoveltiesSection() {
   const navigate = useNavigate();
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
+
+  // ISSUE-34 FIX: tick a cada 60s — garante que recência recalculada ao passar
+  // do limite de 2 dias (hot→warm) ou 5 dias (warm→normal) enquanto a página
+  // está aberta (sem refresh).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 100 });
   const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
@@ -225,7 +229,7 @@ export function NoveltiesSection() {
                         </h4>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span className={cn(fresh ? 'font-medium text-brand-primary' : '')}>
-                            {formatDaysAgo(item.days_as_novelty)}
+                            {formatDaysAgoFromCount(item.days_as_novelty)}
                           </span>
                           {item.supplier_name && (
                             <span className="ml-1 max-w-[80px] truncate">{item.supplier_name}</span>
