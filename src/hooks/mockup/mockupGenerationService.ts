@@ -107,9 +107,10 @@ export function getTechniquePrompt(technique: Technique): string {
 // migration 20251215011449) AND mirrored in area_config for backward-compat with
 // older records. client_id/client_name/logo_rotation/logo_scale added by
 // migration 20260620000001. Uses untypedFrom because the generated types.ts is stale.
+// user_id and thumbnail_url omitted: never used by the mapper below.
 const MOCKUP_HISTORY_COLUMNS =
-  'id, user_id, product_id, product_name, product_sku, technique_id, technique_name, ' +
-  'mockup_url, thumbnail_url, layout_url, logo_url, position_x, position_y, ' +
+  'id, product_id, product_name, product_sku, technique_id, technique_name, ' +
+  'mockup_url, layout_url, logo_url, position_x, position_y, ' +
   'logo_width_cm, logo_height_cm, logo_rotation, logo_scale, ' +
   'client_id, client_name, area_name, area_config, created_at';
 
