@@ -362,7 +362,6 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-
 /**
  * Pure module-level function — called once on mount and on route change.
  * Returns a new object only when values differ, so React bails out via
@@ -378,10 +377,7 @@ function computeOpenGroups(pathname: string): Record<string, boolean> {
 }
 
 export const SidebarReorganized = React.memo(
-  React.forwardRef<HTMLElement, SidebarProps>(function SidebarReorganized(
-    { isOpen, onToggle },
-    ref,
-  ) {
+  React.forwardRef<HTMLElement, SidebarProps>(({ isOpen, onToggle }, ref) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(false);

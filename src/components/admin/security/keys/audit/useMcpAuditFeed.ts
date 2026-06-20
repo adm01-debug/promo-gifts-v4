@@ -108,9 +108,7 @@ export function useMcpAuditFeed() {
 
     const enriched = base.map<AuditFeedRow>((r) => {
       const d = (r.details ?? {}) as Record<string, unknown>;
-      const scopes = (d.scopes ??
-        (d.after as Record<string, unknown>)?.['scopes'] ??
-        []) as string[];
+      const scopes = (d.scopes ?? (d.after as Record<string, unknown>)?.scopes ?? []) as string[];
       const isFull = (Array.isArray(scopes) && scopes.includes('*')) || d.is_full_access === true;
       const escalated = d.escalated_to_full === true || r.action === 'mcp_key.scope_escalated';
       const prof = r.user_id ? profiles[r.user_id] : undefined;

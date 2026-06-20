@@ -74,53 +74,51 @@ export interface NotificationBellProps {
  * Durante a re-hidratação pós-mutação, esconde o número e exibe um spinner
  * sutil sobre o bell para sinalizar "valor sendo confirmado pelo servidor".
  */
-const BellBadge = React.memo(function BellBadge({
-  unreadCount,
-  shouldShake,
-  isMutationRehydrating,
-}: {
-  unreadCount: number;
-  shouldShake: boolean;
-  isMutationRehydrating: boolean;
-}) {
-  return (
-    <>
-      <div className={shouldShake ? 'animate-shake' : undefined}>
-        <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
-      </div>
-      {isMutationRehydrating ? (
-        <div
-          className="absolute -right-0.5 -top-0.5 animate-scale-in"
-          aria-label="Sincronizando notificações"
-          role="status"
-        >
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
-          </span>
+const BellBadge = React.memo(
+  ({
+    unreadCount,
+    shouldShake,
+    isMutationRehydrating,
+  }: {
+    unreadCount: number;
+    shouldShake: boolean;
+    isMutationRehydrating: boolean;
+  }) => {
+    return (
+      <>
+        <div className={shouldShake ? 'animate-shake' : undefined}>
+          <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </div>
-      ) : unreadCount > 0 ? (
-        <div className="absolute -right-0.5 -top-0.5 animate-scale-in">
-          <span className="relative flex h-4 min-w-4 items-center justify-center">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-40" />
-            <Badge className="relative flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] text-destructive-foreground">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          </span>
-        </div>
-      ) : null}
-    </>
-  );
-});
+        {isMutationRehydrating ? (
+          <div
+            className="absolute -right-0.5 -top-0.5 animate-scale-in"
+            aria-label="Sincronizando notificações"
+            role="status"
+          >
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" />
+            </span>
+          </div>
+        ) : unreadCount > 0 ? (
+          <div className="absolute -right-0.5 -top-0.5 animate-scale-in">
+            <span className="relative flex h-4 min-w-4 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-40" />
+              <Badge className="relative flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] text-destructive-foreground">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            </span>
+          </div>
+        ) : null}
+      </>
+    );
+  },
+);
 
 /**
  * RefetchSpinner — isolado para que sua animação não invalide o BellBadge
  * nem o título do drawer. Re-renderiza apenas quando `isRefetching` muda.
  */
-const RefetchSpinner = React.memo(function RefetchSpinner({
-  isRefetching,
-}: {
-  isRefetching: boolean;
-}) {
+const RefetchSpinner = React.memo(({ isRefetching }: { isRefetching: boolean }) => {
   if (!isRefetching) return null;
   return (
     <span
@@ -193,7 +191,7 @@ function NotificationItem({
 }
 
 export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBellProps>(
-  function NotificationBell({ prefetchDebounceMs = DEFAULT_PREFETCH_DEBOUNCE_MS }, ref) {
+  ({ prefetchDebounceMs = DEFAULT_PREFETCH_DEBOUNCE_MS }, ref) => {
     const {
       notifications,
       unreadCount,

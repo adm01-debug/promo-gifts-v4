@@ -83,7 +83,9 @@ export function BridgeProductsPreviewPanel() {
       offset: (page - 1) * pageSize,
     }).then(() => {
       // ignora resposta de requisições obsoletas (race protection)
-      if (reqId !== lastReqRef.current) return;
+      if (reqId !== lastReqRef.current) {
+        /* no-op: obsolete request */
+      }
     });
   }, [buildFilters, fetchAll, page, pageSize]);
 

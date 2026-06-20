@@ -88,10 +88,10 @@ export function AiQuotaManager() {
                       className="h-8 w-24 text-sm"
                       value={limit}
                       min={0}
-                      onChange={(e) =>
+                      onChange={(ev) =>
                         setEditing((prev) => ({
                           ...prev,
-                          [q.id]: { limit: parseInt(e.target.value) || 0, unlimited: false },
+                          [q.id]: { limit: parseInt(ev.target.value) || 0, unlimited: false },
                         }))
                       }
                     />

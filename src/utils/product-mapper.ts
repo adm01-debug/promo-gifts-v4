@@ -202,13 +202,35 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     kitItems:
       p.kit_components?.map((c) => {
         const ck = c as Record<string, unknown>;
+        // Normaliza galeria: aceita string[], {url}[] ou {primary_image_url}[]
+        const rawImages = ck.images;
+        const gallery: string[] = Array.isArray(rawImages)
+          ? rawImages
+              .map((img) => {
+                if (typeof img === 'string') return img;
+                if (img && typeof img === 'object') {
+                  const o = img as Record<string, unknown>;
+                  return (o.url ?? o.image_url ?? o.primary_image_url ?? null) as
+                    | string
+                    | null;
+                }
+                return null;
+              })
+              .filter((u): u is string => typeof u === 'string' && u.length > 0)
+          : [];
+        // Garantir que a capa esteja na galeria
+        const primaryImage = c.primary_image_url || null;
+        if (primaryImage && !gallery.includes(primaryImage)) {
+          gallery.unshift(primaryImage);
+        }
         return {
           id: c.id,
           productId: c.component_product_id || c.id,
           productName: c.component_name || 'Componente',
           quantity: c.quantity || 1,
           sku: c.component_sku || c.component_code || '',
-          imageUrl: c.primary_image_url || null,
+          imageUrl: primaryImage,
+          images: gallery.length > 0 ? gallery : null,
           isOptional: c.is_optional ?? false,
           isPackaging: c.is_packaging ?? false,
           isReplaceable: c.is_replaceable ?? false,
@@ -218,6 +240,8 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
           heightMm: c.height_mm ?? null,
           widthMm: c.width_mm ?? null,
           lengthMm: c.length_mm ?? null,
+          diameterMm: (ck.diameter_mm as number | null | undefined) ?? null,
+          circumferenceMm: (ck.circumference_mm as number | null | undefined) ?? null,
           volumeMl: (ck.capacity_ml as number | null | undefined) ?? null,
           componentTypeCode: (ck.component_type_code ?? null) as string | null,
           supplierComponentCode: (ck.supplier_component_code ?? null) as string | null,

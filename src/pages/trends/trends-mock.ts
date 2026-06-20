@@ -283,7 +283,7 @@ export const MOCK_INSIGHTS = {
 // Heatmap 7×24 mockado com pico em horário comercial
 export function buildMockHeatmap() {
   const matrix: number[][] = Array.from({ length: 7 }, (_, day) =>
-    Array.from({ length: 24 }, (_, hour) => {
+    Array.from({ length: 24 }, (_hourEl, hour) => {
       // Fim de semana mais fraco
       const dayWeight = day === 0 || day === 6 ? 0.25 : 1;
       // Pico 9-12 e 14-18

@@ -273,7 +273,7 @@ export async function ensureCloudReady(
 
   while (!isReady(snap.status) && performance.now() - start < totalTimeoutMs) {
     attempt++;
-    const delay = Math.min(1500, 200 * Math.pow(2, attempt - 1));
+    const delay = Math.min(1500, 200 * 2 ** (attempt - 1));
     if (performance.now() - start + delay >= totalTimeoutMs) break;
     await new Promise((r) => setTimeout(r, delay));
     snap = await probeCloudStatus(true);

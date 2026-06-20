@@ -137,14 +137,18 @@ export interface Product {
   aiGeneratedAt?: string | null;
 }
 
-/** Componente individual de um kit de brindes (produto + quantidade + dimensões). */
+/** Componente individual de um kit de brindes (kit nativo do fornecedor ou kit montado). */
 export interface KitComponent {
   id: string;
+  /** UUID do produto-componente. NULL para kits nativos (componente não vendável avulso). */
   productId: string;
   productName: string;
   quantity: number;
   sku: string;
+  /** Imagem principal (capa). */
   imageUrl?: string | null;
+  /** Galeria completa de fotos do componente (kits nativos). */
+  images?: string[] | null;
   isOptional?: boolean;
   isPackaging?: boolean;
   isReplaceable?: boolean;
@@ -154,6 +158,10 @@ export interface KitComponent {
   heightMm?: number | null;
   widthMm?: number | null;
   lengthMm?: number | null;
+  /** Diâmetro em mm (peças cilíndricas: copos, garrafas, canecas). */
+  diameterMm?: number | null;
+  /** Circunferência em mm (alternativa ao diâmetro). */
+  circumferenceMm?: number | null;
   volumeMl?: number | null;
   componentTypeCode?: string | null;
   supplierComponentCode?: string | null;

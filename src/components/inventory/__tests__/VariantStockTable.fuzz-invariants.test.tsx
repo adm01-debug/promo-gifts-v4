@@ -162,7 +162,7 @@ function mkFilters(rng: () => number): StockFilters {
 describe('Fuzz — 500 combinações aleatórias respeitam invariantes do filtro', () => {
   const rng = mulberry32(0xc0ffee);
   const products = mkWorld(rng, 80);
-  const idx = buildStockIndexes(products, []);
+  const idx = buildStockIndexes(products);
   const productById = new Map(products.map((p) => [p.productId, p]));
   const baseline = applyStockFilters(products, defaultStockFilters, [], idx);
   const baselineCount = baseline.length;

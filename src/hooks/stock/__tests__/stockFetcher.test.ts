@@ -35,7 +35,21 @@ vi.mock('@/lib/supabase-untyped', () => {
         calls.push({ table, method, args });
         return q;
       });
-    for (const m of ['select', 'is', 'in', 'eq', 'range', 'order', 'limit', 'gt']) {
+    for (const m of [
+      'select',
+      'is',
+      'in',
+      'eq',
+      'range',
+      'order',
+      'limit',
+      'gt',
+      'lt',
+      'gte',
+      'lte',
+      'neq',
+      'not',
+    ]) {
       q[m] = chain(m);
     }
     (q as { then?: unknown }).then = (
@@ -64,6 +78,9 @@ import {
   toNumber,
   fetchPaginatedFromBridge,
   fetchAndProcessStockData,
+  nextStockPairs,
+  buildFutureEntries,
+  type ExternalSupplierSource,
 } from '@/hooks/stock/stockFetcher';
 import { logger } from '@/lib/logger';
 
@@ -144,10 +161,13 @@ describe('fetchPaginatedFromBridge', () => {
       'categories',
       { data: page1, error: null, count: 4 },
       { data: page2, error: null, count: 4 },
+      // Keyset pagination: 3rd call confirms no more data (empty page)
+      { data: [], error: null, count: 0 },
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
     expect(rows.map((r) => r.id)).toEqual(['a0', 'a1', 'b0', 'b1']);
-    expect(calls.filter((c) => c.method === 'select')).toHaveLength(2);
+    // Keyset pagination always issues one extra round-trip to confirm end of data.
+    expect(calls.filter((c) => c.method === 'select')).toHaveLength(3);
   });
 
   it('breaks early on an empty page', async () => {
@@ -164,16 +184,17 @@ describe('fetchPaginatedFromBridge', () => {
     expect(calls.filter((c) => c.method === 'select')).toHaveLength(1);
   });
 
-  it('guards against a non-advancing cursor (same last id twice) and stops', async () => {
-    // Page 2 ends with the same last id as page 1 → cursor stuck → guard fires.
+  it('guards against a non-advancing cursor (same last id) and stops', async () => {
+    // Keyset guard: if nextCursor (last id of the page) equals lastId (previous cursor) → break.
+    // This simulates a case where the DB returns the same last row repeatedly.
     queue(
       'categories',
-      { data: [{ id: 'a1' }, { id: 'a2' }], error: null, count: 999 },
-      { data: [{ id: 'a1' }, { id: 'a2' }], error: null, count: 999 }, // exact same page
+      { data: [{ id: 'x1' }, { id: 'stuck' }], error: null, count: 999 },
+      { data: [{ id: 'x2' }, { id: 'stuck' }], error: null, count: 999 },
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
-    // seen-set deduplicates, cursor ('a2') === lastId ('a2') → break after 2nd page.
-    expect(rows.map((r) => r.id)).toEqual(['a1', 'a2']);
+    // Page 1 accepted; page 2's last id === lastId ('stuck') → cursor didn't advance → break.
+    expect(rows.map((r) => r.id)).toEqual(['x1', 'stuck', 'x2']);
     expect(logger.warn).toHaveBeenCalled();
   });
 
@@ -218,17 +239,41 @@ describe('fetchPaginatedFromBridge', () => {
     expect(eqCall!.args).toEqual(['active', true]);
   });
 
-  it('uses keyset cursor pagination (order + limit, not range)', async () => {
+  it('uses keyset pagination: order by id + limit (not range)', async () => {
+    // Keyset pagination replaced offset-based .range() — verify .order() and .limit() are called.
     queue('categories', { data: [{ id: 'c1' }], error: null, count: 1 });
     await fetchPaginatedFromBridge('categories', 'id', 500);
     const orderCall = calls.find((c) => c.method === 'order');
     const limitCall = calls.find((c) => c.method === 'limit');
-    const rangeCall = calls.find((c) => c.method === 'range');
-    expect(orderCall).toBeDefined();
-    expect(orderCall!.args[0]).toBe('id');
-    expect(limitCall).toBeDefined();
-    expect(limitCall!.args[0]).toBe(500);
-    expect(rangeCall).toBeUndefined();
+    expect(orderCall?.args).toEqual(['id', { ascending: true }]);
+    expect(limitCall?.args).toEqual([500]);
+    // range() must NOT be called (keyset replaced it — BUG-STOCK-04 FIX)
+    expect(calls.find((c) => c.method === 'range')).toBeUndefined();
+  });
+
+  it('410 mid-pagination: returns page-1 data and does not throw', async () => {
+    // Simulates server-side cursor invalidation: page 1 succeeds, page 2 returns 410.
+    // The function must stop cleanly and return the partial data already accumulated.
+    queue(
+      'categories',
+      { data: [{ id: 'r1' }, { id: 'r2' }, { id: 'r3' }], error: null, count: 999 },
+      { data: null, error: { message: 'HTTP 410 Gone — bridge deprecated' } },
+    );
+    const rows = await fetchPaginatedFromBridge('categories', 'id', 3);
+    expect(rows.map((r) => r.id)).toEqual(['r1', 'r2', 'r3']);
+    expect(reportSilentEmpty).toHaveBeenCalledTimes(1);
+    expect(reportSilentEmpty).toHaveBeenCalledWith(expect.objectContaining({ reason: 'gone_410' }));
+  });
+
+  it('halts when the last record id is null (cursor cannot advance to next page)', async () => {
+    // If a record arrives with id: null the cursor resolves to null, which triggers
+    // the stuck-cursor guard (nextCursor === null → break + warn). This is distinct
+    // from the "same-id-twice" case: here the very first page already breaks.
+    queue('categories', { data: [{ id: 'x1' }, { id: null }], error: null, count: 999 });
+    const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
+    // x1 is valid and retained; null-id record is discarded by the seen-set guard.
+    expect(rows.map((r) => r.id)).toEqual(['x1']);
+    expect(logger.warn).toHaveBeenCalled();
   });
 });
 
@@ -259,7 +304,7 @@ describe('fetchAndProcessStockData', () => {
   it('returns empty results when there are no products', async () => {
     seedAll({ products: [] });
     const res = await fetchAndProcessStockData();
-    expect(res).toEqual({ productStocks: [], alerts: [], futureStock: [] });
+    expect(res).toEqual({ productStocks: [], alerts: [], futureStock: [], degradedTables: [] });
   });
 
   it('builds a product summary from its variants + supplier source', async () => {
@@ -310,8 +355,7 @@ describe('fetchAndProcessStockData', () => {
     const v = ps.variants[0];
     // supplier source quantity (12) wins over variant stock_quantity (8)
     expect(v.currentStock).toBe(12);
-    // Gold layer (variant_supplier_sources) has no reserved_quantity column —
-    // reservations are not tracked here; reservedStock is always 0.
+    // Gold layer has no reserved_quantity column — reservedStock is always 0 (line ~422 in stockFetcher)
     expect(v.reservedStock).toBe(0);
     expect(v.availableStock).toBe(12); // 12 - 0
     expect(v.minStock).toBe(5);
@@ -555,5 +599,125 @@ describe('fetchAndProcessStockData', () => {
     // currentStock 0, no in-transit -> out_of_stock -> at least one alert
     expect(res.alerts.length).toBeGreaterThan(0);
     expect(res.alerts.some((a) => a.type === 'out_of_stock')).toBe(true);
+  });
+
+  it('gracefully degrades when categories table fails — products returned, degradedTables populated', async () => {
+    // When categories fails, products should still appear but without categoryName.
+    // degradedTables must list 'categories' so the UI can surface a partial-data banner.
+    seedAll({
+      products: [{ id: 'p1', name: 'Caneca', sku: 'CAN', category_id: 'cat1' }],
+      variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 5, is_active: true }],
+    });
+    // Override categories queue with a non-410 fatal error; graceful() catches it.
+    queue('categories', { data: null, error: { message: 'connection timeout' } });
+
+    const res = await fetchAndProcessStockData();
+
+    expect(res.productStocks).toHaveLength(1);
+    expect(res.productStocks[0].productName).toBe('Caneca');
+    // No category data available — categoryName falls back to undefined.
+    expect(res.productStocks[0].categoryName).toBeUndefined();
+    // degradedTables must report the failed table.
+    expect(res.degradedTables).toContain('categories');
+    // Other tables unaffected — variant stock is still computed.
+    expect(res.productStocks[0].variants[0].currentStock).toBe(5);
+  });
+
+  it('aggregates currentStock and inTransitStock from 6 sources across different suppliers', async () => {
+    // BUG-H regression guard: ensures multi-supplier aggregation holds for N > 2 sources.
+    // Six sources, each from a distinct supplier_id; ALL quantities and future slots
+    // must be summed — not just the most-recently-updated supplier's data.
+    seedAll({
+      products: [{ id: 'p1', name: 'Garrafa', sku: 'GAR-001' }],
+      variants: [{ id: 'v1', product_id: 'p1', stock_quantity: 0, is_active: true }],
+      sources: Array.from({ length: 6 }, (_, i) => ({
+        id: `s${i + 1}`,
+        variant_id: 'v1',
+        supplier_id: `sup${i + 1}`,
+        quantity: (i + 1) * 10, // 10, 20, 30, 40, 50, 60 → sum 210
+        is_active: true,
+        updated_at: `2026-0${i + 1}-01`,
+        next_quantity_1: (i + 1) * 5, // 5, 10, 15, 20, 25, 30 → sum 105
+        next_date_1: '2026-10-01',
+      })),
+    });
+    const res = await fetchAndProcessStockData();
+    const v = res.productStocks[0].variants[0];
+    expect(v.currentStock).toBe(210); // 10+20+30+40+50+60
+    expect(v.inTransitStock).toBe(105); // 5+10+15+20+25+30
+    expect(v.futureSegments).toHaveLength(6); // one slot-1 segment per source
+    expect(res.futureStock).toHaveLength(6); // s1-1 … s6-1
+    const ids = res.futureStock.map((e) => e.id).sort();
+    expect(ids).toEqual(['s1-1', 's2-1', 's3-1', 's4-1', 's5-1', 's6-1']);
+  });
+});
+
+// ─── nextStockPairs / buildFutureEntries ────────────────────────────────────
+describe('nextStockPairs — sparse slot allocation (only slots 4-6 populated)', () => {
+  const sparseSource: ExternalSupplierSource = {
+    id: 'sparse',
+    variant_id: 'v-sparse',
+    quantity: 0,
+    // slots 1-3: null (explicit) or omitted (undefined) — no incoming stock yet
+    next_quantity_1: null,
+    next_date_1: null,
+    next_quantity_3: null,
+    next_date_3: null,
+    // slots 4-6: populated (late-season replenishments)
+    next_quantity_4: 100,
+    next_date_4: '2026-10-01',
+    next_quantity_5: 50,
+    next_date_5: '2026-11-01',
+    next_quantity_6: 25,
+    next_date_6: '2026-12-01',
+  };
+
+  it('always returns exactly 6 pairs regardless of how many slots are populated', () => {
+    const pairs = nextStockPairs(sparseSource);
+    expect(pairs).toHaveLength(6);
+  });
+
+  it('preserves null/undefined for unpopulated slots 1-3', () => {
+    const pairs = nextStockPairs(sparseSource);
+    // Slot 1: explicitly null
+    expect(pairs[0].q).toBeNull();
+    expect(pairs[0].d).toBeNull();
+    expect(pairs[0].suffix).toBe('1');
+    expect(pairs[0].status).toBe('confirmed');
+    // Slot 2: omitted field → undefined
+    expect(pairs[1].q).toBeUndefined();
+    expect(pairs[1].d).toBeUndefined();
+    expect(pairs[1].suffix).toBe('2');
+    expect(pairs[1].status).toBe('pending');
+    // Slot 3: explicitly null
+    expect(pairs[2].q).toBeNull();
+    expect(pairs[2].suffix).toBe('3');
+  });
+
+  it('correctly exposes populated slots 4-6 with pending status', () => {
+    const pairs = nextStockPairs(sparseSource);
+    expect(pairs[3]).toMatchObject({ q: 100, d: '2026-10-01', suffix: '4', status: 'pending' });
+    expect(pairs[4]).toMatchObject({ q: 50, d: '2026-11-01', suffix: '5', status: 'pending' });
+    expect(pairs[5]).toMatchObject({ q: 25, d: '2026-12-01', suffix: '6', status: 'pending' });
+  });
+
+  it('buildFutureEntries emits exactly 3 entries for slots 4-6 (skips null slots 1-3)', () => {
+    const entries = buildFutureEntries(
+      sparseSource,
+      'prod-sparse',
+      'v-sparse',
+      'Verde',
+      'Chaveiro',
+      'CHA-001',
+    );
+    expect(entries).toHaveLength(3);
+    const suffixes = entries.map((e) => e.id.split('-').pop()).sort();
+    expect(suffixes).toEqual(['4', '5', '6']);
+    expect(entries.every((e) => e.status === 'pending')).toBe(true);
+    expect(entries.reduce((sum, e) => sum + e.expectedQuantity, 0)).toBe(175); // 100+50+25
+    // Metadata correctly propagated
+    expect(entries[0].productName).toBe('Chaveiro');
+    expect(entries[0].colorName).toBe('Verde');
+    expect(entries[0].productSku).toBe('CHA-001');
   });
 });

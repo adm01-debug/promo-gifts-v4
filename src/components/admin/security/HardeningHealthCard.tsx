@@ -100,7 +100,14 @@ export function HardeningHealthCard() {
               {okCount}/{total}
             </Badge>
           )}
-          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              load();
+            }}
+            disabled={loading}
+          >
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </Button>
         </div>

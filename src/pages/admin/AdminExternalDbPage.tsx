@@ -68,8 +68,8 @@ export default function AdminExternalDbPage() {
         contractName === 'fn_get_customization_price'
           ? { p_area_id: '00000000-0000-0000-0000-000000000000', p_quantidade: 100, p_num_cores: 1 }
           : { p_product_id: '00000000-0000-0000-0000-000000000000' };
-      const result = await invokeExternalRpc<Record<string, unknown>>(contractName, params);
-      const validation = validateRpcPayload(contract, result ?? {});
+      const rpcResult = await invokeExternalRpc<Record<string, unknown>>(contractName, params);
+      const validation = validateRpcPayload(contract, rpcResult ?? {});
       setLiveResults((prev) => ({ ...prev, [contractName]: validation }));
       toast.success(`${contractName}`, {
         description: validation.ok ? 'Contrato OK' : `${validation.missing.length} campos ausentes`,

@@ -34,6 +34,19 @@ export const quoteFormSchema = z
       message: 'Valor do frete inconsistente com a modalidade selecionada',
       path: ['shippingCost'],
     },
+  )
+  .refine(
+    (data) => {
+      // Desconto percentual deve ser entre 0 e 100
+      if (data.discountType === 'percent') {
+        return data.discountValue <= 100;
+      }
+      return true;
+    },
+    {
+      message: 'Desconto percentual não pode exceder 100%',
+      path: ['discountValue'],
+    },
   );
 
 export const quoteItemSchema = z.object({

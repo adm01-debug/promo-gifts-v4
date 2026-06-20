@@ -51,7 +51,7 @@ vi.mock("@/components/a11y/AriaLive", () => ({
 }));
 
 vi.mock("framer-motion", () => {
-  const passthrough = (Tag: keyof JSX.IntrinsicElements) =>
+  const passthrough = (Tag: keyof React.JSX.IntrinsicElements) =>
     React.forwardRef<HTMLElement, Record<string, unknown>>(function M(props, ref) {
       const { children, ...rest } = props as { children?: React.ReactNode };
       const clean: Record<string, unknown> = {};
@@ -63,8 +63,8 @@ vi.mock("framer-motion", () => {
       return React.createElement(Tag, { ref, ...clean }, children);
     });
   return {
-    motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
-    m: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
+    motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof React.JSX.IntrinsicElements) }),
+    m: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof React.JSX.IntrinsicElements) }),
     LazyMotion: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
     domMax: {},
     domAnimation: {},
@@ -202,7 +202,6 @@ describe("NotificationDrawer — trigger→prefetch end-to-end timing", () => {
     expect(snap.lastTriggerToFetch!.totalMs).toBeGreaterThanOrEqual(TRIGGER_TO_FETCH_TTL_MS);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("trigger→fetch exceeded TTL window"),
-      expect.any(Object)
     );
     warnSpy.mockRestore();
   });

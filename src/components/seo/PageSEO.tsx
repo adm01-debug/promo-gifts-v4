@@ -34,40 +34,39 @@ function buildTitle(title: string): string {
   return `${title} | ${SITE_NAME}`;
 }
 
-export const PageSEO = React.forwardRef<HTMLElement, PageSEOProps>(function PageSEO(
-  { title, description, path, noIndex, ogImage, ogType, jsonLd },
-  _ref,
-) {
-  const fullTitle = buildTitle(title);
-  const desc = description || DEFAULT_DESC;
-  const url = path ? `${BASE_URL}${path}` : BASE_URL;
-  const image = ogImage || DEFAULT_OG_IMAGE;
+export const PageSEO = React.forwardRef<HTMLElement, PageSEOProps>(
+  ({ title, description, path, noIndex, ogImage, ogType, jsonLd }, _ref) => {
+    const fullTitle = buildTitle(title);
+    const desc = description || DEFAULT_DESC;
+    const url = path ? `${BASE_URL}${path}` : BASE_URL;
+    const image = ogImage || DEFAULT_OG_IMAGE;
 
-  return (
-    <Helmet>
-      <title>{fullTitle}</title>
-      <meta name="description" content={desc} />
-      {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    return (
+      <Helmet>
+        <title>{fullTitle}</title>
+        <meta name="description" content={desc} />
+        {noIndex && <meta name="robots" content="noindex, nofollow" />}
 
-      {/* Open Graph */}
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={desc} />
-      <meta property="og:type" content={ogType || 'website'} />
-      <meta property="og:site_name" content={SITE_NAME} />
-      <meta property="og:image" content={image} />
-      <meta property="og:locale" content="pt_BR" />
-      <meta property="og:url" content={url} />
+        {/* Open Graph */}
+        <meta property="og:title" content={fullTitle} />
+        <meta property="og:description" content={desc} />
+        <meta property="og:type" content={ogType || 'website'} />
+        <meta property="og:site_name" content={SITE_NAME} />
+        <meta property="og:image" content={image} />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="og:url" content={url} />
 
-      {/* Twitter */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={desc} />
-      <meta name="twitter:image" content={image} />
-      <meta name="twitter:url" content={url} />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={fullTitle} />
+        <meta name="twitter:description" content={desc} />
+        <meta name="twitter:image" content={image} />
+        <meta name="twitter:url" content={url} />
 
-      <link rel="canonical" href={url} />
+        <link rel="canonical" href={url} />
 
-      {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
-    </Helmet>
-  );
-});
+        {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
+      </Helmet>
+    );
+  },
+);

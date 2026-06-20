@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
     console.error('[check-login] unhandled error:', err);
     return new Response(
       JSON.stringify({ allowed: true, reason: 'internal_error_fail_open' }),
-      { status: 200, headers: { ...CORS, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...CORS, 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
     );
   }
 });

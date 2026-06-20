@@ -360,7 +360,7 @@ export function useSellerCartsPage() {
       return;
     }
     if (staleCount > 0) {
-      toast.warning(staleCount + ' item(ns) fora do catalogo ignorado(s)', {
+      toast.warning(`${staleCount} item(ns) fora do catalogo ignorado(s)`, {
         description: 'Produtos descontinuados nao entram no orcamento.',
       });
     }

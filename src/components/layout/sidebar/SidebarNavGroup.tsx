@@ -47,10 +47,7 @@ interface SidebarNavGroupProps {
 }
 
 export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
-  function SidebarNavGroup(
-    { group, isOpen, isCollapsed, onToggle, onMobileClose, isMobileSidebarOpen },
-    _ref,
-  ) {
+  ({ group, isOpen, isCollapsed, onToggle, onMobileClose, isMobileSidebarOpen }, _ref) => {
     const location = useLocation();
     const { isAdmin, isDev } = useAuth();
     const { hasPermission } = useRBAC();
@@ -165,7 +162,6 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                 {item.children.map((child) => renderNavLink(child, depth + 1))}
               </div>
             )}
-
           </div>
         );
       }
@@ -250,7 +246,6 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           </Tooltip>
         );
       }
-
 
       return <div key={item.href}>{linkContent}</div>;
     };

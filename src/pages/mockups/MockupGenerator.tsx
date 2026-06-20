@@ -25,6 +25,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTechniqueHandlers } from '@/pages/mockups/mockup-generator/MockupTechniqueHandlers';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { DiagnosticProfiler } from '@/components/dev/DiagnosticProfiler';
+import { toast } from 'sonner';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const log = createClientLogger('mockup-generator');
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import type { LayoutCaptureRequest } from '@/components/mockup/approval/OffscreenLayoutCapture';
 
@@ -111,6 +115,13 @@ export default function MockupGenerator() {
     setGeneratedMockup: mg.setGeneratedMockup,
     setTechniqueColorConfig: mg.setTechniqueColorConfig,
   });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleTechniqueSelect = useCallback<(t: any) => void>(
+    (t: MockupTechnique | null) => technique.handleTechniqueChange(t),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [technique.handleTechniqueChange],
+  );
 
   useKeyboardShortcuts({
     onGenerate: mg.generateMockup,
@@ -204,7 +215,7 @@ export default function MockupGenerator() {
     mg.logoColorAnalysis.colors,
     mg.productSelection?.colorName,
     mg.productSelection?.colorHex,
-    mg.getProductImage,
+    mg.productSelection?.imageUrl,
   ]);
 
   const handleLayoutCaptured = useCallback(() => {
@@ -294,13 +305,15 @@ export default function MockupGenerator() {
               </TabsTrigger>
             </TabsList>
             <MockupToolbar
-              canUndo={mg.positionHistory.canUndo}
-              canRedo={mg.positionHistory.canRedo}
+              canUndo={mg.positionHistory.canUndo && !!mg.activeAreaId}
+              canRedo={mg.positionHistory.canRedo && !!mg.activeAreaId}
               onUndo={() => {
+                if (!mg.activeAreaId) return;
                 const state = mg.positionHistory.undo();
                 if (state) mg.updateActiveArea(state);
               }}
               onRedo={() => {
+                if (!mg.activeAreaId) return;
                 const state = mg.positionHistory.redo();
                 if (state) mg.updateActiveArea(state);
               }}
@@ -331,9 +344,7 @@ export default function MockupGenerator() {
                     mg.setProductSelection(sel);
                     mg.setGeneratedMockup(null);
                   }}
-                  onTechniqueSelect={(t) =>
-                    technique.handleTechniqueChange(t as MockupTechnique | null)
-                  }
+                  onTechniqueSelect={handleTechniqueSelect}
                   onClientSelect={mg.setSelectedClient}
                   onReset={mg.resetForm}
                   activeAreaId={mg.activeAreaId}
@@ -469,15 +480,20 @@ export default function MockupGenerator() {
                           colorsCount={mg.techniqueColorConfig?.colorCount}
                           onStaticGenerated={async (dataUrl, extra) => {
                             if (mg.activeArea) {
-                              const recordId = await mg.saveMockupToHistory(
-                                dataUrl,
-                                mg.activeArea,
-                                extra,
-                              );
-                              if (recordId) {
-                                mg.setLastSavedMockupUrl(dataUrl);
-                                mg.setLastSavedLayoutMode('static');
-                                mg.setLastSavedRecordId(recordId);
+                              try {
+                                const recordId = await mg.saveMockupToHistory(
+                                  dataUrl,
+                                  mg.activeArea,
+                                  extra,
+                                );
+                                if (recordId) {
+                                  mg.setLastSavedMockupUrl(dataUrl);
+                                  mg.setLastSavedLayoutMode('static');
+                                  mg.setLastSavedRecordId(recordId);
+                                }
+                              } catch (err) {
+                                toast.error('Erro ao salvar mockup no histórico');
+                                log.error('save_history_failed', { error: err instanceof Error ? err.message : String(err) });
                               }
                             }
                           }}

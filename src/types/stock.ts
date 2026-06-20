@@ -7,26 +7,24 @@
 // ESTOQUE POR VARIAÇÃO
 // ============================================
 
-/** Dados de estoque granular por variação (cor/tamanho/SKU). */
-export interface VariantStock {
+/**
+ * Campos canônicos de negócio de uma variação de estoque.
+ * Contém apenas dados de quantidade, status e temporalidade — sem dependência
+ * da camada de apresentação. Funções de cálculo, filtragem e agregação devem
+ * receber `VariantStockCore` em vez de `VariantStock` para explicitar que não
+ * precisam de enriquecimento visual.
+ */
+export interface VariantStockCore {
   id: string;
   productId: string;
   variantId: string;
   variantSku: string;
 
-  /** Imagem da variação quando disponível (fallback para a do produto pai). */
-  imageUrl?: string;
-
   // Identificação da variação
   colorId?: string;
   colorName?: string;
-  colorHex?: string;
-  colorGroup?: string; // Ex: "Azuis", "Vermelhos"
-
   sizeName?: string;
   sizeCode?: string;
-
-  // Atributos extras
   attributeValues?: Record<string, string>;
 
   // Estoque atual
@@ -72,6 +70,31 @@ export interface VariantStock {
   updatedAt: string;
   notes?: string;
 }
+
+/**
+ * Campos de enriquecimento visual de uma variação — adicionados pela camada
+ * de busca a partir de tabelas auxiliares (product_images, paleta de cores).
+ * Não fazem parte da lógica de negócio: cálculos de estoque, alertas e
+ * filtros de quantidade operam apenas sobre `VariantStockCore`.
+ */
+export interface VariantStockUIFields {
+  /** URL de imagem da variação (do product_images, ou fallback do produto pai). */
+  imageUrl?: string;
+  /** Código hex para swatch de cor (#RRGGBB). Uso exclusivo de apresentação. */
+  colorHex?: string;
+  /** Agrupamento visual de cor (ex.: "Azuis", "Vermelhos") para chips de filtro. */
+  colorGroup?: string;
+}
+
+/**
+ * Dados completos de estoque por variação (cor/tamanho/SKU).
+ *
+ * União de dados de negócio (`VariantStockCore`) com enriquecimento visual
+ * (`VariantStockUIFields`). Tipo de uso geral — backward-compatible com todos
+ * os consumidores existentes. Prefira `VariantStockCore` em funções de cálculo
+ * e filtragem que não precisam de campos de apresentação.
+ */
+export type VariantStock = VariantStockCore & VariantStockUIFields;
 
 /** Status de disponibilidade de uma variação de estoque. */
 export type StockStatus =

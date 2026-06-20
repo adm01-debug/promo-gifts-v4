@@ -128,7 +128,7 @@ export const quoteService = {
       notes: item.notes?.trim().slice(0, 1000),
       personalizations: buildPersonalizationsInsertPayload(
         items[index]?.personalizations ?? [],
-        quoteId,
+        items[index]?.id ?? '',
       ),
     }));
 

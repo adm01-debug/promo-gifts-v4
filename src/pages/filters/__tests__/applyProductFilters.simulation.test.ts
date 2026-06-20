@@ -253,8 +253,12 @@ describe('SIM — filtros isolados (resultado exato)', () => {
   it('hasCommercialPackaging retorna apenas com embalagem', () => {
     expect(ids(run(f({ hasCommercialPackaging: true })))).toEqual(['2', '8']);
   });
-  it('gender feminino é case-insensitive', () => {
-    expect(ids(run(f({ gender: ['Feminino'] })))).toEqual(['3']);
+  it('gender feminino é case-insensitive: inclui feminino, exclui unissex, inclui neutros', () => {
+    const out = run(f({ gender: ['Feminino'] }));
+    expect(ids(out)).toContain('3'); // gender='feminino' — match case-insensitive
+    expect(ids(out)).not.toContain('1'); // gender='unissex' — definido, mas diferente → excluído
+    // FIX-16: produtos sem gender são neutros → incluídos com qualquer filtro
+    expect(ids(out)).toContain('2'); // gender='' → neutro
   });
   it('isKit usa detecção de kit', () => {
     expect(ids(run(f({ isKit: true })))).toContain('4');
@@ -337,6 +341,61 @@ describe('SIM — filtros server-side por Set de IDs', () => {
   it('size legado (sem contexto server) cai no match por variações carregadas', () => {
     expect(ids(run(f({ sizes: ['M'] })))).toEqual(['3']);
     expect(ids(run(f({ sizes: ['G'] })))).toEqual(['7']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// FIX-20: gaps de cobertura — minStock boundary, sort stability, three-way AND
+// ---------------------------------------------------------------------------
+describe('FIX-20: cobertura de gaps — minStock=0, sort stability, three-way AND', () => {
+  // minStock boundary
+  it('minStock=0 não filtra nada (equivalente a sem filtro)', () => {
+    expect(run(f({ minStock: 0 })).length).toBe(CATALOG.length);
+  });
+
+  it('minStock=1: exclui produtos sem stock e sem variação com stock', () => {
+    // produto 2 (stock=0, sem variações), produto 7 (stock=0, variação G=3 → passa),
+    // produto 6 (stock=1 → inclui). Produto 7 tem variação G=3 ≥ 1 → inclui.
+    const out = run(f({ minStock: 1 }));
+    expect(ids(out)).not.toContain('2'); // stock=0, sem variações
+    expect(ids(out)).toContain('6'); // stock=1 → incluído
+    expect(ids(out)).toContain('7'); // stock=0 mas variação G=3 ≥ 1 → incluído
+  });
+
+  // sort stability: mesmos inputs → mesma ordem
+  it('sort stability: aplicar o mesmo sort 10x consecutivas dá sempre a mesma ordem', () => {
+    const first = run(f({ sortBy: 'price-asc' })).map((p) => p.id);
+    for (let i = 0; i < 9; i++) {
+      expect(run(f({ sortBy: 'price-asc' })).map((p) => p.id)).toEqual(first);
+    }
+  });
+
+  it('sort stability: name_asc tem ordem determinística em múltiplas chamadas', () => {
+    const first = run(f({ sortBy: 'name_asc' })).map((p) => p.id);
+    expect(run(f({ sortBy: 'name_asc' })).map((p) => p.id)).toEqual(first);
+  });
+
+  // three-way AND: material + priceRange + featured
+  it('three-way AND: material+preço+featured retorna interseção correta', () => {
+    // Produto 1: plastico, R$9.9, featured=true → único match
+    // Produto 4: couro, R$250, featured=true → fora do priceRange
+    const out = run(f({ materiais: ['plastico'], priceRange: [0, 50], featured: true }));
+    expect(ids(out)).toEqual(['1']);
+  });
+
+  it('three-way AND: material+inStock+isNew — nenhum produto atende os 3', () => {
+    // inox → produto 2 (sem stock), papel → produto 7 (sem stock, newArrival=true)
+    // buscar nylon(produto5) + inStock + isNew → produto5 (stock=2, newArrival=false) → excluído
+    const out = run(f({ materiais: ['nylon'], inStock: true, isNew: true }));
+    expect(out).toHaveLength(0);
+  });
+
+  it('three-way AND: material+preço+inStock — produto 1 (plastico, R$9.9, stock=100)', () => {
+    const out = run(f({ materiais: ['plastico'], priceRange: [5, 20], inStock: true }));
+    expect(ids(out)).toContain('1');
+    expect(ids(out)).not.toContain('2'); // inox, não plastico
+    expect(ids(out)).not.toContain('4'); // couro, fora do range
   });
 });
 
@@ -535,6 +594,65 @@ describe('SIM — error gates: falha de servidor nunca zera a grade', () => {
     expect(run(f(), ctx).length).toBe(CATALOG.length);
   });
 
+  // FIX-21: color filter error guard (mirrors categoryFilterError behavior)
+  it('FIX-21: colorFilterError: grade intacta quando RPC de cor falha', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('color-rpc timeout'),
+    });
+    expect(run(f({ colors: ['azul'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('FIX-21: colorFilterError: string error também preserva a grade', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: 'network error',
+    });
+    expect(run(f({ colorGroups: ['azuis'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('FIX-21: cor Set vazio + sem erro + sem loading = zera grade (comportamento correto)', () => {
+    // Sem erro e sem loading, Set vazio significa "nenhum produto desta cor" → grade zerada
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: undefined,
+    });
+    expect(run(f({ colors: ['cor-inexistente'] }), ctx).length).toBe(0);
+  });
+
+  it('FIX-21: cor Set não vazio + erro = filtra normalmente (Set parcial disponível)', () => {
+    // Erro APÓS resultado parcial: usa o Set disponível, não zera
+    const colorIds = new Set(['1', '2']);
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: colorIds,
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('partial failure'),
+    });
+    const out = run(f({ colors: ['azul'] }), ctx);
+    expect(out.length).toBe(2);
+    expect(ids(out)).toEqual(expect.arrayContaining(['1', '2']));
+  });
+
+  it('FIX-21: cor error + filtro local price ativo = price ainda filtra', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('rpc error'),
+    });
+    // priceRange [0, 10] deve filtrar por preço mesmo com color error
+    const out = run(f({ priceRange: [0, 10] as [number, number] }), ctx);
+    expect(out.every((p) => p.price <= 10)).toBe(true);
+    expect(out.length).toBeGreaterThan(0);
+  });
+
   it('cor: Set vazio + carregando = mantém (loading gate)', () => {
     const ctx = baseCtx({
       hasColorFilter: true,
@@ -551,6 +669,41 @@ describe('SIM — error gates: falha de servidor nunca zera a grade', () => {
       isLoadingMaterialFilter: true,
     });
     expect(run(f(), ctx).length).toBe(CATALOG.length);
+  });
+
+  // FIX-22: material filter error guard (mirrors FIX-21 for color)
+  it('FIX-22: materialFilterError: grade intacta quando query de material falha', () => {
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: new Error('material-rpc 503'),
+    });
+    expect(run(f({ materialTypes: ['algodao'] }), ctx).length).toBe(CATALOG.length);
+  });
+
+  it('FIX-22: material Set vazio + sem erro + sem loading = zera grade (comportamento correto)', () => {
+    const ctx = baseCtx({
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: undefined,
+    });
+    expect(run(f({ materialTypes: ['material-inexistente'] }), ctx).length).toBe(0);
+  });
+
+  it('FIX-22: color + material ambos em erro = grade intacta', () => {
+    const ctx = baseCtx({
+      hasColorFilter: true,
+      colorFilteredProductIds: new Set(),
+      isLoadingColorFilter: false,
+      colorFilterError: new Error('color rpc down'),
+      hasMaterialFilter: true,
+      materialFilteredProductIds: new Set(),
+      isLoadingMaterialFilter: false,
+      materialFilterError: new Error('material rpc down'),
+    });
+    expect(run(f({ colors: ['azul'], materiais: ['metal'] }), ctx).length).toBe(CATALOG.length);
   });
 
   it('erro metadata + filtro local ativo: filtra local, NÃO server-side', () => {
@@ -739,7 +892,54 @@ describe('SIM — regressões e casos extremos adicionais', () => {
     const out = run(f({ gender: ['unissex', 'feminino'] }));
     expect(ids(out)).toContain('1'); // unissex
     expect(ids(out)).toContain('3'); // feminino
-    expect(ids(out)).not.toContain('4'); // sem gender definido
+    // FIX-16: produtos sem gênero (gender='') são neutros → incluídos em qualquer filtro
+    expect(ids(out)).toContain('4'); // Kit Executivo não tem gender definido → neutro
+  });
+
+  // ---------------------------------------------------------------------------
+  // FIX-16: GENDER-NULL-PRODUCTS — neutros incluídos em qualquer filtro de gênero
+  // ---------------------------------------------------------------------------
+  describe('FIX-16: produtos com gender null/vazio são neutros (não excluídos)', () => {
+    const pNull = makeProduct({ id: 'g-null', gender: null as never });
+    const pEmpty = makeProduct({ id: 'g-empty', gender: '' });
+    const pFem = makeProduct({ id: 'g-fem', gender: 'feminino' });
+    const pMasc = makeProduct({ id: 'g-masc', gender: 'masculino' });
+    const catalogG = [pNull, pEmpty, pFem, pMasc];
+    const runG = (filters: FilterState) =>
+      applyProductFilters(catalogG, filters, filters.sortBy, baseCtx());
+
+    it('filtro feminino → inclui produtos com gender=null', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).toContain('g-null');
+    });
+
+    it('filtro feminino → inclui produtos com gender="" (vazio)', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).toContain('g-empty');
+    });
+
+    it('filtro feminino → inclui produto com gender=feminino', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).toContain('g-fem');
+    });
+
+    it('filtro feminino → exclui produto com gender=masculino (gênero definido diferente)', () => {
+      const out = runG(f({ gender: ['feminino'] }));
+      expect(ids(out)).not.toContain('g-masc');
+    });
+
+    it('filtro masculino → inclui neutros, exclui feminino', () => {
+      const out = runG(f({ gender: ['masculino'] }));
+      expect(ids(out)).toContain('g-null');
+      expect(ids(out)).toContain('g-empty');
+      expect(ids(out)).toContain('g-masc');
+      expect(ids(out)).not.toContain('g-fem');
+    });
+
+    it('sem filtro gender → todos os produtos aparecem', () => {
+      const out = runG(f());
+      expect(out.length).toBe(catalogG.length);
+    });
   });
 
   it('sizes legado: produto sem variações é excluído mesmo que tamanho coincida', () => {
@@ -904,6 +1104,60 @@ describe('SIM — FIX-10: gaps de cobertura identificados na análise exaustiva'
     expect(out.map((p) => p.id)).not.toContain('ref-p');
   });
 
+  // ---------------------------------------------------------------------------
+  // FIX-17: SUPPLIER-CASE-SENSITIVITY — todas as 3 vias normalizadas para lowercase
+  // ---------------------------------------------------------------------------
+  describe('FIX-17: supplier filter — match case-insensitivo em id, reference e name', () => {
+    const pUpperId = makeProduct({
+      id: 'sup-upper-id',
+      supplier: { id: 'SUP-ABC', name: 'Fornecedor X' } as never,
+    });
+    const pLowerId = makeProduct({
+      id: 'sup-lower-id',
+      supplier: { id: 'sup-abc', name: 'Fornecedor Y' } as never,
+    });
+    const pUpperRef = makeProduct({ id: 'sup-upper-ref', supplier_reference: 'REF-XYZ' });
+    const pLowerRef = makeProduct({ id: 'sup-lower-ref', supplier_reference: 'ref-xyz' });
+    const pUpperName = makeProduct({
+      id: 'sup-upper-name',
+      supplier: { id: 'sup-zz', name: 'ACMECO' } as never,
+    });
+    const catalogSup = [pUpperId, pLowerId, pUpperRef, pLowerRef, pUpperName];
+    const runSup = (filters: FilterState) =>
+      applyProductFilters(catalogSup, filters, filters.sortBy, baseCtx());
+
+    it('filtro "sup-abc" (lower) deve casar supplier.id "SUP-ABC" (upper)', () => {
+      const out = runSup(f({ suppliers: ['sup-abc'] }));
+      expect(ids(out)).toContain('sup-upper-id');
+    });
+
+    it('filtro "SUP-ABC" (upper) deve casar supplier.id "sup-abc" (lower)', () => {
+      const out = runSup(f({ suppliers: ['SUP-ABC'] }));
+      expect(ids(out)).toContain('sup-lower-id');
+    });
+
+    it('filtro "ref-xyz" (lower) deve casar supplier_reference "REF-XYZ" (upper)', () => {
+      const out = runSup(f({ suppliers: ['ref-xyz'] }));
+      expect(ids(out)).toContain('sup-upper-ref');
+    });
+
+    it('filtro "REF-XYZ" (upper) deve casar supplier_reference "ref-xyz" (lower)', () => {
+      const out = runSup(f({ suppliers: ['REF-XYZ'] }));
+      expect(ids(out)).toContain('sup-lower-ref');
+    });
+
+    it('filtro "acmeco" (lower) deve casar supplier.name "ACMECO" (upper)', () => {
+      const out = runSup(f({ suppliers: ['acmeco'] }));
+      expect(ids(out)).toContain('sup-upper-name');
+    });
+
+    it('supplier com id diferente não deve casar mesmo com casing alterado', () => {
+      const out = runSup(f({ suppliers: ['sup-xyz'] }));
+      expect(ids(out)).not.toContain('sup-upper-id');
+      expect(ids(out)).not.toContain('sup-lower-id');
+    });
+  });
+
   // 6. Limites de preço fracionários — inclusão exata nos extremos
   it('priceRange [9.9, 49.9]: inclui produtos exatamente nos limites (R$9.9 e R$49.9)', () => {
     // produto 1 = R$9.9 (no limite inferior), produto 2 = R$49.9 (no limite superior)
@@ -925,5 +1179,72 @@ describe('SIM — FIX-10: gaps de cobertura identificados na análise exaustiva'
   it('priceRange [9.9, 9.9]: intervalo fechado no valor exato → só produto 1', () => {
     const out = run(f({ priceRange: [9.9, 9.9] }));
     expect(ids(out)).toEqual(['1']);
+  });
+
+  // ---------------------------------------------------------------------------
+  // FIX-15: SIZE-FILTER-CASE-SENSITIVITY (legado — sem servidor)
+  // ---------------------------------------------------------------------------
+  describe('FIX-15: size filter — case/trim normalization (legacy path)', () => {
+    // Catálogo auxiliar com variações em casing misto
+    const p_M_upper = makeProduct({
+      id: 'sz-upper',
+      variations: [{ size_code: 'M', stock: 1 } as never],
+    });
+    const p_M_lower = makeProduct({
+      id: 'sz-lower',
+      variations: [{ size_code: 'm', stock: 1 } as never],
+    });
+    const p_XL_mixed = makeProduct({
+      id: 'sz-xl',
+      variations: [{ size_code: ' XL ', stock: 1 } as never],
+    });
+    const catalogSizes = [p_M_upper, p_M_lower, p_XL_mixed];
+    const runSz = (filters: FilterState) =>
+      applyProductFilters(catalogSizes, filters, filters.sortBy, baseCtx());
+
+    it('filtro "m" (minúsculo) deve casar com variação "M" (maiúsculo)', () => {
+      const out = runSz(f({ sizes: ['m'] }));
+      expect(ids(out)).toContain('sz-upper');
+      expect(ids(out)).toContain('sz-lower');
+    });
+
+    it('filtro "M" (maiúsculo) deve casar com variação "m" (minúsculo)', () => {
+      const out = runSz(f({ sizes: ['M'] }));
+      expect(ids(out)).toContain('sz-upper');
+      expect(ids(out)).toContain('sz-lower');
+    });
+
+    it('filtro "xl" deve casar com variação " XL " (com espaços)', () => {
+      const out = runSz(f({ sizes: ['xl'] }));
+      expect(ids(out)).toContain('sz-xl');
+      expect(ids(out)).not.toContain('sz-upper');
+    });
+
+    it('filtro " XL " (com espaços) deve casar com variação "xl" normalizada', () => {
+      const p_xl_clean = makeProduct({
+        id: 'sz-xl-clean',
+        variations: [{ size_code: 'xl', stock: 1 } as never],
+      });
+      const out = applyProductFilters([p_xl_clean], f({ sizes: [' XL '] }), 'name_asc', baseCtx());
+      expect(ids(out)).toContain('sz-xl-clean');
+    });
+
+    it('filtro com casing diferente não deve excluir produto com variação correspondente', () => {
+      // Produto 3 do CATALOG tem variação size_code: 'M'
+      const out = run(f({ sizes: ['m'] }));
+      expect(ids(out)).toContain('3'); // 'm' deve casar 'M'
+    });
+
+    it('filtro com casing correto ainda funciona (não quebra caso normal)', () => {
+      const out = run(f({ sizes: ['M'] }));
+      expect(ids(out)).toContain('3'); // 'M' = 'M' → incluído
+      expect(ids(out)).not.toContain('7'); // produto 7 tem 'P' e 'G', não 'M'
+    });
+
+    it('combinação de tamanhos com casing misto retorna todos os matches', () => {
+      const out = run(f({ sizes: ['m', 'p'] }));
+      expect(ids(out)).toContain('3'); // tem 'M'
+      expect(ids(out)).toContain('7'); // tem 'P'
+    });
   });
 });

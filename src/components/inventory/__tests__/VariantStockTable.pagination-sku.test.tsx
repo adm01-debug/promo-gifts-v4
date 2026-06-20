@@ -1,17 +1,41 @@
 /**
- * Contrato de PAGINAÇÃO SKU-first do módulo Estoque:
- *  - A unidade de paginação é o SKU (variação), não o produto-pai.
- *  - 1 produto com 60 variações => página 1 mostra 50 linhas (PAGE_SIZE),
- *    e a 60ª variação cai na página 2 (o produto "divide" entre páginas).
- *  - O contador fala em "variações" e reconcilia com o total de SKUs.
+ * Contrato de SCROLL VIRTUAL SKU-first do módulo Estoque:
+ *  - A unidade de scroll é o SKU (variação), não o produto-pai.
+ *  - 1 produto com 60 variações → contador exibe "60 variações" (sem intervalo de página).
+ *  - O scroll virtual substitui a paginação: não há botões Anterior/Próximo.
+ *  - Todas as 60 variações estão disponíveis para renderização (não cortadas em páginas).
  *
- * Guarda de regressão: no modelo antigo (paginação por produto) 1 produto = 1
- * página e TODAS as 60 variações renderizariam na página 1 — este teste falharia.
+ * Guarda de regressão: contra reintrodução de paginação por produto-pai
+ * (no modelo antigo, paginação por produto impedia o split de variações entre "páginas").
+ *
+ * Nota técnica: useVirtualizer é mockado neste arquivo para renderizar todos os itens,
+ * pois em jsdom o container tem height=0 e o virtualizer real não renderia nenhum item.
+ * Os testes de virtualização real ficam em stock-filter.perf.test.ts (sem DOM).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { VariantStockTable } from '@/components/inventory/VariantStockTable';
 import type { ProductStockSummary, VariantStock } from '@/types/stock';
+
+// Renderiza todos os itens para que o DOM reflita o estado completo do filtro.
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: ({ count, estimateSize }: { count: number; estimateSize?: () => number }) => {
+    const sz = estimateSize?.() ?? 56;
+    return {
+      getVirtualItems: () =>
+        Array.from({ length: count }, (_, i) => ({
+          index: i,
+          start: i * sz,
+          end: (i + 1) * sz,
+          size: sz,
+          key: i,
+          lane: 0,
+        })),
+      getTotalSize: () => count * sz,
+      scrollToIndex: vi.fn(),
+    };
+  },
+}));
 
 vi.mock('@/utils/color-group-hex', () => ({
   COLOR_GROUP_HEX: {},
@@ -22,9 +46,8 @@ vi.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(), vi.fn()],
   Link: (p: { children: React.ReactNode }) => p.children,
 }));
-// QuickViewThumb calls useQuery internally — stub to avoid needing QueryClientProvider.
 vi.mock('@/components/products/QuickViewThumb', () => ({
-  QuickViewThumb: () => null,
+  QuickViewThumb: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 const mkVariant = (i: number): VariantStock =>
@@ -65,23 +88,33 @@ const product: ProductStockSummary = {
   variants: Array.from({ length: 60 }, (_, i) => mkVariant(i)),
 } as ProductStockSummary;
 
-describe('VariantStockTable — paginação SKU-first', () => {
+describe('VariantStockTable — scroll virtual SKU-first', () => {
   beforeEach(() => window.localStorage.clear());
 
-  it('página 1 mostra 50 SKUs de um produto com 60 variações (split entre páginas)', () => {
+  it('contador exibe total de variações sem intervalo de página', () => {
     render(<VariantStockTable products={[product]} />);
-    const skuCells = screen.getAllByText(/^SKU-\d+$/);
-    expect(skuCells).toHaveLength(50);
-    // 1ª variação visível, 60ª (índice 59) empurrada para a página 2:
-    expect(screen.queryByText('SKU-0')).toBeInTheDocument();
-    expect(screen.queryByText('SKU-59')).not.toBeInTheDocument();
+    expect(screen.getByText('60 variações')).toBeInTheDocument();
+    expect(screen.queryByText(/1[–-]50 de/)).not.toBeInTheDocument();
   });
 
-  it('contador reconcilia em SKUs ("1–50 de 60 variações")', () => {
+  it('não renderiza controles de paginação (Anterior / Próximo)', () => {
     render(<VariantStockTable products={[product]} />);
-    const counter = screen.getByText(
-      (_t, el) => el?.tagName === 'SPAN' && /1[–-]50 de 60 variações/.test(el.textContent || ''),
-    );
-    expect(counter).toBeInTheDocument();
+    expect(screen.queryByText('Anterior')).not.toBeInTheDocument();
+    expect(screen.queryByText('Próximo')).not.toBeInTheDocument();
+  });
+
+  it('todas as 60 variações ficam acessíveis — SKU-0 e SKU-59 presentes no DOM', () => {
+    render(<VariantStockTable products={[product]} />);
+    // Com scroll virtual, NÃO há corte em 50 linhas — todas as 60 são acessíveis:
+    expect(screen.getByText('SKU-0')).toBeInTheDocument();
+    expect(screen.getByText('SKU-59')).toBeInTheDocument();
+    // Garante exatamente 60 SKU cells (sem duplicatas do virtualizer mock):
+    const skuCells = screen.getAllByText(/^SKU-\d+$/);
+    expect(skuCells).toHaveLength(60);
+  });
+
+  it('container de scroll virtual tem data-testid correto', () => {
+    render(<VariantStockTable products={[product]} />);
+    expect(document.querySelector('[data-testid="variant-stock-scroll"]')).toBeInTheDocument();
   });
 });

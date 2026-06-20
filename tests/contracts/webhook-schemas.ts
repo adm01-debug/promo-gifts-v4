@@ -576,6 +576,23 @@ export interface ContractDefinition {
   deprecatedVersions?: string[];
 }
 
+
+// ===========================================================================
+// check-login
+// ===========================================================================
+export const CheckLoginSchemaV1 = z.object({
+  email: z.string().email().max(255).optional(),
+  city: z.string().max(100).optional(),
+}).passthrough(); // body é opcional — a fn aceita body vazio gracefully
+
+// ===========================================================================
+// word-magic
+// ===========================================================================
+export const WordMagicSchemaV1 = z.object({
+  product_id: z.string().uuid('product_id deve ser um UUID válido'),
+  force_regenerate: z.boolean().optional().default(false),
+});
+
 export const CONTRACTS: Record<string, ContractDefinition> = {
   "product-webhook": {
     endpoint: "product-webhook",
@@ -614,7 +631,19 @@ export const CONTRACTS: Record<string, ContractDefinition> = {
     versions: { v1: SendTransactionalEmailSchemaV1 },
     defaultVersion: "v1",
   },
-  "rate-limit-check": {
+  "check-login": {
+    endpoint: "check-login",
+    description: "Pre-authentication check — verifica se email/IP pode logar",
+    versions: { v1: CheckLoginSchemaV1 },
+    defaultVersion: "v1",
+  },
+  "word-magic": {
+    endpoint: "word-magic",
+    description: "Geração de copy B2B via IA (DeepSeek) para produtos",
+    versions: { v1: WordMagicSchemaV1 },
+    defaultVersion: "v1",
+  },
+    "rate-limit-check": {
     endpoint: "rate-limit-check",
     description: "Sliding-window rate limit gate",
     versions: { v1: RateLimitCheckSchemaV1 },

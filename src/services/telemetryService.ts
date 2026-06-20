@@ -32,6 +32,32 @@ const SAMPLE_RATE: Record<TelemetryEventType, number> = {
   ux_action: 0.2, // 20% — ações de UX são frequentes mas amostradas
 };
 
+const MAX_NAME_LENGTH = 256;
+const MAX_URL_LENGTH = 2048;
+const MAX_USER_AGENT_LENGTH = 1024;
+const MAX_METADATA_JSON_LENGTH = 7800;
+
+function truncateText(value: string, maxLength: number, fallback = ''): string {
+  const normalized = value.trim() || fallback;
+  return normalized.length > maxLength ? normalized.slice(0, maxLength) : normalized;
+}
+
+function toBoundedJson(metadata: Record<string, unknown> | undefined): Json {
+  const payload = metadata ?? {};
+  const serialized = JSON.stringify(payload);
+  if (serialized.length <= MAX_METADATA_JSON_LENGTH) return payload as Json;
+
+  return {
+    truncated: true,
+    original_size: serialized.length,
+  } as Json;
+}
+
+function normalizeDuration(durationMs: number | undefined): number | undefined {
+  if (durationMs === undefined || !Number.isFinite(durationMs)) return undefined;
+  return Math.min(Math.max(durationMs, 0), 600000);
+}
+
 /** Formato snake_case que o PostgREST/Supabase espera */
 interface BufferedEvent {
   event_type: TelemetryEventType;
@@ -117,11 +143,14 @@ class TelemetryService {
 
       this.buffer.push({
         event_type: payload.event_type,
-        name: payload.name,
-        duration_ms: payload.durationMs,
-        metadata: (payload.metadata || {}) as Json,
-        url: typeof window !== 'undefined' ? window.location.href : '',
-        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        name: truncateText(payload.name, MAX_NAME_LENGTH, 'unnamed_event'),
+        duration_ms: normalizeDuration(payload.durationMs),
+        metadata: toBoundedJson(payload.metadata),
+        url: truncateText(typeof window !== 'undefined' ? window.location.href : '', MAX_URL_LENGTH),
+        user_agent: truncateText(
+          typeof navigator !== 'undefined' ? navigator.userAgent : '',
+          MAX_USER_AGENT_LENGTH,
+        ),
         session_id: this.sessionId,
       });
 

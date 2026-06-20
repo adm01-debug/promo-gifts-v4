@@ -22,15 +22,8 @@
  *   há `colorName`/`colorGroup` (hasVariantFilter=true).
  */
 import { describe, it, expect } from 'vitest';
-import {
-  applyStockFilters,
-  buildStockIndexes,
-} from '@/lib/inventory/stock-filter';
-import {
-  defaultStockFilters,
-  type ProductStockSummary,
-  type VariantStock,
-} from '@/types/stock';
+import { applyStockFilters, buildStockIndexes } from '@/lib/inventory/stock-filter';
+import { defaultStockFilters, type ProductStockSummary, type VariantStock } from '@/types/stock';
 
 const v = (
   id: string,
@@ -114,30 +107,48 @@ function recomputeChipCounts(projected: ProductStockSummary[]) {
 
 // Mundo de teste: 3 categorias × 2 fornecedores × 3 cores × 4 status
 const products: ProductStockSummary[] = [
-  mkProduct('p1', 'Canecas', 'Acme', [
-    v('p1a', 'p1', 'Azul', 'critical', 2),
-    v('p1b', 'p1', 'Verde', 'low_stock', 8),
-    v('p1c', 'p1', 'Vermelho', 'in_stock', 50),
-  ], 'critical'),
-  mkProduct('p2', 'Canecas', 'Globex', [
-    v('p2a', 'p2', 'Azul', 'low_stock', 9),
-    v('p2b', 'p2', 'Verde', 'out_of_stock', 0),
-  ], 'low_stock'),
-  mkProduct('p3', 'Garrafas', 'Acme', [
-    v('p3a', 'p3', 'Azul', 'critical', 1),
-    v('p3b', 'p3', 'Vermelho', 'in_stock', 200),
-  ], 'critical'),
-  mkProduct('p4', 'Garrafas', 'Globex', [
-    v('p4a', 'p4', 'Verde', 'out_of_stock', 0),
-    v('p4b', 'p4', 'Vermelho', 'low_stock', 5),
-  ], 'out_of_stock'),
-  mkProduct('p5', 'Mochilas', 'Acme', [
-    v('p5a', 'p5', 'Azul', 'in_stock', 100),
-    v('p5b', 'p5', 'Verde', 'critical', 3),
-  ], 'in_stock'),
+  mkProduct(
+    'p1',
+    'Canecas',
+    'Acme',
+    [
+      v('p1a', 'p1', 'Azul', 'critical', 2),
+      v('p1b', 'p1', 'Verde', 'low_stock', 8),
+      v('p1c', 'p1', 'Vermelho', 'in_stock', 50),
+    ],
+    'critical',
+  ),
+  mkProduct(
+    'p2',
+    'Canecas',
+    'Globex',
+    [v('p2a', 'p2', 'Azul', 'low_stock', 9), v('p2b', 'p2', 'Verde', 'out_of_stock', 0)],
+    'low_stock',
+  ),
+  mkProduct(
+    'p3',
+    'Garrafas',
+    'Acme',
+    [v('p3a', 'p3', 'Azul', 'critical', 1), v('p3b', 'p3', 'Vermelho', 'in_stock', 200)],
+    'critical',
+  ),
+  mkProduct(
+    'p4',
+    'Garrafas',
+    'Globex',
+    [v('p4a', 'p4', 'Verde', 'out_of_stock', 0), v('p4b', 'p4', 'Vermelho', 'low_stock', 5)],
+    'out_of_stock',
+  ),
+  mkProduct(
+    'p5',
+    'Mochilas',
+    'Acme',
+    [v('p5a', 'p5', 'Azul', 'in_stock', 100), v('p5b', 'p5', 'Verde', 'critical', 3)],
+    'in_stock',
+  ),
 ];
 
-const idx = buildStockIndexes(products, []);
+const idx = buildStockIndexes(products);
 
 describe('Cross-filter KPI ↔ chip — critical & low_stock', () => {
   it('baseline (sem filtros) — todas as variações projetadas', () => {
@@ -180,12 +191,7 @@ describe('Cross-filter KPI ↔ chip — critical & low_stock', () => {
   });
 
   it('colorName=Azul — projeção real: apenas variações Azul restam', () => {
-    const out = applyStockFilters(
-      products,
-      { ...defaultStockFilters, colorName: 'Azul' },
-      [],
-      idx,
-    );
+    const out = applyStockFilters(products, { ...defaultStockFilters, colorName: 'Azul' }, [], idx);
     const c = recomputeChipCounts(out);
     // Azul: p1a(crit), p2a(low), p3a(crit), p5a(in)
     expect(c.critical).toBe(2);

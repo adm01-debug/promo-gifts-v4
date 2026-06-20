@@ -19,10 +19,14 @@ export interface QuoteHistoryEntry {
 const QUOTE_STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
   pending: 'Pendente',
+  pending_approval: 'Aguardando Aprovação',
   sent: 'Enviado',
+  viewed: 'Visualizado',
   approved: 'Aprovado',
+  converted: 'Convertido',
   rejected: 'Rejeitado',
   expired: 'Expirado',
+  cancelled: 'Cancelado',
 } as const;
 
 export function useQuoteHistory() {
@@ -66,7 +70,7 @@ export function useQuoteHistory() {
     if (!user) return false;
 
     try {
-      await supabase.from('quote_history').insert({
+      const { error } = await supabase.from('quote_history').insert({
         quote_id: quoteId,
         user_id: user.id,
         action,
@@ -76,6 +80,7 @@ export function useQuoteHistory() {
         new_value: options?.newValue || null,
         metadata: structuredClone(options?.metadata ?? {}) as unknown as Json,
       });
+      if (error) throw error;
       return true;
     } catch (err) {
       logger.error('Error adding history entry:', err);

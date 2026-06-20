@@ -19,7 +19,7 @@ function useCountUp(target: number, duration = 600) {
     const step = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - (1 - progress) ** 3;
       setValue(Math.round(from + (to - from) * eased));
       if (progress < 1) raf = requestAnimationFrame(step);
     };
@@ -154,7 +154,7 @@ export function StatCard({
             </p>
             <p
               data-testid="stock-stat-card-value"
-              className="truncate text-xl font-bold leading-tight tabular-nums tracking-tight sm:text-2xl"
+              className="truncate text-xl font-bold tabular-nums leading-tight tracking-tight sm:text-2xl"
             >
               {displayValue}
             </p>
@@ -195,7 +195,6 @@ export function StatCard({
           </div>
         </div>
       </div>
-
 
       {/* Click hint on hover */}
       {clickHint && onClick && (
