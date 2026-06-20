@@ -267,4 +267,142 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       expect(wSpread, `largura varia em ${cols} colunas: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
     });
   }
+
+  // Captura automática de screenshot + DOM html quando qualquer teste deste
+  // describe falhar — facilita o diff antes/depois nos artefatos do CI.
+  test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status === testInfo.expectedStatus) return;
+    try {
+      const vp = page.viewportSize();
+      const tag = `${testInfo.title.replace(/[^a-z0-9]+/gi, '_')}-${vp ? `${vp.width}x${vp.height}` : 'novp'}`;
+      await testInfo.attach(`failure-${tag}.png`, {
+        body: await page.screenshot({ fullPage: true }),
+        contentType: 'image/png',
+      });
+      await testInfo.attach(`failure-${tag}.html`, {
+        body: Buffer.from(await page.content()),
+        contentType: 'text/html',
+      });
+    } catch {
+      // best-effort — não mascarar a falha original
+    }
+  });
+
+  // Rodapé alinhado verticalmente após alternar entre 3/4/5 colunas.
+  test('rodapé permanece alinhado ao bottom após alternar 3/4/5 colunas', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await gotoAndSettle(page, '/reposicao');
+    await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
+
+    for (const cols of [3, 4, 5] as const) {
+      const option = page.getByTestId(`column-option-${cols}`);
+      if ((await option.count()) === 0) continue;
+      await option.click();
+      await page.waitForTimeout(400);
+
+      const items = page.locator(
+        'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
+      );
+      const count = await items.count();
+      if (count === 0) continue;
+      const sampleSize = Math.min(count, cols * 2);
+      const gaps: number[] = [];
+      for (let i = 0; i < sampleSize; i++) {
+        const card = items.nth(i);
+        const cBox = await card.boundingBox();
+        const footer = card
+          .locator('[data-testid="product-card-footer"], [data-testid$="-card-footer"]')
+          .first();
+        if ((await footer.count()) === 0 || !cBox) continue;
+        const fBox = await footer.boundingBox();
+        if (!fBox) continue;
+        gaps.push(cBox.y + cBox.height - (fBox.y + fBox.height));
+      }
+      if (gaps.length < 2) continue;
+      const spread = Math.max(...gaps) - Math.min(...gaps);
+      // eslint-disable-next-line no-console
+      console.log(`[card-parity:footer cols ${cols}] sample=${gaps.length} spread=${spread.toFixed(2)}px`);
+      expect(spread, `rodapé desalinhado em ${cols} colunas: ${spread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+      expect(Math.max(...gaps), `rodapé não ancora ao bottom em ${cols} colunas`).toBeLessThan(32);
+    }
+  });
+
+  // Viewports com deviceScaleFactor 0.9 e 1.1 — Playwright exige novo context.
+  for (const dsf of [0.9, 1.1] as const) {
+    test(`altura do card mantém paridade com deviceScaleFactor=${dsf}`, async ({ browser }) => {
+      const ctx = await browser.newContext({
+        viewport: { width: 1280, height: 800 },
+        deviceScaleFactor: dsf,
+        storageState: 'e2e/.auth/storageState.json',
+      });
+      const page = await ctx.newPage();
+      try {
+        await gotoAndSettle(page, '/reposicao');
+        await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
+        const items = page.locator(
+          'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
+        );
+        const count = await items.count();
+        if (count === 0) test.skip(true, `Sem reposições em dsf=${dsf}.`);
+        const sampleSize = Math.min(count, 6);
+        const heights: number[] = [];
+        for (let i = 0; i < sampleSize; i++) {
+          const b = await items.nth(i).boundingBox();
+          if (b) heights.push(b.height);
+        }
+        const spread = Math.max(...heights) - Math.min(...heights);
+        // eslint-disable-next-line no-console
+        console.log(
+          `[card-parity:dsf ${dsf}] min=${Math.min(...heights)} max=${Math.max(...heights)} spread=${spread.toFixed(2)}px`,
+        );
+        // Em CSS-px a altura permanece 430 independente do dsf.
+        expect(spread, `spread=${spread.toFixed(2)}px excede ${TOL_PX}px em dsf=${dsf}`).toBeLessThanOrEqual(TOL_PX);
+        expect(Math.abs(Math.min(...heights) - 430), `altura ≠ 430px em dsf=${dsf}`).toBeLessThanOrEqual(TOL_PX);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+
+  // Modo de visualização em LISTA — só executa se o toggle existir na página.
+  test('modo lista (se existir) — dimensões do card permanecem consistentes', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await gotoAndSettle(page, '/reposicao');
+    await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
+
+    const listToggle = page
+      .locator(
+        '[data-testid="view-mode-list"], [data-testid="viewmode-list"], [aria-label="Visualização em lista"], [aria-label="Lista"]',
+      )
+      .first();
+    if ((await listToggle.count()) === 0) {
+      test.skip(true, 'Toggle de modo lista não encontrado em /reposicao.');
+    }
+    await listToggle.click();
+    await page.waitForTimeout(400);
+
+    const items = page.locator(
+      'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
+    );
+    const count = await items.count();
+    if (count === 0) test.skip(true, 'Sem reposições no modo lista.');
+    const sampleSize = Math.min(count, 6);
+    const heights: number[] = [];
+    const widths: number[] = [];
+    for (let i = 0; i < sampleSize; i++) {
+      const b = await items.nth(i).boundingBox();
+      if (b) {
+        heights.push(b.height);
+        widths.push(b.width);
+      }
+    }
+    const hSpread = Math.max(...heights) - Math.min(...heights);
+    const wSpread = Math.max(...widths) - Math.min(...widths);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[card-parity:list] sample=${sampleSize} hSpread=${hSpread.toFixed(2)}px wSpread=${wSpread.toFixed(2)}px`,
+    );
+    expect(hSpread, `altura varia no modo lista: ${hSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+    expect(wSpread, `largura varia no modo lista: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+  });
 });
