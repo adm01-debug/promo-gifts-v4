@@ -39,6 +39,8 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   limit?: number;
   offset?: number;
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  /** Conflict target column(s) for `upsert` (e.g. 'sku'). Defaults to the PK when omitted. */
+  onConflict?: string;
   /** AbortSignal — when aborted, the underlying HTTP request is cancelled. */
   signal?: AbortSignal;
 }
