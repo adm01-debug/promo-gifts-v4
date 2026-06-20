@@ -334,6 +334,15 @@ export default [
       'yoda': 'error',
       'no-throw-literal': 'error',
       'no-eq-null': 'error',
+      // Batch 91: 8 zero-violation rules (require-unicode-regexp 999 violations, no-await-in-loop 11 violations)
+      'for-direction': 'error',
+      'getter-return': 'error',
+      'no-async-promise-executor': 'error',
+      'no-misleading-character-class': 'error',
+      'no-implicit-globals': 'error',
+      'prefer-promise-reject-errors': 'error',
+      'no-unsafe-optional-chaining': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
