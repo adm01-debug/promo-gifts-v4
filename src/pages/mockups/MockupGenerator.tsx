@@ -117,7 +117,8 @@ export default function MockupGenerator() {
   });
 
   const handleTechniqueSelect = useCallback(
-    (t: unknown) => technique.handleTechniqueChange(t as MockupTechnique | null),
+    (t: { id: string; name: string; code: string | null } | null) =>
+      technique.handleTechniqueChange(t as unknown as MockupTechnique | null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [technique.handleTechniqueChange],
   );

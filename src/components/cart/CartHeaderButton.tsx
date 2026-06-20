@@ -326,7 +326,7 @@ export function CartHeaderButton() {
                                   <TooltipTrigger asChild>
                                     <button
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                                      onClick={(e) => {
+                                      onClick={async (e) => {
                                         e.stopPropagation();
                                         const snapshot = cart.items.map((item) => ({
                                           product_id: item.product_id,
@@ -338,13 +338,18 @@ export function CartHeaderButton() {
                                           color_name: item.color_name || undefined,
                                           color_hex: item.color_hex || undefined,
                                           notes: item.notes ?? undefined,
+                                          sort_order: item.sort_order ?? undefined,
                                         }));
-                                        clearCart(cart.id);
-                                        showUndoToast({
-                                          title: 'Carrinho limpo',
-                                          description: `${snapshot.length} ${snapshot.length === 1 ? 'item removido' : 'itens removidos'}`,
-                                          onUndo: () => restoreItems(cart.id, snapshot),
-                                        });
+                                        try {
+                                          await clearCart(cart.id);
+                                          showUndoToast({
+                                            title: 'Carrinho limpo',
+                                            description: `${snapshot.length} ${snapshot.length === 1 ? 'item removido' : 'itens removidos'}`,
+                                            onUndo: () => restoreItems(cart.id, snapshot),
+                                          });
+                                        } catch {
+                                          // clearCart already shows its own error toast
+                                        }
                                       }}
                                     >
                                       <Eraser className="h-3.5 w-3.5" />

@@ -224,6 +224,7 @@ export function useQuotes() {
           client_email: original.client_email,
           client_phone: original.client_phone,
           client_company: original.client_company,
+          client_cnpj: original.client_cnpj ?? undefined,
           status: 'draft',
           discount_percent: original.discount_percent,
           discount_amount: original.discount_amount,
