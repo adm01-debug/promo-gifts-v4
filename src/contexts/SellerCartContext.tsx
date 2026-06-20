@@ -3,7 +3,15 @@
  * Expõe dados e operações do carrinho em toda a aplicação
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import {
   useSellerCarts,
   type SellerCart,
@@ -275,36 +283,58 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [restoreItemsMutation],
   );
 
-  return (
-    <SellerCartContext.Provider
-      value={{
-        carts,
-        activeCart,
-        activeCartId: resolvedActiveCartId,
-        isLoading,
-        totalItems,
-        canCreateCart,
-        setActiveCartId,
-        createCart,
-        deleteCart,
-        addToActiveCart,
-        removeItem,
-        updateItemQuantity,
-        updateItemNotes,
-        updateItemSortOrder,
-        updateCartNotes,
-        flushCartNotes,
-        updateCartStatus,
-        duplicateCart: duplicateCartFn,
-        moveItemToCart,
-        duplicateItemToCart,
-        clearCart,
-        restoreItems,
-      }}
-    >
-      {children}
-    </SellerCartContext.Provider>
+  const ctxValue = useMemo(
+    () => ({
+      carts,
+      activeCart,
+      activeCartId: resolvedActiveCartId,
+      isLoading,
+      totalItems,
+      canCreateCart,
+      setActiveCartId,
+      createCart,
+      deleteCart,
+      addToActiveCart,
+      removeItem,
+      updateItemQuantity,
+      updateItemNotes,
+      updateItemSortOrder,
+      updateCartNotes,
+      flushCartNotes,
+      updateCartStatus,
+      duplicateCart: duplicateCartFn,
+      moveItemToCart,
+      duplicateItemToCart,
+      clearCart,
+      restoreItems,
+    }),
+    [
+      carts,
+      activeCart,
+      resolvedActiveCartId,
+      isLoading,
+      totalItems,
+      canCreateCart,
+      setActiveCartId,
+      createCart,
+      deleteCart,
+      addToActiveCart,
+      removeItem,
+      updateItemQuantity,
+      updateItemNotes,
+      updateItemSortOrder,
+      updateCartNotes,
+      flushCartNotes,
+      updateCartStatus,
+      duplicateCartFn,
+      moveItemToCart,
+      duplicateItemToCart,
+      clearCart,
+      restoreItems,
+    ],
   );
+
+  return <SellerCartContext.Provider value={ctxValue}>{children}</SellerCartContext.Provider>;
 }
 
 /** useSellerCartContext — lança erro se o contexto estiver ausente (uso normal). */

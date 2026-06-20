@@ -54,7 +54,7 @@ const FIXED_ORG: Organization = {
 const noop = () => {};
 const noopAsync = async () => {};
 
-const OrganizationContext = createContext<OrganizationContextType>({
+const FIXED_VALUE: OrganizationContextType = {
   organizations: [FIXED_ORG],
   currentOrg: FIXED_ORG,
   currentRole: 'owner',
@@ -62,23 +62,13 @@ const OrganizationContext = createContext<OrganizationContextType>({
   switchOrganization: noop,
   createOrganization: async () => FIXED_ORG,
   refetch: noopAsync,
-});
+};
+
+const OrganizationContext = createContext<OrganizationContextType>(FIXED_VALUE);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   return (
-    <OrganizationContext.Provider
-      value={{
-        organizations: [FIXED_ORG],
-        currentOrg: FIXED_ORG,
-        currentRole: 'owner',
-        isLoading: false,
-        switchOrganization: noop,
-        createOrganization: async () => FIXED_ORG,
-        refetch: noopAsync,
-      }}
-    >
-      {children}
-    </OrganizationContext.Provider>
+    <OrganizationContext.Provider value={FIXED_VALUE}>{children}</OrganizationContext.Provider>
   );
 }
 
