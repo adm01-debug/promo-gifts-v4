@@ -647,6 +647,7 @@ export const ProductTableView = memo(
                       <img
                         src={thumbUrl}
                         alt=""
+                        data-testid="product-image"
                         className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
                         loading="lazy"
                       />
