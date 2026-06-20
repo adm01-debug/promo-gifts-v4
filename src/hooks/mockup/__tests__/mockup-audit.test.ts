@@ -1330,3 +1330,29 @@ describe('Analise estatica — LogoPreviewCanvas.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — GenerateButton.tsx (reduced-motion)
+// =====================================================================
+
+describe('Analise estatica — GenerateButton.tsx (reduced-motion)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/GenerateButton.tsx');
+  });
+
+  describe('prefers-reduced-motion: suprime animacoes decorativas', () => {
+    it('importa useReducedMotion para respeitar preferencia do SO', () => {
+      expect(src).toContain('useReducedMotion');
+    });
+    it('hover e tap scale sao suprimidos quando reducedMotion esta ativo', () => {
+      expect(src).toContain('!reducedMotion ? { scale: 1.02 }');
+    });
+    it('pulso de glow nao anima quando reducedMotion esta ativo', () => {
+      expect(src).toContain('reducedMotion ? { opacity: 0.5 }');
+    });
+    it('transicao de pulso tem duration zero quando reducedMotion esta ativo', () => {
+      expect(src).toContain('reducedMotion ? { duration: 0 }');
+    });
+  });
+});
