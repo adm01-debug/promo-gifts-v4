@@ -50,7 +50,7 @@ describe('useCategoryDescendants', () => {
     let renders = 0;
     const { result } = renderHook(() => {
       renders++;
-      if (renders > 50) throw new Error('RENDER_LOOP: ' + renders);
+      if (renders > 50) throw new Error(`RENDER_LOOP: ${renders}`);
       return useCategoryDescendants([]); // novo array a cada render
     });
     expect(result.current.descendantIds).toEqual([]);
@@ -59,14 +59,15 @@ describe('useCategoryDescendants', () => {
 
   it('mesma chave (ordem diferente) nao re-busca', async () => {
     mockInvoke.mockResolvedValue({ data: { success: true, data: ['d1'] }, error: null });
-    const { result, rerender } = renderHook(
-      ({ ids }) => useCategoryDescendants(ids),
-      { initialProps: { ids: ['cat-1', 'cat-2'] } }
-    );
+    const { result, rerender } = renderHook(({ ids }) => useCategoryDescendants(ids), {
+      initialProps: { ids: ['cat-1', 'cat-2'] },
+    });
     await waitFor(() => expect(result.current.descendantIds.length).toBe(1));
     const before = mockInvoke.mock.calls.length;
     rerender({ ids: ['cat-2', 'cat-1'] }); // mesma chave ordenada
-    await new Promise((r) => setTimeout(r, 80));
+    await new Promise((r) => {
+      setTimeout(r, 80);
+    });
     expect(mockInvoke.mock.calls.length).toBe(before);
   });
 
