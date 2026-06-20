@@ -146,12 +146,18 @@ export function useSupplierFiscalData(
             'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
           )
           .eq('supplier_id', supplierId)
-          .in('variant_id', variantIds.slice(0, 5))
-          .limit(1);
+          .in('variant_id', variantIds);
 
         if (vssResult.data?.length) {
-          vss = vssResult.data[0] as VSSRecord;
-          matchedVariantId = (vss.variant_id as string) || variantIds[0];
+          // Pick the VSS record whose variant appears earliest in the priority order
+          const vssByVariantId = new Map<string, VSSRecord>(
+            vssResult.data.map((r) => [(r as VSSRecord).variant_id as string, r as VSSRecord]),
+          );
+          const matched = variantIds.find((vid) => vssByVariantId.has(vid));
+          if (matched) {
+            vss = vssByVariantId.get(matched) as VSSRecord;
+            matchedVariantId = matched;
+          }
         }
 
         // Keep first variant ID for potential new VSS creation

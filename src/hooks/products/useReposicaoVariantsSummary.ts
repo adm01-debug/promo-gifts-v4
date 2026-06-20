@@ -65,12 +65,11 @@ interface RpcRow {
 const EMPTY: VariantsSummaryByProduct = new Map();
 
 function isRpcRow(obj: unknown): obj is RpcRow {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'product_id' in obj &&
-    typeof (obj as Record<string, unknown>).product_id === 'string'
-  );
+  if (typeof obj !== 'object' || obj === null) return false;
+  const row = obj as Record<string, unknown>;
+  if (typeof row.product_id !== 'string') return false;
+  if (!(row.variants_summary === null || Array.isArray(row.variants_summary))) return false;
+  return true;
 }
 
 /**

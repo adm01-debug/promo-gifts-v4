@@ -55,7 +55,9 @@ function clearDedupTimer() {
 }
 
 // Clear the dedup timer on page unload so it doesn't fire in HMR teardown.
+// removeEventListener before add makes this idempotent on HMR re-evaluation.
 if (typeof window !== 'undefined') {
+  window.removeEventListener('beforeunload', clearDedupTimer);
   window.addEventListener('beforeunload', clearDedupTimer);
 }
 

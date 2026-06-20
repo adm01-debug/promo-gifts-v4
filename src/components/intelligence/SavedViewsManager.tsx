@@ -28,14 +28,12 @@ interface SavedView {
 }
 
 function isSavedView(obj: unknown): obj is SavedView {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    'name' in obj &&
-    typeof (obj as Record<string, unknown>).id === 'string' &&
-    typeof (obj as Record<string, unknown>).name === 'string'
-  );
+  if (typeof obj !== 'object' || obj === null) return false;
+  const row = obj as Record<string, unknown>;
+  if (typeof row.id !== 'string' || typeof row.name !== 'string') return false;
+  if (typeof row.created_at !== 'string') return false;
+  if (typeof row.filters !== 'object' || row.filters === null) return false;
+  return Object.values(row.filters as Record<string, unknown>).every((v) => typeof v === 'string');
 }
 
 export function SavedViewsManager() {
