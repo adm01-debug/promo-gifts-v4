@@ -62,6 +62,12 @@ interface ProductColorSwatchesProps {
   onSelect?: (color: ColorDotLike, index: number) => void;
   /** Nome da cor atualmente selecionada — recebe ring de destaque. */
   selectedName?: string | null;
+  /**
+   * Handler opcional de "limpar seleção" (botão "Todos"). Quando definido E
+   * existir `selectedName`, é renderizado um chip inline ao lado das bolinhas
+   * que dispara o handler. stopPropagation já aplicado.
+   */
+  onClear?: () => void;
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
