@@ -144,7 +144,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       const cellH = (pageH - margin * 2 - 20) / rowsPerPage;
 
       // Strip non-Latin-1 chars for jsPDF Helvetica (Latin-1 only)
-      const sanitize = (s: string) => s.replace(/[^\x00-\xFF]/g, '?');
+      const sanitize = (s: string) => s.replace(/[^ -ÿ]/g, '?');
       // Header
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
@@ -211,7 +211,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
         if (variant) doc.text(`Cor: ${variant}`, x + 4, y + cellH * 0.6 + 28);
         if (note) {
           // Strip non-Latin-1 chars (jsPDF built-in Helvetica is Latin-1 only)
-          const safeNote = note.replace(/[^\x00-\xFF]/g, '?');
+          const safeNote = note.replace(/[^ -ÿ]/g, '?');
           const noteLines = doc.splitTextToSize(`Nota: ${safeNote}`, cellW - 8).slice(0, 2);
           doc.text(noteLines, x + 4, y + cellH * 0.6 + 33);
         }
