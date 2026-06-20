@@ -42,9 +42,22 @@ function saveToStorage(items: RecentlyViewedItem[]) {
   }
 }
 
-// Debounce tracking to prevent duplicate rapid additions
+// Debounce tracking to prevent duplicate rapid additions (module-level — survives re-renders)
 let lastAddedId: string | null = null;
 let lastAddedTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearDedupTimer() {
+  if (lastAddedTimer !== null) {
+    clearTimeout(lastAddedTimer);
+    lastAddedTimer = null;
+  }
+  lastAddedId = null;
+}
+
+// Clear the dedup timer on page unload so it doesn't fire in HMR teardown.
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', clearDedupTimer);
+}
 
 export const useRecentlyViewedStore = create<RecentlyViewedStore>((set, get) => {
   const initial = loadFromStorage();
