@@ -105,6 +105,7 @@ export function useFavoriteQuickAdd() {
   const removeFromAll = useCallback(
     async (productId: string) => {
       if (!user) return;
+      const listCount = membership.get(productId)?.size ?? 0;
       try {
         const { error } = await supabase
           .from('favorite_items')
@@ -116,13 +117,16 @@ export function useFavoriteQuickAdd() {
         qc.invalidateQueries({ queryKey: ['favorite-membership'] });
         qc.invalidateQueries({ queryKey: ['favorite-items'] });
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
+        if (listCount > 1) {
+          toast.info(`Removido de ${listCount} listas simultaneamente`);
+        }
       } catch (e) {
         logger.warn('[favoriteQuickAdd] remove failed', e);
         toast.error('Não foi possível remover dos favoritos');
         // Do NOT toggle — deletion failed, keep local state consistent with DB
       }
     },
-    [user, qc, isFavorite, toggleFavorite],
+    [user, membership, qc, isFavorite, toggleFavorite],
   );
 
   /** Cria lista nova e adiciona o produto nela. Faz rollback da lista se addToList falhar. */
