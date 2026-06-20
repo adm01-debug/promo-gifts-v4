@@ -252,6 +252,16 @@ export default [
       'no-inner-declarations': 'error',
       'no-invalid-regexp': 'error',
       'no-irregular-whitespace': 'error',
+      // Batch 84: 9 zero-violation rules
+      'no-obj-calls': 'error',
+      'no-prototype-builtins': 'error',
+      'no-sparse-arrays': 'error',
+      'no-template-curly-in-string': 'error',
+      'no-unexpected-multiline': 'error',
+      'no-unsafe-negation': 'error',
+      'use-isnan': 'error',
+      'valid-typeof': 'error',
+      'dot-notation': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
