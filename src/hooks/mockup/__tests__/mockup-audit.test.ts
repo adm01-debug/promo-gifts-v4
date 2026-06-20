@@ -1194,3 +1194,58 @@ describe('Analise estatica — TemplatePreview.tsx (type=button)', () => {
     });
   });
 });
+
+// =====================================================================
+// Analise estatica — MockupWizard e ArtFileUpload
+// =====================================================================
+
+describe('Analise estatica — MockupWizard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupWizard.tsx');
+  });
+
+  describe('a11y — etapas clicaveis respondem a Enter e Space', () => {
+    it('onKeyDown trata Enter para navegar a etapa', () => {
+      expect(src).toContain("e.key === 'Enter'");
+    });
+    it('onKeyDown trata Space para navegar a etapa (ARIA spec)', () => {
+      expect(src).toContain("e.key === ' '");
+    });
+    it('Enter e Space estao no mesmo bloco condicional', () => {
+      expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+    });
+    it('etapa clicavel tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label={isClickable');
+    });
+  });
+});
+
+describe('Analise estatica — ArtFileUpload.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  describe('a11y — input de arquivo tem aria-label', () => {
+    it('input type=file tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Upload de arquivos de arte vetorial"');
+    });
+  });
+});
+
+describe('Analise estatica — MockupLightbox.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupLightbox.tsx');
+  });
+
+  describe('a11y — botao de fechar lightbox com label contextual', () => {
+    it('botao de fechar usa "Fechar lightbox" (nao generico "Fechar")', () => {
+      expect(src).toContain('aria-label="Fechar lightbox"');
+    });
+    it('nao tem aria-label generico "Fechar" sem contexto', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+  });
+});

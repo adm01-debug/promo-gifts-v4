@@ -111,7 +111,7 @@ export function MockupLightbox({
                   variant="ghost"
                   className="h-8 w-8 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={handleClose}
-                  aria-label="Fechar"
+                  aria-label="Fechar lightbox"
                 >
                   <X className="h-4 w-4" />
                 </Button>

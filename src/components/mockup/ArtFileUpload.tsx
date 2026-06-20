@@ -203,6 +203,7 @@ export function ArtFileUpload({
           multiple
           accept={[...ACCEPTED_EXTENSIONS, ...ACCEPTED_MIME].join(',')}
           className="hidden"
+          aria-label="Upload de arquivos de arte vetorial"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
         />
         {isUploading ? (

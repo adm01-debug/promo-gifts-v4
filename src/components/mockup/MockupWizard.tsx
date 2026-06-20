@@ -131,7 +131,13 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
                   onClick={() => isClickable && onStepClick(step.id)}
                   role={isClickable ? 'button' : undefined}
                   tabIndex={isClickable ? 0 : undefined}
-                  onKeyDown={(e) => isClickable && e.key === 'Enter' && onStepClick(step.id)}
+                  aria-label={isClickable ? `Ir para etapa ${step.id}: ${step.label}` : undefined}
+                  onKeyDown={(e) => {
+                    if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      onStepClick(step.id);
+                    }
+                  }}
                 >
                   {/* Step Circle */}
                   <div
