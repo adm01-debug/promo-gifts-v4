@@ -244,19 +244,6 @@ export const ProductListItem = memo(
       }
     };
 
-    const getStockLabel = (status: string) => {
-      switch (status) {
-        case 'in-stock':
-          return 'Em estoque';
-        case 'low-stock':
-          return 'Estoque baixo';
-        case 'out-of-stock':
-          return 'Estoque zerado';
-        default:
-          return 'Em estoque';
-      }
-    };
-
     const handleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       if (
@@ -603,7 +590,6 @@ export const ProductListItem = memo(
               >
                 <Package className="h-2.5 w-2.5" aria-hidden="true" />
                 {displayStock.toLocaleString('pt-BR')} Unid
-
               </span>
             </div>
           </div>
@@ -627,10 +613,7 @@ export const ProductListItem = memo(
               )}
             >
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
-              <span className="whitespace-nowrap">
-                {displayStock.toLocaleString('pt-BR')} Unid
-              </span>
-
+              <span className="whitespace-nowrap">{displayStock.toLocaleString('pt-BR')} Unid</span>
             </span>
           </div>
 
@@ -673,11 +656,8 @@ export const ProductListItem = memo(
                 }}
                 onClear={() => setUserSelectedColorName(null)}
               />
-
             </div>
           </div>
-
-
 
           {/* Price column — right-aligned, always visible */}
           <div
