@@ -3,7 +3,7 @@
  * Persiste no banco de dados, máx 3 carrinhos simultâneos
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -611,6 +611,18 @@ export function useSellerCarts() {
     },
   });
 
+  const clearCart = useCallback(
+    async (cartId: string) => {
+      const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
+      if (error) {
+        toast.error('Não foi possível limpar o carrinho', { description: sanitizeError(error) });
+        throw error;
+      }
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    [queryClient],
+  );
+
   return {
     carts,
     isLoading: cartsQuery.isLoading,
@@ -629,11 +641,7 @@ export function useSellerCarts() {
     moveItemToCart,
     duplicateItemToCart,
     restoreItems,
-    clearCart: async (cartId: string) => {
-      const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-    },
+    clearCart,
     refetch: cartsQuery.refetch,
   };
 }

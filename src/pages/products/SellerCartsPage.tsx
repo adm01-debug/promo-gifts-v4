@@ -300,9 +300,7 @@ function SellerCartsContent() {
   // (charCodeAt(0) alone gives only 16 values for hex UUIDs, skewing to 4 buckets)
   const notesPlaceholder = useMemo(() => {
     if (!s.activeCart) return NOTES_PLACEHOLDERS[0];
-    const hash = s.activeCart.id
-      .split('')
-      .reduce((acc, ch) => (acc ^ ch.charCodeAt(0)) & 0xff, 0);
+    const hash = s.activeCart.id.split('').reduce((acc, ch) => (acc ^ ch.charCodeAt(0)) & 0xff, 0);
     return NOTES_PLACEHOLDERS[hash % NOTES_PLACEHOLDERS.length];
   }, [s.activeCart]);
 
@@ -327,12 +325,13 @@ function SellerCartsContent() {
     [s],
   );
 
+  const { canCreateCart, duplicateCart } = s;
   const handleDuplicateCart = useCallback(
     (id: string) => {
-      if (s.canCreateCart) s.duplicateCart(id);
+      if (canCreateCart) duplicateCart(id);
       else toast.error('Limite de 3 carrinhos atingido');
     },
-    [s.canCreateCart, s.duplicateCart],
+    [canCreateCart, duplicateCart],
   );
 
   const cartTableData = useMemo(() => {
@@ -396,7 +395,11 @@ function SellerCartsContent() {
             disabled={!s.canCreateCart}
             size="sm"
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
-            title={!s.canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+            title={
+              !s.canCreateCart
+                ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+                : undefined
+            }
           >
             <Plus className="h-3.5 w-3.5" /> Novo Carrinho
           </Button>
@@ -527,12 +530,7 @@ function SellerCartsContent() {
                     ).map(([key, cfg]) => (
                       <SelectItem key={key} value={key} className="rounded-lg py-2">
                         <span className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              'h-2 w-2 rounded-full shadow-sm',
-                              cfg.bg,
-                            )}
-                          />
+                          <span className={cn('h-2 w-2 rounded-full shadow-sm', cfg.bg)} />
                           <span className="font-medium">{cfg.label}</span>
                         </span>
                       </SelectItem>
@@ -661,12 +659,18 @@ function SellerCartsContent() {
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
                               {visibleColumns.color && (
-                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>Cor</th>
+                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
+                                  Cor
+                                </th>
                               )}
-                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Qtd</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
+                                Qtd
+                              </th>
                               {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
                               {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
-                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>Ações</th>
+                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
+                                Ações
+                              </th>
                             </tr>
                           </thead>
                           <tbody>

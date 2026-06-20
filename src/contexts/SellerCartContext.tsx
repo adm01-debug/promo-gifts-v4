@@ -3,7 +3,15 @@
  * Expõe dados e operações do carrinho em toda a aplicação
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import {
   useSellerCarts,
   type SellerCart,
@@ -88,14 +96,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  const resolvedActiveCartId =
-    activeCartId && carts.find((c) => c.id === activeCartId)
-      ? activeCartId
-      : carts.length > 0
-        ? carts[0].id
-        : null;
+  const resolvedActiveCartId = useMemo(
+    () =>
+      activeCartId && carts.find((c) => c.id === activeCartId)
+        ? activeCartId
+        : carts.length > 0
+          ? carts[0].id
+          : null,
+    [activeCartId, carts],
+  );
 
-  const activeCart = carts.find((c) => c.id === resolvedActiveCartId) || null;
+  const activeCart = useMemo(
+    () => carts.find((c) => c.id === resolvedActiveCartId) ?? null,
+    [carts, resolvedActiveCartId],
+  );
 
   // Persiste apenas selecoes explicitas (nao-nulas) sob a chave do usuario. Nao
   // persistir null impede o clobber do valor recem-hidratado no primeiro render.
@@ -117,7 +131,10 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           toast.success(`Carrinho criado para ${input.company_name}`);
         }
         return result;
-      } catch {
+      } catch (err) {
+        toast.error('Erro ao criar carrinho', {
+          description: err instanceof Error ? err.message : 'Tente novamente',
+        });
         return undefined;
       }
     },
