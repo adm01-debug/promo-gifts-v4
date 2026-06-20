@@ -370,7 +370,7 @@ export const ProductListItem = memo(
       <>
         <article
           className={cn(
-            'group relative flex h-[72px] items-center gap-3 px-3 py-2 sm:h-[88px] sm:gap-4 sm:px-4 sm:py-2.5',
+            'group relative flex min-h-[72px] items-center gap-3 px-3 py-2 sm:min-h-[96px] sm:gap-4 sm:px-4 sm:py-2.5',
             'cursor-pointer rounded-xl bg-card',
             'transition-all duration-200 ease-out',
             'touch-manipulation active:scale-[0.997]',
@@ -583,33 +583,46 @@ export const ProductListItem = memo(
               </Badge>
             )}
 
-            {/* SKU + Stock row — SKU em destaque, antes do estoque */}
-            <div className="mt-0.5 flex items-center gap-2">
-              {product.sku && (
+            {/* SKU row */}
+            {product.sku && (
+              <div className="mt-0.5 flex items-center gap-2">
                 <span className="rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide text-primary sm:text-xs">
                   {product.sku}
                 </span>
-              )}
-              <span
-                className={cn(
-                  'flex items-center gap-1 text-[10px] font-medium sm:text-xs',
-                  getStockColor(displayStatus),
-                )}
-              >
-                <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
-              </span>
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Center — full color swatches, sempre iniciam na mesma posição (esquerda) */}
-          <div className="hidden min-w-0 flex-1 items-center justify-start pl-4 pr-2 md:flex">
+          {/* Estoque column — entre Produto e Cores */}
+          <div className="hidden shrink-0 flex-col items-start justify-center md:flex md:w-[150px]">
+            <span className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              Estoque
+            </span>
+            <span
+              className={cn(
+                'flex items-center gap-1 text-[11px] font-medium sm:text-xs',
+                getStockColor(displayStatus),
+              )}
+            >
+              <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+              <span className="whitespace-nowrap">
+                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
+              </span>
+            </span>
+          </div>
+
+          {/* Cores column — todas as cores, sem clipping */}
+          <div className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-3 pr-2 md:flex">
+            <span className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              Cores
+            </span>
             <ProductColorSwatches
               colors={product.colors}
               max={product.colors?.length || 0}
               size="sm"
+              wrap
               hideWhenEmpty
-              className="flex-wrap justify-start"
+              className="justify-start"
               selectedName={activeColorName}
               onSelect={(c) => {
                 setUserSelectedColorName((prev) =>
@@ -620,7 +633,10 @@ export const ProductListItem = memo(
           </div>
 
           {/* Price column — right-aligned, always visible */}
-          <div className="min-w-[80px] shrink-0 text-right sm:min-w-[100px]">
+          <div className="flex min-w-[90px] shrink-0 flex-col items-end text-right sm:min-w-[110px]">
+            <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              A partir de
+            </span>
             <div className="flex items-center justify-end gap-1.5">
               <PriceFreshnessBadge
                 priceUpdatedAt={product.priceUpdatedAt}
