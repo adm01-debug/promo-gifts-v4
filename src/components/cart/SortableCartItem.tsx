@@ -207,7 +207,7 @@ export const SortableCartItem = memo(
                   <button
                     data-testid="cart-item-menu-trigger"
                     className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:text-primary"
-                    aria-label="Mais opções"
+                    aria-label={`Mais opções para ${item.product_name}`}
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </button>
