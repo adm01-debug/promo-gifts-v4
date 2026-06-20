@@ -44,7 +44,8 @@ export interface ColorDotLike {
 
 interface ProductColorSwatchesProps {
   colors: readonly ColorDotLike[] | undefined;
-  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5. */
+  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5.
+   *  Ignorado quando `wrap` é true (exibe todas as cores). */
   max?: number;
   /** Tamanho do dot. Ver tabela na JSDoc do arquivo. */
   size?: 'xs' | 'sm' | 'md';
@@ -52,10 +53,12 @@ interface ProductColorSwatchesProps {
   /** Esconde quando vazio. Default true. */
   hideWhenEmpty?: boolean;
   /**
-   * Handler disparado ao clicar/teclar Enter numa bolinha.
-   * Recebe a cor selecionada. Sempre chamado com `event.stopPropagation()`
-   * já aplicado (evita ativar o onClick do card pai).
+   * Quando true: exibe TODAS as cores em múltiplas linhas (flex-wrap), sem
+   * truncar nem mostrar chip "+N". Usado nos cards de grid de Catálogo,
+   * Super Filtro, Novidades e Reposição. Default false (legado).
    */
+  wrap?: boolean;
+  /** Handler de seleção. Recebe a cor e o índice. stopPropagation já aplicado. */
   onSelect?: (color: ColorDotLike, index: number) => void;
   /** Nome da cor atualmente selecionada — recebe ring de destaque. */
   selectedName?: string | null;
