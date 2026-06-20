@@ -4,6 +4,8 @@
  * rest-native layer used to own: table aliases, PT↔EN column remapping (filters
  * + returned rows), `_search` → `.ilike`, `.range()` pagination, the empty-`in()`
  * short-circuit and count mode.
+ *
+ * @see src/lib/db/postgrest.ts
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -18,7 +20,7 @@ let nextResult: { data: unknown[] | null; error: { message: string } | null; cou
 vi.mock('@/integrations/supabase/client', () => {
   const CHAIN_METHODS = [
     'select', 'eq', 'in', 'is', 'gte', 'lte', 'gt', 'lt', 'like', 'ilike', 'neq',
-    'not', 'order', 'range', 'insert', 'update', 'delete', 'upsert', 'or', 'limit',
+    'not', 'order', 'range', 'insert', 'update', 'delete', 'upsert', 'or', 'textSearch',
   ];
   return {
     supabase: {
@@ -116,10 +118,12 @@ describe('postgrest helper — PT↔EN column remap', () => {
 });
 
 describe('postgrest helper — _search', () => {
-  it('translates _search into an ilike on the table search column', async () => {
+  it('translates _search into a textSearch on the search_vector column (FTS)', async () => {
     await dbInvoke({ table: 'products', operation: 'select', filters: { _search: 'caneta' } });
-    // products has multiple search columns (name, sku, supplier_reference) → .or() is used
-    expect(callArgs('v_products_public', 'or')).toContainEqual(['name.ilike.*caneta*,sku.ilike.*caneta*,supplier_reference.ilike.*caneta*']);
+    const textSearchCalls = callArgs('v_products_public', 'textSearch');
+    expect(textSearchCalls.length).toBeGreaterThan(0);
+    expect(textSearchCalls[0][0]).toBe('search_vector');
+    expect(textSearchCalls[0][1]).toBe('caneta');
   });
 });
 

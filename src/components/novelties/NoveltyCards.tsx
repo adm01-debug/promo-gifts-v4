@@ -27,7 +27,7 @@ import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
-import { StockBadge, getStockStatus } from '@/components/inventory/StockBadge';
+import { StockBadge } from '@/components/inventory/StockBadge';
 
 const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -301,7 +301,7 @@ export const NoveltyGridCard = memo(
                 <div
                   data-testid="novelty-card-stock-skeleton"
                   aria-label="Carregando estoque"
-                  className="h-4 w-12 animate-pulse rounded bg-muted"
+                  className="h-4 w-16 animate-pulse rounded bg-muted"
                 />
               </>
             ) : (
@@ -326,19 +326,17 @@ export const NoveltyGridCard = memo(
                 ) : (
                   <span
                     data-testid="novelty-card-price-unavailable"
-                    className="text-xs text-muted-foreground"
+                    className="text-xs italic text-muted-foreground"
                   >
                     Sob consulta
                   </span>
                 )}
-                {product.stock_quantity !== null && product.stock_quantity !== undefined && (
-                  <StockBadge
-                    status={getStockStatus(product.stock_quantity)}
-                    quantity={product.stock_quantity}
-                    showQuantity
-                    size="sm"
-                  />
-                )}
+                <StockBadge
+                  status={product.stock_status}
+                  quantity={product.stock_quantity}
+                  showQuantity
+                  size="sm"
+                />
               </>
             )}
           </div>

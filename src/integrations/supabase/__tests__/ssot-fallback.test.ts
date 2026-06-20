@@ -91,7 +91,6 @@ describe('SSOT Supabase — fallback em runtime', () => {
       // Fallback: valida via supabase client interno
       const client = (mod as unknown as { supabase?: { supabaseUrl?: string } }).supabase;
       expect(client?.supabaseUrl ?? '').toContain(CANONICAL);
-
     }
   });
 

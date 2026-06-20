@@ -164,7 +164,8 @@ describe('fetchPaginatedFromBridge', () => {
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
     expect(rows.map((r) => r.id)).toEqual(['a0', 'a1', 'b0', 'b1']);
-    // Keyset pagination breaks early when page.length < pageSize — no extra round-trip.
+    // Early-break optimization: when totalCount is known and all records are fetched,
+    // no extra round-trip is issued to confirm empty page.
     expect(calls.filter((c) => c.method === 'select')).toHaveLength(2);
   });
 

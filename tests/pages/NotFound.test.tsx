@@ -30,9 +30,10 @@ describe('NotFound Page', () => {
   it('logs 404 error on mount', () => {
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     renderWithProviders(<NotFound />, { route: '/bad-route' });
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('404')
+    const had404 = consoleSpy.mock.calls.some((args) =>
+      args.some((a) => typeof a === 'string' && a.includes('404'))
     );
+    expect(had404).toBe(true);
     consoleSpy.mockRestore();
   });
 });

@@ -50,100 +50,103 @@ export function CartTabsRich({
   return (
     <div className="flex items-center gap-2">
       {/* tablist contains ONLY role="tab" children — "Novo" button lives outside to satisfy WCAG 4.1.2 */}
-      <div role="tablist" aria-label="Carrinhos" className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2">
-      {carts.map((cart) => {
-        const isActive = cart.id === activeCartId;
-        const statusCfg = getStatusCfg(cart.status);
-        const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
-        const needsFollowUp = ageDays >= 3 && cart.items.length > 0;
-        const hasItems = cart.items.length > 0;
-        return (
-          <button
-            key={cart.id}
-            onClick={() => onSelect(cart.id)}
-            data-testid="cart-tab"
-            data-cart-id={cart.id}
-            data-active={isActive ? 'true' : 'false'}
-            role="tab"
-            aria-selected={isActive}
-            className={cn(
-              'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
-              isActive
-                ? 'z-10 scale-[1.03] border-primary/40 bg-primary/10 text-primary shadow-lg ring-2 ring-primary/10'
-                : 'border-border/30 bg-card shadow-sm hover:translate-y-[-1px] hover:border-border/60 hover:bg-muted/30',
-            )}
-          >
-            <div
+      <div
+        role="tablist"
+        aria-label="Carrinhos"
+        className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
+      >
+        {carts.map((cart) => {
+          const isActive = cart.id === activeCartId;
+          const statusCfg = getStatusCfg(cart.status);
+          const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
+          const needsFollowUp = ageDays >= 3 && cart.items.length > 0;
+          const hasItems = cart.items.length > 0;
+          return (
+            <button
+              key={cart.id}
+              onClick={() => onSelect(cart.id)}
+              data-testid="cart-tab"
+              data-cart-id={cart.id}
+              data-active={isActive ? 'true' : 'false'}
+              role="tab"
+              aria-selected={isActive}
               className={cn(
-                'absolute inset-x-4 -bottom-[1px] h-0.5 rounded-full bg-primary transition-all duration-500',
-                isActive ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0',
-              )}
-            />
-            {cart.company_logo_url ? (
-              <img
-                src={cart.company_logo_url}
-                alt=""
-                className="h-8 w-8 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover transition-transform group-hover:scale-110"
-                loading="lazy"
-              />
-            ) : (
-              <div
-                className={cn(
-                  'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all',
-                  isActive
-                    ? 'bg-primary/20 text-primary'
-                    : 'bg-muted text-muted-foreground group-hover:bg-muted/80',
-                )}
-              >
-                <Building2 className="h-4 w-4" />
-              </div>
-            )}
-            <div className="flex flex-col items-start gap-0.5 leading-none">
-              <span className="max-w-[150px] truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
-                {cart.company_name}
-              </span>
-              <div className="flex items-center gap-2 opacity-80">
-                <span
-                  className={cn(
-                    'h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                    statusCfg.color.split(' ')[0],
-                  )}
-                  aria-hidden
-                />
-                <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground opacity-60">
-                  {statusCfg.label}
-                </span>
-              </div>
-            </div>
-            <span
-              data-testid="cart-tab-count"
-              data-count={cart.items.length}
-              className={cn(
-                'ml-1 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums transition-all duration-500',
-                hasItems
-                  ? isActive
-                    ? 'scale-110 bg-primary text-primary-foreground shadow-lg'
-                    : 'bg-primary/15 text-primary'
-                  : 'bg-muted text-muted-foreground opacity-50',
+                'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
+                isActive
+                  ? 'z-10 scale-[1.03] border-primary/40 bg-primary/10 text-primary shadow-lg ring-2 ring-primary/10'
+                  : 'border-border/30 bg-card shadow-sm hover:translate-y-[-1px] hover:border-border/60 hover:bg-muted/30',
               )}
             >
-              {cart.items.length}
-            </span>
-            {needsFollowUp && (
-              <motion.span
-                data-testid="cart-tab-followup"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
-                title={`Sem movimento há ${ageDays} dias`}
+              <div
+                className={cn(
+                  'absolute inset-x-4 -bottom-[1px] h-0.5 rounded-full bg-primary transition-all duration-500',
+                  isActive ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0',
+                )}
+              />
+              {cart.company_logo_url ? (
+                <img
+                  src={cart.company_logo_url}
+                  alt=""
+                  className="h-8 w-8 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover transition-transform group-hover:scale-110"
+                  loading="lazy"
+                />
+              ) : (
+                <div
+                  className={cn(
+                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all',
+                    isActive
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-muted text-muted-foreground group-hover:bg-muted/80',
+                  )}
+                >
+                  <Building2 className="h-4 w-4" />
+                </div>
+              )}
+              <div className="flex flex-col items-start gap-0.5 leading-none">
+                <span className="max-w-[150px] truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
+                  {cart.company_name}
+                </span>
+                <div className="flex items-center gap-2 opacity-80">
+                  <span
+                    className={cn(
+                      'h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
+                      statusCfg.color.split(' ')[0],
+                    )}
+                    aria-hidden
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground opacity-60">
+                    {statusCfg.label}
+                  </span>
+                </div>
+              </div>
+              <span
+                data-testid="cart-tab-count"
+                data-count={cart.items.length}
+                className={cn(
+                  'ml-1 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums transition-all duration-500',
+                  hasItems
+                    ? isActive
+                      ? 'scale-110 bg-primary text-primary-foreground shadow-lg'
+                      : 'bg-primary/15 text-primary'
+                    : 'bg-muted text-muted-foreground opacity-50',
+                )}
               >
-                <Clock className="h-3 w-3" />
-              </motion.span>
-            )}
-          </button>
-        );
-      })}
-
+                {cart.items.length}
+              </span>
+              {needsFollowUp && (
+                <motion.span
+                  data-testid="cart-tab-followup"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
+                  title={`Sem movimento há ${ageDays} dias`}
+                >
+                  <Clock className="h-3 w-3" />
+                </motion.span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {canCreateCart && (
