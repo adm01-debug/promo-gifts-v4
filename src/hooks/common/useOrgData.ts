@@ -1,5 +1,5 @@
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import type { Database } from '@/integrations/supabase/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -32,7 +32,7 @@ export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName
     queryFn: async () => {
       if (!currentOrg) return [] as T[];
 
-      let query = supabase.from(tableName as never).select(options.select || '*');
+      let query = untypedFrom<T>(tableName).select(options.select || '*');
 
       // Scope to current organization
       query = query.eq('organization_id', currentOrg.id);
@@ -41,7 +41,7 @@ export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            query = query.eq(key as never, value);
+            query = query.eq(key, value);
           }
         });
       }
@@ -75,12 +75,8 @@ export function useOrgCreate<TTable extends DynamicTableName>(tableName: TTable)
     ) => {
       if (!currentOrg) throw new Error('No organization selected');
 
-      const { data, error } = await supabase
-        .from(tableName as never)
-        .insert({
-          ...payload,
-          organization_id: currentOrg.id,
-        } as never)
+      const { data, error } = await untypedFrom(tableName)
+        .insert({ ...payload, organization_id: currentOrg.id })
         .select()
         .single();
 
@@ -113,9 +109,8 @@ export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable)
     }: { id: string } & (TTable extends TableName
       ? OrgScopedUpdate<Extract<TTable, TableName>>
       : Record<string, unknown>)) => {
-      const { data, error } = await supabase
-        .from(tableName as never)
-        .update(payload as never)
+      const { data, error } = await untypedFrom(tableName)
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
@@ -144,10 +139,7 @@ export function useOrgDelete<TTable extends DynamicTableName>(tableName: TTable)
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from(tableName as never)
-        .delete()
-        .eq('id', id);
+      const { error } = await untypedFrom(tableName).delete().eq('id', id);
 
       if (error) throw error;
       return id;
