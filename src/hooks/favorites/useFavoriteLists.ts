@@ -417,14 +417,16 @@ export function useFavoriteListItems(listId: string | null) {
             }
             const results = await Promise.allSettled(
               trashed.map((t) =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (supabase as any).rpc('restore_favorite_from_trash', {
+                untypedRpc('restore_favorite_from_trash', {
                   _trash_id: t.id,
                   _user_id: user.id,
                 }),
               ),
             );
-            const restoredCount = results.filter((r) => r.status === 'fulfilled').length;
+            const restoredCount = results.reduce((acc, r) => {
+              if (r.status !== 'fulfilled') return acc;
+              return r.value?.error ? acc : acc + 1;
+            }, 0);
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
             qc.invalidateQueries({ queryKey: ['favorite-trash'] });
