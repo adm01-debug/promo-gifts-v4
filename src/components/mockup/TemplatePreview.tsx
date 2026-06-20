@@ -135,7 +135,7 @@ export function TemplatePreviewExpanded({
         <img
           loading="lazy"
           src={productImage}
-          alt="Produto"
+          alt=""
           className="absolute inset-0 h-full w-full object-contain opacity-30"
         />
       )}

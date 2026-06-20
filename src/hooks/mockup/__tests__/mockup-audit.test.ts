@@ -1332,6 +1332,52 @@ describe('Analise estatica — LogoPreviewCanvas.tsx', () => {
 });
 
 // =====================================================================
+// STATIC ANALYSIS — alt text quality (3 files)
+// =====================================================================
+
+describe('Analise estatica — TemplatePreview.tsx (alt text)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TemplatePreview.tsx');
+  });
+
+  it('imagem decorativa de produto (opacity-30) usa alt vazio', () => {
+    expect(src).toContain('alt=""');
+  });
+  it('nao usa alt generico "Produto" para imagem decorativa', () => {
+    expect(src).not.toContain('alt="Produto"');
+  });
+});
+
+describe('Analise estatica — AreaCard.tsx (alt text)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  it('thumbnail do logo tem alt descritivo em PT-BR', () => {
+    expect(src).toContain('alt="Miniatura do logo enviado"');
+  });
+  it('nao usa alt generico "Logo"', () => {
+    expect(src).not.toContain('alt="Logo"');
+  });
+});
+
+describe('Analise estatica — MockupResultCard.tsx (alt text)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  it('mockup gerado tem alt descritivo em PT-BR', () => {
+    expect(src).toContain('alt="Mockup gerado com IA"');
+  });
+  it('nao usa alt em ingles "Generated mockup"', () => {
+    expect(src).not.toContain('alt="Generated mockup"');
+  });
+});
+
+// =====================================================================
 // STATIC ANALYSIS — GenerateButton.tsx (reduced-motion)
 // =====================================================================
 

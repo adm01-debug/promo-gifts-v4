@@ -204,7 +204,7 @@ export const MockupResultCard = memo(
                 >
                   <img
                     src={generatedMockup}
-                    alt="Generated mockup"
+                    alt="Mockup gerado com IA"
                     className="max-h-full max-w-full object-contain transition-transform duration-200"
                     style={{ transform: `scale(${zoom})` }}
                     loading="lazy"

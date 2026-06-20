@@ -129,7 +129,7 @@ export const AreaCard = memo(
             <div className="relative h-7 w-7 overflow-hidden rounded border border-border/30 bg-background">
               <img
                 src={area.logoPreview}
-                alt="Logo"
+                alt="Miniatura do logo enviado"
                 className="h-full w-full object-contain"
                 loading="lazy"
               />
