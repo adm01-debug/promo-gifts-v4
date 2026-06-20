@@ -459,7 +459,8 @@ export function useMockupGenerator() {
         );
         logoColorAnalysis.analyzeImage(logoData);
       };
-      reader.onerror = () => {
+      reader.onerror = (e) => {
+        logger.error('[useMockupGenerator] FileReader error ao ler imagem:', e);
         toast.error('Erro ao ler o arquivo de imagem. Tente novamente.');
       };
       reader.readAsDataURL(processedFile);

@@ -527,3 +527,48 @@ describe('Analise estatica — ShareMenu.tsx', () => {
     });
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — AreaCard.tsx
+// =====================================================================
+
+describe('Analise estatica — AreaCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  describe('displayName — memo() component identificavel no React DevTools', () => {
+    it('exporta como memo()', () => {
+      expect(src).toContain('export const AreaCard = memo(');
+    });
+    it('define displayName apos o componente', () => {
+      expect(src).toContain("AreaCard.displayName = 'AreaCard'");
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — useMockupGenerator.ts
+// =====================================================================
+
+describe('Analise estatica — useMockupGenerator.ts', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/hooks/mockup/useMockupGenerator.ts');
+  });
+
+  describe('reader.onerror — erro de FileReader nao silenciado', () => {
+    it('importa logger de @/lib/logger', () => {
+      expect(src).toContain("from '@/lib/logger'");
+    });
+    it('onerror handler recebe parametro de evento', () => {
+      const onerrorBlock = src.split('reader.onerror')[1]?.split('reader.readAsDataURL')[0] ?? '';
+      expect(onerrorBlock).toContain('(e) =>');
+    });
+    it('onerror handler chama logger.error', () => {
+      const onerrorBlock = src.split('reader.onerror')[1]?.split('reader.readAsDataURL')[0] ?? '';
+      expect(onerrorBlock).toContain('logger.error');
+    });
+  });
+});

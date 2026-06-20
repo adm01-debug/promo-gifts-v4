@@ -222,3 +222,4 @@ export const AreaCard = memo(
     );
   },
 );
+AreaCard.displayName = 'AreaCard';
