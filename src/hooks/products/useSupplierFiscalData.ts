@@ -138,23 +138,20 @@ export function useSupplierFiscalData(
       let matchedVariantId: string | null = null;
 
       if (variantsResult.data.length) {
-        // 2. Get variant_supplier_sources for this supplier + product's variants
+        // 2. Get variant_supplier_sources for this supplier + product's variants.
+        // Single batched .in() query replaces the old sequential loop (N+1 → 1 round-trip).
         const variantIds = variantsResult.data.map((v) => v.id);
+        const vssResult = await untypedFrom('variant_supplier_sources')
+          .select(
+            'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
+          )
+          .eq('supplier_id', supplierId)
+          .in('variant_id', variantIds.slice(0, 5))
+          .limit(1);
 
-        for (const variantId of variantIds.slice(0, 5)) {
-          const vssResult = await untypedFrom('variant_supplier_sources')
-            .select(
-              'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
-            )
-            .eq('supplier_id', supplierId)
-            .eq('variant_id', variantId)
-            .limit(1);
-
-          if (vssResult.data?.length) {
-            vss = vssResult.data[0] as VSSRecord;
-            matchedVariantId = variantId;
-            break;
-          }
+        if (vssResult.data?.length) {
+          vss = vssResult.data[0] as VSSRecord;
+          matchedVariantId = (vss.variant_id as string) || variantIds[0];
         }
 
         // Keep first variant ID for potential new VSS creation
