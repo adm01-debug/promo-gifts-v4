@@ -23,7 +23,6 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import { requireAuth } from './fixtures/test-base';
 import { gotoAndSettle, waitForRouteIdle } from './helpers/nav';
 import { installColorStockMock } from './fixtures/color-swatch-mocks';
-import { ATTR, TID } from './fixtures/color-swatch-selectors';
 
 const ROUTES = ['/produtos', '/super-filtro', '/novidades', '/reposicao'] as const;
 const VIEWS = ['grid', 'list', 'table'] as const;
@@ -35,32 +34,26 @@ const MAX_PRODUCTS_PER_VIEW = Number(process.env.E2E_SWEEP_MAX_PRODUCTS ?? 5);
 const MAX_COLORS_PER_PRODUCT = Number(process.env.E2E_SWEEP_MAX_COLORS ?? 4);
 
 async function switchView(page: Page, mode: ViewMode): Promise<void> {
-  const trigger = page.locator(`[data-testid="${TID.layoutPopoverTrigger}"]`);
+  const trigger = page.locator('[data-testid="layout-popover-trigger"]');
   if (!(await trigger.isVisible().catch(() => false))) return;
   await trigger.click();
-  const btn = page.locator(`[data-testid="${TID.viewMode(mode)}"]`);
+  const btn = page.locator(`[data-testid="view-mode-${mode}"]`);
   await btn.click();
   await page.keyboard.press('Escape');
   await waitForRouteIdle(page);
 }
 
 function productContainer(page: Page, productId?: string): Locator {
-  const sel = productId
-    ? `[${ATTR.productId}="${productId}"]`
-    : `[${ATTR.productId}]`;
+  const sel = productId ? `[data-product-id="${productId}"]` : '[data-product-id]';
   return page.locator(sel).first();
 }
 
-/** Snapshot do estado visual do container: src da imagem unificada + stock-qty. */
-async function snapshot(
-  container: Locator,
-): Promise<{ imgSrc: string | null; stockQty: string | null }> {
-  // Prefere o testid unificado; se ausente (variações de wrapper), cai para a 1ª <img>.
-  const tagged = container.locator(`[data-testid="${TID.productImage}"]`).first();
-  const img = (await tagged.count()) > 0 ? tagged : container.locator('img').first();
+/** Snapshot do estado visual do container: src da primeira imagem + stock-qty. */
+async function snapshot(container: Locator): Promise<{ imgSrc: string | null; stockQty: string | null }> {
+  const img = container.locator('img').first();
   const imgSrc = (await img.getAttribute('src').catch(() => null)) ?? null;
-  const stockEl = container.locator(`[data-testid="${TID.productStockValue}"]`).first();
-  const stockQty = (await stockEl.getAttribute(ATTR.stockQty).catch(() => null)) ?? null;
+  const stockEl = container.locator('[data-testid="product-stock-value"]').first();
+  const stockQty = (await stockEl.getAttribute('data-stock-qty').catch(() => null)) ?? null;
   return { imgSrc, stockQty };
 }
 
