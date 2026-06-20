@@ -510,7 +510,7 @@ export const ProductListItem = memo(
           </div>
 
           {/* Info — main content block */}
-          <div className="min-w-0 flex-1 py-0.5 md:flex-[0_1_42%]">
+          <div className="min-w-0 flex-1 py-0.5 md:max-w-[34%] md:flex-[0_1_34%]">
             {/* Top meta row */}
             <div className="mb-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground sm:text-xs">
               {product.featured && (
