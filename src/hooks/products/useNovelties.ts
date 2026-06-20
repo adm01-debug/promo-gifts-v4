@@ -4,13 +4,11 @@ import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { compareNamePtBR } from '@/utils/product-sorting';
 import { supabase } from '@/integrations/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
 // untypedFrom returns PostgrestQueryBuilder which lacks filter methods (.eq, .order, etc.)
 // Cast to SupabaseClient<any> so .from() gives a plain QueryBuilder that TypeScript
 // won't constrain further; NoveltyQuery is narrowed to PostgrestFilterBuilder<any> below.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fromTable = (table: string) =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (supabase as unknown as SupabaseClient<any, any, any>).from(resolveTable(table));
