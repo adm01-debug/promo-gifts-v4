@@ -216,6 +216,14 @@ export default [
       'default-case-last': 'error',
       'default-param-last': 'error',
       'grouped-accessor-pairs': 'error',
+      // Batch 80: 7 zero-violation standard rules
+      'prefer-rest-params': 'error',
+      'prefer-spread': 'error',
+      'no-new-wrappers': 'error',
+      'no-unneeded-ternary': 'error',
+      'no-useless-escape': 'error',
+      'prefer-numeric-literals': 'error',
+      'no-regex-spaces': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
