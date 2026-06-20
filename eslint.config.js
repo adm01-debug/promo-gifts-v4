@@ -224,6 +224,17 @@ export default [
       'no-useless-escape': 'error',
       'prefer-numeric-literals': 'error',
       'no-regex-spaces': 'error',
+      // Batch 81: 10 zero-violation security/correctness rules
+      'no-new-func': 'error',
+      'no-iterator': 'error',
+      'no-proto': 'error',
+      'no-extend-native': 'error',
+      'no-global-assign': 'error',
+      'no-octal': 'error',
+      'no-with': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-sequences': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
