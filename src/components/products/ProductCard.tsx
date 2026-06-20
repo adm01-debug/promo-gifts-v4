@@ -778,6 +778,7 @@ export const ProductCard = memo(
               colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
               max={6}
               size="sm"
+              wrap
               hideWhenEmpty={false}
               selectedName={activeColorName ?? null}
               onSelect={(c) => {

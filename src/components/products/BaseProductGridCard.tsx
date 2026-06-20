@@ -229,6 +229,7 @@ export const BaseProductGridCard = memo(
               colors={colors}
               max={5}
               size="sm"
+              wrap
               hideWhenEmpty={false}
               selectedName={activeColorName}
               onSelect={(c) => setActiveColorName(c.name)}
