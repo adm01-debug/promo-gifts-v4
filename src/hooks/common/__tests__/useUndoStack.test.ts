@@ -156,9 +156,8 @@ describe('useUndoStack', () => {
       );
     });
 
-    // popAndUndo() é async; flush microtasks para garantir que undo() foi chamado
+    // flush microtasks so async popAndUndo resolves without needing real timers
     await act(async () => {});
-
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
@@ -177,9 +176,7 @@ describe('useUndoStack', () => {
       );
     });
 
-    // flush microtasks — listener removido, undo não deve ter sido chamado
     await act(async () => {});
-
-    expect(undo).not.toHaveBeenCalled();
+    expect(undo).not.toHaveBeenCalled(); // listener removido
   });
 });

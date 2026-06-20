@@ -20,12 +20,17 @@ export function applyVoiceFilters(prev: FilterState, f: VoiceFilters): FilterSta
   // BUG-VOZ-PRICE FIX: apply min AND max atomically so both survive in a single command.
   // FIX-11: clamp to ≥0 — voice agent may produce negative values from misrecognition.
   // FIX-14: use Number.isFinite() — typeof NaN === 'number' would corrupt priceRange with NaN/Infinity.
+  // FIX-18: auto-swap when result is inverted (e.g. new maxPrice < inherited minPrice).
+  //   Exception: [lo, 9999] where lo > 9999 is valid — 9999 is the sentinel for "no upper bound".
+  const PRICE_SENTINEL = 9999;
   const hasMin = Number.isFinite(f.minPrice);
   const hasMax = Number.isFinite(f.maxPrice);
   if (hasMin || hasMax) {
     const rawMin = hasMin ? Number(f.minPrice) : next.priceRange[0];
     const rawMax = hasMax ? Number(f.maxPrice) : next.priceRange[1];
-    next.priceRange = [Math.max(0, rawMin), Math.max(0, rawMax)];
+    const lo = Math.max(0, rawMin);
+    const hi = Math.max(0, rawMax);
+    next.priceRange = lo > hi && hi !== PRICE_SENTINEL ? [hi, lo] : [lo, hi];
   }
 
   if (f.inStock) next.inStock = true;

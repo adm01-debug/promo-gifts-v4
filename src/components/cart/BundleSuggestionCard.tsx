@@ -26,14 +26,14 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
     queryKey: ['bundle-suggestions', productId],
     enabled: !!productId,
     queryFn: async (): Promise<BundleSuggestion[]> => {
-      const { data, error } = await supabase.rpc('get_bundle_suggestions', {
+      const { data: queryRows, error } = await supabase.rpc('get_bundle_suggestions', {
         _product_id: productId,
       });
       if (error) {
         logger.warn('get_bundle_suggestions error:', error);
         return [];
       }
-      return data ?? [];
+      return queryRows ?? [];
     },
     staleTime: 1000 * 60 * 30,
   });

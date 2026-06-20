@@ -32,50 +32,52 @@ interface HoverSetImageProps {
   priority?: boolean;
 }
 
-export const HoverSetImage = memo(function HoverSetImage({
-  primary,
-  set,
-  alt,
-  primaryClassName,
-  fallbackIconClassName,
-  priority = false,
-}: HoverSetImageProps) {
-  if (!primary) {
+export const HoverSetImage = memo(
+  ({
+    primary,
+    set,
+    alt,
+    primaryClassName,
+    fallbackIconClassName,
+    priority = false,
+  }: HoverSetImageProps) => {
+    if (!primary) {
+      return (
+        <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
+          <Package className={cn('h-12 w-12 text-muted-foreground/20', fallbackIconClassName)} />
+        </div>
+      );
+    }
+
+    const hasSetHover = Boolean(set);
+
     return (
-      <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
-        <Package className={cn('h-12 w-12 text-muted-foreground/20', fallbackIconClassName)} />
-      </div>
-    );
-  }
-
-  const hasSetHover = Boolean(set);
-
-  return (
-    <>
-      <OptimizedImage
-        src={getCdnUrl(primary, 'card')}
-        alt={alt}
-        className={cn(
-          'object-contain transition-all duration-300 ease-out',
-          'group-hover:scale-105',
-          hasSetHover && 'group-hover:opacity-0',
-          primaryClassName,
-        )}
-        containerClassName="h-full w-full"
-        priority={priority}
-      />
-      {hasSetHover && set && (
-        <img
-          src={set}
-          alt={`${alt} — todas as cores`}
-          loading="lazy"
-          decoding="async"
-          className="pointer-events-none absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
+      <>
+        <OptimizedImage
+          src={getCdnUrl(primary, 'card')}
+          alt={alt}
+          className={cn(
+            'object-contain transition-all duration-300 ease-out',
+            'group-hover:scale-105',
+            hasSetHover && 'group-hover:opacity-0',
+            primaryClassName,
+          )}
+          containerClassName="h-full w-full"
+          priority={priority}
         />
-      )}
-    </>
-  );
-});
+        {hasSetHover && set && (
+          <img
+            src={set}
+            alt={`${alt} — todas as cores`}
+            loading="lazy"
+            decoding="async"
+            className="pointer-events-none absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        )}
+      </>
+    );
+  },
+);

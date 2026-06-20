@@ -76,8 +76,8 @@ function makeWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Restore default: user=null tests override this; clearAllMocks does not reset implementations
-  vi.mocked(useAuth).mockReturnValue({ user: mockUser } as never);
+  // Restore default user after tests that override with null (clearAllMocks keeps mockReturnValue overrides)
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser });
 });
 
 // ── Estado inicial ────────────────────────────────────────────────────────────
@@ -117,8 +117,8 @@ describe('estado inicial com usuario autenticado', () => {
 // ── user=null ─────────────────────────────────────────────────────────────────
 describe('user=null — queries desabilitadas', () => {
   it('nao inicia Realtime subscription quando user=null', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: null } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: null } as never);
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });

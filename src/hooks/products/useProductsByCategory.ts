@@ -131,11 +131,18 @@ export function useProductsByCategory({
 }
 
 /**
- * Hook auxiliar para buscar descendentes de categorias
+ * Hook auxiliar para buscar descendentes de categorias.
+ * FIX GAP-3 (2026-06-19 audit): adicionado fetchTokenRef para prevenir
+ * race condition quando categoryIds muda rapidamente. Sem o token, uma
+ * resposta stale de uma seleção anterior podia sobrescrever os descendentes
+ * corretos, causando expansão incorreta do category tree na UI.
  */
 export function useCategoryDescendants(categoryIds: string[]) {
   const [descendantIds, setDescendantIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // fetchTokenRef: cada chamada incrementa o token antes do primeiro await.
+  // Verificações após cada await descartam respostas de chamadas supersedidas.
+  const fetchTokenRef = useRef(0);
 
   useEffect(() => {
     if (categoryIds.length === 0) {
@@ -144,6 +151,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
     }
 
     const fetchDescendants = async () => {
+      const token = ++fetchTokenRef.current;
       setIsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('categories-api', {
@@ -153,13 +161,15 @@ export function useCategoryDescendants(categoryIds: string[]) {
           },
         });
 
+        if (token !== fetchTokenRef.current) return; // superseded — nova seleção de categoria
         if (!error && data.success) {
           setDescendantIds(data.data || []);
         }
       } catch (err) {
+        if (token !== fetchTokenRef.current) return; // superseded
         logger.error('Erro ao buscar descendentes:', err);
       } finally {
-        setIsLoading(false);
+        if (token === fetchTokenRef.current) setIsLoading(false);
       }
     };
 

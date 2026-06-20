@@ -424,13 +424,18 @@ export function useQuoteBuilderState() {
       validUntil,
     },
     onRestore: (saved) => {
-      // Exemplo: Restaurar campos se o usuário desejar ou automaticamente
       // Para evitar sobrescrever um carregamento de rascunho real (via URL),
       // só restauramos se não estiver em modo edição.
       if (!isEditMode) {
         if (saved.clientId) setClientId(saved.clientId);
         if (saved.contactId) setContactId(saved.contactId);
+        if (saved.companyInfo) setCompanyInfo(saved.companyInfo);
+        if (saved.contactInfo) setContactInfo(saved.contactInfo);
         if (saved.items) setItems(saved.items);
+        if (saved.discountType) setDiscountType(saved.discountType);
+        if (typeof saved.discountValue === 'number') setDiscountValue(saved.discountValue);
+        if (typeof saved.negotiationMarkup === 'number' && saved.negotiationMarkup > 0)
+          setNegotiationMarkup(saved.negotiationMarkup);
         if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod);
         if (saved.paymentTerms) setPaymentTerms(saved.paymentTerms);
         if (saved.deliveryTime) {
@@ -477,68 +482,66 @@ export function useQuoteBuilderState() {
      */
     let isMounted = true;
     setLoadingQuote(true);
-    fetchQuote(quoteId).then((quote) => {
-      if (!isMounted) return;
-      if (quote) {
-        setClientId(quote.client_id || '');
-        /**
-         * BUG-02 FIX: usar contact_id (ID do contato) em vez de client_id (ID da empresa).
-         *
-         * PROBLEMA ORIGINAL: setContactId recebia quote.client_id, ou seja, o ID da
-         * empresa. Isso fazia a validação do step 'client' passar (ambos clientId e
-         * contactId != ''), mas semanticamente errada — contactId deveria ser o ID
-         * da pessoa de contato, não da empresa.
-         */
-        setContactId(((quote as unknown as Record<string, unknown>).contact_id as string) || '');
-        setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-        setNotes(quote.notes || '');
-        setInternalNotes(quote.internal_notes || '');
-        setQuoteNumber(quote.quote_number || '');
-        setCurrentStatus(quote.status);
-        if (quote.client_name) {
-          setContactInfo({
-            id: '',
-            name: quote.client_name,
-            email: quote.client_email || undefined,
-            phone: quote.client_phone || undefined,
-          });
-        }
-        if (quote.client_company) {
-          setCompanyInfo({
-            id: quote.client_id || '',
-            name: quote.client_company,
-            cnpj: quote.client_cnpj || undefined,
-            ramo_atividade: undefined,
-          });
-        }
-        if (quote.discount_percent && quote.discount_percent > 0) {
-          setDiscountType('percent');
-          setDiscountValue(quote.discount_percent);
-        } else if (quote.discount_amount && quote.discount_amount > 0) {
-          setDiscountType('amount');
-          setDiscountValue(quote.discount_amount);
-        }
-        if (typeof quote.negotiation_markup_percent === 'number')
-          setNegotiationMarkup(quote.negotiation_markup_percent);
-        if (quote.payment_method) setPaymentMethod(quote.payment_method);
-        if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
-        if (quote.shipping_type) setShippingType(quote.shipping_type);
-        if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
-        if (quote.delivery_time) {
-          if (quote.delivery_time.startsWith('date:')) {
-            setDeliveryMode('data');
-            setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
-          } else {
-            setDeliveryMode('prazo');
+    fetchQuote(quoteId)
+      .then((quote) => {
+        if (!isMounted) return;
+        if (quote) {
+          setClientId(quote.client_id || '');
+          setContactId(quote.contact_id || '');
+          setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
+          setNotes(quote.notes || '');
+          setInternalNotes(quote.internal_notes || '');
+          setQuoteNumber(quote.quote_number || '');
+          setCurrentStatus(quote.status);
+          if (quote.client_name) {
+            setContactInfo({
+              id: '',
+              name: quote.client_name,
+              email: quote.client_email || undefined,
+              phone: quote.client_phone || undefined,
+            });
           }
-          setDeliveryTime(quote.delivery_time);
+          if (quote.client_company) {
+            setCompanyInfo({
+              id: quote.client_id || '',
+              name: quote.client_company,
+              cnpj: quote.client_cnpj || undefined,
+              ramo_atividade: undefined,
+            });
+          }
+          if (quote.discount_percent && quote.discount_percent > 0) {
+            setDiscountType('percent');
+            setDiscountValue(quote.discount_percent);
+          } else if (quote.discount_amount && quote.discount_amount > 0) {
+            setDiscountType('amount');
+            setDiscountValue(quote.discount_amount);
+          }
+          if (typeof quote.negotiation_markup_percent === 'number')
+            setNegotiationMarkup(quote.negotiation_markup_percent);
+          if (quote.payment_method) setPaymentMethod(quote.payment_method);
+          if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
+          if (quote.shipping_type) setShippingType(quote.shipping_type);
+          if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
+          if (quote.delivery_time) {
+            if (quote.delivery_time.startsWith('date:')) {
+              setDeliveryMode('data');
+              setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
+            } else {
+              setDeliveryMode('prazo');
+            }
+            setDeliveryTime(quote.delivery_time);
+          }
+          if (quote.items) setItems(quote.items);
+          // Salva o updated_at como baseline para detecção de conflito
+          baselineUpdatedAtRef.current = quote.updated_at ?? null;
         }
-        if (quote.items) setItems(quote.items);
-        // Salva o updated_at como baseline para detecção de conflito
-        baselineUpdatedAtRef.current = quote.updated_at ?? null;
-      }
-      setLoadingQuote(false);
-    });
+        setLoadingQuote(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        logger.error('[useQuoteBuilderState] fetchQuote failed:', err);
+        setLoadingQuote(false);
+      });
     return () => {
       isMounted = false;
     };
@@ -690,7 +693,7 @@ export function useQuoteBuilderState() {
             product_sku: p.product_sku || '',
             product_image_url: p.product_image || undefined,
             quantity: Math.max(1, p.quantity || 1),
-            unit_price: parseFloat(p.product_price || '0'),
+            unit_price: parseFloat(p.product_price) || 0,
             color_name: p.color_name || undefined,
             color_hex: p.color_hex || undefined,
             personalizations: [],
@@ -722,7 +725,7 @@ export function useQuoteBuilderState() {
       product_sku: searchParams.get('product_sku') || '',
       product_image_url: searchParams.get('product_image') || undefined,
       quantity: Math.max(1, parseInt(searchParams.get('min_quantity') || '1', 10)),
-      unit_price: parseFloat(searchParams.get('product_price') || '0'),
+      unit_price: parseFloat(searchParams.get('product_price') ?? '') || 0,
       color_name: colorName,
       color_hex: colorHex,
       personalizations: [],
@@ -974,6 +977,7 @@ export function useQuoteBuilderState() {
 
       const quoteData: Partial<Quote> = {
         client_id: clientId || undefined,
+        contact_id: contactId || undefined,
         client_name: contactInfo?.name || undefined,
         client_company: companyInfo?.name || undefined,
         client_cnpj: companyInfo?.cnpj || undefined,
@@ -1041,6 +1045,7 @@ export function useQuoteBuilderState() {
       isFormValid,
       validationErrors,
       clientId,
+      contactId,
       contactInfo,
       companyInfo,
       discountType,
@@ -1185,8 +1190,10 @@ export function useQuoteBuilderState() {
       const sellerNotes =
         effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
-      baselineUpdatedAtRef.current = new Date().toISOString(); // reset baseline
+      // Reset baseline AFTER save — resetting before could allow another concurrent save
+      // to pass undetected if the save itself fails.
       await handleSaveQuote(effectiveStatus, sellerNotes);
+      baselineUpdatedAtRef.current = new Date().toISOString();
     },
   };
 }

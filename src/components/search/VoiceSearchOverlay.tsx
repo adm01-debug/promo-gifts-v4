@@ -43,7 +43,7 @@ const PHASE_META: Record<VoiceAgentPhase, { title: string; subtitle: string; emo
 };
 
 export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOverlayProps>(
-  function VoiceSearchOverlay(
+  (
     {
       isOpen,
       phase,
@@ -61,7 +61,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
       onSimulateCommand,
     },
     _ref,
-  ) {
+  ) => {
     const [isAutoStarting, setIsAutoStarting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [bootingTimedOut, setBootingTimedOut] = useState(false);

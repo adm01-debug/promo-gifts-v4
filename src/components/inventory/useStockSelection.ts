@@ -41,7 +41,6 @@ export function buildQuoteParam(r: StockSelectionRow): string {
   return `items[]=${encodeURIComponent(JSON.stringify(buildQuoteItemPayload(r)))}`;
 }
 
-
 /** Chave estável por SKU (product+variant) usada no Set de seleção. */
 export const rowKey = (r: { productId: string; variantId: string }) =>
   `${r.productId}::${r.variantId}`;
@@ -63,7 +62,10 @@ export function useStockSelection(rows: StockSelectionRow[]) {
   }, [rows]);
 
   const selectedRows = useMemo(
-    () => Array.from(selectedKeys).map((k) => rowByKey.get(k)).filter(Boolean) as StockSelectionRow[],
+    () =>
+      Array.from(selectedKeys)
+        .map((k) => rowByKey.get(k))
+        .filter(Boolean) as StockSelectionRow[],
     [selectedKeys, rowByKey],
   );
 
@@ -78,18 +80,15 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     });
   }, []);
 
-  const selectAllVisible = useCallback(
-    (visibleRows: StockSelectionRow[]) => {
-      setSelectedKeys(
-        new Set(
-          visibleRows.map((r) =>
-            rowKey({ productId: r.product.productId, variantId: r.variant.variantId }),
-          ),
+  const selectAllVisible = useCallback((visibleRows: StockSelectionRow[]) => {
+    setSelectedKeys(
+      new Set(
+        visibleRows.map((r) =>
+          rowKey({ productId: r.product.productId, variantId: r.variant.variantId }),
         ),
-      );
-    },
-    [],
-  );
+      ),
+    );
+  }, []);
 
   const clear = useCallback(() => setSelectedKeys(new Set()), []);
 
@@ -140,8 +139,7 @@ export function useStockSelection(rows: StockSelectionRow[]) {
       }
       const skipped = selectedRows.length - added;
       toast.success(
-        `${added} ${added === 1 ? 'item adicionado' : 'itens adicionados'} à comparação` +
-          (skipped > 0 ? ` (${skipped} ignorado${skipped > 1 ? 's' : ''} — limite de 4)` : ''),
+        `${added} ${added === 1 ? 'item adicionado' : 'itens adicionados'} à comparação${skipped > 0 ? ` (${skipped} ignorado${skipped > 1 ? 's' : ''} — limite de 4)` : ''}`,
       );
       clear();
     } catch {

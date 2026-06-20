@@ -27,7 +27,7 @@ function useCountUp(end: number, duration: number = 800): number {
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const easeOutQuart = 1 - (1 - progress) ** 4;
       setCount(Math.floor(end * easeOutQuart));
       if (progress < 1) rafId = requestAnimationFrame(animate);
     };
@@ -205,6 +205,7 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="Repostos Hoje"
         value={s.restockedToday}
+        subtitle="snapshot diário às 02h"
         icon={<CalendarPlus className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="info"
         delay={0}

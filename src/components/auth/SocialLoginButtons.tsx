@@ -63,7 +63,7 @@ interface SocialLoginButtonsProps {
  * Para reativar o SSO antes do deploy, ver `docs/AUTH-SSO-ACTIVATION.md`.
  */
 export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsProps>(
-  function SocialLoginButtons({ onError, retryRef }, ref) {
+  ({ onError, retryRef }, ref) => {
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [slowHint, setSlowHint] = useState<string | null>(null);
     const { toast } = useToast();
@@ -153,7 +153,6 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         authDebugError('social-login', 'redirect timeout', { ms: REDIRECT_TIMEOUT_MS });
         finishWithError('timeout', { autoFallback: true });
       }, REDIRECT_TIMEOUT_MS);
-
 
       try {
         const supabase = await getSupabaseClient();

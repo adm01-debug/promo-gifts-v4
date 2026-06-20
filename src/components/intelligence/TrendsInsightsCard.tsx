@@ -36,7 +36,7 @@ export function TrendsInsightsCard({ days }: TrendsInsightsCardProps) {
         await new Promise((r) => setTimeout(r, 400));
         return MOCK_INSIGHTS;
       }
-      const { data, error } = await supabase.functions.invoke('trends-insights', {
+      const { data: queryRows, error } = await supabase.functions.invoke('trends-insights', {
         body: { days },
       });
       if (error) {
@@ -55,7 +55,7 @@ export function TrendsInsightsCard({ days }: TrendsInsightsCardProps) {
         }
         throw error;
       }
-      return data as InsightResponse;
+      return queryRows as InsightResponse;
     },
     staleTime: 1000 * 60 * 5,
     retry: false,

@@ -14,8 +14,8 @@
  */
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useQuoteTemplates } from '../useQuoteTemplates';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuoteTemplates } from '../useQuoteTemplates';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 const _mockOrder = vi.fn();
@@ -57,6 +57,8 @@ beforeEach(() => {
     limit: vi.fn().mockResolvedValue({ data: [], error: null }),
   });
   mockSelect.mockReturnValue({ order: orderFn });
+  // Restore default user — vi.clearAllMocks() preserves mockReturnValue overrides
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
 });
 
 // ── Estado inicial ─────────────────────────────────────────────────────────
@@ -81,8 +83,8 @@ describe('estado inicial', () => {
 // ── user=null guard ────────────────────────────────────────────────────────
 describe('user=null guard', () => {
   it('fetchTemplates: define templates=[] e loading=false sem chamar DB', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: null, isAdmin: false } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: null, isAdmin: false } as never);
     const { supabase: _supabase } = await import('@/integrations/supabase/client');
 
     const { result } = renderHook(() => useQuoteTemplates());
@@ -98,12 +100,15 @@ describe('user=null guard', () => {
 
 // ── fetchTemplates ─────────────────────────────────────────────────────────
 describe('fetchTemplates', () => {
+  beforeEach(async () => {
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+  });
+
   it('carrega templates do DB com order updated_at DESC e limit 200', async () => {
     const mockLimitFn = vi.fn().mockResolvedValue({ data: [], error: null });
     const mockOrderFn = vi.fn().mockReturnValue({ limit: mockLimitFn });
     mockSelect.mockReturnValue({ order: mockOrderFn });
-    const { supabase } = await import('@/integrations/supabase/client');
-
     const { result } = renderHook(() => useQuoteTemplates());
     await act(async () => {
       await result.current.fetchTemplates();
@@ -158,8 +163,8 @@ describe('fetchTemplates', () => {
 // ── isAdmin guard em fetchAllTemplates ───────────────────────────────────
 describe('fetchAllTemplates — isAdmin guard', () => {
   it('nao chama DB quando user nao e admin', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
 
     const { result } = renderHook(() => useQuoteTemplates());
     const callsBefore = vi.mocked((await import('@/integrations/supabase/client')).supabase.from)
