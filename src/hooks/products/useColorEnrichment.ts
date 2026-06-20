@@ -29,6 +29,8 @@ interface UseColorEnrichmentOptions {
   colorGroups: string[];
   /** Active color variation slugs */
   colorVariations: string[];
+  /** Active color nuance slugs */
+  colorNuances: string[];
 }
 
 // Cached reference tables (shared across instances)
@@ -38,8 +40,10 @@ let cachedColorVariations: Array<{
   name: string;
   slug: string;
   group_id: string;
+  nuance_id: string | null;
   hex_code?: string | null;
 }> | null = null;
+let cachedColorNuances: Array<{ id: string; slug: string }> | null = null;
 
 /**
  * Returns a Map<productId, ColorEnrichmentData> for products matching the color filter.
@@ -48,9 +52,10 @@ export function useColorEnrichment({
   productIds,
   colorGroups,
   colorVariations,
+  colorNuances,
 }: UseColorEnrichmentOptions) {
-  const hasFilter = colorGroups.length > 0 || colorVariations.length > 0;
-  const filterKey = `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}`;
+  const hasFilter = colorGroups.length > 0 || colorVariations.length > 0 || colorNuances.length > 0;
+  const filterKey = `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}|${[...colorNuances].sort().join(',')}`;
 
   // Accumulator: track which product IDs have already been enriched for this filter
   const enrichedIdsRef = useRef<Set<string>>(new Set());
@@ -91,35 +96,60 @@ export function useColorEnrichment({
 
       if (newProductIds.length === 0) return accumulatedMapRef.current;
 
-      // Step 1: Load reference tables (cached after first call)
-      if (!cachedColorGroups || !cachedColorVariations) {
-        const refResults = await Promise.all([
-          dbInvoke<{ id: string; slug: string }>({
-            table: 'color_groups',
-            operation: 'select',
-            select: 'id, slug',
-            filters: { is_active: true },
-            limit: 200,
-            offset: 0,
-          }),
-          dbInvoke<{
-            id: string;
-            name: string;
-            slug: string;
-            group_id: string;
-            hex_code: string | null;
-          }>({
-            table: 'color_variations',
-            operation: 'select',
-            select: 'id, name, slug, group_id, hex_code',
-            filters: { is_active: true },
-            limit: 500,
-            offset: 0,
-          }),
-        ]);
+      // Step 1: Load reference tables (cached after first call).
+      // color_nuances only fetched when nuance filter is active.
+      const needNuances = colorNuances.length > 0 && !cachedColorNuances;
+      if (!cachedColorGroups || !cachedColorVariations || needNuances) {
+        const fetches: Promise<unknown>[] = [
+          cachedColorGroups
+            ? Promise.resolve({ records: cachedColorGroups })
+            : dbInvoke<{ id: string; slug: string }>({
+                table: 'color_groups',
+                operation: 'select',
+                select: 'id, slug',
+                filters: { is_active: true },
+                limit: 200,
+                offset: 0,
+              }),
+          cachedColorVariations
+            ? Promise.resolve({ records: cachedColorVariations })
+            : dbInvoke<{
+                id: string;
+                name: string;
+                slug: string;
+                group_id: string;
+                nuance_id: string | null;
+                hex_code: string | null;
+              }>({
+                table: 'color_variations',
+                operation: 'select',
+                select: 'id, name, slug, group_id, nuance_id, hex_code',
+                filters: { is_active: true },
+                limit: 500,
+                offset: 0,
+              }),
+          needNuances
+            ? dbInvoke<{ id: string; slug: string }>({
+                table: 'color_nuances',
+                operation: 'select',
+                select: 'id, slug',
+                filters: { is_active: true },
+                limit: 500,
+                offset: 0,
+              })
+            : Promise.resolve(null),
+        ];
 
-        cachedColorGroups = refResults[0].records || [];
-        cachedColorVariations = refResults[1].records || [];
+        const refResults = await Promise.all(fetches);
+        cachedColorGroups =
+          (refResults[0] as { records?: typeof cachedColorGroups } | null)?.records || [];
+        cachedColorVariations =
+          (refResults[1] as { records?: typeof cachedColorVariations } | null)?.records || [];
+        if (needNuances) {
+          cachedColorNuances =
+            (refResults[2] as { records?: Array<{ id: string; slug: string }> } | null)?.records ||
+            [];
+        }
       }
 
       const colorGroupsCache = cachedColorGroups ?? [];
@@ -127,7 +157,7 @@ export function useColorEnrichment({
       const groupsBySlug = new Map(colorGroupsCache.map((g) => [g.slug, g.id]));
       const variationsBySlug = new Map(colorVariationsCache.map((v) => [v.slug, v]));
 
-      // Resolve target color_ids
+      // Resolve target color_ids from groups, variations, and nuances
       const targetColorIds = new Set<string>();
 
       for (const slug of colorVariations) {
@@ -140,6 +170,23 @@ export function useColorEnrichment({
         if (groupId) {
           for (const v of colorVariationsCache) {
             if (v.group_id === groupId) targetColorIds.add(v.id);
+          }
+        }
+      }
+
+      // FIX-NUANCE-ENRICH: resolve nuance slugs → nuance IDs → variation IDs → color IDs.
+      // Without this, nuance-only filters produced correct product filtering (useProductsByColor)
+      // but showed default product images instead of nuance-specific variant images.
+      if (colorNuances.length > 0 && cachedColorNuances) {
+        const nuanceIdBySlug = new Map(cachedColorNuances.map((n) => [n.slug, n.id]));
+        const targetNuanceIds = new Set<string>();
+        for (const slug of colorNuances) {
+          const nid = nuanceIdBySlug.get(slug);
+          if (nid) targetNuanceIds.add(nid);
+        }
+        for (const v of colorVariationsCache) {
+          if (v.nuance_id && targetNuanceIds.has(v.nuance_id)) {
+            targetColorIds.add(v.id);
           }
         }
       }
