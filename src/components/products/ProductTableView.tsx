@@ -655,32 +655,29 @@ export const ProductTableView = memo(
                     {product.sku}
                   </div>
 
-                  <div className="hidden w-32 items-center gap-1.5 px-3 sm:flex">
+                  <div
+                    className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {product.colors.length > 0 ? (
-                      product.colors
-                        .slice(0, 5)
-                        .map((c: NonNullable<typeof product.colors>[number], i: number) => (
-                          <Tooltip key={i}>
-                            <TooltipTrigger asChild>
-                              <div
-                                className="h-3 w-3 rounded-full border border-border/40 shadow-sm"
-                                style={{ backgroundColor: c.hex }}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-[10px] font-bold">
-                              {c.name}
-                            </TooltipContent>
-                          </Tooltip>
-                        ))
+                      <ProductColorSwatches
+                        colors={product.colors.map((c) => ({
+                          name: c.name,
+                          hex: c.hex ?? null,
+                          image: (c as { image?: string | null }).image ?? null,
+                        }))}
+                        max={5}
+                        size="sm"
+                        hideWhenEmpty={false}
+                        selectedName={userSelectedColorName}
+                        onSelect={(c) => setSelectedColor(product.id, c.name)}
+                        onClear={() => clearSelectedColor(product.id)}
+                      />
                     ) : (
                       <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
                     )}
-                    {product.colors.length > 5 && (
-                      <span className="text-[9px] font-bold text-muted-foreground/60">
-                        +{product.colors.length - 5}
-                      </span>
-                    )}
                   </div>
+
 
                   <div
                     className={cn(
