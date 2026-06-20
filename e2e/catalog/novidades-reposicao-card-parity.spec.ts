@@ -105,4 +105,82 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       }
     }
   });
+
+  test('rodapé (preço/estoque) está alinhado ao bottom em ambos os módulos', async ({ page }, testInfo) => {
+    await gotoAndSettle(page, '/novidades');
+    await expect(page.getByTestId('page-title-novidades')).toBeVisible();
+    const novelty = await measureFirstCard(
+      page,
+      'div[role="list"][aria-label="Grade de novidades"]',
+    );
+    if (!novelty?.box || !novelty.footerBox) test.skip(true, 'Sem novidades / footer não encontrado.');
+
+    await gotoAndSettle(page, '/reposicao');
+    await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
+    const repl = await measureFirstCard(
+      page,
+      'div[role="list"][aria-label="Grade de produtos repostos"]',
+    );
+    if (!repl?.box || !repl.footerBox) test.skip(true, 'Sem reposições / footer não encontrado.');
+
+    // Distância entre bottom do footer e bottom do card = padding interno.
+    // Em ambos os módulos deve ser ~igual (mesmo p-3 do BaseProductGridCard).
+    const novGap = novelty!.box!.y + novelty!.box!.height - (novelty!.footerBox!.y + novelty!.footerBox!.height);
+    const replGap = repl!.box!.y + repl!.box!.height - (repl!.footerBox!.y + repl!.footerBox!.height);
+    const gapDiff = Math.abs(novGap - replGap);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[card-parity:footer] novGap=${novGap.toFixed(2)}px replGap=${replGap.toFixed(2)}px diff=${gapDiff.toFixed(2)}px tolerance=${TOL_PX}px`,
+    );
+    await testInfo.attach('card-parity-footer.json', {
+      body: Buffer.from(
+        JSON.stringify(
+          {
+            tolerance_px: TOL_PX,
+            novGap_px: novGap,
+            replGap_px: replGap,
+            gapDiff_px: gapDiff,
+            novelty_footer: novelty!.footerBox,
+            repl_footer: repl!.footerBox,
+          },
+          null,
+          2,
+        ),
+      ),
+      contentType: 'application/json',
+    });
+
+    expect(gapDiff, `gapDiff=${gapDiff.toFixed(2)}px excede tolerância ${TOL_PX}px`).toBeLessThanOrEqual(TOL_PX);
+    expect(novGap, `novGap=${novGap.toFixed(2)}px alto — rodapé não ancora ao bottom`).toBeLessThan(32);
+    expect(replGap, `replGap=${replGap.toFixed(2)}px alto — rodapé não ancora ao bottom`).toBeLessThan(32);
+  });
+
+  test('screenshot diff por viewport (artefato)', async ({ page }, testInfo) => {
+    // Captura o primeiro card de cada módulo no viewport do project atual
+    // (chromium-authed, firefox-authed, webkit-authed, mobile-chrome,
+    // mobile-safari) para comparação visual antes/depois nos artefatos do CI.
+    const projectName = testInfo.project.name;
+    const vp = page.viewportSize();
+    const vpLabel = vp ? `${vp.width}x${vp.height}` : 'unknown';
+
+    for (const [route, label, listLabel, titleTid] of [
+      ['/novidades', 'novidades', 'Grade de novidades', 'page-title-novidades'],
+      ['/reposicao', 'reposicao', 'Grade de produtos repostos', 'page-title-reposicao'],
+    ] as const) {
+      await gotoAndSettle(page, route);
+      await expect(page.getByTestId(titleTid)).toBeVisible();
+      const items = page.locator(
+        `div[role="list"][aria-label="${listLabel}"] >> [role="listitem"]`,
+      );
+      if ((await items.count()) === 0) {
+        test.skip(true, `Sem itens em ${route} para screenshot diff.`);
+      }
+      const card = items.first();
+      await testInfo.attach(`card-${label}-${projectName}-${vpLabel}.png`, {
+        body: await card.screenshot(),
+        contentType: 'image/png',
+      });
+    }
+  });
 });
