@@ -48,7 +48,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
                     {cart.company_logo_url ? (
                       <img
                         src={cart.company_logo_url}
-                        alt="Logo da empresa"
+                        alt={`Logo de ${cart.company_name}`}
                         className="h-8 w-8 rounded-full border border-border/50 bg-background object-cover"
                         loading="lazy"
                       />
@@ -87,7 +87,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
                         {item.product_image_url ? (
                           <img
                             src={item.product_image_url}
-                            alt="Produto"
+                            alt={item.product_name}
                             className="h-8 w-8 rounded bg-background object-contain"
                             loading="lazy"
                           />

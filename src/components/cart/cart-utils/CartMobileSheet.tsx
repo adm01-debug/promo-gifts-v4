@@ -32,6 +32,8 @@ export function MobileSummarySheet({
       >
         <button
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Recolher resumo do carrinho' : 'Expandir resumo do carrinho'}
           className="flex w-full items-center justify-between px-5 py-3"
         >
           <div className="flex items-center gap-3">

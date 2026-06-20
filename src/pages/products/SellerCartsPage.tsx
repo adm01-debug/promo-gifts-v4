@@ -646,11 +646,12 @@ function SellerCartsContent() {
                         <button
                           type="button"
                           onClick={() => toggleSort(key)}
+                          aria-label={`Ordenar por ${label}${sortKey === key ? `, ${sortDir === 'asc' ? 'decrescente' : 'crescente'}` : ''}`}
                           className="inline-flex items-center gap-1 hover:text-primary"
                           data-testid={`cart-sort-${key}`}
                         >
                           {label}
-                          <span className="text-[10px] opacity-70">
+                          <span className="text-[10px] opacity-70" aria-hidden="true">
                             {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
                           </span>
                         </button>
