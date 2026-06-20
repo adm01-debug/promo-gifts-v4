@@ -418,6 +418,10 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 119: 3 zero-violation rules (removed: jsx-newline many, forbid-component-props many, jsx-max-props-per-line many, jsx-closing-tag-location 3v)
+      'react/jsx-equals-spacing': 'error',
+      'react/jsx-tag-spacing': 'error',
+      'react/forbid-elements': 'error',
       // Batch 118: 6 zero-violation rules (removed: no-unsafe-member-access many, method-signature-style many, destructuring-assignment many, jsx-child-element-spacing many, jsx-props-no-multi-spaces 1v, jsx-boolean-value 5v)
       'constructor-super': 'error',
       'react/jsx-uses-react': 'error',
