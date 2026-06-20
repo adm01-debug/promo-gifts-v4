@@ -606,21 +606,25 @@ export const ProductCard = memo(
         >
           {/* Image Section — clique na FOTO abre QuickView (não navega p/ PDP) */}
           <div
+            ref={quickViewTriggerRef}
             role="button"
             tabIndex={0}
             aria-label={`Visualização rápida de ${product.name}`}
             aria-haspopup="dialog"
+            aria-expanded={quickViewOpen}
             data-testid="product-card-image-quickview"
+            data-product-id={product.id}
             className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            style={{ touchAction: 'manipulation' }}
             onClick={(e) => {
               e.stopPropagation();
-              setQuickViewOpen(true);
+              openQuickView();
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
-                setQuickViewOpen(true);
+                openQuickView();
               }
             }}
           >
