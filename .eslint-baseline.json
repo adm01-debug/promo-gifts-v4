@@ -1,5 +1,498 @@
 {
-  "generatedAt": "2026-06-20T00:36:44.538Z",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-06-20T06:16:10.531Z",
+  "totalErrors": 283,
+  "counts": {
+    "src/audit-debug.ts": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/DiscountApprovalHeaderBadge.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/GroupPersonalizationManager.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/ProductGroupsManager.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/ProductPersonalizationManager.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/AutoTestIntervalCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/AutoTestJobStatusCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/Bitrix24Tab.tsx": {
+      "no-negated-condition": 4
+    },
+    "src/components/admin/connections/ConnectionErrorDetailsDialog.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/connections/ConnectionTestDetailsDialog.tsx": {
+      "no-negated-condition": 4
+    },
+    "src/components/admin/connections/ConnectionTestHistoryPanel.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/connections/ConnectionTimelineDrawer.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/CredentialCacheMetricsPanel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/CredentialsSourceIndicator.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/EventsMultiSelect.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/connections/ExpectedKeysMatchPanel.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/connections/ExternalConnectionsSyncLogPanel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/FailureWindowCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/LastSyncRunPanel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/LastTestLine.tsx": {
+      "no-negated-condition": 5
+    },
+    "src/components/admin/connections/N8nTab.tsx": {
+      "no-negated-condition": 4
+    },
+    "src/components/admin/connections/SecretsManagerHealthPanel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/SmokeTestChecklist.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/connections/SupabaseConnectionsTab.tsx": {
+      "no-negated-condition": 4
+    },
+    "src/components/admin/connections/TestAllConnectionsButton.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/components/admin/connections/TestProgressIndicator.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/useIncidentDetails.ts": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/connections/useSecretField.ts": {
+      "no-negated-condition": 3
+    },
+    "src/components/admin/personalization-manager/ProductPersonalizationManager.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/ProductFormFullscreen.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/ProductMaterialsSection.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/ProductTagsSection.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/SupplierFiscalInfo.tsx": {
+      "no-negated-condition": 4
+    },
+    "src/components/admin/products/image-gallery/ImageStatsBar.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/products/image-gallery/ImageUploadArea.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/image-gallery/useProductImageGallery.ts": {
+      "no-negated-condition": 4
+    },
+    "src/components/admin/products/sections/ProductEngravingSection.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/sections/ProductSupplierSection.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/products/video-gallery/useProductVideoGallery.ts": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/security/keys/UpdateMcpKeyDialog.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/suppliers-manager/SupplierTable.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/suppliers-manager/useSuppliersManager.ts": {
+      "no-negated-condition": 11
+    },
+    "src/components/admin/telemetry/BreakerStatusCard.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/admin/telemetry/ColdVsWarmCrmCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/admin/users/UserTable.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/auth/StepUpAuthDialog.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/bi/ClientComparator.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/bi/ClientOverview360.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/bi/ClientVsIndustryComparison.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/bi/ExecutiveSummaryButton.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/bi/IndustryTrendingProducts.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/cart/CartCompanyPickerDialog.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/catalog/BulkAddToCartModal.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/categories/CategorySidebarPanel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/categories/CategoryTreeNavigation.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/collections/CollectionsTrashView.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/common/BulkActionsBar.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/common/EntityBadge/EntityBadge.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/common/GlobalOfflineAlert.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/common/SocialProof.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/compare/ComparisonPresentationLauncher.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/compare/RecentComparisonsSidebar.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/compare/SupplierComparisonModal.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/engraving/TechniquesPanel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/errors/EnhancedErrorBoundary.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/favorites/FavoritesTrashView.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/filters/FilterPresets.ts": {
+      "no-negated-condition": 1
+    },
+    "src/components/filters/PresetsBar.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/filters/filter-panel/useFilterPanelState.ts": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/CategoryRanking.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/ConversionFunnel.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/HotSearchesCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/MarketIntelligenceChart.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/SupplierSales.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/TrendingProducts.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/TrendsForecastChart.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/intelligence/UnmetDemandCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/inventory/FutureStockDialog.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/inventory/StockFilterToolbar.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/inventory/VariantStockRowActions.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/kit-builder/PersonalizationConfig.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/layout/MainLayout.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/magic-up/MagicUpVariationComparator.tsx": {
+      "no-negated-condition": 6
+    },
+    "src/components/mockup/LogoColorAnalyzer.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/mockup/MockupAnnotations.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/mockup/MockupClientSelector.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/components/mockup/MockupColorSelector.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/mockup/MockupProductSelector.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/mockup/logo-editor/LogoPreviewCanvas.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/personalization/TechniqueSelector.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/pricing/simulator/TechniqueSelector.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/components/products/ColumnSelector.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/NoveltyBadge.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ProductCard.tsx": {
+      "no-negated-condition": 7
+    },
+    "src/components/products/ProductCardImage.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ProductColorSwatches.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/products/ProductCustomizationOptions.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ProductIntelligence.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ProductListItem.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ProductQuickActionsFAB.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ProductQuickView.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/products/ProductTableView.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/products/QuickAddToQuote.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/ShareActions.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/StockHistoryChart.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/VirtualizedProductGrid.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/products/customization/LocationCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/customization/TechniqueCard.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/gallery/GalleryColorVariations.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/products/gallery/PromoFlixPlayer.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/products/quick-view/QuickViewGallery.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/quotes/CompanyContactSelector.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/quotes/QuoteBuilderProductSearch.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/components/quotes/QuoteProductCustomization.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/quotes/QuoteRowQuickActions.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/quotes/QuoteStatusTimeline.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/quotes/QuoteValidityBanner.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/components/quotes/company-contact/CompanySearchDropdown.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/components/simulator/wizard/ProductColorGrid.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/simulator/wizard/StepSpecs.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/ui/OptimizedImage.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/ui/chart.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/components/ui/form.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/contexts/ProductsContext.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/admin/useAuditLog.ts": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/common/useNetworkStatus.ts": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/common/useOfflineGuard.ts": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/intelligence/useExternalDatabase.ts": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/intelligence/useMagicUpState.ts": {
+      "no-negated-condition": 3
+    },
+    "src/hooks/intelligence/useStockHistory.ts": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/products/__tests__/futureStock.battery.test.ts": {
+      "no-negated-condition": 2
+    },
+    "src/hooks/products/__tests__/useCatalogFiltering.test.ts": {
+      "no-negated-condition": 1
+    },
+    "src/hooks/products/useCatalogState.ts": {
+      "no-negated-condition": 2
+    },
+    "src/hooks/products/useNovelties.ts": {
+      "no-negated-condition": 3
+    },
+    "src/hooks/products/useProductLeafCategories.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/hooks/ui/useWorkspaceNotifications.tsx": {
+      "no-negated-condition": 7
+    },
+    "src/integrations/supabase/__tests__/ssot-fallback.test.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/auth/auth-flow-tracer.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/bi/pptxGenerator.ts": {
+      "no-negated-condition": 2
+    },
+    "src/lib/cloud-status.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/db/postgrest.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/inventory/__tests__/days-cover.fuzz.test.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/inventory/__tests__/stock-filter.future-minqty.fuzz.test.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/inventory/__tests__/stock-filter.stress.test.ts": {
+      "no-negated-condition": 4
+    },
+    "src/lib/inventory/stock-filter.ts": {
+      "no-negated-condition": 4
+    },
+    "src/lib/lazyWithRetry.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/notifications-metrics.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/products/novelty-days.ts": {
+      "no-negated-condition": 1
+    },
+    "src/lib/security/rls-denial-logger.ts": {
+      "no-negated-condition": 2
+    },
+    "src/pages/admin/ObservabilityDashboard.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/pages/admin/SellerDiscountLimitsAdminPage.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/pages/admin/telemetry/exportHelpers.ts": {
+      "no-negated-condition": 2
+    },
+    "src/pages/collections/CollectionDetailPage.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/pages/filters/useFiltersPageState.ts": {
+      "no-negated-condition": 4
+    },
+    "src/pages/magic-up/MagicUpConfigPanel.tsx": {
+      "no-negated-condition": 3
+    },
+    "src/pages/mockups/MockupHistoryPage.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/pages/mockups/mockup-generator/MockupEmptyState.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/pages/products/FavoritesPage.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/pages/products/FiltersPage.tsx": {
+      "no-negated-condition": 6
+    },
+    "src/pages/products/ProductDetail.tsx": {
+      "no-negated-condition": 2
+    },
+    "src/pages/products/product-detail/ProductDetailHero.tsx": {
+      "no-negated-condition": 1
+    },
+    "src/services/telemetryService.ts": {
+      "no-negated-condition": 3
+    },
+    "src/tests/QuoteValidationLogic.test.ts": {
+      "no-negated-condition": 1
+    },
+    "src/utils/productPdfExport.ts": {
+      "no-negated-condition": 6
+    }
+  }
 }

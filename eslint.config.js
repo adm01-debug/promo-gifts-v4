@@ -187,6 +187,12 @@ export default [
       'dot-notation': 'error',
       // Batch 76: 1 rule — operator-assignment (7 fixes in 7 files, mixed auto/manual)
       'operator-assignment': 'error',
+      // Batch 77: 5 rules — zero violations (no code changes needed)
+      'yoda': 'error',
+      'prefer-object-spread': 'error',
+      'no-negated-condition': 'error',
+      'no-useless-rename': 'error',
+      'no-unneeded-ternary': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
