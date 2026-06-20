@@ -89,6 +89,8 @@ export function NoveltyProductGrid() {
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // ISSUE-24 FIX: ref para focar o input de busca via atalho `/`
   const searchInputRef = useRef<HTMLInputElement>(null);
+  // ISSUE-46 FIX: ref para o input mobile (sm:hidden) — foca o visível conforme viewport
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isFetching) {
@@ -111,8 +113,7 @@ export function NoveltyProductGrid() {
     };
   }, [isFetching]);
 
-  // ISSUE-24 FIX: atalho `/` foca o input de busca (mesmo padrão do CatalogHeader).
-  // Só dispara se o foco não estiver em input/textarea/select/contenteditable.
+  // ISSUE-24 / ISSUE-46 FIX: atalho `/` foca o input visível — desktop ou mobile.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -120,19 +121,33 @@ export function NoveltyProductGrid() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if ((e.target as HTMLElement)?.isContentEditable) return;
       e.preventDefault();
-      searchInputRef.current?.focus();
+      // Mobile input is visible when offsetParent !== null (sm:hidden hides it on desktop)
+      const mobileVisible = mobileSearchInputRef.current?.offsetParent !== null;
+      (mobileVisible ? mobileSearchInputRef : searchInputRef).current?.focus();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
+
+  // ISSUE-49 FIX: Escape sai do modo de seleção sem precisar clicar em "Cancelar".
+  useEffect(() => {
+    if (!selectionMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setSelectionMode(false);
+      sel.clearSelection();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionMode]);
 
   // ISSUE-37 FIX: counts de fornecedor e categoria usam o conjunto filtrado pelo
   // OUTRO filtro ativo — padrão de "faceted filtering". Antes os counts vinham de
   // `products` (total geral), gerando counts inflados que não refletiam a seleção.
   // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
-    const normSearch = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const normSearch = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
     const searchMatch = (p: (typeof products)[0]) =>
       !q ||
@@ -315,6 +330,18 @@ export function NoveltyProductGrid() {
   const { data: colorsByProduct } = useProductsColorsBatch(visibleProductIds);
 
   const renderContent = () => {
+    // ISSUE-42 FIX: exibe UI de erro em vez de tela vazia quando o fetch falha.
+    if (error && products.length === 0) {
+      return (
+        <div className="py-10 text-center">
+          <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10">
+            <Package className="h-7 w-7 text-destructive/40" />
+          </div>
+          <p className="text-sm font-medium text-destructive">Erro ao carregar novidades</p>
+          <p className="mt-1 text-xs text-muted-foreground">Tente recarregar a página</p>
+        </div>
+      );
+    }
     if (isLoading && products.length === 0) {
       return (
         <div className="space-y-4">
@@ -598,6 +625,7 @@ export function NoveltyProductGrid() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
+              ref={mobileSearchInputRef}
               placeholder="Buscar novidades..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -750,7 +778,9 @@ export function NoveltyProductGrid() {
                 Atualizando novidades...
               </>
             ) : (
-              <span className="text-xs">Role para ver mais {filteredProducts.length - visibleCount} novidades</span>
+              <span className="text-xs">
+                Role para ver mais {filteredProducts.length - visibleCount} novidades
+              </span>
             )}
           </div>
         </div>

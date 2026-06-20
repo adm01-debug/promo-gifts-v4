@@ -92,9 +92,7 @@ export function useSellerCartsPage() {
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
-      const product = dimMap.get(item.product_id) as
-        | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
-        | undefined;
+      const product = dimMap.get(item.product_id);
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;

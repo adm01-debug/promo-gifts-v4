@@ -513,7 +513,10 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const row = (rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null)?.[0] ?? null;
+  const row =
+    (
+      rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null
+    )?.[0] ?? null;
   const logoUrl = row?.logo_url ?? null;
   const mockupUrl = row?.mockup_url ?? null;
 

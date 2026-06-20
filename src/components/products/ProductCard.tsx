@@ -174,6 +174,7 @@ export const ProductCard = memo(
         | undefined
       >(undefined);
       const [quickViewOpen, setQuickViewOpen] = useState(false);
+      const quickViewTriggerRef = useRef<HTMLDivElement | null>(null);
       const [shareDialogOpen, setShareDialogOpen] = useState(false);
       const [shareVariant, setShareVariant] = useState<{
         variantName?: string | null;
@@ -290,6 +291,29 @@ export const ProductCard = memo(
       const actionBusyRef = useRef(false);
       const [variantPickerOpen, setVariantPickerOpen] = useState(false);
       const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
+
+      // QuickView (foto do card) — guards de empilhamento + foco restaurado
+      const openQuickView = useCallback(() => {
+        if (
+          actionsOpen ||
+          actionBusyRef.current ||
+          variantPickerOpen ||
+          collectionModalOpen ||
+          shareDialogOpen ||
+          quickViewOpen
+        ) {
+          return;
+        }
+        setQuickViewOpen(true);
+      }, [actionsOpen, variantPickerOpen, collectionModalOpen, shareDialogOpen, quickViewOpen]);
+      const handleQuickViewOpenChange = useCallback((open: boolean) => {
+        setQuickViewOpen(open);
+        if (!open) {
+          requestAnimationFrame(() => {
+            quickViewTriggerRef.current?.focus({ preventScroll: true });
+          });
+        }
+      }, []);
 
       const addFavorite = useFavoritesStore((s) => s.addFavorite);
       const addToCompare = useComparisonStore((s) => s.addToCompare);
@@ -582,21 +606,25 @@ export const ProductCard = memo(
         >
           {/* Image Section — clique na FOTO abre QuickView (não navega p/ PDP) */}
           <div
+            ref={quickViewTriggerRef}
             role="button"
             tabIndex={0}
             aria-label={`Visualização rápida de ${product.name}`}
             aria-haspopup="dialog"
+            aria-expanded={quickViewOpen}
             data-testid="product-card-image-quickview"
+            data-product-id={product.id}
             className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            style={{ touchAction: 'manipulation' }}
             onClick={(e) => {
               e.stopPropagation();
-              setQuickViewOpen(true);
+              openQuickView();
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
-                setQuickViewOpen(true);
+                openQuickView();
               }
             }}
           >
@@ -629,7 +657,6 @@ export const ProductCard = memo(
               categoryPath={leafCategory?.path}
             />
           </div>
-
 
           {/* Word Magic Badge — visível quando AI está ativa */}
           <WordMagicBadge visible={isAIActive} />
@@ -750,6 +777,7 @@ export const ProductCard = memo(
               colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
               max={6}
               size="sm"
+              wrap
               hideWhenEmpty={false}
               selectedName={activeColorName ?? null}
               onSelect={(c) => {
@@ -767,6 +795,24 @@ export const ProductCard = memo(
                   const currentUrl = new URL(window.location.href);
                   currentUrl.searchParams.set('cor', c.name);
                   currentUrl.searchParams.set('pid', product.id);
+                  window.history.replaceState({}, '', currentUrl.toString());
+                }
+              }}
+              onClear={() => {
+                feedback.light();
+                setActiveVariantIdx(0);
+                // Limpa a cor desse produto no store (reset por produto)
+                useProductSelectionStore.setState((state) => {
+                  const next = { ...state.selectedColors };
+                  delete next[product.id];
+                  return { selectedColors: next };
+                });
+                setImageLoaded(false);
+                const currentUrl = new URL(window.location.href);
+                // Só limpa parâmetros se eles pertencem a este produto
+                if (currentUrl.searchParams.get('pid') === product.id) {
+                  currentUrl.searchParams.delete('cor');
+                  currentUrl.searchParams.delete('pid');
                   window.history.replaceState({}, '', currentUrl.toString());
                 }
               }}
@@ -835,7 +881,11 @@ export const ProductCard = memo(
                       </span>
                     </span>
 
-                    <span className="text-[10px] font-medium text-muted-foreground sm:text-xs">
+                    <span
+                      className="text-[10px] font-medium text-muted-foreground sm:text-xs"
+                      data-testid="product-stock-value"
+                      data-stock-qty={displayStock ?? 0}
+                    >
                       {(displayStock ?? 0).toLocaleString('pt-BR')} un.
                     </span>
                   </div>
@@ -976,12 +1026,20 @@ export const ProductCard = memo(
               <ProductQuickView
                 product={product}
                 open={quickViewOpen}
-                onOpenChange={setQuickViewOpen}
+                onOpenChange={handleQuickViewOpenChange}
                 isFavorited={isFavorited}
                 onToggleFavorite={onToggleFavorite}
                 isInCompare={isInCompare}
                 onToggleCompare={onToggleCompare}
                 onShare={onShare}
+                onAddToQuote={() => {
+                  setVariantPickerMode('quote');
+                  setVariantPickerOpen(true);
+                }}
+                onAddToCollection={() => {
+                  setVariantPickerMode('collection');
+                  setVariantPickerOpen(true);
+                }}
               />
             </Suspense>
           )}
