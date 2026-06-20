@@ -84,6 +84,8 @@ const sortEntries = (entries: StockEntry[], order: SortOrder) =>
         return b.expectedQuantity - a.expectedQuantity;
       case 'quantity-asc':
         return a.expectedQuantity - b.expectedQuantity;
+      default:
+        return 0;
     }
   });
 
