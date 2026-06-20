@@ -443,4 +443,3 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
     });
   });
 });
-});
