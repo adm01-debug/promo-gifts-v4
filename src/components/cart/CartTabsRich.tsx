@@ -89,6 +89,7 @@ export function CartTabsRich({
           const hasItems = cart.items.length > 0;
           return (
             <button
+              type="button"
               key={cart.id}
               onClick={() => onSelect(cart.id)}
               data-testid="cart-tab"
@@ -180,6 +181,7 @@ export function CartTabsRich({
 
       <div className="flex-shrink-0 pb-2 pr-1">
         <button
+          type="button"
           data-testid="cart-tab-new"
           onClick={canCreateCart ? onNew : undefined}
           disabled={!canCreateCart}

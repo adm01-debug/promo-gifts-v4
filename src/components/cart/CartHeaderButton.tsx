@@ -335,6 +335,7 @@ export function CartHeaderButton() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button
+                                      type="button"
                                       aria-label={`Limpar itens do carrinho de ${cart.company_name}`}
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                                       onClick={async (e) => {
@@ -403,6 +404,7 @@ export function CartHeaderButton() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button
+                                      type="button"
                                       aria-label={`Excluir carrinho de ${cart.company_name}`}
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
                                       style={{ opacity: isActive ? 1 : undefined }}
@@ -442,6 +444,7 @@ export function CartHeaderButton() {
                                       </div>
                                     )}
                                     <button
+                                      type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         navigate(`/produto/${item.product_id}`);
@@ -489,6 +492,7 @@ export function CartHeaderButton() {
                                       {/* Qty stepper */}
                                       <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
                                         <button
+                                          type="button"
                                           aria-label={item.quantity <= 1 ? `Remover ${item.product_name}` : `Diminuir quantidade de ${item.product_name}`}
                                           className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                                           onClick={(e) => {
@@ -510,6 +514,7 @@ export function CartHeaderButton() {
                                           {item.quantity}
                                         </span>
                                         <button
+                                          type="button"
                                           aria-label={`Aumentar quantidade de ${item.product_name}`}
                                           className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                                           disabled={item.quantity >= 999999}
@@ -534,6 +539,7 @@ export function CartHeaderButton() {
 
                                   {/* Remove button */}
                                   <button
+                                    type="button"
                                     aria-label={`Remover ${item.product_name} do carrinho`}
                                     className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover/item:opacity-100"
                                     onClick={(e) => {

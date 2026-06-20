@@ -148,6 +148,7 @@ export const SortableCartItem = memo(
           {/* Product image */}
           <div className="group/img-container relative aspect-square overflow-hidden bg-muted/20">
             <button
+              type="button"
               {...attributes}
               {...listeners}
               className="absolute left-2.5 top-2.5 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground opacity-0 shadow-sm backdrop-blur-md transition-all duration-300 hover:text-primary active:cursor-grabbing group-hover:opacity-100"
@@ -205,6 +206,7 @@ export const SortableCartItem = memo(
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
+                    type="button"
                     data-testid="cart-item-menu-trigger"
                     className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:text-primary"
                     aria-label={`Mais opções para ${item.product_name}`}
@@ -376,6 +378,7 @@ export const SortableCartItem = memo(
                 className="flex items-center gap-0 overflow-hidden rounded-lg border border-border/50 bg-background shadow-sm transition-colors hover:border-primary/30"
               >
                 <button
+                  type="button"
                   data-testid="cart-qty-decrement"
                   aria-label={item.quantity <= 1 ? `Remover ${item.product_name}` : `Diminuir quantidade de ${item.product_name}`}
                   className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90"
@@ -412,6 +415,7 @@ export const SortableCartItem = memo(
                   className="m-0 h-9 w-12 appearance-none border-x border-border/30 bg-transparent text-center text-sm font-bold tabular-nums transition-all [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <button
+                  type="button"
                   data-testid="cart-qty-increment"
                   aria-label={`Aumentar quantidade de ${item.product_name}`}
                   disabled={item.quantity >= 999999}
@@ -438,6 +442,7 @@ export const SortableCartItem = memo(
             <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
               <CollapsibleTrigger asChild>
                 <button
+                  type="button"
                   data-testid="cart-item-notes-toggle"
                   className={cn(
                     'flex w-full items-center gap-2 rounded-lg border border-transparent p-2 text-[10px] font-bold uppercase tracking-wider transition-all',
