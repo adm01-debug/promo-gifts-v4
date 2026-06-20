@@ -377,6 +377,13 @@ export default [
       'jsx-a11y/scope': 'error',
       '@typescript-eslint/consistent-type-assertions': 'error',
       'react/prefer-stateless-function': 'error',
+      // Batch 96: 6 zero-violation rules (also removed: no-autofocus 1v)
+      'jsx-a11y/html-has-lang': 'error',
+      'jsx-a11y/img-redundant-alt': 'error',
+      'no-extra-bind': 'error',
+      '@typescript-eslint/no-array-delete': 'error',
+      'prefer-arrow-callback': 'error',
+      '@typescript-eslint/no-empty-object-type': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
