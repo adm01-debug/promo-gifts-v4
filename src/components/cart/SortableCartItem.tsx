@@ -115,7 +115,7 @@ export const SortableCartItem = memo(
       zIndex: isDragging ? 50 : undefined,
     };
 
-    const itemTotal = item.product_price * item.quantity;
+    const itemTotal = (Number(item.product_price) || 0) * (Number(item.quantity) || 0);
     const stock = stockMap.get(item.product_id);
     const isLowStock = stock !== undefined && stock < item.quantity;
     const isOutOfStock = stock !== undefined && stock === 0;
@@ -344,13 +344,15 @@ export const SortableCartItem = memo(
                   </span>
                 )}
               </div>
-              <h4
+              <button
+                type="button"
                 data-testid="cart-item-name"
-                className="line-clamp-2 min-h-[2.5rem] cursor-pointer text-sm font-semibold leading-tight transition-colors group-hover:text-primary"
+                aria-label={`Ver produto ${item.product_name}`}
+                className="line-clamp-2 min-h-[2.5rem] w-full cursor-pointer text-left text-sm font-semibold leading-tight transition-colors hover:text-primary group-hover:text-primary"
                 onClick={() => onNavigate(`/produto/${item.product_id}`)}
               >
                 {item.product_name}
-              </h4>
+              </button>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border border-border/10 bg-muted/20 p-2">
