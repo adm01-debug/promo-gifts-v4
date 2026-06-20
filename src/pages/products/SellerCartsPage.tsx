@@ -18,6 +18,7 @@ import {
 } from '@/components/cart/CartTablePreferences';
 
 import { type CartStatus, type CartTemplateItem } from '@/hooks/products';
+import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
 import { CartEmptyStateSmart } from '@/components/cart/CartEmptyStateSmart';
@@ -97,74 +98,89 @@ function SellerCartsContent() {
     };
   }, []);
 
-  // View mode + grid columns (persisted)
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
-    if (typeof window === 'undefined') return 'grid';
-    return (localStorage.getItem('cart-view-mode') as 'grid' | 'list' | 'table') || 'grid';
-  });
-  const [gridColumns, setGridColumns] = useState<ColumnCount>(() => {
-    if (typeof window === 'undefined') return 3;
-    const v = Number(localStorage.getItem('cart-grid-columns'));
-    return ([3, 4, 5, 6, 8].includes(v) ? v : 3) as ColumnCount;
-  });
-  useEffect(() => {
-    localStorage.setItem('cart-view-mode', viewMode);
-  }, [viewMode]);
-  useEffect(() => {
-    localStorage.setItem('cart-grid-columns', String(gridColumns));
-  }, [gridColumns]);
+  const { user } = useAuth();
+  const uid = user?.id ?? '';
 
-  // Tabela: colunas visíveis + densidade (persistidos)
-  const [visibleColumns, setVisibleColumns] = useState<Record<CartTableColumnKey, boolean>>(() => {
-    if (typeof window === 'undefined') return DEFAULT_CART_TABLE_COLS;
-    try {
-      const raw = localStorage.getItem('cart-table-columns');
-      if (!raw) return DEFAULT_CART_TABLE_COLS;
-      const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
-      return { ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true };
-    } catch {
-      return DEFAULT_CART_TABLE_COLS;
-    }
-  });
-  const [density, setDensity] = useState<CartTableDensity>(() => {
-    if (typeof window === 'undefined') return 'comfortable';
-    return (localStorage.getItem('cart-table-density') as CartTableDensity) || 'comfortable';
-  });
-  useEffect(() => {
-    localStorage.setItem('cart-table-columns', JSON.stringify(visibleColumns));
-  }, [visibleColumns]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-density', density);
-  }, [density]);
+  // View mode + grid columns (persisted, namespaced by user)
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
-  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+  // Tabela: colunas visíveis + densidade (persistidos, namespaced por user)
+  const [visibleColumns, setVisibleColumns] = useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
+  const [density, setDensity] = useState<CartTableDensity>('comfortable');
 
-  // Ordenação + paginação (persistidas)
+  // Ordenação + paginação (persistidas, namespaced por user)
   type SortKey = 'name' | 'price' | 'total';
   type SortDir = 'asc' | 'desc';
-  const [sortKey, setSortKey] = useState<SortKey>(() => {
-    if (typeof window === 'undefined') return 'name';
-    return (localStorage.getItem('cart-table-sort-key') as SortKey) || 'name';
-  });
-  const [sortDir, setSortDir] = useState<SortDir>(() => {
-    if (typeof window === 'undefined') return 'asc';
-    return (localStorage.getItem('cart-table-sort-dir') as SortDir) || 'asc';
-  });
-  const [pageSize, setPageSize] = useState<number>(() => {
-    if (typeof window === 'undefined') return 25;
-    const v = Number(localStorage.getItem('cart-table-page-size'));
-    return [10, 25, 50, 100].includes(v) ? v : 25;
-  });
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  // Carrega preferências do localStorage quando o uid fica disponível
+  useEffect(() => {
+    if (!uid) return;
+    const ns = (key: string) => `${key}:${uid}`;
+
+    const vm = localStorage.getItem(ns('cart-view-mode'));
+    if (vm === 'grid' || vm === 'list' || vm === 'table') setViewMode(vm);
+
+    const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
+    if ([3, 4, 5, 6, 8].includes(gc)) setGridColumns(gc as ColumnCount);
+
+    try {
+      const raw = localStorage.getItem(ns('cart-table-columns'));
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
+        setVisibleColumns({ ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true });
+      }
+    } catch { /* ignore corrupt stored value */ }
+
+    const dn = localStorage.getItem(ns('cart-table-density'));
+    if (dn === 'comfortable' || dn === 'compact') setDensity(dn as CartTableDensity);
+
+    const sk = localStorage.getItem(ns('cart-table-sort-key'));
+    if (sk === 'name' || sk === 'price' || sk === 'total') setSortKey(sk as SortKey);
+
+    const sd = localStorage.getItem(ns('cart-table-sort-dir'));
+    if (sd === 'asc' || sd === 'desc') setSortDir(sd as SortDir);
+
+    const ps = Number(localStorage.getItem(ns('cart-table-page-size')));
+    if ([10, 25, 50, 100].includes(ps)) setPageSize(ps);
+  }, [uid]);
+
+  // Persiste preferências com chave namespaced por user
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-view-mode:${uid}`, viewMode);
+  }, [viewMode, uid]);
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-grid-columns:${uid}`, String(gridColumns));
+  }, [gridColumns, uid]);
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-table-columns:${uid}`, JSON.stringify(visibleColumns));
+  }, [visibleColumns, uid]);
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-table-density:${uid}`, density);
+  }, [density, uid]);
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-table-sort-key:${uid}`, sortKey);
+  }, [sortKey, uid]);
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-table-sort-dir:${uid}`, sortDir);
+  }, [sortDir, uid]);
+  useEffect(() => {
+    if (!uid) return;
+    localStorage.setItem(`cart-table-page-size:${uid}`, String(pageSize));
+  }, [pageSize, uid]);
+
   const [page, setPage] = useState(1);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-key', sortKey);
-  }, [sortKey]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-dir', sortDir);
-  }, [sortDir]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-page-size', String(pageSize));
-  }, [pageSize]);
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {

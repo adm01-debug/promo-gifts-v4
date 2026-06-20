@@ -81,6 +81,32 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('canManage').textContent).toBe('false');
     expect(screen.getByTestId('isSeller').textContent).toBe('false');
     spy.mockRestore();
+    expect(screen.getByTestId('loading').textContent).toBe('false');
+    expect(screen.getByTestId('authenticated').textContent).toBe('false');
+    expect(screen.getByTestId('role').textContent).toBe('none');
+    expect(screen.getByTestId('isAdmin').textContent).toBe('false');
+    expect(screen.getByTestId('canManage').textContent).toBe('false');
+    expect(screen.getByTestId('isSeller').textContent).toBe('false');
+  });
+
+  it('FALLBACK_AUTH signIn returns an unavailable error without throwing', async () => {
+    // Verifies the safe-fallback contract: calling signIn outside AuthProvider
+    // must not throw — it must return a typed error for the caller to handle.
+    const { useAuth: useAuthDirect } = await import('@/contexts/AuthContext');
+    let result: Awaited<ReturnType<ReturnType<typeof useAuthDirect>['signIn']>> | undefined;
+    function SignInConsumer() {
+      const auth = useAuthDirect();
+      return (
+        <button onClick={async () => { result = await auth.signIn({ email: 'x', password: 'y' }); }}>
+          go
+        </button>
+      );
+    }
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { getByText } = render(<SignInConsumer />);
+    spy.mockRestore();
+    await act(async () => { getByText('go').click(); });
+    expect(result?.error?.message).toMatch(/indispon/i);
   });
 
   it('starts with isLoading=true then sets false when no session', async () => {
