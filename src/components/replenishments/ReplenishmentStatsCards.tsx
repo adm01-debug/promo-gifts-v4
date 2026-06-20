@@ -205,6 +205,7 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="Repostos Hoje"
         value={s.restockedToday}
+        subtitle="snapshot diário às 02h"
         icon={<CalendarPlus className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="info"
         delay={0}
