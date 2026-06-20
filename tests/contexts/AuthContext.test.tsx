@@ -67,10 +67,18 @@ describe('AuthContext', () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null } } as any);
   });
 
-  it('throws error when useAuth is used outside AuthProvider', () => {
+  it('returns safe fallback when useAuth is used outside AuthProvider', () => {
+    // useAuth no longer throws — it returns FALLBACK_AUTH to survive HMR races.
+    // Rendering outside AuthProvider should not crash and should show default values.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<AuthConsumer />)).toThrow('useAuth must be used within an AuthProvider');
+    expect(() => render(<AuthConsumer />)).not.toThrow();
     spy.mockRestore();
+    expect(screen.getByTestId('loading').textContent).toBe('false');
+    expect(screen.getByTestId('authenticated').textContent).toBe('false');
+    expect(screen.getByTestId('role').textContent).toBe('none');
+    expect(screen.getByTestId('isAdmin').textContent).toBe('false');
+    expect(screen.getByTestId('canManage').textContent).toBe('false');
+    expect(screen.getByTestId('isSeller').textContent).toBe('false');
   });
 
   it('starts with isLoading=true then sets false when no session', async () => {
