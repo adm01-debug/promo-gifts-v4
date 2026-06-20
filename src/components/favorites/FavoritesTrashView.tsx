@@ -91,6 +91,7 @@ export function FavoritesTrashView() {
                     variant="outline"
                     className="h-7 text-xs"
                     onClick={() => restoreItem.mutate(it.id)}
+                    disabled={restoreItem.isPending}
                   >
                     <RotateCcw className="mr-1 h-3 w-3" /> Restaurar
                   </Button>
@@ -99,6 +100,7 @@ export function FavoritesTrashView() {
                     variant="ghost"
                     className="h-7 text-xs text-destructive hover:text-destructive"
                     onClick={() => purgeItem.mutate(it.id)}
+                    disabled={purgeItem.isPending}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
