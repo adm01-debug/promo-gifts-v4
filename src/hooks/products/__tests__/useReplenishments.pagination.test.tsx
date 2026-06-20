@@ -55,24 +55,6 @@ const baseRow = {
   primary_category_name: null,
 };
 
-// Minimal ReposicaoRow — fields that fn_get_reposicao_listing returns
-const baseRow = {
-  slug: null,
-  is_new: false,
-  primary_image_url: null,
-  primary_image_cdn: null,
-  supplier_id: null,
-  supplier_name: null,
-  supplier_code: null,
-  ultimo_restock_date: null,
-  earliest_restock_date: null,
-  earliest_restock_qty: null,
-  has_upcoming_restock: null,
-  category_names: null,
-  primary_category_id: null,
-  primary_category_name: null,
-};
-
 describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
   beforeEach(() => {
     queryClient.clear();
@@ -92,7 +74,9 @@ describe('useReplenishmentsWithDetails Pagination & Consistency', () => {
     };
     vi.mocked(untypedRpc).mockResolvedValue({ data: [mockRow], error: null });
 
-    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 10 }), { wrapper });
+    const { result } = renderHook(() => useReplenishmentsWithDetails({ limit: 10 }), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true), { timeout: 5000 });
 
