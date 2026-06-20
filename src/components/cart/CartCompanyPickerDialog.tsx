@@ -124,7 +124,10 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-search', debouncedSearch],
     queryFn: async () => {
       if (debouncedSearch.length < 3) return [];
-      const searchOpts = { orderBy: { column: 'razao_social', ascending: true }, limit: 30 } as const;
+      const searchOpts = {
+        orderBy: { column: 'razao_social', ascending: true },
+        limit: 30,
+      } as const;
       const [byRazao, byFantasia] = await Promise.all([
         searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, searchOpts),
         searchCrm<CrmCompany>('companies', 'nome_fantasia', debouncedSearch, searchOpts),
@@ -258,7 +261,11 @@ export function CartCompanyPickerDialog({
             ? 'text-warning'
             : 'text-muted-foreground/40 opacity-0 hover:text-warning group-hover:opacity-100',
         )}
-        aria-label={isFavorite(company.id) ? `Remover ${company.name} dos favoritos` : `Adicionar ${company.name} aos favoritos`}
+        aria-label={
+          isFavorite(company.id)
+            ? `Remover ${company.name} dos favoritos`
+            : `Adicionar ${company.name} aos favoritos`
+        }
       >
         <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
       </button>
@@ -346,6 +353,7 @@ export function CartCompanyPickerDialog({
               <Search className="left-4.5 absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={inputRef}
+                aria-label="Buscar empresa por nome, CNPJ ou segmento"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Nome, CNPJ ou segmento..."
