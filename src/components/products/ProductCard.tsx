@@ -292,6 +292,29 @@ export const ProductCard = memo(
       const [variantPickerOpen, setVariantPickerOpen] = useState(false);
       const [variantPickerMode, setVariantPickerMode] = useState<VariantActionMode>('favorite');
 
+      // QuickView (foto do card) — guards de empilhamento + foco restaurado
+      const openQuickView = useCallback(() => {
+        if (
+          actionsOpen ||
+          actionBusyRef.current ||
+          variantPickerOpen ||
+          collectionModalOpen ||
+          shareDialogOpen ||
+          quickViewOpen
+        ) {
+          return;
+        }
+        setQuickViewOpen(true);
+      }, [actionsOpen, variantPickerOpen, collectionModalOpen, shareDialogOpen, quickViewOpen]);
+      const handleQuickViewOpenChange = useCallback((open: boolean) => {
+        setQuickViewOpen(open);
+        if (!open) {
+          requestAnimationFrame(() => {
+            quickViewTriggerRef.current?.focus({ preventScroll: true });
+          });
+        }
+      }, []);
+
       const addFavorite = useFavoritesStore((s) => s.addFavorite);
       const addToCompare = useComparisonStore((s) => s.addToCompare);
 
