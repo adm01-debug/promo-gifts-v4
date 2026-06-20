@@ -11,10 +11,7 @@ import { resolve } from 'node:path';
 
 const ROOT = resolve(__dirname, '../../../..');
 const ENV_EXAMPLE = readFileSync(resolve(ROOT, '.env.example'), 'utf-8');
-const CLIENT_SRC = readFileSync(
-  resolve(ROOT, 'src/integrations/supabase/client.ts'),
-  'utf-8',
-);
+const CLIENT_SRC = readFileSync(resolve(ROOT, 'src/integrations/supabase/client.ts'), 'utf-8');
 
 const CANONICAL = 'doufsxqlfjyuvxuezpln';
 const FORBIDDEN = 'pqpdolkaeqlyzpdpbizo';
@@ -22,23 +19,16 @@ const FORBIDDEN = 'pqpdolkaeqlyzpdpbizo';
 describe('SSOT Supabase — .env.example', () => {
   it('VITE_SUPABASE_URL aponta para o projeto canônico', () => {
     expect(ENV_EXAMPLE).toMatch(
-      new RegExp(
-        `^VITE_SUPABASE_URL=https://${CANONICAL}\\.supabase\\.co`,
-        'm',
-      ),
+      new RegExp(`^VITE_SUPABASE_URL=https://${CANONICAL}\\.supabase\\.co`, 'm'),
     );
   });
 
   it('VITE_SUPABASE_PROJECT_ID === canônico', () => {
-    expect(ENV_EXAMPLE).toMatch(
-      new RegExp(`^VITE_SUPABASE_PROJECT_ID=${CANONICAL}`, 'm'),
-    );
+    expect(ENV_EXAMPLE).toMatch(new RegExp(`^VITE_SUPABASE_PROJECT_ID=${CANONICAL}`, 'm'));
   });
 
   it('não referencia o projeto Lovable (pqp) em VITE_SUPABASE_*', () => {
-    const lines = ENV_EXAMPLE.split('\n').filter((l) =>
-      l.startsWith('VITE_SUPABASE_'),
-    );
+    const lines = ENV_EXAMPLE.split('\n').filter((l) => l.startsWith('VITE_SUPABASE_'));
     for (const line of lines) {
       expect(line).not.toContain(FORBIDDEN);
     }
@@ -47,9 +37,7 @@ describe('SSOT Supabase — .env.example', () => {
 
 describe('SSOT Supabase — client.ts (guarda imutável)', () => {
   it('mantém CURRENT_PROJECT_ID = canônico', () => {
-    expect(CLIENT_SRC).toMatch(
-      new RegExp(`CURRENT_PROJECT_ID\\s*=\\s*"${CANONICAL}"`),
-    );
+    expect(CLIENT_SRC).toMatch(new RegExp(`CURRENT_PROJECT_ID\\s*=\\s*"${CANONICAL}"`));
   });
 
   it('possui CANONICAL_URL derivada de CURRENT_PROJECT_ID', () => {
@@ -77,7 +65,7 @@ describe('SSOT Supabase — fallback em runtime', () => {
       expect(url).not.toContain(FORBIDDEN);
     } else {
       // Fallback: valida via supabase client interno
-      const client = (mod as { supabase?: { supabaseUrl?: string } }).supabase;
+      const client = (mod as unknown as { supabase?: { supabaseUrl?: string } }).supabase;
       expect(client?.supabaseUrl ?? '').toContain(CANONICAL);
     }
   });
