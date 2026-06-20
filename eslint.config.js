@@ -286,6 +286,18 @@ export default [
       '@typescript-eslint/prefer-namespace-keyword': 'error',
       '@typescript-eslint/triple-slash-reference': 'error',
       'no-fallthrough': 'error',
+      // Batch 87: 11 zero-violation rules
+      'no-object-constructor': 'error',
+      'no-promise-executor-return': 'error',
+      'no-unreachable-loop': 'error',
+      'logical-assignment-operators': 'error',
+      'react/jsx-no-duplicate-props': 'error',
+      'react/jsx-no-target-blank': 'error',
+      'react/no-danger-with-children': 'error',
+      'react/no-direct-mutation-state': 'error',
+      'react/no-find-dom-node': 'error',
+      'react/no-render-return-value': 'error',
+      'react/no-string-refs': 'error',
       'jsx-a11y/anchor-is-valid': 'warn',
     },
     settings: {
