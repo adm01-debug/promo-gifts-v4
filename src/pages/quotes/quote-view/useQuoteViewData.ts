@@ -40,10 +40,13 @@ export function useQuoteViewData(id: string | undefined) {
     const data = await fetchQuote(id);
     setQuote(data);
     setIsLoadingQuote(false);
+    // Prefer CNPJ stored on the quote (snapshot at creation) over live company data.
+    if (data?.client_cnpj) setClientCnpj(formatCNPJ(data.client_cnpj));
     if (data?.client_id) {
       try {
         const company = await selectCrmById<QuoteClientCompany>('companies', data.client_id);
-        if (company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
+        // Only fall back to live company CNPJ if the quote has none stored.
+        if (!data.client_cnpj && company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
         const bId = company?.bitrix_company_id ?? company?.bitrix_id;
         if (bId) setBitrixCompanyId(String(bId));
       } catch {
