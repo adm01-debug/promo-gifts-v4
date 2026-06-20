@@ -128,8 +128,9 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+        const { seller_cart_items: rowItems, ...cart } = row as unknown as SellerCart & {
+          seller_cart_items?: SellerCartItem[] | null;
+        };
         return {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
