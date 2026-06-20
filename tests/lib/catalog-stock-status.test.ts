@@ -44,7 +44,7 @@ describe('getCatalogStockStatus — entradas anômalas normalizam para out-of-st
   });
 });
 
-describe('getCatalogStockStatus — limiar customizado (ex.: min_quantity)', () => {
+describe('getCatalogStockStatus — limiar de low-stock customizado (2º arg)', () => {
   it('respeita threshold=1 (apenas 0 e abaixo são out)', () => {
     expect(getCatalogStockStatus(1, 1)).toBe('in-stock');
     expect(getCatalogStockStatus(0, 1)).toBe('out-of-stock');
@@ -55,6 +55,36 @@ describe('getCatalogStockStatus — limiar customizado (ex.: min_quantity)', () 
   });
   it('threshold padrão é 10', () => {
     expect(CATALOG_LOW_STOCK_THRESHOLD).toBe(10);
+  });
+});
+
+describe('getCatalogStockStatus — order-gate por min_quantity (3º arg)', () => {
+  // BUG-STOCK-01 consolidado: estoque positivo abaixo do mínimo pedível do
+  // fornecedor = out-of-stock (não pode ser pedido), mesmo acima do limiar de low-stock.
+  it('estoque > 0 mas abaixo do mínimo pedível => out-of-stock', () => {
+    expect(getCatalogStockStatus(5, undefined, 20)).toBe('out-of-stock');
+    expect(getCatalogStockStatus(19, undefined, 20)).toBe('out-of-stock');
+    // 50 unidades em estoque mas mínimo 100 → não pedível
+    expect(getCatalogStockStatus(50, undefined, 100)).toBe('out-of-stock');
+  });
+  it('estoque >= mínimo pedível mantém a classificação normal de low/in-stock', () => {
+    expect(getCatalogStockStatus(20, undefined, 20)).toBe('in-stock'); // 20 >= limiar 10
+    expect(getCatalogStockStatus(8, undefined, 5)).toBe('low-stock'); // 8 >= min 5, mas < 10
+    expect(getCatalogStockStatus(100, undefined, 100)).toBe('in-stock');
+  });
+  it('min_quantity ausente/0/null/<1 não bloqueia (sem gate)', () => {
+    expect(getCatalogStockStatus(5, undefined, undefined)).toBe('low-stock');
+    expect(getCatalogStockStatus(5, undefined, null)).toBe('low-stock');
+    expect(getCatalogStockStatus(5, undefined, 0)).toBe('low-stock');
+    expect(getCatalogStockStatus(5, undefined, 0.5)).toBe('low-stock');
+  });
+  it('min_quantity não-finito é ignorado (sem gate)', () => {
+    expect(getCatalogStockStatus(5, undefined, NaN)).toBe('low-stock');
+    expect(getCatalogStockStatus(5, undefined, Infinity)).toBe('low-stock');
+  });
+  it('estoque zerado continua out-of-stock independentemente do min', () => {
+    expect(getCatalogStockStatus(0, undefined, 20)).toBe('out-of-stock');
+    expect(getCatalogStockStatus(0, undefined, 0)).toBe('out-of-stock');
   });
 });
 

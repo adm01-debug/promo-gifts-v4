@@ -6,6 +6,7 @@
 import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
@@ -44,18 +45,16 @@ function mapLightweight(p: LightweightProduct): ProductLightweight {
   };
 }
 
+// FIX BUG-STOCK-01 (2026-06-18) → CONSOLIDADO (2026-06-20): a regra de
+// min_quantity (estoque positivo mas abaixo do mínimo pedível = zerado) agora
+// pertence à SSOT `getCatalogStockStatus` (3º arg). Antes duplicada aqui,
+// divergia do product-mapper (que a ignorava) e do useNovelties. Delegamos para
+// manter um único ponto de verdade.
 function getStockStatus(
   stock: number,
   minQuantity?: number | null,
 ): 'in-stock' | 'low-stock' | 'out-of-stock' {
-  if (stock <= 0) return 'out-of-stock';
-  // FIX BUG-STOCK-01 (2026-06-18): 144 produtos ativos com stock > 0 mas
-  // min_quantity > stock — aparecem como "Estoque baixo" mas não podem ser
-  // pedidos (fornecedor exige mínimo que excede o disponível). Correto: out-of-stock.
-  // Proteção: min >= 1 evita falso-positivo quando min_quantity é 0/null.
-  if (minQuantity && minQuantity >= 1 && stock < minQuantity) return 'out-of-stock';
-  if (stock < 10) return 'low-stock';
-  return 'in-stock';
+  return getCatalogStockStatus(stock, undefined, minQuantity);
 }
 
 /** Converte um `LightweightProduct` (DB) em `Product` (UI), resolvendo categoria-folha e imagens. */

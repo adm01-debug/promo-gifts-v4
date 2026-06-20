@@ -244,8 +244,16 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
   const daysRemaining = calcDaysRemaining(expiresAt);
   const daysAsNovelty = calcDaysAsNovelty(detectedAt);
   const stock = p.stock_quantity ?? 0;
-  const minQty = p.min_quantity ?? 10;
-  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(stock, minQty);
+  // FIX (2026-06-20): min_quantity é o mínimo PEDÍVEL, não o limiar de low-stock.
+  // Antes passado como 2º arg (lowStockThreshold) → estoque positivo abaixo do
+  // mínimo aparecia como "low-stock" (pedível) em vez de "out-of-stock". Agora vai
+  // ao 3º arg da SSOT (order-gate), alinhando Novidades ao catálogo principal.
+  const minQty = p.min_quantity ?? undefined;
+  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(
+    stock,
+    undefined,
+    minQty,
+  );
 
   return {
     novelty_id: p.id,
