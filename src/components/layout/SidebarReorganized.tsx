@@ -376,6 +376,7 @@ function computeOpenGroups(pathname: string): Record<string, boolean> {
   return next;
 }
 
+// eslint-disable-next-line react/require-optimization
 export const SidebarReorganized = React.memo(
   React.forwardRef<HTMLElement, SidebarProps>(({ isOpen, onToggle }, ref) => {
     const location = useLocation();

@@ -418,6 +418,10 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 143: 3 rules (wrap-iife:0v with 'inside' matches Prettier, jsx-a11y/no-noninteractive-element-to-interactive-role:1v, react/require-optimization:5v)
+      'wrap-iife': ['error', 'inside'],
+      'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error',
+      'react/require-optimization': 'error',
       // Batch 142: 7 rules (all zero-violation)
       '@typescript-eslint/no-unnecessary-qualifier': 'error',
       '@typescript-eslint/prefer-enum-initializers': 'error',

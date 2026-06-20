@@ -14,7 +14,7 @@
  * Captura erros de renderização e oferece retry com feedback visual.
  */
 
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { PureComponent, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { m as motion } from 'framer-motion';
@@ -34,7 +34,7 @@ interface State {
   errorCount: number;
 }
 
-export class SimulatorErrorBoundary extends Component<Props, State> {
+export class SimulatorErrorBoundary extends PureComponent<Props, State> {
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
