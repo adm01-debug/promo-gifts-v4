@@ -28,6 +28,25 @@
 > base `fn_simular_combo_gravacao` continuam no `public`; os objetos movidos resolvem `NULL`
 > em `public` e existem em `archive`. **Zero dano colateral.**
 
+### Lote 2 (migration `20260620191500_…b2_archive_legacy_supplier_fns.sql`) — +19 funções
+
+Helpers legados de ingestão/fornecedor (DB-orphan + code-absent, corpos confirmados como
+wrappers órfãos ou versões superadas). `public` funções **668 → 649**.
+
+`fn_ingest_asia_api_batch`, `fn_ingest_asia_product`, `fn_classify_spot_image`,
+`fn_spot_process_batch`, `comparar_precos_spot`, `fn_resolve_supplier`,
+`fn_color_link_all_suppliers`, `fn_tag_product_complete`, `fn_import_product_properties`,
+`extract_xbz_image_metadata`, `fn_get_asia_api_key`, `fn_get_asia_secret_key`,
+`fn_get_cf_credentials`, `fn_extract_color_from_name`, `fn_extract_material_from_name`,
+`fn_recomendar_tecnica`, `fn_list_deactivation_requests`, `create_material_with_equivalence`,
+`fn_expire_novelties` (superada por `fn_expire_novelties_with_stats`).
+
+Sucessores vivos preservados: `fn_process_asia_stock_pending`, `fn_spot_stock_fast_sync`,
+`fn_apply_auto_tag_rules`, edge fn `asia-ingestion`, `materials-api`.
+
+**Acumulado Tier 3b (lotes 1+2): 30 objetos** (27 funções + 3 views). `public`: 300 tabelas ·
+55 views · **649 funções**.
+
 ---
 
 ## 2. Metodologia (6 gates — endurecida vs. Tier 3)
