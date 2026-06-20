@@ -421,6 +421,7 @@ export const ProductListItem = memo(
               <div
                 role="tablist"
                 aria-label="Variantes de cor"
+                tabIndex={0}
                 className="absolute bottom-0.5 left-0 right-0 z-10 flex justify-center gap-1"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => {
