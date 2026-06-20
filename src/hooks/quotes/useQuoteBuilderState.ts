@@ -1056,6 +1056,8 @@ export function useQuoteBuilderState() {
         clearAutoSave();
         navigate(`/orcamentos/${result.id}`);
       }
+
+      return result?.updated_at ?? undefined;
     },
     [
       isDraftValid,
@@ -1214,9 +1216,9 @@ export function useQuoteBuilderState() {
       const previousBaseline = baselineUpdatedAtRef.current;
       baselineUpdatedAtRef.current = null;
       try {
-        await handleSaveQuote(effectiveStatus, sellerNotes);
-        // Re-arm baseline after save so future concurrent edits are detected.
-        baselineUpdatedAtRef.current = new Date().toISOString();
+        const savedUpdatedAt = await handleSaveQuote(effectiveStatus, sellerNotes);
+        // Re-arm baseline to the server's updated_at to avoid clock-skew false conflicts.
+        baselineUpdatedAtRef.current = savedUpdatedAt ?? new Date().toISOString();
       } catch (err) {
         // Restore previous baseline so the next save attempt still performs
         // conflict detection — without this, a failed overwrite leaves baseline
