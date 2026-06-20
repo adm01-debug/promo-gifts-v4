@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { Route } from 'react-router-dom';
 import {
   Auth,
@@ -8,6 +9,9 @@ import {
   TermsPage,
   PrivacyPage,
 } from './lazy-pages';
+
+// Dev-only harness (sem auth) para validação visual de componentes.
+const ColorSwatchesHarness = lazy(() => import('@/pages/dev/ColorSwatchesHarness'));
 
 /**
  * Public routes — accessible without authentication.
@@ -26,5 +30,6 @@ export const publicRoutes = (
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/privacidade" element={<PrivacyPage />} />
+    <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
   </>
 );

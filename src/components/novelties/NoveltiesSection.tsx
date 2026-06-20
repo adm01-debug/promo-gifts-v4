@@ -41,11 +41,17 @@ export function NoveltiesSection() {
   const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
   const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
 
-  // Extract unique suppliers from data
+  // Extract unique suppliers from period-filtered data — faceted filtering:
+  // supplier counts must reflect only the products that match the current
+  // period filter so the count next to each supplier name is accurate.
   const suppliers = useMemo(() => {
     if (!allNovelties) return [];
+    const base =
+      periodFilter === 'all'
+        ? allNovelties
+        : allNovelties.filter((p) => p.days_as_novelty <= parseInt(periodFilter));
     const supMap = new Map<string, { id: string; name: string; count: number }>();
-    allNovelties.forEach((p) => {
+    base.forEach((p) => {
       if (p.supplier_id && p.supplier_name) {
         const existing = supMap.get(p.supplier_id);
         if (existing) existing.count++;
@@ -53,7 +59,7 @@ export function NoveltiesSection() {
       }
     });
     return [...supMap.values()].sort((a, b) => b.count - a.count);
-  }, [allNovelties]);
+  }, [allNovelties, periodFilter]);
 
   // Filter by period and supplier
   const novelties = useMemo(() => {

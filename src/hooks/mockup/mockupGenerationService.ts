@@ -578,10 +578,10 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
+      ...t,
       id: String(t.id),
       name: String(t.name),
       code: t.code ? String(t.code) : null,
-      ...t,
     }));
 }
 

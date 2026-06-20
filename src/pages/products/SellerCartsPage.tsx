@@ -199,6 +199,7 @@ function SellerCartsContent() {
   useEffect(() => {
     localStorage.setItem('cart-table-page-size', String(pageSize));
   }, [pageSize]);
+
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {

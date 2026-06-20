@@ -54,7 +54,10 @@ describe('useIPValidation', () => {
       const ip = await result.current.fetchCurrentIP();
 
       expect(ip).toBe('5.6.7.8');
-      expect(mockFetch).toHaveBeenCalledWith('https://api.ipify.org?format=json');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.ipify.org?format=json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
     });
 
     it('returns null when both methods fail', async () => {
