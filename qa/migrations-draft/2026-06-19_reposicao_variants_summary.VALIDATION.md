@@ -1,7 +1,7 @@
 # Validação Exaustiva — `fn_get_reposicao_variants_summary` v3
 
 **Auditor:** Claude Opus 4.8 (modo Senior DBA)
-**Data:** 2026-06-19 · **Atualização:** 2026-06-20 03:50 UTC (gaps A e C resolvidos via query no Gold; CI trigger)
+**Data:** 2026-06-19 · **Atualização:** 2026-06-20 (gaps A e C resolvidos via query no Gold; CI trigger #2 pós visual-baseline bot commit)
 **Escopo:** análise estática da migração + matriz de ~60 cenários simulados.
 
 > **🟢 ATUALIZAÇÃO 2026-06-20:** `fn_get_reposicao_variants_summary` já está implantada no
