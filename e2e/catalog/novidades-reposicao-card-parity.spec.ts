@@ -22,7 +22,12 @@ async function measureFirstCard(page: import('@playwright/test').Page, listSelec
   const box = await first.boundingBox();
   const img = first.locator('img').first();
   const imgBox = (await img.count()) > 0 ? await img.boundingBox() : null;
-  return { box, imgBox };
+  // Rodapé (preço + estoque) — usado para validar alinhamento bottom.
+  const footer = first.locator(
+    '[data-testid="product-card-footer"], [data-testid$="-card-footer"]',
+  ).first();
+  const footerBox = (await footer.count()) > 0 ? await footer.boundingBox() : null;
+  return { box, imgBox, footerBox };
 }
 
 test.describe('Paridade visual — cards Novidades vs Reposição', () => {
