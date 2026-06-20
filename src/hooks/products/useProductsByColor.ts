@@ -45,11 +45,12 @@ export function useProductsByColor({
   );
 
   const lastFetchedKey = useRef('');
-  // fetchTokenRef: substitui isFetchingRef — cada chamada incrementa o token;
-  // resultados de chamadas supersedidas sao descartados, eliminando a condicao de corrida
-  // onde filtros rapidos A->B bloqueavam B (isFetchingRef=true) e mostravam o resultado
-  // stale de A. Propriedade chave: somente o ultimo fetch em voo aplica setState.
+  // fetchTokenRef: each new call increments the token; only the latest call applies
+  // setState — stale results from slow in-flight requests are discarded.
   const fetchTokenRef = useRef(0);
+  // abortControllerRef: cancels the previous HTTP request so network bandwidth is not
+  // wasted on superseded fetches (token alone prevents stale setState but not network I/O).
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchProductIds = useCallback(async () => {
     if (lastFetchedKey.current === filterKey) return;
@@ -60,6 +61,11 @@ export function useProductsByColor({
     }
 
     const token = ++fetchTokenRef.current;
+    // Cancel the previous in-flight request before starting a new one
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
     setIsLoading(true);
     setError(null);
 
@@ -94,7 +100,7 @@ export function useProductsByColor({
         },
       ];
 
-      const refResults = await Promise.all(refQueries.map((q) => dbInvoke(q)));
+      const refResults = await Promise.all(refQueries.map((q) => dbInvoke({ ...q, signal })));
       if (token !== fetchTokenRef.current) return; // superseded
 
       const groupsData = (refResults[0]?.records ?? []) as Record<string, unknown>[];
@@ -173,6 +179,7 @@ export function useProductsByColor({
               filters: { is_active: true, color_id: chunk },
               limit: 5000,
               offset: 0,
+              signal,
             }),
           ),
         );
@@ -193,6 +200,8 @@ export function useProductsByColor({
         `[useProductsByColor] Found ${matchingProductIds.size} products for ${colorIdArray.length} color IDs`,
       );
     } catch (err) {
+      // Ignore aborted requests — a new fetch is already in-flight
+      if ((err as { name?: string })?.name === 'AbortError') return;
       if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByColor] Critical Error:', err);
       setError(err);

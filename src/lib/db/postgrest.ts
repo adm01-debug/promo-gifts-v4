@@ -35,6 +35,8 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   limit?: number;
   offset?: number;
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  /** AbortSignal — when aborted, the underlying HTTP request is cancelled. */
+  signal?: AbortSignal;
 }
 
 export interface InvokeResult<T> {
@@ -407,7 +409,11 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     query = query.range(from, from + options.limit - 1);
   }
 
-  const { data, error, count: dbCount } = await query;
+  const { data, error, count: dbCount } = await (
+    options.signal
+      ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(options.signal)
+      : query
+  );
 
   if (error) {
     if (error.message?.includes('410') || error.message?.includes('Gone')) {
