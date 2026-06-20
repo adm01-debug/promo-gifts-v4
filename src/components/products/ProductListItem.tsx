@@ -573,7 +573,7 @@ export const ProductListItem = memo(
                 )}
               >
                 <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                {getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
+                {_getStockLabel(displayStatus)} ({displayStock.toLocaleString('pt-BR')})
               </span>
             </div>
           </div>

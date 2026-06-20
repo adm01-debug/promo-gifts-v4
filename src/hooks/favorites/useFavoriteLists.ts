@@ -68,7 +68,9 @@ export function useFavoriteLists() {
     queryFn: async (): Promise<FavoriteList[]> => {
       if (!user) return [];
       // Garante lista padrão
-      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', { _user_id: user.id });
+      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', {
+        _user_id: user.id,
+      });
       if (ensureErr) logger.warn('[favorites] ensure_default_favorite_list failed', ensureErr);
 
       const { data, error } = await supabase
@@ -86,7 +88,9 @@ export function useFavoriteLists() {
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: countRows } = await untypedRpc('get_favorite_list_counts', { _user_id: user.id });
+        const { data: countRows } = await untypedRpc('get_favorite_list_counts', {
+          _user_id: user.id,
+        });
         ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
           (r) => {
             counts[r.list_id] = Number(r.item_count);
@@ -95,7 +99,10 @@ export function useFavoriteLists() {
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as unknown as FavoriteList[];
+      return (data ?? []).map((l) => ({
+        ...l,
+        item_count: counts[l.id] ?? 0,
+      })) as unknown as FavoriteList[];
     },
     enabled: !!user,
     staleTime: 30_000,
@@ -401,7 +408,9 @@ export function useFavoriteListItems(listId: string | null) {
           onClick: async () => {
             const { data: trashed } = await supabase
               .from('favorite_items_trash')
-              .select('id')
+              .select(
+                'id, original_id, list_id, product_id, note, position, price_at_save, variant_id, variant_info',
+              )
               .eq('user_id', user.id)
               .in('original_id', ids);
             if (!trashed?.length) {
@@ -409,19 +418,30 @@ export function useFavoriteListItems(listId: string | null) {
               return;
             }
             const results = await Promise.allSettled(
-              trashed.map((t) =>
-                supabase.rpc('restore_favorite_from_trash', {
-                  _trash_id: t.id,
-                  _user_id: user.id,
-                }),
-              ),
+              trashed.map(async (t) => {
+                const { error: insertErr } = await supabase.from('favorite_items').upsert({
+                  id: t.original_id,
+                  list_id: t.list_id,
+                  product_id: t.product_id,
+                  user_id: user.id,
+                  note: t.note,
+                  position: t.position ?? 0,
+                  price_at_save: t.price_at_save,
+                  variant_id: t.variant_id,
+                  variant_info: t.variant_info,
+                });
+                if (insertErr) throw insertErr;
+                await supabase.from('favorite_items_trash').delete().eq('id', t.id);
+              }),
             );
             const restoredCount = results.filter((r) => r.status === 'fulfilled').length;
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
             qc.invalidateQueries({ queryKey: ['favorite-trash'] });
             qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
-            toast.success(`${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`);
+            toast.success(
+              `${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`,
+            );
           },
         },
         duration: 8000,
