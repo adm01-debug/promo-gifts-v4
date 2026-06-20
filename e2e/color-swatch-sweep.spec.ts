@@ -23,6 +23,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import { requireAuth } from './fixtures/test-base';
 import { gotoAndSettle, waitForRouteIdle } from './helpers/nav';
 import { installColorStockMock } from './fixtures/color-swatch-mocks';
+import { ATTR, TID } from './fixtures/color-swatch-selectors';
 
 const ROUTES = ['/produtos', '/super-filtro', '/novidades', '/reposicao'] as const;
 const VIEWS = ['grid', 'list', 'table'] as const;
