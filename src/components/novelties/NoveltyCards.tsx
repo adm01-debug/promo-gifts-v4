@@ -27,6 +27,7 @@ import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
+import { StockBadge } from '@/components/inventory/StockBadge';
 
 const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -292,6 +293,8 @@ export const NoveltyGridCard = memo(
             {isPriceStockLoading ? (
               <div
                 data-testid="novelty-card-price-skeleton"
+                aria-busy="true"
+                aria-label="Carregando preço"
                 className="h-4 w-20 animate-pulse rounded bg-muted"
               />
             ) : typeof product.base_price === 'number' &&
@@ -309,6 +312,21 @@ export const NoveltyGridCard = memo(
                 </p>
               </div>
             ) : null}
+            {isPriceStockLoading ? (
+              <div
+                data-testid="novelty-card-stock-skeleton"
+                aria-busy="true"
+                aria-label="Carregando estoque"
+                className="h-4 w-12 animate-pulse rounded bg-muted"
+              />
+            ) : (
+              <StockBadge
+                quantity={product.stock_quantity}
+                status={product.stock_status}
+                showQuantity
+                size="sm"
+              />
+            )}
           </div>
         </div>
       </article>
