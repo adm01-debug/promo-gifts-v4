@@ -414,6 +414,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 115: 5 zero-violation rules (removed: parameter-properties many, prefer-function-type many, prefer-object-has-own many, no-unused-prop-types many, require-atomic-updates many, sort-type-constituents many, no-loop-func 1v, require-optimization 1v, vars-on-top 1v)
+      '@typescript-eslint/default-param-last': 'error',
+      'react/require-render-return': 'error',
+      'react/default-props-match-prop-types': 'error',
+      'react/state-in-constructor': 'error',
+      'react/static-property-placement': 'error',
       // Batch 114: 4 zero-violation rules (removed: no-redeclare 1v, no-var-requires 1v, prefer-promise-reject-errors many, prefer-regexp-exec many, return-await 1v)
       '@typescript-eslint/no-misused-spread': 'error',
       '@typescript-eslint/related-getter-setter-pairs': 'error',
