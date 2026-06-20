@@ -1,10 +1,19 @@
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery } from '@tanstack/react-query';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
-import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
+import { supabase } from '@/integrations/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
-const fromTable = (table: string) => untypedFrom(resolveTable(table));
+// untypedFrom returns PostgrestQueryBuilder which lacks filter methods (.eq, .order, etc.)
+// Cast to SupabaseClient<any> so .from() gives a plain QueryBuilder that TypeScript
+// won't constrain further; NoveltyQuery is narrowed to PostgrestFilterBuilder<any> below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fromTable = (table: string) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (supabase as unknown as SupabaseClient<any, any, any>).from(resolveTable(table));
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -33,10 +42,22 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-type NoveltyQuery = ReturnType<typeof fromTable>;
+// PostgrestFilterBuilder<any,...> is the correct return type of .select() —
+// it exposes .eq(), .gt(), .order(), .range() etc. that NoveltyQuery chains need.
+// ReturnType<typeof fromTable> gives PostgrestQueryBuilder (no filter methods), which
+// causes TS2339 on every filter call. TS2589 (excessively deep) is avoided by
+// casting to `any` inside helpers before chaining.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NoveltyQuery = PostgrestFilterBuilder<any, any, any, any, any, any, any>;
 
-const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
-  query.eq('is_stockout', false).not('primary_image_url', 'is', null).gt('sale_price', 0) as NoveltyQuery;
+const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const q = query as any;
+  return q
+    .eq('is_stockout', false)
+    .not('primary_image_url', 'is', null)
+    .gt('sale_price', 0) as NoveltyQuery;
+};
 
 /**
  * Predicado de PERTINÊNCIA de novidade (fonte da verdade = pipeline DB).
@@ -47,10 +68,13 @@ const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
  *    descarta flags vencidas mesmo antes do `cleanup-novelties` rodar).
  * Os filtros de qualidade continuam aplicados.
  */
-const applyNoveltyPredicate = (query: NoveltyQuery, nowIso: string): NoveltyQuery =>
-  applyNoveltyQualityFilters(query.eq('is_active', true) as NoveltyQuery)
+const applyNoveltyPredicate = (query: NoveltyQuery, nowIso: string): NoveltyQuery => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const q = query as any;
+  return applyNoveltyQualityFilters(q.eq('is_active', true) as NoveltyQuery)
     .eq('is_new', true)
     .gt('novelty_expires_at', nowIso) as NoveltyQuery;
+};
 
 /**
  * Dias restantes como novidade — derivado da expiração REAL da pipeline.
