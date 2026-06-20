@@ -161,8 +161,6 @@ describe('fetchPaginatedFromBridge', () => {
       'categories',
       { data: page1, error: null, count: 4 },
       { data: page2, error: null, count: 4 },
-      // Keyset pagination: 3rd call confirms no more data (empty page)
-      { data: [], error: null, count: 0 },
     );
     const rows = await fetchPaginatedFromBridge('categories', 'id', 2);
     expect(rows.map((r) => r.id)).toEqual(['a0', 'a1', 'b0', 'b1']);

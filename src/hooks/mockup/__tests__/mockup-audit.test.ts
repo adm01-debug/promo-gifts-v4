@@ -377,12 +377,12 @@ describe('Analise estatica — useMockupTechniques.ts', () => {
   });
 
   describe('BUG-D — null guard antes de codeMap.set', () => {
-    it('guard if (!tech.code) continue presente', () => {
-      expect(src).toContain('if (!tech.code) continue;');
+    it('guard if (!code) continue presente', () => {
+      expect(src).toContain('if (!code) continue;');
     });
     it('guard precede codeMap.set', () => {
-      const guardPos = src.indexOf('if (!tech.code) continue;');
-      const setPos = src.indexOf('codeMap.set(tech.code,');
+      const guardPos = src.indexOf('if (!code) continue;');
+      const setPos = src.indexOf('codeMap.set(code,');
       expect(guardPos).toBeGreaterThan(-1);
       expect(setPos).toBeGreaterThan(-1);
       expect(guardPos).toBeLessThan(setPos);
