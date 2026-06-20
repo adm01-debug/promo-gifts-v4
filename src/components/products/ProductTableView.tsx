@@ -689,7 +689,7 @@ export const ProductTableView = memo(
                         size="sm"
                         hideWhenEmpty={false}
                         selectedName={userSelectedColorName}
-                        onSelect={(c) => setSelectedColor(product.id, c.name)}
+                        onSelect={(c) => selectColorWithUrl(product.id, c.name)}
                         onClear={() => clearSelectedColor(product.id)}
                       />
                     ) : (
