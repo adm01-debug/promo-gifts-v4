@@ -33,9 +33,8 @@ const NOVELTY_SELECT =
  * - sale_price > 0     → produto sem preço não aparece como novidade
  * - primary_image_url  → produto sem imagem não aparece como novidade
  */
-// After .select() the builder becomes a PostgrestFilterBuilder with filter methods.
-// We capture that post-select type so TS accepts .eq()/.gt()/.order() etc.
-type NoveltyQuery = ReturnType<ReturnType<typeof fromTable>['select']>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase filter builder after .select(); ReturnType<...['select']> hits TS2589.
+type NoveltyQuery = any;
 
 const applyNoveltyQualityFilters = (query: NoveltyQuery): NoveltyQuery =>
   query
