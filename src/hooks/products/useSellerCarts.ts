@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import type { Tables } from '@/integrations/supabase/types';
 
 // ============================================
 // TYPES
@@ -66,6 +67,10 @@ export interface CreateCartInput {
 }
 
 export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
+
+type CartWithItems = Tables<'seller_carts'> & {
+  seller_cart_items: Tables<'seller_cart_items'>[];
+};
 
 const QUERY_KEY = 'seller-carts';
 
@@ -128,8 +133,7 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { seller_cart_items: rowItems, ...cart } = row as any;
+        const { seller_cart_items: rowItems, ...cart } = row as CartWithItems;
         return {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
@@ -140,6 +144,8 @@ export function useSellerCarts() {
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   // Create cart
