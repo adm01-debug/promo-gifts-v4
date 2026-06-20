@@ -195,7 +195,7 @@ export interface ThemePreset {
 export interface ThemeConfig {
   presetId: string;
   radius: number;
-  mode: 'light' | 'dark';
+  mode: 'light' | 'dark' | 'auto';
 }
 
 // =====================================================
@@ -984,7 +984,7 @@ export function saveThemeConfig(config: ThemeConfig): void {
  * Quando o preset não define radius/font, restaura os defaults para que
  * voltar de uma skin GX para uma clássica desfaça os overrides.
  */
-export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dark'): void {
+export function applyThemePreset(presetId: string, mode: 'light' | 'dark' | 'auto' = 'auto'): void {
   const actualMode = mode === 'light' ? 'light' : 'dark';
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
   if (!preset) {
