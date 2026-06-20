@@ -183,4 +183,88 @@ test.describe('Paridade visual — cards Novidades vs Reposição', () => {
       });
     }
   });
+
+  // Viewports extras (além dos 5 projects do playwright.config) para validar
+  // que a altura responsiva do BaseProductGridCard (h-[400px] mobile,
+  // sm:h-[430px] desktop) se mantém fixa também em tablets.
+  const EXTRA_VIEWPORTS = [
+    { w: 600, h: 900, label: 'tablet-sm-600' },
+    { w: 768, h: 1024, label: 'tablet-768' },
+    { w: 834, h: 1112, label: 'tablet-ipad-834' },
+    { w: 1024, h: 1366, label: 'tablet-lg-1024' },
+    { w: 1180, h: 820, label: 'tablet-ipad-air-1180' },
+  ] as const;
+
+  for (const vp of EXTRA_VIEWPORTS) {
+    test(`altura fixa do card em viewport ${vp.label} (${vp.w}x${vp.h})`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.w, height: vp.h });
+      await gotoAndSettle(page, '/reposicao');
+      await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
+      const items = page.locator(
+        'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
+      );
+      const count = await items.count();
+      if (count === 0) test.skip(true, `Sem reposições em ${vp.label}.`);
+      const sampleSize = Math.min(count, 6);
+      const heights: number[] = [];
+      for (let i = 0; i < sampleSize; i++) {
+        const b = await items.nth(i).boundingBox();
+        if (b) heights.push(b.height);
+      }
+      const min = Math.min(...heights);
+      const max = Math.max(...heights);
+      const expected = vp.w < 640 ? 400 : 430;
+      // eslint-disable-next-line no-console
+      console.log(
+        `[card-parity:viewport ${vp.label}] expected=${expected}px min=${min} max=${max} spread=${(max - min).toFixed(2)}px`,
+      );
+      expect(max - min, `cards variam em ${vp.label}: spread=${(max - min).toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+      expect(Math.abs(min - expected), `altura ${min}px ≠ esperada ${expected}px em ${vp.label}`).toBeLessThanOrEqual(TOL_PX);
+    });
+  }
+
+  // Itera explicitamente os modos de grid 3 / 4 / 5 colunas usando os testIDs
+  // do ColumnSelector (data-testid="column-option-N") e valida que todos os
+  // cards visíveis mantêm altura idêntica em cada modo.
+  for (const cols of [3, 4, 5] as const) {
+    test(`grid ${cols} colunas — cards mantêm altura idêntica`, async ({ page }) => {
+      // Desktop largo para garantir que as 3 opções existam no ColumnSelector.
+      await page.setViewportSize({ width: 1600, height: 1000 });
+      await gotoAndSettle(page, '/reposicao');
+      await expect(page.getByTestId('page-title-reposicao')).toBeVisible();
+
+      const option = page.getByTestId(`column-option-${cols}`);
+      if ((await option.count()) === 0) {
+        test.skip(true, `column-option-${cols} indisponível neste viewport.`);
+      }
+      await option.click();
+      // Aguarda re-render do grid após troca de colunas.
+      await page.waitForTimeout(400);
+
+      const items = page.locator(
+        'div[role="list"][aria-label="Grade de produtos repostos"] >> [role="listitem"]',
+      );
+      const count = await items.count();
+      if (count === 0) test.skip(true, `Sem reposições no modo ${cols} colunas.`);
+
+      const sampleSize = Math.min(count, cols * 2);
+      const heights: number[] = [];
+      const widths: number[] = [];
+      for (let i = 0; i < sampleSize; i++) {
+        const b = await items.nth(i).boundingBox();
+        if (b) {
+          heights.push(b.height);
+          widths.push(b.width);
+        }
+      }
+      const hSpread = Math.max(...heights) - Math.min(...heights);
+      const wSpread = Math.max(...widths) - Math.min(...widths);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[card-parity:cols ${cols}] sample=${sampleSize} hSpread=${hSpread.toFixed(2)}px wSpread=${wSpread.toFixed(2)}px`,
+      );
+      expect(hSpread, `altura varia em ${cols} colunas: ${hSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+      expect(wSpread, `largura varia em ${cols} colunas: ${wSpread.toFixed(2)}px`).toBeLessThanOrEqual(TOL_PX);
+    });
+  }
 });
