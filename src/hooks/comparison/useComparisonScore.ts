@@ -81,9 +81,27 @@ export function useComparisonScore(
   return useMemo(() => {
     if (!products || products.length === 0) return [];
 
-    const prices = products.map((p) => Number(p.price ?? 0));
-    const stocks = products.map((p) => Number(p.stock ?? 0));
-    const mins = products.map((p) => Number(p.minQuantity ?? 1));
+    // Defensive: coerce every weight to a finite number. A malformed/partial
+    // weights object (e.g. the persisted `{minQty,colors,verified}` shape passed
+    // by mistake) would otherwise make `normalize(...) * undefined = NaN`,
+    // turning every score into NaN. Missing keys collapse to 0.
+    const w: ComparisonScoreWeights = {
+      price: Number(weights?.price) || 0,
+      stock: Number(weights?.stock) || 0,
+      minQuantity: Number(weights?.minQuantity) || 0,
+      colorVariety: Number(weights?.colorVariety) || 0,
+      verifiedSupplier: Number(weights?.verifiedSupplier) || 0,
+      leadTime: Number(weights?.leadTime) || 0,
+    };
+
+    const safeNum = (v: unknown, fallback = 0): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
+    const prices = products.map((p) => safeNum(p.price, 0));
+    const stocks = products.map((p) => safeNum(p.stock, 0));
+    const mins = products.map((p) => safeNum(p.minQuantity, 1));
     const colorCounts = products.map((p) => p.colors?.length ?? 0);
     const leadTimes = products.map((p) => leadTimeProxy(p.stockStatus));
 
@@ -98,23 +116,23 @@ export function useComparisonScore(
     const minLead = Math.min(...leadTimes);
     const maxLead = Math.max(...leadTimes);
 
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
+    const totalWeight = Object.values(w).reduce((a, b) => a + b, 0) || 1;
 
     const scores = products.map((p, i) => {
       const verified = Boolean(p.supplier?.verified ?? p.supplier?.isVerified ?? false);
       const breakdown: Record<keyof ComparisonScoreWeights, number> = {
-        price: normalizeLowerBetter(prices[i], minPrice, maxPrice) * weights.price,
-        stock: normalizeHigherBetter(stocks[i], minStock, maxStock) * weights.stock,
-        minQuantity: normalizeLowerBetter(mins[i], minMin, maxMin) * weights.minQuantity,
-        colorVariety:
-          normalizeHigherBetter(colorCounts[i], minColors, maxColors) * weights.colorVariety,
-        verifiedSupplier: (verified ? 1 : 0.4) * weights.verifiedSupplier,
-        leadTime: normalizeLowerBetter(leadTimes[i], minLead, maxLead) * weights.leadTime,
+        price: normalizeLowerBetter(prices[i], minPrice, maxPrice) * w.price,
+        stock: normalizeHigherBetter(stocks[i], minStock, maxStock) * w.stock,
+        minQuantity: normalizeLowerBetter(mins[i], minMin, maxMin) * w.minQuantity,
+        colorVariety: normalizeHigherBetter(colorCounts[i], minColors, maxColors) * w.colorVariety,
+        verifiedSupplier: (verified ? 1 : 0.4) * w.verifiedSupplier,
+        leadTime: normalizeLowerBetter(leadTimes[i], minLead, maxLead) * w.leadTime,
       };
       const total = Object.values(breakdown).reduce((a, b) => a + b, 0);
+      const normalized = Math.round((total / totalWeight) * 100);
       return {
         productId: p.id !== null && p.id !== undefined ? String(p.id) : `__idx_${i}`,
-        total: Math.round((total / totalWeight) * 100),
+        total: Number.isFinite(normalized) ? normalized : 0,
         breakdown,
         isWinner: false,
         rank: 0,
