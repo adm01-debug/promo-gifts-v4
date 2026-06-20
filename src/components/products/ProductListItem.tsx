@@ -12,7 +12,7 @@
  *    estão implementadas aqui com a mesma arquitetura de variante/cor:
  *    Favoritar, Comparar, Coleção, Share, Orçamento, Carrinho, QuickView
  */
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect, useId } from 'react';
 import { Package, Building2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { NoveltyBadge } from './NoveltyBadge';
@@ -93,6 +93,10 @@ export const ProductListItem = memo(
     priority = false,
   }: ProductListItemProps) => {
     const navigate = useNavigate();
+    const uid = useId();
+    const stockLabelId = `stock-label-${uid}`;
+    const colorsLabelId = `colors-label-${uid}`;
+    const priceLabelId = `price-label-${uid}`;
     const detectedIsKit = isProductKit(product);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
@@ -606,11 +610,11 @@ export const ProductListItem = memo(
           {/* Estoque column — entre Produto e Cores (md+) */}
           <div
             role="group"
-            aria-labelledby={`stock-label-${product.id}`}
+            aria-labelledby={stockLabelId}
             className="hidden shrink-0 flex-col items-start justify-center md:flex md:w-[150px]"
           >
             <span
-              id={`stock-label-${product.id}`}
+              id={stockLabelId}
               className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
             >
               Estoque
@@ -631,11 +635,11 @@ export const ProductListItem = memo(
           {/* Cores column — todas as cores, sem clipping (md+) */}
           <div
             role="group"
-            aria-labelledby={`colors-label-${product.id}`}
+            aria-labelledby={colorsLabelId}
             className="hidden min-w-0 flex-1 flex-col items-start justify-center pl-3 pr-2 md:flex"
           >
             <span
-              id={`colors-label-${product.id}`}
+              id={colorsLabelId}
               className="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
             >
               Cores
@@ -659,11 +663,11 @@ export const ProductListItem = memo(
           {/* Price column — right-aligned, always visible */}
           <div
             role="group"
-            aria-labelledby={`price-label-${product.id}`}
+            aria-labelledby={priceLabelId}
             className="flex min-w-[90px] shrink-0 flex-col items-end text-right sm:min-w-[110px]"
           >
             <span
-              id={`price-label-${product.id}`}
+              id={priceLabelId}
               className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80"
             >
               A partir de
