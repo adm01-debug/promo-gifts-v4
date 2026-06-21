@@ -496,6 +496,10 @@ const MockupGridCard = memo(
       >
         <div className="absolute left-2 top-2 z-10">
           <div
+            role="checkbox"
+            aria-checked={isCompareSelected}
+            aria-label={`Selecionar ${mockup.product_name} para comparação`}
+            tabIndex={0}
             className={cn(
               'flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border-2 bg-background/80 backdrop-blur-sm transition-all',
               isCompareSelected
@@ -506,8 +510,19 @@ const MockupGridCard = memo(
               e.stopPropagation();
               onToggleCompare(mockup.id);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleCompare(mockup.id);
+              }
+            }}
           >
-            {isCompareSelected && <span className="text-xs font-bold">✓</span>}
+            {isCompareSelected && (
+              <span className="text-xs font-bold" aria-hidden="true">
+                ✓
+              </span>
+            )}
           </div>
         </div>
         <div
@@ -673,6 +688,10 @@ const MockupListRow = memo(
         )}
       >
         <div
+          role="checkbox"
+          aria-checked={isCompareSelected}
+          aria-label={`Selecionar ${mockup.product_name} para comparação`}
+          tabIndex={0}
           className={cn(
             'flex h-5 w-5 flex-shrink-0 cursor-pointer items-center justify-center rounded border-2 transition-all',
             isCompareSelected
@@ -683,8 +702,19 @@ const MockupListRow = memo(
             e.stopPropagation();
             onToggleCompare(mockup.id);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleCompare(mockup.id);
+            }
+          }}
         >
-          {isCompareSelected && <span className="text-[10px] font-bold">✓</span>}
+          {isCompareSelected && (
+            <span className="text-[10px] font-bold" aria-hidden="true">
+              ✓
+            </span>
+          )}
         </div>
         <div className="h-20 w-16 flex-shrink-0 overflow-hidden rounded-md border bg-muted/30">
           <img
