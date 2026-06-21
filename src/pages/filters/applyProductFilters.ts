@@ -251,11 +251,16 @@ export function applyProductFilters(
     result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
   }
   // FIX-03: inStock considera variações além do estoque agregado.
+  // BUG-APF-02 FIX: usa stockStatus pré-computado (inclui regra de min_quantity)
+  // em vez de stock > 0. Produtos com stock < min_quantity são 'out-of-stock'
+  // (413 produtos afetados no catálogo atual) e não devem passar o filtro "Em estoque".
   if (filters.inStock)
     result = result.filter((product) => {
       if (product.variations && product.variations.length > 0)
         return product.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
-      return (product.stock || 0) > 0;
+      return product.stockStatus
+        ? product.stockStatus !== 'out-of-stock'
+        : (product.stock || 0) > 0;
     });
   if (filters.hasCommercialPackaging)
     result = result.filter((product) => product.hasCommercialPackaging === true);
