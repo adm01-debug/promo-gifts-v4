@@ -567,6 +567,11 @@ export function VariantStockTable({
   // Atalho de teclado "s" → alterna modo seleção (paridade catálogo).
   useSelectionShortcut(() => selection.setMode(!selection.enabled));
 
+  // Coluna "Cobertura (EMA)" — gated por feature flag `useEmaRupture`.
+  // Quando off: hook desabilitado (queryFn não executa) + coluna não renderiza.
+  const emaEnabled = isFeatureEnabled('useEmaRupture');
+  const { byVariantId: emaByVariantId } = useRuptureAlerts();
+
   if (isLoading) {
     return (
       <Table>
