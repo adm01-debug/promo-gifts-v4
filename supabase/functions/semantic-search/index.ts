@@ -9,6 +9,24 @@ import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 
 // ========================================
+// AI CALL TIMEOUT GUARD (graceful degradation)
+// Garante que uma chamada de IA presa nao segure a request ate o limite de
+// wall-clock da plataforma (~150s -> 504). No estouro, o handler degrada para
+// busca por keyword (HTTP 200) em vez de 500/504.
+// ========================================
+const AI_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timeout:${label}:${ms}ms`)), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
+// ========================================
 // PG_TRGM RE-RANK via RPC search_products_semantic
 // ========================================
 interface RankResult {
@@ -233,8 +251,22 @@ Deno.serve(async (req) => {
     // Cache miss — call AI with tracking
     console.log(`[Cache MISS] Query: "${query}" - Calling AI...`);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    // Graceful degradation: fallback heuristico (keyword split) construido ANTES
+    // da chamada de IA. Se a IA falhar/expirar/sem credencial, devolvemos este
+    // intent com HTTP 200 + degraded:true em vez de 500/504. A busca continua
+    // funcionando em modo keyword.
+    const fallbackIntent: SearchIntent = {
+      type: 'mixed',
+      filters: {},
+      keywords: query.split(' ').filter((w: string) => w.length > 2),
+      originalQuery: query,
+    };
+    let degraded = false;
+    let degradedReason: string | undefined;
+
+    // LOVABLE_API_KEY pode estar ausente (o router multi-provider e o caminho
+    // primario). Nao lancamos mais — seguimos; se nada responder, cai no fallback.
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
 
     const model = "google/gemini-2.5-flash";
 
@@ -286,7 +318,10 @@ EXEMPLOS:
 
 Responda APENAS com JSON válido no formato especificado.`;
 
-    const aiResponse = await callAiWithTracking({
+    let searchIntent: SearchIntent = fallbackIntent;
+    let aiResponse: Response | null = null;
+    try {
+      aiResponse = await withTimeout(callAiWithTracking({
       userId: auth.userId,
       functionName: "semantic-search",
       model,
@@ -328,49 +363,68 @@ Responda APENAS com JSON válido no formato especificado.`;
         ],
         tool_choice: { type: "function", function: { name: "parse_search_intent" } }
       },
-    });
+    }), AI_TIMEOUT_MS, "semantic-search-ai");
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ success: false, error: "Rate limit exceeded" }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      if (!aiResponse.ok) {
+        // 429/402 sao back-pressure reais do provider/quota — propaga como tal.
+        if (aiResponse.status === 429) {
+          return new Response(JSON.stringify({ success: false, error: "Rate limit exceeded" }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        if (aiResponse.status === 402) {
+          return new Response(JSON.stringify({ success: false, error: "Payment required" }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        // Qualquer outro status (401 sem credencial, 5xx do gateway, etc.):
+        // degrada para modo keyword em vez de estourar 500.
+        degraded = true;
+        degradedReason = `ai_http_${aiResponse.status}`;
+        console.warn(`[Degraded] AI gateway status ${aiResponse.status} — usando fallback keyword.`);
+      } else {
+        const aiData = await aiResponse.json();
+        const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+        if (toolCall?.function?.arguments) {
+          try {
+            const parsed = JSON.parse(toolCall.function.arguments);
+            searchIntent = { ...parsed, originalQuery: query };
+          } catch (e) {
+            console.error("[Error] Parsing tool response:", e);
+            degraded = true;
+            degradedReason = "ai_parse_error";
+          }
+        } else {
+          // Resposta OK porem sem tool_call utilizavel — degrada.
+          degraded = true;
+          degradedReason = "ai_no_tool_call";
+        }
       }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ success: false, error: "Payment required" }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      throw new Error(`AI gateway error: ${aiResponse.status}`);
+    } catch (aiErr) {
+      // Cota excedida e propagada para virar 429 no handler externo.
+      if (aiErr instanceof QuotaExceededError) throw aiErr;
+      // Timeout ou erro inesperado (router all_failed, rede, etc.): degrada.
+      degraded = true;
+      degradedReason = (aiErr as Error)?.message?.slice(0, 120) || "ai_call_failed";
+      console.warn(`[Degraded] Chamada de IA falhou (${degradedReason}) — usando fallback keyword.`);
     }
 
-    const aiData = await aiResponse.json();
-
-    let searchIntent: SearchIntent = {
-      type: 'mixed',
-      filters: {},
-      keywords: query.split(' ').filter((w: string) => w.length > 2),
-      originalQuery: query
-    };
-
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      try {
-        const parsed = JSON.parse(toolCall.function.arguments);
-        searchIntent = { ...parsed, originalQuery: query };
-      } catch (e) {
-        console.error("[Error] Parsing tool response:", e);
-      }
+    if (degraded) {
+      searchIntent = fallbackIntent;
     }
 
-    searchCache.set(cacheKey, searchIntent);
+    // So cacheia intents reais (nao-degradados) — evita envenenar o cache com
+    // fallback keyword enquanto a IA esta temporariamente indisponivel.
+    if (!degraded) {
+      searchCache.set(cacheKey, searchIntent);
+    }
     const stats = searchCache.getStats();
-    console.log(`[Cache SET] Query: "${query}" | Cache size: ${stats.size} | Hit rate: ${stats.hitRate}`);
+    console.log(`[Cache ${degraded ? 'DEGRADED' : 'SET'}] Query: "${query}" | reason: ${degradedReason ?? 'ok'} | size: ${stats.size} | hit: ${stats.hitRate}`);
 
     const rankings = productsForRank?.length
       ? await rerankProducts(query, productsForRank, rankLimit)
       : [];
 
     return new Response(
-      JSON.stringify({ success: true, intent: searchIntent, rankings, cached: false, cacheStats: stats }),
+      JSON.stringify({ success: true, intent: searchIntent, rankings, cached: false, degraded, cacheStats: stats }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
