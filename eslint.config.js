@@ -425,6 +425,14 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 133: 7 rules (all zero-violation — removed: react/require-optimization 5v, return-await 6v, no-aria-hidden-on-focusable 6v, no-onchange 6v, no-loop-func 7v, no-console 10v, no-void 84v, no-continue 111v, no-bitwise 191v, no-plusplus 360v)
+      '@typescript-eslint/no-extraneous-class': 'error',
+      '@typescript-eslint/no-shadow': 'error',
+      'no-sequences': 'error',
+      'no-throw-literal': 'error',
+      'prefer-promise-reject-errors': 'error',
+      'react/no-direct-mutation-state': 'error',
+      'react/no-string-refs': 'error',
       // Batch 132: 7 rules (5 zero-violation + 2 with manual fixes — removed: return-await 6v, no-aria-hidden-on-focusable 6v, no-onchange 6v, no-loop-func 7v, restrict-template-expressions 8v, no-redeclare 8v, no-useless-default-assignment 9v, prefer-reduce-type-parameter 10v, no-unnecessary-type-arguments 15v, no-dynamic-delete 15v, no-unnecessary-type-parameters 16v, no-object-type-as-default-prop 23v, destructuring-assignment 53v, hook-use-state 31v, jsx-curly-newline 209v, no-unused-prop-types 55v, no-use-before-define 409v, init-declarations 142v, no-confusing-void-expression 2932v, jsx-handler-names 204v, no-array-index-key 206v, jsx-no-leaked-render 2013v, no-unnecessary-type-conversion 182v)
       'react/jsx-props-no-multi-spaces': 'error',
       'react/jsx-wrap-multilines': 'error',
