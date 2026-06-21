@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 235: 5 zero-violation rules (probe 235A: all 0v✓)
+      '@typescript-eslint/no-invalid-void-type': 'error',
+      '@typescript-eslint/triple-slash-reference': 'error',
+      '@typescript-eslint/no-loss-of-precision': 'error',
+      '@typescript-eslint/consistent-type-assertions': 'error',
+      '@typescript-eslint/no-namespace': 'error',
       // Batch 234: 5 zero-violation rules (probe 234A: all 0v✓)
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/adjacent-overload-signatures': 'error',
