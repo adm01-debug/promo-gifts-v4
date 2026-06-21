@@ -93,7 +93,5 @@ export function ReplenishmentBadgeCompact({
   daysSince: number;
   className?: string;
 }) {
-  return (
-    <ReplenishmentBadge daysSince={daysSince} size="sm" showDays={true} className={className} />
-  );
+  return <ReplenishmentBadge daysSince={daysSince} size="sm" showDays className={className} />;
 }

@@ -270,7 +270,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     };
 
     it('should handle HLS.js fatal network errors with recovery attempts', async () => {
-      const { findByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { findByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const errorHandler = hlsInstance.on.mock.calls.find((call) => call[0] === 'hlsError')![1];
@@ -304,7 +304,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should handle HLS.js fatal media errors with recovery', async () => {
-      render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const errorHandler = hlsInstance.on.mock.calls.find((call) => call[0] === 'hlsError')![1];
@@ -322,7 +322,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should hide loading overlay when HLS.js MANIFEST_PARSED event fires', async () => {
-      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const manifestHandler = hlsInstance.on.mock.calls.find(
@@ -339,7 +339,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should hide loading overlay when HLS.js FRAG_LOADED event fires', async () => {
-      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const fragLoadedHandler = hlsInstance.on.mock.calls.find(
@@ -368,7 +368,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     };
 
     it('should update quality state during multiple level changes with auto-level enabled', async () => {
-      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const levelSwitchedHandler = hlsInstance.on.mock.calls.find(
@@ -406,7 +406,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should show "Manual Load" button and re-initialize player on click', async () => {
       vi.useFakeTimers();
-      const { getByText, queryByText } = render(<PromoFlixPlayer src="stuck.m3u8" isHls={true} />);
+      const { getByText, queryByText } = render(<PromoFlixPlayer src="stuck.m3u8" isHls />);
 
       // Advance to trigger timeout
       await act(async () => {
@@ -488,7 +488,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         return Promise.resolve();
       });
 
-      render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
+      render(<PromoFlixPlayer src="test.mp4" autoPlay />);
 
       await waitFor(
         () => {
@@ -515,13 +515,13 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should prevent race conditions using initTokenRef during fast src changes', async () => {
       // First render
-      const { rerender } = render(<PromoFlixPlayer src="first.m3u8" isHls={true} />);
+      const { rerender } = render(<PromoFlixPlayer src="first.m3u8" isHls />);
       await waitFor(() => expect(lastHlsInstance).not.toBeNull());
       const firstHls = lastHlsInstance as MockHlsInstance;
 
       // Quickly change src on the SAME instance — dispara o cleanup do useEffect
       // que destrói a instância HLS anterior antes de criar a nova.
-      rerender(<PromoFlixPlayer src="second.m3u8" isHls={true} />);
+      rerender(<PromoFlixPlayer src="second.m3u8" isHls />);
 
       // Wait for second instance
       await waitFor(() => {
@@ -553,7 +553,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     it('should NOT persist the autoplay-forced mute as a user preference', async () => {
       // localStorage limpo → usuário não escolheu mutar. O autoplay força o mute
       // (política do navegador), mas isso não pode virar preferência persistida.
-      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
+      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay />);
       const video = container.querySelector('video') as HTMLVideoElement;
 
       // O navegador dispara `volumechange` quando o componente faz video.muted = true;
@@ -567,7 +567,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should persist an explicit user mute/unmute after the autoplay-forced mute', async () => {
-      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
+      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay />);
       const video = container.querySelector('video') as HTMLVideoElement;
 
       // Consome o flag de supressão do mute forçado pelo autoplay (não persiste).

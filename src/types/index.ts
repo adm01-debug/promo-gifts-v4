@@ -2,16 +2,16 @@
 // Central Types Export - SSOT
 
 // Domain types
-export * from './domain';
+export type * from './domain';
 
 // Infrastructure types (external DB)
-export * from './infrastructure';
+export type * from './infrastructure';
 
 // Unified technique types
-export * from './tecnica-unificada';
-export * from './gravacao-database';
+export type * from './tecnica-unificada';
+export type * from './gravacao-database';
 
 // Feature modules
-export * from './product';
-export * from './quote';
-export * from './mockup';
+export type * from './product';
+export type * from './quote';
+export type * from './mockup';

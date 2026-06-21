@@ -71,7 +71,7 @@ function renderAt(pathname: string) {
     <MemoryRouter initialEntries={[pathname]}>
       <SidebarNavGroup
         group={group}
-        isOpen={true}
+        isOpen
         isCollapsed={false}
         onToggle={() => {}}
         onMobileClose={() => {}}

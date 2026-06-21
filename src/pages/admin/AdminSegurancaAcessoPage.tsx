@@ -373,7 +373,7 @@ export default function AdminSegurancaAcessoPage() {
             <RecentAuditTable />
           </TabsContent>
 
-          <TabsContent value="tokens"></TabsContent>
+          <TabsContent value="tokens" />
 
           <TabsContent value="active-ips">
             <ActiveIpsList />

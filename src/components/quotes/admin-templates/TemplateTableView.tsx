@@ -54,7 +54,7 @@ export function TemplateTableView({
               <TableHead className="text-right">Valor</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead className="text-right">Atualizado</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
           <TableBody>

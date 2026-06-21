@@ -53,7 +53,7 @@ export function NoveltyBadgeCompact({
     <NoveltyBadge
       daysRemaining={daysRemaining}
       size="sm"
-      showDays={true}
+      showDays
       className={className}
       onClick={onClick}
     />

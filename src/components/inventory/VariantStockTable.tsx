@@ -752,7 +752,7 @@ export function VariantStockTable({
             className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]"
           >
             <TableRow className="bg-muted/50">
-              {selection.enabled && <TableHead className="w-[40px] pr-0"></TableHead>}
+              {selection.enabled && <TableHead className="w-[40px] pr-0" />}
               <TableHead className="w-[280px]">Variação / Cor</TableHead>
               <TableHead className="hidden w-[120px] md:table-cell">Categoria</TableHead>
               <TableHead>Estoque</TableHead>

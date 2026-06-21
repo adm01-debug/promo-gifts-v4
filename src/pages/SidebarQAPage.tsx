@@ -181,7 +181,7 @@ export default function SidebarQAPage() {
               </h2>
               <div className="flex flex-wrap items-start gap-6">
                 <SidebarPreview width={vp.value} dark={false} />
-                {showSideBySide && <SidebarPreview width={vp.value} dark={true} />}
+                {showSideBySide && <SidebarPreview width={vp.value} dark />}
               </div>
             </div>
           ))}

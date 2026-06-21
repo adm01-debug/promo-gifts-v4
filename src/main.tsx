@@ -50,13 +50,11 @@ if (!root) {
 }
 
 createRoot(root).render(
-  <>
-    <HelmetProvider>
-      <EnhancedErrorBoundary>
-        <App />
-      </EnhancedErrorBoundary>
-    </HelmetProvider>
-  </>,
+  <HelmetProvider>
+    <EnhancedErrorBoundary>
+      <App />
+    </EnhancedErrorBoundary>
+  </HelmetProvider>,
 );
 
 if (import.meta.env.PROD) {

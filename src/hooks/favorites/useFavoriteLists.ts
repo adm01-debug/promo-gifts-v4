@@ -68,7 +68,7 @@ export function useFavoriteLists() {
     queryFn: async (): Promise<FavoriteList[]> => {
       if (!user) return [];
       // Garante lista padrão
-      const { error: ensureErr } = await untypedRpc('ensure_default_favorite_list', {
+      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', {
         _user_id: user.id,
       });
       if (ensureErr) logger.warn('[favorites] ensure_default_favorite_list failed', ensureErr);
@@ -417,18 +417,14 @@ export function useFavoriteListItems(listId: string | null) {
             }
             const results = await Promise.allSettled(
               trashed.map((t) =>
-                untypedRpc('restore_favorite_from_trash', {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (supabase as any).rpc('restore_favorite_from_trash', {
                   _trash_id: t.id,
                   _user_id: user.id,
                 }),
               ),
             );
-            const restoredCount = results.reduce((acc, r) => {
-              if (r.status !== 'fulfilled') return acc;
-              if (r.value?.error) return acc;
-              const restored = r.value?.data as RestoreResult | null;
-              return restored?.ok ? acc + 1 : acc;
-            }, 0);
+            const restoredCount = results.filter((r) => r.status === 'fulfilled').length;
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
             qc.invalidateQueries({ queryKey: ['favorite-trash'] });

@@ -213,163 +213,158 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
   const fullLockedForUser = !grantorLoading && !canGrantFull && escalating;
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Pencil className="h-5 w-5" /> Editar chave MCP
-            </DialogTitle>
-            <DialogDescription>
-              <code className="font-mono text-xs">{source.key_prefix}…</code> · alterações ficam
-              registradas no audit log.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5" /> Editar chave MCP
+          </DialogTitle>
+          <DialogDescription>
+            <code className="font-mono text-xs">{source.key_prefix}…</code> · alterações ficam
+            registradas no audit log.
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="upd-mcp-name">Nome</Label>
-              <Input
-                id="upd-mcp-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-              />
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="upd-mcp-name">Nome</Label>
+            <Input
+              id="upd-mcp-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="upd-mcp-desc">Descrição</Label>
+            <Textarea
+              id="upd-mcp-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              maxLength={1000}
+              placeholder="Opcional — contexto interno da chave."
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Escopos</Label>
+            <div className="flex flex-wrap gap-2">
+              {KNOWN_SCOPES.map((s) => {
+                const active = scopes.includes(s);
+                const isFull = s === FULL_SCOPE;
+                const lock = isFull && !canGrantFull && !grantorLoading && !active;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => handleScopeToggle(s)}
+                    disabled={lock}
+                    className={[
+                      'rounded border px-2 py-1 font-mono text-xs transition',
+                      lock
+                        ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
+                        : active
+                          ? isFull
+                            ? 'border-destructive bg-destructive text-destructive-foreground'
+                            : 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border bg-background hover:border-primary/40',
+                    ].join(' ')}
+                  >
+                    {s}
+                    {lock && ' 🔒'}
+                  </button>
+                );
+              })}
             </div>
-
-            <div>
-              <Label htmlFor="upd-mcp-desc">Descrição</Label>
-              <Textarea
-                id="upd-mcp-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-                maxLength={1000}
-                placeholder="Opcional — contexto interno da chave."
-              />
-            </div>
-
-            <div>
-              <Label className="mb-2 block">Escopos</Label>
-              <div className="flex flex-wrap gap-2">
-                {KNOWN_SCOPES.map((s) => {
-                  const active = scopes.includes(s);
-                  const isFull = s === FULL_SCOPE;
-                  const lock = isFull && !canGrantFull && !grantorLoading && !active;
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => handleScopeToggle(s)}
-                      disabled={lock}
-                      className={[
-                        'rounded border px-2 py-1 font-mono text-xs transition',
-                        lock
-                          ? 'cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60'
-                          : active
-                            ? isFull
-                              ? 'border-destructive bg-destructive text-destructive-foreground'
-                              : 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background hover:border-primary/40',
-                      ].join(' ')}
-                    >
-                      {s}
-                      {lock && ' 🔒'}
-                    </button>
-                  );
-                })}
-              </div>
-              {fullLockedForUser && (
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  🔒 Você não pode escalar esta chave para <code className="font-mono">*</code>{' '}
-                  (FULL).
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="upd-mcp-expires">
-                Expira em {willBeFull && <span className="text-destructive">*</span>}
-              </Label>
-              <Input
-                id="upd-mcp-expires"
-                type="datetime-local"
-                value={expiresLocal}
-                onChange={(e) => setExpiresLocal(e.target.value)}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {willBeFull
-                  ? `Obrigatório para chave FULL. Máx ${FULL_SCOPE_MAX_TTL_DAYS} dias.`
-                  : 'Em branco = sem expiração.'}
+            {fullLockedForUser && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                🔒 Você não pode escalar esta chave para <code className="font-mono">*</code>{' '}
+                (FULL).
               </p>
-            </div>
-
-            {escalating && (
-              <Alert variant="destructive">
-                <ShieldAlert className="h-4 w-4" />
-                <AlertTitle className="flex items-center gap-2">
-                  Escalando para acesso total <Badge variant="destructive">*</Badge>
-                </AlertTitle>
-                <AlertDescription>
-                  Esta alteração concede <strong>acesso total</strong> ao MCP. Exige justificativa,
-                  confirmação e <strong>verificação dupla</strong> (senha + código por e-mail) antes
-                  de ser aplicada.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {escalating && (
-              <>
-                <div>
-                  <Label htmlFor="upd-mcp-just">
-                    Justificativa <span className="text-destructive">*</span>
-                  </Label>
-                  <Textarea
-                    id="upd-mcp-just"
-                    value={justification}
-                    onChange={(e) => setJustification(e.target.value)}
-                    rows={3}
-                    maxLength={1000}
-                    placeholder="Por que esta chave precisa virar FULL agora?"
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo — registrada no
-                    audit log.
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="upd-mcp-confirm">
-                    Confirmação <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="upd-mcp-confirm"
-                    value={confirmation}
-                    onChange={(e) => setConfirmation(e.target.value)}
-                    placeholder={`Digite "${FULL_SCOPE_CONFIRMATION}"`}
-                    className="font-mono"
-                  />
-                </div>
-              </>
             )}
           </div>
 
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting || !!validation || fullLockedForUser}
-            >
-              {submitting
-                ? 'Salvando…'
-                : escalating
-                  ? 'Verificar e escalar para FULL'
-                  : 'Salvar alterações'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          <div>
+            <Label htmlFor="upd-mcp-expires">
+              Expira em {willBeFull && <span className="text-destructive">*</span>}
+            </Label>
+            <Input
+              id="upd-mcp-expires"
+              type="datetime-local"
+              value={expiresLocal}
+              onChange={(e) => setExpiresLocal(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {willBeFull
+                ? `Obrigatório para chave FULL. Máx ${FULL_SCOPE_MAX_TTL_DAYS} dias.`
+                : 'Em branco = sem expiração.'}
+            </p>
+          </div>
+
+          {escalating && (
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle className="flex items-center gap-2">
+                Escalando para acesso total <Badge variant="destructive">*</Badge>
+              </AlertTitle>
+              <AlertDescription>
+                Esta alteração concede <strong>acesso total</strong> ao MCP. Exige justificativa,
+                confirmação e <strong>verificação dupla</strong> (senha + código por e-mail) antes
+                de ser aplicada.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {escalating && (
+            <>
+              <div>
+                <Label htmlFor="upd-mcp-just">
+                  Justificativa <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="upd-mcp-just"
+                  value={justification}
+                  onChange={(e) => setJustification(e.target.value)}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="Por que esta chave precisa virar FULL agora?"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo — registrada no audit
+                  log.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="upd-mcp-confirm">
+                  Confirmação <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="upd-mcp-confirm"
+                  value={confirmation}
+                  onChange={(e) => setConfirmation(e.target.value)}
+                  placeholder={`Digite "${FULL_SCOPE_CONFIRMATION}"`}
+                  className="font-mono"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={submitting || !!validation || fullLockedForUser}>
+            {submitting
+              ? 'Salvando…'
+              : escalating
+                ? 'Verificar e escalar para FULL'
+                : 'Salvar alterações'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

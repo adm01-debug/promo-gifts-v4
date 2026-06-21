@@ -379,7 +379,7 @@ export function InboundEventsPanel() {
                     <TableHead className="w-20 text-xs">HMAC</TableHead>
                     <TableHead className="w-20 text-xs">Proc.</TableHead>
                     <TableHead className="text-xs">IP</TableHead>
-                    <TableHead className="w-20 text-xs"></TableHead>
+                    <TableHead className="w-20 text-xs" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

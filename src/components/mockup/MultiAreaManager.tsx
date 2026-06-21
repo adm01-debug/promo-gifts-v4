@@ -63,7 +63,11 @@ export function MultiAreaManager({
       return;
     }
     onAreasChange(
-      areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview, logoFile: activeArea.logoFile ?? null })),
+      areas.map((a) => ({
+        ...a,
+        logoPreview: activeArea.logoPreview,
+        logoFile: activeArea.logoFile ?? null,
+      })),
     );
     toast.success(`Logo aplicado em ${areas.length} áreas`);
   };
@@ -146,7 +150,7 @@ export function MultiAreaManager({
                   area={area}
                   index={index}
                   isActive={activeAreaId === area.id}
-                  isReadOnly={true}
+                  isReadOnly
                   canRemove={false}
                   onSelect={() => onActiveAreaChange(area.id)}
                   onNameChange={() => {}}
