@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 205: 5 zero-violation rules (saved: @typescript-eslint/no-mixed-enums 0v✓, @typescript-eslint/no-non-null-asserted-nullish-coalescing 0v✓, @typescript-eslint/no-unnecessary-type-constraint 0v✓, @typescript-eslint/no-unsafe-declaration-merging 0v✓, @typescript-eslint/no-useless-empty-export 0v✓, @typescript-eslint/prefer-namespace-keyword 0v✓ — Batch 206+)
+      'no-compare-neg-zero': 'error',
+      'no-dupe-else-if': 'error',
+      'no-import-assign': 'error',
+      '@typescript-eslint/no-duplicate-enum-values': 'error',
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
       // Batch 204: 5 zero-violation rules (saved: no-compare-neg-zero 0v✓, no-dupe-else-if 0v✓, no-import-assign 0v✓ — Batch 205+)
       'no-setter-return': 'error',
       'no-sparse-arrays': 'error',
