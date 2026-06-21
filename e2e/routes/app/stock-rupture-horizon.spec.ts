@@ -59,6 +59,6 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
 
     // 4. Reload preserva a seleção.
     await page.reload();
-    await expect(page.getByTestId('rupture-horizon-control')).toContainText('30 dias');
+    await expect(page.getByTestId('rupture-horizon-control')).toContainText('30d');
   });
 });
