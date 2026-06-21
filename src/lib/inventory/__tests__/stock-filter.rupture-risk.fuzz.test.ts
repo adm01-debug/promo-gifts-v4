@@ -257,4 +257,23 @@ describe(`stock-filter.fuzz — ${SIM_COUNT} simulações de Risco de Ruptura`, 
       expect(out.length).toBe(expected);
     }
   });
+
+  it('ghost-only set: 100 sims com IDs inexistentes ⇒ saída SEMPRE vazia', () => {
+    // Cenário-limite: o EMA reportou variantId que sumiu do catálogo (ex: variação
+    // descontinuada). O filtro DEVE retornar zero — nunca cair em "mostra tudo".
+    for (let sim = 0; sim < 100; sim++) {
+      const { products } = makeUniverse(sim + 3000, 25);
+      const ghostSet = new Set<string>([
+        `ghost-${sim}-a`,
+        `ghost-${sim}-b`,
+        `ghost-${sim}-c`,
+      ]);
+      const out = applyStockFilters(
+        products,
+        { ...defaultStockFilters, ruptureRiskVariantIds: ghostSet },
+        [],
+      );
+      expect(out).toEqual([]);
+    }
+  });
 });
