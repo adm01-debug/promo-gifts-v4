@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 218: 5 zero-violation rules (saved: @typescript-eslint/prefer-promise-reject-errors 0v✓ — Batch 219+)
+      '@typescript-eslint/default-param-last': 'error',
+      '@typescript-eslint/dot-notation': 'error',
+      '@typescript-eslint/no-restricted-imports': 'error',
+      '@typescript-eslint/no-shadow': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
       // Batch 217: 5 zero-violation rules (saved: @typescript-eslint/default-param-last 0v✓ — Batch 218+)
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-this-alias': 'error',
