@@ -425,6 +425,14 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 142: 7 rules (all zero-violation)
+      '@typescript-eslint/no-unnecessary-qualifier': 'error',
+      '@typescript-eslint/prefer-enum-initializers': 'error',
+      '@typescript-eslint/prefer-find': 'error',
+      '@typescript-eslint/no-for-in-array': 'error',
+      'no-label-var': 'error',
+      'no-useless-call': 'error',
+      'prefer-exponentiation-operator': 'error',
       // Batch 141: 5 rules (3 zero-violation + 2 with manual fixes — removed: no-redundant-type-constituents 53v, no-base-to-string 58v)
       '@typescript-eslint/unified-signatures': 'error',
       '@typescript-eslint/parameter-properties': 'error',
