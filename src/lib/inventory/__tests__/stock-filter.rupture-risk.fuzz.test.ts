@@ -137,44 +137,50 @@ describe(`stock-filter.fuzz — ${SIM_COUNT} simulações de Risco de Ruptura`, 
       const outVariantIds = out.flatMap((p) => p.variants.map((v) => v.variantId));
       const outVariantSet = new Set(outVariantIds);
 
-      // I1: subset estrito
-      for (const id of outVariantIds) {
-        if (!ruptureSet.has(id)) {
-          failures.push(`#${sim} I1: ${id} fora do set apareceu na saída`);
-          break;
+      // Quando o set está vazio, o contrato (I7) é "comportamento legado" —
+      // as invariantes I1-I5 não se aplicam.
+      const ruptureActive = ruptureSet.size > 0;
+
+      if (ruptureActive) {
+        // I1: subset estrito
+        for (const id of outVariantIds) {
+          if (!ruptureSet.has(id)) {
+            failures.push(`#${sim} I1: ${id} fora do set apareceu na saída`);
+            break;
+          }
+        }
+        // I2 + I5: paridade card↔tabela (interseção set∩universo)
+        if (outVariantSet.size !== intersection.size) {
+          failures.push(
+            `#${sim} I2/I5: saída=${outVariantSet.size} ≠ interseção=${intersection.size}`,
+          );
+        }
+        for (const id of intersection) {
+          if (!outVariantSet.has(id)) {
+            failures.push(`#${sim} I2: ${id} ∈ interseção mas ausente da saída`);
+            break;
+          }
+        }
+        // I3: produtos sem variações na saída são proibidos
+        for (const p of out) {
+          if (p.variants.length === 0) {
+            failures.push(`#${sim} I3: produto ${p.productId} sem variações na saída`);
+            break;
+          }
+        }
+        // I4: nenhum vazamento por classe de status (regressão dirigida)
+        for (const status of STATUSES as StockStatus[]) {
+          const leak = out
+            .flatMap((p) => p.variants)
+            .find((v) => v.status === status && !ruptureSet.has(v.variantId));
+          if (leak) {
+            failures.push(`#${sim} I4[${status}]: vazamento de ${leak.variantId}`);
+            break;
+          }
         }
       }
-      // I2 + I5: paridade card↔tabela (interseção set∩universo)
-      if (outVariantSet.size !== intersection.size) {
-        failures.push(
-          `#${sim} I2/I5: saída=${outVariantSet.size} ≠ interseção=${intersection.size}`,
-        );
-      }
-      for (const id of intersection) {
-        if (!outVariantSet.has(id)) {
-          failures.push(`#${sim} I2: ${id} ∈ interseção mas ausente da saída`);
-          break;
-        }
-      }
-      // I3: produtos sem variações na saída são proibidos
-      for (const p of out) {
-        if (p.variants.length === 0) {
-          failures.push(`#${sim} I3: produto ${p.productId} sem variações na saída`);
-          break;
-        }
-      }
-      // I4: nenhuma variante de status arbitrário fora do set (redundante c/ I1
-      // mas verificada por classe de status para detectar regressão dirigida)
-      for (const status of STATUSES as StockStatus[]) {
-        const leak = out
-          .flatMap((p) => p.variants)
-          .find((v) => v.status === status && !ruptureSet.has(v.variantId));
-        if (leak) {
-          failures.push(`#${sim} I4[${status}]: vazamento de ${leak.variantId}`);
-          break;
-        }
-      }
-      // I6: idempotência
+
+      // I6: idempotência (sempre aplica)
       const out2 = applyStockFilters(
         products,
         { ...defaultStockFilters, ruptureRiskVariantIds: ruptureSet },
