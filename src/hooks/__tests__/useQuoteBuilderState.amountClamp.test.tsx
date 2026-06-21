@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * useQuoteBuilderState — regressão BUG-01: desconto em R$ deve ser clamped antes de enviar ao servidor
  *

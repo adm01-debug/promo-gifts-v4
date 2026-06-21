@@ -71,7 +71,7 @@ const STATUS_FILTER_VALUES: StatusFilter[] = [
 // SSOT — labels alinhados aos cards do StockDashboard (KPI ↔ chip).
 // NÃO ALTERAR sem atualizar o teste de regressão
 // `VariantStockTable.kpi-consistency.test.tsx`.
-const STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
+const _STATUS_FILTER_LABEL: Record<StatusFilter, string> = {
   all: 'Todos',
   in_stock: 'Em Estoque',
   low_stock: 'Estoque Baixo',
@@ -303,14 +303,11 @@ function FlatVariantRow({
           />
         </TableCell>
         {emaEnabled && (
-          <TableCell
-            className="hidden lg:table-cell"
-            data-testid="stock-row-ema-coverage"
-          >
+          <TableCell className="hidden lg:table-cell" data-testid="stock-row-ema-coverage">
             {emaAlert ? (
               <div className="flex flex-col items-start gap-0.5">
                 <RuptureLevelBadge level={emaAlert.nivel_alerta} className="text-[10px]" />
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="text-[10px] tabular-nums text-muted-foreground">
                   {emaAlert.cobertura_dias !== null && Number.isFinite(emaAlert.cobertura_dias)
                     ? `${emaAlert.cobertura_dias!.toFixed(1)} d`
                     : '—'}
@@ -449,7 +446,7 @@ function VariantStockTableInner({
   }, []);
 
   // Filtro por status (persistido). Aplicado por variação individual.
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+  const [statusFilter, _setStatusFilter] = useState<StatusFilter>(() => {
     const stored = readStored(STATUS_FILTER_STORAGE_KEY, 'all') as StatusFilter;
     return STATUS_FILTER_VALUES.includes(stored) ? stored : 'all';
   });
@@ -487,7 +484,7 @@ function VariantStockTableInner({
    * Contagem de variações (SKUs) por status — base para chips de filtro.
    * Indexa por status uma única vez por mudança de busca.
    */
-  const statusCounts = useMemo(() => {
+  const _statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
       all: 0,
       in_stock: 0,
@@ -744,7 +741,6 @@ function VariantStockTableInner({
             fonte única de filtro por status (Total / Em Estoque / Risco de
             Ruptura / Sem Estoque / Estoque Futuro). */}
 
-
         <div className="flex items-center gap-2">
           {/* Contagem total */}
           <span className="whitespace-nowrap text-xs text-muted-foreground">
@@ -851,7 +847,7 @@ function VariantStockTableInner({
                       isSelected={selection.isSelected(k)}
                       onToggleSelect={() => selection.toggle(k)}
                       emaEnabled={emaEnabled}
-                      emaAlert={emaEnabled ? emaByVariantId.get(variant.variantId) : undefined}
+                      emaAlert={emaEnabled ? emaByVariantId?.get(variant.variantId) : undefined}
                     />
                   );
                 })}

@@ -165,24 +165,24 @@ export function useProductSupplierSources(productId?: string) {
   // Manual per-product writes are intentionally disabled — see the file header. The table is
   // per-variant and sync-managed; surfacing a clear message beats silently failing or, worse,
   // writing malformed rows.
-  const addSource = useCallback(async (_input: SupplierSourceInput) => {
+  const addSource = useCallback((_input: SupplierSourceInput) => {
     toast.error(MANUAL_WRITE_MESSAGE);
-    return false;
+    return Promise.resolve(false);
   }, []);
 
-  const updateSource = useCallback(async (_id: string, _updates: Partial<SupplierSourceInput>) => {
+  const updateSource = useCallback((_id: string, _updates: Partial<SupplierSourceInput>) => {
     toast.error(MANUAL_WRITE_MESSAGE);
-    return false;
+    return Promise.resolve(false);
   }, []);
 
-  const removeSource = useCallback(async (_id: string) => {
+  const removeSource = useCallback((_id: string) => {
     toast.error(MANUAL_WRITE_MESSAGE);
-    return false;
+    return Promise.resolve(false);
   }, []);
 
-  const setPreferred = useCallback(async (_id: string) => {
+  const setPreferred = useCallback((_id: string) => {
     toast.error(MANUAL_WRITE_MESSAGE);
-    return false;
+    return Promise.resolve(false);
   }, []);
 
   return {

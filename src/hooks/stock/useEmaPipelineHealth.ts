@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface EmaPipelineHealthRow {
   componente: string;
-  status: 'OK' | 'ATRASO' | 'FALHA' | string;
+  status: string | 'ATRASO' | 'FALHA' | 'OK';
   ultima_execucao: string | null;
   proxima_execucao: string | null;
   detalhe: string | null;
@@ -21,11 +21,11 @@ export function useEmaPipelineHealth() {
     refetchInterval: 60_000,
     retry: 1,
     queryFn: async (): Promise<EmaPipelineHealthRow[]> => {
-      const { data, error } = await (supabase as unknown as {
-        rpc: (
-          n: string,
-        ) => Promise<{ data: EmaPipelineHealthRow[] | null; error: Error | null }>;
-      }).rpc('fn_ema_pipeline_health');
+      const { data, error } = await (
+        supabase as unknown as {
+          rpc: (n: string) => Promise<{ data: EmaPipelineHealthRow[] | null; error: Error | null }>;
+        }
+      ).rpc('fn_ema_pipeline_health');
       if (error) throw error;
       return data ?? [];
     },

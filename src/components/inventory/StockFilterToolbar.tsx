@@ -7,7 +7,6 @@ import {
   X,
   Building2,
   Palette,
-  Package,
   ShoppingCart,
   AlertTriangle,
   SlidersHorizontal,
@@ -35,7 +34,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { InlineColorGroupFilter } from '@/components/filters/InlineColorGroupFilter';
 import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFilter';
-import { DebouncedPriceInput } from '@/components/filters/DebouncedPriceInput';
 import { FilterSection } from '@/components/filters/filter-panel/FilterSection';
 import { StockHelpTooltip } from '@/components/inventory/StockHelpTooltip';
 import type { StockFilters } from '@/types/stock';
@@ -119,12 +117,10 @@ export function StockFilterToolbar({
     onUpdateFilter('minQtyIncludesFutureStock', v);
   };
 
-
   // Atalho: Shift+F alterna inclusão do Estoque Futuro.
   useFutureStockShortcut(() => {
     setIncludeFutureStock(!filters.includeFutureStock);
   });
-
 
   // Accordion behavior: only one section open at a time
   const toggleSection = (id: string) => {
@@ -167,8 +163,6 @@ export function StockFilterToolbar({
     const t = setTimeout(() => setIsSearching(false), 600);
     return () => clearTimeout(t);
   }, [isSearching, filters.search, localSearch]);
-
-
 
   // Debounce quantity
   useEffect(() => {
@@ -316,8 +310,6 @@ export function StockFilterToolbar({
                   cobre includeFutureStock. minQtyIncludesFutureStock é derivado
                   automaticamente do toggle do toolbar (ver normalização abaixo). */}
 
-
-
               {/* FilterSection: Fornecedores */}
               <FilterSection
                 id="fornecedores"
@@ -397,7 +389,6 @@ export function StockFilterToolbar({
             example="Janela 15 dias: vende o que chega até lá."
             emptyHint="Sem chegadas? Aumente para 30 dias."
           >
-
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -577,25 +568,25 @@ export function StockFilterToolbar({
               // Habilitado quando há algo a buscar: texto digitado OU
               // pelo menos um filtro ativo (status, categoria, fornecedor,
               // cor, quantidade mínima). Loading desabilita.
-              disabled={
-                isSearching ||
-                (localSearch.trim() === '' && activeFiltersCount === 0)
-              }
+              disabled={isSearching || (localSearch.trim() === '' && activeFiltersCount === 0)}
               aria-label="Aplicar busca no estoque"
               aria-busy={isSearching}
               title="Aplicar busca (Enter)"
             >
-              {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : null}
+              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
               <span>{isSearching ? 'Buscando…' : 'Busca'}</span>
             </Button>
-
           </div>
         </StockHelpTooltip>
 
         {activeFiltersCount > 0 && (
-          <Button variant="ghost" onClick={handleReset} size="icon" aria-label="Limpar filtros" className="shrink-0">
+          <Button
+            variant="ghost"
+            onClick={handleReset}
+            size="icon"
+            aria-label="Limpar filtros"
+            className="shrink-0"
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
@@ -608,7 +599,6 @@ export function StockFilterToolbar({
           data-testid="stock-toolbar-slot"
           className="order-last ml-auto flex w-full items-center justify-end sm:w-auto"
         />
-
       </div>
 
       {/* Status chips removed — StatCards above handle status filtering */}

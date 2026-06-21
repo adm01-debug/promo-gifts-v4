@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Integration tests para SocialLoginButtons — cobrem:
  *  1. Click feliz: spinner aparece, label muda para "Conectando ao Google…"

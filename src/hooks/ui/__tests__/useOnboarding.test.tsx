@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante o controle do estado do tour de onboarding:
  * - Nenhuma API pública além de `restartTour` permite reabrir o tour

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * useQuoteBuilderState — overwrite consciente preserva o status do save
  *

@@ -7,21 +7,15 @@
  */
 import type { StockDashboardSummary } from '@/types/stock';
 
-export type StockKpiFilter = 'all' | 'in_stock' | 'critical' | 'out_of_stock';
+export type StockKpiFilter = 'all' | 'critical' | 'in_stock' | 'out_of_stock';
 
-
-export type StockKpiSlug =
-  | 'total-de-variacoes'
-  | 'em-estoque'
-  | 'risco-de-ruptura'
-  | 'sem-estoque';
-
+export type StockKpiSlug = 'em-estoque' | 'risco-de-ruptura' | 'sem-estoque' | 'total-de-variacoes';
 
 export interface StockKpiCardData {
   slug: StockKpiSlug;
   title: string;
   /** Unidade contábil do card (para tooltip / leitor de tela). */
-  unit: 'variações' | 'produtos';
+  unit: 'produtos' | 'variações';
   value: number;
   /** Texto curto mostrado abaixo do número (clareza imediata). */
   subtitle: string;
@@ -29,7 +23,7 @@ export interface StockKpiCardData {
   tooltip: string;
   /** Filtro aplicado ao clicar; null = limpar filtro. */
   filter: StockKpiFilter | null;
-  variant: 'default' | 'success' | 'warning' | 'error';
+  variant: 'default' | 'error' | 'success' | 'warning';
 }
 
 const pct = (n: number, total: number): string =>
@@ -57,7 +51,6 @@ export function buildStockKpiCards(
       ? ruptureRisk30dCount
       : variantsCritical;
   const ruptureFromEma = typeof ruptureRisk30dCount === 'number';
-
 
   return [
     {
@@ -110,4 +103,3 @@ export function buildStockKpiCards(
     },
   ];
 }
-

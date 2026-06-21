@@ -15,15 +15,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  AlertTriangle, TrendingDown, Activity, Info,
-  ShoppingCart, Download, MessageSquarePlus, Flame, Layers,
+  AlertTriangle,
+  TrendingDown,
+  Activity,
+  ShoppingCart,
+  Download,
+  MessageSquarePlus,
+  Flame,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isFeatureEnabled } from '@/lib/feature-flags';
@@ -53,30 +61,48 @@ function fmt(n: number | null | undefined, d = 1): string {
 }
 
 function exportCSV(rows: RuptureAlertRow[]) {
-  const headers = ['Nível','Score','Confiança','Fornecedor','SKU','Estoque','EMA/dia','Cobertura(d)','Gap(un)','Spike'];
-  const lines = rows.map((r) => [
-    r.nivel_alerta, r.score_composto ?? '', r.confidence_level ?? '',
-    r.supplier_name ?? '', r.supplier_sku ?? '',
-    r.stock_total ?? 0, fmt(r.ema_diaria, 2),
-    r.cobertura_dias !== null ? fmt(r.cobertura_dias, 1) : '',
-    r.gap_unidades ?? 0, r.anomalia_spike ? 'SIM' : 'NÃO',
-  ].join(';'));
+  const headers = [
+    'Nível',
+    'Score',
+    'Confiança',
+    'Fornecedor',
+    'SKU',
+    'Estoque',
+    'EMA/dia',
+    'Cobertura(d)',
+    'Gap(un)',
+    'Spike',
+  ];
+  const lines = rows.map((r) =>
+    [
+      r.nivel_alerta,
+      r.score_composto ?? '',
+      r.confidence_level ?? '',
+      r.supplier_name ?? '',
+      r.supplier_sku ?? '',
+      r.stock_total ?? 0,
+      fmt(r.ema_diaria, 2),
+      r.cobertura_dias !== null ? fmt(r.cobertura_dias, 1) : '',
+      r.gap_unidades ?? 0,
+      r.anomalia_spike ? 'SIM' : 'NÃO',
+    ].join(';'),
+  );
   const csv = [headers.join(';'), ...lines].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `ema-risco-${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `ema-risco-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
 function buildWhatsAppLink(row: RuptureAlertRow): string {
   const msg = encodeURIComponent(
-    `Olá! Preciso repor o SKU ${row.supplier_sku ?? row.variant_id.slice(0,8)} (${row.supplier_name ?? '?'}). ` +
-    `Cobertura atual: ${row.cobertura_dias !== null ? fmt(row.cobertura_dias, 0) + 'd' : 'sem estoque'}. ` +
-    `EMA: ${fmt(row.ema_diaria, 2)}/dia. Gap: ${(row.gap_unidades ?? 0).toLocaleString('pt-BR')} un. ` +
-    `Nível: ${row.nivel_alerta}.`,
+    `Olá! Preciso repor o SKU ${row.supplier_sku ?? row.variant_id.slice(0, 8)} (${row.supplier_name ?? '?'}). ` +
+      `Cobertura atual: ${row.cobertura_dias !== null ? `${fmt(row.cobertura_dias, 0)}d` : 'sem estoque'}. ` +
+      `EMA: ${fmt(row.ema_diaria, 2)}/dia. Gap: ${(row.gap_unidades ?? 0).toLocaleString('pt-BR')} un. ` +
+      `Nível: ${row.nivel_alerta}.`,
   );
   return `https://wa.me/?text=${msg}`;
 }
@@ -95,7 +121,9 @@ function OptInEmpty() {
   );
 }
 
-interface Props { focusedLevel?: string | null; }
+interface Props {
+  focusedLevel?: string | null;
+}
 
 export function RupturePanelEma({ focusedLevel }: Props = {}) {
   if (!isFeatureEnabled('useEmaRupture')) return <OptInEmpty />;
@@ -159,7 +187,8 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
   function toggleLevel(lvl: RuptureLevel) {
     setActiveLevels((prev) => {
       const next = new Set(prev);
-      if (next.has(lvl)) next.delete(lvl); else next.add(lvl);
+      if (next.has(lvl)) next.delete(lvl);
+      else next.add(lvl);
       return next;
     });
   }
@@ -185,7 +214,9 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
           const active = activeLevels.has(lvl);
           return (
             <button
-              key={lvl} type="button" onClick={() => toggleLevel(lvl)}
+              key={lvl}
+              type="button"
+              onClick={() => toggleLevel(lvl)}
               className={`flex flex-col items-start gap-1 rounded-xl border bg-card p-3 text-left transition-all hover:shadow-md ${
                 active ? 'border-primary/40 ring-1 ring-primary/30' : 'border-border/40'
               }`}
@@ -231,7 +262,8 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
 
               {/* Export CSV */}
               <Button
-                variant="outline" size="sm"
+                variant="outline"
+                size="sm"
                 className="h-8 gap-1.5 text-xs"
                 onClick={() => exportCSV(filtered)}
                 disabled={filtered.length === 0}
@@ -247,7 +279,9 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
                 <SelectContent>
                   <SelectItem value="all">Todos os fornecedores</SelectItem>
                   {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -257,13 +291,19 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
 
         <CardContent className="pt-0">
           {isLoading ? (
-            <div className="space-y-2">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
           ) : error ? (
             <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4" /> Não foi possível carregar alertas EMA.
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">Nenhum alerta nos níveis selecionados.</div>
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              Nenhum alerta nos níveis selecionados.
+            </div>
           ) : groupBySupplier && supplierGroups ? (
             // Vista agrupada por fornecedor
             <div className="space-y-4">
@@ -271,7 +311,9 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
                 <div key={grp.name}>
                   <div className="mb-1.5 flex items-center gap-2">
                     <span className="text-sm font-semibold">{grp.name}</span>
-                    <Badge variant="secondary" className="text-xs">{grp.rows.length}</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {grp.rows.length}
+                    </Badge>
                     {supplierData?.find((s) => s.supplier_name === grp.name) && (
                       <span className="text-xs text-muted-foreground">
                         {supplierData.find((s) => s.supplier_name === grp.name)?.pct_risco}% crítico
@@ -288,7 +330,13 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
         </CardContent>
       </Card>
 
-      <PurchaseOrderModal open={poRow !== null} onOpenChange={(o) => { if (!o) setPoRow(null); }} row={poRow} />
+      <PurchaseOrderModal
+        open={poRow !== null}
+        onOpenChange={(o) => {
+          if (!o) setPoRow(null);
+        }}
+        row={poRow}
+      />
     </div>
   );
 }
@@ -315,7 +363,7 @@ function RuptureTable({
             <th className="px-2 py-1.5 text-right">Cob.</th>
             <th className="px-2 py-1.5 text-right">Gap</th>
             <th className="px-2 py-1.5 text-center">7d</th>
-            <th className="px-2 py-1.5"></th>
+            <th className="px-2 py-1.5" />
           </tr>
         </thead>
         <tbody>
@@ -334,7 +382,10 @@ function RuptureTable({
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                         <TooltipTrigger>
-                          <Flame className="h-3.5 w-3.5 text-amber-500" aria-label="Pico de depleção" />
+                          <Flame
+                            className="h-3.5 w-3.5 text-amber-500"
+                            aria-label="Pico de depleção"
+                          />
                         </TooltipTrigger>
                         <TooltipContent>Pico de depleção detectado (7d)</TooltipContent>
                       </Tooltip>
@@ -344,18 +395,22 @@ function RuptureTable({
               </td>
               <td className="px-2 py-1.5">
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-bold tabular-nums text-xs">{row.score_composto ?? '—'}</span>
+                  <span className="text-xs font-bold tabular-nums">
+                    {row.score_composto ?? '—'}
+                  </span>
                   {row.confidence_level && (
-                    <span className={cn(
-                      'rounded border px-1 py-0 text-[10px] font-medium leading-tight',
-                      CONFIDENCE_STYLE[row.confidence_level],
-                    )}>
+                    <span
+                      className={cn(
+                        'rounded border px-1 py-0 text-[10px] font-medium leading-tight',
+                        CONFIDENCE_STYLE[row.confidence_level],
+                      )}
+                    >
                       {row.confidence_level}
                     </span>
                   )}
                 </div>
               </td>
-              <td className="px-2 py-1.5 text-foreground max-w-[120px] truncate">
+              <td className="max-w-[120px] truncate px-2 py-1.5 text-foreground">
                 {row.supplier_name ?? '—'}
               </td>
               <td className="px-2 py-1.5 font-mono text-xs text-muted-foreground">
@@ -363,10 +418,10 @@ function RuptureTable({
               </td>
               <td className="px-2 py-1.5 text-right tabular-nums">{fmt(row.stock_total, 0)}</td>
               <td className="px-2 py-1.5 text-right tabular-nums">{fmt(row.ema_diaria, 2)}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums font-semibold">
+              <td className="px-2 py-1.5 text-right font-semibold tabular-nums">
                 {row.cobertura_dias === null ? '—' : `${fmt(row.cobertura_dias, 1)}d`}
               </td>
-              <td className="px-2 py-1.5 text-right tabular-nums text-xs">
+              <td className="px-2 py-1.5 text-right text-xs tabular-nums">
                 {row.gap_unidades ? row.gap_unidades.toLocaleString('pt-BR') : '—'}
               </td>
               <td className="px-2 py-1.5 text-center">
@@ -378,7 +433,8 @@ function RuptureTable({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          size="sm" variant="outline"
+                          size="sm"
+                          variant="outline"
                           className="h-6 gap-1 px-1.5 text-[10px]"
                           onClick={() => onPedir(row)}
                         >
@@ -391,17 +447,16 @@ function RuptureTable({
                   <TooltipProvider delayDuration={100}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <a
-                          href={buildWhatsAppLink(row)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        <a href={buildWhatsAppLink(row)} target="_blank" rel="noopener noreferrer">
                           <Button
-                            size="sm" variant="ghost"
+                            size="sm"
+                            variant="ghost"
                             className="h-6 gap-1 px-1.5 text-[10px] text-emerald-600"
                             asChild
                           >
-                            <span><MessageSquarePlus className="h-3 w-3" /> WA</span>
+                            <span>
+                              <MessageSquarePlus className="h-3 w-3" /> WA
+                            </span>
                           </Button>
                         </a>
                       </TooltipTrigger>

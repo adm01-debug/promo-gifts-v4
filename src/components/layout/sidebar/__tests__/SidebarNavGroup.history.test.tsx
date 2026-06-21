@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante que o destaque (active state) e a auto-expansão do grupo "Orçamentos"
  * permanecem consistentes para "Novo Orçamento" — em paridade com "Orçamentos"

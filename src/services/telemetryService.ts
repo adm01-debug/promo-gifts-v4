@@ -133,8 +133,7 @@ class TelemetryService {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async log(payload: TelemetryPayload): Promise<void> {
+  log(payload: TelemetryPayload): void {
     try {
       if (import.meta.env.DEV) {
         logger.warn(`[Telemetry] ${payload.event_type}: ${payload.name}`, payload.metadata);
@@ -169,7 +168,7 @@ class TelemetryService {
     }
   }
 
-  async logError(name: string, error: unknown, metadata?: Record<string, unknown>): Promise<void> {
+  logError(name: string, error: unknown, metadata?: Record<string, unknown>): void {
     const errObj =
       error instanceof Error
         ? error
@@ -190,11 +189,7 @@ class TelemetryService {
     });
   }
 
-  async logPerformance(
-    name: string,
-    durationMs: number,
-    metadata?: Record<string, unknown>,
-  ): Promise<void> {
+  logPerformance(name: string, durationMs: number, metadata?: Record<string, unknown>): void {
     // Mantém o threshold (só >= 100ms importa) ANTES do sampling
     if (durationMs < 100) return;
     return this.log({
@@ -205,7 +200,7 @@ class TelemetryService {
     });
   }
 
-  async logUXAction(name: string, metadata?: Record<string, unknown>): Promise<void> {
+  logUXAction(name: string, metadata?: Record<string, unknown>): void {
     return this.log({
       event_type: 'ux_action',
       name,

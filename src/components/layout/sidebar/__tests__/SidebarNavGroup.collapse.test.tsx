@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 // =============================================================================
 // SKIPPED — Tracked by issue #151 (re-classificado em 2026-05-12, Fase 3 T24)
 // https://github.com/adm01-debug/Promo_Gifts/issues/151

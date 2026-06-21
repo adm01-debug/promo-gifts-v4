@@ -24,9 +24,16 @@ export function useStockNotes(variantId: string | null) {
   const client = supabase as unknown as {
     from: (n: string) => {
       select: (c: string) => {
-        eq: (k: string, v: string) => {
-          order: (k: string, o: { ascending: boolean }) => Promise<{
-            data: StockNote[] | null; error: Error | null;
+        eq: (
+          k: string,
+          v: string,
+        ) => {
+          order: (
+            k: string,
+            o: { ascending: boolean },
+          ) => Promise<{
+            data: StockNote[] | null;
+            error: Error | null;
           }>;
         };
       };
@@ -53,7 +60,9 @@ export function useStockNotes(variantId: string | null) {
 
   const addNote = useMutation({
     mutationFn: async ({ note, supplierId }: { note: string; supplierId?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
       const { error } = await client.from('stock_notes').insert({
         variant_id: variantId!,
@@ -67,7 +76,8 @@ export function useStockNotes(variantId: string | null) {
       void qc.invalidateQueries({ queryKey: ['stock-notes', variantId] });
       toast({ title: '📝 Nota adicionada' });
     },
-    onError: (err) => toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' }),
+    onError: (err) =>
+      toast({ title: 'Erro', description: (err as Error).message, variant: 'destructive' }),
   });
 
   const deleteNote = useMutation({
@@ -75,7 +85,9 @@ export function useStockNotes(variantId: string | null) {
       const { error } = await client.from('stock_notes').delete().eq('id', noteId);
       if (error) throw error;
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['stock-notes', variantId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['stock-notes', variantId] });
+    },
   });
 
   return { notes: notesQuery.data ?? [], isLoading: notesQuery.isLoading, addNote, deleteNote };

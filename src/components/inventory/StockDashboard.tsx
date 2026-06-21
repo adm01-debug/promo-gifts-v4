@@ -252,7 +252,7 @@ export function StockDashboard() {
       const t = f.expectedDate ? Date.parse(f.expectedDate) : NaN;
       if (!Number.isFinite(t)) continue;
       if (t < now || t > horizon) continue;
-      variantSet.add(f.variantId);
+      if (f.variantId) variantSet.add(f.variantId);
       units += f.expectedQuantity || 0;
     }
     return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };

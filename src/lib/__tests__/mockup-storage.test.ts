@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Behavioural tests for mockup-storage utilities.
  * Run: npx vitest run src/lib/__tests__/mockup-storage.test.ts
