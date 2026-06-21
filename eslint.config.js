@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 162: 5 zero-violation rules (excluded: no-return-assign 0v✓, no-throw-literal 0v✓, prefer-regex-literals 0v✓, no-unneeded-ternary 0v✓ — saved Batch 163)
+      'jsx-a11y/aria-role': 'error',
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
+      '@typescript-eslint/no-array-delete': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
       // Batch 161: 5 zero-violation rules (excluded: jsx-a11y/aria-role 0v✓, @typescript-eslint/no-non-null-asserted-nullish-coalescing 0v✓ — saved Batch 162)
       'no-div-regex': 'error',
       'grouped-accessor-pairs': 'error',
