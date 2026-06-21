@@ -302,6 +302,28 @@ function FlatVariantRow({
             projection={projection}
           />
         </TableCell>
+        {emaEnabled && (
+          <TableCell
+            className="hidden lg:table-cell"
+            data-testid="stock-row-ema-coverage"
+          >
+            {emaAlert ? (
+              <div className="flex flex-col items-start gap-0.5">
+                <RuptureLevelBadge level={emaAlert.nivel_alerta} className="text-[10px]" />
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {emaAlert.cobertura_dias !== null && Number.isFinite(emaAlert.cobertura_dias)
+                    ? `${emaAlert.cobertura_dias!.toFixed(1)} d`
+                    : '—'}
+                  {emaAlert.lead_time_efetivo !== null
+                    ? ` · LT ${emaAlert.lead_time_efetivo}d`
+                    : ''}
+                </span>
+              </div>
+            ) : (
+              <EmptyCell />
+            )}
+          </TableCell>
+        )}
         <TableCell className="hidden sm:table-cell">
           <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             <Button
