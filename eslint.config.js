@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 203: 5 zero-violation rules (saved: no-setter-return 0v✓, no-sparse-arrays 0v✓ — Batch 204+)
+      'no-array-constructor': 'error',
+      'no-loss-of-precision': 'error',
+      'no-nonoctal-decimal-escape': 'error',
+      'no-prototype-builtins': 'error',
+      'no-useless-escape': 'error',
       // Batch 202: 5 zero-violation rules (saved: no-array-constructor 0v✓ — Batch 203+)
       'no-unreachable-loop': 'error',
       'no-unsafe-optional-chaining': 'error',
