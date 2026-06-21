@@ -22,19 +22,8 @@ import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
-import {
-  computeRuptureRisk,
-  DEFAULT_RUPTURE_HORIZON,
-  RUPTURE_HORIZON_OPTIONS,
-  type RuptureHorizonDays,
-} from '@/lib/inventory/rupture-risk';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { computeRuptureRisk } from '@/lib/inventory/rupture-risk';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
 import { useRuptureAlerts, type RuptureAlertRow } from '@/hooks/stock/useRuptureAlerts';
 import { RuptureLevelBadge } from './risk/RuptureLevelBadge';
 import { isFeatureEnabled } from '@/lib/feature-flags';
