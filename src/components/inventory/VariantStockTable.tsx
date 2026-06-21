@@ -849,6 +849,8 @@ export function VariantStockTable({
                       selectionEnabled={selection.enabled}
                       isSelected={selection.isSelected(k)}
                       onToggleSelect={() => selection.toggle(k)}
+                      emaEnabled={emaEnabled}
+                      emaAlert={emaEnabled ? emaByVariantId.get(variant.variantId) : undefined}
                     />
                   );
                 })}
