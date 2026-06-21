@@ -349,11 +349,9 @@ export function TagsFilter({
 export function QuickOptionsFilter({
   filters,
   toggleBooleanFilter,
-  onMinStockChange,
 }: {
   filters: FilterState;
   toggleBooleanFilter: (key: keyof FilterState) => void;
-  onMinStockChange: (v: number) => void;
 }) {
   return (
     <div
@@ -410,16 +408,6 @@ export function QuickOptionsFilter({
           Com Personalização
         </Label>
       </div>
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="filter-inStock"
-          checked={filters.inStock}
-          onCheckedChange={() => toggleBooleanFilter('inStock')}
-        />
-        <Label htmlFor="filter-inStock" className="cursor-pointer text-sm">
-          Em Estoque
-        </Label>
-      </div>
       <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 p-2">
         <Checkbox
           id="has-commercial-packaging"
@@ -433,6 +421,31 @@ export function QuickOptionsFilter({
         >
           <Gift className="h-3.5 w-3.5 text-warning" />
           Com Embalagem Nativa
+        </Label>
+      </div>
+    </div>
+  );
+}
+
+export function StockFilter({
+  filters,
+  toggleBooleanFilter,
+  onMinStockChange,
+}: {
+  filters: FilterState;
+  toggleBooleanFilter: (key: keyof FilterState) => void;
+  onMinStockChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-2 px-1">
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="filter-inStock"
+          checked={filters.inStock}
+          onCheckedChange={() => toggleBooleanFilter('inStock')}
+        />
+        <Label htmlFor="filter-inStock" className="cursor-pointer text-sm">
+          Em Estoque
         </Label>
       </div>
 
