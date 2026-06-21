@@ -416,6 +416,7 @@ function VariantStockTableInner({
   className,
   isLoading,
   targetQuantity,
+  ruptureFilterActive,
   emaEnabled,
   emaByVariantId,
 }: VariantStockTableInnerProps) {
