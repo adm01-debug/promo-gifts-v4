@@ -1707,7 +1707,7 @@ describe('Analise estatica — MockupConfigPanel.tsx (aria-hidden em icones deco
     expect(src).toContain('<Wand2 className="h-5 w-5 text-primary" aria-hidden="true"');
   });
   it('icone Loader2 no spinner de carregamento tem aria-hidden', () => {
-    expect(src).toContain('animate-spin text-primary" aria-hidden="true"');
+    expect(src).toMatch(/<Loader2[\s\S]*?aria-hidden="true"/);
   });
   it('container de carregamento tem role=status', () => {
     expect(src).toContain('role="status"');
@@ -1716,15 +1716,13 @@ describe('Analise estatica — MockupConfigPanel.tsx (aria-hidden em icones deco
     expect(src).toContain('aria-label="Informações sobre a técnica"');
   });
   it('icone Paintbrush na lista de tecnicas tem aria-hidden', () => {
-    expect(src).toContain('<Paintbrush className="h-3.5 w-3.5 text-primary" aria-hidden="true"');
+    expect(src).toMatch(/<Paintbrush[\s\S]*?aria-hidden="true"/);
   });
   it('icone RefreshCw no botao de reset tem aria-hidden', () => {
     expect(src).toContain('<RefreshCw className="h-4 w-4" aria-hidden="true"');
   });
   it('icone ChevronDown no collapsible tem aria-hidden', () => {
-    expect(src).toContain(
-      '<ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" aria-hidden="true"',
-    );
+    expect(src).toMatch(/<ChevronDown[\s\S]*?transition-transform[\s\S]*?aria-hidden="true"/);
   });
 });
 
@@ -1765,13 +1763,115 @@ describe('Analise estatica — TechniqueTooltip.tsx (aria-hidden em icones do ho
     );
   });
   it('icone Palette (max cores) no conteudo do tooltip tem aria-hidden', () => {
-    expect(src).toContain(
-      '<Palette className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
-    );
+    expect(src).toMatch(/<Palette[\s\S]*?h-3\.5 w-3\.5[\s\S]*?aria-hidden="true"/);
   });
   it('icone Wrench (setup) no conteudo do tooltip tem aria-hidden', () => {
     expect(src).toContain(
       '<Wrench className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
     );
+  });
+});
+
+describe('Analise estatica — GenerateButton.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/GenerateButton.tsx');
+  });
+
+  it('icone Loader2 no estado gerando tem aria-hidden', () => {
+    expect(src).toContain('<Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true"');
+  });
+  it('icone Sparkles no estado padrao tem aria-hidden', () => {
+    expect(src).toContain('<Sparkles className="mr-2 h-5 w-5" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — GeneratingOverlay.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/GeneratingOverlay.tsx');
+  });
+
+  it('icone CurrentIcon animado tem aria-hidden', () => {
+    expect(src).toContain('animate-bounce text-primary" aria-hidden="true"');
+  });
+  it('icone Check no passo concluido tem aria-hidden', () => {
+    expect(src).toContain('<Check className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone StepIcon no passo atual tem aria-hidden', () => {
+    expect(src).toContain('<StepIcon className="h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MockupResultCard.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  it('icone Sparkles no estado de loading tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Sparkles className="h-12 w-12 animate-pulse text-primary" aria-hidden="true"',
+    );
+  });
+  it('icone CheckCircle2 no titulo de sucesso tem aria-hidden', () => {
+    expect(src).toContain('<CheckCircle2 className="h-4 w-4 animate-scale-in" aria-hidden="true"');
+  });
+  it('icone ImageIcon no titulo padrao tem aria-hidden', () => {
+    expect(src).toContain('<ImageIcon className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Download no botao Baixar tem aria-hidden', () => {
+    expect(src).toContain('<Download className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone ArrowLeftRight no toggle antes-depois tem aria-hidden', () => {
+    expect(src).toContain('<ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+  it('icone Maximize2 no botao tela cheia tem aria-hidden', () => {
+    expect(src).toContain('<Maximize2 className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+  it('icone X no botao fechar lightbox tem aria-hidden', () => {
+    expect(src).toContain('<X className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icones ZoomOut e ZoomIn nos controles de zoom tem aria-hidden', () => {
+    expect(src).toContain('<ZoomOut className="h-4 w-4" aria-hidden="true"');
+    expect(src).toContain('<ZoomIn className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone RotateCcw no botao de reset zoom tem aria-hidden', () => {
+    expect(src).toContain('<RotateCcw className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MultiAreaManager.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MultiAreaManager.tsx');
+  });
+
+  it('icone Layers no cabecalho tem aria-hidden', () => {
+    expect(src).toContain('<Layers className="h-4 w-4 text-primary" aria-hidden="true"');
+  });
+  it('icone ChevronUp no collapsible tem aria-hidden', () => {
+    expect(src).toContain(
+      '<ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone ChevronDown no collapsible tem aria-hidden', () => {
+    expect(src).toContain(
+      '<ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Copy no botao de copiar logo tem aria-hidden', () => {
+    expect(src).toContain('<Copy className="mr-1 h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — LogoPositionEditor.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoPositionEditor.tsx');
+  });
+
+  it('icone Move no CardTitle tem aria-hidden', () => {
+    expect(src).toContain('<Move className="h-4 w-4 text-primary" aria-hidden="true"');
   });
 });

@@ -118,16 +118,16 @@ export function MultiAreaManager({
           <CollapsibleTrigger asChild>
             <div className="flex cursor-pointer items-center justify-between hover:opacity-80">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
+                <Layers className="h-4 w-4 text-primary" aria-hidden="true" />
                 <CardTitle className="text-base">Áreas de Personalização</CardTitle>
                 <Badge variant="secondary" className="text-xs">
                   {areas.length} {areas.length === 1 ? 'área' : 'áreas'}
                 </Badge>
               </div>
               {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               )}
             </div>
           </CollapsibleTrigger>
@@ -174,7 +174,7 @@ export function MultiAreaManager({
                 onClick={applyLogoToAllAreas}
                 className="w-full"
               >
-                <Copy className="mr-1 h-4 w-4" /> Aplicar Logo em Todas as Áreas
+                <Copy className="mr-1 h-4 w-4" aria-hidden="true" /> Aplicar Logo em Todas as Áreas
               </Button>
             )}
           </CardContent>
