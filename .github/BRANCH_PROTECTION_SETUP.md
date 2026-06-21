@@ -39,10 +39,7 @@ Vá em: <https://github.com/adm01-debug/promo-gifts-v4/settings/branches>
 | ✅ **Require status checks to pass** | ON | Garante que CI roda antes do merge |
 | └─ Adicione: `Verify push to main matches accepted patterns` | | (nome do job do sentinel) |
 | └─ Adicione: `Verify Branch Protection is enabled on main` | | (job paralelo do sentinel) |
-| └─ Adicione: `Verify required checks SSOT matches workflows (+ Branch Protection)` | | (valida SSOT `.github/required-checks.json`) |
-| └─ Adicione: `Risco de Ruptura — fuzz (800 sims, 10 invariantes)` | | (fuzz do filtro de Risco de Ruptura — bloqueia merge se invariante quebrar) |
 | └─ Adicione: `Schema Drift Gate` *(se existir)* | | Drift do plano de redeploy |
-
 | ⚪ Require signed commits | OFF (opcional) | Só se você assina com GPG/SSH |
 | ⚪ Require linear history | ON (opcional) | Força squash/rebase, proíbe merge commit |
 
@@ -72,34 +69,6 @@ Depois de salvar:
    (botão `Run workflow`).
 3. No Summary do run, o job `Verify Branch Protection is enabled on main`
    deve mostrar **✅ Branch `main` está protegida**.
-4. O job `Verify required checks SSOT matches workflows (+ Branch Protection)`
-   deve mostrar **✓** para todos os itens de `.github/required-checks.json`
-   (e nenhum `::warning::` sobre check ausente no Branch Protection).
-
-## Status check ainda não aparece na lista de busca?
-
-O GitHub só lista um status check como selecionável **depois que ele rodou
-pelo menos uma vez** num PR/commit. Se você acabou de criar o workflow
-`stock-rupture-fuzz` e o nome `Risco de Ruptura — fuzz (800 sims, 10 invariantes)`
-não aparece no autocomplete:
-
-- Abra um PR pequeno que toque `src/lib/inventory/**` (qualquer arquivo serve),
-  **ou**
-- Vá em **Actions → stock-rupture-fuzz → Run workflow** e dispare manualmente.
-
-Após o primeiro run com sucesso/falha, o nome fica disponível para seleção.
-
-## Adicionando novos required checks
-
-A lista canônica vive em [`.github/required-checks.json`](./required-checks.json).
-Para adicionar um novo check:
-
-1. Edite o JSON acrescentando `{ "name": "...", "workflow": "...", "rationale": "..." }`
-   — o `name` precisa ser **idêntico** ao campo `name:` do job no workflow.
-2. Commit. O job `check-required-checks-ssot` do Sentinel valida automaticamente
-   que o `name` existe no workflow indicado (falha o CI se houver drift).
-3. Marque o novo check como required na UI do GitHub conforme tabela acima.
-
 
 ## Teste prático (opcional, mas recomendado)
 
@@ -140,3 +109,34 @@ config para reativação rápida).
 
 - [GitHub Docs — About rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
 - [GitHub Docs — Bypass list](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository#granting-bypass-permissions-for-a-ruleset)
+
+## SSOT multi-ruleset (`.github/required-checks.json`)
+
+A lista canônica de required checks suporta **múltiplos rulesets** — cada um
+aplica seu próprio conjunto de checks a uma ou mais branches:
+
+```jsonc
+{
+  "rulesets": [
+    { "id": "main",    "branches":       ["main"],      "required_checks": [ ... ] },
+    { "id": "release", "branchPatterns": ["release/*"], "required_checks": [ ... ] }
+  ]
+}
+```
+
+- `branches` — match exato de nomes.
+- `branchPatterns` — globs simples (`*` ≠ `/`, `**` = qualquer coisa) expandidos
+  em runtime via `GET /repos/{repo}/branches`.
+- O mesmo check pode aparecer em vários rulesets — a validação deduplica.
+
+O job `check-required-checks-ssot` do Sentinel:
+1. **Falha o CI** se algum `name`/`workflow` declarado no SSOT não bater com um
+   job real (drift estrutural).
+2. **Avisa (não bloqueia)** quando o Branch Protection de qualquer branch
+   resolvida pelo ruleset não inclui um check declarado — requer `GH_TOKEN`
+   com `administration:read`.
+
+> **Importante:** o GitHub aplica required checks **por branch/ruleset na UI**.
+> O SSOT só descreve a intenção; após editar o JSON, ainda é preciso marcar
+> os checks no ruleset correspondente em
+> `Settings → Branches → <ruleset>`.

@@ -9,8 +9,6 @@
 
 > 📊 **Último relatório E2E (Risco de Ruptura):** abra a execução mais recente em [Actions → stock-rupture-horizon-e2e](https://github.com/promo-gifts/promo-gifts-v4/actions/workflows/stock-rupture-horizon-e2e.yml) e baixe o artefato `playwright-report-stock-rupture-horizon-*`.
 
-> 🛡️ **Branch Protection & required checks:** lista canônica em [`.github/required-checks.json`](.github/required-checks.json) (validada no CI pelo job `check-required-checks-ssot` do *Branch Protection Sentinel*). Passo a passo de configuração e como fazer um check novo aparecer na lista de seleção: [`.github/BRANCH_PROTECTION_SETUP.md`](.github/BRANCH_PROTECTION_SETUP.md).
-
 ---
 
 ## 📋 Sumário
