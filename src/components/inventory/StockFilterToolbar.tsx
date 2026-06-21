@@ -645,7 +645,7 @@ export function StockFilterToolbar({
         <div
           id="stock-toolbar-slot"
           data-testid="stock-toolbar-slot"
-          className="ml-auto flex items-center"
+          className="order-last ml-auto flex w-full items-center justify-end sm:w-auto"
         />
 
       </div>
