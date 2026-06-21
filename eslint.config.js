@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 201: 5 zero-violation rules (saved: no-unreachable-loop 0v✓, no-unsafe-optional-chaining 0v✓, no-useless-backreference 0v✓ — Batch 202+)
+      'no-shadow-restricted-names': 'error',
+      'prefer-object-has-own': 'error',
+      'no-extra-semi': 'error',
+      'no-regex-spaces': 'error',
+      'no-unexpected-multiline': 'error',
       // Batch 200: 5 zero-violation rules (saved: no-shadow-restricted-names 0v✓, prefer-object-has-own 0v✓ — Batch 201+)
       'vars-on-top': 'error',
       'prefer-exponentiation-operator': 'error',
