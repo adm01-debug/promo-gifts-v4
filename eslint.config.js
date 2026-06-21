@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 239: 5 zero-violation rules (239A: no-set-state 12v, jsx-pascal-case 16v, forbid-component-props 11133v, display-name 61v; 239B: destructuring-assignment 53v, function-component-definition 57v, jsx-curly-newline 209v, jsx-no-bind 3666v, jsx-no-leaked-render 2013v, jsx-no-literals 9543v, jsx-one-expression-per-line 9836v, jsx-props-no-spreading 351v, jsx-sort-props 17658v, no-unused-prop-types 55v, prefer-read-only-props 5060v, require-default-props 1905v; 239C: all jsx-a11y had violations; 239D: no-await-in-loop 105v, new-cap 49v, preserve-caught-error 1v, prefer-named-capture-group 148v, unused-imports/no-unused-vars 149v, no-undefined 1266v, camelcase 6082v, no-useless-assignment 13v; 239E: func-call-spacing 8v, eol-last 11v, no-multiple-empty-lines 4v, no-trailing-spaces 99v, func-names 2v, arrow-parens 8v)
+      'react/forbid-prop-types': 'error',
+      'no-invalid-this': 'error',
+      'jsx-quotes': 'error',
+      'no-mixed-spaces-and-tabs': 'error',
+      'no-tabs': 'error',
       // Batch 238: 1 zero-violation rule (238A-G probed all 134 @typescript-eslint rules — only consistent-type-imports was 0v)
       '@typescript-eslint/consistent-type-imports': 'error',
       // Batch 237: 5 zero-violation rules (probe 237A: all 0v✓)
