@@ -31,7 +31,7 @@ export function HardeningHealthCard() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('check_hardening_status' as never);
+      const { data, error } = await supabase.rpc('check_hardening_status');
       if (error) throw error;
       setStatus(data as unknown as HardeningStatus);
     } catch (err) {
