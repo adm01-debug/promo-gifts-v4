@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
+import { isValidQuoteTransition } from '@/lib/quote-status-config';
+import type { QuoteStatus } from '@/types/quote';
 
 export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -155,22 +157,27 @@ export async function handleSyncBitrix(params: {
     },
   });
 
-  if (error || !data?.ok)
-    throw new Error(data?.error || error?.message || 'Erro desconhecido');
+  if (error || !data?.ok) throw new Error(data?.error || error?.message || 'Erro desconhecido');
 
   const result = data.result;
   const parsedBitrixId = result?.quote_id ? Number(result.quote_id) : null;
   const bitrixQuoteIdFromResponse =
     parsedBitrixId && !isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
 
-  const crmUpdates: TablesUpdate<'quotes'> = { status: 'sent' };
+  // Only transition to 'sent' if the current status allows it — guard against
+  // silently resetting terminal states (converted, cancelled) via Bitrix sync.
+  const canTransitionToSent = isValidQuoteTransition(quote.status as QuoteStatus, 'sent');
+  const crmUpdates: TablesUpdate<'quotes'> = {};
+  if (canTransitionToSent) crmUpdates.status = 'sent';
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
-  try {
-    // rls-allow: update por id; RLS valida ownership
-    await supabase.from('quotes').update(crmUpdates).eq('id', quoteId);
-  } catch {
-    /* ignore */
+  if (Object.keys(crmUpdates).length > 0) {
+    try {
+      // rls-allow: update por id; RLS valida ownership
+      await supabase.from('quotes').update(crmUpdates).eq('id', quoteId);
+    } catch {
+      /* ignore */
+    }
   }
 
   await logQuoteHistory(
@@ -184,7 +191,7 @@ export async function handleSyncBitrix(params: {
     prev
       ? {
           ...prev,
-          status: 'sent',
+          ...(canTransitionToSent ? { status: 'sent' as QuoteStatus } : {}),
           ...(bitrixQuoteIdFromResponse ? { bitrix_quote_id: bitrixQuoteIdFromResponse } : {}),
         }
       : prev,

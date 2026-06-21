@@ -44,6 +44,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatBRL, formatBRLShort } from '@/utils/currency';
+import { isValidQuoteTransition } from '@/lib/quote-status-config';
 
 type QuoteStatus = Quote['status'];
 
@@ -54,16 +55,6 @@ interface Column {
   color: string;
   bgColor: string;
 }
-
-const QUOTE_VALID_TRANSITIONS: Record<string, QuoteStatus[]> = {
-  draft: ['pending', 'sent'],
-  pending_approval: ['draft'],
-  pending: ['draft', 'sent', 'expired'],
-  sent: ['approved', 'rejected', 'pending', 'expired'],
-  approved: ['sent'],
-  rejected: ['sent'],
-  expired: ['pending', 'sent'],
-} as const;
 
 const columns: Column[] = [
   {
@@ -365,7 +356,7 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     }
 
     if (targetStatus && targetStatus !== draggedQuote.status) {
-      if (!QUOTE_VALID_TRANSITIONS[draggedQuote.status]?.includes(targetStatus)) {
+      if (!isValidQuoteTransition(draggedQuote.status, targetStatus)) {
         toast.error('Transição inválida', {
           description: `Não é possível mover de "${columns.find((c) => c.id === draggedQuote.status)?.title}" para "${columns.find((c) => c.id === targetStatus)?.title}"`,
         });
