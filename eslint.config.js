@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 167: 5 zero-violation rules (excluded: no-plusplus 360v, no-continue 111v, no-bitwise 191v, no-param-reassign 21v, prefer-destructuring 201v)
+      '@typescript-eslint/no-unsafe-enum-comparison': 'error',
+      'no-useless-escape': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      'no-multi-assign': 'error',
+      'no-restricted-syntax': 'error',
       // Batch 166: 5 zero-violation rules (excluded: @typescript-eslint/no-unsafe-enum-comparison 0v✓ — saved Batch 167)
       'yoda': 'error',
       'no-template-curly-in-string': 'error',
