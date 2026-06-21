@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 161: 5 zero-violation rules (excluded: jsx-a11y/aria-role 0v✓, @typescript-eslint/no-non-null-asserted-nullish-coalescing 0v✓ — saved Batch 162)
+      'no-div-regex': 'error',
+      'grouped-accessor-pairs': 'error',
+      'default-case-last': 'error',
+      'jsx-a11y/autocomplete-valid': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
       // Batch 160: 5 zero-violation rules (excluded: no-div-regex 0v✓, grouped-accessor-pairs 0v✓, default-case-last 0v✓, jsx-a11y/autocomplete-valid 0v✓, jsx-a11y/aria-proptypes 0v✓ — saved Batch 161)
       'jsx-a11y/aria-props': 'error',
       '@typescript-eslint/no-duplicate-enum-values': 'error',
