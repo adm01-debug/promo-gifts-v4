@@ -526,20 +526,10 @@ export function StockFilterToolbar({
 
         {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip
-          title='"Preciso de X unidades"'
-          description={
-            <>
-              Digite a quantidade do pedido e veja quem atende:
-              <br />
-              🟢 <strong>Atende agora</strong> — tem em estoque.
-              <br />
-              🟡 <strong>Atende com reposição</strong> — chega a tempo.
-              <br />
-              🔴 <strong>Não atende</strong> — falta produto.
-            </>
-          }
-          example="Digite 500 → vê quem cobre um pedido de 500 un."
-          emptyHint="Reduza a quantidade ou troque de fornecedor."
+          title="Preciso de X unidades"
+          description="Digite a quantidade do pedido. Mostra quem atende agora (🟢), com reposição (🟡) ou não atende (🔴)."
+          example="500 → veja quem cobre o pedido."
+          emptyHint="Reduza a quantidade ou troque o fornecedor."
         >
           <div className="relative w-full sm:w-48">
             <ShoppingCart className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
