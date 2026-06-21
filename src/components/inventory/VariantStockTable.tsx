@@ -733,10 +733,9 @@ function VariantStockTableInner({
           </span>
         </div>
 
-        {/* Chips de status removidos — os StatCards do StockDashboard cobrem
-            o filtro por status (Total / Em Estoque / Risco de Ruptura / Sem
-            Estoque / Estoque Futuro). Mantemos o estado `statusFilter` em
-            'all' como no-op para preservar o pipeline de filtragem abaixo. */}
+        {/* Chips de status removidos — os StatCards do StockDashboard são a
+            fonte única de filtro por status (Total / Em Estoque / Risco de
+            Ruptura / Sem Estoque / Estoque Futuro). */}
 
 
         <div className="flex items-center gap-2">
