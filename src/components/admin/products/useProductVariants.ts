@@ -28,6 +28,8 @@ export interface ProductVariant {
   width_mm: number | null;
   length_mm: number | null;
   weight_g: number | null;
+  /** jsonb bag holding fields without dedicated columns (ean, mm-dimensions). */
+  attributes?: Record<string, unknown> | null;
 }
 
 export interface VariantFormData {
@@ -72,7 +74,19 @@ async function fetchProductVariants(productId: string): Promise<ProductVariant[]
     limit: 200,
     orderBy: { column: 'name', ascending: true },
   });
-  return records;
+  // ean & mm-dimensions live inside the `attributes` jsonb (no dedicated columns) — surface
+  // them at the top level so the edit form round-trips.
+  return records.map((r) => {
+    const attrs = (r.attributes ?? {}) as Record<string, unknown>;
+    return {
+      ...r,
+      ean: r.ean ?? (attrs.ean as string | null) ?? null,
+      height_mm: r.height_mm ?? (attrs.height_mm as number | null) ?? null,
+      width_mm: r.width_mm ?? (attrs.width_mm as number | null) ?? null,
+      length_mm: r.length_mm ?? (attrs.length_mm as number | null) ?? null,
+      weight_g: r.weight_g ?? (attrs.weight_g as number | null) ?? null,
+    };
+  });
 }
 
 async function createVariantApi(payload: Record<string, unknown>): Promise<void> {
@@ -91,7 +105,15 @@ async function deleteVariantApi(id: string): Promise<void> {
   if (error) throw new Error(error.message || 'Erro ao excluir variação');
 }
 
-function formToPayload(formData: VariantFormData, extra?: Record<string, unknown>) {
+// product_variants has no ean/height_mm/width_mm/length_mm/weight_g columns, and `attributes`
+// (jsonb) is NOT NULL with no default. Stash those form-only fields inside `attributes`
+// (merging with existing keys so sync-written data is not clobbered) and never send them as
+// top-level columns — doing so throws PGRST204 / a not-null violation.
+function formToPayload(
+  formData: VariantFormData,
+  extra?: Record<string, unknown>,
+  existingAttributes?: Record<string, unknown> | null,
+) {
   return {
     ...extra,
     name: formData.name.trim(),
@@ -100,13 +122,16 @@ function formToPayload(formData: VariantFormData, extra?: Record<string, unknown
     color_hex: formData.color_hex || null,
     stock_quantity: formData.stock_quantity,
     supplier_sku: formData.supplier_sku.trim() || null,
-    ean: formData.ean.trim() || null,
     size_code: formData.size_code.trim() || null,
     capacity_ml: formData.capacity_ml,
-    height_mm: formData.height_mm,
-    width_mm: formData.width_mm,
-    length_mm: formData.length_mm,
-    weight_g: formData.weight_g,
+    attributes: {
+      ...(existingAttributes ?? {}),
+      ean: formData.ean.trim() || null,
+      height_mm: formData.height_mm,
+      width_mm: formData.width_mm,
+      length_mm: formData.length_mm,
+      weight_g: formData.weight_g,
+    },
   };
 }
 
@@ -150,7 +175,9 @@ export function useProductVariants(productId: string, productName?: string, prod
   const handleUpdate = async (variantId: string, formData: VariantFormData) => {
     setIsSaving(true);
     try {
-      await updateVariantApi(variantId, formToPayload(formData));
+      // Merge into the variant's existing `attributes` so we don't drop sync-written keys.
+      const current = variants.find((v) => v.id === variantId);
+      await updateVariantApi(variantId, formToPayload(formData, undefined, current?.attributes));
       toast.success('Variação atualizada');
       setEditingId(null);
       invalidate();

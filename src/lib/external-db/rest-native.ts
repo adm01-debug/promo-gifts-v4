@@ -708,7 +708,7 @@ type RestWriteClient = {
     insert(values: unknown): RestWriteBuilder;
     update(values: unknown): RestWriteBuilder;
     delete(): RestWriteBuilder;
-    upsert(values: unknown): RestWriteBuilder;
+    upsert(values: unknown, options?: { onConflict?: string }): RestWriteBuilder;
   };
 };
 export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
@@ -752,7 +752,12 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
       builder = tbl.insert(payloadOf(options.data)).select();
       break;
     case 'upsert':
-      builder = tbl.upsert(payloadOf(options.data)).select();
+      builder = tbl
+        .upsert(
+          payloadOf(options.data),
+          options.onConflict ? { onConflict: options.onConflict } : undefined,
+        )
+        .select();
       break;
     case 'update':
       builder = scoped(tbl.update(payloadOf(options.data))).select();

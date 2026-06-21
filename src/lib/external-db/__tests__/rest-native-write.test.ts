@@ -22,6 +22,7 @@ interface Capture {
   table: string | null;
   op: 'insert' | 'update' | 'delete' | 'upsert' | null;
   payload: unknown;
+  upsertOptions?: { onConflict?: string };
   eqCalls: Array<[string, unknown]>;
   selected: boolean;
 }
@@ -64,9 +65,10 @@ vi.mock('@/integrations/supabase/client', () => ({
           cap.payload = p;
           return makeBuilder();
         },
-        upsert: (p: unknown) => {
+        upsert: (p: unknown, opts?: { onConflict?: string }) => {
           cap.op = 'upsert';
           cap.payload = p;
+          cap.upsertOptions = opts;
           return makeBuilder();
         },
         delete: () => {
@@ -86,6 +88,7 @@ function resetCap() {
   cap.table = null;
   cap.op = null;
   cap.payload = undefined;
+  cap.upsertOptions = undefined;
   cap.eqCalls = [];
   cap.selected = false;
   nextResult = { data: [], error: null };
@@ -130,6 +133,30 @@ describe('rest-native WRITE (Plano A)', () => {
     expect(cap.op).toBe('insert');
     expect(cap.selected).toBe(true);
     expect(r.count).toBe(1);
+  });
+
+  // ── upsert: onConflict é repassado ao PostgREST (bulk import "atualizar por SKU") ──
+  it('upsert: repassa onConflict ao supabase.upsert (alvo o índice único sku, não a PK)', async () => {
+    nextResult = { data: [{ id: '1', sku: 'A' }], error: null };
+    await executeRestNativeWrite({
+      table: 'products',
+      operation: 'upsert',
+      data: [{ sku: 'A', name: 'X' }],
+      onConflict: 'sku',
+    } as InvokeOptions);
+    expect(cap.op).toBe('upsert');
+    expect(cap.upsertOptions).toEqual({ onConflict: 'sku' });
+  });
+
+  it('upsert: sem onConflict, NÃO passa options (cai na PK por padrão)', async () => {
+    nextResult = { data: [{ id: '1' }], error: null };
+    await executeRestNativeWrite({
+      table: 'products',
+      operation: 'upsert',
+      data: [{ id: '1', name: 'X' }],
+    } as InvokeOptions);
+    expect(cap.op).toBe('upsert');
+    expect(cap.upsertOptions).toBeUndefined();
   });
 
   it('A3: personalization_techniques escreve direto na própria tabela (NÃO aliasada)', async () => {
