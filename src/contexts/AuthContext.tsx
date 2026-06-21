@@ -23,6 +23,7 @@ import { useProfileRoles } from '@/hooks/auth/useProfileRoles';
 import { useAuthMFA } from '@/hooks/auth/useAuthMFA';
 import { setSafeToastRoles } from '@/lib/security/safeToast';
 import { clearPostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import { clearColorsCache } from '@/hooks/products/useProductsColorsBatch';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import {
   attachSessionRevalidation,
@@ -387,6 +388,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearProfileRoles();
       clearMFA();
       clearPostLoginRedirect();
+      clearColorsCache();
       try {
         window.sessionStorage.removeItem('catalog:sortBy');
       } catch {

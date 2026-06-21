@@ -200,7 +200,11 @@ export function useVariantStock() {
   }, []);
 
   const dismissAllAlerts = useCallback(() => {
-    setDismissedAlerts(new Set(rawAlerts.map((a) => a.id)));
+    setDismissedAlerts((prev) => {
+      const next = new Set(prev);
+      rawAlerts.forEach((a) => next.add(a.id));
+      return next;
+    });
   }, [rawAlerts]);
 
   const dismissAlertsBySeverity = useCallback(

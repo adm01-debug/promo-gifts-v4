@@ -91,10 +91,17 @@ export function useStockChartData(productId: string) {
     if (!hasData) return mockChartData;
     const supplierId = selectedSupplier === 'all' ? undefined : selectedSupplier;
     const aggregated = aggregateDailySummaryByDate(summaries ?? [], supplierId);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
+    // BUG-CHART-CUTOFF: new Date('YYYY-MM-DD') is parsed as UTC midnight; comparing
+    // it against a local-time Date causes an off-by-one at the period boundary in
+    // non-UTC timezones (e.g. Brazil UTC-3 drops the oldest day).
+    // Fix: derive a local-timezone cutoff string and compare lexicographically —
+    // safe because 'YYYY-MM-DD' strings are zero-padded and lexicographically ordered.
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const cutoffStr = `${cutoffDate.getFullYear()}-${pad(cutoffDate.getMonth() + 1)}-${pad(cutoffDate.getDate())}`;
     return aggregated
-      .filter((d) => new Date(d.date) >= cutoff)
+      .filter((d) => d.date >= cutoffStr)
       .reduce<
         Array<{
           date: string;

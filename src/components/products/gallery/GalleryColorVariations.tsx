@@ -2,7 +2,7 @@
  * GalleryColorVariations — Cards de variações de cor abaixo da galeria
  */
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Play, Package } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -36,10 +36,14 @@ export function GalleryColorVariations({
   activeColorName,
 }: GalleryColorVariationsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sortedColors = sortByColorGroup(
-    colors,
-    (c) => c.name,
-    (c) => c.hex,
+  const sortedColors = useMemo(
+    () =>
+      sortByColorGroup(
+        colors,
+        (c) => c.name,
+        (c) => c.hex,
+      ),
+    [colors],
   );
 
   // Sync scroll to selected color

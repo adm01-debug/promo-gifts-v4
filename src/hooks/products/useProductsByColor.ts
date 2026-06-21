@@ -55,7 +55,16 @@ export function useProductsByColor({
   const fetchProductIds = useCallback(async () => {
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
-      setProductIds(new Set());
+      // Abort any in-flight request and invalidate its token so the stale
+      // setState in its finally/resolve path cannot overwrite the cleared state.
+      abortControllerRef.current?.abort();
+      ++fetchTokenRef.current;
+      setIsLoading(false);
+      // FIX BUG-RENDER-COLOR-01: conditional setState prevents render loop.
+      // new Set() creates a different object reference every call; when productIds is
+      // already empty, React's Object.is check on the prev ref short-circuits the
+      // re-render that would re-trigger this effect indefinitely.
+      setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       lastFetchedKey.current = '';
       return;
     }

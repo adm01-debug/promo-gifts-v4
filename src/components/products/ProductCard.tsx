@@ -647,10 +647,6 @@ export const ProductCard = memo(
               hasMultipleVariants={hasMultipleVariants}
               safeVariantIdx={safeVariantIdx}
               onImageLoad={() => setImageLoaded(true)}
-              onVariantChange={(idx) => {
-                setActiveVariantIdx(idx);
-                setImageLoaded(false);
-              }}
               priority={priority}
               cardImageBlurhash={product.primary_image_blurhash}
               onStatusClick={handleStatusClick}
@@ -858,7 +854,7 @@ export const ProductCard = memo(
                       {activeColorName || 'A partir de'}
                     </p>
                     <span className="inline-flex items-center gap-2 font-display text-xs font-black tracking-tight text-foreground sm:text-lg">
-                      {formatPrice(product.price)}
+                      {formatPrice(product.price ?? 0)}
                       <PriceFreshnessBadge
                         priceUpdatedAt={product.priceUpdatedAt}
                         thresholdDays={product.priceFreshnessThresholdDays}
@@ -961,7 +957,7 @@ export const ProductCard = memo(
                       product_name: product.name,
                       product_sku: product.sku || undefined,
                       product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
-                      product_price: product.price ?? 0,
+                      product_price: product.sale_price ?? product.price ?? 0,
                       quantity: product.minQuantity || 1,
                       color_name: pendingVariant?.color_name || undefined,
                       color_hex: pendingVariant?.color_hex || undefined,
@@ -997,7 +993,7 @@ export const ProductCard = memo(
                         product_sku: product.sku || undefined,
                         product_image_url:
                           pendingVariant?.selected_thumbnail || product.images?.[0],
-                        product_price: product.price ?? 0,
+                        product_price: product.sale_price ?? product.price ?? 0,
                         quantity: product.minQuantity || 1,
                         color_name: pendingVariant?.color_name || undefined,
                         color_hex: pendingVariant?.color_hex || undefined,

@@ -1107,6 +1107,29 @@ describe('useCatalogFiltering — client-side materiais fallback', () => {
     );
     expect(result.current.map((p) => p.id)).toEqual(['borr']);
   });
+
+  it('SF-MATERIAIS-INERT-ALL: não zera a grade quando nenhum produto tem materiais (catálogo leve)', () => {
+    // BUG-CF-01: todos os produtos com materials=[] — catálogo lightweight antes de Silver/Gold hydration.
+    // materialsDataAvailable=false → filtro de texto deve ser pulado → grid intacta.
+    const catalog = [makeP('a', []), makeP('b', []), makeP('c', [])];
+    const ids = run(catalog, { materiais: ['plastico'] }).map((p) => p.id);
+    expect(ids).toHaveLength(catalog.length);
+  });
+
+  it('SF-MATERIAIS-INERT-PARTIAL: filtra quando pelo menos um produto tem materiais', () => {
+    // Com dados de materiais disponíveis, o filtro de texto DEVE rodar normalmente.
+    // Evitamos acentos no produto para que o toLowerCase() funcione sem normalização.
+    const catalog = [
+      makeP('com-mat', ['Plastico ABS']),
+      makeP('sem-mat', []),
+      makeP('outro', ['Metal']),
+    ];
+    const ids = run(catalog, { materiais: ['plastico'] }).map((p) => p.id);
+    expect(ids).toContain('com-mat');
+    expect(ids).not.toContain('outro');
+    // produto sem materiais não passa quando dados existem no catálogo
+    expect(ids).not.toContain('sem-mat');
+  });
 });
 
 // CLIENT-SIDE category fallback — quando hasCategoryFilter=false mas filters.categories

@@ -158,7 +158,10 @@ export function useCatalogFiltering({
       const [min, max] = filters.priceRange;
       // FIX-SF-F: 9999 é sentinela "sem limite" — não excluir produtos caros quando
       // só o mínimo é definido. max >= 9999 vira ilimitado.
-      result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
+      result = result.filter((p) => {
+        if (p.price === null || p.price === undefined) return true;
+        return p.price >= min && (max >= 9999 || p.price <= max);
+      });
     }
 
     // FIX-INSTOCK-VARIATIONS: considera variações além do estoque agregado,
@@ -239,19 +242,34 @@ export function useCatalogFiltering({
     // (catálogo leve não hidrata esse campo), o filtro é pulado para não zerar a grade.
     if (filters.techniques?.length) {
       const techSet = new Set(filters.techniques.map((t: string) => t.toLowerCase()));
+      const toStringArray = (v: unknown): string[] =>
+        Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string') : [];
       const techniquesDataAvailable = result.some(
-        (p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0,
+        (p) => toStringArray(p.metadata?.techniques).length > 0,
       );
       if (techniquesDataAvailable) {
         result = result.filter((p) => {
-          const metaTechs: string[] = (p.metadata?.techniques as string[]) ?? [];
+          const metaTechs = toStringArray(p.metadata?.techniques);
           if (metaTechs.length > 0) {
-            return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
+            return metaTechs.some((t) => techSet.has(t.toLowerCase()));
           }
           return true;
         });
       }
     }
+
+    // BUG-CF-01 FIX: mirror applyProductFilters SF-MATERIAIS-INERT guard — lightweight catalog
+    // products have materials=[] until Silver/Gold hydration runs. Without this guard, a URL
+    // with ?materiais=plastico (text-based, not materialGroupSlugs) zeroes the grid because
+    // every product fails the filter. Only apply the legacy text filter when at least one
+    // product in the catalog actually has materials data populated.
+    // Mirrors applyProductFilters.ts: check both array and string forms because the filter
+    // code handles both. The key invariant is that lightweight catalog products have
+    // materials=[] (empty array) until Silver/Gold hydration, never a non-empty string.
+    const materialsDataAvailable = realProducts.some((p) => {
+      const m = p.materials as string[] | string;
+      return Array.isArray(m) ? m.length > 0 : typeof m === 'string' && m.length > 0;
+    });
 
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
@@ -260,7 +278,7 @@ export function useCatalogFiltering({
         // FIX-22 parity: guard !materialFilterError mirrors applyProductFilters (FIX-22).
         return [];
       }
-    } else if (filters.materiais.length) {
+    } else if (materialsDataAvailable && filters.materiais.length > 0) {
       const lowerMateriais = filters.materiais.map((m) => m.toLowerCase());
       result = result.filter((p) => {
         const mats = (

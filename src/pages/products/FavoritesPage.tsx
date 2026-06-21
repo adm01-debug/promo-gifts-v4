@@ -281,9 +281,7 @@ export default function FavoritesPage() {
     if (onlyPriceDrops && isRemoteListView) {
       list = list.filter((p) => {
         const meta = enrichedMetaMap.get(p.id);
-        return (
-          meta?.priceDiffPct !== null && meta?.priceDiffPct !== undefined && meta.priceDiffPct < -2
-        );
+        return meta !== undefined && meta.priceDiffPct !== null && meta.priceDiffPct < -2;
       });
     }
     const sorted = [...list];
@@ -325,7 +323,9 @@ export default function FavoritesPage() {
     const prices = source.map((p) => p.price ?? 0).filter((v) => v > 0);
     return {
       total: source.length,
-      categories: new Set(source.map((p) => p.category?.id ?? p.category_id)).size,
+      categories: new Set(
+        source.map((p) => p.category?.id ?? p.category_id).filter((id): id is string => !!id),
+      ).size,
       minPrice: prices.length ? Math.min(...prices) : 0,
       maxPrice: prices.length ? Math.max(...prices) : 0,
     };
@@ -338,7 +338,7 @@ export default function FavoritesPage() {
     () => lists.find((l) => l.id === selectedListId) ?? null,
     [lists, selectedListId],
   );
-  const headerTotalCount = isRemoteListView ? rawItems.length : favoriteCount;
+  const headerTotalCount = isRemoteListView ? (rawItems?.length ?? 0) : favoriteCount;
 
   const handleClearAll = () => {
     if (isRemoteListView) {
@@ -570,7 +570,7 @@ export default function FavoritesPage() {
               <>
                 <FavoritesViewHeader
                   list={activeList}
-                  itemCount={isRemoteListView ? rawItems.length : favoriteCount}
+                  itemCount={isRemoteListView ? (rawItems?.length ?? 0) : favoriteCount}
                   sort={sort}
                   onSortChange={setSort}
                   fallbackTitle={!isRemoteListView ? 'Todos os favoritos' : undefined}

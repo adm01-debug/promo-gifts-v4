@@ -95,12 +95,13 @@ export function useSellerCartsPage() {
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
-      if (weight > 0) {
-        totalWeightG += weight * item.quantity;
+      const qty = Number.isFinite(item.quantity) ? item.quantity : 0;
+      if (weight > 0 && qty > 0) {
+        totalWeightG += weight * qty;
         hasData = true;
       }
-      if (volume > 0) {
-        totalVolumeCm3 += volume * item.quantity;
+      if (volume > 0 && qty > 0) {
+        totalVolumeCm3 += volume * qty;
         hasData = true;
       }
     });
@@ -383,7 +384,7 @@ export function useSellerCartsPage() {
   const [confirmClearCart, setConfirmClearCart] = useState(false);
 
   const handleGenerateQuote = useCallback((cart: SellerCart) => {
-    if (cart.items.length === 0) {
+    if (!cart?.items?.length) {
       toast.error('Carrinho vazio', {
         description: 'Adicione ao menos um produto antes de gerar o orçamento.',
       });
@@ -412,7 +413,9 @@ export function useSellerCartsPage() {
           // fail-open: don't block quote on DB error
           uuidIds.forEach((id) => validIds.add(id.toLowerCase()));
         } else {
-          (data ?? []).forEach((row) => validIds.add(String(row.id).toLowerCase()));
+          (data ?? []).forEach((row) => {
+            if (row?.id) validIds.add(String(row.id).toLowerCase());
+          });
         }
       } catch {
         uuidIds.forEach((id) => validIds.add(id.toLowerCase())); // fail-open

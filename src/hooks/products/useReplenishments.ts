@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { untypedRpc } from '@/lib/supabase-untyped';
+import { shouldRetry } from '@/lib/db/postgrest';
 
 /**
  * Módulo Reposição — FONTE ÚNICA DE VERDADE: RPC `fn_get_reposicao_listing`.
@@ -230,14 +231,13 @@ export interface UseReplenishmentsOptions {
 export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions = {}) {
   const { limit = FETCH_ALL_LIMIT, onlyHighlighted = false } = options;
 
-  return useQuery<ReplenishmentWithDetails[]>({
-    queryKey: ['replenishments-details', limit, onlyHighlighted],
-    queryFn: async () => {
-      const items = await fetchReposicao(limit);
-      return onlyHighlighted ? items.filter((n) => n.is_highlighted) : items;
-    },
+  return useQuery<ReplenishmentWithDetails[], Error, ReplenishmentWithDetails[]>({
+    queryKey: ['replenishments-details', limit],
+    queryFn: async () => fetchReposicao(limit),
+    // filter in select so toggling onlyHighlighted reuses cached data without re-fetch
+    select: (items) => (onlyHighlighted ? items.filter((n) => n.is_highlighted) : items),
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
@@ -299,17 +299,17 @@ export function useReplenishmentStats() {
       };
     },
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
 export function useReplenishmentCount() {
-  // Shares the cache key of useReplenishmentsWithDetails(default) — no duplicate fetch.
+  // Must match useReplenishmentsWithDetails(default) queryKey — no duplicate fetch.
   return useQuery<ReplenishmentWithDetails[], Error, number>({
-    queryKey: ['replenishments-details', FETCH_ALL_LIMIT, false],
+    queryKey: ['replenishments-details', FETCH_ALL_LIMIT],
     queryFn: () => fetchReposicao(FETCH_ALL_LIMIT),
     select: (data) => data.length,
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }

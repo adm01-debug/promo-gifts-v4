@@ -129,13 +129,15 @@ export function useStockNotificationCounts(since?: string | null) {
         args,
       )) as RpcResult<CountsRow>;
       if (error) throw new Error(error.message);
-      const d = data ?? { stockout: 0, low_stock: 0, novelties: 0, restocks: 0 };
+      // PostgREST SETOF functions wrap results in an array; unwrap before accessing fields.
+      const raw = Array.isArray(data) ? (data as CountsRow[])[0] : (data as CountsRow | null);
+      const d = raw ?? { stockout: 0, low_stock: 0, novelties: 0, restocks: 0 };
       return {
-        stockout: d.stockout,
-        low_stock: d.low_stock,
-        novelties: d.novelties,
-        restocks: d.restocks,
-        total: d.stockout + d.low_stock + d.novelties + d.restocks,
+        stockout: d.stockout ?? 0,
+        low_stock: d.low_stock ?? 0,
+        novelties: d.novelties ?? 0,
+        restocks: d.restocks ?? 0,
+        total: (d.stockout ?? 0) + (d.low_stock ?? 0) + (d.novelties ?? 0) + (d.restocks ?? 0),
       };
     },
     staleTime: STALE,

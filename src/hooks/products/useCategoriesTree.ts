@@ -157,8 +157,11 @@ export function useCategoriesTree() {
   const getPath = useCallback(
     (categoryId: string): CategoryTreeItem[] => {
       const path: CategoryTreeItem[] = [];
+      const visited = new Set<string>();
       let current = categories.find((cat) => cat.id === categoryId);
       while (current) {
+        if (visited.has(current.id)) break; // cycle guard
+        visited.add(current.id);
         path.unshift(current);
         if (current.parent_id) {
           const parentId = current.parent_id;

@@ -564,11 +564,16 @@ export function useFiltersPageState() {
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
   const filteredProductIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
+  const filteredProductMinQtys = useMemo(
+    () => new Map(filteredProducts.map((p) => [p.id, p.minQuantity])),
+    [filteredProducts],
+  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: filteredProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
     colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
   });
 
   // Merge color enrichment data into products

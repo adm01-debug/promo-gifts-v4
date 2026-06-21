@@ -41,7 +41,6 @@ function renderImage(product: Product, categoryName?: string | null) {
           allMatchingVariants={[]}
           hasMultipleVariants={false}
           safeVariantIdx={0}
-          onVariantChange={() => undefined}
           categoryName={categoryName}
           priority
         />
@@ -62,7 +61,11 @@ describe('ProductCardImage — badge Kit', () => {
   });
 
   it('não exibe o badge Kit para produto comum', () => {
-    renderImage({ ...baseProduct, name: 'Caneca térmica', category: { id: 'cat', name: 'Canecas' } });
+    renderImage({
+      ...baseProduct,
+      name: 'Caneca térmica',
+      category: { id: 'cat', name: 'Canecas' },
+    });
     expect(screen.queryByText('Kit')).not.toBeInTheDocument();
   });
 });
