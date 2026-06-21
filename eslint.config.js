@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 154: 5 zero-violation rules (excluded: jsx-a11y/heading-has-content 0v✓ — saved Batch 155; also: prefer-tag-over-role 177v)
+      'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error',
+      'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error',
+      'jsx-a11y/img-redundant-alt': 'error',
+      'jsx-a11y/no-redundant-roles': 'error',
+      'jsx-a11y/interactive-supports-focus': 'error',
       // Batch 153: 5 zero-violation rules (excluded: jsx-a11y/no-interactive-element-to-noninteractive-role 0v✓ — saved Batch 154; also: jsx-handler-names 204v, jsx-no-bind 3666v, no-noninteractive-element-interactions 55v)
       '@typescript-eslint/no-unsafe-declaration-merging': 'error',
       '@typescript-eslint/no-mixed-enums': 'error',
