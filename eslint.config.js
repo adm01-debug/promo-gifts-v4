@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 159: 5 zero-violation rules (excluded: jsx-a11y/aria-props 0v✓, @typescript-eslint/no-duplicate-enum-values 0v✓, @typescript-eslint/no-useless-constructor 0v✓ — saved Batch 160)
+      'no-lone-blocks': 'error',
+      'react/no-namespace': 'error',
+      'react/no-is-mounted': 'error',
+      'react/no-unused-class-component-methods': 'error',
+      'jsx-a11y/iframe-has-title': 'error',
       // Batch 158: 5 zero-violation rules (excluded: no-lone-blocks 0v✓, react/no-namespace 0v✓, react/no-is-mounted 0v✓, react/no-unused-class-component-methods 0v✓, jsx-a11y/iframe-has-title 0v✓ — saved Batch 159)
       'no-multi-str': 'error',
       'no-extend-native': 'error',
