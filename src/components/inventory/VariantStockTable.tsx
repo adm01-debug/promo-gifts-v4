@@ -381,13 +381,38 @@ interface VariantStockTableProps {
   targetQuantity?: number;
 }
 
+/**
+ * Wrapper público: decide se monta o hook `useRuptureAlerts` (que exige
+ * QueryClientProvider) somente quando a flag `useEmaRupture` está ativa.
+ * Mantém compat com testes legados que renderizam sem provider.
+ */
+export function VariantStockTable(props: VariantStockTableProps) {
+  const emaEnabled = isFeatureEnabled('useEmaRupture');
+  if (emaEnabled) {
+    return <VariantStockTableWithEma {...props} />;
+  }
+  return <VariantStockTableInner {...props} emaEnabled={false} />;
+}
+
+function VariantStockTableWithEma(props: VariantStockTableProps) {
+  const { byVariantId } = useRuptureAlerts();
+  return <VariantStockTableInner {...props} emaEnabled emaByVariantId={byVariantId} />;
+}
+
+interface VariantStockTableInnerProps extends VariantStockTableProps {
+  emaEnabled: boolean;
+  emaByVariantId?: Map<string, RuptureAlertRow>;
+}
+
 /** Tabela de variações de estoque em modo flat (1 SKU = 1 linha) com scroll virtual. */
-export function VariantStockTable({
+function VariantStockTableInner({
   products,
   className,
   isLoading,
   targetQuantity,
-}: VariantStockTableProps) {
+  emaEnabled,
+  emaByVariantId,
+}: VariantStockTableInnerProps) {
   // Scroll container ref para o useVirtualizer
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const deepLinkConsumedRef = useRef<string | null>(null);
