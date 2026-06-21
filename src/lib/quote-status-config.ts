@@ -54,6 +54,13 @@ export const QUOTE_STATUS_CONFIG: Record<string, QuoteStatusConfig> = {
     badgeVariant: 'default',
     badgeClassName: 'bg-success/15 text-success border-success/30',
   },
+  viewed: {
+    label: 'Visualizado',
+    color: 'hsl(var(--info))',
+    badgeVariant: 'outline',
+    badgeClassName: 'bg-info/10 text-info border-info/30',
+    icon: 'eye',
+  },
   rejected: {
     label: 'Rejeitado',
     color: 'hsl(var(--destructive))',
@@ -65,6 +72,12 @@ export const QUOTE_STATUS_CONFIG: Record<string, QuoteStatusConfig> = {
     color: 'hsl(var(--muted-foreground))',
     badgeVariant: 'secondary',
     badgeClassName: 'bg-muted text-muted-foreground border-muted',
+  },
+  cancelled: {
+    label: 'Cancelado',
+    color: 'hsl(var(--muted-foreground))',
+    badgeVariant: 'secondary',
+    badgeClassName: 'bg-muted/50 text-muted-foreground border-muted line-through',
   },
 };
 
