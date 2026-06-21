@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 151: 5 zero-violation rules (excluded: react/sort-comp 0v✓ — saved Batch 152; also: no-unstable-nested-components 29v)
+      'react/jsx-fragments': 'error',
+      'react/no-access-state-in-setstate': 'error',
+      'react/no-redundant-should-component-update': 'error',
+      'react/no-this-in-sfc': 'error',
+      'react/prefer-stateless-function': 'error',
       // Batch 150: 5 zero-violation rules (excluded: react/jsx-fragments 0v✓, react/no-access-state-in-setstate 0v✓, react/no-redundant-should-component-update 0v✓ — saved Batch 151; also: no-array-index-key 206v)
       'jsx-a11y/anchor-is-valid': 'error',
       'react/no-children-prop': 'error',
