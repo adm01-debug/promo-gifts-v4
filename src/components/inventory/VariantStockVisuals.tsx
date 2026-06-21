@@ -137,13 +137,18 @@ export function RichColorSwatch({
             role="img"
             aria-label={label}
             className={cn(
-              // 20px → 23px (+15%) → 25px (+10%)
-              'relative inline-flex h-[25px] w-[25px] shrink-0 cursor-help items-center justify-center rounded-full border transition-opacity',
-              isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
+              // Mesmo visual do swatch do Catálogo de Produtos
+              // (src/components/products/ProductColorSwatches.tsx):
+              // border /40, shadow-sm; sem opacity quando "em estoque"
+              // para que cores claras (BRANCO) não fiquem cinza.
+              'relative inline-block h-[25px] w-[25px] shrink-0 cursor-help rounded-full border border-border/40 shadow-sm transition-all',
+              isActive && 'ring-2 ring-primary ring-offset-1',
               !bg && 'border-dashed border-muted-foreground/40',
-              isOutOfStock && 'opacity-50',
+              // Esgotado: mesma marcação do catálogo (slash diagonal + grayscale leve).
+              isOutOfStock &&
+                'opacity-60 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
             )}
-            style={bg ? { background: bg } : undefined}
+            style={bg ? { backgroundColor: bg } : undefined}
           />
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-medium">
@@ -153,6 +158,7 @@ export function RichColorSwatch({
     </TooltipProvider>
   );
 }
+
 
 
 // ============================================
