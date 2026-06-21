@@ -454,15 +454,10 @@ function VariantStockTableInner({
     writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
   }, [statusFilter]);
 
-  // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
-  const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
-    const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
-    const n = parseInt(raw, 10) as RuptureHorizonDays;
-    return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
-  });
-  useEffect(() => {
-    writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
-  }, [ruptureHorizon]);
+  // Horizonte de projeção do "Risco de Ruptura" — controlado pela toolbar
+  // superior (`StockFilterToolbar`) via hook compartilhado para evitar
+  // prop-drilling. Persistência em localStorage segue na mesma chave.
+  const [ruptureHorizon] = useRuptureHorizon();
 
   // Inline search filtering — runs against deferredSearch so keystrokes never
   // block the React render. The Input value (inlineSearch) updates immediately;
