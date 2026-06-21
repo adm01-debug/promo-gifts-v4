@@ -41,7 +41,10 @@ interface StatCardProps {
   clickHint?: string;
   isActive?: boolean;
   subtitle?: string;
+  /** Tooltip nativo (atributo `title` no botão) — útil para esclarecer unidade (variações vs produtos). */
+  tooltip?: string;
 }
+
 
 const variantStyles = {
   default: {
@@ -92,7 +95,9 @@ export function StatCard({
   clickHint,
   isActive,
   subtitle,
+  tooltip,
 }: StatCardProps) {
+
   const styles = variantStyles[variant];
 
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
@@ -115,6 +120,8 @@ export function StatCard({
       type="button"
       data-testid="stock-stat-card"
       data-stat-slug={slug}
+      title={tooltip}
+
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
