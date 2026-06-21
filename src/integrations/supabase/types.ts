@@ -7400,10 +7400,6 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
-      restore_favorite_from_trash: {
-        Args: { _trash_id: string; _user_id: string }
-        Returns: Json
-      }
       execute_role_migration_batch: {
         Args: {
           _dry_run?: boolean
@@ -7937,7 +7933,9 @@ export type Database = {
         | "mcp_key_revoke"
         | "mcp_key_rotate"
     }
-    CompositeTypes: Record<never, never>
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
