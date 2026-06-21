@@ -201,14 +201,11 @@ export default function RolePermissionsPage() {
 
   const groupedPermissions = useMemo(
     () =>
-      permissions.reduce(
-        (acc, perm) => {
-          if (!acc[perm.category]) acc[perm.category] = [];
-          acc[perm.category].push(perm);
-          return acc;
-        },
-        {} as Record<string, Permission[]>,
-      ),
+      permissions.reduce<Record<string, Permission[]>>((acc, perm) => {
+        if (!acc[perm.category]) acc[perm.category] = [];
+        acc[perm.category].push(perm);
+        return acc;
+      }, {}),
     [permissions],
   );
 
