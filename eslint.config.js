@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 174: 5 zero-violation rules (excluded: no-void 84v — saved: no-unsafe-finally 0v✓ — Batch 175)
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'no-global-assign': 'error',
+      'no-native-reassign': 'error',
       // Batch 173: 5 zero-violation rules (saved: no-eval 0v✓, no-implied-eval 0v✓ — Batch 174)
       'no-floating-decimal': 'error',
       'no-implicit-globals': 'error',
