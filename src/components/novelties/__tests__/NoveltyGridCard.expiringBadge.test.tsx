@@ -21,6 +21,9 @@ vi.mock('@/components/products/NoveltyBadge', () => ({ NoveltyBadge: () => null 
 vi.mock('@/components/products/ProductStatusBadge', () => ({ ProductStatusBadge: () => null }));
 vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
+// 10 dias atrás → getRecencyVariant retorna 'normal' (não fresh), expiring badge pode aparecer
+const TEN_DAYS_AGO = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
     novelty_id: 'nov-1',
@@ -37,7 +40,7 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
     supplier_id: null,
     supplier_name: null,
     supplier_product_code: null,
-    detected_at: new Date().toISOString(),
+    detected_at: TEN_DAYS_AGO,
     expires_at: new Date().toISOString(),
     days_remaining: 30,
     days_as_novelty: 10,
@@ -82,7 +85,10 @@ describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
 
   it('NÃO mostra o badge quando fresh (recém-chegado tem prioridade)', () => {
     const { queryByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', is_highlighted: true }),
+      makeNovelty({
+        status: 'expiring_soon',
+        detected_at: new Date().toISOString(), // detectado agora → fresh = true → badge oculto
+      }),
     );
     expect(queryByTestId('novelty-expiring-badge')).toBeNull();
   });
