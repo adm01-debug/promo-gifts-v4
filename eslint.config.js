@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 185: 5 zero-violation rules (saved: parameter-properties 0v✓, consistent-type-exports 0v✓ — Batch 186+; excluded: no-loop-func 7v)
+      '@typescript-eslint/no-var-requires': 'error',
+      '@typescript-eslint/no-dupe-class-members': 'error',
+      '@typescript-eslint/no-empty-interface': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/no-unnecessary-parameter-property-assignment': 'error',
       // Batch 184: 5 zero-violation rules (saved: no-var-requires 0v✓ — Batch 185+; excluded: non-nullable-type-assertion-style 38v)
       '@typescript-eslint/no-extra-non-null-assertion': 'error',
       '@typescript-eslint/no-for-in-array': 'error',
