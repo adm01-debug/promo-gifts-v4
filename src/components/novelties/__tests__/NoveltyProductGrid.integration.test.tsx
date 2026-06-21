@@ -21,6 +21,33 @@ function getByPlaceholderPartial(text: string): HTMLInputElement {
 
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
+  // noveltyToProduct is imported as a module-level named export by NoveltyProductGrid
+  // (not just from the hook return value), so it must be present at the top level.
+  noveltyToProduct: (n: {
+    product_id: string;
+    product_name?: string;
+    base_price?: number;
+    product_sku?: string;
+    stock_quantity?: number;
+    supplier_id?: string;
+    supplier_name?: string;
+    category_id?: string;
+    category_name?: string;
+    product_image?: string;
+  }) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    product_name: n.product_name || '',
+    price: n.base_price,
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id, name: n.supplier_name },
+    category: { id: n.category_id, name: n.category_name },
+    images: [n.product_image],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  }),
   useNoveltiesWithDetails: vi.fn(() => ({
     data: [
       {

@@ -113,11 +113,13 @@ jobs:
           - mobile-safari
     env:
       # Mapeia browser → install target (evita baixar os 3 engines em cada shard).
-      PW_BROWSER_chromium-authed: chromium
-      PW_BROWSER_firefox-authed: firefox
-      PW_BROWSER_webkit-authed: webkit
-      PW_BROWSER_mobile-chrome: chromium
-      PW_BROWSER_mobile-safari: webkit
+      # Nomes usam underscore porque bash não permite hífen em nomes de variáveis
+      # (${!ENGINE_VAR} falhava com "invalid variable name" para mobile-chrome etc).
+      PW_BROWSER_chromium_authed: chromium
+      PW_BROWSER_firefox_authed: firefox
+      PW_BROWSER_webkit_authed: webkit
+      PW_BROWSER_mobile_chrome: chromium
+      PW_BROWSER_mobile_safari: webkit
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
@@ -148,7 +150,7 @@ jobs:
         run: |
           PW_VER=$(node -p "require('./node_modules/@playwright/test/package.json').version")
           echo "version=$PW_VER" >> "$GITHUB_OUTPUT"
-          ENGINE_VAR="PW_BROWSER_${{ matrix.project }}"
+          ENGINE_VAR="PW_BROWSER_$(echo '${{ matrix.project }}' | tr '-' '_')"
           ENGINE="${!ENGINE_VAR}"
           echo "engine=$ENGINE" >> "$GITHUB_OUTPUT"
 
