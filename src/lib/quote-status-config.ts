@@ -111,5 +111,9 @@ export const QUOTE_VALID_TRANSITIONS: Readonly<Record<QuoteStatus, readonly Quot
 
 /** Returns true if moving from → to is a permitted transition. */
 export function isValidQuoteTransition(from: QuoteStatus, to: QuoteStatus): boolean {
-  return (QUOTE_VALID_TRANSITIONS[from] as readonly string[]).includes(to);
+  // BUG-016: DB values cast to QuoteStatus may not match any key (e.g. future statuses,
+  // migrations). Guard prevents TypeError: cannot read 'includes' of undefined.
+  const transitions = QUOTE_VALID_TRANSITIONS[from];
+  if (!transitions) return false;
+  return (transitions as readonly string[]).includes(to);
 }

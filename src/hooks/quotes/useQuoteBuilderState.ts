@@ -139,6 +139,9 @@ export function useQuoteBuilderState() {
 
   // ── Detecção de concorrência: armazena updated_at ao abrir o orçamento ──
   const baselineUpdatedAtRef = useRef<string | null>(null);
+  // BUG-011: Prevents double-submit when the user clicks "Save" twice rapidly
+  // (or two async paths race to call handleSaveQuote simultaneously).
+  const isSavingRef = useRef(false);
   const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
   // Status que o usuário tentou salvar quando o conflito foi detectado.
   // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
@@ -239,7 +242,13 @@ export function useQuoteBuilderState() {
     if (clientId && contactId) steps.push('client');
     if (paymentMethod && paymentTerms && deliveryTime && shippingType) {
       if (shippingType !== 'fob_pre' || shippingCost > 0) {
-        steps.push('conditions');
+        // BUG-005: validUntil was missing from the conditions check, causing the
+        // stepper to show the "Conditions" step as ✓ even when the validity date
+        // is in the past. Save would then fail with a toast error — contradiction.
+        // We mark it incomplete when the date is missing or expired so the seller
+        // sees a clear signal before attempting to send the quote.
+        const validityOk = validUntil && new Date(validUntil) > new Date();
+        if (validityOk) steps.push('conditions');
       }
     }
     if (items.length > 0) steps.push('items');
@@ -256,6 +265,7 @@ export function useQuoteBuilderState() {
     deliveryTime,
     shippingType,
     shippingCost,
+    validUntil,
   ]);
 
   const announce = useCallback((message: string) => {
@@ -994,131 +1004,142 @@ export function useQuoteBuilderState() {
   // ── Save ──
   const handleSaveQuote = useCallback(
     async (status: 'draft' | 'pending_approval' | 'pending' = 'draft', sellerNotes?: string) => {
-      if (status === 'draft') {
-        if (!isDraftValid) {
-          toast.error('Selecione uma empresa para salvar o rascunho.');
+      // BUG-011: Prevent double-save from rapid clicks or concurrent async callers.
+      if (isSavingRef.current) {
+        toast.error('Salvamento em andamento. Aguarde.');
+        return;
+      }
+      isSavingRef.current = true;
+      try {
+        if (status === 'draft') {
+          if (!isDraftValid) {
+            toast.error('Selecione uma empresa para salvar o rascunho.');
+            return;
+          }
+        } else if (!isFormValid) {
+          const missing = validationErrors.map((e) => QUOTE_FIELD_LABELS[e] || e).join(', ');
+          toast.error(`Preencha os campos obrigatórios: ${missing}`);
           return;
         }
-      } else if (!isFormValid) {
-        const missing = validationErrors.map((e) => QUOTE_FIELD_LABELS[e] || e).join(', ');
-        toast.error(`Preencha os campos obrigatórios: ${missing}`);
-        return;
-      }
 
-      // BUG-015: Block sending a quote whose validity date is already in the past.
-      // Drafts are exempt — sellers legitimately archive old drafts with expired dates.
-      if (status !== 'draft' && validUntil && new Date(validUntil) < new Date()) {
-        toast.error(
-          'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
-        );
-        return;
-      }
-
-      // BUG-008: Validate that the status transition is allowed before hitting the DB.
-      // Without this guard, the app could attempt illegal transitions (e.g. approved→draft,
-      // converted→anything) that the DB CHECK constraint would reject with a cryptic error.
-      // Same-status saves (e.g. re-saving a draft) are always allowed (not a transition).
-      // Only applies in edit mode — new quotes always start at the requested status.
-      if (isEditMode && quoteId && currentStatus && currentStatus !== status) {
-        if (!isValidQuoteTransition(currentStatus as QuoteStatus, status as QuoteStatus)) {
+        // BUG-015: Block sending a quote whose validity date is already in the past.
+        // Drafts are exempt — sellers legitimately archive old drafts with expired dates.
+        if (status !== 'draft' && validUntil && new Date(validUntil) < new Date()) {
           toast.error(
-            `Não é possível alterar o status de "${getQuoteStatusLabel(currentStatus)}" para "${getQuoteStatusLabel(status)}".`,
+            'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
           );
           return;
         }
-      }
 
-      // ── Bloqueio de fechamento: itens com preço defasado precisam de confirmação ──
-      // Só validamos ao fechar (pending / pending_approval). Rascunho permanece livre.
-      if (status !== 'draft') {
-        const staleUnconfirmed = items.filter((item) => {
-          if (item.price_confirmed_at) return false;
-          const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
-          return f.isStale;
-        });
-        if (staleUnconfirmed.length > 0) {
-          const names = staleUnconfirmed
-            .slice(0, 3)
-            .map((i) => i.product_name)
-            .filter(Boolean)
-            .join(', ');
-          const extra = staleUnconfirmed.length > 3 ? ` e mais ${staleUnconfirmed.length - 3}` : '';
-          toast.error('Confirme os preços defasados antes de fechar o orçamento', {
-            description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço possivelmente defasado: ${names}${extra}. Use o botão "Confirmar com fornecedor" em cada item ou "Confirmar todos" no resumo.`,
-            duration: 8000,
-          });
-          return;
-        }
-      }
-
-      const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
-
-      const quoteData: Partial<Quote> = {
-        client_id: clientId || undefined,
-        contact_id: contactId || undefined,
-        client_name: contactInfo?.name || undefined,
-        client_company: companyInfo?.name || undefined,
-        client_cnpj: companyInfo?.cnpj || undefined,
-        client_email: contactInfo?.email || undefined,
-        client_phone: contactInfo?.phone || undefined,
-        status: effectiveStatus,
-        discount_percent: discountType === 'percent' ? discountValue : 0,
-        discount_amount: discountType === 'amount' ? discountAmount : 0,
-        negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
-        notes: notes || undefined,
-        internal_notes: internalNotes || undefined,
-        valid_until: validUntil || undefined,
-        payment_method: paymentMethod || undefined,
-        payment_terms: paymentTerms || undefined,
-        delivery_time: deliveryTime || undefined,
-        shipping_type: shippingType || undefined,
-        shipping_cost: shippingType === 'fob_pre' ? shippingCost || 0 : 0,
-      };
-      let result;
-      if (isEditMode && quoteId) {
-        // ── Detecção de concorrência ──
-        // Compara updated_at atual do banco com o baseline registrado ao abrir o orçamento.
-        // Se outro usuário/sessão salvou enquanto estava aberto, exibe alerta.
-        if (baselineUpdatedAtRef.current) {
-          const { data: remoteQuote } = await supabase
-            // rls-allow: RLS scopes quotes to seller; concurrency check reads specific quote by id
-            .from('quotes')
-            .select('updated_at')
-            .eq('id', quoteId)
-            .single();
-
-          const remoteTs = remoteQuote?.updated_at;
-          if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
-            const label = new Date(remoteTs).toLocaleString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: 'America/Sao_Paulo',
-            });
-            pendingSaveStatusRef.current = status; // preserva a intenção do save
-            pendingSellerNotesRef.current = sellerNotes; // preserva a justificativa de aprovação
-            setConflictInfo({ modifiedAt: remoteTs, label });
-            return; // Bloqueia o save — usuário decide no banner
+        // BUG-008: Validate that the status transition is allowed before hitting the DB.
+        // Without this guard, the app could attempt illegal transitions (e.g. approved→draft,
+        // converted→anything) that the DB CHECK constraint would reject with a cryptic error.
+        // Same-status saves (e.g. re-saving a draft) are always allowed (not a transition).
+        // Only applies in edit mode — new quotes always start at the requested status.
+        if (isEditMode && quoteId && currentStatus && currentStatus !== status) {
+          if (!isValidQuoteTransition(currentStatus as QuoteStatus, status as QuoteStatus)) {
+            toast.error(
+              `Não é possível alterar o status de "${getQuoteStatusLabel(currentStatus)}" para "${getQuoteStatusLabel(status)}".`,
+            );
+            return;
           }
         }
-        result = await updateQuote(quoteId, quoteData, items);
-      } else {
-        result = await createQuote(quoteData, items);
-      }
 
-      // If pending_approval, create approval request usando desconto REAL (não aparente)
-      if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
-        await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
-      }
+        // ── Bloqueio de fechamento: itens com preço defasado precisam de confirmação ──
+        // Só validamos ao fechar (pending / pending_approval). Rascunho permanece livre.
+        if (status !== 'draft') {
+          const staleUnconfirmed = items.filter((item) => {
+            if (item.price_confirmed_at) return false;
+            const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
+            return f.isStale;
+          });
+          if (staleUnconfirmed.length > 0) {
+            const names = staleUnconfirmed
+              .slice(0, 3)
+              .map((i) => i.product_name)
+              .filter(Boolean)
+              .join(', ');
+            const extra =
+              staleUnconfirmed.length > 3 ? ` e mais ${staleUnconfirmed.length - 3}` : '';
+            toast.error('Confirme os preços defasados antes de fechar o orçamento', {
+              description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço possivelmente defasado: ${names}${extra}. Use o botão "Confirmar com fornecedor" em cada item ou "Confirmar todos" no resumo.`,
+              duration: 8000,
+            });
+            return;
+          }
+        }
 
-      if (result?.id) {
-        clearAutoSave();
-        navigate(`/orcamentos/${result.id}`);
-      }
+        const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
 
-      return result?.updated_at ?? undefined;
+        const quoteData: Partial<Quote> = {
+          client_id: clientId || undefined,
+          contact_id: contactId || undefined,
+          client_name: contactInfo?.name || undefined,
+          client_company: companyInfo?.name || undefined,
+          client_cnpj: companyInfo?.cnpj || undefined,
+          client_email: contactInfo?.email || undefined,
+          client_phone: contactInfo?.phone || undefined,
+          status: effectiveStatus,
+          discount_percent: discountType === 'percent' ? discountValue : 0,
+          discount_amount: discountType === 'amount' ? discountAmount : 0,
+          negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
+          notes: notes || undefined,
+          internal_notes: internalNotes || undefined,
+          valid_until: validUntil || undefined,
+          payment_method: paymentMethod || undefined,
+          payment_terms: paymentTerms || undefined,
+          delivery_time: deliveryTime || undefined,
+          shipping_type: shippingType || undefined,
+          shipping_cost: shippingType === 'fob_pre' ? shippingCost || 0 : 0,
+        };
+        let result;
+        if (isEditMode && quoteId) {
+          // ── Detecção de concorrência ──
+          // Compara updated_at atual do banco com o baseline registrado ao abrir o orçamento.
+          // Se outro usuário/sessão salvou enquanto estava aberto, exibe alerta.
+          if (baselineUpdatedAtRef.current) {
+            const { data: remoteQuote } = await supabase
+              // rls-allow: RLS scopes quotes to seller; concurrency check reads specific quote by id
+              .from('quotes')
+              .select('updated_at')
+              .eq('id', quoteId)
+              .single();
+
+            const remoteTs = remoteQuote?.updated_at;
+            if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
+              const label = new Date(remoteTs).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'America/Sao_Paulo',
+              });
+              pendingSaveStatusRef.current = status; // preserva a intenção do save
+              pendingSellerNotesRef.current = sellerNotes; // preserva a justificativa de aprovação
+              setConflictInfo({ modifiedAt: remoteTs, label });
+              return; // Bloqueia o save — usuário decide no banner
+            }
+          }
+          result = await updateQuote(quoteId, quoteData, items);
+        } else {
+          result = await createQuote(quoteData, items);
+        }
+
+        // If pending_approval, create approval request usando desconto REAL (não aparente)
+        if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
+          await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
+        }
+
+        if (result?.id) {
+          clearAutoSave();
+          navigate(`/orcamentos/${result.id}`);
+        }
+
+        return result?.updated_at ?? undefined;
+      } finally {
+        isSavingRef.current = false;
+      }
     },
     [
       isDraftValid,
