@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 216: 5 zero-violation rules (saved: @typescript-eslint/prefer-optional-chain 0v✓, @typescript-eslint/no-this-alias 0v✓, @typescript-eslint/no-extraneous-class 0v✓ — Batch 217+)
+      '@typescript-eslint/no-wrapper-object-types': 'error',
+      '@typescript-eslint/prefer-as-const': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-dupe-class-members': 'error',
+      '@typescript-eslint/no-useless-constructor': 'error',
       // Batch 215: 5 zero-violation rules (saved: @typescript-eslint/no-wrapper-object-types 0v✓, @typescript-eslint/prefer-as-const 0v✓, @typescript-eslint/no-explicit-any 0v✓ — Batch 216+)
       '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/prefer-namespace-keyword': 'error',
