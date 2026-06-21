@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 153: 5 zero-violation rules (excluded: jsx-a11y/no-interactive-element-to-noninteractive-role 0v✓ — saved Batch 154; also: jsx-handler-names 204v, jsx-no-bind 3666v, no-noninteractive-element-interactions 55v)
+      '@typescript-eslint/no-unsafe-declaration-merging': 'error',
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/parameter-properties': 'error',
+      'react/no-multi-comp': 'error',
+      'jsx-a11y/media-has-caption': 'error',
       // Batch 152: 5 zero-violation rules (excluded: no-set-state 12v, jsx-sort-props 17658v, jsx-max-depth 9467v, consistent-type-definitions 98v)
       'react/sort-comp': 'error',
       'react/no-direct-mutation-state': 'error',
