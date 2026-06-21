@@ -250,3 +250,29 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::warning::Branch Protection NÃO está ativa em main. Ative em $REPO/settings/branches"
           fi
+
+  # ============================================================================
+  # Job paralelo: valida SSOT de required checks (.github/required-checks.json)
+  #   (A) cada item bate com um job real de algum workflow (FALHA se drift)
+  #   (B) (best-effort) lista de required do Branch Protection inclui todos os
+  #       itens do SSOT — warning não-bloqueante (precisa GH_TOKEN com
+  #       permissão administration:read).
+  # ============================================================================
+  check-required-checks-ssot:
+    name: Verify required checks SSOT matches workflows (+ Branch Protection)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run required-checks SSOT validator
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/check-required-checks.mjs
+
