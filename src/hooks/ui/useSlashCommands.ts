@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRBAC } from '@/hooks/auth/useRBAC';
 
@@ -17,7 +16,6 @@ export interface CommandDefinition {
 
 export function useSlashCommands(onClose: () => void) {
   const navigate = useNavigate();
-  const { setTheme: _setTheme } = useTheme();
   const { signOut } = useAuth();
   const { isDev } = useRBAC();
 

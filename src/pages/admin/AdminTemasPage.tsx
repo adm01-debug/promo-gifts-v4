@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Save, Palette, Sparkles, Check, Gamepad2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { m as motion } from 'framer-motion';
-import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from 'sonner';
 import {
   THEME_PRESETS,
@@ -33,7 +32,6 @@ const classicPresets = THEME_PRESETS.filter((p) => p.category !== 'gx');
 const gxPresets = THEME_PRESETS.filter((p) => p.category === 'gx');
 
 export default function AdminTemasPage() {
-  const { actualTheme: _actualTheme } = useTheme();
   const [config, setConfig] = useState<ThemeConfig>(loadThemeConfig);
   const [savedConfig, setSavedConfig] = useState<ThemeConfig>(loadThemeConfig);
 
