@@ -423,7 +423,7 @@ export function StockFilterToolbar({
                   id="future-stock-switch"
                   data-testid="future-stock-switch"
                   checked={!!filters.includeFutureStock}
-                  onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
+                  onCheckedChange={(v) => setIncludeFutureStock(v)}
                   aria-label="Incluir Estoque Futuro no cálculo"
                 />
               </div>
