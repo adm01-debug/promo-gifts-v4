@@ -184,7 +184,7 @@ export function MockupProductSelector({
           disabled={disabled}
           aria-label="Remover produto selecionado"
         >
-          <X className="h-3.5 w-3.5" />
+          <X aria-hidden="true" className="h-3.5 w-3.5" />
         </Button>
       </div>
     );
@@ -212,7 +212,7 @@ export function MockupProductSelector({
             disabled={disabled}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 transition-transform group-hover:scale-110">
-              <Search className="h-5 w-5 text-primary" />
+              <Search aria-hidden="true" className="h-5 w-5 text-primary" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">Buscar produto</span>
@@ -225,7 +225,7 @@ export function MockupProductSelector({
         <DialogContent className="overflow-hidden border-border/40 p-0 shadow-2xl sm:max-w-[800px]">
           <DialogHeader className="p-6 pb-2">
             <DialogTitle className="flex items-center gap-2 font-display text-2xl">
-              <Package className="h-6 w-6 text-primary" />
+              <Package aria-hidden="true" className="h-6 w-6 text-primary" />
               Selecione o Produto
             </DialogTitle>
           </DialogHeader>
@@ -234,7 +234,10 @@ export function MockupProductSelector({
             {/* Search Header */}
             <div className="shrink-0 space-y-4 p-6 pt-2">
               <div className="group relative">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                <Search
+                  aria-hidden="true"
+                  className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary"
+                />
                 <Input
                   aria-label="Buscar produto por nome, SKU ou palavras-chave"
                   placeholder="Busque por nome, SKU ou palavras-chave..."
@@ -250,7 +253,7 @@ export function MockupProductSelector({
                     onClick={() => setSearchQuery('')}
                     className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                   >
-                    <X className="h-5 w-5" />
+                    <X aria-hidden="true" className="h-5 w-5" />
                   </button>
                 )}
               </div>
@@ -270,7 +273,7 @@ export function MockupProductSelector({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Filter aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
                   <select
                     aria-label="Ordenar produtos"
                     value={sortBy}
@@ -313,7 +316,7 @@ export function MockupProductSelector({
                 ) : sortedProducts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                     <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                      <SearchX className="h-10 w-10 opacity-20" />
+                      <SearchX aria-hidden="true" className="h-10 w-10 opacity-20" />
                     </div>
                     <p className="font-display text-xl font-bold text-foreground">
                       Nenhum resultado

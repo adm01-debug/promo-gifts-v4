@@ -63,7 +63,7 @@ export function MockupLightbox({
                     </Badge>
                     {mockup.location_name && (
                       <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                        <MapPin className="h-2.5 w-2.5" /> {mockup.location_name}
+                        <MapPin aria-hidden="true" className="h-2.5 w-2.5" /> {mockup.location_name}
                       </span>
                     )}
                   </div>
@@ -77,7 +77,7 @@ export function MockupLightbox({
                   </Badge>
                 )}
                 <span className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                  <Clock aria-hidden="true" className="h-3 w-3" />
                   {formatDistanceToNow(new Date(mockup.created_at), {
                     addSuffix: true,
                     locale: ptBR,

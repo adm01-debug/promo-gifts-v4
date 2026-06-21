@@ -120,7 +120,7 @@ export function ProductSearchCombobox({
                   }
                   return (
                     <div className="flex h-full w-full items-center justify-center">
-                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <Package aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
                     </div>
                   );
                 })()}
@@ -142,16 +142,16 @@ export function ProductSearchCombobox({
                 onClick={handleClear}
                 aria-label="Remover produto selecionado"
               >
-                <X className="h-3.5 w-3.5" />
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
+              <Search aria-hidden="true" className="h-4 w-4" />
               <span>{placeholder}</span>
             </div>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
 
@@ -171,14 +171,20 @@ export function ProductSearchCombobox({
           <CommandList className="max-h-[400px]">
             {isSearching ? (
               <div className="py-6 text-center">
-                <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-primary" />
+                <Loader2
+                  aria-hidden="true"
+                  className="mx-auto mb-2 h-6 w-6 animate-spin text-primary"
+                />
                 <p className="text-sm text-muted-foreground">Buscando...</p>
               </div>
             ) : (
               <>
                 <CommandEmpty>
                   <div className="py-6 text-center">
-                    <Package className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-50" />
+                    <Package
+                      aria-hidden="true"
+                      className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-50"
+                    />
                     <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Tente buscar por nome ou SKU
@@ -211,7 +217,7 @@ export function ProductSearchCombobox({
                         )}
                       >
                         {selectedProduct?.id === product.id && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
+                          <Check aria-hidden="true" className="h-3 w-3 text-primary-foreground" />
                         )}
                       </div>
 

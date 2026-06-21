@@ -28,7 +28,7 @@ export function showMockupSuccessToast({
           />
           <div className="absolute right-2 top-2">
             <div className="flex items-center gap-1.5 rounded-full bg-success/90 px-2 py-1 text-xs font-medium text-success-foreground">
-              <CheckCircle2 className="h-3 w-3" />
+              <CheckCircle2 aria-hidden="true" className="h-3 w-3" />
               Criado!
             </div>
           </div>
@@ -55,7 +55,7 @@ export function showMockupSuccessToast({
               }}
               className="flex-1"
             >
-              <Download className="mr-1.5 h-4 w-4" />
+              <Download aria-hidden="true" className="mr-1.5 h-4 w-4" />
               Baixar
             </Button>
             <Button
@@ -67,7 +67,7 @@ export function showMockupSuccessToast({
                 toast.dismiss(t);
               }}
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink aria-hidden="true" className="h-4 w-4" />
             </Button>
           </div>
         </div>

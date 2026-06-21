@@ -159,7 +159,10 @@ export function MockupClientSelector({
     <div ref={containerRef} className="relative z-40 w-full" data-testid="mockup-client-selector">
       {/* Campo de busca — z-50 + isolate para ficar acima do backdrop-blur */}
       <div className="relative isolate z-50">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          aria-hidden="true"
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           ref={inputRef}
           data-testid="mockup-client-search-input"
@@ -171,7 +174,10 @@ export function MockupClientSelector({
           className="h-11 bg-background pl-9"
         />
         {isLoading ? (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary" />
+          <Loader2
+            aria-hidden="true"
+            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary"
+          />
         ) : (
           searchQuery.length > 0 && (
             <button
@@ -180,7 +186,7 @@ export function MockupClientSelector({
               aria-label="Limpar busca de cliente"
               className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              <X className="h-4 w-4" />
+              <X aria-hidden="true" className="h-4 w-4" />
             </button>
           )
         )}
@@ -259,14 +265,17 @@ export function MockupClientSelector({
                       }}
                       className="mt-1 h-8 gap-2 border-destructive/20 transition-colors hover:bg-destructive/5 hover:text-destructive"
                     >
-                      <RefreshCw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
+                      <RefreshCw
+                        aria-hidden="true"
+                        className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')}
+                      />
                       {isLoading ? 'Tentando...' : 'Tentar novamente'}
                     </Button>
                   </div>
                 ) : filteredCompanies.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-2 px-4 py-6 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
-                      <Building2 className="h-5 w-5 text-muted-foreground/60" />
+                      <Building2 aria-hidden="true" className="h-5 w-5 text-muted-foreground/60" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
@@ -341,7 +350,7 @@ export function MockupClientSelector({
                       disabled={isFetchingNextPage}
                     >
                       {isFetchingNextPage ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        <Loader2 aria-hidden="true" className="mr-2 h-3 w-3 animate-spin" />
                       ) : searchQuery ? (
                         'Buscar em mais registros...'
                       ) : (

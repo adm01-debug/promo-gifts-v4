@@ -63,10 +63,10 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
       <div className="space-y-4 rounded-lg border border-border/30 p-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+            <ArrowLeft aria-hidden="true" className="mr-1 h-4 w-4" /> Voltar
           </Button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             Carregando detalhes...
           </div>
         </div>
@@ -84,7 +84,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
       <div className="space-y-4 rounded-lg border border-border/30 p-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+            <ArrowLeft aria-hidden="true" className="mr-1 h-4 w-4" /> Voltar
           </Button>
         </div>
         <div role="alert" className="py-6 text-center text-muted-foreground">
@@ -108,7 +108,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
     <div className="space-y-4 rounded-lg border border-border/30 p-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          <ArrowLeft aria-hidden="true" className="mr-1 h-4 w-4" /> Voltar
         </Button>
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-medium">{fullProduct.name}</h4>
@@ -149,7 +149,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
                 />
                 {outOfStock && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <AlertTriangle aria-hidden="true" className="h-4 w-4 text-destructive" />
                   </div>
                 )}
               </div>

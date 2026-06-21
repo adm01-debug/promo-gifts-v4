@@ -85,7 +85,7 @@ export function MockupAnnotations({
           onClick={() => setIsAnnotating(!isAnnotating)}
           className="gap-1.5"
         >
-          <MessageSquarePlus className="h-3.5 w-3.5" />
+          <MessageSquarePlus aria-hidden="true" className="h-3.5 w-3.5" />
           {isAnnotating ? 'Clique na imagem...' : 'Anotar'}
         </Button>
         {annotations.length > 0 && (
@@ -154,7 +154,7 @@ export function MockupAnnotations({
                   />
                   <div className="flex gap-1">
                     <Button size="sm" className="h-7 flex-1 text-xs" onClick={saveAnnotationText}>
-                      <Save className="mr-1 h-3 w-3" /> Salvar
+                      <Save aria-hidden="true" className="mr-1 h-3 w-3" /> Salvar
                     </Button>
                     <Button
                       size="sm"
@@ -163,7 +163,7 @@ export function MockupAnnotations({
                       aria-label="Remover anotação"
                       onClick={() => removeAnnotation(ann.id)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 aria-hidden="true" className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export function MockupAnnotations({
                 className="h-5 w-5"
                 onClick={() => removeAnnotation(ann.id)}
               >
-                <X className="h-3 w-3" />
+                <X aria-hidden="true" className="h-3 w-3" />
               </Button>
             </div>
           ))}

@@ -52,7 +52,7 @@ export function TemplateSelector({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="flex-1">
-          <LayoutTemplate className="mr-1 h-4 w-4" />
+          <LayoutTemplate aria-hidden="true" className="mr-1 h-4 w-4" />
           Templates
         </Button>
       </DropdownMenuTrigger>
@@ -64,7 +64,7 @@ export function TemplateSelector({
             <HoverCard key={template.id} openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
                 <DropdownMenuItem onClick={() => onApply(template)} className="cursor-pointer">
-                  <template.icon className="mr-2 h-4 w-4" />
+                  <template.icon aria-hidden="true" className="mr-2 h-4 w-4" />
                   {template.name}
                   <Badge variant="secondary" className="ml-auto text-[10px]">
                     {template.areas.length}
@@ -74,7 +74,7 @@ export function TemplateSelector({
               <HoverCardContent side="right" align="start">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <template.icon className="h-4 w-4 text-primary" />
+                    <template.icon aria-hidden="true" className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">{template.name}</span>
                   </div>
                   <TemplatePreview areas={template.areas} />
@@ -107,7 +107,7 @@ export function TemplateSelector({
                   <HoverCardTrigger asChild>
                     <DropdownMenuItem className="group cursor-pointer">
                       <div className="flex flex-1 items-center" onClick={() => onApply(template)}>
-                        <User className="mr-2 h-4 w-4 text-primary" />
+                        <User aria-hidden="true" className="mr-2 h-4 w-4 text-primary" />
                         {template.name}
                         <Badge variant="secondary" className="ml-auto mr-2 text-[10px]">
                           {template.areas.length}
@@ -123,14 +123,14 @@ export function TemplateSelector({
                           onDeleteCustom(template.id);
                         }}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 aria-hidden="true" className="h-3 w-3" />
                       </Button>
                     </DropdownMenuItem>
                   </HoverCardTrigger>
                   <HoverCardContent side="right" align="start">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary" />
+                        <User aria-hidden="true" className="h-4 w-4 text-primary" />
                         <span className="text-sm font-medium">{template.name}</span>
                       </div>
                       <TemplatePreview areas={template.areas} />
@@ -161,7 +161,7 @@ export function TemplateSelector({
           className="cursor-pointer text-primary"
           disabled={!hasAreas}
         >
-          <Save className="mr-2 h-4 w-4" />
+          <Save aria-hidden="true" className="mr-2 h-4 w-4" />
           Salvar Posicionamento Atual
         </DropdownMenuItem>
       </DropdownMenuContent>

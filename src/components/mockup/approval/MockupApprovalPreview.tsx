@@ -124,7 +124,7 @@ export function MockupApprovalPreview({
         <DialogHeader className="flex-row items-center justify-between border-b px-6 pb-2 pt-4">
           <div>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
+              <FileText aria-hidden="true" className="h-5 w-5 text-primary" />
               Aprovação de Layout
             </DialogTitle>
             <DialogDescription>
@@ -134,9 +134,9 @@ export function MockupApprovalPreview({
           <div className="flex items-center gap-2">
             <Button onClick={handleExportPdf} disabled={isExporting} size="sm" className="gap-1.5">
               {isExporting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="h-4 w-4" />
+                <Download aria-hidden="true" className="h-4 w-4" />
               )}
               {isExporting ? 'Exportando...' : 'Baixar PDF'}
             </Button>
