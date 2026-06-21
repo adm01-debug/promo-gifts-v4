@@ -239,6 +239,10 @@ export function useSellerCarts() {
               .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
             if (retryErr) throw retryErr;
+          } else {
+            // Item desapareceu entre o INSERT falho e o retry (ex: DELETE concorrente).
+            // Lançar erro evita que o produto seja silenciosamente descartado.
+            throw new Error('Conflito de carrinho: tente novamente');
           }
         } else if (error) {
           throw error;
