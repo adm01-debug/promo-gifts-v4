@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 197: 5 zero-violation rules (saved: no-extra-label 0v✓, no-floating-decimal 0v✓, no-iterator 0v✓ — Batch 198+)
+      'grouped-accessor-pairs': 'error',
+      'no-div-regex': 'error',
+      'no-else-return': 'error',
+      'no-empty-static-block': 'error',
+      'no-eq-null': 'error',
       // Batch 196: 5 zero-violation rules
       'no-promise-executor-return': 'error',
       'no-template-curly-in-string': 'error',
