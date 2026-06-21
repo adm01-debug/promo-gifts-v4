@@ -89,7 +89,7 @@ export function buildStockKpiCards(
         ? 'podem esgotar em até 30 dias'
         : `${pct(ruptureValue, totalVariants)} em estado crítico`,
       tooltip: ruptureFromEma
-        ? 'Variações com previsão de esgotar em até 30 dias. Priorize estes pedidos.'
+        ? 'Variações com previsão de esgotar em até 30 dias.'
         : 'Variações em estado crítico. Atenção ao oferecer.',
       filter: 'critical',
       variant: 'warning',
