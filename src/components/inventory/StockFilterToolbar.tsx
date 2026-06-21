@@ -509,38 +509,66 @@ export function StockFilterToolbar({
         <Popover>
           <StockHelpTooltip
             title="Risco de Ruptura"
-            description="Janela usada para projetar quais SKUs podem zerar. Independente do filtro 'Estoque Futuro'."
+            description="Ligue para filtrar só SKUs que podem zerar dentro da janela escolhida (3/7/15/30d)."
             example="3 dias = só o que esgota agora. 30 dias = visão ampla."
-            emptyHint="Aumente para 30 dias para ver mais SKUs em risco."
+            emptyHint="Sem SKUs em risco no momento — Switch fica indisponível."
           >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 size="default"
                 data-testid="rupture-horizon-control"
-                aria-label={`Risco de Ruptura, janela ${ruptureHorizon} dias`}
-                className="relative gap-2 font-normal text-muted-foreground hover:text-foreground [&[data-state=open]]:border-border/60 [&[data-state=open]]:text-foreground [&[data-state=open]_svg]:text-primary"
+                aria-pressed={isRuptureRiskActive}
+                aria-label={
+                  isRuptureRiskActive
+                    ? `Risco de Ruptura ativo, janela ${ruptureHorizon} dias`
+                    : 'Filtro de Risco de Ruptura desligado'
+                }
+                className={cn(
+                  'relative gap-2 font-normal text-muted-foreground hover:text-foreground',
+                  isRuptureRiskActive &&
+                    'border-border/60 text-foreground [&_svg]:text-primary',
+                )}
               >
                 <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">Risco</span>
-                <span
-                  aria-hidden="true"
-                  className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                >
-                  {ruptureHorizon}d
-                </span>
+                {isRuptureRiskActive && ruptureRiskCount > 0 && (
+                  <span
+                    data-testid="rupture-risk-horizon-badge"
+                    aria-hidden="true"
+                    className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  >
+                    {ruptureHorizon}d
+                  </span>
+                )}
               </Button>
             </PopoverTrigger>
           </StockHelpTooltip>
-          <PopoverContent className="w-64 p-0" align="start">
-            <div className="space-y-1.5 px-3 py-2.5">
-              <div className="flex items-center gap-1.5">
-                <TrendingDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                <span className="text-xs font-medium text-foreground">Projetar risco em</span>
+          <PopoverContent className="w-72 p-0" align="start">
+            <div className="space-y-2 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label
+                  htmlFor="rupture-risk-switch"
+                  className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-foreground"
+                >
+                  <TrendingDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  Mostrar só Risco de Ruptura
+                </Label>
+                <Switch
+                  id="rupture-risk-switch"
+                  data-testid="rupture-risk-switch"
+                  checked={isRuptureRiskActive}
+                  disabled={!onToggleRuptureRisk || ruptureRiskCount === 0}
+                  onCheckedChange={(v) => onToggleRuptureRisk?.(v)}
+                  aria-label="Filtrar somente SKUs em risco de ruptura"
+                />
               </div>
               <p className="text-[11px] leading-snug text-muted-foreground">
-                Janela usada apenas para o cálculo de Risco de Ruptura.
-                Independente do filtro "Estoque Futuro".
+                {ruptureRiskCount === 0
+                  ? 'Nenhum SKU em risco detectado no momento.'
+                  : isRuptureRiskActive
+                    ? `Mostrando apenas SKUs que podem zerar em ${ruptureHorizon} dias.`
+                    : `${ruptureRiskCount} SKU${ruptureRiskCount === 1 ? '' : 's'} em risco — ligue o Switch para filtrar.`}
               </p>
             </div>
             <div className="space-y-1.5 border-t border-border/40 px-3 py-2.5">
@@ -548,7 +576,7 @@ export function StockFilterToolbar({
                 id="rupture-horizon-label"
                 className="text-[10px] uppercase tracking-wide text-muted-foreground"
               >
-                Horizonte
+                Horizonte de projeção
               </span>
               <div
                 role="radiogroup"
