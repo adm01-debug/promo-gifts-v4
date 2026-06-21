@@ -15,9 +15,7 @@ import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 const THROTTLE_KEY = 'access_denied_throttle';
 const THROTTLE_MS = 30_000;
 
-interface ThrottleMap {
-  [key: string]: number;
-}
+type ThrottleMap = Record<string, number>;
 
 function loadThrottle(): ThrottleMap {
   try {

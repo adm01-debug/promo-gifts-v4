@@ -425,6 +425,14 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 131: 7 rules (5 zero-violation + 2 auto-fix — removed: return-await 6v, no-aria-hidden-on-focusable 6v, no-loop-func 7v, restrict-template-expressions 8v, no-useless-default-assignment 9v, prefer-reduce-type-parameter 10v, no-unnecessary-type-parameters 16v, switch-exhaustiveness-check 34v, no-base-to-string 58v, display-name 61v, no-unsafe-return 106v, no-unnecessary-type-conversion 182v, prefer-destructuring 201v, no-floating-promises 588v, strict-void-return 920v, no-unnecessary-condition 2223v)
+      '@typescript-eslint/restrict-plus-operands': 'error',
+      '@typescript-eslint/no-unsafe-enum-comparison': 'error',
+      '@typescript-eslint/prefer-for-of': 'error',
+      'react/jsx-curly-spacing': 'error',
+      'react/jsx-first-prop-new-line': 'error',
+      'react/jsx-closing-bracket-location': 'error',
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
       // Batch 130: 7 rules (2 zero-violation + 5 with manual fixes — removed: return-await 6v, no-invalid-void-type 5v→2v with allowInGenericTypeArguments, array-type 212v, consistent-type-definitions 98v, no-unnecessary-type-arguments 16v, no-noninteractive-element-interactions 54v, label-has-associated-control 63v, no-array-index-key 206v, no-param-reassign 21v, no-unsafe-return 106v, switch-exhaustiveness-check 34v, no-base-to-string 58v, promise-function-async 504v, prefer-reduce-type-parameter 10v, consistent-return 132v, no-multi-comp 620v, no-aria-hidden-on-focusable 6v, prefer-readonly 2v—FIXED, require-array-sort-compare 1v—FIXED)
       'jsx-a11y/anchor-is-valid': 'error',
       'react/jsx-fragments': 'error',
