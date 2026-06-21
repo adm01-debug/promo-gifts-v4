@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 164: 5 zero-violation rules
+      'no-extra-bind': 'error',
+      'no-useless-rename': 'error',
+      'prefer-object-spread': 'error',
+      'no-useless-computed-key': 'error',
+      'operator-assignment': 'error',
       // Batch 163: 5 zero-violation rules (excluded: no-extra-bind 0v✓, no-useless-rename 0v✓, prefer-object-spread 0v✓, no-useless-computed-key 0v✓, operator-assignment 0v✓ — saved Batch 164)
       'no-return-assign': 'error',
       'no-throw-literal': 'error',
