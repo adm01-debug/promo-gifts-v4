@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 152: 5 zero-violation rules (excluded: no-set-state 12v, jsx-sort-props 17658v, jsx-max-depth 9467v, consistent-type-definitions 98v)
+      'react/sort-comp': 'error',
+      'react/no-direct-mutation-state': 'error',
+      'react/no-did-mount-set-state': 'error',
+      'react/no-did-update-set-state': 'error',
+      'react/no-will-update-set-state': 'error',
       // Batch 151: 5 zero-violation rules (excluded: react/sort-comp 0v✓ — saved Batch 152; also: no-unstable-nested-components 29v)
       'react/jsx-fragments': 'error',
       'react/no-access-state-in-setstate': 'error',
