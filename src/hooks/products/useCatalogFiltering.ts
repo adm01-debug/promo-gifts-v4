@@ -158,7 +158,10 @@ export function useCatalogFiltering({
       const [min, max] = filters.priceRange;
       // FIX-SF-F: 9999 é sentinela "sem limite" — não excluir produtos caros quando
       // só o mínimo é definido. max >= 9999 vira ilimitado.
-      result = result.filter((p) => p.price >= min && (max >= 9999 || p.price <= max));
+      result = result.filter((p) => {
+        if (p.price === null || p.price === undefined) return true;
+        return p.price >= min && (max >= 9999 || p.price <= max);
+      });
     }
 
     // FIX-INSTOCK-VARIATIONS: considera variações além do estoque agregado,
