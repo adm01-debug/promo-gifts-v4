@@ -273,6 +273,10 @@ export type WizardAction =
   | { type: 'SET_STEP'; payload: WizardStep }
   | { type: 'START_NEW_PERSONALIZATION' }
   | { type: 'UPDATE_PERSONALIZATION'; payload: { index: number; personalization: Personalization } }
+  | {
+      type: 'LOAD_DRAFT';
+      payload: { product: SelectedProduct; quantity: number; personalizations: Personalization[] };
+    }
   | { type: 'UPDATE_SPECS'; payload: Partial<EngravingSpecs> };
 
 // ============================================
