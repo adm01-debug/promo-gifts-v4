@@ -407,7 +407,7 @@ export function applyStockFilters(
     const pNorm = idx.productNormals.get(p.productId);
     const variantsForFilter = selectMatchingVariants(p, ctx);
     if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
-    if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
+    if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter, incomingNowMs, incomingCutoffMs)) continue;
     if (!matchSearchIdx(p, variantsForFilter, ctx.searchN, pNorm)) continue;
     if (
       ctx.categoryN &&
