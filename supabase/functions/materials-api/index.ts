@@ -152,9 +152,12 @@ Deno.serve(async (req) => {
 
       case 'product_materials': {
         if (!productId) return new Response(JSON.stringify({ error: 'productId é obrigatório' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        // FIX BUG-MAT-01 (2026-06-21): .order('name') em product_materials causava 400
+        // (coluna não existe na tabela base; 'name' pertence a material_types, não a product_materials).
+        // Corrigido para sort_order (coluna canônica de ordenação de product_materials).
         const { data, error } = await externalSupabase.from('product_materials')
           .select('id, part, percentage, notes, sort_order, material_id, material_types!inner (id, name, slug, group_id, material_groups!inner (id, name, slug))')
-          .eq('product_id', productId).eq('is_active', true).order('name', { ascending: true });
+          .eq('product_id', productId).eq('is_active', true).order('sort_order', { ascending: true });
         if (error) throw error;
         result = { materials: data, count: data?.length || 0, productId };
         break;
