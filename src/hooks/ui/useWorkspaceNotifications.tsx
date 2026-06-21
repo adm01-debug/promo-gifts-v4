@@ -295,7 +295,10 @@ export function useWorkspaceNotifications() {
     if (!user) return;
 
     const channel = supabase
-      .channel('workspace_notifications_realtime')
+      // BUG-RT-CHANNEL FIX: tópico único por montagem. Este hook monta no sino do header E
+      // na gaveta de notificações ao mesmo tempo; com nome estático a 2ª instância recebia o
+      // canal já inscrito e o .on('postgres_changes') após subscribe() derrubava o render.
+      .channel(`workspace_notifications_realtime:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
