@@ -26,6 +26,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
 import { buildStockKpiCards } from './stockKpiCards';
+import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
+
 
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
@@ -186,6 +188,21 @@ export function StockDashboard() {
 
   const warningAlerts = useMemo(() => alerts.filter((a) => a.severity === 'warning'), [alerts]);
   const infoAlerts = useMemo(() => alerts.filter((a) => a.severity === 'info'), [alerts]);
+
+  // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 15 dias.
+  // Quando o feature flag `useEmaRupture` estiver off, `alerts` vem vazio e
+  // passamos `null` para o helper cair no fallback `variantsCritical`.
+  const { alerts: ruptureAlerts } = useRuptureAlerts();
+  const ruptureRisk15dCount = useMemo<number | null>(() => {
+    if (ruptureAlerts.length === 0) return null;
+    return ruptureAlerts.filter(
+      (a) =>
+        typeof a.cobertura_dias === 'number' &&
+        Number.isFinite(a.cobertura_dias) &&
+        a.cobertura_dias <= 15,
+    ).length;
+  }, [ruptureAlerts]);
+
 
   const activeFilterLabel = useMemo(() => {
     switch (filters.status) {
@@ -390,13 +407,14 @@ export function StockDashboard() {
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-        {buildStockKpiCards(summary).map((card) => {
+        {buildStockKpiCards(summary, ruptureRisk15dCount).map((card) => {
           const ICONS: Record<typeof card.slug, React.ReactNode> = {
             'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
             'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
-            'critico': <TrendingDown className="h-6 w-6 text-warning" />,
+            'risco-de-ruptura': <TrendingDown className="h-6 w-6 text-warning" />,
             'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
           };
+
           const isActive =
             card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter;
           return (
