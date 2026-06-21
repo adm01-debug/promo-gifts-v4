@@ -90,10 +90,10 @@ export function buildStockKpiCards(
       unit: 'variações',
       value: ruptureValue,
       subtitle: ruptureFromEma
-        ? 'podem esgotar em até 15 dias'
+        ? 'podem esgotar em até 30 dias'
         : `${pct(ruptureValue, totalVariants)} em estado crítico`,
       tooltip: ruptureFromEma
-        ? `${ruptureValue.toLocaleString('pt-BR')} variações com cobertura projetada ≤ 15 dias ` +
+        ? `${ruptureValue.toLocaleString('pt-BR')} variações com cobertura projetada ≤ 30 dias ` +
           `(modelo EMA — média móvel exponencial de saídas).`
         : `${ruptureValue.toLocaleString('pt-BR')} variações em estado crítico (fallback — ` +
           `previsão EMA indisponível).`,
