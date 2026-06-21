@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 163: 5 zero-violation rules (excluded: no-extra-bind 0v✓, no-useless-rename 0v✓, prefer-object-spread 0v✓, no-useless-computed-key 0v✓, operator-assignment 0v✓ — saved Batch 164)
+      'no-return-assign': 'error',
+      'no-throw-literal': 'error',
+      'prefer-regex-literals': 'error',
+      'no-unneeded-ternary': 'error',
+      'no-useless-return': 'error',
       // Batch 162: 5 zero-violation rules (excluded: no-return-assign 0v✓, no-throw-literal 0v✓, prefer-regex-literals 0v✓, no-unneeded-ternary 0v✓ — saved Batch 163)
       'jsx-a11y/aria-role': 'error',
       '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
