@@ -313,6 +313,10 @@ export function StockDashboard() {
         </Suspense>
       )}
 
+      {/* Onda 1 — Hero preditivo: chips de nível + projeção 7/15/30d + saúde ETL.
+          Render condicional via flag `useEmaRupture` (componente retorna null se off). */}
+      <StockRiskHero />
+
       {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
       <Card>
         <CardContent className="p-4">
