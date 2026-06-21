@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 150: 5 zero-violation rules (excluded: react/jsx-fragments 0v✓, react/no-access-state-in-setstate 0v✓, react/no-redundant-should-component-update 0v✓ — saved Batch 151; also: no-array-index-key 206v)
+      'jsx-a11y/anchor-is-valid': 'error',
+      'react/no-children-prop': 'error',
+      'react/jsx-boolean-value': 'error',
+      'react/jsx-no-useless-fragment': 'error',
+      'react/self-closing-comp': 'error',
       // Batch 149: 5 zero-violation rules (excluded: jsx-a11y/anchor-is-valid 0v✓, react/no-children-prop 0v✓, react/jsx-boolean-value 0v✓ — saved for Batch 150; also: method-signature-style 50v, no-bitwise 191v, no-continue 111v)
       'prefer-numeric-literals': 'error',
       'symbol-description': 'error',
