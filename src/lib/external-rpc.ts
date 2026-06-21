@@ -63,7 +63,12 @@ export async function invokeExternalRpc<T>(
         logger.warn(
           `[external-rpc] Retry ${attempt + 1}/${MAX_RETRIES} for ${rpcName} after ${delay}ms: ${msg}`,
         );
-        await Promise.race([new Promise<void>((r) => setTimeout(r, delay)), deadlinePromise]);
+        await Promise.race([
+          new Promise<void>((r) => {
+            setTimeout(r, delay);
+          }),
+          deadlinePromise,
+        ]);
         continue;
       }
       throw new Error(msg);

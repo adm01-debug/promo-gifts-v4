@@ -73,10 +73,10 @@ export function useCustomizationPriceCalculator() {
 export function useCustomizationPriceReactive(
   techniqueId: string | null,
   quantidade: number,
-  numCores: number = 1,
+  numCores = 1,
   larguraCm?: number | null,
   alturaCm?: number | null,
-  usaDimensao: boolean = false,
+  usaDimensao = false,
 ) {
   const [price, setPrice] = useState<CustomizationPriceResponseV6 | null>(null);
   const [loading, setLoading] = useState(false);

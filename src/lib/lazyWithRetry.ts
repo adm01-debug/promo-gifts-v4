@@ -28,7 +28,9 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 
         if (isChunkLoadError(error)) {
           logger.warn(`Chunk load failed (attempt ${i + 1}/${retries}), retrying...`);
-          await new Promise((resolve) => setTimeout(resolve, interval * (i + 1)));
+          await new Promise((resolve) => {
+            setTimeout(resolve, interval * (i + 1));
+          });
 
           // Última tentativa: aciona recovery agressivo (hard reload + cache bust).
           if (i === retries - 1) {

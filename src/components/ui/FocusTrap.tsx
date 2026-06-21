@@ -148,7 +148,7 @@ export function FocusTrap({
 }
 
 // Hook for managing focus trap
-export function useFocusTrap(active: boolean = true) {
+export function useFocusTrap(active = true) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 

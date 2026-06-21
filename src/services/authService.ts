@@ -16,7 +16,9 @@ export const authService = {
     try {
       await Promise.race([
         supabase.rpc('log_user_logout'),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout RPC')), 2000)),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout RPC')), 2000);
+        }),
       ]);
     } catch (err) {
       logger.warn('log_user_logout failed', { err: String(err) });

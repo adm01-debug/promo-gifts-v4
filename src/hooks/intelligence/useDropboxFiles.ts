@@ -38,7 +38,7 @@ export function useDropboxFiles() {
     }
   }, []);
 
-  const listFiles = useCallback(async (path: string = '') => {
+  const listFiles = useCallback(async (path = '') => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('dropbox-list', {

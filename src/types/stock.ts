@@ -425,7 +425,7 @@ export function calculateStockStatus(
 /** Estima dias até o esgotamento com base no estoque atual e na média diária de vendas. */
 export function calculateDaysUntilStockout(
   currentStock: number,
-  avgDailySales: number = 2,
+  avgDailySales = 2,
 ): number | undefined {
   // Guarda defensiva: NaN, Infinity, negativos e zero → indefinido.
   if (!Number.isFinite(currentStock) || !Number.isFinite(avgDailySales)) return undefined;
@@ -434,7 +434,7 @@ export function calculateDaysUntilStockout(
 }
 
 /** Retorna o estoque disponível (atual menos reservado, mínimo 0). */
-export function calculateAvailableStock(currentStock: number, reservedStock: number = 0): number {
+export function calculateAvailableStock(currentStock: number, reservedStock = 0): number {
   return Math.max(0, currentStock - reservedStock);
 }
 

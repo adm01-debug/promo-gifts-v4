@@ -960,7 +960,8 @@ export function loadThemeConfig(): ThemeConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
-      parsed.mode = parsed.mode || 'auto';
+      // Support both light/dark if ever expanded, but default to dark for now
+      parsed.mode ||= 'auto';
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }

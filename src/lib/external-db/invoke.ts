@@ -295,7 +295,9 @@ export async function invokeWithRetry(
           reason: msg,
         });
       }
-      await new Promise((r) => setTimeout(r, delay));
+      await new Promise((r) => {
+        setTimeout(r, delay);
+      });
       continue;
     }
 

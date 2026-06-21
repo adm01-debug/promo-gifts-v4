@@ -155,7 +155,7 @@ export function calculateCustomizationTotal(
   numCores: number,
   tabela: TabelaPrecoOficial,
   faixas: FaixaPrecoOficial[],
-  markupPercent: number = 115,
+  markupPercent = 115,
 ) {
   const faixa = findPriceTier(quantidade, faixas);
   const markupMultiplier = 1 + markupPercent / 100;

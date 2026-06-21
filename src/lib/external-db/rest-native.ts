@@ -378,7 +378,10 @@ function isRetryableError(msg: string): boolean {
     lower.includes('504')
   );
 }
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 // ── Concurrency limiter ───────────────────────────────────────────────────────────
 export async function runWithConcurrency<T>(
