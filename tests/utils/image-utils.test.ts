@@ -12,7 +12,6 @@ import {
   getColorThumbnail,
   categorizeImages,
   type ProductImageMeta,
-  type CdnVariant,
 } from '@/utils/image-utils';
 
 // Helper to create test image
