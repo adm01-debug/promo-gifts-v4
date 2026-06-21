@@ -192,19 +192,33 @@ export function StockDashboard() {
   // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 30 dias.
   // Quando o feature flag `useEmaRupture` estiver off, `alerts` vem vazio e
   // passamos `null` para o helper cair no fallback `variantsCritical`.
-  const { alerts: ruptureAlerts } = useRuptureAlerts();
-  const ruptureRisk30dCount = useMemo<number | null>(() => {
-    if (ruptureAlerts.length === 0) return null;
-    return ruptureAlerts.filter(
-      (a) =>
+  const { alerts: ruptureAlerts, byVariantId: ruptureByVariantId } = useRuptureAlerts();
+
+  // SSOT do "Risco de Ruptura": set de variantId únicos com cobertura ≤ 30d.
+  // O MESMO set alimenta o número do card E o filtro da tabela, garantindo
+  // invariante card-count === linhas-filtradas (deduplica fornecedores por
+  // variante via `byVariantId`).
+  const ruptureRiskVariantIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (ruptureByVariantId.size === 0) return null;
+    const ids = new Set<string>();
+    for (const a of ruptureByVariantId.values()) {
+      if (
         typeof a.cobertura_dias === 'number' &&
         Number.isFinite(a.cobertura_dias) &&
-        a.cobertura_dias <= 30,
-    ).length;
-  }, [ruptureAlerts]);
+        a.cobertura_dias <= 30
+      ) {
+        ids.add(a.variant_id);
+      }
+    }
+    return ids.size > 0 ? ids : null;
+  }, [ruptureByVariantId]);
 
+  const ruptureRisk30dCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : null;
+  const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
+  void ruptureAlerts; // mantido para upstream subscribers (cache warm)
 
   const activeFilterLabel = useMemo(() => {
+    if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
     switch (filters.status) {
       case 'in_stock':
         return 'Em Estoque';
@@ -221,7 +235,7 @@ export function StockDashboard() {
       default:
         return null;
     }
-  }, [filters.status]);
+  }, [filters.status, isRuptureRiskActive]);
 
   const isFiltered = filters.status !== 'all';
 
