@@ -119,7 +119,7 @@ export function MockupConfigPanel({
     <Card className="border-border/30">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-primary" />
+          <Wand2 className="h-5 w-5 text-primary" aria-hidden="true" />
           Configuração
         </CardTitle>
         <CardDescription>
@@ -129,8 +129,11 @@ export function MockupConfigPanel({
       <CardContent className="space-y-6">
         {isLoadingData && (
           <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <Loader2 className="mx-auto mb-2 h-8 w-8 animate-spin text-primary" />
+            <div className="text-center" role="status">
+              <Loader2
+                className="mx-auto mb-2 h-8 w-8 animate-spin text-primary"
+                aria-hidden="true"
+              />
               <p className="text-sm text-muted-foreground">Carregando dados...</p>
             </div>
           </div>
@@ -171,7 +174,10 @@ export function MockupConfigPanel({
               trailing={
                 selectedTechnique && (
                   <TechniqueTooltip technique={selectedTechnique}>
-                    <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-primary" />
+                    <Info
+                      className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-primary"
+                      aria-label="Informações sobre a técnica"
+                    />
                   </TechniqueTooltip>
                 )
               }
@@ -204,7 +210,10 @@ export function MockupConfigPanel({
                             <SelectItem value={technique.id} className="cursor-pointer">
                               <div className="flex w-full flex-col gap-0.5">
                                 <div className="flex items-center gap-2">
-                                  <Paintbrush className="h-3.5 w-3.5 text-primary" />
+                                  <Paintbrush
+                                    className="h-3.5 w-3.5 text-primary"
+                                    aria-hidden="true"
+                                  />
                                   <span>{technique.name}</span>
                                   {technique.maxWidth && technique.maxHeight ? (
                                     <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
@@ -356,7 +365,7 @@ export function MockupConfigPanel({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" onClick={onReset} aria-label="Limpar formulário">
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Limpar formulário</TooltipContent>
@@ -418,7 +427,10 @@ function MobileCollapsibleSection({
                     {summary}
                   </span>
                 )}
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+                <ChevronDown
+                  className="h-4 w-4 text-muted-foreground transition-transform"
+                  aria-hidden="true"
+                />
               </div>
             </div>
           </CollapsibleTrigger>

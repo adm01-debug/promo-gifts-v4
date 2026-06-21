@@ -1645,7 +1645,7 @@ describe('Analise estatica — MockupHistoryPanel.tsx (checkbox keyboard support
     expect(src).toContain("e.key === 'Enter' || e.key === ' '");
   });
   it('checkmark visual tem aria-hidden', () => {
-    expect(src).toMatch(/<span[^>]+aria-hidden="true">✓<\/span>/);
+    expect(src).toMatch(/<span[^>]+aria-hidden="true">\s*✓\s*<\/span>/);
   });
 });
 
@@ -1680,5 +1680,98 @@ describe('Analise estatica — MockupCompareDialog.tsx (aria-hidden em icones de
   });
   it('icone Download no botao Baixar tem aria-hidden', () => {
     expect(src).toContain('<Download className="mr-1 h-3.5 w-3.5" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MockupHistoryPanel.tsx (botao X cabecalho comparacao)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  it('botao X no cabecalho de comparacao tem aria-label', () => {
+    expect(src).toContain('aria-label="Cancelar seleção para comparação"');
+  });
+  it('icone X no botao de cancelar comparacao tem aria-hidden', () => {
+    expect(src).toMatch(/<X className="h-4 w-4" aria-hidden="true"/);
+  });
+});
+
+describe('Analise estatica — MockupConfigPanel.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupConfigPanel.tsx');
+  });
+
+  it('icone Wand2 no CardTitle tem aria-hidden', () => {
+    expect(src).toContain('<Wand2 className="h-5 w-5 text-primary" aria-hidden="true"');
+  });
+  it('icone Loader2 no spinner de carregamento tem aria-hidden', () => {
+    expect(src).toContain('animate-spin text-primary" aria-hidden="true"');
+  });
+  it('container de carregamento tem role=status', () => {
+    expect(src).toContain('role="status"');
+  });
+  it('icone Info no trigger de tooltip de tecnica tem aria-label', () => {
+    expect(src).toContain('aria-label="Informações sobre a técnica"');
+  });
+  it('icone Paintbrush na lista de tecnicas tem aria-hidden', () => {
+    expect(src).toContain('<Paintbrush className="h-3.5 w-3.5 text-primary" aria-hidden="true"');
+  });
+  it('icone RefreshCw no botao de reset tem aria-hidden', () => {
+    expect(src).toContain('<RefreshCw className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone ChevronDown no collapsible tem aria-hidden', () => {
+    expect(src).toContain(
+      '<ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" aria-hidden="true"',
+    );
+  });
+});
+
+describe('Analise estatica — TechniqueTooltip.tsx (aria-hidden em icones do hover card)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TechniqueTooltip.tsx');
+  });
+
+  it('icone Clock (durabilidade) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Clock className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Palette (cores) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Palette className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Info (ideal para) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Info className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Layers (local) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Layers className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Info (variacao) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Info className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Ruler (dimensoes) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Ruler className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Palette (max cores) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Palette className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
+    );
+  });
+  it('icone Wrench (setup) no conteudo do tooltip tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Wrench className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true"',
+    );
   });
 });

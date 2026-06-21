@@ -190,8 +190,13 @@ export function MockupHistoryPanel({
                 >
                   <Columns2 className="mr-1 h-4 w-4" aria-hidden="true" /> Comparar
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => setSelectedForCompare(new Set())}>
-                  <X className="h-4 w-4" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Cancelar seleção para comparação"
+                  onClick={() => setSelectedForCompare(new Set())}
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </>
             )}
