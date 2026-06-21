@@ -47,6 +47,14 @@ const QuickViewTooltip = ({ label, children }: { label: string; children: React.
 // Image types that are excluded from the gallery (ADR-001)
 const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'component']);
 
+// BUG-QVW-01 FIX (2026-06-21): Intl.NumberFormat era recriado a cada chamada dentro do
+// componente. Mover para módulo — mesmo padrão de BUG-PSH-01 / BUG-TVW-01.
+const quickViewPriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+const formatPrice = (price: number) => quickViewPriceFormatter.format(price);
+
 interface ProductQuickViewProps {
   product: Product | null;
   isLoading?: boolean;
@@ -226,13 +234,6 @@ export const ProductQuickView = React.memo(
       variationName: color.name,
       groupName: color.group,
     }));
-
-    const formatPrice = (price: number) => {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price);
-    };
 
     const getStockStatusInfo = (status: string) => {
       switch (status) {

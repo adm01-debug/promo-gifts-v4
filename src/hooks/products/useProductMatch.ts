@@ -173,6 +173,8 @@ export interface MatchFilters {
   minScore: number;
   matchTypes: MatchResult['matchType'][];
   categoryFilter?: string;
+  /** Filtro por category_id (mais robusto que categoryFilter quando o nome não está disponível). */
+  categoryId?: string;
   supplierFilter?: string;
   onlyInStock: boolean;
 }
@@ -202,6 +204,7 @@ export function useProductMatch(
 
       // Pre-filters
       if (mergedFilters.onlyInStock && candidate.stockStatus === 'out-of-stock') continue;
+      if (mergedFilters.categoryId && candidate.category_id !== mergedFilters.categoryId) continue;
       if (mergedFilters.categoryFilter && candidate.category?.name !== mergedFilters.categoryFilter)
         continue;
       if (mergedFilters.supplierFilter && candidate.supplier?.name !== mergedFilters.supplierFilter)
@@ -226,6 +229,7 @@ export function useProductMatch(
     allProducts,
     mergedFilters.minScore,
     matchTypesKey,
+    mergedFilters.categoryId,
     mergedFilters.categoryFilter,
     mergedFilters.supplierFilter,
     mergedFilters.onlyInStock,

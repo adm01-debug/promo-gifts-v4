@@ -25,6 +25,7 @@ import {
 } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import { getCdnUrl } from '@/utils/image-utils';
 
 export interface BulkVariantSelection {
   product: Product;
@@ -200,16 +201,11 @@ function ProductVariantStep({
             >
               {variant.selected_thumbnail ? (
                 <img
-                  src={`${variant.selected_thumbnail}/thumbnail`}
+                  src={getCdnUrl(variant.selected_thumbnail, 'thumbnail')}
                   alt={variant.color_name ?? ''}
                   className="h-10 w-10 shrink-0 rounded-lg border border-border/50 object-cover shadow-sm transition-transform group-hover:scale-105"
                   onError={(e) => {
-                    const t = e.currentTarget;
-                    if (t.src.includes('/thumbnail')) {
-                      t.src = variant.selected_thumbnail ?? '';
-                    } else {
-                      t.style.display = 'none';
-                    }
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : (
