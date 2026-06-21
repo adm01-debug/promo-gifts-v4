@@ -253,6 +253,10 @@ export type WizardAction =
       payload: { sourceId: string; targetLocation: EngravingLocation };
     }
   | {
+      type: 'LOAD_DRAFT';
+      payload: { product: SelectedProduct; quantity: number; personalizations: Personalization[] };
+    }
+  | {
       type: 'RECALC_PERSONALIZATION_PRICING';
       payload: { personalizationId: string; pricing: Personalization['pricing'] };
     }

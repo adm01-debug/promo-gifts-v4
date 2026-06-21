@@ -39,7 +39,7 @@ export function MatchFiltersPanel({
   suppliers,
 }: MatchFiltersPanelProps) {
   const hasActiveFilters = Boolean(
-    filters.categoryId || filters.supplierFilter || filters.onlyInStock,
+    filters.categoryFilter || filters.supplierFilter || filters.onlyInStock,
   );
 
   return (
@@ -55,9 +55,9 @@ export function MatchFiltersPanel({
           <div className="space-y-1">
             <label className="text-[10px] font-medium text-muted-foreground">Categoria</label>
             <Select
-              value={filters.categoryId || ALL}
+              value={filters.categoryFilter || ALL}
               onValueChange={(v) =>
-                setFilters((f) => ({ ...f, categoryId: v === ALL ? undefined : v }))
+                setFilters((f) => ({ ...f, categoryFilter: v === ALL ? undefined : v }))
               }
             >
               <SelectTrigger className="h-8 text-xs">
