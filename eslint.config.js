@@ -425,6 +425,11 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 145: 4 rules (all zero-violation; excluded: no-useless-default-assignment 9v, no-loop-func 7v, no-unsafe-type-assertion 1535v)
+      '@typescript-eslint/return-await': 'error',
+      'jsx-a11y/no-aria-hidden-on-focusable': 'error',
+      '@typescript-eslint/prefer-promise-reject-errors': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
       // Batch 144: 9 rules (all zero-violation)
       'no-empty-static-block': 'error',
       'no-new-native-nonconstructor': 'error',
