@@ -65,7 +65,7 @@ describe('useCategoryDescendants', () => {
     await waitFor(() => expect(result.current.descendantIds.length).toBe(1));
     const before = mockInvoke.mock.calls.length;
     rerender({ ids: ['cat-2', 'cat-1'] }); // mesma chave ordenada
-    await new Promise((r) => {
+    await new Promise<void>((r) => {
       setTimeout(r, 80);
     });
     expect(mockInvoke.mock.calls.length).toBe(before);

@@ -26,6 +26,7 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
+import { getRecencyVariant } from '@/lib/novelty-dates';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
 
@@ -77,7 +78,7 @@ export const NoveltyGridCard = memo(
   }: NoveltyCardProps) => {
     // ISSUE-5 FIX: computar freshness ao renderizar (não do cache) — evita badge
     // "recém-chegado" exibido com dado stale por até 2 min após cruzar 5 dias.
-    const fresh = product.is_highlighted;
+    const fresh = getRecencyVariant(product.detected_at) === 'hot';
 
     // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
     // num swatch troca a foto principal pela imagem da variante selecionada.
@@ -103,10 +104,9 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura MÍNIMA flexível (NÃO fixa, sem max-h, sem overflow-hidden no article):
-          // conteúdo longo + skeleton de preço/estoque pode crescer sem recorte. Altura
-          // fixa/max + overflow-hidden invalidam a medição do virtualizer (measureElement)
-          // e quebram o scroll do módulo /novidades. Paridade com BaseProductGridCard.
+          // min-h garante consistência visual sem clips: o CSS grid stretch
+          // alinha as alturas por linha. h/max-h fixo + overflow-hidden quebravam
+          // o measureElement do virtualizer (altura sempre 400px, scroll errado).
           'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
