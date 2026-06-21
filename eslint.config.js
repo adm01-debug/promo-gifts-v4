@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 150: 5 zero-violation rules (excluded: react/jsx-fragments 0v✓, react/no-access-state-in-setstate 0v✓, react/no-redundant-should-component-update 0v✓ — saved Batch 151; also: no-array-index-key 206v)
+      'jsx-a11y/anchor-is-valid': 'error',
+      'react/no-children-prop': 'error',
+      'react/jsx-boolean-value': 'error',
+      'react/jsx-no-useless-fragment': 'error',
+      'react/self-closing-comp': 'error',
       // Batch 149: 5 zero-violation rules (excluded: jsx-a11y/anchor-is-valid 0v✓, react/no-children-prop 0v✓, react/jsx-boolean-value 0v✓ — saved for Batch 150; also: method-signature-style 50v, no-bitwise 191v, no-continue 111v)
       'prefer-numeric-literals': 'error',
       'symbol-description': 'error',
