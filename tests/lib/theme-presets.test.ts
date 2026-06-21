@@ -508,6 +508,24 @@ describe('§8 Storage — saveThemeConfig + loadThemeConfig (round-trip)', () =>
     expect(loaded.mode).toBe('auto');
     expect(loaded.presetId).toBe('corporate');
   });
+
+  it('saveThemeConfig retorna true quando a gravação tem sucesso', () => {
+    const cfg: ThemeConfig = { presetId: 'corporate', radius: 4, mode: 'light' };
+    expect(saveThemeConfig(cfg)).toBe(true);
+  });
+
+  it('saveThemeConfig retorna false quando localStorage.setItem lança (QuotaExceededError)', () => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => {
+      throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+    };
+    try {
+      const result = saveThemeConfig({ presetId: 'corporate', radius: 4, mode: 'auto' });
+      expect(result).toBe(false);
+    } finally {
+      Storage.prototype.setItem = original;
+    }
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
