@@ -72,6 +72,34 @@ Depois de salvar:
    (botão `Run workflow`).
 3. No Summary do run, o job `Verify Branch Protection is enabled on main`
    deve mostrar **✅ Branch `main` está protegida**.
+4. O job `Verify required checks SSOT matches workflows (+ Branch Protection)`
+   deve mostrar **✓** para todos os itens de `.github/required-checks.json`
+   (e nenhum `::warning::` sobre check ausente no Branch Protection).
+
+## Status check ainda não aparece na lista de busca?
+
+O GitHub só lista um status check como selecionável **depois que ele rodou
+pelo menos uma vez** num PR/commit. Se você acabou de criar o workflow
+`stock-rupture-fuzz` e o nome `Risco de Ruptura — fuzz (800 sims, 10 invariantes)`
+não aparece no autocomplete:
+
+- Abra um PR pequeno que toque `src/lib/inventory/**` (qualquer arquivo serve),
+  **ou**
+- Vá em **Actions → stock-rupture-fuzz → Run workflow** e dispare manualmente.
+
+Após o primeiro run com sucesso/falha, o nome fica disponível para seleção.
+
+## Adicionando novos required checks
+
+A lista canônica vive em [`.github/required-checks.json`](./required-checks.json).
+Para adicionar um novo check:
+
+1. Edite o JSON acrescentando `{ "name": "...", "workflow": "...", "rationale": "..." }`
+   — o `name` precisa ser **idêntico** ao campo `name:` do job no workflow.
+2. Commit. O job `check-required-checks-ssot` do Sentinel valida automaticamente
+   que o `name` existe no workflow indicado (falha o CI se houver drift).
+3. Marque o novo check como required na UI do GitHub conforme tabela acima.
+
 
 ## Teste prático (opcional, mas recomendado)
 
