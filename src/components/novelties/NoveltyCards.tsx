@@ -28,6 +28,7 @@ import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadg
 import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 
 const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -91,6 +92,19 @@ export const NoveltyGridCard = memo(
       return match?.image || product.product_image;
     }, [activeColorName, colors, product.product_image]);
 
+    // Estoque/status da cor selecionada (paridade com a lista/tabela do Catálogo).
+    // Com cor ativa, mostra o estoque DAQUELA cor (soma das variantes, vinda de
+    // useProductsColorsBatch.stockQty); sem cor, mostra o total do produto.
+    const activeColor = useMemo(() => {
+      if (!activeColorName || !colors?.length) return undefined;
+      return colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
+    }, [activeColorName, colors]);
+    const hasColorStock = typeof activeColor?.stockQty === 'number';
+    const displayStockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : product.stock_quantity;
+    const displayStockStatus = hasColorStock
+      ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
+      : product.stock_status;
+
     return (
       <article
         data-testid="novelty-grid-card"
@@ -149,7 +163,7 @@ export const NoveltyGridCard = memo(
             productImageUrl={activeImage}
             productPrice={product.base_price ?? 0}
             productMinQuantity={product.min_quantity || 1}
-            isOutOfStock={product.stock_status === 'out-of-stock'}
+            isOutOfStock={displayStockStatus === 'out-of-stock'}
           />
         )}
 
@@ -271,6 +285,7 @@ export const NoveltyGridCard = memo(
               hideWhenEmpty={false}
               selectedName={activeColorName}
               onSelect={(c) => setActiveColorName(c.name)}
+              onClear={() => setActiveColorName(null)}
             />
           </div>
 
@@ -322,8 +337,8 @@ export const NoveltyGridCard = memo(
                   </span>
                 )}
                 <StockBadge
-                  status={product.stock_status}
-                  quantity={product.stock_quantity}
+                  status={displayStockStatus}
+                  quantity={displayStockQty}
                   showQuantity
                   size="sm"
                 />
@@ -358,6 +373,10 @@ export function NoveltyTableView({
   // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
   const selectedSet: Set<string> = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
 
+  // Seleção de cor por linha (productId → nome da cor). Troca a foto e o estoque
+  // exibidos para a cor escolhida; "Todos" limpa. Estado por id (seguro p/ tabela).
+  const [colorByProduct, setColorByProduct] = useState<Map<string, string>>(new Map());
+
   return (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
@@ -377,6 +396,20 @@ export function NoveltyTableView({
         <TableBody>
           {products.map((product) => {
             const isSelected = selectedSet.has(product.product_id);
+            const rowColors = colorsByProduct?.get(product.product_id);
+            const activeColorName = colorByProduct.get(product.product_id) ?? null;
+            const activeColor =
+              activeColorName && rowColors
+                ? rowColors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase())
+                : undefined;
+            const rowImage = activeColor?.image || product.product_image;
+            const hasColorStock = typeof activeColor?.stockQty === 'number';
+            const rowStockQty = hasColorStock
+              ? (activeColor?.stockQty ?? 0)
+              : (product.stock_quantity ?? 0);
+            const rowStockStatus = hasColorStock
+              ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
+              : product.stock_status;
             return (
               <TableRow
                 key={product.novelty_id}
@@ -425,9 +458,9 @@ export function NoveltyTableView({
                         testId="novelty-table-row-thumb"
                         className="h-full w-full"
                       >
-                        {product.product_image ? (
+                        {rowImage ? (
                           <img
-                            src={product.product_image}
+                            src={rowImage}
                             alt={product.product_name}
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
@@ -473,10 +506,21 @@ export function NoveltyTableView({
                 </TableCell>
                 <TableCell className="px-2 py-1.5">
                   <ProductColorSwatches
-                    colors={colorsByProduct?.get(product.product_id)}
+                    colors={rowColors}
                     max={5}
                     size="sm"
                     hideWhenEmpty={false}
+                    selectedName={activeColorName}
+                    onSelect={(c) =>
+                      setColorByProduct((prev) => new Map(prev).set(product.product_id, c.name))
+                    }
+                    onClear={() =>
+                      setColorByProduct((prev) => {
+                        const next = new Map(prev);
+                        next.delete(product.product_id);
+                        return next;
+                      })
+                    }
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -488,8 +532,8 @@ export function NoveltyTableView({
                 {/* ISSUE-15 FIX: usa StockBadge consistente com ProductListItem */}
                 <TableCell className="px-2 py-1.5 text-right">
                   <StockBadge
-                    status={product.stock_status}
-                    quantity={product.stock_quantity ?? 0}
+                    status={rowStockStatus}
+                    quantity={rowStockQty}
                     showQuantity
                     size="sm"
                   />
