@@ -70,7 +70,10 @@ export function useFavoritesPageState() {
   useUndoStack();
   useLegacyFavoritesMigration();
 
-  const { favorites, clearFavorites, favoriteCount, toggleFavorite } = useFavoritesStore();
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const clearFavorites = useFavoritesStore((s) => s.clearFavorites);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const { lists, createList, updateList, deleteList, generateShareToken, revokeShareToken } =
     useFavoriteLists();
   const { items: trashItems } = useFavoriteTrash();

@@ -16,8 +16,10 @@ export function useCatalogSelection(
   onSelectedCountChange?: (count: number) => void,
 ) {
   const navigate = useNavigate();
-  const favStore = useFavoritesStore();
-  const compStore = useComparisonStore();
+  const favIsFavorite = useFavoritesStore((s) => s.isFavorite);
+  const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+  const compIsInCompare = useComparisonStore((s) => s.isInCompare);
+  const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
@@ -31,9 +33,9 @@ export function useCatalogSelection(
     if (!selectionMode) setSelectedIds(new Set());
   }, [selectionMode]);
 
-  // BUG-CS-12: Stale ID removal must not drop products that were already loaded 
+  // BUG-CS-12: Stale ID removal must not drop products that were already loaded
   // and selected just because they are currently off-screen in the virtualized grid.
-  // We only remove IDs if they are confirmed as no longer available in the whole 
+  // We only remove IDs if they are confirmed as no longer available in the whole
   // catalog data or if selection mode was exited (handled above).
   //
   // Note: paginatedProducts here corresponds to the current viewport slice.
@@ -114,8 +116,8 @@ export function useCatalogSelection(
       } else if (wizardMode === 'favorite') {
         let added = 0;
         selections.forEach((s) => {
-          if (!favStore.isFavorite(s.product.id)) {
-            favStore.addFavorite(
+          if (!favIsFavorite(s.product.id)) {
+            favAddFavorite(
               s.product.id,
               s.variant
                 ? {
@@ -138,8 +140,8 @@ export function useCatalogSelection(
         const toAdd = selections.slice(0, 4);
         let added = 0;
         toAdd.forEach((s) => {
-          if (!compStore.isInCompare(s.product.id)) {
-            compStore.addToCompare(
+          if (!compIsInCompare(s.product.id)) {
+            compAddToCompare(
               s.product.id,
               s.variant
                 ? {
@@ -190,15 +192,23 @@ export function useCatalogSelection(
         clearSelection();
       }
     },
-    [wizardMode, navigate, clearSelection, favStore, compStore],
+    [
+      wizardMode,
+      navigate,
+      clearSelection,
+      favIsFavorite,
+      favAddFavorite,
+      compIsInCompare,
+      compAddToCompare,
+    ],
   );
 
-  const bulkCartProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
-    return paginatedProducts.filter((p) => ids.includes(p.id));
-  }, [selectedIds, paginatedProducts]);
+  const bulkCartProducts = useMemo(
+    () => paginatedProducts.filter((p) => selectedIds.has(p.id)),
+    [selectedIds, paginatedProducts],
+  );
 
-  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedId = selectedIds.size > 0 ? (selectedIds.values().next().value ?? '') : '';
   const firstSelectedProduct = paginatedProducts.find((p) => p.id === firstSelectedId);
 
   const selectedTotalValue = useMemo(() => {

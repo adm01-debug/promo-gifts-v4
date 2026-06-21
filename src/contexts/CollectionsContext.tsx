@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, type ReactNode, useCallback, useMemo } from 'react';
 import {
   useCollections,
   type Collection,
@@ -62,11 +62,13 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
     [collectionsHook.getCollectionProductsFromMap, getProductsByIds],
   );
 
-  return (
-    <CollectionsContext.Provider value={{ ...collectionsHook, getCollectionProducts }}>
-      {children}
-    </CollectionsContext.Provider>
+  const value = useMemo(
+    () => ({ ...collectionsHook, getCollectionProducts }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [collectionsHook, getCollectionProducts],
   );
+
+  return <CollectionsContext.Provider value={value}>{children}</CollectionsContext.Provider>;
 }
 
 export function useCollectionsContext() {

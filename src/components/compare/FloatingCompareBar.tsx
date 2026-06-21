@@ -10,7 +10,10 @@ import { cn } from '@/lib/utils';
 
 export const FloatingCompareBar = React.forwardRef<HTMLDivElement>((_props, _ref) => {
   const navigate = useNavigate();
-  const { compareItems, removeByIndex, clearCompare, compareCount } = useComparisonStore();
+  const compareItems = useComparisonStore((s) => s.compareItems);
+  const removeByIndex = useComparisonStore((s) => s.removeByIndex);
+  const clearCompare = useComparisonStore((s) => s.clearCompare);
+  const compareCount = useComparisonStore((s) => s.compareCount);
   const ctx = useProductsContextSafe();
   const getProductsByIds = ctx?.getProductsByIds;
   const cacheSignal = ctx?.products;

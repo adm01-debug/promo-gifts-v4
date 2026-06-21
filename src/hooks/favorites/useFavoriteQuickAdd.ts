@@ -23,7 +23,8 @@ export function useFavoriteQuickAdd() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { lists, defaultList, createList, deleteList } = useFavoriteLists();
-  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
 
   // Index global de membership: produto X está em quais listas?
   const { data: membership = new Map<string, Set<string>>() } = useQuery({

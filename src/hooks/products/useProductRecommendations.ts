@@ -202,7 +202,8 @@ export function useProductRecommendations(productId?: string, productSku?: strin
         const { fetchPromobrindProducts, getProductPrice, getProductImageUrl } =
           await import('@/lib/external-db');
         const productsData = await fetchPromobrindProducts({ limit: 500 });
-        const matchedProducts = productsData.filter((p) => skus.includes(p.sku));
+        const skuSet = new Set(skus);
+        const matchedProducts = productsData.filter((p) => skuSet.has(p.sku));
 
         return matchedProducts.map((p) => {
           const imageUrl = getProductImageUrl(p);

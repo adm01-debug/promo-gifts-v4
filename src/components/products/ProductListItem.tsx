@@ -138,8 +138,8 @@ export const ProductListItem = memo(
         prevListFilterRef.current = listFilterKey;
       }
     }, [listFilterKey]);
-    const favStore = useFavoritesStore();
-    const compStore = useComparisonStore();
+    const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+    const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
     const handleStatusClick = useCallback(
       (type: string, _value?: string | number) => {
@@ -186,12 +186,12 @@ export const ProductListItem = memo(
           : undefined;
 
         if (variantPickerMode === 'favorite') {
-          favStore.addFavorite(product.id, variantInfo);
+          favAddFavorite(product.id, variantInfo);
           toast.success(
             `"${product.name}" favoritado${variant?.color_name ? ` — ${variant.color_name}` : ''}`,
           );
         } else if (variantPickerMode === 'compare') {
-          const result = compStore.addToCompare(product.id, variantInfo);
+          const result = compAddToCompare(product.id, variantInfo);
           if (!result) {
             showErrorToast({ title: 'Limite de 4 produtos para comparação atingido' });
           } else {
@@ -225,7 +225,7 @@ export const ProductListItem = memo(
           setShareDialogOpen(true);
         }
       },
-      [variantPickerMode, product, favStore, compStore, carts],
+      [variantPickerMode, product, favAddFavorite, compAddToCompare, carts],
     );
 
     const formatPrice = (price: number) =>

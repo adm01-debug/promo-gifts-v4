@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 const CURRENT_SLOT_KEY = 'current'; // marker no campo client_name para o slot "atual"
 
 export function useComparisonSync() {
-  const { compareItems } = useComparisonStore();
+  const compareItems = useComparisonStore((s) => s.compareItems);
   const hydratedRef = useRef(false);
   const userIdRef = useRef<string | null>(null);
 

@@ -289,13 +289,12 @@ export function NoveltyProductGrid() {
   if (error) logger.error('Erro ao carregar novidades:', error);
 
   // Favorites & Compare stores for ProductListItem integration
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const {
-    isInCompare,
-    addToCompare,
-    removeFromCompare,
-    canAddMore: canAddToCompare,
-  } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const removeFromCompare = useComparisonStore((s) => s.removeFromCompare);
+  const canAddToCompare = useComparisonStore((s) => s.canAddMore);
   const onToggleCompare = useCallback(
     (productId: string) => {
       if (isInCompare(productId)) {
