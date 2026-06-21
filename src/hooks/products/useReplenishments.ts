@@ -230,12 +230,11 @@ export interface UseReplenishmentsOptions {
 export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions = {}) {
   const { limit = FETCH_ALL_LIMIT, onlyHighlighted = false } = options;
 
-  return useQuery<ReplenishmentWithDetails[]>({
-    queryKey: ['replenishments-details', limit, onlyHighlighted],
-    queryFn: async () => {
-      const items = await fetchReposicao(limit);
-      return onlyHighlighted ? items.filter((n) => n.is_highlighted) : items;
-    },
+  return useQuery<ReplenishmentWithDetails[], Error, ReplenishmentWithDetails[]>({
+    queryKey: ['replenishments-details', limit],
+    queryFn: async () => fetchReposicao(limit),
+    // filter in select so toggling onlyHighlighted reuses cached data without re-fetch
+    select: (items) => (onlyHighlighted ? items.filter((n) => n.is_highlighted) : items),
     staleTime: 2 * 60 * 1000,
     retry: 2,
   });

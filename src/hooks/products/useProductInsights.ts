@@ -86,7 +86,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
 
           const clientSegmentMap: Record<string, string> = {};
           (clients || []).forEach((c: { id?: string; ramo_atividade?: string }) => {
-            if (c.ramo_atividade) clientSegmentMap[c.id!] = c.ramo_atividade;
+            if (c.id && c.ramo_atividade) clientSegmentMap[c.id] = c.ramo_atividade;
           });
 
           const segmentCounts: Record<string, number> = {};

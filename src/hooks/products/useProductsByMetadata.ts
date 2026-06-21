@@ -87,6 +87,10 @@ export function useProductsByMetadata({
   const fetchProductIds = useCallback(async () => {
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
+      // Increment token to invalidate any in-flight request (same pattern as
+      // useProductsByColor / useProductsByCategory BUG-002 fix).
+      ++fetchTokenRef.current;
+      setIsLoading(false);
       setProductIds(new Set());
       lastFetchedKey.current = '';
       return;
