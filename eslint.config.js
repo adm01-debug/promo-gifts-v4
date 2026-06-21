@@ -584,7 +584,6 @@ export default [
       // Batch 120: 1 zero-violation rule
       '@typescript-eslint/no-implied-eval': 'error',
       // Batch 121 audit: all candidates already active in earlier batches — no net-new rules
-      '@typescript-eslint/non-nullable-type-assertion-style': 'error',
     },
     settings: {
       react: { version: 'detect' },
