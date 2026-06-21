@@ -418,7 +418,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
-      // Batch 182: 5 zero-violation rules (saved: prefer-return-this-type 0v✓, prefer-as-const 0v✓, class-literal-property-style 0v✓, ban-tslint-comment 0v✓, no-shadow 0v✓ — Batch 183+)
+      // Batch 183: 5 zero-violation rules (saved from probe 182A)
+      '@typescript-eslint/prefer-return-this-type': 'error',
+      '@typescript-eslint/prefer-as-const': 'error',
+      '@typescript-eslint/class-literal-property-style': 'error',
+      '@typescript-eslint/ban-tslint-comment': 'error',
+      '@typescript-eslint/no-shadow': 'error',
+      // Batch 182: 5 zero-violation rules (excluded: promise-function-async 504v)
       '@typescript-eslint/prefer-namespace-keyword': 'error',
       '@typescript-eslint/triple-slash-reference': 'error',
       '@typescript-eslint/no-this-alias': 'error',
