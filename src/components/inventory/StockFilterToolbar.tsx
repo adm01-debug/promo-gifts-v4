@@ -517,7 +517,8 @@ export function StockFilterToolbar({
               <Button
                 variant="outline"
                 size="default"
-                data-testid="rupture-risk-toggle-button"
+                data-testid="rupture-horizon-control"
+                data-testid-alias="rupture-risk-toggle-button"
                 aria-pressed={isRuptureRiskActive}
                 aria-label={
                   isRuptureRiskActive
