@@ -639,6 +639,15 @@ export function StockFilterToolbar({
           </Button>
         )}
 
+        {/* Slot à direita da toolbar — recebe o badge "Atualizado há…" via
+            portal do StockDashboard (#stock-toolbar-slot). `ml-auto` empurra
+            para o canto direito da barra. */}
+        <div
+          id="stock-toolbar-slot"
+          data-testid="stock-toolbar-slot"
+          className="ml-auto flex items-center"
+        />
+
       </div>
 
       {/* Status chips removed — StatCards above handle status filtering */}

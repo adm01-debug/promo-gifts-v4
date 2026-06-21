@@ -66,11 +66,25 @@ function formatRelativeTime(date: Date, now: number): string {
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
 }
 
-/** Portal que projeta controles de cabeçalho no slot `#stock-header-slot` da página. */
+/**
+ * Portal que projeta controles no slot à direita da toolbar de Estoque
+ * (`#stock-toolbar-slot`). Se o slot da toolbar ainda não existir no DOM,
+ * faz fallback para o `#stock-header-slot` (compat com layouts antigos).
+ * Reavalia o alvo quando a árvore muda (toolbar é remontada em filtros).
+ */
 function HeaderSlotPortal({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    setSlot(document.getElementById('stock-header-slot'));
+    const resolve = () =>
+      document.getElementById('stock-toolbar-slot') ??
+      document.getElementById('stock-header-slot');
+    setSlot(resolve());
+    const mo = new MutationObserver(() => {
+      const next = resolve();
+      setSlot((prev) => (prev === next ? prev : next));
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
   }, []);
   if (!slot) return null;
   return createPortal(children, slot);
