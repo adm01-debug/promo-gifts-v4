@@ -1126,6 +1126,9 @@ export default [
       'react/jsx-closing-tag-location': 'error',
       'jsx-a11y/interactive-supports-focus': 'error',
       '@typescript-eslint/no-invalid-void-type': ['error', { allowInGenericTypeArguments: true }],
+      // Batch 130b: @typescript-eslint/require-await — 2026-06-21
+      // Excluido dos Batches 125/130/146/188 com 119 violacoes historicas.
+      '@typescript-eslint/require-await': 'error',
       // Batch 129: 5 rules (1 zero-violation + 4 with manual fixes — removed: return-await 6v, no-onchange 6v, no-redeclare 8v, no-object-type-as-default-prop 23v, accessible-emoji 88v, no-empty-function 112v, prefer-tag-over-role 178v)
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-var-requires': 'error',
