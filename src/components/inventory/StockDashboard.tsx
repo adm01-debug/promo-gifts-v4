@@ -25,8 +25,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
-import { StockRiskHero } from './risk/StockRiskHero';
-import { RupturePanelEma } from './risk/RupturePanelEma';
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
   import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
@@ -313,9 +311,6 @@ export function StockDashboard() {
         </Suspense>
       )}
 
-      {/* Onda 1 — Hero preditivo: chips de nível + projeção 7/15/30d + saúde ETL.
-          Render condicional via flag `useEmaRupture` (componente retorna null se off). */}
-      <StockRiskHero />
 
       {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
       <Card>
@@ -513,9 +508,6 @@ export function StockDashboard() {
         </div>
       )}
 
-      {/* Onda 1 — Painel preditivo por fornecedor (KPIs EMA + tabela filtrada).
-          Componente próprio aplica o gate `useEmaRupture` e renderiza opt-in se off. */}
-      <RupturePanelEma />
 
       {/* Stock Table */}
       <Card>
