@@ -146,7 +146,8 @@ describe('BUG-NEW-02 — Realtime subscription', () => {
     await new Promise((r) => {
       setTimeout(r, 50);
     });
-    expect(supabase.channel).toHaveBeenCalledWith('quotes-realtime');
+    // Canal agora é único por subscrição: 'quotes-realtime-{userId}-{random}-{ts}'
+    expect(supabase.channel).toHaveBeenCalledWith(expect.stringMatching(/^quotes-realtime/));
   });
 
   it('cancela channel ao desmontar (cleanup BUG-NEW-02)', async () => {
