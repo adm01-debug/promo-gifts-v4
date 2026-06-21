@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 179: 5 zero-violation rules (saved: @typescript-eslint/no-unnecessary-boolean-literal-compare 0v✓, @typescript-eslint/unified-signatures 0v✓ — Batch 180)
+      '@typescript-eslint/prefer-includes': 'error',
+      '@typescript-eslint/prefer-regexp-exec': 'error',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'error',
+      '@typescript-eslint/prefer-ts-expect-error': 'error',
+      '@typescript-eslint/require-array-sort-compare': 'error',
       // Batch 178: 5 zero-violation rules (saved: @typescript-eslint/prefer-includes 0v✓, @typescript-eslint/prefer-regexp-exec 0v✓ — Batch 179)
       '@typescript-eslint/no-unnecessary-qualifier': 'error',
       '@typescript-eslint/no-unnecessary-template-expression': 'error',
