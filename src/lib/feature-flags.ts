@@ -31,7 +31,9 @@ export type FeatureFlag =
   | 'magic_up'
   | 'mfa'
   | 'presentation_mode'
+  | 'useEmaRupture'
   | 'voice_commands';
+
 
 interface FlagConfig {
   /** Default enabled state */
