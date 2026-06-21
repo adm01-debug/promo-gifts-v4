@@ -208,12 +208,12 @@ export function ArtFileUpload({
         />
         {isUploading ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
             <p className="text-sm">Enviando…</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <Upload className="h-6 w-6" />
+            <Upload className="h-6 w-6" aria-hidden="true" />
             <p className="text-sm font-medium">Arraste arquivos vetoriais ou clique</p>
             <p className="text-xs">
               {ACCEPTED_EXTENSIONS.join(', ')} • máx {MAX_SIZE_MB}MB
@@ -226,7 +226,7 @@ export function ArtFileUpload({
         <div className="space-y-2">
           {attachments.map((att) => (
             <Card key={att.id} className="flex items-center gap-3 p-3">
-              <FileText className="h-5 w-5 shrink-0 text-primary" />
+              <FileText className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{att.original_name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -240,7 +240,7 @@ export function ArtFileUpload({
                 onClick={() => handleDownload(att)}
                 aria-label={`Baixar arquivo ${att.original_name}`}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
               </Button>
               <Button
                 size="icon"
@@ -249,7 +249,7 @@ export function ArtFileUpload({
                 aria-label={`Remover arquivo ${att.original_name}`}
                 className="text-destructive hover:text-destructive"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Card>
           ))}

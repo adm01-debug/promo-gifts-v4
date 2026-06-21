@@ -174,7 +174,7 @@ export function MockupHistoryPanel({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" />
+              <History className="h-5 w-5 text-primary" aria-hidden="true" />
               Histórico de Mockups
             </CardTitle>
             <CardDescription>Mockups gerados anteriormente</CardDescription>
@@ -188,7 +188,7 @@ export function MockupHistoryPanel({
                   onClick={() => setShowCompare(true)}
                   disabled={selectedForCompare.size < 2}
                 >
-                  <Columns2 className="mr-1 h-4 w-4" /> Comparar
+                  <Columns2 className="mr-1 h-4 w-4" aria-hidden="true" /> Comparar
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setSelectedForCompare(new Set())}>
                   <X className="h-4 w-4" />
@@ -276,7 +276,7 @@ export function MockupHistoryPanel({
               htmlFor="filter-date-range"
               className="flex items-center gap-1 text-xs text-muted-foreground"
             >
-              <Calendar className="h-3 w-3" /> Período
+              <Calendar className="h-3 w-3" aria-hidden="true" /> Período
             </Label>
             <Select
               value={filterDateRange}
@@ -305,7 +305,7 @@ export function MockupHistoryPanel({
         {hasFilters && (
           <div className="flex justify-end">
             <Button variant="ghost" size="sm" onClick={clearFilters}>
-              <RefreshCw className="mr-1 h-4 w-4" /> Limpar filtros
+              <RefreshCw className="mr-1 h-4 w-4" aria-hidden="true" /> Limpar filtros
             </Button>
           </div>
         )}
@@ -316,7 +316,7 @@ export function MockupHistoryPanel({
         ) : mockupHistory.length === 0 ? (
           <div className="animate-fade-in py-16 text-center">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
-              <Wand2 className="h-10 w-10 text-primary/60" />
+              <Wand2 className="h-10 w-10 text-primary/60" aria-hidden="true" />
             </div>
             <h3 className="mb-2 font-display text-lg font-semibold text-foreground">
               Nenhum mockup gerado ainda
@@ -328,12 +328,12 @@ export function MockupHistoryPanel({
         ) : filteredMockups.length === 0 ? (
           <div className="animate-fade-in py-16 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Search className="h-8 w-8 text-muted-foreground/50" />
+              <Search className="h-8 w-8 text-muted-foreground/50" aria-hidden="true" />
             </div>
             <h3 className="mb-2 font-display text-lg font-semibold">Nenhum resultado</h3>
             <p className="mb-4 text-muted-foreground">Ajuste os filtros de busca.</p>
             <Button variant="outline" size="sm" onClick={clearFilters}>
-              <RefreshCw className="mr-2 h-4 w-4" /> Limpar filtros
+              <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" /> Limpar filtros
             </Button>
           </div>
         ) : (
@@ -403,7 +403,7 @@ export function MockupHistoryPanel({
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -433,7 +433,7 @@ export function MockupHistoryPanel({
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <Button
                   variant="outline"
@@ -535,7 +535,7 @@ const MockupGridCard = memo(
                 variant="secondary"
                 className="bg-background/80 px-1 py-0 text-[9px] backdrop-blur-sm"
               >
-                <FileImage className="mr-0.5 h-2.5 w-2.5" />
+                <FileImage className="mr-0.5 h-2.5 w-2.5" aria-hidden="true" />
                 Layout
               </Badge>
             </div>
@@ -566,18 +566,18 @@ const MockupGridCard = memo(
             </Badge>
             {mockup.location_name && (
               <Badge variant="outline" className="gap-0.5 px-1.5 py-0 text-[10px]">
-                <MapPin className="h-2.5 w-2.5" />
+                <MapPin className="h-2.5 w-2.5" aria-hidden="true" />
                 {mockup.location_name}
               </Badge>
             )}
           </div>
           {(mockup.logo_width_cm || mockup.logo_height_cm) && (
             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Ruler className="h-2.5 w-2.5" />
+              <Ruler className="h-2.5 w-2.5" aria-hidden="true" />
               {mockup.logo_width_cm?.toFixed(1)}×{mockup.logo_height_cm?.toFixed(1)} cm
               {mockup.colors_count && (
                 <span className="ml-1 flex items-center gap-0.5">
-                  <Palette className="h-2.5 w-2.5" />
+                  <Palette className="h-2.5 w-2.5" aria-hidden="true" />
                   {mockup.colors_count} cor{mockup.colors_count > 1 ? 'es' : ''}
                 </span>
               )}
@@ -587,7 +587,7 @@ const MockupGridCard = memo(
             <p className="truncate text-xs font-medium text-primary">👤 {mockup.client_name}</p>
           )}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
+            <Clock className="h-3 w-3" aria-hidden="true" />
             {safeFormatDistance(mockup.created_at)}
           </div>
         </div>
@@ -601,7 +601,7 @@ const MockupGridCard = memo(
                 className="h-8 w-8 shadow-md"
                 onClick={() => onLoadFromHistory(mockup)}
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Regenerar</TooltipContent>
@@ -621,7 +621,7 @@ const MockupGridCard = memo(
                 className="h-8 w-8 shadow-md"
                 onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Baixar</TooltipContent>
@@ -636,7 +636,7 @@ const MockupGridCard = memo(
                 className="h-8 w-8 shadow-md"
                 onClick={() => onDelete(mockup.id)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Excluir</TooltipContent>
@@ -712,26 +712,26 @@ const MockupListRow = memo(
             </Badge>
             {mockup.location_name && (
               <Badge variant="outline" className="gap-0.5 px-1.5 py-0 text-[10px]">
-                <MapPin className="h-2.5 w-2.5" />
+                <MapPin className="h-2.5 w-2.5" aria-hidden="true" />
                 {mockup.location_name}
               </Badge>
             )}
             {(mockup.logo_width_cm || mockup.logo_height_cm) && (
               <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <Ruler className="h-2.5 w-2.5" />
+                <Ruler className="h-2.5 w-2.5" aria-hidden="true" />
                 {mockup.logo_width_cm?.toFixed(1)}×{mockup.logo_height_cm?.toFixed(1)} cm
               </span>
             )}
             {mockup.colors_count && (
               <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <Palette className="h-2.5 w-2.5" />
+                <Palette className="h-2.5 w-2.5" aria-hidden="true" />
                 {mockup.colors_count} cor{mockup.colors_count > 1 ? 'es' : ''}
               </span>
             )}
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+              <Clock className="h-3 w-3" aria-hidden="true" />
               {safeFormatDistance(mockup.created_at)}
             </span>
           </div>
@@ -746,7 +746,7 @@ const MockupListRow = memo(
                 className="h-8 w-8"
                 onClick={() => onLoadFromHistory(mockup)}
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Regenerar</TooltipContent>
@@ -766,7 +766,7 @@ const MockupListRow = memo(
                 className="h-8 w-8"
                 onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Baixar</TooltipContent>
@@ -781,7 +781,7 @@ const MockupListRow = memo(
                 className="h-8 w-8"
                 onClick={() => onDelete(mockup.id)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Excluir</TooltipContent>

@@ -1534,3 +1534,80 @@ describe('Analise estatica — MockupClientSelector.tsx (role alert + chip keybo
     expect(src).toContain("e.key === 'Enter' || e.key === ' '");
   });
 });
+
+describe('Analise estatica — MockupHistoryPanel.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  it('icone History no cabecalho tem aria-hidden', () => {
+    expect(src).toContain('<History className="h-5 w-5 text-primary" aria-hidden="true"');
+  });
+  it('icone Columns2 no botao Comparar tem aria-hidden', () => {
+    expect(src).toContain('<Columns2 className="mr-1 h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Calendar no Label de periodo tem aria-hidden', () => {
+    expect(src).toContain('<Calendar className="h-3 w-3" aria-hidden="true"');
+  });
+  it('icone RefreshCw nos botoes Limpar filtros tem aria-hidden', () => {
+    expect(src).toContain('<RefreshCw className="mr-1 h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Wand2 no estado vazio tem aria-hidden', () => {
+    expect(src).toContain('<Wand2 className="h-10 w-10 text-primary/60" aria-hidden="true"');
+  });
+  it('icone Search no estado sem resultados tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Search className="h-8 w-8 text-muted-foreground/50" aria-hidden="true"',
+    );
+  });
+  it('icone MapPin nos badges de localizacao tem aria-hidden', () => {
+    expect(src).toContain('<MapPin className="h-2.5 w-2.5" aria-hidden="true"');
+  });
+  it('icone Clock nas informacoes de tempo tem aria-hidden', () => {
+    expect(src).toContain('<Clock className="h-3 w-3" aria-hidden="true"');
+  });
+  it('icone ChevronLeft da paginacao tem aria-hidden', () => {
+    expect(src).toContain('<ChevronLeft className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone ChevronRight da paginacao tem aria-hidden', () => {
+    expect(src).toContain('<ChevronRight className="h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — ShareMenu.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ShareMenu.tsx');
+  });
+
+  it('icone Share2 no botao trigger tem aria-hidden', () => {
+    expect(src).toContain('<Share2 className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Link2 no item Copiar link tem aria-hidden', () => {
+    expect(src).toContain('<Link2 className="mr-2 h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Download no item Download PNG tem aria-hidden', () => {
+    expect(src).toContain('<Download className="mr-2 h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — ArtFileUpload.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  it('icone Upload na zona de drop tem aria-hidden', () => {
+    expect(src).toContain('<Upload className="h-6 w-6" aria-hidden="true"');
+  });
+  it('icone FileText no item de arquivo tem aria-hidden', () => {
+    expect(src).toContain('<FileText className="h-5 w-5 shrink-0 text-primary" aria-hidden="true"');
+  });
+  it('icone Download no botao de download tem aria-hidden', () => {
+    expect(src).toContain('<Download className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Trash2 no botao de remover tem aria-hidden', () => {
+    expect(src).toContain('<Trash2 className="h-4 w-4" aria-hidden="true"');
+  });
+});
