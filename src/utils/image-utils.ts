@@ -319,7 +319,7 @@ export const GALLERY_TYPES: ImageTypeCode[] = [
 ];
 
 /** Tipos técnicos — documentação/embalagem, não aparecem na galeria */
-export const TECHNICAL_IMAGE_TYPES: Set<string> = new Set([
+export const TECHNICAL_IMAGE_TYPES = new Set<string>([
   'box',
   'pouch',
   'location',

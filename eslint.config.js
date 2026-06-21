@@ -605,6 +605,16 @@ export default [
       '@typescript-eslint/return-await': 'error',
       // Batch 127: 13 rules — 15 auto-fixed (no-unnecessary-type-arguments) + 12 zero-violation rules
       '@typescript-eslint/no-unnecessary-type-arguments': 'error',
+      // Batch 128: 9 rules — small-count violations fixed before enabling
+      '@typescript-eslint/no-duplicate-type-constituents': 'error',
+      '@typescript-eslint/no-unsafe-enum-comparison': 'error',
+      '@typescript-eslint/prefer-function-type': 'error',
+      '@typescript-eslint/prefer-for-of': 'error',
+      '@typescript-eslint/consistent-generic-constructors': 'error',
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
+      '@typescript-eslint/no-useless-default-assignment': 'error',
+      '@typescript-eslint/only-throw-error': 'error',
+      '@typescript-eslint/no-loop-func': 'error',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
       '@typescript-eslint/no-confusing-non-null-assertion': 'error',
       '@typescript-eslint/no-meaningless-void-operator': 'error',

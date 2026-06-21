@@ -59,6 +59,8 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       }
     }
 
-    throw lastError;
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(String(lastError ?? 'lazyWithRetry: all attempts failed'));
   });
 }

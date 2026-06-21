@@ -56,7 +56,7 @@ export function formatFullPtBr(iso: string): string {
 export function buildUpdatedTooltip(
   updatedAt: string | null | undefined,
   updatedByEmail: string | null | undefined,
-  updatedBy?: string | null | undefined,
+  updatedBy?: string | null,
 ): string | undefined {
   if (!updatedAt) return undefined;
 

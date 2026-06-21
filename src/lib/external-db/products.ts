@@ -185,8 +185,9 @@ export async function fetchPromobrindProducts(options?: {
           logger.warn(
             `[external-db] Timeout at offset=${offset}, retrying (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})...`,
           );
+          const retryDelay1 = 1000 * consecutiveErrors;
           await new Promise((r) => {
-            setTimeout(r, 1000 * consecutiveErrors);
+            setTimeout(r, retryDelay1);
           });
           continue;
         }
@@ -213,8 +214,9 @@ export async function fetchPromobrindProducts(options?: {
               );
               break;
             }
+            const retryDelay2 = 1000 * consecutiveErrors;
             await new Promise((r) => {
-              setTimeout(r, 1000 * consecutiveErrors);
+              setTimeout(r, retryDelay2);
             });
             continue;
           }

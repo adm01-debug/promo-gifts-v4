@@ -246,7 +246,8 @@ export default function TrendsPage() {
         buildQ('product_views', sincePrevious),
         buildQ('search_analytics', sincePrevious),
       ]);
-      if (ve || se) throw ve || se;
+      const trendErr = ve || se;
+      if (trendErr) throw new Error(trendErr.message, { cause: trendErr });
 
       // Buckets atual + anterior (mesmo número de dias)
       const cur = new Map<string, { date: string; views: number; searches: number }>();
