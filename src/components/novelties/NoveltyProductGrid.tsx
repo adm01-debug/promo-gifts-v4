@@ -537,25 +537,59 @@ export function NoveltyProductGrid() {
     }
 
     return (
-      <VirtualizedNoveltyGrid
-        products={paginatedProducts}
-        gridColumns={effectiveCols}
-        selectionMode={selectionMode}
-        selectedIds={sel.selectedIds}
-        onToggleSelect={sel.toggleSelect}
-        onProductClick={handleProductClick}
-        colorsByProduct={colorsByProduct}
-        hasMore={hasMore}
-        isLoadingMore={false}
-        onLoadMore={handleLoadMore}
-        scrollToTopToken={scrollToken}
-        onStatusClick={(type) => {
-          if (type === 'novelty') return;
-          if (type === 'promotion') navigate('/filtros?onSale=1');
-          if (type === 'featured') navigate('/filtros?featured=1');
-          if (type === 'kit') navigate('/filtros?isKit=1');
-        }}
-      />
+      <div
+        ref={gridScrollRef}
+        data-testid="novelty-grid-scroll"
+        className="overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg pr-1 [scrollbar-gutter:stable]"
+        style={{ height: gridScrollHeight }}
+      >
+        <VirtualizedNoveltyGrid
+          products={paginatedProducts}
+          gridColumns={effectiveCols}
+          selectionMode={selectionMode}
+          selectedIds={sel.selectedIds}
+          onToggleSelect={sel.toggleSelect}
+          onProductClick={handleProductClick}
+          colorsByProduct={colorsByProduct}
+          hasMore={hasMore}
+          isLoadingMore={false}
+          onLoadMore={handleLoadMore}
+          scrollToTopToken={scrollToken}
+          scrollElementRef={gridScrollRef}
+          onStatusClick={(type) => {
+            if (type === 'novelty') return;
+            if (type === 'promotion') navigate('/filtros?onSale=1');
+            if (type === 'featured') navigate('/filtros?featured=1');
+            if (type === 'kit') navigate('/filtros?isKit=1');
+          }}
+        />
+
+        {hasMore && (
+          <div
+            data-testid="novelty-infinite-loader"
+            aria-live="polite"
+            aria-busy={isFetching}
+            className="space-y-3 py-4"
+          >
+            <div
+              className={cn(
+                'grid',
+                `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
+              )}
+            >
+              {Array.from({ length: Math.min(gridColumns * 2, 12) }).map((_, i) => (
+                <NoveltyCardSkeleton key={`load-more-${i}`} />
+              ))}
+            </div>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {isFetching
+                ? 'Atualizando novidades...'
+                : `Carregando mais ${Math.min(pageSize, filteredProducts.length - visibleCount)} de ${filteredProducts.length - visibleCount}`}
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
