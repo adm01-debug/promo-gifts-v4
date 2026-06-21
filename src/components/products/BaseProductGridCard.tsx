@@ -224,11 +224,19 @@ export const BaseProductGridCard = memo(
 
           {/* 5 — Bolinhas de cores */}
           <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
+            {/*
+             * NÃO usar `wrap` aqui. Este card (Reposição) tem footer extra
+             * (label "Saídas 90d" + sparkline) que NÃO existe em Novidades.
+             * Com `wrap`, produtos multicor geram 2–3 linhas de bolinhas e o
+             * conteúdo ultrapassa o piso min-h-[420px], deixando os cards do
+             * grid com alturas diferentes. Modo single-row + chip "+N" mantém
+             * a linha de cores com altura FIXA, garantindo cards uniformes.
+             * (Regressão reintroduzida pelo commit 876113a80 — wrap removido.)
+             */}
             <ProductColorSwatches
               colors={colors}
               max={5}
               size="sm"
-              wrap
               hideWhenEmpty={false}
               selectedName={activeColorName}
               onSelect={(c) => setActiveColorName(c.name)}

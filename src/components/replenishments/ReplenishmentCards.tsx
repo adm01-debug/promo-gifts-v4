@@ -123,7 +123,16 @@ export const ReplenishmentGridCard = memo(
                 Saídas 90d
               </span>
             </div>
-            <ProductSparkline productId={product.product_id} />
+            {/*
+             * Slot de altura FIXA (h-7 = 28px, igual ao svg do sparkline).
+             * ProductSparkline retorna null quando não há dados suficientes;
+             * sem reserva, cards sem dados ficariam ~28px mais baixos que os
+             * com sparkline. Reservar a altura aqui garante uniformidade total
+             * dos cards do grid, independente da presença de série histórica.
+             */}
+            <div className="h-7">
+              <ProductSparkline productId={product.product_id} />
+            </div>
           </div>
         )}
       />
