@@ -35,6 +35,11 @@ const FutureStockModal = lazyWithRetry(() =>
 const PackagingModal = lazyWithRetry(() =>
   import('@/components/products/PackagingModal').then((m) => ({ default: m.PackagingModal })),
 );
+const ProductEngravingSection = lazyWithRetry(() =>
+  import('@/components/products/ProductEngravingSection').then((m) => ({
+    default: m.ProductEngravingSection,
+  })),
+);
 
 import {
   useProduct,
@@ -360,6 +365,17 @@ export default function ProductDetail() {
           isLoadingNiches={isLoading}
           hasErrorNiches={isError}
         />
+
+        <Suspense fallback={null}>
+          <ProductEngravingSection
+            productId={product.id}
+            productName={product.name}
+            productSku={product.sku}
+            productPrice={product.price ?? 0}
+            productImageUrl={product.images?.[0]}
+            categoryName={product.category?.name}
+          />
+        </Suspense>
 
         <div className="border-t border-border/60 pt-6 xl:pt-8">
           <Suspense
