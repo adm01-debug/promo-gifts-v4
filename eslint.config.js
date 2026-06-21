@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 154: 5 zero-violation rules (excluded: jsx-a11y/heading-has-content 0v✓ — saved Batch 155; also: prefer-tag-over-role 177v)
+      'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error',
+      'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error',
+      'jsx-a11y/img-redundant-alt': 'error',
+      'jsx-a11y/no-redundant-roles': 'error',
+      'jsx-a11y/interactive-supports-focus': 'error',
       // Batch 153: 5 zero-violation rules (excluded: jsx-a11y/no-interactive-element-to-noninteractive-role 0v✓ — saved Batch 154; also: jsx-handler-names 204v, jsx-no-bind 3666v, no-noninteractive-element-interactions 55v)
       '@typescript-eslint/no-unsafe-declaration-merging': 'error',
       '@typescript-eslint/no-mixed-enums': 'error',
