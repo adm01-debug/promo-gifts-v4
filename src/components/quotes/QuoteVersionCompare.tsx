@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
@@ -15,7 +17,7 @@ import { ArrowRight, TrendingUp, TrendingDown, Minus, GitCompare } from 'lucide-
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { QuoteVersion } from '@/hooks/quotes';
-import { STATUS_LABELS } from '@/hooks/quotes/quoteHelpers';
+import { getQuoteStatusLabel } from '@/lib/quote-status-config';
 import { formatCurrency } from '@/lib/format';
 
 interface QuoteItem {
@@ -83,7 +85,6 @@ function DiffBadge({
   );
 }
 
-
 export function QuoteVersionCompare({
   open,
   onOpenChange,
@@ -95,6 +96,7 @@ export function QuoteVersionCompare({
   const [leftDetail, setLeftDetail] = useState<QuoteDetail | null>(null);
   const [rightDetail, setRightDetail] = useState<QuoteDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (versions.length >= 2) {
@@ -111,20 +113,35 @@ export function QuoteVersionCompare({
 
   async function loadDetails() {
     setLoading(true);
+    setLoadError(null);
     try {
       const [left, right] = await Promise.all([
-        fetchQuoteDetail(leftId),
-        fetchQuoteDetail(rightId),
+        fetchQuoteDetail(leftId).catch((err) => {
+          logger.error('[QuoteVersionCompare] Failed to load left version:', err);
+          return null;
+        }),
+        fetchQuoteDetail(rightId).catch((err) => {
+          logger.error('[QuoteVersionCompare] Failed to load right version:', err);
+          return null;
+        }),
       ]);
+      if (!left || !right) {
+        setLoadError('Não foi possível carregar uma das versões para comparação.');
+        toast.error('Falha ao carregar versões para comparação');
+      }
       setLeftDetail(left);
       setRightDetail(right);
+    } catch (err) {
+      logger.error('[QuoteVersionCompare] Unexpected error:', err);
+      setLoadError('Erro inesperado ao comparar versões.');
+      toast.error('Erro ao comparar versões');
     } finally {
       setLoading(false);
     }
   }
 
   async function fetchQuoteDetail(id: string): Promise<QuoteDetail | null> {
-    const { data: quote } = await supabase
+    const { data: quote, error: qErr } = await supabase
       // rls-allow: lookup por id específico; RLS valida ownership
       .from('quotes')
       .select(
@@ -133,13 +150,16 @@ export function QuoteVersionCompare({
       .eq('id', id)
       .single();
 
+    if (qErr) throw qErr;
     if (!quote) return null;
 
-    const { data: items } = await supabase
+    const { data: items, error: iErr } = await supabase
       .from('quote_items')
       .select('id, product_name, product_sku, quantity, unit_price, subtotal, color_name')
       .eq('quote_id', id)
       .order('sort_order', { ascending: true });
+
+    if (iErr) throw iErr;
 
     return { ...quote, items: items || [] } as QuoteDetail;
   }
@@ -190,6 +210,9 @@ export function QuoteVersionCompare({
         </div>
 
         {loading && <div className="py-8 text-center text-muted-foreground">Carregando...</div>}
+        {loadError && !loading && (
+          <div className="py-8 text-center text-sm text-destructive">{loadError}</div>
+        )}
 
         {leftDetail && rightDetail && !loading && (
           <div className="space-y-4">
@@ -203,7 +226,7 @@ export function QuoteVersionCompare({
                         v{detail.version} — {detail.quote_number}
                       </span>
                       <Badge variant={detail.status === 'approved' ? 'default' : 'outline'}>
-                        {STATUS_LABELS[detail.status] || detail.status}
+                        {getQuoteStatusLabel(detail.status)}
                       </Badge>
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">

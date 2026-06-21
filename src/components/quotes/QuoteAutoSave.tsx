@@ -183,7 +183,11 @@ export function QuoteAutoSave({
         if (mountedRef.current) setStatus('idle');
       }, 2000);
     } catch (error) {
-      logger.error('Erro ao salvar draft:', error);
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        logger.error('localStorage quota exceeded — draft não pôde ser salvo', error);
+      } else {
+        logger.error('Erro ao salvar draft:', error);
+      }
       setStatus('error');
     }
   }, [storageKey, quoteId]);
@@ -283,7 +287,11 @@ export function useQuoteAutoSave(quoteId?: string) {
         savedAt: new Date().toISOString(),
         version: Date.now(),
       };
-      localStorage.setItem(storageKey, JSON.stringify(draft));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(draft));
+      } catch (err) {
+        logger.error('useQuoteAutoSave: failed to persist draft', err);
+      }
     },
     [storageKey, quoteId],
   );

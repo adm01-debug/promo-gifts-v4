@@ -3,6 +3,7 @@
  */
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
+import type { QuoteStatus } from '@/types/quote';
 
 /**
  * Hard limit on negotiation markup (%). Attempting to exceed this is a user
@@ -196,23 +197,30 @@ export function buildPersonalizationsInsertPayload(
   personalizations: NonNullable<QuoteItem['personalizations']>,
   quoteItemId: string,
 ): TablesInsert<'quote_item_personalizations'>[] {
-  return personalizations.map((p) => ({
-    quote_item_id: quoteItemId,
-    technique_id: p.technique_id || null,
-    technique_name: p.technique_name || null,
-    location_code: p.location_code || null,
-    location_name: p.location_name || null,
-    personalized_quantity: p.personalized_quantity || null,
-    colors_count: p.colors_count || 1,
-    positions_count: p.positions_count || 1,
-    area_cm2: p.area_cm2,
-    width_cm: p.width_cm,
-    height_cm: p.height_cm,
-    setup_cost: round2(p.setup_cost || 0),
-    unit_cost: round2(p.unit_cost || 0),
-    total_cost: round2(p.total_cost || 0),
-    notes: p.notes,
-  }));
+  return personalizations.map((p) => {
+    if ((p.setup_cost ?? 0) < 0 || (p.unit_cost ?? 0) < 0 || (p.total_cost ?? 0) < 0) {
+      throw new Error(
+        `Custos de personalização não podem ser negativos (técnica: ${p.technique_name || p.technique_id || 'desconhecida'})`,
+      );
+    }
+    return {
+      quote_item_id: quoteItemId,
+      technique_id: p.technique_id || null,
+      technique_name: p.technique_name || null,
+      location_code: p.location_code || null,
+      location_name: p.location_name || null,
+      personalized_quantity: p.personalized_quantity || null,
+      colors_count: p.colors_count || 1,
+      positions_count: p.positions_count || 1,
+      area_cm2: p.area_cm2,
+      width_cm: p.width_cm,
+      height_cm: p.height_cm,
+      setup_cost: round2(p.setup_cost || 0),
+      unit_cost: round2(p.unit_cost || 0),
+      total_cost: round2(p.total_cost || 0),
+      notes: p.notes,
+    };
+  });
 }
 
 /**
@@ -224,7 +232,7 @@ export function buildPersonalizationsInsertPayload(
  * FIX: versão anterior omitia pending_approval, viewed, converted e cancelled,
  * fazendo a UI exibir o valor cru do banco para esses status.
  */
-export const STATUS_LABELS: Record<string, string> = {
+export const STATUS_LABELS: Record<QuoteStatus, string> = {
   draft: 'Rascunho',
   pending: 'Pendente',
   pending_approval: 'Aguardando Aprovação',

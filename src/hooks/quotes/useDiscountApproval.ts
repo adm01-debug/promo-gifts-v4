@@ -52,6 +52,21 @@ export function useDiscountApproval() {
     ): Promise<boolean> => {
       if (!user) return false;
       try {
+        // BUG-040: Dedup guard — idempotent under double-clicks / retries.
+        // A pending row for this quote already satisfies the intent; skip the
+        // duplicate INSERT to avoid confusing the admin approval queue.
+        const { data: existing } = await supabase
+          // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
+          .from('discount_approval_requests')
+          .select('id')
+          .eq('quote_id', quoteId)
+          .eq('status', 'pending')
+          .maybeSingle();
+        if (existing) {
+          toast.success('Solicitação de aprovação enviada ao admin!');
+          return true;
+        }
+
         const { error } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
@@ -75,7 +90,10 @@ export function useDiscountApproval() {
           throw error;
         }
 
-        // Set quote status to pending_approval so UI shows correct state
+        // Set quote status to pending_approval so UI shows correct state.
+        // IMPORTANT: throw on failure — a swallowed error here would leave an
+        // orphaned approval request row while the quote stays editable, allowing
+        // the seller to overwrite the discount under admin review.
         const { error: statusError } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('quotes')
@@ -83,6 +101,7 @@ export function useDiscountApproval() {
           .eq('id', quoteId);
         if (statusError) {
           logger.error('Failed to set quote status to pending_approval:', statusError);
+          throw statusError;
         }
 
         // Buscar contexto do orçamento (markup + aparente) para auditoria e história

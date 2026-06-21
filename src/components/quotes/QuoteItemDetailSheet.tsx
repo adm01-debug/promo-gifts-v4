@@ -146,7 +146,9 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 alt={item.product_name}
                 className="h-16 w-16 rounded-lg border border-border object-cover"
                 loading="lazy"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder.svg'; }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                }}
               />
             )}
             <div className="min-w-0 flex-1">
@@ -335,12 +337,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                             </div>
                           </div>
                         </div>
-
-                        {/* Next Tier Hint */}
-                        {getNextTier(item.quantity) && <NextTierHint currentQty={item.quantity} />}
                       </div>
                     );
                   })}
+                  {/* Next Tier Hint rendered once per item, not once per personalization */}
+                  {getNextTier(item.quantity) && <NextTierHint currentQty={item.quantity} />}
                 </div>
               </div>
             </>
