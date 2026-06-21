@@ -75,6 +75,10 @@ const MAX_AUTO_RETRIES = 2;
  * - Elegant full-screen fallback (ou custom via `fallback` prop)
  */
 class EnhancedErrorBoundary extends Component<Props, State> {
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
+  }
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -87,10 +91,6 @@ class EnhancedErrorBoundary extends Component<Props, State> {
       isClearingCache: false,
       copied: false,
     };
-  }
-
-  static getDerivedStateFromError(error: Error): Partial<State> {
-    return { hasError: true, error };
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {

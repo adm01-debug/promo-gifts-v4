@@ -35,13 +35,13 @@ interface State {
 }
 
 export class SimulatorErrorBoundary extends Component<Props, State> {
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
+  }
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null, errorCount: 0 };
-  }
-
-  static getDerivedStateFromError(error: Error): Partial<State> {
-    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {

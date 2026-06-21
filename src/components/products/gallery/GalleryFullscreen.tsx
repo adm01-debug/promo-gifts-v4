@@ -85,7 +85,9 @@ export function GalleryFullscreen({
               src={allMedia[selectedIndex]}
               controls
               className="h-full w-full animate-fade-in object-contain"
-            />
+            >
+              <track kind="captions" />
+            </video>
           ) : (
             <img
               key={allMedia[selectedIndex]}
