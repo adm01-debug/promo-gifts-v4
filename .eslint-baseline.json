@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-21T07:44:49.216Z",
+  "generatedAt": "2026-06-21T08:34:35.367Z",
   "totalErrors": 0,
   "counts": {
     "src/components/admin/connections/BridgeProductsPreviewPanel.tsx": {
@@ -12,12 +12,6 @@
       "@typescript-eslint/no-non-null-assertion": 1
     },
     "src/components/admin/connections/useIncidentDetails.ts": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/expert/chat/ChatInputBar.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/expert/chat/useExpertChat.ts": {
       "@typescript-eslint/no-non-null-assertion": 1
     },
     "src/components/favorites/ShareListDialog.tsx": {
