@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 172: 5 zero-violation rules (excluded: no-implicit-coercion 443v — saved: no-floating-decimal 0v✓, no-implicit-globals 0v✓ — Batch 173)
+      'no-extend-native': 'error',
+      '@typescript-eslint/no-unsafe-declaration-merging': 'error',
+      'no-constructor-return': 'error',
+      'no-label-var': 'error',
+      'no-div-regex': 'error',
       // Batch 171: 5 zero-violation rules (saved: no-extend-native 0v✓, no-unsafe-declaration-merging 0v✓, no-constructor-return 0v✓ — Batch 172)
       '@typescript-eslint/prefer-as-const': 'error',
       'no-useless-concat': 'error',
