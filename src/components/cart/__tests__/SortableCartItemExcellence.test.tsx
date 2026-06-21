@@ -11,8 +11,8 @@ vi.mock('framer-motion', async () => {
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
       <div {...props}>{children}</div>
     ),
-    img: ({ children, ...props }: React.HTMLAttributes<HTMLImageElement>) => (
-      <img {...(props as React.ImgHTMLAttributes<HTMLImageElement>)}>{children}</img>
+    img: ({ children: _children, ...props }: React.HTMLAttributes<HTMLImageElement>) => (
+      <img {...(props as React.ImgHTMLAttributes<HTMLImageElement>)} />
     ),
   };
   return {

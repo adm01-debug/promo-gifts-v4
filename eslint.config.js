@@ -425,6 +425,12 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 127: 4 zero-violation rules + 1 rule with 1 fix (removed: no-implicit-coercion 443v, no-negated-condition 289v, jsx-a11y/no-autofocus 36v)
+      'react/void-dom-elements-no-children': 'error',
+      '@typescript-eslint/no-duplicate-enum-values': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      '@typescript-eslint/no-array-delete': 'error',
+      '@typescript-eslint/no-unsafe-unary-minus': 'error',
       // Batch 126: 3 zero-violation rules + 1 rule with 5 auto-fixes (removed: no-unnecessary-type-arguments 16v, no-deprecated 134v, no-import-type-side-effects 102v)
       '@typescript-eslint/consistent-generic-constructors': 'error',
       'no-useless-computed-key': 'error',
