@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 190: 5 zero-violation rules (saved: no-throw-literal 0v✓, no-useless-call 0v✓ — Batch 191+)
+      'no-multi-str': 'error',
+      'no-new-wrappers': 'error',
+      'no-proto': 'error',
+      'no-script-url': 'error',
+      'no-sequences': 'error',
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
