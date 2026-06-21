@@ -52,6 +52,21 @@ export function useDiscountApproval() {
     ): Promise<boolean> => {
       if (!user) return false;
       try {
+        // BUG-040: Dedup guard — idempotent under double-clicks / retries.
+        // A pending row for this quote already satisfies the intent; skip the
+        // duplicate INSERT to avoid confusing the admin approval queue.
+        const { data: existing } = await supabase
+          // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
+          .from('discount_approval_requests')
+          .select('id')
+          .eq('quote_id', quoteId)
+          .eq('status', 'pending')
+          .maybeSingle();
+        if (existing) {
+          toast.success('Solicitação de aprovação enviada ao admin!');
+          return true;
+        }
+
         const { error } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
