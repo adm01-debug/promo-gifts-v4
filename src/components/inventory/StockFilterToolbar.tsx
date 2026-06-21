@@ -106,7 +106,7 @@ export function StockFilterToolbar({
     () => ({
       cores: (filters.colorGroup ? 1 : 0) + (filters.colorName ? 1 : 0),
       categorias: filters.categoryId ? 1 : 0,
-      estoque: filters.minQuantityNeeded && filters.minQuantityNeeded > 0 ? 1 : 0,
+      // estoque: removido — minQuantityNeeded agora vive só no input do toolbar
       fornecedores: filters.supplierId ? 1 : 0,
       ordenacao: filters.sortBy !== 'stock_quantity' ? 1 : 0,
     }),
