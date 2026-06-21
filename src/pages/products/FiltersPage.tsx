@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useMemo, useState, useRef, lazy, Suspense } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { SharePreviewDialog } from '@/components/products/share/SharePreviewDialog';
 import { VariantPickerDialog } from '@/components/products/VariantPickerDialog';
 import { type ExternalVariantStock, type Product } from '@/hooks/products';
@@ -53,8 +53,6 @@ import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
 import { useFiltersSelectionMode } from '@/pages/filters/useFiltersSelectionMode';
 import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
-
-const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverlayConnected'));
 
 // DEFAULT_SORT_VALUE derivado do SSOT (SORT_OPTIONS) — evita hardcodar 'name'.
 // Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
@@ -237,7 +235,7 @@ export default function FiltersPage() {
           <div className="min-w-0 flex-1 space-y-6">
             <div
               className="sticky z-20 flex flex-col gap-4 bg-background/90 pb-3 pt-1 backdrop-blur-sm"
-              style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 40px))' }}
+              style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 0px))' }}
             >
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-shrink-0">
@@ -696,7 +694,7 @@ export default function FiltersPage() {
                                   groups: state.filters.colorGroups,
                                   variations: state.filters.colorVariations,
                                 }
-                              : null
+                            : null
                           }
                           selectionMode={state.selectionMode}
                           externalSelectedIds={sel.selectedIds}
@@ -726,7 +724,7 @@ export default function FiltersPage() {
                                   groups: state.filters.colorGroups,
                                   variations: state.filters.colorVariations,
                                 }
-                              : null
+                            : null
                           }
                           selectionMode={state.selectionMode}
                           selectedIds={sel.selectedIds}
@@ -802,15 +800,6 @@ export default function FiltersPage() {
           </div>
         </div>
       </div>
-      {state.voiceOverlayOpen && (
-        <Suspense fallback={null}>
-          <LazyVoiceOverlay
-            isOpen={state.voiceOverlayOpen}
-            onClose={() => state.setVoiceOverlayOpen(false)}
-            onAction={handleVoiceAction}
-          />
-        </Suspense>
-      )}
 
       {/* Step 1: Variant picker for share */}
       {shareProduct && variantForShare === undefined && (
