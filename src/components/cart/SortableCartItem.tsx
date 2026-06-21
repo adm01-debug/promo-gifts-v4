@@ -123,7 +123,12 @@ export const SortableCartItem = memo(
     const handleNotesChange = (value: string) => {
       setLocalNotes(value);
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => onUpdateNotes(item.id, value), 800);
+      debounceRef.current = setTimeout(() => {
+        onUpdateNotes(item.id, value);
+        // Clear the ref so the server-sync effect (guarded by !debounceRef.current)
+        // re-enables after the write settles; otherwise it stays disabled forever.
+        debounceRef.current = undefined;
+      }, 800);
     };
 
     return (

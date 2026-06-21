@@ -190,15 +190,6 @@ function SellerCartsContent() {
   useEffect(() => {
     setPage(1);
   }, [s.activeCartId]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-key', sortKey);
-  }, [sortKey]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-dir', sortDir);
-  }, [sortDir]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-page-size', String(pageSize));
-  }, [pageSize]);
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {

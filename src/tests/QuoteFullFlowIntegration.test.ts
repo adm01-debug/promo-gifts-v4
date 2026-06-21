@@ -59,11 +59,10 @@ describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)'
     // total: 2283.05 - 114.15 + 150 = 2318.90
     expect(totals.total).toBe(2318.9);
 
-    // realDiscountPercent = round2((realSubtotal - finalBeforeShipping) / realSubtotal * 100)
-    //   = round2((2075.50 - 2168.90) / 2075.50 * 100) = -4.5
-    // Valor negativo é válido: significa que o markup absorveu o desconto aparente —
-    // o cliente paga acima do custo real do vendedor. A implementação não faz clamp para 0;
-    // a UI é responsável por interpretar/exibir negativos como "sem desconto efetivo".
+    // realDiscountPercent: ((2075.50 - 2168.90) / 2075.50) * 100 = -4.50. calculateQuoteTotals
+    // does NOT clamp — a negative "real discount" is valid and means the markup absorbed the
+    // apparent discount (the client pays above the real subtotal), so there is no real discount
+    // to approve against the seller's limit (realDiscountPercent <= limit always holds).
     expect(totals.realDiscountPercent).toBe(-4.5);
   });
 

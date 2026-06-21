@@ -1,6 +1,7 @@
-import { PureComponent, type ReactNode } from 'react';
+import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -16,16 +17,24 @@ interface State {
  * ErrorBoundary — catches render errors so a single broken component
  * doesn't crash the entire page. Provides a retry button to reset state.
  */
-export class ErrorBoundary extends PureComponent<Props, State> {
+export class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
   static getDerivedStateFromError(error: unknown): State {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao renderizar este componente.';
     return { hasError: true, errorMessage: message };
   }
 
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, errorMessage: '' };
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    // getDerivedStateFromError only updates UI state; without this hook the incident is
+    // invisible in monitoring. Forward it to the structured logger/telemetry.
+    logger.error('[ErrorBoundary] render error caught', error, {
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   handleRetry = () => {

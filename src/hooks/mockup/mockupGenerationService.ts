@@ -183,8 +183,6 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // semantically-invalid empty string for a URL field.
     let logoUrl: string | null = area.logoPreview ?? null;
     if (logoUrl?.startsWith('data:')) {
-      // `logoUrl` is narrowed to a non-null string inside this guard and equals
-      // `area.logoPreview` here, so use it directly (avoids a non-null assertion).
       logoUrl = await uploadLogoToStorage(
         userId,
         logoUrl,
@@ -507,11 +505,12 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  // Explicit array narrowing instead of a double-cast through `unknown` (which would
-  // hide an unexpected payload shape). Field values are read individually below.
-  const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
-  const logoUrl = (row?.logo_url as string | null | undefined) ?? null;
-  const mockupUrl = (row?.mockup_url as string | null | undefined) ?? null;
+  const row =
+    (
+      rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null
+    )?.[0] ?? null;
+  const logoUrl = row?.logo_url ?? null;
+  const mockupUrl = row?.mockup_url ?? null;
 
   let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
   if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
@@ -524,7 +523,10 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   // round-trip and is robust to base-URL format variations (trailing slash, etc.).
   // Supabase storage public URLs follow the pattern:
   //   .../storage/v1/object/public/mockup-assets/<path>
-  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/(.+)$/;
+  // Capture the object path but stop at any query/fragment (?t=, transform suffixes, #...),
+  // otherwise the captured key won't exist in the bucket and storage.remove() silently
+  // no-ops, leaking the orphaned logo/composite PNG.
+  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/([^?#]+)/;
   const pathsToRemove: string[] = [];
   for (const url of [logoUrl, mockupUrl]) {
     if (!url) continue;
@@ -579,9 +581,6 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
-      // `...t` PRIMEIRO; os campos coeridos abaixo precisam sobrescrever os
-      // valores crus (senão o spread devolvia id/name como número, contrariando
-      // o tipo `Technique` que exige string).
       ...t,
       id: String(t.id),
       name: String(t.name),

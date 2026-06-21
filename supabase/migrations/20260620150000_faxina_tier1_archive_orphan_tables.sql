@@ -34,13 +34,21 @@ comment on table archive._cleanup_manifest is
 do $$
 declare
   t text; v_rows bigint;
+  -- IMPORTANT: notification_preferences, product_target_audiences and user_favorites are
+  -- intentionally NOT in this list — they are NOT orphans:
+  --   * notification_preferences  -> read by the live SECURITY DEFINER fn is_dnd_active()
+  --     (20260620180000), called by the send-notification edge fn (runtime DND check).
+  --   * product_target_audiences  -> indexed by 20260620150000_fix_catalog_critical_bugs.sql.
+  --   * user_favorites            -> policy recreated by 20260620160000_fix_favorites_bugs_all.sql.
+  -- Archiving them aborted clean replay (`supabase db reset`/preview/DR) at the CREATE
+  -- INDEX/POLICY steps and broke DND at runtime. See 20260620190000_heal_faxina_live_tables.
   orphans text[] := array[
-    'notification_preferences','sm_worker_partitions','conversation_delivery_status',
+    'sm_worker_partitions','conversation_delivery_status',
     'magic_up_comments','push_subscriptions','user_allowed_ips','user_filter_presets',
     'magic_up_public_shares','product_search_logs','comparison_reactions','notification_templates',
     'order_item_personalizations','favorite_item_reactions','system_changelog','category_relationships',
     'seo_audit_log','supplier_field_priority','collection_item_reactions','attribute_equivalences',
-    'product_target_audiences','search_queries','user_favorites'
+    'search_queries'
   ];
   backups text[] := array[
     '_backup_stock_daily_summary_20260618','_bkp_kit_dims_20260619','_bkp_orphan_active_variants_20260619'

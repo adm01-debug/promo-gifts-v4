@@ -67,12 +67,6 @@ export interface CreateCartInput {
 
 export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 
-// Shape returned by supabase.from('seller_carts').select('*, seller_cart_items(*)')
-type SellerCartJoinRow = Omit<SellerCart, 'items' | 'status'> & {
-  seller_cart_items: SellerCartItem[] | null;
-  status: string;
-};
-
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
@@ -134,12 +128,14 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row as SellerCartJoinRow;
+        const { seller_cart_items: rowItems, ...cart } = row as Omit<SellerCart, 'items'> & {
+          seller_cart_items: SellerCartItem[] | null;
+        };
         return {
           ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
-          items: (rowItems ?? []) as SellerCartItem[],
+          notes: cart.notes ?? null,
+          status: (cart.status ?? 'novo') as CartStatus,
+          items: rowItems ?? [],
         };
       });
     },
