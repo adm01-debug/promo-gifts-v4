@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 155: 5 zero-violation rules (excluded: jsx-a11y/scope 0v✓, jsx-a11y/tabindex-no-positive 0v✓ — saved Batch 156; no-abstract-roles invalid rule)
+      'jsx-a11y/heading-has-content': 'error',
+      'jsx-a11y/html-has-lang': 'error',
+      'jsx-a11y/lang': 'error',
+      'jsx-a11y/no-access-key': 'error',
+      'jsx-a11y/no-aria-hidden-on-focusable': 'error',
       // Batch 154: 5 zero-violation rules (excluded: jsx-a11y/heading-has-content 0v✓ — saved Batch 155; also: prefer-tag-over-role 177v)
       'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error',
       'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error',
