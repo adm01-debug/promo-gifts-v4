@@ -23,7 +23,7 @@
  *  quebrar a linha mesmo no mobile mais estreito 320px).
  * ──────────────────────────────────────────────────────────────────────────────
  */
-import { memo, useId } from 'react';
+import { memo, useId, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -88,8 +88,16 @@ export const ProductColorSwatches = memo(
     selectedName,
     onClear,
   }: ProductColorSwatchesProps) => {
-
     const idPrefix = useId();
+
+    // BUG-PCS-01 FIX (2026-06-21): window.location.search lida inline a cada render sem
+    // memoização — recria URLSearchParams desnecessariamente e não reage a mudanças de URL.
+    // DEVE ficar antes dos early returns para respeitar Rules of Hooks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reads URL once per mount; selectedName drives reactive updates
+    const urlColor = useMemo(() => {
+      if (typeof window === 'undefined') return null;
+      return new URLSearchParams(window.location.search).get('cor')?.toLowerCase() ?? null;
+    }, []);
 
     if (colors === undefined) {
       return (
@@ -117,7 +125,10 @@ export const ProductColorSwatches = memo(
       if (hideWhenEmpty) {
         return (
           <div
-            className={cn('min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]', className)}
+            className={cn(
+              'min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]',
+              className,
+            )}
             data-testid="colors-empty-hidden"
           />
         );
@@ -141,10 +152,6 @@ export const ProductColorSwatches = memo(
     const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
     const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
 
-    // Resolve o estado selecionado o mais cedo possível
-    const queryParams =
-      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
     const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
 
     return (
@@ -155,7 +162,7 @@ export const ProductColorSwatches = memo(
               //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
               'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
-              'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
+              'flex h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"
@@ -174,16 +181,17 @@ export const ProductColorSwatches = memo(
           const hasStockInfo = typeof c.stockQty === 'number';
           const isOutOfStock = hasStockInfo && c.stockQty === 0 && !c.hasUpcomingRestock;
           const isUpcoming = hasStockInfo && c.stockQty === 0 && c.hasUpcomingRestock === true;
-          const formattedRestock =
-            c.nextRestockDate
-              ? new Date(`${c.nextRestockDate}T00:00:00`).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: 'short',
-                })
-              : null;
+          const formattedRestock = c.nextRestockDate
+            ? new Date(`${c.nextRestockDate}T00:00:00`).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: 'short',
+              })
+            : null;
 
           return (
-            <Tooltip key={`${c.name}-${idx}`}>
+            // BUG-PCS-02 FIX (2026-06-21): chave composta name+idx é instável ao reordenar.
+            // Nome da cor é único por produto; chave estável evita re-mounts desnecessários.
+            <Tooltip key={c.name}>
               <TooltipTrigger asChild>
                 <button
                   type="button"

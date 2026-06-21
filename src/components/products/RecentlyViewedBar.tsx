@@ -10,6 +10,9 @@ import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 
+// BUG-RVB-02 FIX (2026-06-21): Intl.NumberFormat construída dentro do map por produto/render.
+const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
 interface RecentlyViewedBarProps {
   className?: string;
   maxVisible?: number;
@@ -68,7 +71,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                       )}
                     >
                       <OptimizedImage
-                        src={getCdnUrl(product.images[0], 'thumbnail')}
+                        src={getCdnUrl(product.images?.[0] ?? '', 'thumbnail')}
                         alt={product.name}
                         className="object-cover"
                         containerClassName="h-full w-full"
@@ -78,10 +81,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                   <TooltipContent side="bottom">
                     <p className="truncate font-medium">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(product.price)}
+                      {priceFormatter.format(product.price)}
                     </p>
                   </TooltipContent>
                 </Tooltip>

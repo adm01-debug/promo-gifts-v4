@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// BUG-PSH-01 FIX (2026-06-21): Intl.NumberFormat era recriado a cada render (a cada evento
+// de scroll). Sticky header dispara setVisible(true/false) ao cruzar 400px — move para módulo.
+const stickyPriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Heart, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,9 +51,6 @@ export function ProductStickyHeader({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
-
   // Build a minimal Product object for the wizard if not provided
   const wizardProduct: Product =
     product ||
@@ -90,7 +94,7 @@ export function ProductStickyHeader({
 
               {/* Price */}
               <span className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm font-bold text-foreground">
-                {formatPrice(productPrice)}
+                {stickyPriceFormatter.format(productPrice)}
                 <span className="font-normal text-muted-foreground">/un</span>
                 <PriceFreshnessBadge
                   priceUpdatedAt={product?.priceUpdatedAt}
