@@ -145,7 +145,7 @@ export default function FiltersPage() {
         state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
-        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || 'name';
+        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || DEFAULT_SORT_VALUE;
         state.setSortBy(sortValue);
         toast.success(action.response);
       } else if (action.action === 'clear') {
