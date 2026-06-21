@@ -1,5 +1,54 @@
 {
-  "generatedAt": "2026-06-20T06:34:15.901Z",
+  "generatedAt": "2026-06-21T07:44:49.216Z",
   "totalErrors": 0,
-  "counts": {}
+  "counts": {
+    "src/components/admin/connections/BridgeProductsPreviewPanel.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 6
+    },
+    "src/components/admin/connections/ConnectionTestHistoryPanel.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 2
+    },
+    "src/components/admin/connections/ExpectedKeysMatchPanel.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/components/admin/connections/useIncidentDetails.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/components/expert/chat/ChatInputBar.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/components/expert/chat/useExpertChat.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/components/favorites/ShareListDialog.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/components/mockup/approval/MockupLayoutButtons.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/components/products/PriceFreshnessBadge.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 2
+    },
+    "src/components/products/share/ShareKitDialog.tsx": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/hooks/bi/useClientSeasonality.ts": {
+      "@typescript-eslint/no-non-null-assertion": 3
+    },
+    "src/hooks/bi/useIndustryCategoryTrends.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/hooks/products/useProductInsights.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/hooks/useFutureStockPreference.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/lib/external-db/products-detail.ts": {
+      "@typescript-eslint/no-non-null-assertion": 1
+    },
+    "src/lib/external-db/techniques.ts": {
+      "@typescript-eslint/no-non-null-assertion": 2
+    }
+  }
 }

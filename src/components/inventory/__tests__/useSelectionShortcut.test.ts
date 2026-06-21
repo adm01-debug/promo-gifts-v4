@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useSelectionShortcut } from '../useSelectionShortcut';
 
 function press(key: string, opts: Partial<KeyboardEventInit & { target?: EventTarget }> = {}) {
-  const target = (opts.target as EventTarget) ?? document.body;
+  const target = opts.target ?? document.body;
   const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...opts });
   target.dispatchEvent(ev);
   return ev;

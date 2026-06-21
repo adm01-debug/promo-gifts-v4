@@ -585,12 +585,15 @@ export default [
       '@typescript-eslint/no-implied-eval': 'error',
       // Batch 121 audit: all candidates already active in earlier batches — no net-new rules
       // Batch 122: 4 rules — source fixes + ESLint autofix applied
+      // Batch 122: 4 rules — source fixes + ESLint autofix applied (already present above in block)
       // Batch 123: 1 rule — 46 violations auto-fixed + 4 manual fixes in canvas-confetti.d.ts
       '@typescript-eslint/require-array-sort-compare': 'error',
       '@typescript-eslint/no-unnecessary-template-expression': 'error',
       '@typescript-eslint/consistent-type-exports': 'error',
       '@typescript-eslint/prefer-reduce-type-parameter': 'error',
       '@typescript-eslint/method-signature-style': 'error',
+      // Batch 124: 1 rule — 39 violations auto-fixed, 1 manual fix (no-non-null-asserted-nullish-coalescing side-effect)
+      '@typescript-eslint/non-nullable-type-assertion-style': 'error',
     },
     settings: {
       react: { version: 'detect' },
