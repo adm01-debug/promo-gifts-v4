@@ -191,6 +191,16 @@ function SellerCartsContent() {
   useEffect(() => {
     setPage(1);
   }, [s.activeCartId]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-key', sortKey);
+  }, [sortKey]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-sort-dir', sortDir);
+  }, [sortDir]);
+  useEffect(() => {
+    localStorage.setItem('cart-table-page-size', String(pageSize));
+  }, [pageSize]);
+
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {
@@ -703,7 +713,6 @@ function SellerCartsContent() {
                                       <button
                                         type="button"
                                         onClick={() => s.navigate(`/produto/${item.product_id}`)}
-                                        aria-label={`Abrir detalhes de ${item.product_name}`}
                                         className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
                                       >
                                         {item.product_name}

@@ -102,7 +102,20 @@ export default function ComparePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareItems, getProductsByIds, _cacheSignal]);
 
-  const products: Product[] = compareEntries.map((e) => e.product);
+  const products: Product[] = useMemo(() => compareEntries.map((e) => e.product), [compareEntries]);
+
+  // Score, radar and AI advisor reason at the product level. Deduping by id
+  // prevents the same product (added under two variants) from colliding on
+  // chart dataKeys / winner lookup or emitting duplicate React keys.
+  const analyticsProducts: Product[] = useMemo(() => {
+    const seen = new Set<string>();
+    return products.filter((p) => {
+      const id = String(p.id);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [products]);
 
   // Rótulo vem da fonte única (catalog-stock-status); cor Tailwind é presentational, fica local.
   const getStockStatusLabel = (status: string) => ({
@@ -241,10 +254,10 @@ export default function ComparePage() {
         <div className="hidden space-y-4 md:block">
           {/* Score + Radar */}
           <div className={cn('grid grid-cols-1 gap-4', showRadar && 'lg:grid-cols-2')}>
-            <ComparisonScoreCard products={products} />
-            {showRadar && <ComparisonRadarChart products={products} />}
+            <ComparisonScoreCard products={analyticsProducts} />
+            {showRadar && <ComparisonRadarChart products={analyticsProducts} />}
           </div>
-          <AIComparisonAdvisor products={products} />
+          <AIComparisonAdvisor products={analyticsProducts} />
 
           {/* Duel mode toggle (only visible when 2 products) */}
           {compareCount === 2 && (
@@ -384,7 +397,7 @@ export default function ComparePage() {
           )}
 
           {/* Bottom rail — Compare também com... */}
-          <SimilarProductsRail products={products} formatCurrency={formatCurrency} />
+          <SimilarProductsRail products={analyticsProducts} formatCurrency={formatCurrency} />
         </div>
       </div>
     </>

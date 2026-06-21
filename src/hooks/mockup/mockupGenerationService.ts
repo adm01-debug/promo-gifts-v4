@@ -183,6 +183,8 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // semantically-invalid empty string for a URL field.
     let logoUrl: string | null = area.logoPreview ?? null;
     if (logoUrl?.startsWith('data:')) {
+      // `logoUrl` is narrowed to a non-null string inside this guard and equals
+      // `area.logoPreview` here, so use it directly (avoids a non-null assertion).
       logoUrl = await uploadLogoToStorage(
         userId,
         logoUrl,
