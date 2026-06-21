@@ -84,7 +84,7 @@ export class DevInfraGate {
    * Handler reativo a mudanças no localStorage.
    * Bug Fix: Agora trata `event.key === null`, que ocorre quando `localStorage.clear()` é chamado.
    */
-  private handleStorageEvent = (event: StorageEvent): void => {
+  private readonly handleStorageEvent = (event: StorageEvent): void => {
     const relevantKeys = ['show_dev_infra_messages', 'lov:bridge-metrics-overlay:open'];
     // Se o key for null, o storage foi limpo totalmente (localStorage.clear())
     if (event.key === null || relevantKeys.includes(event.key)) {

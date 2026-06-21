@@ -43,7 +43,7 @@ import { toast } from 'sonner';
 // Reset module-level state between tests by re-importing fresh
 async function resetModule() {
   vi.resetModules();
-  return await import('../session-recovery');
+  return import('../session-recovery');
 }
 
 describe('isBadJwtError', () => {

@@ -598,6 +598,11 @@ export default [
       '@typescript-eslint/non-nullable-type-assertion-style': 'error',
       // Batch 125: 1 rule — 19 violations auto-fixed (unnecessary boolean literal comparisons)
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      // Batch 126: 4 rules — source fixes in 12 files before enabling
+      '@typescript-eslint/no-useless-constructor': 'error',
+      '@typescript-eslint/no-invalid-void-type': 'error',
+      '@typescript-eslint/prefer-readonly': 'error',
+      '@typescript-eslint/return-await': 'error',
     },
     settings: {
       react: { version: 'detect' },
