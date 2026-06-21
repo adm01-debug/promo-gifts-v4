@@ -135,10 +135,10 @@ export function RichColorSwatch({
         <TooltipTrigger asChild>
           <span
             role="img"
-            aria-label={isOutOfStock ? `${label} (esgotado)` : label}
+            aria-label={label}
             className={cn(
-              // 20px * 1.15 = 23px
-              'relative inline-flex h-[23px] w-[23px] shrink-0 cursor-help items-center justify-center rounded-full border transition-opacity',
+              // 20px → 23px (+15%) → 25px (+10%)
+              'relative inline-flex h-[25px] w-[25px] shrink-0 cursor-help items-center justify-center rounded-full border transition-opacity',
               isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
               !bg && 'border-dashed border-muted-foreground/40',
               isOutOfStock && 'opacity-50',
@@ -148,7 +148,6 @@ export function RichColorSwatch({
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-medium">
           {label}
-          {isOutOfStock ? ' · esgotado' : ''}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
