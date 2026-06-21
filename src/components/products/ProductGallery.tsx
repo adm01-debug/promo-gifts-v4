@@ -114,6 +114,13 @@ export function ProductGallery({
   }, []);
 
   useEffect(() => {
+    // BUG-PG-01 FIX: clear any in-flight animation timer so isAnimating doesn't
+    // remain true for up to 400ms after the user switches colour.
+    if (animTimerRef.current) {
+      clearTimeout(animTimerRef.current);
+      animTimerRef.current = undefined;
+    }
+    setIsAnimating(false);
     setSelectedIndex(0);
     resetZoom();
   }, [selectedColorIndex, resetZoom]);

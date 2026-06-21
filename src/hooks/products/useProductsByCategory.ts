@@ -101,8 +101,8 @@ export function useProductsByCategory({
         throw new Error(invokeError.message);
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao buscar produtos por categoria');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro ao buscar produtos por categoria');
       }
 
       setProductIds(new Set(data.productIds || []));

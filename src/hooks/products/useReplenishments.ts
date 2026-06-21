@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { untypedRpc } from '@/lib/supabase-untyped';
+import { shouldRetry } from '@/lib/db/postgrest';
 
 /**
  * Módulo Reposição — FONTE ÚNICA DE VERDADE: RPC `fn_get_reposicao_listing`.
@@ -236,7 +237,7 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
     // filter in select so toggling onlyHighlighted reuses cached data without re-fetch
     select: (items) => (onlyHighlighted ? items.filter((n) => n.is_highlighted) : items),
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
@@ -298,7 +299,7 @@ export function useReplenishmentStats() {
       };
     },
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
@@ -309,6 +310,6 @@ export function useReplenishmentCount() {
     queryFn: () => fetchReposicao(FETCH_ALL_LIMIT),
     select: (data) => data.length,
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
