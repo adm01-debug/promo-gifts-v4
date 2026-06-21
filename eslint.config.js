@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 162: 5 zero-violation rules (excluded: no-return-assign 0v✓, no-throw-literal 0v✓, prefer-regex-literals 0v✓, no-unneeded-ternary 0v✓ — saved Batch 163)
+      'jsx-a11y/aria-role': 'error',
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
+      '@typescript-eslint/no-array-delete': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
       // Batch 161: 5 zero-violation rules (excluded: jsx-a11y/aria-role 0v✓, @typescript-eslint/no-non-null-asserted-nullish-coalescing 0v✓ — saved Batch 162)
       'no-div-regex': 'error',
       'grouped-accessor-pairs': 'error',
