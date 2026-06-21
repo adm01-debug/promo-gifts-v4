@@ -21,7 +21,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateStockStatus, type StockStatus } from '@/types/stock';
-import { ColorSwatch } from '@/components/shared/ColorSwatch';
+import {
+  getColorSwatchClasses,
+  resolveSwatchBackground,
+} from '@/components/shared/ColorSwatch';
 
 
 // ============================================
@@ -113,8 +116,7 @@ interface RichColorSwatchProps {
   isActive?: boolean;
 }
 
-/** Swatch de cor enriquecido: delega o visual ao primitivo compartilhado
- *  `ColorSwatch` (SSOT entre Catálogo e Estoque) e adiciona Tooltip + a11y. */
+/** Swatch de cor enriquecido: gradiente para cores mistas, indicador de esgotado e estado ativo. */
 export function RichColorSwatch({
   hex,
   name,
@@ -122,18 +124,29 @@ export function RichColorSwatch({
   isActive = false,
 }: RichColorSwatchProps) {
   const label = name?.trim() || 'Sem cor';
+  const bg = resolveSwatchBackground(hex, label);
+
   return (
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <ColorSwatch
-            hex={hex}
-            name={label}
-            isActive={isActive}
-            isOutOfStock={isOutOfStock}
-            sizeClassName="h-[25px] w-[25px] cursor-help"
+          <span
             role="img"
             aria-label={label}
+            className={cn(
+              // SSOT: src/components/shared/ColorSwatch.tsx — não duplicar
+              // regras visuais aqui. Tamanho fixo 25px (estoque).
+              'h-[25px] w-[25px] shrink-0 cursor-help',
+              getColorSwatchClasses({ isActive, isOutOfStock }),
+              !bg && 'border-dashed border-muted-foreground/40',
+            )}
+            style={
+              bg
+                ? bg.startsWith('conic-gradient')
+                  ? { backgroundImage: bg }
+                  : { backgroundColor: bg }
+                : undefined
+            }
           />
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-medium">

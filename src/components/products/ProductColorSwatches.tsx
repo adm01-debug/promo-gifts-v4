@@ -26,7 +26,11 @@
 import { memo, useId, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { getColorSwatchClasses, resolveSwatchBackground } from '@/components/shared/ColorSwatch';
+import {
+  getColorSwatchClasses,
+  resolveSwatchBackground,
+} from '@/components/shared/ColorSwatch';
+
 
 export interface ColorDotLike {
   name: string;
@@ -198,18 +202,18 @@ export const ProductColorSwatches = memo(
                   type="button"
                   role="radio"
                   className={cn(
-                    // SSOT visual: base + estados out-of-stock/active (compartilhado com Estoque)
-                    getColorSwatchClasses({ isActive: isSelected, isOutOfStock, hasBg: true }),
-                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    isSelected
-                      ? 'scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
-                      : !isOutOfStock &&
-                          'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
-
+                    // SSOT: src/components/shared/ColorSwatch.tsx
+                    getColorSwatchClasses({
+                      isActive: isSelected,
+                      isOutOfStock,
+                      isUpcoming,
+                      isInteractive: true,
+                    }),
                     SIZE_CLASS[size],
                   )}
-
-                  style={{ backgroundColor: resolveSwatchBackground(c.hex, c.name).background ?? 'transparent' }}
+                  style={{
+                    backgroundColor: resolveSwatchBackground(c.hex, c.name) ?? 'transparent',
+                  }}
                   aria-label={
                     isOutOfStock
                       ? `Opção de cor: ${c.name} — esgotada`
@@ -217,7 +221,6 @@ export const ProductColorSwatches = memo(
                         ? `Opção de cor: ${c.name} — reposição prevista${formattedRestock ? ` em ${formattedRestock}` : ''}`
                         : `Opção de cor: ${c.name}`
                   }
-
                   aria-describedby={tooltipId}
                   aria-checked={isSelected}
                   data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}
@@ -255,6 +258,7 @@ export const ProductColorSwatches = memo(
                   )}
                 </button>
               </TooltipTrigger>
+
               <TooltipContent
                 id={tooltipId}
                 side="top"
