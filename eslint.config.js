@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 237: 5 zero-violation rules (probe 237A: all 0v✓)
+      '@typescript-eslint/no-implied-eval': 'error',
+      '@typescript-eslint/prefer-for-of': 'error',
+      '@typescript-eslint/dot-notation': 'error',
+      '@typescript-eslint/no-empty-interface': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
       // Batch 236: 5 zero-violation rules (236A: array-type 212v✗, no-import-type-side-effects 102v✗)
       '@typescript-eslint/no-unnecessary-type-constraint': 'error',
       '@typescript-eslint/no-misused-new': 'error',
