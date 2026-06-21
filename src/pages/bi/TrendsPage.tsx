@@ -247,7 +247,7 @@ export default function TrendsPage() {
         buildQ('search_analytics', sincePrevious),
       ]);
       const dbError = ve ?? se;
-      if (dbError) throw new Error(dbError.message, { cause: dbError });
+      if (dbError) throw new Error(dbError.message);
 
       // Buckets atual + anterior (mesmo número de dias)
       const cur = new Map<string, { date: string; views: number; searches: number }>();
