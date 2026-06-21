@@ -46,20 +46,20 @@ describe('buildStockKpiCards', () => {
     expect(bySlug['sem-estoque'].value).not.toBe(baseSummary.productsOutOfStock);
   });
 
-  it('Risco de Ruptura uses EMA count (≤ 30 dias) when provided', () => {
+  it('Risco de Ruptura uses predictive count (≤ 30 dias) when provided', () => {
     const cards = buildStockKpiCards(baseSummary, 987);
     const rupture = cards.find((c) => c.slug === 'risco-de-ruptura')!;
     expect(rupture.title).toBe('Risco de Ruptura');
     expect(rupture.value).toBe(987);
     expect(rupture.subtitle).toMatch(/30 dias/);
-    expect(rupture.tooltip).toMatch(/EMA/);
+    expect(rupture.tooltip).toMatch(/[Pp]revisão|[Aa]nálise/);
   });
 
-  it('Risco de Ruptura falls back to variantsCritical when EMA count is null/undefined', () => {
+  it('Risco de Ruptura falls back to variantsCritical when predictive count is null/undefined', () => {
     const cards = buildStockKpiCards(baseSummary, null);
     const rupture = cards.find((c) => c.slug === 'risco-de-ruptura')!;
     expect(rupture.value).toBe(baseSummary.variantsCritical);
-    expect(rupture.tooltip).toMatch(/fallback/);
+    expect(rupture.tooltip).toMatch(/estado crítico/);
   });
 
   it('marks all 4 primary cards with unit "variações"', () => {
