@@ -429,6 +429,9 @@ export function StockDashboard() {
                 colorGroups={availableColorGroups}
                 totalProducts={allProductStocks.length}
                 filteredCount={productStocks.length}
+                isRuptureRiskActive={isRuptureRiskActive}
+                ruptureRiskCount={ruptureRiskCount}
+                onToggleRuptureRisk={toggleRuptureRisk}
               />
             </div>
           </div>
