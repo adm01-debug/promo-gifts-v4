@@ -295,9 +295,11 @@ export function useWorkspaceNotifications() {
     if (!user) return;
 
     const channel = supabase
-      // BUG-RT-CHANNEL FIX: tópico único por montagem. Este hook monta no sino do header E
-      // na gaveta de notificações ao mesmo tempo; com nome estático a 2ª instância recebia o
-      // canal já inscrito e o .on('postgres_changes') após subscribe() derrubava o render.
+      // BUG-RT-CHANNEL FIX: topico unico por montagem. O sino monta em TODA pagina (Header)
+      // e coexiste com o Drawer de notificacoes -> 2 instancias simultaneas do hook. Com nome
+      // estatico, supabase.channel('workspace_notifications_realtime') devolvia o canal JA
+      // inscrito e o .on('postgres_changes') caia APOS subscribe() -> "cannot add postgres_changes
+      // callbacks ... after subscribe()" (mesmo crash de render do canal de quotes na QuoteViewPage).
       .channel(`workspace_notifications_realtime:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
