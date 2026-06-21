@@ -28,8 +28,7 @@ export const round2 = (n: number | null | undefined): number => {
  * at 50 here would persist a different value than what the user entered, which
  * is a worse outcome than letting the DB reject it with an explicit error.
  */
-const clampMarkup = (v: number | null | undefined): number =>
-  round2(Math.max(0, v || 0));
+const clampMarkup = (v: number | null | undefined): number => round2(Math.max(0, v || 0));
 
 export function validateDiscount(
   quote: Partial<Quote>,
@@ -80,9 +79,13 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
-  // Negative value is valid: means markup > apparent discount (seller has margin).
+  // Clamped to 0: a negative value means markup > apparent discount (seller
+  // has margin, no real concession to buyer). Showing -4.5% would confuse
+  // users; 0 correctly conveys "no real discount was given".
   const realDiscountPercent =
-    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
+    realSubtotal > 0
+      ? Math.max(0, round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
+      : 0;
 
   return {
     subtotal: round2(subtotal),
