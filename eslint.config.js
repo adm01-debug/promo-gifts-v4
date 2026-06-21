@@ -417,6 +417,24 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 232: 5 zero-violation rules (saved: unified-signatures, no-mixed-enums, parameter-properties 0v✓ — Batch 233+)
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
+      '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
+      '@typescript-eslint/no-unnecessary-qualifier': 'error',
+      '@typescript-eslint/no-array-constructor': 'error',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      // Batch 231: 5 zero-violation rules (saved: no-non-null-asserted-nullish-coalescing, no-non-null-asserted-optional-chain, no-unnecessary-qualifier, no-array-constructor 0v✓ — Batch 232+)
+      '@typescript-eslint/class-literal-property-style': 'error',
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
+      '@typescript-eslint/prefer-namespace-keyword': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      // Batch 230: 5 zero-violation rules (saved: class-literal-property-style, consistent-indexed-object-style, prefer-namespace-keyword, no-require-imports 0v✓ — Batch 231+)
+      '@typescript-eslint/no-duplicate-enum-values': 'error',
+      '@typescript-eslint/no-restricted-types': 'error',
+      '@typescript-eslint/consistent-generic-constructors': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
       // Batch 229: 5 zero-violation rules (saved: no-useless-empty-export, no-duplicate-enum-values, no-restricted-types, consistent-generic-constructors, no-confusing-non-null-assertion 0v✓ — Batch 230+)
       '@typescript-eslint/only-throw-error': 'error',
       '@typescript-eslint/ban-tslint-comment': 'error',
