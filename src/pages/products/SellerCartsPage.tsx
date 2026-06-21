@@ -190,6 +190,10 @@ function SellerCartsContent() {
   useEffect(() => {
     setPage(1);
   }, [s.activeCartId]);
+
+  // Densidade da tabela: compact reduz o padding das células.
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {

@@ -15,6 +15,7 @@ import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import type { CreateCartInput } from '@/hooks/products';
 import { useSearchHistory } from '@/hooks/common';
+import { toast } from 'sonner';
 
 interface CompanyItem {
   id: string;
@@ -33,8 +34,9 @@ interface CartCompanyPickerProps {
 export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [creating, setCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { createCart, canCreateCart } = useSellerCartContext();
+  const { createCart, canCreateCart, carts, setActiveCartId } = useSellerCartContext();
   const { history, addToHistory, removeFromHistory, clearHistory } = useSearchHistory('company');
 
   // Debounce server search
@@ -140,22 +142,59 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
       ramo?: string | null;
       logo_url?: string | null;
     }) => {
+      // Trava de reentrância: createCart é assíncrono e canCreateCart só vira false
+      // após o refetch; sem isto, duplo-clique (ou clique no histórico) dispara dois
+      // INSERTs e cria dois carrinhos, queimando o limite de 3.
+      if (creating) return;
+
+      // Já existe carrinho para esta empresa? Abre o existente em vez de duplicar
+      // (evita dividir o pedido do cliente em 2 carrinhos e gerar orçamento parcial).
+      // Roda ANTES do guard de limite: abrir o existente deve funcionar mesmo com 3.
+      const existingCart = carts.find((c) => c.company_id === company.id);
+      if (existingCart) {
+        setActiveCartId(existingCart.id);
+        toast.info(`Você já tem um carrinho para ${company.name}`, {
+          description: 'Abrindo o carrinho existente.',
+        });
+        onCreated?.();
+        return;
+      }
+
+      if (!canCreateCart) return;
+
       addToHistory({
         id: company.id,
         label: company.name,
         type: 'company',
       });
 
+      // Histórico só guarda id+label; recupera logo/ramo do cache local para não
+      // criar carrinho sem logo/segmento quando o clique vem de "Visitados".
+      const enriched = localCompanies.find((c) => c.id === company.id);
       const input: CreateCartInput = {
         company_id: company.id,
         company_name: company.name,
-        company_location: company.ramo || undefined,
-        company_logo_url: company.logo_url || undefined,
+        company_location: company.ramo ?? enriched?.ramo ?? undefined,
+        company_logo_url: company.logo_url ?? enriched?.logo_url ?? undefined,
       };
-      await createCart(input);
-      onCreated?.();
+      setCreating(true);
+      try {
+        await createCart(input);
+        onCreated?.();
+      } finally {
+        setCreating(false);
+      }
     },
-    [createCart, onCreated, addToHistory],
+    [
+      createCart,
+      onCreated,
+      addToHistory,
+      creating,
+      canCreateCart,
+      localCompanies,
+      carts,
+      setActiveCartId,
+    ],
   );
 
   const isLoading = loadingLocal || loadingServer;
@@ -209,8 +248,9 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                 <div key={item.id} className="group relative">
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent/50"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => handleSelect({ id: item.id, name: item.label })}
+                    disabled={!canCreateCart || creating}
                   >
                     <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="flex-1 truncate">{item.label}</span>
@@ -241,7 +281,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                 'text-sm transition-colors hover:bg-accent/50',
               )}
               onClick={() => handleSelect(company)}
-              disabled={!canCreateCart}
+              disabled={!canCreateCart || creating}
             >
               {company.logo_url ? (
                 <img

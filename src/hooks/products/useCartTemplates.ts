@@ -75,7 +75,7 @@ export function useCartTemplates() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Template salvo com sucesso');
     },
     onError: (err: Error) => toast.error('Operação falhou', { description: sanitizeError(err) }),
@@ -87,10 +87,11 @@ export function useCartTemplates() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Template excluído');
     },
-    onError: (err: Error) => toast.error('Não foi possível excluir o template', { description: sanitizeError(err) }),
+    onError: (err: Error) =>
+      toast.error('Não foi possível excluir o template', { description: sanitizeError(err) }),
   });
 
   return {
