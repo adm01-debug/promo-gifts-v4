@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-06-21T12:44:56.833Z",
+  "generatedAt": "2026-06-21T14:02:53.909Z",
   "totalErrors": 1,
   "counts": {
-    "src/integrations/supabase/types.ts": {
-      "@typescript-eslint/consistent-indexed-object-style": 1
+    "src/types/domain/simulator-wizard.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
     }
   }
 }

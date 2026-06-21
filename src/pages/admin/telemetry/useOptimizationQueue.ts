@@ -156,7 +156,7 @@ export function useOptimizationQueue() {
     });
 
     // Checa guardrail
-    const { data: guardrail } = await supabase.rpc('check_telemetry_regression' as never);
+    const { data: guardrail } = await supabase.rpc('check_telemetry_regression');
     const guardrailStatus =
       (guardrail as { status?: string } | null)?.status ?? 'insufficient_data';
 

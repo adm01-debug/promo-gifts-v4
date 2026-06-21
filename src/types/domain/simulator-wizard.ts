@@ -259,6 +259,14 @@ export type WizardAction =
   | { type: 'ADD_PERSONALIZATION'; payload: Personalization }
   | { type: 'CANCEL_PERSONALIZATION' }
   | { type: 'EDIT_PERSONALIZATION'; payload: number }
+  | {
+      type: 'LOAD_DRAFT';
+      payload: {
+        personalizations?: Personalization[];
+        product: SelectedProduct | null;
+        quantity: number;
+      };
+    }
   | { type: 'REMOVE_ALL_PERSONALIZATIONS' }
   | { type: 'REMOVE_PERSONALIZATION'; payload: string }
   | { type: 'RESET_WIZARD' }

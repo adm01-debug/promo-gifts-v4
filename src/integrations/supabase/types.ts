@@ -1,10 +1,5 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style, @typescript-eslint/sort-type-constituents
+export type Json = Json[] | boolean | number | string | { [key: string]: Json | undefined } | null
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -7347,16 +7342,15 @@ export type Database = {
         }
       }
       consume_step_up_token:
-        | {
-            Args: { _challenge_id: string; _token_hash: string }
-            Returns: boolean
-          }
-        | {
+        {
             Args: {
               _expected_action: Database["public"]["Enums"]["step_up_action"]
               _expected_target?: string
               _token: string
             }
+            Returns: boolean
+          } | {
+            Args: { _challenge_id: string; _token_hash: string }
             Returns: boolean
           }
       convert_quote_to_order: {
@@ -7632,13 +7626,11 @@ export type Database = {
         Returns: undefined
       }
       is_admin:
-        | { Args: never; Returns: boolean }
-        | { Args: { _user_id?: string }; Returns: boolean }
+        { Args: { _user_id?: string }; Returns: boolean } | { Args: never; Returns: boolean }
       is_admin_strict: { Args: { _user_id?: string }; Returns: boolean }
       is_dev: { Args: { _user_id?: string }; Returns: boolean }
       is_dnd_active:
-        | { Args: never; Returns: boolean }
-        | { Args: { p_user_id: string }; Returns: boolean }
+        { Args: { p_user_id: string }; Returns: boolean } | { Args: never; Returns: boolean }
       is_kit_collaborator: {
         Args: { _kit_id: string; _user_id: string }
         Returns: boolean
@@ -7722,19 +7714,7 @@ export type Database = {
       }
       purge_old_audit_logs: { Args: never; Returns: undefined }
       record_app_vital:
-        | {
-            Args: {
-              _name: string
-              _rating?: string
-              _req_id?: string
-              _ua?: string
-              _uid?: string
-              _url?: string
-              _value: number
-            }
-            Returns: undefined
-          }
-        | {
+        {
             Args: {
               _name: string
               _rating: string
@@ -7742,6 +7722,17 @@ export type Database = {
               _ua: string
               _uid?: string
               _url: string
+              _value: number
+            }
+            Returns: undefined
+          } | {
+            Args: {
+              _name: string
+              _rating?: string
+              _req_id?: string
+              _ua?: string
+              _uid?: string
+              _url?: string
               _value: number
             }
             Returns: undefined
@@ -7866,15 +7857,14 @@ export type Database = {
         Returns: boolean
       }
       sync_external_connections_from_credentials:
-        | { Args: never; Returns: Json }
-        | {
+        {
             Args: {
               _trigger_op?: string
               _trigger_secret_name?: string
               _trigger_user_id?: string
             }
             Returns: Json
-          }
+          } | { Args: never; Returns: Json }
       validate_mcp_key: {
         Args: { _key_plain: string }
         Returns: {
@@ -7895,47 +7885,18 @@ export type Database = {
     }
     Enums: {
       app_role:
-        | "admin"
-        | "manager"
-        | "vendedor"
-        | "supervisor"
-        | "dev"
-        | "agente"
-        | "coordenador"
+        "admin" | "agente" | "coordenador" | "dev" | "manager" | "supervisor" | "vendedor"
       conversation_event_type:
-        | "text"
-        | "image"
-        | "file"
-        | "system"
-        | "tool_call"
-        | "tool_result"
-      org_role: "owner" | "admin" | "member"
+        "file" | "image" | "system" | "text" | "tool_call" | "tool_result"
+      org_role: "admin" | "member" | "owner"
       role_migration_item_status:
-        | "pending"
-        | "success"
-        | "failed"
-        | "skipped"
-        | "dry_run"
+        "dry_run" | "failed" | "pending" | "skipped" | "success"
       role_migration_status:
-        | "pending"
-        | "running"
-        | "completed"
-        | "failed"
-        | "partial"
-        | "dry_run"
+        "completed" | "dry_run" | "failed" | "partial" | "pending" | "running"
       step_up_action:
-        | "promote_dev"
-        | "demote_dev"
-        | "mcp_full_issue"
-        | "mcp_full_escalate"
-        | "secret_rotation"
-        | "secret_revoke"
-        | "mcp_key_revoke"
-        | "mcp_key_rotate"
+        "demote_dev" | "mcp_full_escalate" | "mcp_full_issue" | "mcp_key_revoke" | "mcp_key_rotate" | "promote_dev" | "secret_revoke" | "secret_rotation"
     }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    CompositeTypes: Record<never, never>
   }
 }
 

@@ -173,6 +173,7 @@ export interface MatchFilters {
   minScore: number;
   matchTypes: MatchResult['matchType'][];
   categoryFilter?: string;
+  categoryId?: string;
   supplierFilter?: string;
   onlyInStock: boolean;
 }
@@ -202,6 +203,7 @@ export function useProductMatch(
 
       // Pre-filters
       if (mergedFilters.onlyInStock && candidate.stockStatus === 'out-of-stock') continue;
+      if (mergedFilters.categoryId && candidate.category_id !== mergedFilters.categoryId) continue;
       if (mergedFilters.categoryFilter && candidate.category?.name !== mergedFilters.categoryFilter)
         continue;
       if (mergedFilters.supplierFilter && candidate.supplier?.name !== mergedFilters.supplierFilter)
@@ -227,6 +229,7 @@ export function useProductMatch(
     mergedFilters.minScore,
     matchTypesKey,
     mergedFilters.categoryFilter,
+    mergedFilters.categoryId,
     mergedFilters.supplierFilter,
     mergedFilters.onlyInStock,
   ]);
