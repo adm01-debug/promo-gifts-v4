@@ -42,6 +42,8 @@ import {
 import { getPriceFreshness } from '@/utils/price-freshness';
 import * as QuoteCalc from '@/logic/quotes/calculations';
 import type { PromobrindProduct } from '@/lib/external-db';
+import { isValidQuoteTransition, getQuoteStatusLabel } from '@/lib/quote-status-config';
+import type { QuoteStatus } from '@/types/quote';
 
 import { logger } from '@/lib/logger';
 interface Product {
@@ -815,11 +817,13 @@ export function useQuoteBuilderState() {
   // BUG-032: Clamp amount-mode discount when markup decreases below discountValue.
   // Without this, the UI input keeps showing the stale R$ value while discountAmount
   // is silently clamped by calculateDiscountAmount — confusing the seller.
+  // FIX: use functional updater so discountValue is NOT in deps — the effect must
+  // fire only when subtotal or discountType changes, not on every user keystroke.
+  // The functional form reads the latest discountValue at update time (no stale closure).
   useEffect(() => {
-    if (discountType === 'amount' && discountValue > subtotal) {
-      setDiscountValue(QuoteCalc.round2(subtotal));
-    }
-  }, [subtotal, discountType, discountValue]);
+    if (discountType !== 'amount') return;
+    setDiscountValue((prev) => (prev > subtotal ? QuoteCalc.round2(subtotal) : prev));
+  }, [subtotal, discountType]);
 
   const handleProductClick = useCallback((product: Product) => {
     setSelectedProductForColor(product);
@@ -980,6 +984,20 @@ export function useQuoteBuilderState() {
         return;
       }
 
+      // BUG-008: Validate that the status transition is allowed before hitting the DB.
+      // Without this guard, the app could attempt illegal transitions (e.g. approved→draft,
+      // converted→anything) that the DB CHECK constraint would reject with a cryptic error.
+      // Same-status saves (e.g. re-saving a draft) are always allowed (not a transition).
+      // Only applies in edit mode — new quotes always start at the requested status.
+      if (isEditMode && quoteId && currentStatus && currentStatus !== status) {
+        if (!isValidQuoteTransition(currentStatus as QuoteStatus, status as QuoteStatus)) {
+          toast.error(
+            `Não é possível alterar o status de "${getQuoteStatusLabel(currentStatus)}" para "${getQuoteStatusLabel(status)}".`,
+          );
+          return;
+        }
+      }
+
       // ── Bloqueio de fechamento: itens com preço defasado precisam de confirmação ──
       // Só validamos ao fechar (pending / pending_approval). Rascunho permanece livre.
       if (status !== 'draft') {
@@ -1095,6 +1113,7 @@ export function useQuoteBuilderState() {
       shippingCost,
       isEditMode,
       quoteId,
+      currentStatus,
       items,
       navigate,
       updateQuote,
