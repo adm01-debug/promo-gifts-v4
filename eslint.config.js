@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 158: 5 zero-violation rules (excluded: no-lone-blocks 0v✓, react/no-namespace 0v✓, react/no-is-mounted 0v✓, react/no-unused-class-component-methods 0v✓, jsx-a11y/iframe-has-title 0v✓ — saved Batch 159)
+      'no-multi-str': 'error',
+      'no-extend-native': 'error',
+      'no-global-assign': 'error',
+      'no-extra-label': 'error',
+      'no-label-var': 'error',
       // Batch 157: 5 zero-violation rules (excluded: no-multi-str 0v✓, no-extend-native 0v✓, no-global-assign 0v✓, no-extra-label 0v✓, no-label-var 0v✓ — saved Batch 158)
       'jsx-a11y/mouse-events-have-key-events': 'error',
       'no-caller': 'error',
