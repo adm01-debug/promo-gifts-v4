@@ -204,7 +204,20 @@ export function applyProductFilters(
     !materialFilterError
   )
     result = [];
-  if (!hasMaterialFilter && filters.materiais.length > 0) {
+  // BUG-MATERIAIS-INERT FIX: o catálogo leve do Super Filtro NÃO hidrata
+  // product.materials (sempre []). O bloco legado abaixo casa filters.materiais
+  // (texto livre que chega via voz, URL ?materiais= ou preset salvo) contra
+  // product.materials.join(' ') — com a lista vazia, QUALQUER materiais selecionado
+  // zerava a grade silenciosamente ('' .includes('metal') === false para todos os
+  // produtos). Espelha o gate de `techniquesDataAvailable`: o bloco client-side só
+  // roda quando os produtos carregados realmente trazem materiais. O filtro de
+  // materiais "real" (grupos/tipos) continua server-side via materialFilteredProductIds,
+  // intacto. Computado a partir de realProducts (entrada completa), não de `result`,
+  // para não depender de filtros anteriores terem ou não deixado produtos com materiais.
+  const materialsDataAvailable = realProducts.some(
+    (p) => Array.isArray(p.materials) && p.materials.length > 0,
+  );
+  if (!hasMaterialFilter && materialsDataAvailable && filters.materiais.length > 0) {
     const materiaisLower = filters.materiais.map((m) => m.toLowerCase());
     result = result.filter((product) => {
       const materialsStr = product.materials.join(' ').toLowerCase();
