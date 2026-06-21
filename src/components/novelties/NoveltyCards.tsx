@@ -85,7 +85,9 @@ export const NoveltyGridCard = memo(
     const [activeColorName, setActiveColorName] = useState<string | null>(null);
     // Reset swatch selection when a different product is rendered into the same
     // component slot (can happen in non-virtualised list views after filter change).
-    useEffect(() => { setActiveColorName(null); }, [product.product_id]);
+    useEffect(() => {
+      setActiveColorName(null);
+    }, [product.product_id]);
     const activeImage = useMemo(() => {
       if (!activeColorName || !colors?.length) return product.product_image;
       const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());

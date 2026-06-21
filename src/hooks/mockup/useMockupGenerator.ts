@@ -73,6 +73,12 @@ export function useMockupGenerator() {
   >([]);
   const [artAttachments, setArtAttachments] = useState<ArtFileAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Re-entrancy guard for generateMockup: setIsLoading(true) is async/batched and
+  // cannot block a synchronous second call (a fast double-click, or the two buttons
+  // wired to the same handler). Flipped synchronously before the first await so a
+  // concurrent invocation returns immediately — preventing duplicate edge calls,
+  // duplicate history rows, and orphaned storage PNGs.
+  const isGeneratingRef = useRef(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [mockupAnnotations, setMockupAnnotations] = useState<
     { id: string; x: number; y: number; text: string }[]
@@ -517,6 +523,9 @@ export function useMockupGenerator() {
   );
 
   const generateMockup = useCallback(async () => {
+    // Re-entrancy guard (see isGeneratingRef): block a second concurrent generation
+    // that slips through before the isLoading-driven `disabled` re-render commits.
+    if (isGeneratingRef.current) return;
     const areasWithLogos = personalizationAreas.filter((a) => a.logoPreview);
     if (!selectedClient || !productSelection || !selectedTechnique || areasWithLogos.length === 0) {
       toast.error('Selecione empresa, produto, técnica e faça upload de pelo menos um logo');
@@ -554,6 +563,7 @@ export function useMockupGenerator() {
       }
     }
 
+    isGeneratingRef.current = true;
     setIsLoading(true);
     setGeneratedMockup(null);
     setGeneratedBatchMockups([]);
@@ -627,6 +637,7 @@ export function useMockupGenerator() {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      isGeneratingRef.current = false;
     }
   }, [
     selectedClient,

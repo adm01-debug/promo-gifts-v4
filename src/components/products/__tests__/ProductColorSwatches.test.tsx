@@ -123,11 +123,7 @@ describe('ProductColorSwatches', () => {
       const onClear = vi.fn();
       render(
         <TooltipProvider>
-          <ProductColorSwatches
-            colors={mockColors}
-            selectedName="Amarelo"
-            onClear={onClear}
-          />
+          <ProductColorSwatches colors={mockColors} selectedName="Amarelo" onClear={onClear} />
         </TooltipProvider>,
       );
       fireEvent.click(screen.getByTestId('color-swatches-clear'));
@@ -206,9 +202,9 @@ describe('ProductColorSwatches', () => {
           <ProductColorSwatches colors={stockColors} />
         </TooltipProvider>,
       );
-      expect(
-        screen.getByLabelText('Opção de cor: Verde').getAttribute('data-stock-state'),
-      ).toBe('in-stock');
+      expect(screen.getByLabelText('Opção de cor: Verde').getAttribute('data-stock-state')).toBe(
+        'in-stock',
+      );
     });
 
     it('permanece clicável mesmo quando esgotado (não quebra layout)', () => {

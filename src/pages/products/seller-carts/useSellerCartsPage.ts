@@ -84,7 +84,10 @@ export function useSellerCartsPage() {
   const weightVolume = useMemo(() => {
     if (!activeCart) return null;
     // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
-    const dimMap = new Map(allProducts.map((p) => [p.id, p]));
+    const dimMap = new Map(
+      // p inferred as Product; `as const` keeps each entry a [key, value] tuple for Map().
+      allProducts.map((p) => [p.id, p] as const),
+    );
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;

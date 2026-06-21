@@ -152,13 +152,29 @@ function svgError(corsHeaders: Record<string, string>): Response {
 
 // ─ Image helpers ────────────────────────────────────────────────────────────
 
+// Hard cap on any fetched/decoded image (product or logo). Without this a caller can
+// point productImageUrl at a huge file on an allowed CDN, or send a massive base64
+// logo, to exhaust the edge worker's memory (the bucket's 10 MB limit only bounds the
+// OUTPUT upload, not these inputs).
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15 MB
+
 async function fetchBytes(url: string, ms = 14_000): Promise<Uint8Array> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching image`);
-    return new Uint8Array(await res.arrayBuffer());
+    // Reject oversized payloads up-front via Content-Length when the server provides it…
+    const declared = Number(res.headers.get("content-length") || 0);
+    if (declared > MAX_IMAGE_BYTES) {
+      throw new Error(`Image too large (${declared} bytes > ${MAX_IMAGE_BYTES} max)`);
+    }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    // …and again after download, for servers that omit or under-report Content-Length.
+    if (bytes.byteLength > MAX_IMAGE_BYTES) {
+      throw new Error(`Image too large (${bytes.byteLength} bytes > ${MAX_IMAGE_BYTES} max)`);
+    }
+    return bytes;
   } finally { clearTimeout(t); }
 }
 
@@ -270,6 +286,18 @@ async function compositeImages(
     createImageBitmap(new Blob([logoBytes as unknown as any])),
   ]);
 
+  // Decompression-bomb guard: a small file can decode to an enormous pixel buffer.
+  // Reject anything beyond ~40 MP before it is rasterised onto the canvas.
+  const MAX_BITMAP_PIXELS = 40_000_000;
+  if (
+    prodBmp.width * prodBmp.height > MAX_BITMAP_PIXELS ||
+    logoBmp.width * logoBmp.height > MAX_BITMAP_PIXELS
+  ) {
+    prodBmp.close?.();
+    logoBmp.close?.();
+    throw new Error("Image dimensions exceed the maximum allowed (decompression-bomb guard).");
+  }
+
   // BUG-A15 FIX: const/let em vez de var
   // AUDIT 2026-06-17 — WYSIWYG parity: the on-screen preview (LogoPreviewCanvas)
   // renders the product with `object-contain` on a neutral background and positions
@@ -358,6 +386,15 @@ Deno.serve(async (req) => {
   // G1: reject SVG data URLs before any fetch/decode work.
   if (body.logoBase64 && /^data:image\/svg/i.test(body.logoBase64.trim()))
     return svgError(corsHeaders);
+
+  // Bound the inline logo BEFORE decoding it (base64 inflates ~4/3 vs. the raw bytes),
+  // so an oversized data: URL can't exhaust memory in base64ToBytes/createImageBitmap.
+  if (body.logoBase64 && body.logoBase64.length > Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 64)
+    return validationError(
+      "Logo é muito grande. Envie uma imagem menor.",
+      corsHeaders,
+      "LOGO_TOO_LARGE",
+    );
 
   const posX    = Math.max(0, Math.min(100, body.positionX ?? 50));
   const posY    = Math.max(0, Math.min(100, body.positionY ?? 50));

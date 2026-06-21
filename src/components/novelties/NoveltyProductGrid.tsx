@@ -147,8 +147,7 @@ export function NoveltyProductGrid() {
   // `products` (total geral), gerando counts inflados que não refletiam a seleção.
   // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
-    const normSearch = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const normSearch = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
     const searchMatch = (p: (typeof products)[0]) =>
       !q ||
@@ -779,7 +778,9 @@ export function NoveltyProductGrid() {
                 Atualizando novidades...
               </>
             ) : (
-              <span className="text-xs">Role para ver mais {filteredProducts.length - visibleCount} novidades</span>
+              <span className="text-xs">
+                Role para ver mais {filteredProducts.length - visibleCount} novidades
+              </span>
             )}
           </div>
         </div>

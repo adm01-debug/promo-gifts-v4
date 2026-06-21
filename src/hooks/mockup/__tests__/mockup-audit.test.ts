@@ -336,6 +336,20 @@ describe('Analise estatica — useMockupGenerator.ts', () => {
       expect(block).toContain('await clearDraft()');
     });
   });
+
+  describe('Re-entrancy — generateMockup não dispara 2x concorrente', () => {
+    it('declara isGeneratingRef como useRef(false)', () => {
+      expect(src).toContain('const isGeneratingRef = useRef(false)');
+    });
+    it('generateMockup retorna cedo quando já está gerando', () => {
+      const block = src.split('const generateMockup')[1]?.split('const deleteMockup')[0] ?? '';
+      expect(block).toContain('if (isGeneratingRef.current) return;');
+    });
+    it('reseta o guard no finally (não trava após erro/sucesso)', () => {
+      const block = src.split('const generateMockup')[1]?.split('const deleteMockup')[0] ?? '';
+      expect(block).toContain('isGeneratingRef.current = false;');
+    });
+  });
 });
 
 // =====================================================================

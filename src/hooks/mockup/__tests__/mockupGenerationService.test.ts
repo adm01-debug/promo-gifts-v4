@@ -11,18 +11,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Supabase client mock (chainable, thenable query builder) ────────────────
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
-let tableResults: Record<string, { data: unknown; error: unknown } | { data: unknown; error: unknown }[]> = {};
+type FakeResult = { data: unknown; error: unknown };
+// A table maps to either a single static result or a QUEUE of results (consumed one per
+// call) so a test can simulate sequenced DB responses, e.g. "first insert raises a 23503
+// FK violation, the retry succeeds".
+let tableResults: Record<string, FakeResult | FakeResult[]> = {};
 const captured: { insert?: Record<string, unknown> } = {};
 
 vi.mock('@/integrations/supabase/client', () => {
   const makeBuilder = (table: string) => {
-    // result(): if tableResults[table] is an array, consume in queue order (1st call → [0],
-    // 2nd → [1], ...) — lets tests simulate retry-on-FK. A single object = legacy behaviour.
-    const result = () => {
+    // Supports a single static result OR a queue (array) consumed one item per call,
+    // shifting until a single item remains (which then stays sticky).
+    const result = (): FakeResult => {
       const r = tableResults[table];
-      if (Array.isArray(r)) {
-        return r.length > 1 ? (r.shift() as { data: unknown; error: unknown }) : r[0];
-      }
+      if (Array.isArray(r)) return (r.length > 1 ? r.shift()! : r[0]) ?? { data: null, error: null };
       return r ?? { data: null, error: null };
     };
     const q: Record<string, unknown> = {};
@@ -65,6 +67,7 @@ import { uploadLogoToStorage } from '@/lib/mockup-storage';
 import { toast } from 'sonner';
 import {
   getTechniquePrompt,
+  createDefaultArea,
   saveMockupToDb,
   fetchMockupHistory,
   deleteMockupFromDb,
@@ -139,6 +142,27 @@ describe('getTechniquePrompt', () => {
   });
 });
 
+// ─── createDefaultArea (pure) ─────────────────────────────────────
+describe('createDefaultArea', () => {
+  it('seeds logoRotation=0 and logoScale=100 so the controlled sliders are defined (H4)', () => {
+    const a = createDefaultArea();
+    // Regression guard: omitting these made the size/rotation Sliders bind to
+    // `undefined` (controlled→uncontrolled warning) and persisted NULL geometry on the
+    // first generate/save.
+    expect(a.logoRotation).toBe(0);
+    expect(a.logoScale).toBe(100);
+  });
+
+  it('returns a fresh id and sane default geometry on every call', () => {
+    const a = createDefaultArea();
+    const b = createDefaultArea();
+    expect(a.id).not.toBe(b.id);
+    expect(a.positionX).toBe(50);
+    expect(a.positionY).toBe(50);
+    expect(a.logoPreview).toBeNull();
+  });
+});
+
 // ─── saveMockupToDb ───────────────────────────────────────────────
 describe('saveMockupToDb', () => {
   it('persists rotation/scale in area_config and thumbnail_url = mockupUrl (G5/T10)', async () => {
@@ -186,11 +210,12 @@ describe('saveMockupToDb', () => {
   });
 
   it('uploads data: logos and nulls product_id when the product is unknown', async () => {
-    // No pre-SELECT on products — the insert is attempted with product_id:'ghost' first.
-    // A 23503 FK violation triggers a retry with product_id:null. Simulate the queue.
     tableResults.products = { data: null, error: null };
+    // Production reality: 'ghost' is not a real products.id, so the first insert raises a
+    // 23503 FK violation; saveMockupToDb retries with product_id: null and succeeds. The
+    // queue makes the mock enforce the FK the same way Postgres would.
     tableResults.generated_mockups = [
-      { data: null, error: { code: '23503', message: 'FK violation on product_id' } },
+      { data: null, error: { code: '23503', message: 'FK violation' } },
       { data: { id: 'rec-2' }, error: null },
     ];
 
