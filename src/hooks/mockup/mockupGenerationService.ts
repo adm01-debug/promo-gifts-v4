@@ -185,7 +185,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     if (logoUrl?.startsWith('data:')) {
       logoUrl = await uploadLogoToStorage(
         userId,
-        logoUrl,
+        area.logoPreview as string,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
@@ -578,10 +578,10 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
+      ...t,
       id: String(t.id),
       name: String(t.name),
       code: t.code ? String(t.code) : null,
-      ...t,
     }));
 }
 

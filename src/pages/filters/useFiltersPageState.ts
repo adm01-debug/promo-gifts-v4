@@ -570,6 +570,7 @@ export function useFiltersPageState() {
     productIds: filteredProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
   });
 
   // Merge color enrichment data into products
@@ -717,8 +718,10 @@ export function useFiltersPageState() {
         key: 'tags',
       });
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
-      const min = filters.priceRange[0] > 0 ? `R$${filters.priceRange[0]}` : '';
-      const max = filters.priceRange[1] < 9999 ? `R$${filters.priceRange[1]}` : '';
+      const fmt = (n: number) =>
+        n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+      const min = filters.priceRange[0] > 0 ? fmt(filters.priceRange[0]) : '';
+      const max = filters.priceRange[1] < 9999 ? fmt(filters.priceRange[1]) : '';
       summary.push({
         label: 'Preço',
         value: min && max ? `${min}–${max}` : min || max,

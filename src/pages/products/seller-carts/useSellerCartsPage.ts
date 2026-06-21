@@ -93,13 +93,12 @@ export function useSellerCartsPage() {
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
-      const qty = Number(item.quantity) || 0;
       if (weight > 0) {
-        totalWeightG += weight * qty;
+        totalWeightG += weight * item.quantity;
         hasData = true;
       }
       if (volume > 0) {
-        totalVolumeCm3 += volume * qty;
+        totalVolumeCm3 += volume * item.quantity;
         hasData = true;
       }
     });
@@ -389,7 +388,7 @@ export function useSellerCartsPage() {
     // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
     // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const allIds = [...new Set(cart.items.map((i) => i.product_id as string))];
+    const allIds = [...new Set(cart.items.map((i) => i.product_id))];
     const uuidIds = allIds.filter((id) => uuidRe.test(id));
     // Non-UUID IDs (legacy) bypass server validation — fail-open.
     const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
@@ -427,12 +426,7 @@ export function useSellerCartsPage() {
     if (debounceNotesRef.current && activeCartIdForFlush) {
       clearTimeout(debounceNotesRef.current);
       debounceNotesRef.current = undefined;
-      const saved = await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
-      if (!saved) {
-        toast.warning('Notas não foram salvas', {
-          description: 'As notas do carrinho podem não aparecer no orçamento.',
-        });
-      }
+      await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
     }
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
@@ -463,21 +457,10 @@ export function useSellerCartsPage() {
     [carts, activeCartId],
   );
   const cartAge = activeCart ? differenceInDays(new Date(), new Date(activeCart.created_at)) : 0;
-  const cartSubtotal = useMemo(
-    () =>
-      activeCart
-        ? activeCart.items.reduce(
-            (sum, i) => sum + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
-            0,
-          )
-        : 0,
-    [activeCart],
-  );
-  const cartTotalQty = useMemo(
-    () =>
-      activeCart ? activeCart.items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0) : 0,
-    [activeCart],
-  );
+  const cartSubtotal = activeCart
+    ? activeCart.items.reduce((s, i) => s + i.product_price * i.quantity, 0)
+    : 0;
+  const cartTotalQty = activeCart ? activeCart.items.reduce((s, i) => s + i.quantity, 0) : 0;
 
   return {
     navigate,
