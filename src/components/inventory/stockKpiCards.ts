@@ -5,7 +5,10 @@
  * teste unitário (sem providers, sem React Query) e garantir que cada card
  * use a contagem certa (variações vs produtos) e o filtro correto.
  */
-import type { StockDashboardSummary, StockStatusFilter } from '@/types/stock';
+import type { StockDashboardSummary } from '@/types/stock';
+
+export type StockKpiFilter = 'all' | 'in_stock' | 'critical' | 'out_of_stock';
+
 
 export type StockKpiSlug =
   | 'total-de-variacoes'
@@ -24,7 +27,7 @@ export interface StockKpiCardData {
   /** Tooltip detalhado (atributo title nativo). */
   tooltip: string;
   /** Filtro aplicado ao clicar; null = limpar filtro. */
-  filter: StockStatusFilter | null;
+  filter: StockKpiFilter | null;
   variant: 'default' | 'success' | 'warning' | 'error';
 }
 
