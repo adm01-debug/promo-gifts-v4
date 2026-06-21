@@ -384,7 +384,14 @@ export function useSellerCarts() {
         })
         .select()
         .single();
-      if (cartErr) throw cartErr;
+      if (cartErr) {
+        if (cartErr.message?.includes('Limite de 3')) {
+          throw new Error(
+            'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de duplicar.',
+          );
+        }
+        throw cartErr;
+      }
 
       // Copy items
       if (sourceCart.items.length > 0) {
@@ -580,9 +587,15 @@ export function useSellerCarts() {
 
           const existing = await findVariantInCart(cartId, item.product_id, colorName);
           if (existing) {
+            // Mescla: se outro processo adicionou o mesmo item durante o intervalo do
+            // undo, somamos ao invés de sobrescrever — evita perder unidades adicionadas
+            // entre o clear e o restore. clampQuantity garante o teto de 999999.
             const { error } = await supabase
               .from('seller_cart_items')
-              .update({ quantity: safeQty, updated_at: new Date().toISOString() })
+              .update({
+                quantity: clampQuantity(existing.quantity + safeQty),
+                updated_at: new Date().toISOString(),
+              })
               .eq('id', existing.id);
             if (error) throw error;
           } else {
