@@ -185,7 +185,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     if (logoUrl?.startsWith('data:')) {
       logoUrl = await uploadLogoToStorage(
         userId,
-        logoUrl,
+        area.logoPreview as string,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
@@ -302,7 +302,7 @@ const GENERATE_TIMEOUT_MS = 60000;
 // BEFORE spending an edge-function invocation.
 function assertNotSvg(areas: PersonalizationArea[]): void {
   for (const area of areas) {
-    if (area.logoPreview?.startsWith('data:image/svg')) {
+    if (area.logoPreview && area.logoPreview.startsWith('data:image/svg')) {
       throw new Error(
         'Logos SVG não são suportados. Converta o logo para PNG ou JPG e tente novamente.',
       );
@@ -505,10 +505,7 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const row =
-    (
-      rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null
-    )?.[0] ?? null;
+  const row = (rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null)?.[0] ?? null;
   const logoUrl = row?.logo_url ?? null;
   const mockupUrl = row?.mockup_url ?? null;
 
@@ -527,7 +524,7 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   const pathsToRemove: string[] = [];
   for (const url of [logoUrl, mockupUrl]) {
     if (!url) continue;
-    const match = STORAGE_PATH_RE.exec(url);
+    const match = url.match(STORAGE_PATH_RE);
     if (match?.[1]) pathsToRemove.push(match[1]);
   }
 
@@ -578,10 +575,10 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
-      ...t,
       id: String(t.id),
       name: String(t.name),
       code: t.code ? String(t.code) : null,
+      ...t,
     }));
 }
 
