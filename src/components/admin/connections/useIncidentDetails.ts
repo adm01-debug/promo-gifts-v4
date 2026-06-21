@@ -212,7 +212,7 @@ export function useIncidentDetails(input: IncidentDetailsInput | null) {
       input?.kind ?? null,
       input?.windowMinutes ?? 120,
     ],
-    queryFn: () => fetchDetails(input as IncidentDetailsInput),
+    queryFn: () => fetchDetails(input!),
     enabled: !!input,
     staleTime: 60_000,
   });

@@ -114,7 +114,7 @@ export function ExpectedKeysMatchPanel({
     () =>
       extConns
         .filter((c) => !!c.env_key && !expectedEnvKeys.has(c.env_key.toLowerCase()))
-        .map((c) => ({ env_key: c.env_key as string, name: c.name })),
+        .map((c) => ({ env_key: c.env_key!, name: c.name })),
     [extConns, expectedEnvKeys],
   );
 

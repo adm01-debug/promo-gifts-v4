@@ -266,7 +266,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         },
         { timeout: 2000 },
       );
-      return lastHlsInstance as MockHlsInstance;
+      return lastHlsInstance!;
     };
 
     it('should handle HLS.js fatal network errors with recovery attempts', async () => {
@@ -364,7 +364,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         },
         { timeout: 2000 },
       );
-      return lastHlsInstance as MockHlsInstance;
+      return lastHlsInstance!;
     };
 
     it('should update quality state during multiple level changes with auto-level enabled', async () => {
@@ -441,7 +441,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should clean up src and load() the video element on unmount to prevent residual errors', () => {
       const { unmount } = render(<PromoFlixPlayer src="test.mp4" />);
-      const video = document.querySelector('video') as HTMLVideoElement;
+      const video = document.querySelector('video')!;
       const removeAttributeSpy = vi.spyOn(video, 'removeAttribute');
       const loadSpy = vi.spyOn(video, 'load');
 
@@ -454,7 +454,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     it('should reset error state when switching to a new video src', async () => {
       const { rerender, queryByText, getByText } = render(<PromoFlixPlayer src="error.mp4" />);
 
-      const video = document.querySelector('video') as HTMLVideoElement;
+      const video = document.querySelector('video')!;
       await act(async () => {
         Object.defineProperty(video, 'error', { value: { code: 2 }, configurable: true });
         fireEvent(video, new Event('error'));
@@ -503,7 +503,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should correctly handle native error code 3 (DECODE)', async () => {
       const { findByText } = render(<PromoFlixPlayer src="corrupt.mp4" />);
-      const video = document.querySelector('video') as HTMLVideoElement;
+      const video = document.querySelector('video')!;
 
       await act(async () => {
         Object.defineProperty(video, 'error', { value: { code: 3 }, configurable: true });
@@ -517,7 +517,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       // First render
       const { rerender } = render(<PromoFlixPlayer src="first.m3u8" isHls={true} />);
       await waitFor(() => expect(lastHlsInstance).not.toBeNull());
-      const firstHls = lastHlsInstance as MockHlsInstance;
+      const firstHls = lastHlsInstance!;
 
       // Quickly change src on the SAME instance — dispara o cleanup do useEffect
       // que destrói a instância HLS anterior antes de criar a nova.
@@ -554,7 +554,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       // localStorage limpo → usuário não escolheu mutar. O autoplay força o mute
       // (política do navegador), mas isso não pode virar preferência persistida.
       const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
-      const video = container.querySelector('video') as HTMLVideoElement;
+      const video = container.querySelector('video')!;
 
       // O navegador dispara `volumechange` quando o componente faz video.muted = true;
       // jsdom não dispara sozinho, então simulamos.
@@ -568,7 +568,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should persist an explicit user mute/unmute after the autoplay-forced mute', async () => {
       const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
-      const video = container.querySelector('video') as HTMLVideoElement;
+      const video = container.querySelector('video')!;
 
       // Consome o flag de supressão do mute forçado pelo autoplay (não persiste).
       await act(async () => {

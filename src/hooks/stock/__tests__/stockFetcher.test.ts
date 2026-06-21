@@ -23,7 +23,7 @@ const defaultResult: QueryResult = { data: [], error: null, count: 0 };
 
 function nextResult(table: string): QueryResult {
   const q = resultQueues[table];
-  if (q && q.length > 0) return q.shift() as QueryResult;
+  if (q && q.length > 0) return q.shift()!;
   return defaultResult;
 }
 
