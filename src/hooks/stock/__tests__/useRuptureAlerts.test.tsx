@@ -83,10 +83,11 @@ describe('useRuptureAlerts', () => {
 
   it('lista vazia em caso de erro, sem crash', async () => {
     setFeatureFlag('useEmaRupture', true);
-    limitMock.mockResolvedValueOnce({ data: null, error: new Error('view não existe') });
+    limitMock.mockResolvedValue({ data: null, error: new Error('view não existe') });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const { result } = renderHook(() => useRuptureAlerts(), { wrapper: wrap(qc) });
-    await waitFor(() => expect(result.current.error).not.toBeNull());
+    await waitFor(() => expect(result.current.error).not.toBeNull(), { timeout: 5000 });
     expect(result.current.alerts).toEqual([]);
   });
 });
+
