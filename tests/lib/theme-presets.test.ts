@@ -525,6 +525,12 @@ describe('§9 importThemeConfig / exportThemeConfig', () => {
     const parsed = importThemeConfig(json);
     expect(parsed?.mode).toBe('auto');
   });
+
+  it('importThemeConfig corrige mode inválido para "auto"', () => {
+    const json = JSON.stringify({ presetId: 'corporate', radius: 8, mode: 'invalid-value' });
+    const parsed = importThemeConfig(json);
+    expect(parsed?.mode).toBe('auto');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
