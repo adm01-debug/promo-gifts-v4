@@ -272,14 +272,14 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
 // DML grant). Only BRIDGE_ALIASES apply — mirrors dbInvokeDelete's resolution.
 type WriteResult = { data: unknown; error: { message?: string } | null };
 type WriteBuilder = PromiseLike<WriteResult> & {
-  insert(values: unknown): WriteBuilder;
-  update(values: unknown): WriteBuilder;
-  upsert(values: unknown): WriteBuilder;
-  delete(): WriteBuilder;
-  select(columns?: string): WriteBuilder;
-  eq(column: string, value: unknown): WriteBuilder;
-  in(column: string, values: readonly unknown[]): WriteBuilder;
-  is(column: string, value: null): WriteBuilder;
+  insert: (values: unknown) => WriteBuilder;
+  update: (values: unknown) => WriteBuilder;
+  upsert: (values: unknown) => WriteBuilder;
+  delete: () => WriteBuilder;
+  select: (columns?: string) => WriteBuilder;
+  eq: (column: string, value: unknown) => WriteBuilder;
+  in: (column: string, values: readonly unknown[]) => WriteBuilder;
+  is: (column: string, value: null) => WriteBuilder;
 };
 
 function remapWriteData(resolvedTable: string, data: unknown): unknown {

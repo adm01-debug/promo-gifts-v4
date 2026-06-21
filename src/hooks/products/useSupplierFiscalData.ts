@@ -151,11 +151,11 @@ export function useSupplierFiscalData(
         if (vssResult.data?.length) {
           // Pick the VSS record whose variant appears earliest in the priority order
           const vssByVariantId = new Map<string, VSSRecord>(
-            vssResult.data.map((r) => [(r as VSSRecord).variant_id as string, r as VSSRecord]),
+            vssResult.data.map((r) => [(r as VSSRecord).variant_id!, r as VSSRecord]),
           );
           const matched = variantIds.find((vid) => vssByVariantId.has(vid));
           if (matched) {
-            vss = vssByVariantId.get(matched) as VSSRecord;
+            vss = vssByVariantId.get(matched)!;
             matchedVariantId = matched;
           }
         }

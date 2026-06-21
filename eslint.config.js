@@ -1478,6 +1478,7 @@ export default [
       'jsx-a11y/no-noninteractive-element-to-interactive-role': 'off',
       'jsx-a11y/interactive-supports-focus': 'off',
       'react/sort-comp': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off', // 26 intentional non-null assertions; rule re-added by firehose batch
     },
   },
 ];

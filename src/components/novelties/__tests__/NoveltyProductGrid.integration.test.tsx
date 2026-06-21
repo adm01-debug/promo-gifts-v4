@@ -98,20 +98,6 @@ vi.mock('@/hooks/products', () => ({
   },
   // NoveltyProductGrid imports noveltyToProduct as a module-level export (ISSUE-35), so the
   // mock must expose it at the top level — not only inside useNoveltiesSelectionMode.
-  noveltyToProduct: (n: NoveltyWithDetails) => ({
-    id: n.product_id,
-    name: n.product_name || '',
-    product_name: n.product_name || '',
-    price: n.base_price,
-    sku: n.product_sku || '',
-    stock: n.stock_quantity,
-    supplier: { id: n.supplier_id, name: n.supplier_name },
-    category: { id: n.category_id, name: n.category_name },
-    images: [n.product_image],
-    colors: [],
-    materials: [],
-    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-  }),
   useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),
