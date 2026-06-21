@@ -72,7 +72,9 @@ describe("product-mapper", () => {
     });
 
     it("maps low stock correctly", () => {
-      const result = mapPromobrindToProduct({ ...baseProduct, stock: 5 } as any);
+      // min_quantity deve ser <= stock para não acionar a guarda 'can't fill min order'.
+      // Testamos o caminho qty < CATALOG_LOW_STOCK_THRESHOLD (10) → 'low-stock'.
+      const result = mapPromobrindToProduct({ ...baseProduct, stock: 5, min_quantity: 1 } as any);
       expect(result.stockStatus).toBe("low-stock");
     });
 

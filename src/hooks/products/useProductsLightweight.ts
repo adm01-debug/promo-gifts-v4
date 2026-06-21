@@ -243,7 +243,10 @@ async function fetchCatalogPage(
 
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
-  if (categories && categories.length > 0) filters.category_id = categories;
+  // GAP-CAT-01: NÃO aplicar category_id server-side. Produtos ficam em sub-categorias
+  // (category_id = 'camisetas') mas o filtro selecionado pode ser o pai ('vestuario').
+  // O filtro correto (com includeDescendants) é feito client-side em useCatalogFiltering
+  // via categoryFilteredProductIds retornados por useProductsByCategory.
   if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
 
   let orderBy: { column: string; ascending?: boolean; nullsFirst?: boolean } = {
