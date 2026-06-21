@@ -366,7 +366,11 @@ Deno.serve(async (req) => {
   // using the product's contain rect, so the result matches the preview (WYSIWYG).
   const logoWidthCm  = body.logoWidthCm  ?? 5;
   const logoHeightCm = body.logoHeightCm ?? 3;
-  const rotation = body.logoRotation ?? 0;
+  // Sanitize rotation like the other geometry fields: a NaN/Infinity/non-number from a
+  // malformed or older payload would put ctx.rotate() into an invalid state and corrupt
+  // the canvas while still returning 200. Clamp to a finite [-360, 360] range.
+  const rotationRaw = Number(body.logoRotation ?? 0);
+  const rotation = Number.isFinite(rotationRaw) ? Math.max(-360, Math.min(360, rotationRaw)) : 0;
   const scale    = Math.max(10, Math.min(300, body.logoScale ?? 100));
 
   const t0 = Date.now();

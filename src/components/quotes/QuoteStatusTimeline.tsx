@@ -61,11 +61,16 @@ export function QuoteStatusTimeline({
   // Compute current index based on filtered steps
   const activeSteps = isPendingApproval ? steps : steps.filter((s) => s.key !== 'pending_approval');
   const stepIdx = activeSteps.findIndex((s) => s.key === status);
+  const mappedOrder = statusOrder[status];
   const baseIdx =
     stepIdx >= 0
       ? stepIdx
-      : statusOrder[status] !== null
-        ? Math.min(statusOrder[status], activeSteps.length)
+      : // Unknown status → undefined (not null), so guard with !== undefined. Clamp to the
+        // LAST valid index (length - 1): terminal statuses (sent/viewed/approved/…) map to 5
+        // but there are only 4 visible steps, and Math.min(5, length) would be out of bounds,
+        // leaving the final step perpetually "completed" and never "current".
+        mappedOrder !== undefined
+        ? Math.min(mappedOrder, activeSteps.length - 1)
         : 0;
   const syncIdx = activeSteps.findIndex((s) => s.key === 'syncing');
   const currentIdx = isSyncing && syncIdx >= 0 ? syncIdx : baseIdx;

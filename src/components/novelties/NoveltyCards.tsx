@@ -26,7 +26,6 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
-import { getRecencyVariant } from '@/lib/novelty-dates';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
 
@@ -76,9 +75,12 @@ export const NoveltyGridCard = memo(
     isPriceStockLoading = false,
     priority = false,
   }: NoveltyCardProps) => {
-    // ISSUE-5 FIX: computar freshness ao renderizar (não do cache) — evita badge
-    // "recém-chegado" exibido com dado stale por até 2 min após cruzar 5 dias.
-    const fresh = getRecencyVariant(product.detected_at) === 'hot';
+    // "recém-chegado" = is_highlighted (days_as_novelty ≤ NOVELTY_FRESH_DAYS = 5), a fonte
+    // de verdade da pipeline e mutuamente exclusivo com o badge de "expirando". Derivar
+    // `fresh` de getRecencyVariant estreitava a janela para ≤2 dias ('hot'), divergindo do
+    // predicado/comentário e quebrando o teste-guarda NoveltyGridCard.expiringBadge (que
+    // modela fresh ⇔ is_highlighted).
+    const fresh = product.is_highlighted;
 
     // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
     // num swatch troca a foto principal pela imagem da variante selecionada.
@@ -99,10 +101,11 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
-          // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
-          // Reposição em todos os viewports.
-          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
+          // Altura flexível com piso — o virtualizer (measureElement) precisa medir a
+          // altura REAL do card. Alturas fixas + overflow-hidden recortam conteúdo (nomes
+          // longos + skeleton de preço/estoque) e corrompem a medição/scroll de /novidades.
+          // Guarda coberta por NoveltyGridCard.flexibleHeight.test.tsx.
+          'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
@@ -259,7 +262,6 @@ export const NoveltyGridCard = memo(
             {product.product_name ?? '—'}
           </p>
 
-
           <div className="mt-0.5">
             <ProductColorSwatches
               colors={colors}
@@ -354,8 +356,7 @@ export function NoveltyTableView({
   // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()
   // quando há muitos produtos selecionados. NoveltyProductGrid.tsx já tem sel.selectedIds
   // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
-  const selectedSet: Set<string> =
-    selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+  const selectedSet: Set<string> = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
 
   return (
     <div className="overflow-x-auto rounded-lg border">

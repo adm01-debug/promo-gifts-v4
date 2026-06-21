@@ -523,7 +523,10 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   // round-trip and is robust to base-URL format variations (trailing slash, etc.).
   // Supabase storage public URLs follow the pattern:
   //   .../storage/v1/object/public/mockup-assets/<path>
-  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/(.+)$/;
+  // Capture the object path but stop at any query/fragment (?t=, transform suffixes, #...),
+  // otherwise the captured key won't exist in the bucket and storage.remove() silently
+  // no-ops, leaking the orphaned logo/composite PNG.
+  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/([^?#]+)/;
   const pathsToRemove: string[] = [];
   for (const url of [logoUrl, mockupUrl]) {
     if (!url) continue;
