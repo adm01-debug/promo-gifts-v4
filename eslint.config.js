@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 236: 5 zero-violation rules (236A: array-type 212v✗, no-import-type-side-effects 102v✗)
+      '@typescript-eslint/no-unnecessary-type-constraint': 'error',
+      '@typescript-eslint/no-misused-new': 'error',
+      '@typescript-eslint/no-var-requires': 'error',
+      '@typescript-eslint/no-useless-constructor': 'error',
+      '@typescript-eslint/no-dupe-class-members': 'error',
       // Batch 235: 5 zero-violation rules (probe 235A: all 0v✓)
       '@typescript-eslint/no-invalid-void-type': 'error',
       '@typescript-eslint/triple-slash-reference': 'error',
