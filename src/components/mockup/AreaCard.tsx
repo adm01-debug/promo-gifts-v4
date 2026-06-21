@@ -34,7 +34,7 @@ export const AreaCard = memo(
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       e.stopPropagation();
       const file = e.target.files?.[0];
-      if (file && file.type.startsWith('image/')) {
+      if (file?.type.startsWith('image/')) {
         onLogoUpload(file);
       }
       // Reset input so the same file can be re-selected

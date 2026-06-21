@@ -120,7 +120,7 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
         const tag = target.tagName;
         const ceAttr = target.getAttribute?.('contenteditable');
         const isCE =
-          target.isContentEditable === true ||
+          target.isContentEditable ||
           ceAttr === '' ||
           ceAttr === 'true' ||
           ceAttr === 'plaintext-only';

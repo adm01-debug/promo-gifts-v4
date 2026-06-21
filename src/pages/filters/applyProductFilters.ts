@@ -99,8 +99,8 @@ export function applyProductFilters(
     result = result.filter(
       (p) =>
         p.name.toLowerCase().includes(s) ||
-        (p.sku && p.sku.toLowerCase().includes(s)) ||
-        (p.description && p.description.toLowerCase().includes(s)),
+        p.sku?.toLowerCase().includes(s) ||
+        p.description?.toLowerCase().includes(s),
     );
   }
   if (hasColorFilter && colorFilteredProductIds.size > 0)
@@ -247,11 +247,11 @@ export function applyProductFilters(
   if (filters.hasCommercialPackaging)
     result = result.filter((product) => product.hasCommercialPackaging === true);
   if (filters.isKit) result = result.filter((product) => isProductKit(product));
-  if (filters.featured) result = result.filter((product) => product.featured === true);
-  if (filters.isNew) result = result.filter((product) => product.newArrival === true);
+  if (filters.featured) result = result.filter((product) => product.featured);
+  if (filters.isNew) result = result.filter((product) => product.newArrival);
   if (filters.hasPersonalization)
     result = result.filter((product) => product.hasPersonalization === true);
-  if (filters.onSale) result = result.filter((product) => product.onSale === true);
+  if (filters.onSale) result = result.filter((product) => product.onSale);
   if (filters.gender?.length) {
     const genderSet = new Set(filters.gender.map((g) => g.toLowerCase().trim()));
     result = result.filter((product) => {

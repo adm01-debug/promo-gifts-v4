@@ -115,7 +115,7 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
         {freshness.status !== 'unknown' &&
           (() => {
             const stripped =
-              freshness.label.match(/\(([^)]+)\)/)?.[1] ||
+              /\(([^)]+)\)/.exec(freshness.label)?.[1] ||
               freshness.label
                 .replace(/^(Atualizado|Próximo do limite|Possivelmente defasado)\s+/i, '')
                 .trim();

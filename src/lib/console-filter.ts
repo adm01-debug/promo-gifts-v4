@@ -34,7 +34,7 @@
     try {
       const first = args[0];
       const msg = typeof first === 'string' ? first : JSON.stringify(first);
-      return SILENCED_PATTERNS.some((pattern) => msg && msg.includes(pattern));
+      return SILENCED_PATTERNS.some((pattern) => msg?.includes(pattern));
     } catch {
       return false;
     }

@@ -173,7 +173,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                   let widthCm = p.width_cm;
                   let heightCm = p.height_cm;
                   if ((!widthCm || !heightCm) && p.notes) {
-                    const dimMatch = p.notes.match(/\|\s*([\d.]+)×([\d.]+)cm/);
+                    const dimMatch = /\|\s*([\d.]+)×([\d.]+)cm/.exec(p.notes);
                     if (dimMatch) {
                       widthCm = parseFloat(dimMatch[1]);
                       heightCm = parseFloat(dimMatch[2]);

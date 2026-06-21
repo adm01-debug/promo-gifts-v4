@@ -40,7 +40,7 @@ export function OtherSuppliersRow({ product, formatCurrency, onAddToCompare }: P
               Buscando alternativas...
             </p>
           )}
-          {result && result.alternatives.length === 0 && (
+          {result?.alternatives.length === 0 && (
             <p className="py-2 text-center text-[11px] text-muted-foreground">
               Nenhum fornecedor alternativo encontrado.
             </p>
