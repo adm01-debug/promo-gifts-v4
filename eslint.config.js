@@ -563,6 +563,10 @@ export default [
       'no-extend-native': 'error',
       'no-eval': 'error',
       '@typescript-eslint/no-this-alias': 'error',
+      // Batch 117: 3 zero-violation rules
+      'react/no-invalid-html-attribute': 'error',
+      'react/forbid-foreign-prop-types': 'error',
+      '@typescript-eslint/no-implied-eval': 'error',
     },
     settings: {
       react: { version: 'detect' },
