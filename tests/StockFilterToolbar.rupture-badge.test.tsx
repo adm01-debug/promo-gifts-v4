@@ -4,9 +4,7 @@
  * Regra de UX (espelho do "Estoque Futuro"):
  *  - Badge `data-testid="rupture-risk-horizon-badge"` SÓ aparece quando:
  *      isRuptureRiskActive === true  &&  ruptureRiskCount > 0
- *  - O Switch fica disabled quando ruptureRiskCount === 0 (não há nada
- *    para filtrar) ou quando o callback `onToggleRuptureRisk` não foi
- *    provido (modo legado/sem wiring).
+ *  - Switch fica disabled quando ruptureRiskCount === 0 ou sem callback.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -30,7 +28,7 @@ function openRupturePopover() {
 }
 
 describe('StockFilterToolbar — badge de Risco de Ruptura', () => {
-  it('OFF + count=0 → badge ausente, botão sem aria-pressed=true', () => {
+  it('OFF + count=0 → badge ausente, aria-pressed=false', () => {
     render(
       <StockFilterToolbar
         {...baseProps}
@@ -58,7 +56,7 @@ describe('StockFilterToolbar — badge de Risco de Ruptura', () => {
     expect(screen.queryByTestId('rupture-risk-horizon-badge')).not.toBeInTheDocument();
   });
 
-  it('ON + count>0 → badge visível com "3d" (horizonte default)', () => {
+  it('ON + count>0 → badge visível com "Nd"', () => {
     render(
       <StockFilterToolbar
         {...baseProps}
@@ -88,7 +86,7 @@ describe('StockFilterToolbar — badge de Risco de Ruptura', () => {
     expect(screen.queryByTestId('rupture-risk-horizon-badge')).not.toBeInTheDocument();
   });
 
-  it('Switch fica disabled quando count=0', () => {
+  it('Switch disabled quando count=0', () => {
     render(
       <StockFilterToolbar
         {...baseProps}
@@ -98,8 +96,7 @@ describe('StockFilterToolbar — badge de Risco de Ruptura', () => {
       />,
     );
     openRupturePopover();
-    const sw = screen.getByTestId('rupture-risk-switch');
-    expect(sw).toBeDisabled();
+    expect(screen.getByTestId('rupture-risk-switch')).toBeDisabled();
   });
 
   it('Switch dispara onToggleRuptureRisk(true) quando count>0', () => {

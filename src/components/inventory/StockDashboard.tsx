@@ -27,6 +27,11 @@ import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
 import { buildStockKpiCards } from './stockKpiCards';
 import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
+import {
+  useRuptureRiskHydration,
+  writeRuptureRiskActivePref,
+} from '@/hooks/stock/useRuptureRiskHydration';
 
 
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
@@ -198,6 +203,13 @@ export function StockDashboard() {
   // O MESMO set alimenta o número do card E o filtro da tabela, garantindo
   // invariante card-count === linhas-filtradas (deduplica fornecedores por
   // variante via `byVariantId`).
+  const [ruptureHorizon] = useRuptureHorizon();
+
+  // SSOT do "Risco de Ruptura": IDs únicos com cobertura ≤ horizonte ativo.
+  // Parametrizado pelo `ruptureHorizon` (3/7/15/30) — mudar a janela na
+  // toolbar recomputa o set, e o efeito de sincronização abaixo atualiza
+  // `filters.ruptureRiskVariantIds` quando o filtro está ativo, fazendo
+  // grid + badge + Switch reagirem em conjunto a uma única fonte da verdade.
   const ruptureRiskVariantIds = useMemo<ReadonlySet<string> | null>(() => {
     if (ruptureByVariantId.size === 0) return null;
     const ids = new Set<string>();
@@ -205,23 +217,20 @@ export function StockDashboard() {
       if (
         typeof a.cobertura_dias === 'number' &&
         Number.isFinite(a.cobertura_dias) &&
-        a.cobertura_dias <= 30
+        a.cobertura_dias <= ruptureHorizon
       ) {
         ids.add(a.variant_id);
       }
     }
     return ids.size > 0 ? ids : null;
-  }, [ruptureByVariantId]);
+  }, [ruptureByVariantId, ruptureHorizon]);
 
-  const ruptureRisk30dCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : null;
+  const ruptureRiskCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : 0;
+  const ruptureRisk30dCount = ruptureRiskCount > 0 ? ruptureRiskCount : null;
   const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
   void ruptureAlerts; // mantido para upstream subscribers (cache warm)
 
-  // Toggle on/off do filtro de Risco de Ruptura — espelha o padrão do
-  // Estoque Futuro (Switch no popover do botão da toolbar). Persiste o
-  // estado em localStorage e reaplica quando o conjunto fica disponível
-  // após reload (re-hidratação assíncrona dos alertas EMA).
-  const RUPTURE_PREF_KEY = 'stock-filter:rupture-risk-active:v1';
+  // Toggle on/off do filtro de Risco de Ruptura — espelha o Estoque Futuro.
   const toggleRuptureRisk = useCallback(
     (active: boolean) => {
       if (active && ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
@@ -230,33 +239,32 @@ export function StockDashboard() {
       } else {
         updateFilter('ruptureRiskVariantIds', undefined);
       }
-      try {
-        window.localStorage.setItem(RUPTURE_PREF_KEY, active ? '1' : '0');
-      } catch {
-        /* quota/private mode */
-      }
+      writeRuptureRiskActivePref(active);
     },
     [ruptureRiskVariantIds, updateFilter],
   );
 
-  // Re-hidratação: quando os alertas EMA chegam após mount, se a pref
-  // estava ON, aplica o filtro automaticamente (uma única vez por sessão).
-  const ruptureHydratedRef = useRef(false);
-  useEffect(() => {
-    if (ruptureHydratedRef.current) return;
-    if (!ruptureRiskVariantIds || ruptureRiskVariantIds.size === 0) return;
-    let pref = '0';
-    try {
-      pref = window.localStorage.getItem(RUPTURE_PREF_KEY) ?? '0';
-    } catch {
-      /* ignore */
-    }
-    if (pref === '1' && !isRuptureRiskActive) {
+  // Re-hidratação após reload: aplica filtro quando alertas EMA chegam.
+  useRuptureRiskHydration({
+    variantIds: ruptureRiskVariantIds,
+    isActive: isRuptureRiskActive,
+    applyFilter: (ids) => {
       updateFilter('status', 'all');
-      updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+      updateFilter('ruptureRiskVariantIds', ids);
+    },
+  });
+
+  // Mudança de horizonte enquanto o filtro está ativo → re-sincroniza o
+  // conjunto aplicado para que grid e badge atualizem juntos.
+  useEffect(() => {
+    if (!isRuptureRiskActive) return;
+    if (!ruptureRiskVariantIds || ruptureRiskVariantIds.size === 0) {
+      updateFilter('ruptureRiskVariantIds', undefined);
+      return;
     }
-    ruptureHydratedRef.current = true;
-  }, [ruptureRiskVariantIds, isRuptureRiskActive, updateFilter]);
+    updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruptureHorizon, ruptureRiskVariantIds]);
 
   const activeFilterLabel = useMemo(() => {
     if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
@@ -422,7 +430,7 @@ export function StockDashboard() {
                 totalProducts={allProductStocks.length}
                 filteredCount={productStocks.length}
                 isRuptureRiskActive={isRuptureRiskActive}
-                ruptureRiskCount={ruptureRisk30dCount ?? 0}
+                ruptureRiskCount={ruptureRiskCount}
                 onToggleRuptureRisk={toggleRuptureRisk}
               />
             </div>

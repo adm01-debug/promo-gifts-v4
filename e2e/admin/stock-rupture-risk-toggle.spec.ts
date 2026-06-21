@@ -1,15 +1,9 @@
 /**
  * E2E — Toggle "Risco de Ruptura" no toolbar do /estoque.
  *
- * Espelha 1-para-1 o spec de Estoque Futuro (stock-future-stock.spec.ts):
- *  - Botão dedicado existe fora do popover de filtros.
- *  - Alternar liga o Switch e exibe o badge "Nd" no botão.
- *  - Trocar o horizonte (3/7/15/30) atualiza `aria-checked` e o badge.
- *  - A ativação é persistida em `localStorage` (`stock-filter:rupture-risk-active:v1`)
- *    + horizonte em `stock.ruptureHorizon`; ambos sobrevivem a um reload.
- *  - Quando não há SKUs em risco, o Switch fica desabilitado (sem badge).
- *
- * Política: usa exclusivamente seletores do SSOT (`Sel.stock.*`).
+ * Espelha 1-para-1 o spec de Estoque Futuro: liga, troca horizonte (que
+ * agora filtra o grid + atualiza badge juntos), persiste em localStorage
+ * (chaves v1) e sobrevive a reload via re-hidratação dos alertas EMA.
  */
 import { test, expect } from '../fixtures/test-base';
 import type { Page } from '@playwright/test';
@@ -18,9 +12,9 @@ import { gotoAndSettle } from '../helpers/nav';
 import { Sel } from '../fixtures/selectors';
 
 const ACTIVE_KEY = 'stock-filter:rupture-risk-active:v1';
-const HORIZON_KEY = 'stock.ruptureHorizon';
+const HORIZON_KEY = 'stock-filter:rupture-horizon:v1';
 
-async function readStorage(page: Page, key: string) {
+async function read(page: Page, key: string) {
   return page.evaluate((k) => {
     try {
       return window.localStorage.getItem(k);
@@ -37,6 +31,7 @@ test.describe('Estoque — toggle Risco de Ruptura (paridade com Estoque Futuro)
         try {
           window.localStorage.removeItem(a);
           window.localStorage.removeItem(h);
+          window.localStorage.removeItem('stock.ruptureHorizon');
         } catch {
           /* ignore */
         }
@@ -51,10 +46,8 @@ test.describe('Estoque — toggle Risco de Ruptura (paridade com Estoque Futuro)
     const toggle = page.locator(Sel.stock.ruptureRiskToggleButton);
     await expect(toggle).toBeVisible({ timeout: 15_000 });
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    // Badge oculto enquanto o filtro está OFF.
     await expect(page.locator(Sel.stock.ruptureRiskHorizonBadge)).toHaveCount(0);
 
-    // Abre o popover e liga o Switch.
     await toggle.click();
     const sw = page.locator(Sel.stock.ruptureRiskSwitch);
     await expect(sw).toBeVisible();
@@ -63,36 +56,30 @@ test.describe('Estoque — toggle Risco de Ruptura (paridade com Estoque Futuro)
     }
     await sw.click();
     await expect(sw).toHaveAttribute('aria-checked', 'true');
-
-    // Horizonte default = 3d.
     await expect(page.locator(Sel.stock.ruptureRiskHorizon(3))).toHaveAttribute(
       'aria-checked',
       'true',
     );
 
-    // Troca para 30 dias.
     await page.locator(Sel.stock.ruptureRiskHorizon(30)).click();
     await expect(page.locator(Sel.stock.ruptureRiskHorizon(30))).toHaveAttribute(
       'aria-checked',
       'true',
     );
 
-    // Fecha popover e valida estado do botão + badge.
     await page.keyboard.press('Escape');
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect(toggle).toContainText('30d');
     await expect(page.locator(Sel.stock.ruptureRiskHorizonBadge)).toBeVisible();
 
-    // Persistência no localStorage.
-    await expect.poll(() => readStorage(page, ACTIVE_KEY)).toBe('1');
-    await expect.poll(() => readStorage(page, HORIZON_KEY)).toBe('30');
+    await expect.poll(() => read(page, ACTIVE_KEY)).toBe('1');
+    await expect.poll(() => read(page, HORIZON_KEY)).toBe('30');
 
-    // Sobrevive a reload (re-hidratação do filtro quando alertas EMA chegam).
     await page.reload();
-    const toggleAfter = page.locator(Sel.stock.ruptureRiskToggleButton);
-    await expect(toggleAfter).toBeVisible({ timeout: 15_000 });
-    await expect(toggleAfter).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
-    await expect(toggleAfter).toContainText('30d');
+    const after = page.locator(Sel.stock.ruptureRiskToggleButton);
+    await expect(after).toBeVisible({ timeout: 15_000 });
+    await expect(after).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
+    await expect(after).toContainText('30d');
   });
 
   test('desligar via Switch remove o badge e zera a pref', async ({ page }) => {
@@ -104,8 +91,6 @@ test.describe('Estoque — toggle Risco de Ruptura (paridade com Estoque Futuro)
     if (await sw.isDisabled()) {
       test.skip(true, 'sem SKUs em risco para validar o toggle');
     }
-
-    // Liga e depois desliga.
     await sw.click();
     await expect(sw).toHaveAttribute('aria-checked', 'true');
     await sw.click();
@@ -114,6 +99,6 @@ test.describe('Estoque — toggle Risco de Ruptura (paridade com Estoque Futuro)
     await page.keyboard.press('Escape');
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator(Sel.stock.ruptureRiskHorizonBadge)).toHaveCount(0);
-    await expect.poll(() => readStorage(page, ACTIVE_KEY)).toBe('0');
+    await expect.poll(() => read(page, ACTIVE_KEY)).toBe('0');
   });
 });

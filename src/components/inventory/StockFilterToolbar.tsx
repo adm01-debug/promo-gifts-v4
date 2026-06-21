@@ -66,10 +66,10 @@ interface StockFilterToolbarProps {
   /**
    * Estado do filtro dimensional "Risco de Ruptura" — controlado pelo
    * StockDashboard. Quando true, a tabela mostra só SKUs em risco e o
-   * botão exibe o badge "Nd" + estilo ativo (mesma UX do Estoque Futuro).
+   * botão exibe o badge "Nd" + estilo ativo (espelho do Estoque Futuro).
    */
   isRuptureRiskActive?: boolean;
-  /** Quantidade de SKUs em risco (≤30d) — usada para habilitar o Switch e o badge. */
+  /** Quantidade de SKUs em risco (filtrada por horizonte) — gate do Switch + badge. */
   ruptureRiskCount?: number;
   /** Callback de toggle on/off do filtro de Risco de Ruptura. */
   onToggleRuptureRisk?: (active: boolean) => void;
