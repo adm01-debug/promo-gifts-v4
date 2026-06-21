@@ -112,6 +112,8 @@ function SellerCartsContent() {
   const [visibleColumns, setVisibleColumns] =
     useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
   const [density, setDensity] = useState<CartTableDensity>('comfortable');
+  // Density-aware cell padding (single SSOT; consumed by every th/td in the table view).
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
   // Ordenação + paginação (persistidas, namespaced por user)
   type SortKey = 'name' | 'price' | 'total';
