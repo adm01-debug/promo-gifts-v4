@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useColorFanout } from '@/hooks/products/useColorFanout';
 import { useColorSystem } from '@/hooks/products/useColorSystem';
 import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
@@ -635,6 +636,74 @@ export function useFiltersPageState() {
     });
   }, [filteredProducts, colorEnrichmentMap, filters.colorGroups, filters.colorVariations]);
 
+  // ============================================================
+  // FAN-OUT DE COR (FASE 2): expande produtos em "cards de cor".
+  // Filtro de cor ativo => cada produto vira N cards (1 por cor selecionada que
+  // possui), cards do mesmo produto adjacentes. Foto/estoque/cor por variante.
+  // Sem filtro de cor => displayCards = enrichedFilteredProducts (1-card-por-produto).
+  // ============================================================
+  const { data: colorFanoutMap } = useColorFanout({
+    productIds: filteredProductIds,
+    colorGroups: filters.colorGroups || [],
+    colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
+  });
+
+  const hasFanoutColorFilter =
+    (filters.colorGroups?.length || 0) > 0 ||
+    (filters.colorVariations?.length || 0) > 0 ||
+    (filters.colorNuances?.length || 0) > 0;
+
+  const displayCards = useMemo(() => {
+    // Sem filtro de cor (ou fan-out ainda carregando): 1 card por produto.
+    if (!hasFanoutColorFilter || !colorFanoutMap || colorFanoutMap.size === 0) {
+      return enrichedFilteredProducts;
+    }
+    // Fan-out: 1 card por (produto, cor). Mantém ordem de filteredProducts
+    // (cards do mesmo produto saem adjacentes pois iteramos produto a produto).
+    const cards: typeof filteredProducts = [];
+    for (const product of filteredProducts) {
+      const colorCards = colorFanoutMap.get(product.id);
+      if (!colorCards || colorCards.length === 0) {
+        // produto sem cor correspondente (não esperado pós-filtro) → 1 card neutro
+        cards.push(product);
+        continue;
+      }
+      for (const cc of colorCards) {
+        cards.push({
+          ...product,
+          _cardColorId: cc.colorId,
+          // foto da cor (fallback automático: mantém og/images do produto se cc.image nulo)
+          ...(cc.image
+            ? {
+                og_image_url: cc.image,
+                images: [cc.image, ...product.images.filter((img) => img !== cc.image)],
+              }
+            : {}),
+          stock: cc.stock,
+          stockStatus: cc.stockStatus,
+          // 1 cor por card → resolveColorImage/resolveColorStock casam direto
+          colors: [
+            {
+              name: cc.colorName || "",
+              hex: cc.colorHex || "#CCCCCC",
+              group: cc.colorName || "",
+              groupSlug: cc.groupSlug || undefined,
+              variationSlug: cc.variationSlug || undefined,
+              image: cc.image || undefined,
+              images: cc.image ? [cc.image] : undefined,
+            },
+          ],
+        });
+      }
+    }
+    return cards;
+  }, [hasFanoutColorFilter, colorFanoutMap, enrichedFilteredProducts, filteredProducts]);
+
+  /** Total de cards exibidos (>= nº de produtos quando há fan-out de cor). */
+  const cardCount = displayCards.length;
+
   // Search toast
   const prevSearchRef = useRef<string>('');
   useEffect(() => {
@@ -851,6 +920,10 @@ export function useFiltersPageState() {
     sortBy,
     setSortBy,
     filteredProducts: enrichedFilteredProducts,
+    // FAN-OUT: lista expandida (1 card por cor quando filtro de cor ativo).
+    // Sem filtro de cor, === filteredProducts. O grid renderiza displayCards.
+    displayCards,
+    cardCount,
     activeFiltersCount,
     activeFiltersSummary,
     clearSingleFilter,
