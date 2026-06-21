@@ -498,6 +498,16 @@ describe('§8 Storage — saveThemeConfig + loadThemeConfig (round-trip)', () =>
       expect(loadThemeConfig().presetId).toBe(id);
     });
   });
+
+  it('loadThemeConfig corrige mode inválido (truthy) para "auto"', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ presetId: 'corporate', radius: 8, mode: 'invalid-value' }),
+    );
+    const loaded = loadThemeConfig();
+    expect(loaded.mode).toBe('auto');
+    expect(loaded.presetId).toBe('corporate');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
