@@ -1087,8 +1087,12 @@ export function importThemeConfig(json: string): ThemeConfig | null {
       typeof parsed.radius === 'number' &&
       THEME_PRESETS.some((p) => p.id === parsed.presetId)
     ) {
-      // Backfill defaults para configs antigas sem mode (compat retroativa)
-      return { ...getDefaultConfig(), ...parsed } as ThemeConfig;
+      const result = { ...getDefaultConfig(), ...parsed } as ThemeConfig;
+      // Guard against corrupted/malicious mode values (e.g. mode:"hack")
+      if (!(['light', 'dark', 'auto'] as string[]).includes(result.mode)) {
+        result.mode = 'auto';
+      }
+      return result;
     }
   } catch {
     // JSON inválido: import falha silenciosamente
