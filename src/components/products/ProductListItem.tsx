@@ -244,19 +244,6 @@ export const ProductListItem = memo(
       }
     };
 
-    const _getStockLabel = (status: string) => {
-      switch (status) {
-        case 'in-stock':
-          return 'Em estoque';
-        case 'low-stock':
-          return 'Estoque baixo';
-        case 'out-of-stock':
-          return 'Estoque zerado';
-        default:
-          return 'Em estoque';
-      }
-    };
-
     const handleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
       if (
@@ -667,7 +654,6 @@ export const ProductListItem = memo(
                     prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
                   );
                 }}
-                onClear={() => setUserSelectedColorName(null)}
               />
             </div>
           </div>

@@ -185,7 +185,7 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     if (logoUrl?.startsWith('data:')) {
       logoUrl = await uploadLogoToStorage(
         userId,
-        area.logoPreview as string,
+        logoUrl,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
