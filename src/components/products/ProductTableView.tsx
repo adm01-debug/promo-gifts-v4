@@ -80,13 +80,17 @@ interface ProductTableViewProps {
 type SortCol = 'name' | 'price' | 'sku' | 'stock' | 'supplier';
 type SortDir = 'asc' | 'desc';
 
+// BUG-TVW-01 FIX (2026-06-21): Intl.NumberFormat era recriado em cada chamada de formatPrice
+// (potencialmente centenas de vezes por render em tabelas virtualizadas). Mover para módulo.
+const tablePriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price);
+  const formatted = tablePriceFormatter.format(price);
 
   const parts = formatted.split(/\s/);
   if (parts.length >= 2) {

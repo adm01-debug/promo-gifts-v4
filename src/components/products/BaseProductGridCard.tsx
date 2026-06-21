@@ -71,11 +71,13 @@ export interface BaseProductGridCardProps {
   readonly renderFooterExtras?: () => ReactNode;
 }
 
-/**
- * Formata preço em BRL.
- */
+// BUG-BGPC-01 FIX (2026-06-21): Intl.NumberFormat recriado a cada chamada — módulo-nível.
+const baseCardPriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
 function formatPrice(price: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  return baseCardPriceFormatter.format(price);
 }
 
 export const BaseProductGridCard = memo(

@@ -357,22 +357,29 @@ export function useCatalogState() {
     if (hasNextPage && !isFetchingNextPage && !prefetchScheduledRef.current) {
       prefetchScheduledRef.current = true;
       if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => {
+        // BUG-CS-04 FIX (2026-06-21): capturar handle para cancelar no cleanup.
+        // Sem isto, se o componente desmontar enquanto o callback está pendente,
+        // fetchNextPage() é chamado após desmontagem. React-query tolera, mas
+        // cancelar é mais correto e evita trabalho desnecessário.
+        const idleHandle = window.requestIdleCallback(() => {
           fetchNextPage().finally(() => {
             prefetchScheduledRef.current = false;
           });
         });
-      } else {
-        const prefetchTimer = setTimeout(() => {
-          fetchNextPage().finally(() => {
-            prefetchScheduledRef.current = false;
-          });
-        }, 1000);
         return () => {
-          clearTimeout(prefetchTimer);
+          window.cancelIdleCallback(idleHandle);
           prefetchScheduledRef.current = false;
         };
       }
+      const prefetchTimer = setTimeout(() => {
+        fetchNextPage().finally(() => {
+          prefetchScheduledRef.current = false;
+        });
+      }, 1000);
+      return () => {
+        clearTimeout(prefetchTimer);
+        prefetchScheduledRef.current = false;
+      };
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 

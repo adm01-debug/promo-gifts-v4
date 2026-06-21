@@ -16,10 +16,14 @@ interface RelatedProductsProps {
   maxItems?: number;
 }
 
-function ProductMiniCard({ product, onClick }: { product: Product; onClick: () => void }) {
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+// BUG-RELP-01 FIX (2026-06-21): Intl.NumberFormat dentro do componente → recriado por render.
+const relatedPriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+const formatRelatedPrice = (price: number) => relatedPriceFormatter.format(price);
 
+function ProductMiniCard({ product, onClick }: { product: Product; onClick: () => void }) {
   return (
     <div
       className={cn(
@@ -62,7 +66,7 @@ function ProductMiniCard({ product, onClick }: { product: Product; onClick: () =
         <div className="flex flex-col gap-1 border-t border-border/50 pt-2">
           <div className="flex items-center justify-between">
             <span className="font-display text-sm font-bold text-foreground sm:text-base">
-              {formatPrice(product.price)}
+              {formatRelatedPrice(product.price)}
             </span>
             <div className="flex -space-x-1">
               {product.colors.slice(0, 3).map((color, idx) => (

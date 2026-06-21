@@ -28,6 +28,10 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 import type { KitComponent } from '@/types/product-catalog';
 
+// BUG-KIT-02 FIX (2026-06-21): formatWeight era recriada dentro de KitComponentCard
+// em cada render. Movida para módulo — função pura sem deps de props/state.
+const formatWeight = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${g} g`);
+
 /* ── Copy Button ── */
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -125,8 +129,6 @@ export function KitComponentCard({
   const borderColor = isPackaging ? 'border-warning/25' : 'border-border';
   // Galeria extra (além da capa): mostra mini-thumbs clicáveis se houver >1 foto.
   const extraImages = (item.images ?? []).filter((url) => url && url !== item.imageUrl);
-
-  const formatWeight = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${g} g`);
 
   return (
     <div
