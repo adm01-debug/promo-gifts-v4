@@ -1,5 +1,9 @@
 {
-  "generatedAt": "2026-06-21T08:50:48.075Z",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-06-21T12:44:56.833Z",
+  "totalErrors": 1,
+  "counts": {
+    "src/integrations/supabase/types.ts": {
+      "@typescript-eslint/consistent-indexed-object-style": 1
+    }
+  }
 }
