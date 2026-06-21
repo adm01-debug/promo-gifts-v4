@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 155: 5 zero-violation rules (excluded: jsx-a11y/scope 0v✓, jsx-a11y/tabindex-no-positive 0v✓ — saved Batch 156; no-abstract-roles invalid rule)
+      'jsx-a11y/heading-has-content': 'error',
+      'jsx-a11y/html-has-lang': 'error',
+      'jsx-a11y/lang': 'error',
+      'jsx-a11y/no-access-key': 'error',
+      'jsx-a11y/no-aria-hidden-on-focusable': 'error',
       // Batch 154: 5 zero-violation rules (excluded: jsx-a11y/heading-has-content 0v✓ — saved Batch 155; also: prefer-tag-over-role 177v)
       'jsx-a11y/no-interactive-element-to-noninteractive-role': 'error',
       'jsx-a11y/no-noninteractive-element-to-interactive-role': 'error',
