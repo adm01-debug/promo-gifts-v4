@@ -175,6 +175,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       const productCounts = recentQuoteItems.reduce<Record<string, ProductCount>>((acc, item) => {
         const key = item.product_sku || item.product_name;
+        if (!key) return acc;
         if (!acc[key]) {
           acc[key] = {
             sku: item.product_sku,

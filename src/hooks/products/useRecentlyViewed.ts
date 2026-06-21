@@ -24,7 +24,10 @@ export function useRecentlyViewed() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setItems(JSON.parse(stored));
+        const parsed: unknown = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setItems(parsed as RecentlyViewedItem[]);
+        }
       }
     } catch (e) {
       logger.error('Error loading recently viewed:', e);
