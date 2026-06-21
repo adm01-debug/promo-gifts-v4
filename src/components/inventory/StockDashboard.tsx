@@ -217,6 +217,47 @@ export function StockDashboard() {
   const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
   void ruptureAlerts; // mantido para upstream subscribers (cache warm)
 
+  // Toggle on/off do filtro de Risco de Ruptura — espelha o padrão do
+  // Estoque Futuro (Switch no popover do botão da toolbar). Persiste o
+  // estado em localStorage e reaplica quando o conjunto fica disponível
+  // após reload (re-hidratação assíncrona dos alertas EMA).
+  const RUPTURE_PREF_KEY = 'stock-filter:rupture-risk-active:v1';
+  const toggleRuptureRisk = useCallback(
+    (active: boolean) => {
+      if (active && ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+        updateFilter('status', 'all');
+        updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+      } else {
+        updateFilter('ruptureRiskVariantIds', undefined);
+      }
+      try {
+        window.localStorage.setItem(RUPTURE_PREF_KEY, active ? '1' : '0');
+      } catch {
+        /* quota/private mode */
+      }
+    },
+    [ruptureRiskVariantIds, updateFilter],
+  );
+
+  // Re-hidratação: quando os alertas EMA chegam após mount, se a pref
+  // estava ON, aplica o filtro automaticamente (uma única vez por sessão).
+  const ruptureHydratedRef = useRef(false);
+  useEffect(() => {
+    if (ruptureHydratedRef.current) return;
+    if (!ruptureRiskVariantIds || ruptureRiskVariantIds.size === 0) return;
+    let pref = '0';
+    try {
+      pref = window.localStorage.getItem(RUPTURE_PREF_KEY) ?? '0';
+    } catch {
+      /* ignore */
+    }
+    if (pref === '1' && !isRuptureRiskActive) {
+      updateFilter('status', 'all');
+      updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+    }
+    ruptureHydratedRef.current = true;
+  }, [ruptureRiskVariantIds, isRuptureRiskActive, updateFilter]);
+
   const activeFilterLabel = useMemo(() => {
     if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
     switch (filters.status) {
