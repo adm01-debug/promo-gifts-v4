@@ -237,7 +237,7 @@ export function StockDashboard() {
     }
   }, [filters.status, isRuptureRiskActive]);
 
-  const isFiltered = filters.status !== 'all';
+  const isFiltered = filters.status !== 'all' || isRuptureRiskActive;
 
   // Estoque futuro — janela de 30 dias (regra de negócio).
   // Contamos variações distintas com pelo menos uma reposição prevista nos
