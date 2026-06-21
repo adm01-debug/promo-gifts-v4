@@ -131,20 +131,18 @@ function InlineColorSwatch({
 }
 
 // =====================================================
-// COMPONENTE INLINE — MODO SELEÇÃO Única
+// COMPONENTE INLINE — MODO SELEÇÃO MÚLTIPLA (FAN-OUT DE COR)
 //
-// FEAT-COR-UNICA 2026-06-21: proibido selecionar mais de uma cor por vez.
-// Quando o usuário clica num grupo, variação ou nuança, a seleção anterior é
-// substituída (não acumulada). Isso garante que o card mostra exatamente
-// 1 foto + 1 estoque da cor escolhida, sem ambiguidade.
+// FAN-OUT 2026-06-21: seleção MÚLTIPLA. O usuário pode marcar várias cores;
+// cada produto aparece como N cards (1 por cor selecionada que possui), cada
+// card com sua própria foto + estoque. Toggle acumula/remove (não substitui).
 //
 // Hierarquia de seleção:
 //   Grupo ("Azul") → agrega todas as variações do grupo
 //   Variação ("Azul Royal") → específico — 1 foto + 1 estoque
 //   Nuança ("Metalizado") → cross-cutting (todas as cores com esse acabamento)
 //
-// Ao clicar num grupo cujo filho está selecionado → troca para o grupo (mais amplo).
-// Ao clicar na cor já selecionada → desmarca tudo.
+// Ao clicar numa cor já selecionada → remove apenas ela (mantém as demais).
 // =====================================================
 
 interface InlineColorGroupFilterProps {
@@ -212,7 +210,8 @@ export function InlineColorGroupFilter({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection.variations.join(','), variationToGroupId, colorData]);
 
-  // FEAT-COR-UNICA: nome da cor para exibição no badge
+  // Nome da cor p/ badge quando há seleção única; múltiplas cores => null
+  // (a toolbar mostra contagem agregada nesse caso).
   const selectedColorName = useMemo(() => {
     if (!colorData) return null;
     if (selection.groups.length === 1) {
@@ -234,38 +233,38 @@ export function InlineColorGroupFilter({
   const hasAnySelection =
     selection.groups.length > 0 || selection.variations.length > 0 || selection.nuances.length > 0;
 
-  // FEAT-COR-UNICA: toggles exclusivos — seleção única
+  // FAN-OUT DE COR (FASE 3): seleção MÚLTIPLA reabilitada.
+  // Cada cor selecionada que o produto possui gera 1 card separado no grid
+  // (ex.: Verde + Amarelo num produto que tem ambos => 2 cards). Toggle =
+  // adiciona/remove da lista, preservando as demais dimensões (grupo/variação/nuança coexistem).
   const toggleGroup = (slug: string) => {
-    const isDirectlySelected = selection.groups.includes(slug);
-    if (isDirectlySelected) {
-      // Desmarca tudo
-      onChange({ groups: [], variations: [], nuances: [] });
-    } else {
-      // Seleciona exclusivamente este grupo (limpa variações e nuanças)
-      onChange({ groups: [slug], variations: [], nuances: [] });
-    }
+    const isSelected = selection.groups.includes(slug);
+    onChange({
+      ...selection,
+      groups: isSelected
+        ? selection.groups.filter((g) => g !== slug)
+        : [...selection.groups, slug],
+    });
   };
 
   const toggleVariation = (slug: string) => {
     const isSelected = selection.variations.includes(slug);
-    if (isSelected) {
-      // Desmarca tudo
-      onChange({ groups: [], variations: [], nuances: [] });
-    } else {
-      // Seleciona exclusivamente esta variação (limpa grupos e nuanças)
-      onChange({ groups: [], variations: [slug], nuances: [] });
-    }
+    onChange({
+      ...selection,
+      variations: isSelected
+        ? selection.variations.filter((v) => v !== slug)
+        : [...selection.variations, slug],
+    });
   };
 
   const toggleNuance = (slug: string) => {
     const isSelected = selection.nuances.includes(slug);
-    if (isSelected) {
-      // Desmarca tudo
-      onChange({ groups: [], variations: [], nuances: [] });
-    } else {
-      // Seleciona exclusivamente esta nuança (limpa grupos e variações)
-      onChange({ groups: [], variations: [], nuances: [slug] });
-    }
+    onChange({
+      ...selection,
+      nuances: isSelected
+        ? selection.nuances.filter((n) => n !== slug)
+        : [...selection.nuances, slug],
+    });
   };
 
   const toggleExpand = (groupId: string) => {
@@ -395,9 +394,9 @@ export function InlineColorGroupFilter({
                     );
                   })}
                 </div>
-                {/* Hint de seleção exclusiva dentro do painel de variações */}
+                {/* Hint: seleção múltipla gera cards por cor */}
                 <p className="text-[10px] text-muted-foreground/60">
-                  Selecione uma variação para ver a foto e estoque específicos
+                  Selecione uma ou mais cores — cada cor vira um card com foto e estoque próprios
                 </p>
               </div>
             ))}

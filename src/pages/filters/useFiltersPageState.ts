@@ -723,9 +723,9 @@ export function useFiltersPageState() {
   // Chips removíveis no cabeçalho não apareciam para esses filtros.
   const activeFiltersSummary = useMemo(() => {
     const summary: { label: string; value: string; key: keyof FilterState }[] = [];
-    // FEAT-COR-UNICA 2026-06-21: seleção exclusiva (max 1 cor).
-    // Chip mostra o nome da cor selecionada em vez de contagem.
-    // slugToLabel: "azul-royal" → "Azul Royal" sem precisar de lookup async.
+    // FAN-OUT 2026-06-21: seleção múltipla. Chip mostra o nome quando há 1 cor,
+    // ou "N selecionadas" quando múltiplas. colorNameBySlug dá o nome real
+    // (acentos/parênteses); slugToLabel é fallback ("azul-royal" → "Azul Royal").
     const slugToLabel = (slug: string) =>
       slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const totalCores =
@@ -742,7 +742,7 @@ export function useFiltersPageState() {
     if (totalCores > 0)
       summary.push({
         label: 'Cor',
-        value: selectedColorSlug
+        value: totalCores === 1 && selectedColorSlug
           ? (colorNameBySlug.get(selectedColorSlug) ?? slugToLabel(selectedColorSlug))
           : `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
         key: 'colors',
