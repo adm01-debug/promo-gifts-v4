@@ -425,6 +425,12 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
+      'no-alert': 'error',
+      'no-implied-eval': 'error',
+      'no-promise-executor-return': 'error',
+      'prefer-exponentiation-operator': 'error',
+      'no-useless-concat': 'error',
       // Batch 146: 1 rule (9v auto-fixed; excluded: unbound-method 64v, no-loop-func 7v, restrict-template-expressions 8v, require-await 119v, no-unnecessary-type-assertion 385v, sort-type-constituents 746v, use-unknown-in-catch-callback-variable 18v, no-autofocus 36v, no-noninteractive-tabindex 12v, no-unnecessary-type-parameters 16v, prefer-reduce-type-parameter 10v, no-nested-ternary 709v, jsx-no-constructed-context-values 14v)
       '@typescript-eslint/no-useless-default-assignment': 'error',
       // Batch 145: 4 rules (all zero-violation; excluded: no-useless-default-assignment 9v, no-loop-func 7v, no-unsafe-type-assertion 1535v)
