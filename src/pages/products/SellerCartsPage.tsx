@@ -190,15 +190,9 @@ function SellerCartsContent() {
   useEffect(() => {
     setPage(1);
   }, [s.activeCartId]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-key', sortKey);
-  }, [sortKey]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-dir', sortDir);
-  }, [sortDir]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-page-size', String(pageSize));
-  }, [pageSize]);
+  // NOTA: sort-key/sort-dir/page-size já são persistidos COM namespace por usuário
+  // nos effects acima (linhas ~174-185). Os três effects sem namespace que existiam
+  // aqui eram código morto (gravavam chaves nunca lidas) — removidos.
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {

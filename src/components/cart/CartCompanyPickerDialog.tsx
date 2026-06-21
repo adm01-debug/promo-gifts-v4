@@ -24,6 +24,7 @@ import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { CreateCartInput } from '@/hooks/products';
+import { toast } from 'sonner';
 
 interface CompanyItem {
   id: string;
@@ -71,12 +72,8 @@ export function CartCompanyPickerDialog({
   const [recents, setRecents] = useState<CompanyItem[]>([]);
   const [favorites, setFavorites] = useState<CompanyItem[]>([]);
   const [isCreating, setIsCreating] = useState(false);
-  // Synchronous guard: state alone leaves a same-tick window where a fast
-  // double-click/tap fires handleSelect twice before the re-render disables it,
-  // creating two carts for the same company (and wasting a cart slot).
-  const creatingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { createCart, canCreateCart } = useSellerCartContext();
+  const { createCart, canCreateCart, carts, setActiveCartId } = useSellerCartContext();
   const { user } = useAuth();
   const uid = user?.id ?? '';
   const recentKey = uid ? `${RECENT_KEY_BASE}:${uid}` : RECENT_KEY_BASE;
@@ -85,7 +82,6 @@ export function CartCompanyPickerDialog({
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
-      creatingRef.current = false;
       setIsCreating(false);
       return;
     }
@@ -201,16 +197,40 @@ export function CartCompanyPickerDialog({
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {
-      if (creatingRef.current) return;
-      creatingRef.current = true;
+      // Trava de duplo-submit: antes isCreating nunca era setado para true (guard
+      // morto), então dois cliques/Enter durante o await de createCart criavam dois
+      // carrinhos para a mesma empresa.
+      if (isCreating) return;
+
+      // Já existe carrinho para esta empresa? Abre o existente em vez de duplicar
+      // (evita dividir o pedido em 2 carrinhos → orçamento parcial). Antes do guard
+      // de limite: abrir o existente deve funcionar mesmo com 3 carrinhos.
+      const existingCart = carts.find((c) => c.company_id === company.id);
+      if (existingCart) {
+        setActiveCartId(existingCart.id);
+        toast.info(`Você já tem um carrinho para ${company.name}`, {
+          description: 'Abrindo o carrinho existente.',
+        });
+        const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
+          0,
+          MAX_RECENT,
+        );
+        writeList(recentKey, nextRecents);
+        setRecents(nextRecents);
+        onCreated?.(existingCart.id);
+        onOpenChange(false);
+        return;
+      }
+
+      if (!canCreateCart) return;
       setIsCreating(true);
-      const input: CreateCartInput = {
-        company_id: company.id,
-        company_name: company.name,
-        company_location: company.ramo || undefined,
-        company_logo_url: company.logo_url || undefined,
-      };
       try {
+        const input: CreateCartInput = {
+          company_id: company.id,
+          company_name: company.name,
+          company_location: company.ramo || undefined,
+          company_logo_url: company.logo_url || undefined,
+        };
         const result = await createCart(input);
         if (result) {
           const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
@@ -223,11 +243,20 @@ export function CartCompanyPickerDialog({
           onOpenChange(false);
         }
       } finally {
-        creatingRef.current = false;
         setIsCreating(false);
       }
     },
-    [createCart, onCreated, onOpenChange, recents, recentKey],
+    [
+      createCart,
+      onCreated,
+      onOpenChange,
+      recents,
+      recentKey,
+      isCreating,
+      canCreateCart,
+      carts,
+      setActiveCartId,
+    ],
   );
 
   const isLoading = loadingLocal || loadingServer;
@@ -235,52 +264,54 @@ export function CartCompanyPickerDialog({
   const canSelect = canCreateCart && !isCreating;
 
   const renderRow = (company: CompanyItem) => (
-    <div key={company.id} className="group relative flex items-center rounded-lg">
-      <button
-        type="button"
-        disabled={!canSelect}
-        data-testid="cart-company-picker-select"
-        data-company-id={company.id}
-        className={cn(
-          'flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
-          'transition-colors hover:bg-accent/60',
-          !canSelect && 'cursor-not-allowed opacity-50',
-        )}
-        onClick={() => handleSelect(company)}
-      >
-        {company.logo_url ? (
-          <img
-            src={company.logo_url}
-            alt=""
-            className="h-9 w-9 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </div>
-        )}
-        <div className="min-w-0 flex-1 pr-8">
-          <p className="truncate text-sm font-medium">{company.name}</p>
-          {company.ramo && (
-            <p className="truncate text-[11px] text-muted-foreground">{company.ramo}</p>
-          )}
+    <div
+      key={company.id}
+      role="button"
+      tabIndex={canSelect ? 0 : -1}
+      aria-disabled={!canSelect}
+      data-testid="cart-company-picker-select"
+      data-company-id={company.id}
+      className={cn(
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
+        'group transition-colors hover:bg-accent/60',
+        !canSelect && 'pointer-events-none opacity-50',
+      )}
+      onClick={() => canSelect && handleSelect(company)}
+      onKeyDown={(e) => {
+        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleSelect(company);
+        }
+      }}
+    >
+      {company.logo_url ? (
+        <img
+          src={company.logo_url}
+          alt=""
+          className="h-9 w-9 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
         </div>
-      </button>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{company.name}</p>
+        {company.ramo && (
+          <p className="truncate text-[11px] text-muted-foreground">{company.ramo}</p>
+        )}
+      </div>
       <button
         type="button"
         onClick={(e) => toggleFavorite(company, e)}
         className={cn(
-          'absolute right-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+          'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
           isFavorite(company.id)
             ? 'text-warning'
             : 'text-muted-foreground/40 opacity-0 hover:text-warning group-hover:opacity-100',
         )}
-        aria-label={
-          isFavorite(company.id)
-            ? `Remover ${company.name} dos favoritos`
-            : `Adicionar ${company.name} aos favoritos`
-        }
+        aria-label={isFavorite(company.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       >
         <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
       </button>
@@ -365,17 +396,16 @@ export function CartCompanyPickerDialog({
 
           <TabsContent value="search" className="m-0 space-y-3 px-3 pb-4 pt-3">
             <div className="relative px-2">
-              <Search className="left-4.5 absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={inputRef}
-                aria-label="Buscar empresa por nome, CNPJ ou segmento"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Nome, CNPJ ou segmento..."
+                placeholder="Nome ou segmento..."
                 className="h-9 border-border/40 bg-muted/20 pl-8 text-sm transition-colors focus:bg-background"
               />
               {isLoading && (
-                <Loader2 className="right-4.5 absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground opacity-50" />
+                <Loader2 className="absolute right-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground opacity-50" />
               )}
             </div>
             <ScrollArea className="h-[290px] pr-2">

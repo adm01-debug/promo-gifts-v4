@@ -50,8 +50,6 @@ export function CartTabsRich({
     [onSelect],
   );
 
-  const now = new Date();
-
   if (isLoading) {
     return (
       <div className="flex animate-pulse gap-2 overflow-x-auto pb-1">
@@ -79,20 +77,18 @@ export function CartTabsRich({
         ref={tablistRef}
         role="tablist"
         aria-label="Carrinhos"
-        tabIndex={0}
         onKeyDown={handleTablistKeyDown}
         className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
       >
         {carts.map((cart) => {
           const isActive = cart.id === activeCartId;
           const statusCfg = getStatusCfg(cart.status);
-          const ageDays = differenceInDays(now, new Date(cart.created_at));
+          const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
           const needsFollowUp =
             ageDays >= 3 && cart.items.length > 0 && cart.status !== 'pronto_orcamento';
           const hasItems = cart.items.length > 0;
           return (
             <button
-              type="button"
               key={cart.id}
               onClick={() => onSelect(cart.id)}
               data-testid="cart-tab"
@@ -101,7 +97,6 @@ export function CartTabsRich({
               role="tab"
               aria-selected={isActive}
               tabIndex={isActive ? 0 : -1}
-              aria-label={`${cart.company_name} — ${statusCfg.label} — ${cart.items.length} ${cart.items.length === 1 ? 'item' : 'itens'}${needsFollowUp ? ', aguardando follow-up' : ''}`}
               className={cn(
                 'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
                 isActive
@@ -142,7 +137,7 @@ export function CartTabsRich({
                   <span
                     className={cn(
                       'h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                      statusCfg.bg,
+                      statusCfg.color.split(' ')[0],
                     )}
                     aria-hidden
                   />
@@ -154,7 +149,6 @@ export function CartTabsRich({
               <span
                 data-testid="cart-tab-count"
                 data-count={cart.items.length}
-                aria-hidden="true"
                 className={cn(
                   'ml-1 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums transition-all duration-500',
                   hasItems
@@ -171,8 +165,8 @@ export function CartTabsRich({
                   data-testid="cart-tab-followup"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  aria-hidden="true"
                   className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
+                  title={`Follow-up sugerido — criado há ${ageDays} dias`}
                 >
                   <Clock className="h-3 w-3" />
                 </motion.span>
@@ -184,7 +178,6 @@ export function CartTabsRich({
 
       <div className="flex-shrink-0 pb-2 pr-1">
         <button
-          type="button"
           data-testid="cart-tab-new"
           onClick={canCreateCart ? onNew : undefined}
           disabled={!canCreateCart}
