@@ -513,6 +513,10 @@ export function StockDashboard() {
         </div>
       )}
 
+      {/* Onda 1 — Painel preditivo por fornecedor (KPIs EMA + tabela filtrada).
+          Componente próprio aplica o gate `useEmaRupture` e renderiza opt-in se off. */}
+      <RupturePanelEma />
+
       {/* Stock Table */}
       <Card>
         <CardHeader className="pb-3">
