@@ -811,6 +811,16 @@ export function useQuoteBuilderState() {
     () => QuoteCalc.calculateRealDiscountPercent(realSubtotal, subtotal, discountAmount),
     [realSubtotal, subtotal, discountAmount],
   );
+
+  // BUG-032: Clamp amount-mode discount when markup decreases below discountValue.
+  // Without this, the UI input keeps showing the stale R$ value while discountAmount
+  // is silently clamped by calculateDiscountAmount — confusing the seller.
+  useEffect(() => {
+    if (discountType === 'amount' && discountValue > subtotal) {
+      setDiscountValue(QuoteCalc.round2(subtotal));
+    }
+  }, [subtotal, discountType, discountValue]);
+
   const handleProductClick = useCallback((product: Product) => {
     setSelectedProductForColor(product);
   }, []);

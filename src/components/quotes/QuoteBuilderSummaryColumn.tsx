@@ -259,7 +259,10 @@ export function QuoteBuilderSummaryColumn({
                   const isStale = staleIndexes.has(idx);
                   return (
                     <div
-                      key={item.id ?? `${item.product_id}-${item.product_sku ?? ''}-${item.color_name ?? ''}-${idx}`}
+                      key={
+                        item.id ??
+                        `${item.product_id}-${item.product_sku ?? ''}-${item.color_name ?? ''}-${idx}`
+                      }
                       className={cn(
                         'cursor-pointer rounded-xl border transition-all',
                         isActive
@@ -692,9 +695,9 @@ export function QuoteBuilderSummaryColumn({
               Solicitar Aprovação de Desconto
             </DialogTitle>
             <DialogDescription>
-              O desconto de{' '}
+              O desconto real de{' '}
               <span className="font-semibold text-foreground">
-                {discountType === 'percent' ? `${discountValue}%` : formatCurrency(discountValue)}
+                {realDiscountPercent.toFixed(2).replace('.', ',')}%
               </span>{' '}
               excede seu limite de{' '}
               <span className="font-semibold text-foreground">{maxDiscountPercent}%</span>.
@@ -713,12 +716,10 @@ export function QuoteBuilderSummaryColumn({
                 </div>
                 <div data-testid="quote-approval-requested">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    Solicitado
+                    Solicitado (real)
                   </p>
                   <p className="mt-0.5 text-sm font-bold text-amber-500">
-                    {discountType === 'percent'
-                      ? `${discountValue}%`
-                      : formatCurrency(discountValue)}
+                    {realDiscountPercent.toFixed(2).replace('.', ',')}%
                   </p>
                 </div>
               </div>
@@ -729,16 +730,7 @@ export function QuoteBuilderSummaryColumn({
                 />
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-amber-500"
-                  style={{
-                    width: `${Math.min(
-                      discountType === 'percent'
-                        ? discountValue
-                        : presentedSubtotal > 0
-                          ? (discountValue / presentedSubtotal) * 100
-                          : 0,
-                      100,
-                    )}%`,
-                  }}
+                  style={{ width: `${Math.min(realDiscountPercent, 100)}%` }}
                 />
               </div>
             </div>
