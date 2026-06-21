@@ -52,6 +52,11 @@ import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { isProductKit } from '@/lib/products/kit-detection';
 
+// BUG-LIST-04 FIX (2026-06-21): Intl.NumberFormat criado por render por item →
+// com 500 itens na lista, 500 instâncias por render. Módulo-nível: instância única.
+const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatPrice = (price: number) => priceFormatter.format(price);
+
 interface ProductListItemProps {
   product: Product;
   onClick?: () => void;
@@ -227,9 +232,6 @@ export const ProductListItem = memo(
       },
       [variantPickerMode, product, favStore, compStore, carts],
     );
-
-    const formatPrice = (price: number) =>
-      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
     const getStockColor = (status: string) => {
       switch (status) {
@@ -706,100 +708,76 @@ export const ProductListItem = memo(
           />
         </article>
 
-        {/* Variant Picker Dialog */}
-        <VariantPickerDialog
-          open={variantPickerOpen}
-          onOpenChange={setVariantPickerOpen}
-          productId={product.id}
-          productName={product.name}
-          mode={variantPickerMode}
-          onComplete={handleVariantComplete}
-        />
+        {/* BUG-LIST-02 FIX (2026-06-21): todos os dialogs renderizados incondicionalmente
+            → 500 itens × 6 dialogs = 3000 componentes montados na view de lista.
+            Cada dialog agora só é montado ao abrir (unmount ao fechar). */}
 
-        {/* Collection Modal */}
-        <AddToCollectionModal
-          open={collectionModalOpen}
-          onOpenChange={setCollectionModalOpen}
-          productId={product.id}
-          productName={product.name}
-          variant={collectionVariant}
-        />
+        {variantPickerOpen && (
+          <VariantPickerDialog
+            open={variantPickerOpen}
+            onOpenChange={setVariantPickerOpen}
+            productId={product.id}
+            productName={product.name}
+            mode={variantPickerMode}
+            onComplete={handleVariantComplete}
+          />
+        )}
 
-        {/* Quick View Modal */}
-        <ProductQuickView
-          product={product}
-          open={quickViewOpen}
-          onOpenChange={(open) => {
-            setQuickViewOpen(open);
-            if (!open) {
-              requestAnimationFrame(() => {
-                quickViewTriggerRef.current?.focus({ preventScroll: true });
-              });
-            }
-          }}
-          isFavorited={isFavorited}
-          onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-          onShare={onShare}
-          onAddToQuote={() => {
-            setVariantPickerMode('quote');
-            setVariantPickerOpen(true);
-          }}
-          onAddToCollection={() => {
-            setVariantPickerMode('collection');
-            setVariantPickerOpen(true);
-          }}
-        />
+        {collectionModalOpen && (
+          <AddToCollectionModal
+            open={collectionModalOpen}
+            onOpenChange={setCollectionModalOpen}
+            productId={product.id}
+            productName={product.name}
+            variant={collectionVariant}
+          />
+        )}
 
-        {/* Share Preview Dialog */}
-        <SharePreviewDialog
-          open={shareDialogOpen}
-          onOpenChange={setShareDialogOpen}
-          product={product}
-          selectedVariant={shareVariant}
-        />
+        {quickViewOpen && (
+          <ProductQuickView
+            product={product}
+            open={quickViewOpen}
+            onOpenChange={(open) => {
+              setQuickViewOpen(open);
+              if (!open) {
+                requestAnimationFrame(() => {
+                  quickViewTriggerRef.current?.focus({ preventScroll: true });
+                });
+              }
+            }}
+            isFavorited={isFavorited}
+            onToggleFavorite={onToggleFavorite}
+            isInCompare={isInCompare}
+            onToggleCompare={onToggleCompare}
+            onShare={onShare}
+            onAddToQuote={() => {
+              setVariantPickerMode('quote');
+              setVariantPickerOpen(true);
+            }}
+            onAddToCollection={() => {
+              setVariantPickerMode('collection');
+              setVariantPickerOpen(true);
+            }}
+          />
+        )}
 
-        {/* Cart/Cliente Selector — exibido após a escolha da variação */}
-        <CartSelectorDialog
-          open={selectorOpen}
-          onOpenChange={setSelectorOpen}
-          carts={carts}
-          productName={product.name}
-          canCreateMore={canCreateCart}
-          onSelect={(cartId) => {
-            addToActiveCart(
-              {
-                product_id: product.id,
-                product_name: product.name,
-                product_sku: product.sku || undefined,
-                product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
-                product_price: product.price ?? 0,
-                quantity: product.minQuantity || 1,
-                color_name: pendingVariant?.color_name || undefined,
-                color_hex: pendingVariant?.color_hex || undefined,
-              },
-              cartId,
-            );
-            setSelectorOpen(false);
-            setPendingVariant(null);
-          }}
-          onCreateNew={() => {
-            // Mantém pendingVariant — será adicionado ao carrinho recém-criado
-            setSelectorOpen(false);
-            setCompanyPickerOpen(true);
-          }}
-        />
+        {shareDialogOpen && (
+          <SharePreviewDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            product={product}
+            selectedVariant={shareVariant}
+          />
+        )}
 
-        {/* Picker de empresa — cria carrinho na hora para outro cliente e adiciona o item */}
-        <CartCompanyPickerDialog
-          open={companyPickerOpen}
-          onOpenChange={(o) => {
-            setCompanyPickerOpen(o);
-            if (!o) setPendingVariant(null);
-          }}
-          onCreated={(newCartId) => {
-            if (newCartId) {
+        {selectorOpen && (
+          <CartSelectorDialog
+            open={selectorOpen}
+            onOpenChange={setSelectorOpen}
+            carts={carts}
+            productName={product.name}
+            canCreateMore={canCreateCart}
+            onSelect={(cartId) => {
               addToActiveCart(
                 {
                   product_id: product.id,
@@ -811,12 +789,45 @@ export const ProductListItem = memo(
                   color_name: pendingVariant?.color_name || undefined,
                   color_hex: pendingVariant?.color_hex || undefined,
                 },
-                newCartId,
+                cartId,
               );
-            }
-            setPendingVariant(null);
-          }}
-        />
+              setSelectorOpen(false);
+              setPendingVariant(null);
+            }}
+            onCreateNew={() => {
+              setSelectorOpen(false);
+              setCompanyPickerOpen(true);
+            }}
+          />
+        )}
+
+        {companyPickerOpen && (
+          <CartCompanyPickerDialog
+            open={companyPickerOpen}
+            onOpenChange={(o) => {
+              setCompanyPickerOpen(o);
+              if (!o) setPendingVariant(null);
+            }}
+            onCreated={(newCartId) => {
+              if (newCartId) {
+                addToActiveCart(
+                  {
+                    product_id: product.id,
+                    product_name: product.name,
+                    product_sku: product.sku || undefined,
+                    product_image_url: pendingVariant?.selected_thumbnail || product.images?.[0],
+                    product_price: product.price ?? 0,
+                    quantity: product.minQuantity || 1,
+                    color_name: pendingVariant?.color_name || undefined,
+                    color_hex: pendingVariant?.color_hex || undefined,
+                  },
+                  newCartId,
+                );
+              }
+              setPendingVariant(null);
+            }}
+          />
+        )}
       </>
     );
   },
