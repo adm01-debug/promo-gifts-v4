@@ -27,6 +27,11 @@ import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
 import { buildStockKpiCards } from './stockKpiCards';
 import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
+import {
+  useRuptureRiskHydration,
+  writeRuptureRiskActivePref,
+} from '@/hooks/stock/useRuptureRiskHydration';
 
 
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
