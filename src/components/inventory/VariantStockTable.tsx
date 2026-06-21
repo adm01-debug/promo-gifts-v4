@@ -793,6 +793,15 @@ export function VariantStockTable({
 
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
+              {emaEnabled && (
+                <TableHead
+                  className="hidden lg:table-cell"
+                  data-testid="stock-thead-ema-coverage"
+                  title="Cobertura projetada via EMA α=0.3 — dados pré-computados em mv_stock_rupture_alert"
+                >
+                  Cobertura (EMA)
+                </TableHead>
+              )}
               <TableHead className="hidden sm:table-cell">Ações</TableHead>
             </TableRow>
           </TableHeader>
