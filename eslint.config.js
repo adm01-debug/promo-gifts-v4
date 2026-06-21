@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 200: 5 zero-violation rules (saved: no-shadow-restricted-names 0v✓, prefer-object-has-own 0v✓ — Batch 201+)
+      'vars-on-top': 'error',
+      'prefer-exponentiation-operator': 'error',
+      'no-constant-binary-expression': 'error',
+      'no-unused-private-class-members': 'error',
+      'no-lonely-if': 'error',
       // Batch 199: 5 zero-violation rules
       'no-object-constructor': 'error',
       'no-restricted-exports': 'error',
