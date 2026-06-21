@@ -11,12 +11,13 @@ import { getCdnUrl } from '@/utils/image-utils';
 import { ExternalLink, Users, Tag, Layers, Equal, Link2, FileText } from 'lucide-react';
 
 function formatPrice(value: number) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Sob consulta';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 export const MATCH_TYPE_CONFIG = {
   identical: { label: 'Idêntico', icon: Equal, color: 'bg-primary text-primary-foreground' },
-  similar: { label: 'Semelhante', icon: Layers, color: 'bg-info text-info-foreground' },
+  similar: { label: 'Similar', icon: Layers, color: 'bg-info text-info-foreground' },
   complementary: {
     label: 'Complementar',
     icon: Link2,
@@ -109,13 +110,16 @@ export function MatchCard({
 
   const handleAddToQuote = () => {
     const p = match.product;
+    // Usa a mesma imagem exibida no card (images[0] || image_url), senão o
+    // orçamento perde a miniatura que o usuário acabou de ver.
+    const thumb = p.images?.[0] || p.image_url || '';
     const params = new URLSearchParams({
       product_id: p.id,
       product_name: p.name,
       product_sku: p.sku || '',
-      product_price: String(p.price),
+      product_price: Number.isFinite(p.price) ? String(p.price) : '0',
       min_quantity: String(p.minQuantity || 1),
-      ...(p.image_url ? { product_image: p.image_url } : {}),
+      ...(thumb ? { product_image: thumb } : {}),
     });
     navigate(`/orcamentos/novo?${params.toString()}`);
   };

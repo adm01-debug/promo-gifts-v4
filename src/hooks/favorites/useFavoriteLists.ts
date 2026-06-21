@@ -416,6 +416,8 @@ export function useFavoriteListItems(listId: string | null) {
               return;
             }
             const results = await Promise.allSettled(
+              // RPC real (verificado no BD) ainda ausente de types.ts; usa o helper
+              // `untypedRpc` do projeto — mesmo padrão das chamadas acima neste arquivo.
               trashed.map((t) =>
                 untypedRpc('restore_favorite_from_trash', {
                   _trash_id: t.id,
