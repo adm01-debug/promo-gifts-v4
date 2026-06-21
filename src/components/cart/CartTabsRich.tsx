@@ -77,6 +77,7 @@ export function CartTabsRich({
         ref={tablistRef}
         role="tablist"
         aria-label="Carrinhos"
+        tabIndex={0}
         onKeyDown={handleTablistKeyDown}
         className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
       >
@@ -191,11 +192,18 @@ export function CartTabsRich({
           )}
           aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 3 carrinhos atingido'}
         >
-          <div className={cn(
-            'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
-            canCreateCart && 'group-hover/new:bg-primary/20',
-          )}>
-            <Plus className={cn('h-4 w-4 transition-transform duration-300', canCreateCart && 'group-hover/new:rotate-90')} />
+          <div
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
+              canCreateCart && 'group-hover/new:bg-primary/20',
+            )}
+          >
+            <Plus
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                canCreateCart && 'group-hover/new:rotate-90',
+              )}
+            />
           </div>
           <span>Novo</span>
         </button>

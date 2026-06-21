@@ -425,6 +425,14 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 130: 7 rules (2 zero-violation + 5 with manual fixes — removed: return-await 6v, no-invalid-void-type 5v→2v with allowInGenericTypeArguments, array-type 212v, consistent-type-definitions 98v, no-unnecessary-type-arguments 16v, no-noninteractive-element-interactions 54v, label-has-associated-control 63v, no-array-index-key 206v, no-param-reassign 21v, no-unsafe-return 106v, switch-exhaustiveness-check 34v, no-base-to-string 58v, promise-function-async 504v, prefer-reduce-type-parameter 10v, consistent-return 132v, no-multi-comp 620v, no-aria-hidden-on-focusable 6v, prefer-readonly 2v—FIXED, require-array-sort-compare 1v—FIXED)
+      'jsx-a11y/anchor-is-valid': 'error',
+      'react/jsx-fragments': 'error',
+      '@typescript-eslint/require-array-sort-compare': 'error',
+      '@typescript-eslint/prefer-readonly': 'error',
+      'react/jsx-closing-tag-location': 'error',
+      'jsx-a11y/interactive-supports-focus': 'error',
+      '@typescript-eslint/no-invalid-void-type': ['error', { allowInGenericTypeArguments: true }],
       // Batch 129: 5 rules (1 zero-violation + 4 with manual fixes — removed: return-await 6v, no-onchange 6v, no-redeclare 8v, no-object-type-as-default-prop 23v, accessible-emoji 88v, no-empty-function 112v, prefer-tag-over-role 178v)
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-var-requires': 'error',

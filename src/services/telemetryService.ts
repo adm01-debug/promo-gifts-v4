@@ -70,7 +70,7 @@ interface BufferedEvent {
 }
 
 class TelemetryService {
-  private sessionId: string;
+  private readonly sessionId: string;
   private buffer: BufferedEvent[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private flushing = false;
@@ -146,7 +146,10 @@ class TelemetryService {
         name: truncateText(payload.name, MAX_NAME_LENGTH, 'unnamed_event'),
         duration_ms: normalizeDuration(payload.durationMs),
         metadata: toBoundedJson(payload.metadata),
-        url: truncateText(typeof window !== 'undefined' ? window.location.href : '', MAX_URL_LENGTH),
+        url: truncateText(
+          typeof window !== 'undefined' ? window.location.href : '',
+          MAX_URL_LENGTH,
+        ),
         user_agent: truncateText(
           typeof navigator !== 'undefined' ? navigator.userAgent : '',
           MAX_USER_AGENT_LENGTH,

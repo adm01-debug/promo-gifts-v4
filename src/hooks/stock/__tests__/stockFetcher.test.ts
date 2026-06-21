@@ -710,7 +710,9 @@ describe('nextStockPairs — sparse slot allocation (only slots 4-6 populated)',
       'CHA-001',
     );
     expect(entries).toHaveLength(3);
-    const suffixes = entries.map((e) => e.id.split('-').pop()).sort();
+    const suffixes = entries
+      .map((e) => e.id.split('-').pop())
+      .sort((a, b) => (a ?? '').localeCompare(b ?? ''));
     expect(suffixes).toEqual(['4', '5', '6']);
     expect(entries.every((e) => e.status === 'pending')).toBe(true);
     expect(entries.reduce((sum, e) => sum + e.expectedQuantity, 0)).toBe(175); // 100+50+25

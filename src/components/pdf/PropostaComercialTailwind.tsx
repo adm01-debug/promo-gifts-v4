@@ -247,7 +247,8 @@ export const PropostaComercialTailwind = forwardRef<
         );
       })}
 
-      <style>{`
+      <style>
+        {`
           @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&family=Sacramento&display=swap');
           @media print {
             body { background: white; }
@@ -256,7 +257,8 @@ export const PropostaComercialTailwind = forwardRef<
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-        `}</style>
+        `}
+      </style>
     </div>
   );
 });
