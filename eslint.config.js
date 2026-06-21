@@ -425,6 +425,10 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 125: 3 rules with 1 fix each (removed: no-unnecessary-type-assertion 388v, no-confusing-void-expression 2935v, require-await 119v, no-dynamic-delete 15v)
+      '@typescript-eslint/prefer-function-type': 'error',
+      '@typescript-eslint/no-unsafe-enum-comparison': 'error',
+      '@typescript-eslint/prefer-for-of': 'error',
       // Batch 124: 3 auto-fixable rules (removed: no-base-to-string manual, no-redundant-type-constituents Radix UI patterns, switch-exhaustiveness-check manual, prefer-nullish-coalescing many, no-unnecessary-condition many)
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
