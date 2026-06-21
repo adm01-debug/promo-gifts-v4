@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 222: 5 zero-violation rules (no saved rules — Batch 223 probes fresh)
+      '@typescript-eslint/consistent-generic-constructors': 'error',
+      '@typescript-eslint/class-literal-property-style': 'error',
+      '@typescript-eslint/prefer-regexp-exec': 'error',
+      '@typescript-eslint/unified-signatures': 'error',
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
       // Batch 221: 5 zero-violation rules (saved: @typescript-eslint/consistent-generic-constructors 0v✓ — Batch 222+)
       '@typescript-eslint/no-confusing-non-null-assertion': 'error',
       '@typescript-eslint/no-duplicate-type-constituents': 'error',
