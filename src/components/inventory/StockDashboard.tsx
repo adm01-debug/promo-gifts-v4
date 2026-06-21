@@ -440,7 +440,6 @@ export function StockDashboard() {
                   setOutOfStockDialogOpen(true);
                 }
               }}
-              clickHint={card.tooltip}
             />
           );
         })}
@@ -457,7 +456,7 @@ export function StockDashboard() {
             updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
             if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
           }}
-          clickHint="Variações com reposição prevista nos próximos 30 dias"
+          tooltip="Variações com reposição prevista nos próximos 30 dias."
           trend={
             futureStock30dUnits > 0
               ? {

@@ -66,9 +66,7 @@ export function buildStockKpiCards(
       unit: 'variações',
       value: totalVariants,
       subtitle: `em ${totalProducts.toLocaleString('pt-BR')} produtos`,
-      tooltip:
-        `${totalVariants.toLocaleString('pt-BR')} variações (cor/tamanho) distribuídas ` +
-        `em ${totalProducts.toLocaleString('pt-BR')} produtos.`,
+      tooltip: 'Todas as variações (cor/tamanho) do catálogo. Use para dimensionar o mix.',
       filter: 'all',
       variant: 'default',
     },
@@ -78,9 +76,7 @@ export function buildStockKpiCards(
       unit: 'variações',
       value: variantsInStock,
       subtitle: `${pct(variantsInStock, totalVariants)} das variações`,
-      tooltip:
-        `${variantsInStock.toLocaleString('pt-BR')} variações disponíveis para venda ` +
-        `(de ${totalVariants.toLocaleString('pt-BR')} totais).`,
+      tooltip: 'Variações disponíveis para venda imediata.',
       filter: 'in_stock',
       variant: 'success',
     },
@@ -93,10 +89,8 @@ export function buildStockKpiCards(
         ? 'podem esgotar em até 30 dias'
         : `${pct(ruptureValue, totalVariants)} em estado crítico`,
       tooltip: ruptureFromEma
-        ? `${ruptureValue.toLocaleString('pt-BR')} variações com cobertura projetada ≤ 30 dias ` +
-          `(modelo EMA — média móvel exponencial de saídas).`
-        : `${ruptureValue.toLocaleString('pt-BR')} variações em estado crítico (fallback — ` +
-          `previsão EMA indisponível).`,
+        ? 'Variações com previsão de esgotar em até 30 dias. Priorize estes pedidos.'
+        : 'Variações em estado crítico. Atenção ao oferecer.',
       filter: 'critical',
       variant: 'warning',
     },
@@ -110,11 +104,10 @@ export function buildStockKpiCards(
         variantsOutOfStock > 0
           ? `em ${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos afetados`
           : 'nenhuma variação zerada',
-      tooltip:
-        `${variantsOutOfStock.toLocaleString('pt-BR')} variações esgotadas, ` +
-        `afetando ${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos.`,
+      tooltip: 'Variações zeradas. Evite ofertar ou confirme reposição antes.',
       filter: 'out_of_stock',
       variant: 'error',
     },
   ];
 }
+
