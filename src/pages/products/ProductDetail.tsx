@@ -178,6 +178,12 @@ export default function ProductDetail() {
     }
   }, [product, trackProductView, addToRecentlyViewed]);
 
+  // Reset color state when navigating between products (SPA: component is reused, state persists).
+  useEffect(() => {
+    setColorAutoSelected(false);
+    setSelectedVariation(null);
+  }, [id]);
+
   // Auto-select color from URL
   useEffect(() => {
     if (!product || colorAutoSelected) return;
@@ -217,11 +223,10 @@ export default function ProductDetail() {
       const normalizedHex = hexParam.startsWith('#')
         ? hexParam.toLowerCase()
         : `#${hexParam.toLowerCase()}`;
-      match = product.variations.find(
-        (v: ProductVariation) =>
-          v.color?.hex?.toLowerCase() === normalizedHex ||
-          v.color?.hex?.toLowerCase() === `#${normalizedHex}`,
-      );
+      match = product.variations.find((v: ProductVariation) => {
+        const dbHex = (v.color?.hex?.toLowerCase() ?? '').replace(/^#/, '');
+        return dbHex !== '' && dbHex === normalizedHex.replace(/^#/, '');
+      });
     }
 
     // 4. Tenta match por grupo

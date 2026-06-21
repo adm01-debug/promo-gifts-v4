@@ -411,7 +411,7 @@ export function ProductDetailHero({
                   productName={product.name}
                   productSku={product.sku}
                   productImageUrl={product.images?.[0]}
-                  productPrice={product.price}
+                  productPrice={product.price ?? 0}
                   minQuantity={minQuantity}
                   variant="button"
                   buttonSize="lg"
@@ -439,7 +439,7 @@ export function ProductDetailHero({
                       product_id: id,
                       product_name: product.name,
                       product_sku: product.sku || '',
-                      product_price: String(product.price),
+                      product_price: String(product.price ?? 0),
                       product_image: v?.selected_thumbnail || product.images?.[0] || '',
                       min_quantity: String(minQuantity),
                     });
