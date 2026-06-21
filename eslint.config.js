@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 157: 5 zero-violation rules (excluded: no-multi-str 0v✓, no-extend-native 0v✓, no-global-assign 0v✓, no-extra-label 0v✓, no-label-var 0v✓ — saved Batch 158)
+      'jsx-a11y/mouse-events-have-key-events': 'error',
+      'no-caller': 'error',
+      'no-new-func': 'error',
+      'no-new-wrappers': 'error',
+      'no-script-url': 'error',
       // Batch 156: 5 zero-violation rules (excluded: jsx-a11y/mouse-events-have-key-events 0v✓ — saved Batch 157)
       'jsx-a11y/scope': 'error',
       'jsx-a11y/tabindex-no-positive': 'error',
