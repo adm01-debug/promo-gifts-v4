@@ -32,7 +32,7 @@ export function PresetCard({ preset, isActive, onSelect }: PresetCardProps) {
           role="radio"
           aria-checked={isActive}
           aria-label={`Skin ${preset.name}: ${preset.description}`}
-          tabIndex={isActive ? 0 : -1}
+          tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -119,7 +119,7 @@ export function PresetCard({ preset, isActive, onSelect }: PresetCardProps) {
           </p>
         </motion.div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className=" ">
+      <TooltipContent side="bottom">
         <p className="font-semibold">
           {preset.emoji} {preset.name}
         </p>
