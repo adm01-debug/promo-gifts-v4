@@ -457,12 +457,11 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         inscricao_estadual: inscricaoEstadual.trim() || null,
         tax_regime: regimeTributario || null,
         state_uf: estadoFaturamento || null,
-        // BUG-19 FIX: persist social media to dedicated columns
-        instagram: instagram.trim() || null,
-        facebook: facebook.trim() || null,
-        linkedin: linkedin.trim() || null,
-        youtube: youtube.trim() || null,
-        tiktok: tiktok.trim() || null,
+        // NOTE: `suppliers` has NO instagram/facebook/linkedin/youtube/tiktok columns — the
+        // earlier "BUG-19 FIX" referenced columns that were never created, so writing them
+        // throws PGRST204 and blocks supplier creation entirely. They are intentionally
+        // omitted; persisting social links requires an additive migration (5 text columns
+        // or a `social_media` jsonb) before they can be re-added here.
         created_at: now,
         updated_at: now,
       };

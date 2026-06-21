@@ -57,7 +57,8 @@ export const TARGET_FIELDS = [
   { key: 'box_volume_cm3', label: 'Volume Caixa (cm³)', required: false },
   { key: 'box_image', label: 'Imagem Caixa', required: false },
   // ── Mídia ──
-  { key: 'image_url', label: 'URL Imagem', required: false },
+  // NOTE: there is no `image_url` column on `products`. The real columns are
+  // `primary_image_url` (text) and `images` (jsonb). Image headers map to primary_image_url.
   { key: 'primary_image_url', label: 'URL Imagem Principal', required: false },
   { key: 'og_image_url', label: 'URL OG Image', required: false },
   // ── Flags ──
@@ -105,8 +106,7 @@ export const TEMPLATE_EXAMPLES: Record<string, string | number> = {
   box_quantity: 500,
   box_volume_cm3: 135,
   box_image: '',
-  image_url: 'https://exemplo.com/imagem.jpg',
-  primary_image_url: '',
+  primary_image_url: 'https://exemplo.com/imagem.jpg',
   og_image_url: '',
   is_active: 'Sim',
   is_featured: 'Não',
@@ -200,11 +200,11 @@ export const ALIAS_MAP: Record<string, TargetFieldKey> = {
   boxvolume: 'box_volume_cm3',
   imagemcaixa: 'box_image',
   boximage: 'box_image',
-  imagem: 'image_url',
-  image: 'image_url',
-  imageurl: 'image_url',
-  foto: 'image_url',
-  photo: 'image_url',
+  imagem: 'primary_image_url',
+  image: 'primary_image_url',
+  imageurl: 'primary_image_url',
+  foto: 'primary_image_url',
+  photo: 'primary_image_url',
   imagemprincipal: 'primary_image_url',
   primaryimage: 'primary_image_url',
   ogimage: 'og_image_url',

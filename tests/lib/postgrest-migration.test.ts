@@ -38,7 +38,7 @@ vi.mock('@/integrations/supabase/client', () => {
   };
 });
 
-import { dbInvoke } from '@/lib/db/postgrest';
+import { dbInvoke, dbInvokeSingle } from '@/lib/db/postgrest';
 
 const callsOf = (table: string) => recorded.find((r) => r.table === table)?.calls ?? [];
 const callArgs = (table: string, method: string) =>
@@ -148,5 +148,45 @@ describe('postgrest helper — count mode', () => {
     const result = await dbInvoke({ table: 'products', operation: 'select', countMode: 'exact' });
     expect(callArgs('v_products_public', 'select')[0][1]).toMatchObject({ count: 'exact' });
     expect(result.count).toBe(42);
+  });
+});
+
+// REGRESSION: dbInvoke previously implemented only the READ path; write operations
+// silently degraded into a `SELECT … LIMIT 1`, so product create/edit (and every other
+// migrated write call-site) persisted nothing while still reporting success. These tests
+// pin the write routing to the REST-native write engine.
+describe('postgrest helper — WRITE routing', () => {
+  it('routes insert to a real .insert() on the base table (never the Gold read view)', async () => {
+    nextResult = { data: [{ id: 'new-1', sku: 'SKU-1', name: 'Caneta' }], error: null, count: null };
+    const created = await dbInvokeSingle<{ id: string }>({
+      table: 'products',
+      operation: 'insert',
+      data: { sku: 'SKU-1', name: 'Caneta' },
+    });
+    expect(recorded.map((r) => r.table)).toContain('products');
+    expect(recorded.map((r) => r.table)).not.toContain('v_products_public');
+    expect(callArgs('products', 'insert')[0][0]).toMatchObject({ sku: 'SKU-1', name: 'Caneta' });
+    expect(created).toMatchObject({ id: 'new-1' });
+  });
+
+  it('routes update to .update() scoped by id', async () => {
+    nextResult = { data: [{ id: 'p-9' }], error: null, count: null };
+    await dbInvoke({ table: 'products', operation: 'update', id: 'p-9', data: { sale_price: 42 } });
+    expect(callArgs('products', 'update')[0][0]).toMatchObject({ sale_price: 42 });
+    expect(callArgs('products', 'eq')).toContainEqual(['id', 'p-9']);
+  });
+
+  it('routes delete to .delete() scoped by id', async () => {
+    nextResult = { data: [{ id: 'p-9' }], error: null, count: null };
+    await dbInvoke({ table: 'products', operation: 'delete', id: 'p-9' });
+    expect(callsOf('products').some((c) => c.m === 'delete')).toBe(true);
+    expect(callArgs('products', 'eq')).toContainEqual(['id', 'p-9']);
+  });
+
+  it('fails loud for a write to a non-write-eligible table (no silent SELECT fallback)', async () => {
+    await expect(
+      dbInvoke({ table: 'frontend_telemetry', operation: 'insert', data: { a: 1 } }),
+    ).rejects.toThrow(/not supported|REST_NATIVE_WRITE_TABLES/);
+    expect(recorded.length).toBe(0); // never touched the database
   });
 });
