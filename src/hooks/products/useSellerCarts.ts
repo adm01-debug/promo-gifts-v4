@@ -161,7 +161,7 @@ export function useSellerCarts() {
         .single();
 
       if (error) {
-        if (error.message?.includes('Limite de 3')) {
+        if (error.code === '23514' || error.message?.includes('Limite de 3')) {
           throw new Error(
             'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de criar outro.',
           );
@@ -385,7 +385,7 @@ export function useSellerCarts() {
         .select()
         .single();
       if (cartErr) {
-        if (cartErr.message?.includes('Limite de 3')) {
+        if (cartErr.code === '23514' || cartErr.message?.includes('Limite de 3')) {
           throw new Error(
             'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de duplicar.',
           );
