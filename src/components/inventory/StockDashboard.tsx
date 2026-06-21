@@ -407,7 +407,7 @@ export function StockDashboard() {
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-        {buildStockKpiCards(summary, ruptureRisk15dCount).map((card) => {
+        {buildStockKpiCards(summary, ruptureRisk30dCount).map((card) => {
           const ICONS: Record<typeof card.slug, React.ReactNode> = {
             'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
             'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
