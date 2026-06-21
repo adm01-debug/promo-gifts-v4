@@ -21,8 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateStockStatus, type StockStatus } from '@/types/stock';
+import { ColorSwatch } from '@/components/shared/ColorSwatch';
 
-const MIXED_COLOR_RE = /color(ido)?|sortido|multi/i;
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
