@@ -27,19 +27,31 @@ export function MfaChallengeDialog({ open }: MfaChallengeDialogProps) {
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [factorsLoading, setFactorsLoading] = useState(false);
+  const [factorError, setFactorError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setCode('');
       setFactorId(null);
+      setFactorError(false);
       return;
     }
+    let cancelled = false;
+    setFactorsLoading(true);
+    setFactorError(false);
     (async () => {
       const { data } = await supabase.auth.mfa.listFactors();
+      if (cancelled) return;
       const verified = data?.totp?.find((f) => f.status === 'verified');
       setFactorId(verified?.id ?? null);
+      setFactorError(!verified);
+      setFactorsLoading(false);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   async function verify() {
@@ -93,25 +105,40 @@ export function MfaChallengeDialog({ open }: MfaChallengeDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <Input
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="000000"
-            className="h-14 text-center font-mono text-2xl tracking-[0.5em]"
-            autoFocus
-            inputMode="numeric"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && code.length === 6) verify();
-            }}
-          />
+          {factorError ? (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Nenhum fator TOTP verificado encontrado. Verifique seu app autenticador ou saia e
+              contate o suporte.
+            </p>
+          ) : (
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              className="h-14 text-center font-mono text-2xl tracking-[0.5em]"
+              autoFocus
+              inputMode="numeric"
+              disabled={factorsLoading}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && code.length === 6 && factorId) verify();
+              }}
+            />
+          )}
           <div className="flex justify-between">
             <Button variant="ghost" onClick={handleSignOut}>
               Sair
             </Button>
-            <Button onClick={verify} disabled={loading || code.length !== 6}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verificar
-            </Button>
+            {!factorError && (
+              <Button
+                onClick={verify}
+                disabled={loading || code.length !== 6 || !factorId || factorsLoading}
+              >
+                {(loading || factorsLoading) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Verificar
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
