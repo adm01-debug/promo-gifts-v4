@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 177: 5 zero-violation rules (excluded: no-confusing-void-expression 2937v, no-import-type-side-effects 102v)
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
+      '@typescript-eslint/no-meaningless-void-operator': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      '@typescript-eslint/no-unsafe-unary-minus': 'error',
       // Batch 176: 5 zero-violation rules (saved: @typescript-eslint/no-mixed-enums 0v✓, @typescript-eslint/no-useless-empty-export 0v✓ — Batch 177)
       'no-promise-executor-return': 'error',
       'no-unreachable-loop': 'error',
