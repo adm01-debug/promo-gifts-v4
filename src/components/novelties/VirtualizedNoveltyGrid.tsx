@@ -52,7 +52,10 @@ export function VirtualizedNoveltyGrid({
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
-  const estimatedRowHeight = numCols <= 2 ? 460 : numCols <= 3 ? 440 : 420;
+  // Estimativa adaptativa por nº de colunas — cards mais estreitos são mais altos
+  // por causa do wrap do nome do produto. Manter o estimado próximo do medido
+  // reduz o re-layout do virtualizer e elimina "jitter" durante o scroll.
+  const estimatedRowHeight = numCols <= 2 ? 520 : numCols <= 3 ? 480 : numCols <= 4 ? 460 : 440;
 
   // Mede o offset do container em relação ao topo do documento — necessário
   // para o useWindowVirtualizer alinhar suas posições absolutas.
@@ -76,10 +79,13 @@ export function VirtualizedNoveltyGrid({
   const virtualizer = useWindowVirtualizer({
     count: rowCount,
     estimateSize: () => estimatedRowHeight,
-    overscan: 3,
+    // overscan 5 → buffer ~2 viewports em monitores comuns: rolagem rápida
+    // não revela área em branco, sem inflar custo de render (cada row tem ≤ 6 cards).
+    overscan: 5,
     scrollMargin,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
+
 
   // Reset de scroll ao topo quando os filtros mudam (skip 1º render).
   const isFirstScrollRef = useRef(true);
