@@ -85,6 +85,15 @@ export default function FiltersPage() {
     () => JSON.stringify([state.sortBy, state.viewMode, state.filters]),
     [state.sortBy, state.viewMode, state.filters],
   );
+
+  // FAN-OUT DE COR (FASE 5): quando o filtro de cor expande produtos em cards por
+  // cor, a contagem distingue produtos de variações ("X produtos · Y variações").
+  // Sem fan-out (cardCount === nº de produtos), hasFanout=false → contagem padrão.
+  const countDisplay = useMemo(() => {
+    const produtos = state.filteredProducts.length;
+    const variacoes = state.cardCount ?? produtos;
+    return { produtos, variacoes, hasFanout: variacoes > produtos };
+  }, [state.filteredProducts.length, state.cardCount]);
   const sel = useFiltersSelectionMode({
     selectionMode: state.selectionMode,
     filteredProducts: state.filteredProducts,
@@ -191,7 +200,9 @@ export default function FiltersPage() {
                       <span className="tabular-nums">
                         {state.isLoadingProducts && state.realProducts.length === 0
                           ? 'carregando...'
-                          : `${(state.activeFiltersCount > 0 ? state.filteredProducts.length : (state.totalEstimate ?? state.filteredProducts.length)).toLocaleString('pt-BR')}${!state.isFullyLoaded && state.activeFiltersCount === 0 ? '+' : ''} itens`}
+                          : countDisplay.hasFanout
+                            ? `${countDisplay.produtos.toLocaleString('pt-BR')} produtos · ${countDisplay.variacoes.toLocaleString('pt-BR')} variações`
+                            : `${(state.activeFiltersCount > 0 ? state.filteredProducts.length : (state.totalEstimate ?? state.filteredProducts.length)).toLocaleString('pt-BR')}${!state.isFullyLoaded && state.activeFiltersCount === 0 ? '+' : ''} itens`}
                       </span>
                       {!state.isFullyLoaded &&
                         state.loadingProgress > 0 &&
@@ -321,7 +332,9 @@ export default function FiltersPage() {
                     <Badge variant="secondary" className="shrink-0 whitespace-nowrap">
                       {state.isLoadingProducts && state.realProducts.length === 0
                         ? 'Carregando...'
-                        : `${state.filteredProducts.length.toLocaleString('pt-BR')} encontrado${state.filteredProducts.length !== 1 ? 's' : ''}`}
+                        : countDisplay.hasFanout
+                          ? `${countDisplay.produtos.toLocaleString('pt-BR')} produtos · ${countDisplay.variacoes.toLocaleString('pt-BR')} variações`
+                          : `${state.filteredProducts.length.toLocaleString('pt-BR')} encontrado${state.filteredProducts.length !== 1 ? 's' : ''}`}
                     </Badge>
                   )}
                   <Sheet open={state.mobileFiltersOpen} onOpenChange={state.setMobileFiltersOpen}>
