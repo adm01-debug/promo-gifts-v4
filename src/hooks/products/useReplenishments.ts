@@ -303,9 +303,9 @@ export function useReplenishmentStats() {
 }
 
 export function useReplenishmentCount() {
-  // Shares the cache key of useReplenishmentsWithDetails(default) — no duplicate fetch.
+  // Must match useReplenishmentsWithDetails(default) queryKey — no duplicate fetch.
   return useQuery<ReplenishmentWithDetails[], Error, number>({
-    queryKey: ['replenishments-details', FETCH_ALL_LIMIT, false],
+    queryKey: ['replenishments-details', FETCH_ALL_LIMIT],
     queryFn: () => fetchReposicao(FETCH_ALL_LIMIT),
     select: (data) => data.length,
     staleTime: 2 * 60 * 1000,

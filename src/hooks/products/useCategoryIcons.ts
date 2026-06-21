@@ -194,15 +194,14 @@ export function getCategoryIcon(
   const nameLower = categoryName.toLowerCase();
 
   // 1. Busca exata no banco
-  const exact = icons.find((i) => i.category_name.toLowerCase() === nameLower);
+  const exact = icons.find((i) => i.category_name?.toLowerCase() === nameLower);
   if (exact) return exact.icon;
 
   // 2. Busca parcial (contém) no banco
-  const partial = icons.find(
-    (i) =>
-      nameLower.includes(i.category_name.toLowerCase()) ||
-      i.category_name.toLowerCase().includes(nameLower),
-  );
+  const partial = icons.find((i) => {
+    const n = i.category_name?.toLowerCase();
+    return n && (nameLower.includes(n) || n.includes(nameLower));
+  });
   if (partial) return partial.icon;
 
   // 3. Busca por palavras-chave no mapa estático
@@ -215,7 +214,7 @@ export function getCategoryIcon(
   // 4. Busca por primeira palavra significativa no banco
   const firstWord = nameLower.split(/[\s|]/)[0];
   if (firstWord.length > 2) {
-    const firstWordMatch = icons.find((i) => i.category_name.toLowerCase().includes(firstWord));
+    const firstWordMatch = icons.find((i) => i.category_name?.toLowerCase().includes(firstWord));
     if (firstWordMatch) return firstWordMatch.icon;
   }
 
