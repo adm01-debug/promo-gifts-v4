@@ -425,6 +425,13 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 138: 6 rules (all zero-violation — removed: prefer-named-capture-group 148v)
+      'no-implicit-globals': 'error',
+      'no-extend-native': 'error',
+      'no-multi-assign': 'error',
+      'no-sequences': 'error',
+      'logical-assignment-operators': 'error',
+      '@typescript-eslint/consistent-generic-constructors': 'error',
       // Batch 137: 4 rules (2 zero-violation + 2 with manual fixes)
       'array-callback-return': 'error',
       'prefer-object-has-own': 'error',
