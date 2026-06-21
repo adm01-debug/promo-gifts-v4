@@ -399,6 +399,14 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     delete rawFilters._search;
   }
 
+  // Extract _name_prefix (prefix-search meta-filter — must never leak into an .eq()).
+  let namePrefix: string | undefined;
+  if (rawFilters && '_name_prefix' in rawFilters) {
+    const rawPrefix = rawFilters._name_prefix;
+    if (typeof rawPrefix === 'string' && rawPrefix.trim() !== '') namePrefix = rawPrefix.trim();
+    delete rawFilters._name_prefix;
+  }
+
   const remappedFilters = rawFilters ? remapFilters(table, rawFilters) : undefined;
   const remappedSelect = options.select ? remapSelect(table, options.select) : '*';
   const remappedOrderCol = options.orderBy
@@ -480,6 +488,17 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
       } else {
         logger.warn(`[postgrest] _search ignored on '${table}': no search column configured`);
       }
+    }
+  }
+
+  // _name_prefix → prefix ILIKE across the configured search columns. Restores the
+  // catalog-search "0 produtos" fix (commit 57fc30a4b) reverted upstream by the bot.
+  if (namePrefix) {
+    const prefixCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+    const prefixCols = prefixCfg ? (Array.isArray(prefixCfg) ? prefixCfg : [prefixCfg]) : ['name'];
+    const safePrefix = namePrefix.replace(/[,()*%]/g, ' ').trim();
+    if (safePrefix.length > 0) {
+      query = query.or(prefixCols.map((c) => `${c}.ilike.${safePrefix}*`).join(','));
     }
   }
 
