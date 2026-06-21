@@ -80,12 +80,19 @@ export const ColorSwatch = forwardRef<HTMLSpanElement, ColorSwatchProps>(functio
   { hex, name, isActive, isOutOfStock, sizeClassName = 'h-[25px] w-[25px]', className, style, ...rest },
   ref,
 ) {
-  const { background, hasBg } = resolveSwatchBackground(hex, name);
+  const { background, isMixed, hasBg } = resolveSwatchBackground(hex, name);
+  // Gradientes (cores mistas) precisam ir em `background` — `backgroundColor`
+  // só aceita <color>, então um conic-gradient seria silenciosamente descartado.
+  const bgStyle = background
+    ? isMixed
+      ? { ...style, background }
+      : { ...style, backgroundColor: background }
+    : style;
   return (
     <span
       ref={ref}
       className={cn(getColorSwatchClasses({ isActive, isOutOfStock, hasBg }), 'shrink-0', sizeClassName, className)}
-      style={background ? { ...style, backgroundColor: background } : style}
+      style={bgStyle}
       {...rest}
     />
   );
