@@ -26,6 +26,11 @@
 import { memo, useId, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import {
+  getColorSwatchClasses,
+  resolveSwatchBackground,
+} from '@/components/shared/ColorSwatch';
+
 
 export interface ColorDotLike {
   name: string;
@@ -197,16 +202,18 @@ export const ProductColorSwatches = memo(
                   type="button"
                   role="radio"
                   className={cn(
-                    'relative inline-block rounded-full border border-border/40 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    isSelected
-                      ? 'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
-                      : 'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
-                    // Esgotado: visual atenuado (overlay "X" via ::before)
-                    isOutOfStock &&
-                      'opacity-40 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
+                    // SSOT: src/components/shared/ColorSwatch.tsx
+                    getColorSwatchClasses({
+                      isActive: isSelected,
+                      isOutOfStock,
+                      isUpcoming,
+                      isInteractive: true,
+                    }),
                     SIZE_CLASS[size],
                   )}
-                  style={{ backgroundColor: c.hex || 'transparent' }}
+                  style={{
+                    backgroundColor: resolveSwatchBackground(c.hex, c.name) ?? 'transparent',
+                  }}
                   aria-label={
                     isOutOfStock
                       ? `Opção de cor: ${c.name} — esgotada`
@@ -251,6 +258,7 @@ export const ProductColorSwatches = memo(
                   )}
                 </button>
               </TooltipTrigger>
+
               <TooltipContent
                 id={tooltipId}
                 side="top"
