@@ -71,19 +71,40 @@ export interface CreateTemplateInput {
   validity_days?: number;
 }
 
+function isValidTemplateItem(v: unknown): v is QuoteTemplateItem {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as Record<string, unknown>;
+  return (
+    typeof r.productName === 'string' &&
+    typeof r.quantity === 'number' &&
+    typeof r.unitPrice === 'number'
+  );
+}
+
 function transformTemplates(data: QuoteTemplateRow[]): QuoteTemplate[] {
-  return (data || []).map((item) => ({
-    ...item,
-    is_default: item.is_default ?? false,
-    items: Array.isArray(item.items) ? (item.items as unknown as QuoteTemplateItem[]) : [],
-    template_data:
-      typeof item.template_data === 'object' && item.template_data !== null
-        ? (item.template_data as Record<string, unknown>)
-        : {},
-    discount_percent: item.discount_percent ?? 0,
-    discount_amount: item.discount_amount ?? 0,
-    validity_days: item.validity_days ?? 30,
-  })) as unknown as QuoteTemplate[];
+  return (data || []).map(
+    (item): QuoteTemplate => ({
+      id: item.id,
+      seller_id: item.seller_id,
+      name: item.name,
+      description: item.description ?? undefined,
+      is_default: item.is_default ?? false,
+      template_data:
+        typeof item.template_data === 'object' && item.template_data !== null
+          ? (item.template_data as Record<string, unknown>)
+          : {},
+      items: Array.isArray(item.items) ? (item.items as unknown[]).filter(isValidTemplateItem) : [],
+      discount_percent: item.discount_percent ?? 0,
+      discount_amount: item.discount_amount ?? 0,
+      notes: item.notes ?? undefined,
+      internal_notes: item.internal_notes ?? undefined,
+      payment_terms: item.payment_terms ?? undefined,
+      delivery_time: item.delivery_time ?? undefined,
+      validity_days: item.validity_days ?? 30,
+      created_at: item.created_at ?? '',
+      updated_at: item.updated_at ?? '',
+    }),
+  );
 }
 
 // ============================================
