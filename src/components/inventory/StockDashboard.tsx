@@ -189,17 +189,17 @@ export function StockDashboard() {
   const warningAlerts = useMemo(() => alerts.filter((a) => a.severity === 'warning'), [alerts]);
   const infoAlerts = useMemo(() => alerts.filter((a) => a.severity === 'info'), [alerts]);
 
-  // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 15 dias.
+  // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 30 dias.
   // Quando o feature flag `useEmaRupture` estiver off, `alerts` vem vazio e
   // passamos `null` para o helper cair no fallback `variantsCritical`.
   const { alerts: ruptureAlerts } = useRuptureAlerts();
-  const ruptureRisk15dCount = useMemo<number | null>(() => {
+  const ruptureRisk30dCount = useMemo<number | null>(() => {
     if (ruptureAlerts.length === 0) return null;
     return ruptureAlerts.filter(
       (a) =>
         typeof a.cobertura_dias === 'number' &&
         Number.isFinite(a.cobertura_dias) &&
-        a.cobertura_dias <= 15,
+        a.cobertura_dias <= 30,
     ).length;
   }, [ruptureAlerts]);
 
@@ -407,7 +407,7 @@ export function StockDashboard() {
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-        {buildStockKpiCards(summary, ruptureRisk15dCount).map((card) => {
+        {buildStockKpiCards(summary, ruptureRisk30dCount).map((card) => {
           const ICONS: Record<typeof card.slug, React.ReactNode> = {
             'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
             'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
