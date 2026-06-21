@@ -110,24 +110,31 @@ Deno.serve(async (req) => {
 
         if (catError) throw catError;
 
-        // Função para encontrar todos os descendentes
+        // Função para encontrar todos os descendentes (BFS com visited set para
+        // prevenir loop infinito em caso de ciclos na hierarquia de categorias).
         const findDescendants = (parentIds: string[]): string[] => {
-          const descendants: string[] = [];
+          const visited = new Set<string>(parentIds);
+          const descendants: string[] = [...parentIds];
           const queue = [...parentIds];
 
           while (queue.length > 0) {
             const currentId = queue.shift()!;
-            descendants.push(currentId);
 
             // Encontrar filhos diretos
             const children = allCategories
               .filter((c: any) => c.parent_id === currentId)
-              .map((c: any) => c.id);
+              .map((c: any) => c.id as string);
 
-            queue.push(...children);
+            for (const childId of children) {
+              if (!visited.has(childId)) {
+                visited.add(childId);
+                descendants.push(childId);
+                queue.push(childId);
+              }
+            }
           }
 
-          return [...new Set(descendants)]; // Remover duplicatas
+          return descendants;
         };
 
         const allCategoryIds = findDescendants(categoryIds);
@@ -157,21 +164,27 @@ Deno.serve(async (req) => {
 
           // Encontrar todos os descendentes
           const findDescendants = (parentIds: string[]): string[] => {
-            const descendants: string[] = [];
+            const visited = new Set<string>(parentIds);
+            const descendants: string[] = [...parentIds];
             const queue = [...parentIds];
 
             while (queue.length > 0) {
               const currentId = queue.shift()!;
-              descendants.push(currentId);
 
               const children = allCategories
                 .filter((c: any) => c.parent_id === currentId)
-                .map((c: any) => c.id);
+                .map((c: any) => c.id as string);
 
-              queue.push(...children);
+              for (const childId of children) {
+                if (!visited.has(childId)) {
+                  visited.add(childId);
+                  descendants.push(childId);
+                  queue.push(childId);
+                }
+              }
             }
 
-            return [...new Set(descendants)];
+            return descendants;
           };
 
           targetCategoryIds = findDescendants(categoryIds);
