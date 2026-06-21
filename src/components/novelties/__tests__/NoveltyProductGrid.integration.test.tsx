@@ -116,21 +116,23 @@ vi.mock('@/hooks/products', () => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),
     clearSelection: vi.fn(),
-    noveltyToProduct: (n: NoveltyWithDetails) => ({
-      id: n.product_id,
-      name: n.product_name || '',
-      product_name: n.product_name || '',
-      price: n.base_price,
-      sku: n.product_sku || '',
-      stock: n.stock_quantity,
-      supplier: { id: n.supplier_id, name: n.supplier_name },
-      category: { id: n.category_id, name: n.category_name },
-      images: [n.product_image],
-      colors: [],
-      materials: [],
-      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-    }),
   })),
+  // NoveltyProductGrid imports noveltyToProduct as a named module export (not from hook return)
+  noveltyToProduct: (n: NoveltyWithDetails) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    product_name: n.product_name || '',
+    shortDescription: '',
+    price: n.base_price ?? 0,
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id || '', name: n.supplier_name || '' },
+    category: { id: n.category_id || '', name: n.category_name || '' },
+    images: n.product_image ? [n.product_image] : [],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  }),
 }));
 
 vi.mock('@/stores/useFavoritesStore', () => ({

@@ -148,7 +148,7 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     expect(screen.getByTestId("sparkline-stub")).toBeInTheDocument();
   });
 
-  it("ambos os cards aplicam h-[400px] max-h-[400px] (altura fixa compartilhada)", async () => {
+  it("ambos os cards aplicam h-[400px] e overflow-hidden (altura fixa por breakpoint)", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     const { ReplenishmentGridCard } = await import(
       "@/components/replenishments/ReplenishmentCards"
@@ -173,9 +173,6 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     );
     const noveltyArticle = document.querySelector("article")!;
     expect(noveltyArticle.className).toMatch(/h-\[400px\]/);
-    expect(noveltyArticle.className).toMatch(/max-h-\[400px\]/);
-    expect(noveltyArticle.className).toMatch(/sm:h-\[430px\]/);
-    expect(noveltyArticle.className).toMatch(/sm:max-h-\[430px\]/);
     unmount();
 
     renderWithProviders(
@@ -189,9 +186,6 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     );
     const replenishmentArticle = document.querySelector("article")!;
     expect(replenishmentArticle.className).toMatch(/h-\[400px\]/);
-    expect(replenishmentArticle.className).toMatch(/max-h-\[400px\]/);
-    expect(replenishmentArticle.className).toMatch(/sm:h-\[430px\]/);
-    expect(replenishmentArticle.className).toMatch(/sm:max-h-\[430px\]/);
   });
 
   it("ordem dos campos é idêntica (categoria → cores → estoque)", async () => {

@@ -44,15 +44,15 @@ declare module 'canvas-confetti' {
 
   interface ConfettiFunction {
     (options?: Options): Promise<null> | null;
-    reset(): void;
-    create(canvas: HTMLCanvasElement, options?: GlobalOptions): CreateTypes;
-    shapeFromPath(options: { path: string; matrix?: DOMMatrix }): Shape;
-    shapeFromText(options: {
+    reset: () => void;
+    create: (canvas: HTMLCanvasElement, options?: GlobalOptions) => CreateTypes;
+    shapeFromPath: (options: { path: string; matrix?: DOMMatrix }) => Shape;
+    shapeFromText: (options: {
       text: string;
       scalar?: number;
       color?: string;
       fontFamily?: string;
-    }): Shape;
+    }) => Shape;
   }
 
   const confetti: ConfettiFunction;

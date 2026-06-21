@@ -95,9 +95,9 @@ export function BridgeProductsPreviewPanel() {
     const min = minPriceInput.trim() === '' ? null : Number(minPriceInput);
     const max = maxPriceInput.trim() === '' ? null : Number(maxPriceInput);
     const stock = minStockInput.trim() === '' ? null : Number(minStockInput);
-    setAppliedMinPrice(Number.isFinite(min as number) ? (min as number) : null);
-    setAppliedMaxPrice(Number.isFinite(max as number) ? (max as number) : null);
-    setAppliedMinStock(Number.isFinite(stock as number) ? (stock as number) : null);
+    setAppliedMinPrice(Number.isFinite(min!) ? min! : null);
+    setAppliedMaxPrice(Number.isFinite(max!) ? max! : null);
+    setAppliedMinStock(Number.isFinite(stock!) ? stock! : null);
     setPage(1);
   }, [searchInput, activeInput, minPriceInput, maxPriceInput, minStockInput]);
 

@@ -107,7 +107,9 @@ export default [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      // Disabled: non-nullable-type-assertion-style (Batch 124) forces `!` over `as NonNullable<T>`,
+      // making these two rules contradictory. Prefer the explicit style enforced by that rule.
+      '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },
@@ -692,7 +694,7 @@ export default [
       // Batch 118: 6 zero-violation rules (removed: no-unsafe-member-access many, method-signature-style many, destructuring-assignment many, jsx-child-element-spacing many, jsx-props-no-multi-spaces 1v, jsx-boolean-value 5v)
       'constructor-super': 'error',
       'react/jsx-uses-react': 'error',
-      'react/jsx-sort-default-props': 'error',
+      'react/sort-default-props': 'error',
       'react/sort-prop-types': 'error',
       'react/prefer-exact-props': 'error',
       'react/forbid-dom-props': 'error',
@@ -848,6 +850,21 @@ export default [
       'no-extend-native': 'error',
       'no-eval': 'error',
       '@typescript-eslint/no-this-alias': 'error',
+      // Batch 120: 1 zero-violation rule
+      '@typescript-eslint/no-implied-eval': 'error',
+      // Batch 121 audit: all candidates already active in earlier batches — no net-new rules
+      // Batch 122: 4 rules — source fixes + ESLint autofix applied
+      // Batch 122: 4 rules — source fixes + ESLint autofix applied (already present above in block)
+      // Batch 123: 1 rule — 46 violations auto-fixed + 4 manual fixes in canvas-confetti.d.ts
+      '@typescript-eslint/require-array-sort-compare': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/consistent-type-exports': 'error',
+      '@typescript-eslint/prefer-reduce-type-parameter': 'error',
+      '@typescript-eslint/method-signature-style': 'error',
+      // Batch 124: 1 rule — 39 violations auto-fixed, 1 manual fix (no-non-null-asserted-nullish-coalescing side-effect)
+      '@typescript-eslint/non-nullable-type-assertion-style': 'error',
+      // Batch 125: 1 rule — 19 violations auto-fixed (unnecessary boolean literal comparisons)
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
     },
     settings: {
       react: { version: 'detect' },

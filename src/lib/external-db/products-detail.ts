@@ -147,7 +147,7 @@ export async function fetchPromobrindProductById(
       table: 'suppliers',
       operation: 'select',
       select: 'id, name, code',
-      filters: { id: product.supplier_id as string },
+      filters: { id: product.supplier_id! },
       limit: 1,
     });
     enrichmentSlots.push('supplier');

@@ -67,10 +67,10 @@ export interface CustomizationOptionResult {
 
 // ── RPC client type ─────────────────────────────────────────────────────────────────
 type RpcClient = {
-  rpc(
+  rpc: (
     name: string,
     params?: Record<string, unknown>,
-  ): Promise<{
+  ) => Promise<{
     data: unknown;
     error: { message: string; code?: string } | null;
   }>;
@@ -95,16 +95,16 @@ async function enrichCustomizationPrice(result: EnrichableResult): Promise<Enric
   if (!result.success || !result.tabela_codigo || result.tabela) return result;
   try {
     type SB = {
-      from(t: string): {
-        select(c: string): {
-          eq(
+      from: (t: string) => {
+        select: (c: string) => {
+          eq: (
             col: string,
             val: unknown,
-          ): {
-            eq(
+          ) => {
+            eq: (
               col: string,
               val: unknown,
-            ): { limit(n: number): Promise<{ data: Record<string, unknown>[] | null }> };
+            ) => { limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null }> };
           };
         };
       };

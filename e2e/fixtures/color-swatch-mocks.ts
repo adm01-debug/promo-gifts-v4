@@ -1,86 +1,89 @@
 /**
- * Fixture determinística para o cenário de cor esgotada (out-of-stock).
+ * Fixtures determinísticos para testes E2E de bolinhas de cor.
  *
- * installColorStockMock injeta uma variante "Preto Mock" com stock_quantity=0
- * via page.route, interceptando chamadas GET a product_variants.
- * O cenário valida que:
- *   - O swatch out-of-stock mantém dimensões > 0 (layout estável)
- *   - data-stock-state="out" é renderizado
- *   - O swatch permanece clicável e ganha aria-checked="true" ao ser clicado
+ * Usa page.route() para interceptar chamadas Supabase REST de product_variants
+ * e injetar variante de cor com estoque zero — cenário "esgotado" previsível
+ * sem depender de seed do banco.
  */
-import type { Page, Route } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-export interface ColorStockMockOptions {
+const SUPABASE_REST_BASE = 'https://doufsxqlfjyuvxuezpln.supabase.co/rest/v1';
+
+interface ColorStockMockOptions {
   productId: string;
-  mockColorName?: string;
-  mockStockQty?: number;
+  /** Nome da cor injetada. Padrão: 'Preto Mock'. */
+  colorName?: string;
+  /** Cor hex da bolinha. Padrão: '#1a1a1a'. */
+  colorHex?: string;
 }
 
+interface ProductVariantRow {
+  id: string;
+  product_id: string | null;
+  color_name: string | null;
+  color_hex: string | null;
+  color_code: string | null;
+  color_id: string | null;
+  name: string | null;
+  sku: string | null;
+  stock_quantity: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/**
+ * Instala um mock de rede que intercepta requisições de product_variants
+ * para o produto dado e injeta uma cor esgotada determinística.
+ *
+ * Deve ser chamado ANTES de page.reload() para que o mock esteja ativo
+ * quando a página carregar os dados.
+ */
 export async function installColorStockMock(
   page: Page,
-  options: ColorStockMockOptions,
+  {
+    productId,
+    colorName = 'Preto Mock',
+    colorHex = '#1a1a1a',
+  }: ColorStockMockOptions,
 ): Promise<void> {
-  const { productId, mockColorName = 'Preto Mock', mockStockQty = 0 } = options;
+  const mockVariant: ProductVariantRow = {
+    id: `mock-oos-${productId}`,
+    product_id: productId,
+    color_name: colorName,
+    color_hex: colorHex,
+    color_code: 'MOCK-OOS',
+    color_id: null,
+    name: `${colorName} (mock)`,
+    sku: `MOCK-${productId}-OOS`,
+    stock_quantity: 0,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
-  await page.route(/\/rest\/v1\/product_variants/, async (route: Route) => {
-    if (route.request().method() !== 'GET') return route.fallback();
-
-    // Fetch the real response first
-    let response;
-    try {
-      response = await route.fetch();
-    } catch {
-      return route.fallback();
-    }
-
-    let rows: unknown[] = [];
-    try {
-      rows = await response.json();
-    } catch {
-      return route.fallback();
-    }
-
-    if (!Array.isArray(rows)) return route.fallback();
-
-    // Only inject the mock variant if this response is for the target product
-    const hasTargetProduct = rows.some(
-      (r) => r && typeof r === 'object' && (r as Record<string, unknown>).product_id === productId,
-    );
-    // Also inject when the URL references the productId (batch queries via `in.(...)`)
-    const urlHasProduct = route.request().url().includes(productId);
-
-    if (!hasTargetProduct && !urlHasProduct) {
-      return route.fulfill({
-        status: response.status(),
-        headers: Object.fromEntries(response.headers()),
-        body: JSON.stringify(rows),
+  await page.route(
+    (url) =>
+      url.toString().startsWith(SUPABASE_REST_BASE) &&
+      url.toString().includes('product_variants') &&
+      url.toString().includes(productId),
+    async (route) => {
+      const response = await route.fetch();
+      let rows: ProductVariantRow[] = [];
+      try {
+        rows = (await response.json()) as ProductVariantRow[];
+      } catch {
+        // Response not JSON — pass through unchanged
+        await route.fulfill({ response });
+        return;
+      }
+      const alreadyMocked = rows.some((r) => r.id === mockVariant.id);
+      const patched = alreadyMocked ? rows : [...rows, mockVariant];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(patched),
       });
-    }
-
-    const mockVariant = {
-      id: `mock-preto-${productId}`,
-      product_id: productId,
-      sku: `MOCK-PRETO-${productId.slice(0, 8).toUpperCase()}`,
-      name: mockColorName,
-      color_id: null,
-      color_name: mockColorName,
-      color_hex: '#000000',
-      color_code: null,
-      stock_quantity: mockStockQty,
-      is_active: true,
-      updated_at: new Date().toISOString(),
-    };
-
-    const enhanced = [...rows, mockVariant];
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: {
-        'content-range': `0-${enhanced.length - 1}/${enhanced.length}`,
-        'access-control-expose-headers': 'content-range',
-      },
-      body: JSON.stringify(enhanced),
-    });
-  });
+    },
+  );
 }

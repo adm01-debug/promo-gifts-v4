@@ -23,7 +23,7 @@ const defaultResult: QueryResult = { data: [], error: null, count: 0 };
 
 function nextResult(table: string): QueryResult {
   const q = resultQueues[table];
-  if (q && q.length > 0) return q.shift() as QueryResult;
+  if (q && q.length > 0) return q.shift()!;
   return defaultResult;
 }
 
@@ -712,7 +712,7 @@ describe('nextStockPairs — sparse slot allocation (only slots 4-6 populated)',
     expect(entries).toHaveLength(3);
     const suffixes = entries
       .map((e) => e.id.split('-').pop())
-      .sort((a, b) => (a ?? '').localeCompare(b ?? ''));
+      .sort((a, b) => String(a).localeCompare(String(b)));
     expect(suffixes).toEqual(['4', '5', '6']);
     expect(entries.every((e) => e.status === 'pending')).toBe(true);
     expect(entries.reduce((sum, e) => sum + e.expectedQuantity, 0)).toBe(175); // 100+50+25

@@ -267,7 +267,7 @@ export const PriceFreshnessBadge = memo(
     // Estado "confirmado pelo vendedor" — pill verde discreto que substitui o
     // alerta. Mantém o tooltip (mostra data SSOT + regra) para auditoria.
     if (isConfirmed) {
-      const confirmedLabel = `Preço confirmado por você ${formatConfirmedRelative(confirmedAt as string | Date)}`;
+      const confirmedLabel = `Preço confirmado por você ${formatConfirmedRelative(confirmedAt!)}`;
       const confirmedBody =
         variant === 'icon-only' ? (
           <span
@@ -313,8 +313,8 @@ export const PriceFreshnessBadge = memo(
               <div className="flex flex-col gap-1.5">
                 <div className="font-semibold">Preço confirmado com fornecedor</div>
                 <div className="leading-snug text-muted-foreground">
-                  Você validou este preço {formatConfirmedRelative(confirmedAt as string | Date)}. O
-                  alerta de preço defasado fica suprimido neste contexto até o próximo recálculo.
+                  Você validou este preço {formatConfirmedRelative(confirmedAt!)}. O alerta de preço
+                  defasado fica suprimido neste contexto até o próximo recálculo.
                 </div>
                 <FreshnessTooltipBody freshness={freshness} priceUpdatedAt={priceUpdatedAt} />
               </div>

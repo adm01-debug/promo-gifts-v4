@@ -67,6 +67,11 @@ export interface CreateCartInput {
 
 export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 
+// Raw row returned by Supabase nested select: `seller_carts.*, seller_cart_items(*)`
+type SellerCartRawRow = Omit<SellerCart, 'items'> & {
+  seller_cart_items: SellerCartItem[];
+};
+
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
@@ -128,14 +133,12 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row as Omit<SellerCart, 'items'> & {
-          seller_cart_items: SellerCartItem[] | null;
-        };
+        const { seller_cart_items: rowItems, ...cart } = row as unknown as SellerCartRawRow;
         return {
           ...cart,
-          notes: cart.notes ?? null,
-          status: (cart.status ?? 'novo') as CartStatus,
-          items: rowItems ?? [],
+          notes: (cart.notes as string | null) ?? null,
+          status: ((cart.status as string) ?? 'novo') as CartStatus,
+          items: (rowItems ?? []) as SellerCartItem[],
         };
       });
     },

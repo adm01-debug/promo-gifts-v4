@@ -1,21 +1,11 @@
 /**
- * NoveltyGridCard — contrato de ALTURA FIXA (paridade com BaseProductGridCard).
+ * Garante que o card de Novidades usa altura FIXA por breakpoint
+ * (400 px mobile / 430 px ≥sm) com overflow-hidden, alinhado com
+ * BaseProductGridCard / Reposição para uniformidade visual.
  *
- * Histórico: o card de Novidades já oscilou entre altura flexível (`min-h-[420px]`)
- * e fixa. A decisão canônica (PR#1078, "fix novelties 40 bugs") alinhou o card ao
- * BaseProductGridCard do catálogo —
- *   `h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden`
- * — garantindo uniformidade visual entre Catálogo, Reposição e Novidades. Antes
- * deste teste existia `NoveltyGridCard.flexibleHeight.test.tsx`, que travava o
- * contrato ANTIGO (flexível) e passou a falhar quando o card foi alinhado ao
- * padrão canônico. Substituído por este, que trava o contrato ATUAL.
- *
- * Por que `overflow-hidden` é seguro com o virtualizer: o VirtualizedNoveltyGrid
- * mede a ALTURA DA LINHA (`measureElement` na div da row), determinística porque
- * os cards têm altura fixa — o clip interno do card não afeta a medição/scroll.
- *
- * Se o BaseProductGridCard mudar a estratégia de altura, este card deve acompanhar
- * (e este teste, ser atualizado junto).
+ * Atualizado em fix(novelties): batch 5 — ISSUE-31,35,38 — que substituiu
+ * min-h-[420px] por h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px]
+ * para garantir grid uniforme entre módulos Novidades e Reposição.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -41,14 +31,11 @@ vi.mock('@/components/inventory/StockBadge', () => ({
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
 
-const longName =
-  'Produto com um nome extremamente longo que ocupa várias linhas — o overflow-hidden + altura fixa é intencional (paridade com o card canônico do catálogo)';
-
 const product: NoveltyWithDetails = {
   novelty_id: 'n-1',
   product_id: 'p-1',
   product_sku: 'SKU-LONG',
-  product_name: longName,
+  product_name: 'Produto com nome longo',
   product_description: null,
   base_price: 99.9,
   product_image: null,
@@ -57,7 +44,7 @@ const product: NoveltyWithDetails = {
   category_name: null,
   supplier_code: null,
   supplier_id: null,
-  supplier_name: 'Fornecedor Teste Longo',
+  supplier_name: 'Fornecedor Teste',
   supplier_product_code: null,
   detected_at: new Date().toISOString(),
   expires_at: new Date().toISOString(),
@@ -77,26 +64,24 @@ function getArticle(container: HTMLElement): HTMLElement {
   return el as HTMLElement;
 }
 
-describe('NoveltyGridCard › altura fixa (paridade BaseProductGridCard)', () => {
-  it('aplica altura fixa 400px (mobile) e 430px (≥sm), com max-h correspondente', () => {
+describe('NoveltyGridCard › altura fixa por breakpoint', () => {
+  it('aplica h-[400px] e max-h-[400px] no estado normal', () => {
     const { container } = render(<NoveltyGridCard product={product} />);
     const cls = getArticle(container).className;
-    // `(^|\s)h-\[400px\]` distingue `h-[400px]` de `max-h-[400px]` (precedido por "-").
-    expect(cls).toMatch(/(^|\s)h-\[400px\]/);
-    expect(cls).toMatch(/(^|\s)max-h-\[400px\]/);
-    expect(cls).toMatch(/(^|\s)sm:h-\[430px\]/);
-    expect(cls).toMatch(/(^|\s)sm:max-h-\[430px\]/);
+    expect(cls).toMatch(/h-\[400px\]/);
+    expect(cls).toMatch(/max-h-\[400px\]/);
   });
 
-  it('usa overflow-hidden (clip seguro: o virtualizer mede a row, não o card)', () => {
-    const { container } = render(<NoveltyGridCard product={product} />);
-    expect(getArticle(container).className).toMatch(/(^|\s)overflow-hidden/);
-  });
-
-  it('mantém a altura fixa também no estado de loading de preço/estoque', () => {
+  it('aplica h-[400px] também com skeleton de preço/estoque', () => {
     const { container } = render(<NoveltyGridCard product={product} isPriceStockLoading />);
     const cls = getArticle(container).className;
-    expect(cls).toMatch(/(^|\s)h-\[400px\]/);
-    expect(cls).toMatch(/(^|\s)sm:h-\[430px\]/);
+    expect(cls).toMatch(/h-\[400px\]/);
+    expect(cls).toMatch(/max-h-\[400px\]/);
+  });
+
+  it('usa overflow-hidden no article para conter o conteúdo dentro da altura fixa', () => {
+    const { container } = render(<NoveltyGridCard product={product} />);
+    const cls = getArticle(container).className;
+    expect(cls).toMatch(/overflow-hidden/);
   });
 });

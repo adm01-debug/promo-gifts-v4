@@ -94,15 +94,12 @@ function clearDraft(key: string | null) {
 
 /** Agrupa técnicas por grupo_tecnica */
 function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOption[]> {
-  return options.reduce(
-    (groups, t) => {
-      const group = t.grupo_tecnica || 'OUTROS';
-      if (!groups[group]) groups[group] = [];
-      groups[group].push(t);
-      return groups;
-    },
-    {} as Record<string, TechniqueOption[]>,
-  );
+  return options.reduce<Record<string, TechniqueOption[]>>((groups, t) => {
+    const group = t.grupo_tecnica || 'OUTROS';
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(t);
+    return groups;
+  }, {});
 }
 
 interface SelectedTechniqueBarProps {

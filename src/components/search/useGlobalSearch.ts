@@ -814,14 +814,11 @@ export function useGlobalSearch() {
     [removeFromHistory],
   );
 
-  const groupedResults = results.reduce(
-    (acc, result) => {
-      if (!acc[result.type]) acc[result.type] = [];
-      acc[result.type].push(result);
-      return acc;
-    },
-    {} as Record<string, SearchResult[]>,
-  );
+  const groupedResults = results.reduce<Record<string, SearchResult[]>>((acc, result) => {
+    if (!acc[result.type]) acc[result.type] = [];
+    acc[result.type].push(result);
+    return acc;
+  }, {});
 
   return {
     open,
