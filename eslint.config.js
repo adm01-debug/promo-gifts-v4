@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 212: 5 zero-violation rules (saved: @typescript-eslint/no-invalid-this 0v✓ — Batch 213+)
+      '@typescript-eslint/no-meaningless-void-operator': 'error',
+      '@typescript-eslint/no-invalid-void-type': 'error',
+      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/ban-tslint-comment': 'error',
+      '@typescript-eslint/require-array-sort-compare': 'error',
       // Batch 211: 5 zero-violation rules (saved: @typescript-eslint/no-meaningless-void-operator 0v✓ — Batch 212+)
       '@typescript-eslint/prefer-regexp-exec': 'error',
       '@typescript-eslint/no-unsafe-unary-minus': 'error',
