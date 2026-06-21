@@ -302,7 +302,7 @@ const GENERATE_TIMEOUT_MS = 60000;
 // BEFORE spending an edge-function invocation.
 function assertNotSvg(areas: PersonalizationArea[]): void {
   for (const area of areas) {
-    if (area.logoPreview && area.logoPreview.startsWith('data:image/svg')) {
+    if (area.logoPreview?.startsWith('data:image/svg')) {
       throw new Error(
         'Logos SVG não são suportados. Converta o logo para PNG ou JPG e tente novamente.',
       );
@@ -530,7 +530,7 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   const pathsToRemove: string[] = [];
   for (const url of [logoUrl, mockupUrl]) {
     if (!url) continue;
-    const match = url.match(STORAGE_PATH_RE);
+    const match = STORAGE_PATH_RE.exec(url);
     if (match?.[1]) pathsToRemove.push(match[1]);
   }
 

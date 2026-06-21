@@ -366,7 +366,7 @@ async function dbInvokeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>
     logger.warn(
       `[postgrest] write error on table='${table}' (original='${options.table}') op='${op}': ${error.message ?? 'unknown'}`,
     );
-    throw error;
+    throw Object.assign(new Error(error.message ?? 'postgrest write error'), error);
   }
   const records = mapRows<T>(table, (data as T[]) ?? []);
   return { records, count: records.length };

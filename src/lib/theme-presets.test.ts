@@ -185,7 +185,7 @@ describe('Theme Presets Consistency & Contrast', () => {
         const components = shadow.split(',');
         if (components.length >= 2) {
           const lastComponent = components[components.length - 1];
-          const lastAlphaMatch = lastComponent.match(/\/\s*([0-9.]+)\s*\)/);
+          const lastAlphaMatch = /\/\s*([0-9.]+)\s*\)/.exec(lastComponent);
           if (lastAlphaMatch) {
             const lastAlpha = parseFloat(lastAlphaMatch[1]);
             expect
@@ -206,7 +206,7 @@ describe('Theme Presets Consistency & Contrast', () => {
         const components = shadow.split(',');
         if (components.length >= 2) {
           const lastComponent = components[components.length - 1];
-          const lastAlphaMatch = lastComponent.match(/\/\s*([0-9.]+)\s*\)/);
+          const lastAlphaMatch = /\/\s*([0-9.]+)\s*\)/.exec(lastComponent);
           if (lastAlphaMatch) {
             const lastAlpha = parseFloat(lastAlphaMatch[1]);
             expect
