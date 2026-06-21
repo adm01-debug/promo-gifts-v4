@@ -218,9 +218,12 @@ export function MockupClientSelector({
             <div className="relative">
               <ScrollArea style={{ height: `${dropdownHeight}px` }}>
                 {isError ? (
-                  <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+                  <div
+                    role="alert"
+                    className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center"
+                  >
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                      <AlertCircle className="h-6 w-6 text-destructive" />
+                      <AlertCircle className="h-6 w-6 text-destructive" aria-hidden="true" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-foreground">Falha ao carregar CRM</p>

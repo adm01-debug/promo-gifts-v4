@@ -44,8 +44,11 @@ export function LogoColorAnalyzer({
 
   if (error) {
     return (
-      <div className={cn('flex items-center gap-2 py-4 text-sm text-destructive', className)}>
-        <AlertTriangle className="h-4 w-4" />
+      <div
+        role="alert"
+        className={cn('flex items-center gap-2 py-4 text-sm text-destructive', className)}
+      >
+        <AlertTriangle className="h-4 w-4" aria-hidden="true" />
         <span>{error}</span>
       </div>
     );

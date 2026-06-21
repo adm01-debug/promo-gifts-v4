@@ -1482,3 +1482,43 @@ describe('Analise estatica — AreaCard.tsx (aria-label input)', () => {
     expect(src).toMatch(/aria-label=\{`Nome da área \$\{index \+ 1\}`\}/);
   });
 });
+
+// =====================================================================
+// STATIC ANALYSIS — role="alert" em estados de erro
+// =====================================================================
+
+describe('Analise estatica — LogoColorAnalyzer.tsx (role alert)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  it('container de erro tem role="alert" para anuncio imediato ao leitor de tela', () => {
+    expect(src).toContain('role="alert"');
+  });
+  it('icone de alerta e decorativo (aria-hidden)', () => {
+    expect(src).toContain('aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MockupColorSelector.tsx (role alert)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupColorSelector.tsx');
+  });
+
+  it('estado de produto nao encontrado tem role="alert"', () => {
+    expect(src).toContain('role="alert"');
+  });
+});
+
+describe('Analise estatica — MockupClientSelector.tsx (role alert)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  it('estado de erro do CRM tem role="alert"', () => {
+    expect(src).toContain('role="alert"');
+  });
+});
