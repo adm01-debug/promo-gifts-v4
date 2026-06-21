@@ -26,7 +26,7 @@ export interface SupplierSource {
   updated_at: string;
 }
 
-export type SupplierSourceInput = Omit<SupplierSource, 'id' | 'created_at' | 'updated_at'>;
+export type SupplierSourceInput = Omit<SupplierSource, 'created_at' | 'id' | 'updated_at'>;
 
 const BRIDGE_TABLE = 'variant_supplier_sources';
 

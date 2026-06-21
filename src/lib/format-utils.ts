@@ -8,7 +8,7 @@
  * @param decimals Casas decimais (padrão 0)
  * @returns String formatada ou "Sem dados"
  */
-export function formatTooltipNumber(value: number | undefined | null, decimals = 0): string {
+export function formatTooltipNumber(value: number | null | undefined, decimals = 0): string {
   if (value === undefined || value === null || isNaN(value)) return 'Sem dados';
   return value.toLocaleString('pt-BR', {
     minimumFractionDigits: decimals,
@@ -19,7 +19,7 @@ export function formatTooltipNumber(value: number | undefined | null, decimals =
 /**
  * Formata percentuais com sinal e sufixo
  */
-export function formatTooltipPercent(value: number | undefined | null, decimals = 0): string {
+export function formatTooltipPercent(value: number | null | undefined, decimals = 0): string {
   if (value === undefined || value === null || isNaN(value)) return 'Sem dados';
   const sign = value >= 0 ? '+' : '';
   return `${sign}${formatTooltipNumber(value, decimals)}%`;
@@ -28,7 +28,7 @@ export function formatTooltipPercent(value: number | undefined | null, decimals 
 /**
  * Formata moeda R$
  */
-export function formatTooltipCurrency(value: number | undefined | null): string {
+export function formatTooltipCurrency(value: number | null | undefined): string {
   if (value === undefined || value === null || isNaN(value)) return 'Sem dados';
   return value.toLocaleString('pt-BR', {
     style: 'currency',

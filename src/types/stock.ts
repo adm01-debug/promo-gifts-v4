@@ -98,12 +98,12 @@ export type VariantStock = VariantStockCore & VariantStockUIFields;
 
 /** Status de disponibilidade de uma variação de estoque. */
 export type StockStatus =
-  | 'in_stock' // Estoque OK
-  | 'low_stock' // Abaixo do mínimo
   | 'critical' // Crítico (< 25% do mínimo)
+  | 'in_stock' // Estoque OK
+  | 'incoming' // Estoque chegando
+  | 'low_stock' // Abaixo do mínimo
   | 'out_of_stock' // Sem estoque
-  | 'overstocked' // Excesso de estoque
-  | 'incoming'; // Estoque chegando
+  | 'overstocked'; // Excesso de estoque
 
 // ============================================
 // PRODUTO COM ESTOQUE DETALHADO
@@ -181,11 +181,11 @@ export interface FutureStockEntry {
   orderDate?: string;
 
   // Origem
-  source: 'purchase_order' | 'production' | 'transfer' | 'manual';
+  source: 'manual' | 'production' | 'purchase_order' | 'transfer';
   sourceReference?: string; // ID do pedido de compra, etc.
 
   // Status
-  status: 'pending' | 'confirmed' | 'in_transit' | 'partial' | 'completed' | 'cancelled';
+  status: 'cancelled' | 'completed' | 'confirmed' | 'in_transit' | 'partial' | 'pending';
 
   // Fornecedor
   supplierId?: string;
@@ -218,7 +218,7 @@ export interface StockMovement {
   // Referência
   reason: string;
   reference?: string; // ID do pedido, nota fiscal, etc.
-  referenceType?: 'order' | 'purchase' | 'adjustment' | 'transfer' | 'return';
+  referenceType?: 'adjustment' | 'order' | 'purchase' | 'return' | 'transfer';
 
   // Custo
   unitCost?: number;
@@ -232,13 +232,13 @@ export interface StockMovement {
 
 /** Categoria de movimentação de estoque. */
 export type StockMovementType =
+  | 'adjustment' // Ajuste de inventário
   | 'in' // Entrada
   | 'out' // Saída (venda)
-  | 'adjustment' // Ajuste de inventário
-  | 'transfer' // Transferência entre locais
-  | 'return' // Devolução
+  | 'released' // Liberação de reserva
   | 'reserved' // Reserva para pedido
-  | 'released'; // Liberação de reserva
+  | 'return' // Devolução
+  | 'transfer'; // Transferência entre locais
 
 // ============================================
 // ALERTAS DE ESTOQUE
@@ -248,7 +248,7 @@ export type StockMovementType =
 export interface StockAlert {
   id: string;
   type: StockAlertType;
-  severity: 'info' | 'warning' | 'error';
+  severity: 'error' | 'info' | 'warning';
 
   // Produto/Variação afetada
   productId: string;
@@ -277,12 +277,12 @@ export interface StockAlert {
 
 /** Categoria de alerta de estoque. */
 export type StockAlertType =
-  | 'out_of_stock'
   | 'critical'
-  | 'low_stock'
-  | 'restock_needed'
-  | 'overstock'
   | 'incoming_delayed'
+  | 'low_stock'
+  | 'out_of_stock'
+  | 'overstock'
+  | 'restock_needed'
   | 'stockout_predicted';
 
 // ============================================
@@ -330,20 +330,20 @@ export interface StockFilters {
 
 /** Critérios de ordenação disponíveis no dashboard de estoque. */
 export type StockSortOption =
+  | 'available_stock'
+  | 'days_remaining'
   | 'name'
   | 'sku'
-  | 'stock_quantity'
-  | 'available_stock'
-  | 'days_remaining';
+  | 'stock_quantity';
 
 /** Opções de agrupamento de produtos no dashboard de estoque. */
 export type StockGroupOption =
+  | 'category'
+  | 'color_group'
+  | 'color'
   | 'none'
   | 'product'
-  | 'color'
-  | 'color_group'
   | 'status'
-  | 'category'
   | 'supplier';
 
 /** Filtros padrão aplicados ao abrir o dashboard de estoque. */
@@ -443,12 +443,12 @@ export function aggregateVariantsToProduct(
   variants: VariantStock[],
 ): Omit<
   ProductStockSummary,
-  | 'productId'
-  | 'productName'
-  | 'productSku'
-  | 'productImageUrl'
   | 'categoryId'
   | 'categoryName'
+  | 'productId'
+  | 'productImageUrl'
+  | 'productName'
+  | 'productSku'
   | 'supplierName'
 > {
   const totalCurrentStock = variants.reduce((sum, v) => sum + v.currentStock, 0);

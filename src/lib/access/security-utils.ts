@@ -21,6 +21,6 @@ export function generateSecurityHash(input: string): string {
 /**
  * Gera um identificador completo com prefixo para exibição na UI.
  */
-export function generateSecurityId(prefix: 'REQ' | 'AUTH', path: string): string {
+export function generateSecurityId(prefix: 'AUTH' | 'REQ', path: string): string {
   return `${prefix}-${generateSecurityHash(path)}`;
 }

@@ -29,7 +29,7 @@ interface MagicUpCampaignPanelProps {
   onSelectCampaign: (campaign: MagicUpCampaign) => void;
   onDuplicateCampaign: (campaign: MagicUpCampaign) => void;
   fields: Array<{
-    field: keyof Pick<MagicUpBrief, 'objective' | 'channel' | 'audience' | 'tone'>;
+    field: keyof Pick<MagicUpBrief, 'audience' | 'channel' | 'objective' | 'tone'>;
     options: string[];
   }>;
 }

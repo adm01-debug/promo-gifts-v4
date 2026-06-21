@@ -51,10 +51,10 @@ const STATUS_SORT_ORDER: Record<string, number> = {
   partial: 3,
 } as const;
 
-type SortField = 'date' | 'quantity' | 'product' | 'status';
+type SortField = 'date' | 'product' | 'quantity' | 'status';
 type SortDir = 'asc' | 'desc';
-type StatusFilter = 'all' | 'confirmed' | 'pending' | 'in_transit';
-type DateRange = 'all' | '7d' | '15d' | '30d' | '60d' | '90d';
+type StatusFilter = 'all' | 'confirmed' | 'in_transit' | 'pending';
+type DateRange = '7d' | '15d' | '30d' | '60d' | '90d' | 'all';
 type ViewMode = 'list' | 'timeline';
 
 const STATUS_CONFIG: Record<
@@ -123,7 +123,7 @@ function daysUntil(dateStr: string): number {
 
 function getDaysLabel(days: number): {
   text: string;
-  urgency: 'ok' | 'soon' | 'imminent' | 'overdue';
+  urgency: 'imminent' | 'ok' | 'overdue' | 'soon';
 } {
   if (days < 0) return { text: `${Math.abs(days)}d atrasado`, urgency: 'overdue' };
   if (days === 0) return { text: 'Hoje', urgency: 'imminent' };
@@ -170,7 +170,7 @@ function KpiCard({
   variant = 'default',
 }: {
   label: string;
-  value: string | number;
+  value: number | string;
   sub?: string;
   icon: typeof Package;
   variant?: 'default' | 'primary' | 'success' | 'warning';

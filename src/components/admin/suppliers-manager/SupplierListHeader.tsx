@@ -7,10 +7,10 @@ import { cn } from '@/lib/utils';
 interface SupplierListHeaderProps {
   search: string;
   setSearch: (s: string) => void;
-  filterType: 'all' | 'product' | 'engraving';
-  setFilterType: (t: 'all' | 'product' | 'engraving') => void;
-  filterStatus: 'all' | 'active' | 'inactive';
-  setFilterStatus: (s: 'all' | 'active' | 'inactive') => void;
+  filterType: 'all' | 'engraving' | 'product';
+  setFilterType: (t: 'all' | 'engraving' | 'product') => void;
+  filterStatus: 'active' | 'all' | 'inactive';
+  setFilterStatus: (s: 'active' | 'all' | 'inactive') => void;
   loading: boolean;
   totalCount: number;
   filteredCount: number;

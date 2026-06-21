@@ -32,7 +32,7 @@ export interface McpKeyRow {
   is_full: boolean;
 }
 
-export type StatusFilter = 'all' | 'active' | 'expired' | 'revoked';
+export type StatusFilter = 'active' | 'all' | 'expired' | 'revoked';
 export type SortKey = 'created_desc' | 'expires_asc' | 'last_used_desc';
 
 export interface CreatorOption {

@@ -34,7 +34,7 @@ const sb = { from: untypedFrom };
  * api_format usa underscore no banco (não kebab-case).
  * Valores válidos vêm da migration original (CHECK constraint no banco).
  */
-export type AiApiFormat = 'openai_compatible' | 'anthropic_native' | 'google_native' | 'custom';
+export type AiApiFormat = 'anthropic_native' | 'custom' | 'google_native' | 'openai_compatible';
 
 export interface AiProvider {
   id: string;
@@ -94,7 +94,7 @@ export interface AiModel {
   created_at: string;
   updated_at: string;
   /** Hidratado via select com !inner — opcional para UIs mais simples */
-  provider?: Pick<AiProvider, 'id' | 'slug' | 'display_name' | 'api_format' | 'is_active'>;
+  provider?: Pick<AiProvider, 'api_format' | 'display_name' | 'id' | 'is_active' | 'slug'>;
 }
 
 export interface AiFunctionRouting {
@@ -115,8 +115,8 @@ export interface AiFunctionRouting {
   created_at: string;
   updated_at: string;
   /** Hidratado via select — primary model com slug e provider para mostrar na UI */
-  primary_model?: Pick<AiModel, 'id' | 'model_id' | 'display_name' | 'provider_id'> & {
-    provider?: Pick<AiProvider, 'slug' | 'display_name'>;
+  primary_model?: Pick<AiModel, 'display_name' | 'id' | 'model_id' | 'provider_id'> & {
+    provider?: Pick<AiProvider, 'display_name' | 'slug'>;
   };
 }
 
@@ -126,22 +126,22 @@ export interface AiFunctionRouting {
 
 export type ProviderInput = Omit<
   AiProvider,
-  | 'id'
   | 'created_at'
   | 'created_by'
+  | 'id'
+  | 'last_latency_ms'
+  | 'last_test_at'
+  | 'last_test_message'
+  | 'last_test_ok'
   | 'updated_at'
   | 'updated_by'
-  | 'last_test_at'
-  | 'last_test_ok'
-  | 'last_test_message'
-  | 'last_latency_ms'
 >;
 
-export type ModelInput = Omit<AiModel, 'id' | 'created_at' | 'updated_at' | 'provider'>;
+export type ModelInput = Omit<AiModel, 'created_at' | 'id' | 'provider' | 'updated_at'>;
 
 export type RoutingInput = Omit<
   AiFunctionRouting,
-  'id' | 'created_at' | 'updated_at' | 'primary_model'
+  'created_at' | 'id' | 'primary_model' | 'updated_at'
 >;
 
 // ============================================================

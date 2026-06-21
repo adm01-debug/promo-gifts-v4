@@ -20,7 +20,7 @@ import { getBridgeSamples, type BridgeCallSample } from './bridgeCallMetrics';
 import { isInstrumentationPaused, subscribeInstrumentationPaused } from './instrumentationControl';
 
 /** Causa provável do bloqueio da main thread. */
-export type LongTaskAttribution = 'self' | 'same-origin-ancestor' | 'other' | string;
+export type LongTaskAttribution = string | 'other' | 'same-origin-ancestor' | 'self';
 
 export interface LongTaskEvent {
   /** Identificador sequencial único na sessão. */

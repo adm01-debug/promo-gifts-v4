@@ -110,9 +110,9 @@ export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable)
     mutationFn: async ({
       id,
       ...payload
-    }: { id: string } & (TTable extends TableName
+    }: (TTable extends TableName
       ? OrgScopedUpdate<Extract<TTable, TableName>>
-      : Record<string, unknown>)) => {
+      : Record<string, unknown>) & { id: string }) => {
       const { data, error } = await supabase
         .from(tableName as never)
         .update(payload as never)

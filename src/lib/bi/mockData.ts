@@ -77,7 +77,7 @@ export interface MockIndustryTrend {
   unitsSold: number;
   ordersCount: number;
   avgPrice: number;
-  trend: 'up' | 'stable' | 'down';
+  trend: 'down' | 'stable' | 'up';
 }
 
 /** Gera tendências mockadas baseadas no ramo */

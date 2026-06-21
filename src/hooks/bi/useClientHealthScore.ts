@@ -15,7 +15,7 @@ import { useClientBI } from '@/hooks/bi/useClientBI';
 import { useClientVsIndustry } from '@/hooks/bi/useClientVsIndustry';
 import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
 
-export type HealthTier = 'healthy' | 'attention' | 'risk' | 'unknown';
+export type HealthTier = 'attention' | 'healthy' | 'risk' | 'unknown';
 
 export interface HealthScoreBreakdown {
   recency: { score: number; weight: number; label: string };

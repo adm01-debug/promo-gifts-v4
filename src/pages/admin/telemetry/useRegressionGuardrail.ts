@@ -13,7 +13,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type GuardrailStatus = 'ok' | 'warning' | 'regression' | 'insufficient_data' | 'error';
+export type GuardrailStatus = 'error' | 'insufficient_data' | 'ok' | 'regression' | 'warning';
 
 export interface GuardrailWindow {
   samples: number;

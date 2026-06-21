@@ -26,9 +26,15 @@ const STORAGE_KEY = 'global-search-history-v2';
 const store: Record<string, string> = {};
 const localStorageMock = {
   getItem: vi.fn((k: string) => store[k] ?? null),
-  setItem: vi.fn((k: string, v: string) => { store[k] = v; }),
-  removeItem: vi.fn((k: string) => { delete store[k]; }),
-  clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]); }),
+  setItem: vi.fn((k: string, v: string) => {
+    store[k] = v;
+  }),
+  removeItem: vi.fn((k: string) => {
+    delete store[k];
+  }),
+  clear: vi.fn(() => {
+    Object.keys(store).forEach((k) => delete store[k]);
+  }),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
@@ -37,7 +43,7 @@ beforeEach(() => {
   localStorageMock.clear();
 });
 
-function makeItem(id: string, type: 'product' | 'company' | 'general' = 'general') {
+function makeItem(id: string, type: 'company' | 'general' | 'product' = 'general') {
   return { id, label: `Item ${id}`, type, timestamp: Date.now() };
 }
 
@@ -58,13 +64,15 @@ describe('useSearchHistory', () => {
     const items = [makeItem('p1', 'product'), makeItem('c1', 'company'), makeItem('p2', 'product')];
     store[STORAGE_KEY] = JSON.stringify(items);
     const { result } = renderHook(() => useSearchHistory('product'));
-    expect(result.current.history.every(h => h.type === 'product')).toBe(true);
+    expect(result.current.history.every((h) => h.type === 'product')).toBe(true);
     expect(result.current.history).toHaveLength(2);
   });
 
   it('addToHistory: adiciona item e persiste', () => {
     const { result } = renderHook(() => useSearchHistory());
-    act(() => { result.current.addToHistory(makeItem('new1')); });
+    act(() => {
+      result.current.addToHistory(makeItem('new1'));
+    });
     expect(localStorageMock.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
   });
 
@@ -72,26 +80,32 @@ describe('useSearchHistory', () => {
     const items = [makeItem('dup')];
     store[STORAGE_KEY] = JSON.stringify(items);
     const { result } = renderHook(() => useSearchHistory());
-    act(() => { result.current.addToHistory(makeItem('dup')); });
+    act(() => {
+      result.current.addToHistory(makeItem('dup'));
+    });
     const saved = JSON.parse(store[STORAGE_KEY] || '[]');
-    expect(saved.filter((i: {id: string}) => i.id === 'dup')).toHaveLength(1);
+    expect(saved.filter((i: { id: string }) => i.id === 'dup')).toHaveLength(1);
   });
 
   it('removeFromHistory: remove por id', () => {
     const items = [makeItem('r1'), makeItem('r2')];
     store[STORAGE_KEY] = JSON.stringify(items);
     const { result } = renderHook(() => useSearchHistory());
-    act(() => { result.current.removeFromHistory('r1'); });
+    act(() => {
+      result.current.removeFromHistory('r1');
+    });
     const saved = JSON.parse(store[STORAGE_KEY] || '[]');
-    expect(saved.find((i: {id: string}) => i.id === 'r1')).toBeUndefined();
-    expect(saved.find((i: {id: string}) => i.id === 'r2')).toBeDefined();
+    expect(saved.find((i: { id: string }) => i.id === 'r1')).toBeUndefined();
+    expect(saved.find((i: { id: string }) => i.id === 'r2')).toBeDefined();
   });
 
   it('clearHistory: limpa todo o historico', () => {
     const items = [makeItem('x1'), makeItem('x2')];
     store[STORAGE_KEY] = JSON.stringify(items);
     const { result } = renderHook(() => useSearchHistory());
-    act(() => { result.current.clearHistory(); });
+    act(() => {
+      result.current.clearHistory();
+    });
     // Após clear, storage deve estar vazio ou vazio por tipo
     const saved = store[STORAGE_KEY];
     if (saved) {

@@ -12,7 +12,7 @@ export interface KitCollaboratorRow {
   id: string;
   kit_id: string;
   user_id: string;
-  permission: 'view' | 'edit';
+  permission: 'edit' | 'view';
   invited_email: string | null;
   created_at: string;
 }
@@ -47,7 +47,7 @@ export function useKitCollaborators(kitId: string | undefined) {
   });
 
   const invite = useMutation({
-    mutationFn: async ({ email, permission }: { email: string; permission: 'view' | 'edit' }) => {
+    mutationFn: async ({ email, permission }: { email: string; permission: 'edit' | 'view' }) => {
       if (!kitId) throw new Error('Kit não definido');
       // Resolve email -> user_id via profiles
       const { data: profile, error: pErr } = await supabase

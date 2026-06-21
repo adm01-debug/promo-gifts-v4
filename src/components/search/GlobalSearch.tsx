@@ -23,7 +23,7 @@ interface SearchResult {
   id: string;
   title: string;
   description?: string;
-  category: 'product' | 'quote' | 'client' | 'order' | 'page' | 'action';
+  category: 'action' | 'client' | 'order' | 'page' | 'product' | 'quote';
   url: string;
   icon?: React.ReactNode;
   metadata?: Record<string, string>;

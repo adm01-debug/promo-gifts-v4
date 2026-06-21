@@ -45,7 +45,7 @@ interface TechniqueSelectorProps {
   compact?: boolean;
 }
 
-type SLAFilter = 'all' | 'express' | 'standard' | 'extended';
+type SLAFilter = 'all' | 'express' | 'extended' | 'standard';
 
 const SLA_OPTIONS: {
   value: SLAFilter;
@@ -106,7 +106,7 @@ export function TechniqueSelector({
       });
       // Mapear campos do BD externo para interface
       return result.records.map((t) => {
-        const ext = t as Technique & Pick<ExternalTechnique, 'setup_price' | 'handling_price'>;
+        const ext = t as Pick<ExternalTechnique, 'handling_price' | 'setup_price'> & Technique;
         return {
           ...t,
           setup_cost: ext.setup_price ?? t.setup_cost ?? null,

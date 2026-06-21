@@ -11,23 +11,23 @@
 
 import { isInstrumentationPaused } from './instrumentationControl';
 
-export type BridgeName = 'external-db-bridge' | 'crm-db-bridge';
+export type BridgeName = 'crm-db-bridge' | 'external-db-bridge';
 
 /** Operações permitidas para cada bridge, garantindo consistência em compile-time. */
 export type BridgeOperation =
-  | 'select'
-  | 'search'
-  | 'insert'
-  | 'update'
-  | 'delete'
-  | 'upsert'
   | 'batch'
-  | 'rpc'
-  | `rpc:${string}`
-  | `auth:${string}`
-  | 'invoke'
+  | 'delete'
   | 'handshake'
-  | 'health';
+  | 'health'
+  | 'insert'
+  | 'invoke'
+  | 'rpc'
+  | 'search'
+  | 'select'
+  | 'update'
+  | 'upsert'
+  | `auth:${string}`
+  | `rpc:${string}`;
 
 export interface BridgeCallSample {
   id: number;

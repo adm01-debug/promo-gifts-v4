@@ -13,10 +13,10 @@
 // ============================================
 
 export type WizardStep =
-  | 'product' // Passo 1: Selecionar produto + quantidade
+  | 'comparison' // Passo 4: Comparativo de técnicas com preços
   | 'location' // Passo 2: Selecionar local de gravação
-  | 'specs' // Passo 3: Configurar cores, tamanho
-  | 'comparison'; // Passo 4: Comparativo de técnicas com preços
+  | 'product' // Passo 1: Selecionar produto + quantidade
+  | 'specs'; // Passo 3: Configurar cores, tamanho
 
 export const WIZARD_STEPS: WizardStep[] = ['product', 'location', 'specs', 'comparison'];
 
@@ -123,7 +123,7 @@ export interface AvailableTechnique {
   efetivaLarguraMax?: number; // MIN(max_width, gravacao_largura_max)
   efetivaAlturaMax?: number; // MIN(max_height, gravacao_altura_max)
   variacaoLabel?: string; // label da variação
-  shape?: 'rectangle' | 'circle';
+  shape?: 'circle' | 'rectangle';
 }
 
 // ============================================
@@ -248,32 +248,32 @@ export interface SimulatorWizardState {
 // ============================================
 
 export type WizardAction =
-  | { type: 'SET_STEP'; payload: WizardStep }
-  | { type: 'SELECT_PRODUCT'; payload: SelectedProduct | null }
-  | { type: 'SET_QUANTITY'; payload: number }
-  | { type: 'SET_AVAILABLE_LOCATIONS'; payload: EngravingLocation[] }
-  | { type: 'SELECT_LOCATION'; payload: EngravingLocation | null }
-  | { type: 'UPDATE_SPECS'; payload: Partial<EngravingSpecs> }
-  | { type: 'SET_COMPARISON_RESULTS'; payload: TechniqueComparisonResult[] }
-  | { type: 'SELECT_COMPARISON'; payload: TechniqueComparisonResult | null }
-  | { type: 'ADD_PERSONALIZATION'; payload: Personalization }
-  | { type: 'UPDATE_PERSONALIZATION'; payload: { index: number; personalization: Personalization } }
-  | { type: 'REMOVE_PERSONALIZATION'; payload: string }
-  | { type: 'REMOVE_ALL_PERSONALIZATIONS' }
-  | { type: 'EDIT_PERSONALIZATION'; payload: number }
-  | { type: 'START_NEW_PERSONALIZATION' }
-  | { type: 'CANCEL_PERSONALIZATION' }
-  | { type: 'SET_CALCULATING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string | null }
-  | {
-      type: 'RECALC_PERSONALIZATION_PRICING';
-      payload: { personalizationId: string; pricing: Personalization['pricing'] };
-    }
   | {
       type: 'DUPLICATE_PERSONALIZATION';
       payload: { sourceId: string; targetLocation: EngravingLocation };
     }
-  | { type: 'RESET_WIZARD' };
+  | {
+      type: 'RECALC_PERSONALIZATION_PRICING';
+      payload: { personalizationId: string; pricing: Personalization['pricing'] };
+    }
+  | { type: 'ADD_PERSONALIZATION'; payload: Personalization }
+  | { type: 'CANCEL_PERSONALIZATION' }
+  | { type: 'EDIT_PERSONALIZATION'; payload: number }
+  | { type: 'REMOVE_ALL_PERSONALIZATIONS' }
+  | { type: 'REMOVE_PERSONALIZATION'; payload: string }
+  | { type: 'RESET_WIZARD' }
+  | { type: 'SELECT_COMPARISON'; payload: TechniqueComparisonResult | null }
+  | { type: 'SELECT_LOCATION'; payload: EngravingLocation | null }
+  | { type: 'SELECT_PRODUCT'; payload: SelectedProduct | null }
+  | { type: 'SET_AVAILABLE_LOCATIONS'; payload: EngravingLocation[] }
+  | { type: 'SET_CALCULATING'; payload: boolean }
+  | { type: 'SET_COMPARISON_RESULTS'; payload: TechniqueComparisonResult[] }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_QUANTITY'; payload: number }
+  | { type: 'SET_STEP'; payload: WizardStep }
+  | { type: 'START_NEW_PERSONALIZATION' }
+  | { type: 'UPDATE_PERSONALIZATION'; payload: { index: number; personalization: Personalization } }
+  | { type: 'UPDATE_SPECS'; payload: Partial<EngravingSpecs> };
 
 // ============================================
 // HELPERS

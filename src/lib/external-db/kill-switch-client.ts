@@ -188,7 +188,7 @@ export interface KillSwitchState {
   /** Mensagem amigável quando bloqueado (vem do banco). */
   message?: string | null;
   /** Origem do dado para diagnóstico. */
-  source: 'memory' | 'storage' | 'network' | 'fail-open';
+  source: 'fail-open' | 'memory' | 'network' | 'storage';
 }
 
 /**

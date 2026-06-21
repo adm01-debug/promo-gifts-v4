@@ -36,7 +36,7 @@ interface VariantGridMatrixProps {
   variants: VariantGridItem[];
   selectedId?: string | null;
   onSelect?: (variant: VariantGridItem) => void;
-  mode?: 'view' | 'admin';
+  mode?: 'admin' | 'view';
   compact?: boolean;
   onBulkAction?: (action: BulkAction) => Promise<void>;
   isBulkLoading?: boolean;

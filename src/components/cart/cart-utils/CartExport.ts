@@ -13,7 +13,7 @@ import { formatCurrency } from '../CartUtilComponents';
  *    com = + - @ TAB ou CR são prefixados com aspa simples para não serem
  *    interpretados como fórmula ao abrir a planilha.
  */
-export function csvCell(value: string | number | null | undefined): string {
+export function csvCell(value: number | string | null | undefined): string {
   const raw = value === null || value === undefined ? '' : String(value);
   const guarded = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   return `"${guarded.replace(/"/g, '""')}"`;

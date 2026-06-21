@@ -40,7 +40,7 @@ function useCountUp(end: number, duration = 800): number {
 
 // ─── Stat Card ───────────────────────────────────────────────────
 
-type StatVariant = 'success' | 'warning' | 'info' | 'default' | 'orange';
+type StatVariant = 'default' | 'info' | 'orange' | 'success' | 'warning';
 
 interface StatCardProps {
   readonly label: string;

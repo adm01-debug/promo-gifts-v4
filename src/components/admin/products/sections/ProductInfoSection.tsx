@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 
 interface Props extends FormSectionProps {
-  skuStatus: 'idle' | 'checking' | 'valid' | 'duplicate';
+  skuStatus: 'checking' | 'duplicate' | 'idle' | 'valid';
   duplicateName: string;
   skuManuallyEdited: boolean;
   onSkuManualEdit: () => void;

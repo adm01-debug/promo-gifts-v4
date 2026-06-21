@@ -36,8 +36,8 @@ import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/C
 import { cn } from '@/lib/utils';
 import type { SellerCart, CartStatus } from '@/hooks/products';
 
-type StatusFilter = 'all' | CartStatus;
-type SortKey = 'recent' | 'value-desc' | 'items-desc';
+type StatusFilter = CartStatus | 'all';
+type SortKey = 'items-desc' | 'recent' | 'value-desc';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recent', label: 'Mais recente' },
@@ -135,7 +135,11 @@ function CartsListContent() {
           disabled={!canCreateCart}
           data-testid="carts-list-new"
           className="gap-2"
-          title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+          title={
+            !canCreateCart
+              ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+              : undefined
+          }
         >
           <Plus className="h-4 w-4" />
           Novo carrinho
@@ -228,7 +232,11 @@ function CartsListContent() {
             onClick={() => setPickerOpen(true)}
             disabled={!canCreateCart}
             className="gap-2"
-            title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+            title={
+              !canCreateCart
+                ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+                : undefined
+            }
           >
             <Plus className="h-4 w-4" /> Novo carrinho
           </Button>

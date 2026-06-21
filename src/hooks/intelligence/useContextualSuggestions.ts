@@ -7,7 +7,7 @@ export interface ContextualSuggestion {
   id: string;
   text: string;
   icon?: string;
-  type: 'filter' | 'search' | 'action';
+  type: 'action' | 'filter' | 'search';
   priority: number;
   filterKey?: keyof AdvancedFilterState;
   filterValue?: unknown;

@@ -20,7 +20,7 @@ export interface MockProduct {
   recentViews: number;
   baselineViews: number;
   trendingScore: number;
-  classification: 'rising' | 'stable' | 'falling' | 'new';
+  classification: 'falling' | 'new' | 'rising' | 'stable';
 }
 
 export interface MockSearch {

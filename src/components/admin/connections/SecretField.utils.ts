@@ -7,7 +7,7 @@ import type { ConnectionType } from '@/hooks/intelligence';
  */
 export function mapConnectionToTester(
   connectionId: string | undefined,
-): { type: ConnectionType; envKey?: 'promobrind' | 'crm' } | null {
+): { type: ConnectionType; envKey?: 'crm' | 'promobrind' } | null {
   if (!connectionId) return null;
   if (connectionId === 'n8n') return { type: 'n8n' };
   if (connectionId === 'bitrix24') return { type: 'bitrix24' };

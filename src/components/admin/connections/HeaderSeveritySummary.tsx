@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { usePulseBarStatus, type PulseSeverity } from './usePulseBarStatus';
 
-type Tone = 'destructive' | 'warning' | 'success';
+type Tone = 'destructive' | 'success' | 'warning';
 
 interface PillDef {
   level: PulseSeverity;

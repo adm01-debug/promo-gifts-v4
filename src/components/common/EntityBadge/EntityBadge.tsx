@@ -45,9 +45,9 @@ export interface EntityBadgeProps {
   /** Optional emoji or single-character icon shown before the dot */
   icon?: string | null;
   /** Visual size */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   /** Visual variant */
-  variant?: 'default' | 'outline' | 'solid' | 'ghost';
+  variant?: 'default' | 'ghost' | 'outline' | 'solid';
   /** When true and `groupLabel` is set, renders `${groupLabel}${groupSeparator}${name}` */
   showGroup?: boolean;
   /** Separator between group label and name. Default: ": " */

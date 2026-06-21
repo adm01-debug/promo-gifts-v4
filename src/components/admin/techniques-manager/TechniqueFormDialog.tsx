@@ -111,7 +111,7 @@ export function TechniqueFormDialog({
     setForm(EMPTY_FORM);
   };
 
-  const update = (field: keyof NewTechniqueData, value: string | boolean) =>
+  const update = (field: keyof NewTechniqueData, value: boolean | string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   return (

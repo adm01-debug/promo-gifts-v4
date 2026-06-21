@@ -64,7 +64,7 @@ function fmtTs(iso: string | null): string {
   return new Date(iso).toLocaleString('pt-BR');
 }
 
-function ratioTone(ratio: number): 'ok' | 'warn' | 'error' {
+function ratioTone(ratio: number): 'error' | 'ok' | 'warn' {
   if (ratio >= 0.85) return 'ok';
   if (ratio >= 0.5) return 'warn';
   return 'error';
@@ -310,7 +310,7 @@ function Kpi({
   label: string;
   value: string;
   hint: string;
-  tone: 'ok' | 'warn' | 'error' | 'neutral';
+  tone: 'error' | 'neutral' | 'ok' | 'warn';
   progress?: number;
 }) {
   const toneCls =

@@ -23,7 +23,7 @@ export interface ProductWithCalculatedPrice extends Product {
   matchingTechnique?: PromobrindPriceTable;
 }
 
-export type ViewMode = 'cards' | 'table' | 'list';
+export type ViewMode = 'cards' | 'list' | 'table';
 
 export const DEFAULT_FILTERS: SearchFilters = {
   searchQuery: '',

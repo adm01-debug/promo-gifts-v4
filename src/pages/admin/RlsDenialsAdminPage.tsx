@@ -34,7 +34,7 @@ interface DenialRow {
   user_email: string | null;
   user_role: string | null;
   table_name: string;
-  operation: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+  operation: 'DELETE' | 'INSERT' | 'SELECT' | 'UPDATE';
   endpoint: string | null;
   query_summary: string | null;
   target_id: string | null;

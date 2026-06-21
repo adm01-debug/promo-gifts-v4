@@ -33,7 +33,7 @@ export interface RotationHistoryEntry {
   previous_suffix: string | null;
   new_suffix: string | null;
   notes: string | null;
-  action_type?: 'set' | 'rotate';
+  action_type?: 'rotate' | 'set';
 }
 
 export interface SecretMutationResult {

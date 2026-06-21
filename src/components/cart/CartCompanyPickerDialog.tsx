@@ -65,7 +65,7 @@ export function CartCompanyPickerDialog({
   onOpenChange,
   onCreated,
 }: CartCompanyPickerDialogProps) {
-  const [tab, setTab] = useState<'recent' | 'favorites' | 'search'>('recent');
+  const [tab, setTab] = useState<'favorites' | 'recent' | 'search'>('recent');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [recents, setRecents] = useState<CompanyItem[]>([]);
@@ -129,7 +129,10 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-search', debouncedSearch],
     queryFn: async () => {
       if (debouncedSearch.length < 3) return [];
-      const searchOpts = { orderBy: { column: 'razao_social', ascending: true }, limit: 30 } as const;
+      const searchOpts = {
+        orderBy: { column: 'razao_social', ascending: true },
+        limit: 30,
+      } as const;
       const [byRazao, byFantasia] = await Promise.all([
         searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, searchOpts),
         searchCrm<CrmCompany>('companies', 'nome_fantasia', debouncedSearch, searchOpts),
@@ -177,16 +180,19 @@ export function CartCompanyPickerDialog({
 
   const isFavorite = useCallback((id: string) => favorites.some((f) => f.id === id), [favorites]);
 
-  const toggleFavorite = useCallback((company: CompanyItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const next = prev.some((f) => f.id === company.id)
-        ? prev.filter((f) => f.id !== company.id)
-        : [company, ...prev].slice(0, 20);
-      writeList(favKey, next);
-      return next;
-    });
-  }, [favKey]);
+  const toggleFavorite = useCallback(
+    (company: CompanyItem, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setFavorites((prev) => {
+        const next = prev.some((f) => f.id === company.id)
+          ? prev.filter((f) => f.id !== company.id)
+          : [company, ...prev].slice(0, 20);
+        writeList(favKey, next);
+        return next;
+      });
+    },
+    [favKey],
+  );
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {

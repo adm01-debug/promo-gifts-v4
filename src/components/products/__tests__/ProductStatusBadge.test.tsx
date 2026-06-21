@@ -20,7 +20,6 @@ describe('ProductStatusBadge — consistency across contexts', () => {
     expect(screen.getByText(/Estoque zerado/i)).toBeInTheDocument();
   });
 
-
   it('size="sm" uses the standardized 9px typography and tight padding', () => {
     const { container } = render(
       <Wrapper>
@@ -47,7 +46,7 @@ describe('ProductStatusBadge — consistency across contexts', () => {
   });
 
   it('all sizes share the same typography/padding scale family', () => {
-    const sizes: Array<'sm' | 'md' | 'lg'> = ['sm', 'md', 'lg'];
+    const sizes: Array<'lg' | 'md' | 'sm'> = ['sm', 'md', 'lg'];
     expect(sizes).not.toHaveLength(0);
     for (const size of sizes) {
       const { container, unmount } = render(

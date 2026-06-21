@@ -16,7 +16,7 @@ export interface MatchResult {
   product: Product;
   score: number;
   reasons: string[];
-  matchType: 'identical' | 'similar' | 'complementary';
+  matchType: 'complementary' | 'identical' | 'similar';
 }
 
 // Complementary product keyword pairs (Portuguese)

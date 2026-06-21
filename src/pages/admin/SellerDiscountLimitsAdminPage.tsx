@@ -511,7 +511,7 @@ function KpiCard({
   icon: React.ReactNode;
   label: string;
   value: number;
-  tone?: 'success' | 'warning' | 'danger';
+  tone?: 'danger' | 'success' | 'warning';
 }) {
   const toneCls =
     tone === 'success'
@@ -541,7 +541,7 @@ function ImpactPill({
 }: {
   label: string;
   value: number;
-  tone: 'success' | 'warning' | 'danger';
+  tone: 'danger' | 'success' | 'warning';
 }) {
   const toneCls =
     tone === 'success'

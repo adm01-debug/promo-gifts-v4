@@ -434,7 +434,7 @@ function KpiCard({
   label: string;
   value: string;
   sub?: string;
-  tone?: 'muted' | 'warning' | 'destructive';
+  tone?: 'destructive' | 'muted' | 'warning';
 }) {
   return (
     <Card

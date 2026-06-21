@@ -4,12 +4,12 @@ import { useLocation } from 'react-router-dom';
 import { performanceTracker } from '@/utils/performance';
 
 type TransitionVariant =
+  | 'fade-slide'
   | 'fade'
-  | 'slide-up'
+  | 'scale'
   | 'slide-left'
   | 'slide-right'
-  | 'scale'
-  | 'fade-slide';
+  | 'slide-up';
 
 interface PageTransitionProps {
   children: ReactNode;

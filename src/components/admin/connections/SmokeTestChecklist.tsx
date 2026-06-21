@@ -51,10 +51,10 @@ import { formatMaskedSuffix, normalizeMaskedSuffix } from '@/lib/masked-suffix';
 import { logger } from '@/lib/logger';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
 
-type StepStatus = 'idle' | 'running' | 'passed' | 'failed' | 'skipped';
+type StepStatus = 'failed' | 'idle' | 'passed' | 'running' | 'skipped';
 
 interface StepState {
-  id: 'rotate' | 'history' | 'reload';
+  id: 'history' | 'reload' | 'rotate';
   title: string;
   description: string;
   status: StepStatus;

@@ -15,14 +15,14 @@
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 
 export type DevRouteUxEvent =
-  | 'view'
+  | 'abandon'
   | 'back'
-  | 'retry'
-  | 'fallback'
-  | 'request_access'
   | 'copy_link'
+  | 'fallback'
   | 'mail'
-  | 'abandon';
+  | 'request_access'
+  | 'retry'
+  | 'view';
 
 interface RecordParams {
   event: DevRouteUxEvent;

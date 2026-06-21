@@ -91,7 +91,7 @@ export interface Product {
   onSale: boolean;
   isKit: boolean;
   gender?: string | null;
-  category: { id: string | number; name: string };
+  category: { id: number | string; name: string };
   supplier: { id: string; name: string };
   tags: {
     publicoAlvo: string[];
@@ -212,7 +212,7 @@ export interface ProductVariation {
 /** Parâmetros de consulta para filtrar e ordenar produtos no catálogo. */
 export interface ProductFilters {
   category?: string;
-  categoryId?: string | number;
+  categoryId?: number | string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -221,16 +221,16 @@ export interface ProductFilters {
   // União das opções de ambos os lados do merge (main + PR) — `| string` mantém
   // permissivo, mas preservamos todos os literais para autocomplete/intenção.
   sortBy?:
-    | 'price-asc'
-    | 'price-desc'
-    | 'newest'
-    | 'stock'
-    | 'best-seller-supplier'
+    | string
     | 'best-seller-promo'
-    | 'name'
+    | 'best-seller-supplier'
     | 'name-asc'
     | 'name-desc'
-    | string;
+    | 'name'
+    | 'newest'
+    | 'price-asc'
+    | 'price-desc'
+    | 'stock';
 }
 
 /** Representação mínima de produto para seletores e catálogo (~10× menor que `Product`). */

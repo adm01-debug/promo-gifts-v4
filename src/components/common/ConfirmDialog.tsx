@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AlertTriangle, Info, CheckCircle2, XCircle } from 'lucide-react';
 
-type ConfirmVariant = 'default' | 'destructive' | 'warning' | 'success';
+type ConfirmVariant = 'default' | 'destructive' | 'success' | 'warning';
 
 interface ConfirmDialogProps {
   open: boolean;

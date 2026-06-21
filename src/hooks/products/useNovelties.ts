@@ -105,7 +105,7 @@ export interface NoveltyWithDetails {
   days_remaining: number;
   /** Dias decorridos desde a detecção como novidade (idade do badge). */
   days_as_novelty: number;
-  status: 'active' | 'expiring_soon' | 'expired';
+  status: 'active' | 'expired' | 'expiring_soon';
   is_highlighted: boolean;
   is_active: boolean;
   stock_quantity: number;
@@ -510,7 +510,9 @@ export function useNoveltyStats() {
       }));
   }, [allNovelties]);
 
-  const query = useQuery<Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierName' | 'topSupplierCount'>>({
+  const query = useQuery<
+    Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierCount' | 'topSupplierName'>
+  >({
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
@@ -558,11 +560,26 @@ export function useNoveltyStats() {
           fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
         ]);
 
-      if (todayRes.error) { handleQueryError('useNovelties', 'products', todayRes.error); return emptyBase; }
-      if (weekRes.error) { handleQueryError('useNovelties', 'products', weekRes.error); return emptyBase; }
-      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyBase; }
-      if (activeRes.error) { handleQueryError('useNovelties', 'products', activeRes.error); return emptyBase; }
-      if (totalRes.error) { handleQueryError('useNovelties', 'products', totalRes.error); return emptyBase; }
+      if (todayRes.error) {
+        handleQueryError('useNovelties', 'products', todayRes.error);
+        return emptyBase;
+      }
+      if (weekRes.error) {
+        handleQueryError('useNovelties', 'products', weekRes.error);
+        return emptyBase;
+      }
+      if (fifteenRes.error) {
+        handleQueryError('useNovelties', 'products', fifteenRes.error);
+        return emptyBase;
+      }
+      if (activeRes.error) {
+        handleQueryError('useNovelties', 'products', activeRes.error);
+        return emptyBase;
+      }
+      if (totalRes.error) {
+        handleQueryError('useNovelties', 'products', totalRes.error);
+        return emptyBase;
+      }
 
       const activeCount = activeRes.count ?? 0;
       const totalProducts = totalRes.count ?? 0;

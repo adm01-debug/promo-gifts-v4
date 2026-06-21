@@ -18,7 +18,7 @@ const FETCH_ALL_LIMIT = 2000;
 
 // ─── Types ───────────────────────────────────────────────────────
 
-export type ReplenishmentStatus = 'active' | 'expiring_soon' | 'expired';
+export type ReplenishmentStatus = 'active' | 'expired' | 'expiring_soon';
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock';
 
 export interface ReplenishmentWithDetails {

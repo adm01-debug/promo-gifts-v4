@@ -8,7 +8,7 @@
  * Formata "há quantos dias" a partir de um timestamp ISO ou Date.
  * Usa UTC para evitar off-by-one em fusos como UTC+10 próximos da meia-noite.
  */
-export function formatDaysAgoFromTs(ts: string | number | Date): string {
+export function formatDaysAgoFromTs(ts: Date | number | string): string {
   const date = ts instanceof Date ? ts : new Date(ts);
   const msPerDay = 86400000;
   const days = Math.floor((Date.now() - date.getTime()) / msPerDay);
@@ -31,7 +31,7 @@ export function formatDaysAgoFromCount(daysElapsed: number): string {
  * ISSUE-34 NOTE: chamar em cada render (não memoizar) garante que a variante
  * se atualiza corretamente quando o componente re-renderiza pelo tick de 1min.
  */
-export function getRecencyVariant(ts: string | number | Date): 'hot' | 'warm' | 'normal' {
+export function getRecencyVariant(ts: Date | number | string): 'hot' | 'normal' | 'warm' {
   const date = ts instanceof Date ? ts : new Date(ts);
   const days = Math.floor((Date.now() - date.getTime()) / 86400000);
   if (days <= 2) return 'hot';

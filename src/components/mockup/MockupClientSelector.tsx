@@ -26,7 +26,7 @@ function CompanyAvatar({
 }: {
   name: string;
   logoUrl?: string | null;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
 }) {
   const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-8 h-8 text-xs';
 

@@ -10,14 +10,8 @@
  */
 
 export type FeatureFlag =
-  | 'mfa'
-  | 'ai_recommendations'
-  | 'presentation_mode'
-  | 'voice_commands'
-  | 'magic_up'
-  | 'e2e_tests'
   | 'advanced_analytics'
-  | 'custom_kits_v2'
+  | 'ai_recommendations'
   /**
    * M-05: Controle dinâmico do crm-db-bridge (pgxfvjmuubtbowutlide).
    *
@@ -31,7 +25,13 @@ export type FeatureFlag =
    * Usar esta flag para feature rollout controlado; usar o kill-switch
    * para desligamentos de emergência (indisponibilidade, incidente).
    */
-  | 'crm_bridge_enabled';
+  | 'crm_bridge_enabled'
+  | 'custom_kits_v2'
+  | 'e2e_tests'
+  | 'magic_up'
+  | 'mfa'
+  | 'presentation_mode'
+  | 'voice_commands';
 
 interface FlagConfig {
   /** Default enabled state */

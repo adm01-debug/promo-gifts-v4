@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 
-type CfSyncStatus = 'pending' | 'syncing' | 'verified' | 'failed' | 'skipped';
+type CfSyncStatus = 'failed' | 'pending' | 'skipped' | 'syncing' | 'verified';
 
 interface CfImage {
   id: string;
@@ -168,7 +168,7 @@ const PAGE_SIZE = 100;
 
 export default function AdminCloudflareImagesPage() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | CfSyncStatus | 'none'>('all');
+  const [statusFilter, setStatusFilter] = useState<CfSyncStatus | 'all' | 'none'>('all');
   const [page, setPage] = useState(0);
 
   const {

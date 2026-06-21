@@ -4,12 +4,7 @@
  * with example usage and (optional) error/empty-state hint.
  */
 import { HelpCircle } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ReactNode } from 'react';
 
 interface StockHelpTooltipProps {
@@ -18,7 +13,7 @@ interface StockHelpTooltipProps {
   example?: ReactNode;
   emptyHint?: ReactNode;
   children?: ReactNode;
-  side?: 'top' | 'bottom' | 'left' | 'right';
+  side?: 'bottom' | 'left' | 'right' | 'top';
 }
 
 export function StockHelpTooltip({

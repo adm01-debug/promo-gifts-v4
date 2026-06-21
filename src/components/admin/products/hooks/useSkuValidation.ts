@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 
 export function useSkuValidation(currentSku: string, isEdit: boolean, originalSku?: string) {
-  const [status, setStatus] = useState<'idle' | 'checking' | 'valid' | 'duplicate'>('idle');
+  const [status, setStatus] = useState<'checking' | 'duplicate' | 'idle' | 'valid'>('idle');
   const [duplicateName, setDuplicateName] = useState('');
 
   useEffect(() => {

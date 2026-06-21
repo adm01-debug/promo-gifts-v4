@@ -186,7 +186,7 @@ const KEYWORD_ICONS: Record<string, string> = {
  * Usa busca fuzzy com correspondência de palavras-chave
  */
 export function getCategoryIcon(
-  categoryName: string | undefined | null,
+  categoryName: string | null | undefined,
   icons: CategoryIcon[],
 ): string {
   if (!categoryName) return '📦';

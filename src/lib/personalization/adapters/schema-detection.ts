@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
  *    sabermos quando podemos remover tradutores antigos.
  */
 
-export type PriceSchemaVersion = 'v5.9-nested' | 'v6.x-flat' | 'v7-new' | 'unknown';
+export type PriceSchemaVersion = 'unknown' | 'v5.9-nested' | 'v6.x-flat' | 'v7-new';
 
 export type SchemaStats = Record<PriceSchemaVersion, number>;
 

@@ -46,7 +46,7 @@ export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }>
   },
 };
 
-export function getStatusCfg(status: string | undefined | null) {
+export function getStatusCfg(status: string | null | undefined) {
   return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.novo;
 }
 
@@ -95,7 +95,7 @@ export function PriceLabel({ label, value, testId, className, isPrimary }: Price
 // ============================================
 
 export interface CartAction {
-  type: 'add' | 'remove' | 'qty' | 'move' | 'duplicate' | 'clear';
+  type: 'add' | 'clear' | 'duplicate' | 'move' | 'qty' | 'remove';
   itemName: string;
   detail?: string;
   time: Date;

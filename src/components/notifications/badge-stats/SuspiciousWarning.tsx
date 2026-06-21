@@ -20,7 +20,7 @@ interface SuspiciousWarningProps {
     toT: number;
   };
   streakTrend: {
-    direction: 'rising' | 'flat' | 'falling';
+    direction: 'falling' | 'flat' | 'rising';
     slopePerSec: number;
     suggestion: { primary: string; rationale: string } | null;
   };

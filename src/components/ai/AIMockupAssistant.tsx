@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
   timestamp: Date;
   suggestions?: QuickAction[];

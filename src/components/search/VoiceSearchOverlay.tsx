@@ -169,7 +169,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
     }, [colors.primary]);
 
     // Haptic feedback
-    const vibrate = useCallback((pattern: number | number[]) => {
+    const vibrate = useCallback((pattern: number[] | number) => {
       try {
         navigator?.vibrate?.(pattern);
       } catch {

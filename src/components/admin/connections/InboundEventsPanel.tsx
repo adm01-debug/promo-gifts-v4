@@ -54,7 +54,7 @@ import { format, formatDistanceToNow, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
-type Period = '24h' | '7d' | '30d';
+type Period = '7d' | '24h' | '30d';
 
 interface EventRow {
   id: string;
@@ -163,7 +163,7 @@ export function InboundEventsPanel() {
       .slice(0, 4)
       .map(([n]) => n);
     const data = Object.entries(buckets).map(([day, counts]) => {
-      const row: Record<string, string | number> = { day };
+      const row: Record<string, number | string> = { day };
       for (const n of topEps) row[n] = counts[n] ?? 0;
       return row;
     });

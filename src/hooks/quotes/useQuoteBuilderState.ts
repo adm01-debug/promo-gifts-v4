@@ -74,7 +74,7 @@ function mapQuoteSearchProduct(
     sku: p.sku,
     price: p.sale_price ?? p.base_price ?? 0,
     images,
-    colors: (p.colors || []).map((c: string | RawProductColor) => {
+    colors: (p.colors || []).map((c: RawProductColor | string) => {
       const name = typeof c === 'string' ? c : c.name || '';
       const hex = (typeof c === 'string' ? undefined : c.hex) || findKnownHex(name) || undefined;
       return { name, hex, stock: typeof c === 'string' ? undefined : c.stock };
@@ -83,7 +83,7 @@ function mapQuoteSearchProduct(
     totalStock:
       p.stock_quantity ??
       (p.colors || []).reduce(
-        (sum: number, c: string | RawProductColor) =>
+        (sum: number, c: RawProductColor | string) =>
           sum + (typeof c === 'object' ? (c.stock ?? 0) : 0),
         0,
       ),
@@ -141,7 +141,7 @@ export function useQuoteBuilderState() {
   // Status que o usuário tentou salvar quando o conflito foi detectado.
   // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
   // evitando rebaixar silenciosamente o orçamento para rascunho.
-  const pendingSaveStatusRef = useRef<'draft' | 'pending' | 'pending_approval'>('draft');
+  const pendingSaveStatusRef = useRef<'draft' | 'pending_approval' | 'pending'>('draft');
   // Preserva a justificativa de aprovação digitada pelo vendedor caso um conflito
   // de concorrência interrompa o save: o diálogo de aprovação limpa seu estado local
   // logo após o submit, então sem isto o replay do overwrite enviaria sellerNotes
@@ -149,7 +149,7 @@ export function useQuoteBuilderState() {
   const pendingSellerNotesRef = useRef<string | undefined>(undefined);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
-  const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
+  const [discountType, setDiscountType] = useState<'amount' | 'percent'>('percent');
   const [discountValue, setDiscountValue] = useState(0);
   /** Margem de negociação interna 0–50%. Default 0 (desligado). */
   const [negotiationMarkup, setNegotiationMarkup] = useState(0);
@@ -177,12 +177,12 @@ export function useQuoteBuilderState() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'prazo' | 'data'>('prazo');
+  const [deliveryMode, setDeliveryMode] = useState<'data' | 'prazo'>('prazo');
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [shippingType, setShippingType] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
 
-  const handleDeliveryModeChange = useCallback((mode: 'prazo' | 'data') => {
+  const handleDeliveryModeChange = useCallback((mode: 'data' | 'prazo') => {
     setDeliveryMode(mode);
     setDeliveryTime('');
     setDeliveryDate(undefined);
@@ -954,7 +954,7 @@ export function useQuoteBuilderState() {
 
   // ── Save ──
   const handleSaveQuote = useCallback(
-    async (status: 'draft' | 'pending' | 'pending_approval' = 'draft', sellerNotes?: string) => {
+    async (status: 'draft' | 'pending_approval' | 'pending' = 'draft', sellerNotes?: string) => {
       if (status === 'draft') {
         if (!isDraftValid) {
           toast.error('Selecione uma empresa para salvar o rascunho.');
@@ -1199,7 +1199,7 @@ export function useQuoteBuilderState() {
      * Preserva o status que o usuário tentou salvar (não rebaixa para rascunho).
      * Após o save, atualiza o baseline para evitar falsos positivos futuros.
      */
-    overwriteAndSave: async (status?: 'draft' | 'pending' | 'pending_approval') => {
+    overwriteAndSave: async (status?: 'draft' | 'pending_approval' | 'pending') => {
       const effectiveStatus = status ?? pendingSaveStatusRef.current;
       // Repassa a justificativa preservada para que o requestApproval no replay
       // não perca o motivo informado pelo vendedor.

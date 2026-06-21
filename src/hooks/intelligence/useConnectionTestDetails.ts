@@ -7,7 +7,7 @@ export interface TestDetails {
   id: string;
   tested_at: string;
   ok: boolean;
-  triggered_by: 'manual' | 'cron' | 'webhook';
+  triggered_by: 'cron' | 'manual' | 'webhook';
   triggered_by_user_email?: string | null;
   request: { method: string | null; url: string | null };
   response: {
@@ -30,7 +30,7 @@ export interface TestDetails {
 interface Args {
   open: boolean;
   type: ConnectionType;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Quando presente, busca este registro específico em vez do mais recente. */
   historyId?: string;

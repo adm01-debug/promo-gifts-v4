@@ -21,8 +21,8 @@ interface Props {
   rows: Array<Record<string, unknown>>;
   columns?: Array<{ key: string; header: string }>;
   formats?: Array<'csv' | 'json'>;
-  size?: 'sm' | 'default';
-  variant?: 'outline' | 'ghost' | 'secondary';
+  size?: 'default' | 'sm';
+  variant?: 'ghost' | 'outline' | 'secondary';
   disabled?: boolean;
   label?: string;
 }

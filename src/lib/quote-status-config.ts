@@ -8,7 +8,7 @@ export interface QuoteStatusConfig {
   /** HSL color token for charts / icons */
   color: string;
   /** Badge variant for QuoteViewPage */
-  badgeVariant: 'default' | 'secondary' | 'destructive' | 'outline';
+  badgeVariant: 'default' | 'destructive' | 'outline' | 'secondary';
   /** Tailwind classes for list badges (bg + text + border) */
   badgeClassName: string;
   /** Lucide icon name hint (optional, for future use) */

@@ -192,7 +192,7 @@ export function useCustomizationPriceLegacy() {
           p_altura_cm: alturaCm ?? null,
         });
 
-        if (rpcError) throw new Error(rpcError.message, { cause: rpcError });
+        if (rpcError) throw new Error(String(rpcError));
         const rawResult = rawResultRaw as RpcCustomizationPriceResult | null;
         if (!rawResult?.success) {
           setLoading(false);

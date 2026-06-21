@@ -9,7 +9,7 @@ import { ptBR } from 'date-fns/locale';
  * @param pattern - Padrão de formatação (default: dd/MM/yyyy)
  * @returns String formatada em português
  */
-export function formatDate(date: Date | string | number, pattern = 'dd/MM/yyyy'): string {
+export function formatDate(date: Date | number | string, pattern = 'dd/MM/yyyy'): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   return format(parsedDate, pattern, { locale: ptBR });
 }
@@ -19,7 +19,7 @@ export function formatDate(date: Date | string | number, pattern = 'dd/MM/yyyy')
  * @param date - Data a ser formatada
  * @returns String no formato "dd/MM/yyyy HH:mm"
  */
-export function formatDateTime(date: Date | string | number): string {
+export function formatDateTime(date: Date | number | string): string {
   return formatDate(date, 'dd/MM/yyyy HH:mm');
 }
 
@@ -28,7 +28,7 @@ export function formatDateTime(date: Date | string | number): string {
  * @param date - Data a ser formatada
  * @returns String no formato "HH:mm"
  */
-export function formatTime(date: Date | string | number): string {
+export function formatTime(date: Date | number | string): string {
   return formatDate(date, 'HH:mm');
 }
 
@@ -39,7 +39,7 @@ export function formatTime(date: Date | string | number): string {
  * @returns String formatada em português
  */
 export function formatDateRelative(
-  date: Date | string | number,
+  date: Date | number | string,
   baseDate: Date = new Date(),
 ): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
@@ -54,7 +54,7 @@ export function formatDateRelative(
  * Ex: "ontem às 15:30", "hoje às 10:00"
  */
 export function formatDateRelativeFull(
-  date: Date | string | number,
+  date: Date | number | string,
   baseDate: Date = new Date(),
 ): string {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
@@ -65,7 +65,7 @@ export function formatDateRelativeFull(
  * Formata data para exibição em lista/tabela
  * Ex: "25 Dez 2025, 14:30"
  */
-export function formatDateCompact(date: Date | string | number): string {
+export function formatDateCompact(date: Date | number | string): string {
   return formatDate(date, 'dd MMM yyyy, HH:mm');
 }
 
@@ -73,7 +73,7 @@ export function formatDateCompact(date: Date | string | number): string {
  * Formata data por extenso
  * Ex: "25 de dezembro de 2025"
  */
-export function formatDateLong(date: Date | string | number): string {
+export function formatDateLong(date: Date | number | string): string {
   return formatDate(date, "dd 'de' MMMM 'de' yyyy");
 }
 
@@ -81,7 +81,7 @@ export function formatDateLong(date: Date | string | number): string {
  * Formata dia da semana
  * Ex: "Segunda-feira", "Terça-feira"
  */
-export function formatWeekday(date: Date | string | number): string {
+export function formatWeekday(date: Date | number | string): string {
   return formatDate(date, 'EEEE');
 }
 
@@ -89,14 +89,14 @@ export function formatWeekday(date: Date | string | number): string {
  * Formata mês e ano
  * Ex: "Dezembro de 2025"
  */
-export function formatMonthYear(date: Date | string | number): string {
+export function formatMonthYear(date: Date | number | string): string {
   return formatDate(date, "MMMM 'de' yyyy");
 }
 
 /**
  * Verifica se uma data é hoje
  */
-export function isToday(date: Date | string | number): boolean {
+export function isToday(date: Date | number | string): boolean {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   const today = new Date();
   return (
@@ -109,7 +109,7 @@ export function isToday(date: Date | string | number): boolean {
 /**
  * Verifica se uma data é ontem
  */
-export function isYesterday(date: Date | string | number): boolean {
+export function isYesterday(date: Date | number | string): boolean {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -123,7 +123,7 @@ export function isYesterday(date: Date | string | number): boolean {
 /**
  * Verifica se uma data é amanhã
  */
-export function isTomorrow(date: Date | string | number): boolean {
+export function isTomorrow(date: Date | number | string): boolean {
   const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -137,7 +137,7 @@ export function isTomorrow(date: Date | string | number): boolean {
 /**
  * Formata data inteligente (hoje/ontem/amanhã ou data normal)
  */
-export function formatDateSmart(date: Date | string | number): string {
+export function formatDateSmart(date: Date | number | string): string {
   if (isToday(date)) return 'Hoje';
   if (isYesterday(date)) return 'Ontem';
   if (isTomorrow(date)) return 'Amanhã';

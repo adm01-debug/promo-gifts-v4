@@ -47,7 +47,7 @@ const makeVariant = (overrides: Partial<VariantWithStock> = {}): VariantWithStoc
 });
 
 // Reimplementa o filtro de período do modal (espelho da lógica em FutureStockModal.tsx)
-type DateFilter = 'all' | '7days' | '30days' | '90days' | 'past';
+type DateFilter = '7days' | '30days' | '90days' | 'all' | 'past';
 const applyDateFilter = (entries: StockEntry[], filter: DateFilter) => {
   if (filter === 'all') return entries;
   return entries.filter((e) => {
@@ -68,7 +68,7 @@ const applyDateFilter = (entries: StockEntry[], filter: DateFilter) => {
 };
 
 // Reimplementa as ordenações do modal
-type SortOrder = 'nearest' | 'farthest' | 'quantity-desc' | 'quantity-asc';
+type SortOrder = 'farthest' | 'nearest' | 'quantity-asc' | 'quantity-desc';
 const sortEntries = (entries: StockEntry[], order: SortOrder) =>
   [...entries].sort((a, b) => {
     switch (order) {

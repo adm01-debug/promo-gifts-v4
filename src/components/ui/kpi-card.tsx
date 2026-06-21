@@ -20,7 +20,7 @@ interface KpiCardProps {
   customValueColor?: string;
   ariaLabel?: string;
   /** Texto explicativo exibido em tooltip ao passar o mouse no ícone de info. */
-  tooltip?: string | ReactNode;
+  tooltip?: ReactNode | string;
   /** Delay opcional (ms) para animação fade-in escalonada. */
   animationDelay?: number;
 }

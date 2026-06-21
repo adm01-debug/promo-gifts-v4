@@ -34,8 +34,8 @@ import {
 import { sortColorSummary } from '@/utils/colorSorting';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type SortOrder = 'nearest' | 'farthest' | 'quantity-desc' | 'quantity-asc';
-type DateFilter = 'all' | '7days' | '30days' | '90days' | 'past';
+type SortOrder = 'farthest' | 'nearest' | 'quantity-asc' | 'quantity-desc';
+type DateFilter = '7days' | '30days' | '90days' | 'all' | 'past';
 
 interface FutureStockModalProps {
   open: boolean;

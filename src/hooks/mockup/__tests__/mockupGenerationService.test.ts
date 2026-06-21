@@ -11,7 +11,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Supabase client mock (chainable, thenable query builder) ────────────────
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
-let tableResults: Record<string, { data: unknown; error: unknown } | { data: unknown; error: unknown }[]> = {};
+let tableResults: Record<
+  string,
+  { data: unknown; error: unknown }[] | { data: unknown; error: unknown }
+> = {};
 const captured: { insert?: Record<string, unknown> } = {};
 
 vi.mock('@/integrations/supabase/client', () => {
@@ -478,8 +481,8 @@ describe('buildTechniqueList', () => {
   it('filters out items without id or name', () => {
     const raw = [
       { id: '1', name: 'Silk', code: 'silk' },
-      { id: '2' },           // no name
-      { name: 'Laser' },     // no id
+      { id: '2' }, // no name
+      { name: 'Laser' }, // no id
       null,
       undefined,
       42,

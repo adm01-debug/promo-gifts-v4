@@ -177,12 +177,12 @@ export function useProductIntelligenceData(productId: string | undefined) {
 // ---------- Helpers ----------
 
 export type IntelligenceFlag =
-  | 'hot-product'
-  | 'stockout-risk'
-  | 'stagnant'
-  | 'negotiation-opportunity'
+  | 'class-a'
   | 'frequent-restock'
-  | 'class-a';
+  | 'hot-product'
+  | 'negotiation-opportunity'
+  | 'stagnant'
+  | 'stockout-risk';
 
 export function getActiveFlags(data: ProductIntelligenceData | null): IntelligenceFlag[] {
   if (!data) return [];

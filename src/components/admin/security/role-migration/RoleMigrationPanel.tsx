@@ -82,7 +82,7 @@ interface ProfileLite {
 
 const STATUS_BADGE: Record<
   string,
-  { variant: 'default' | 'destructive' | 'secondary' | 'outline'; className?: string }
+  { variant: 'default' | 'destructive' | 'outline' | 'secondary'; className?: string }
 > = {
   completed: { variant: 'default', className: 'bg-emerald-600 hover:bg-emerald-600' },
   partial: { variant: 'secondary' },

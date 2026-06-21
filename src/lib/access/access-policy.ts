@@ -10,7 +10,7 @@ export const checkAccess = (
   userRoles: AppRole[] | null | undefined,
   currentAAL: string | null,
   policy: AccessPolicy,
-): { allowed: boolean; reason?: 'unauthenticated' | 'insufficient_role' | 'mfa_required' } => {
+): { allowed: boolean; reason?: 'insufficient_role' | 'mfa_required' | 'unauthenticated' } => {
   const { requiredRole, requireMfa, requireDev } = policy;
   // Defensivo contra mocks parciais e estados intermediários do AuthContext
   // (carregando, falha de fetch). Em runtime real AuthContext sempre retorna

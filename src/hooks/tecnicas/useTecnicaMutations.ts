@@ -54,7 +54,7 @@ export function useTecnicaMutations() {
 
   // Update
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string } & Partial<PersonalizationTechniqueRaw>) => {
+    mutationFn: async ({ id, ...data }: Partial<PersonalizationTechniqueRaw> & { id: string }) => {
       await dbInvokeSingle({
         table: 'personalization_techniques',
         operation: 'update',

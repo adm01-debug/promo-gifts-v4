@@ -117,8 +117,8 @@ export function subscribeThresholds(listener: () => void): () => void {
 
 // ---------- Avaliação ----------
 
-export type AlertSeverity = 'warn' | 'crit';
-export type AlertMetric = 'p95' | 'avgResp';
+export type AlertSeverity = 'crit' | 'warn';
+export type AlertMetric = 'avgResp' | 'p95';
 
 export interface BridgeAlert {
   key: string; // bridge::op::metric

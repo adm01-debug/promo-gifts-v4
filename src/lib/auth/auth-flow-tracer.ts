@@ -22,23 +22,23 @@ const FLOW_PREFIX = '[AUTH-FLOW]';
 const AUTH_FLOW_DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_AUTH_DEBUG === 'true';
 
 export type FlowPhase =
-  | 'mount'
-  | 'url-parsed'
-  | 'provider-error-query'
-  | 'provider-error-hash'
-  | 'pkce-exchange-start'
-  | 'pkce-exchange-ok'
-  | 'pkce-exchange-failed'
-  | 'session-check-initial'
-  | 'session-found-immediately'
   | 'auth-listener-subscribed'
   | 'auth-state-change'
-  | 'timeout-recheck'
+  | 'mount'
+  | 'pkce-exchange-failed'
+  | 'pkce-exchange-ok'
+  | 'pkce-exchange-start'
+  | 'provider-error-hash'
+  | 'provider-error-query'
   | 'redirect-home'
   | 'redirect-login'
-  | 'unexpected-error';
+  | 'session-check-initial'
+  | 'session-found-immediately'
+  | 'timeout-recheck'
+  | 'unexpected-error'
+  | 'url-parsed';
 
-export type FlowOutcome = 'success' | 'failure' | 'pending';
+export type FlowOutcome = 'failure' | 'pending' | 'success';
 
 interface FlowStep {
   /** ms desde o mount. */
@@ -54,7 +54,7 @@ interface FlowSnapshot {
   durationMs: number | null;
   outcome: FlowOutcome;
   url: { pathname: string; hasQuery: boolean; hasHash: boolean };
-  flow: 'pkce' | 'implicit' | 'unknown';
+  flow: 'implicit' | 'pkce' | 'unknown';
   providerError: string | null;
   finalSessionUser: string | null;
   finalProvider: string | null;

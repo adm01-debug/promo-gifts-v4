@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface ProductCardSkeletonProps {
-  variant?: 'default' | 'compact' | 'detailed';
+  variant?: 'compact' | 'default' | 'detailed';
   className?: string;
   animate?: boolean;
   hideCategoryBadges?: boolean;
@@ -139,7 +139,7 @@ export function ProductGridSkeleton({
   selectionMode = false,
 }: {
   count?: number;
-  variant?: 'default' | 'compact' | 'detailed';
+  variant?: 'compact' | 'default' | 'detailed';
   columns?: number;
   className?: string;
   hideCategoryBadges?: boolean;
@@ -552,7 +552,7 @@ export function ProductDetailSkeleton() {
 // ─── Mockup Skeletons ─────────────────────────────────────────────
 
 export interface MockupSkeletonProps {
-  variant?: 'config' | 'preview' | 'result' | 'card' | 'editor' | 'wizard';
+  variant?: 'card' | 'config' | 'editor' | 'preview' | 'result' | 'wizard';
   className?: string;
   delay?: number;
 }

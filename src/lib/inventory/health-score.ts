@@ -15,7 +15,7 @@
 import type { ProductStockSummary, StockStatus } from '@/types/stock';
 
 /** Faixa semântica de saúde: verde (good), amarelo (warning) ou vermelho (danger). */
-export type HealthBand = 'good' | 'warning' | 'danger';
+export type HealthBand = 'danger' | 'good' | 'warning';
 
 /** Parâmetros de entrada para o cálculo do score de saúde do estoque. */
 export interface HealthScoreInput {
@@ -58,7 +58,7 @@ export function getHealthBand(score: number): HealthBand {
  *   ≥ 30d → good · 7–29d → warning · <7d ou indefinido/0 → danger
  */
 export type DaysCoverBand = HealthBand;
-export function getDaysCoverBand(days: number | undefined | null): DaysCoverBand {
+export function getDaysCoverBand(days: number | null | undefined): DaysCoverBand {
   if (days === null || days === undefined || !Number.isFinite(days) || days < 7) return 'danger';
   if (days < 30) return 'warning';
   return 'good';
@@ -105,7 +105,7 @@ export const HEALTH_BANDS: ReadonlyArray<{ band: HealthBand; min: number; label:
 
 /** Regras de limiar de estoque exibidas no tooltip dos cards do dashboard. */
 export const STOCK_THRESHOLD_RULES: ReadonlyArray<{
-  key: 'healthy' | 'low' | 'critical' | 'out';
+  key: 'critical' | 'healthy' | 'low' | 'out';
   label: string;
   rule: string;
 }> = [

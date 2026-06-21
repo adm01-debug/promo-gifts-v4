@@ -65,7 +65,7 @@ function normalizeHigherBetter(value: number, min: number, max: number): number 
 
 export function useComparisonScore(
   products: {
-    id?: string | number;
+    id?: number | string;
     price?: number | null;
     stock?: number | null;
     rating?: number | null;

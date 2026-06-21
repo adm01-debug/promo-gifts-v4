@@ -11,7 +11,7 @@ interface SidePanelProps {
   title?: string;
   description?: string;
   side?: 'left' | 'right';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'lg' | 'md' | 'sm' | 'xl';
   overlay?: boolean;
   footer?: React.ReactNode;
 }

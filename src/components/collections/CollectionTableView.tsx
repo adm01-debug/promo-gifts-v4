@@ -31,7 +31,7 @@ import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 
-type SortKey = 'name' | 'products' | 'featured' | 'updated';
+type SortKey = 'featured' | 'name' | 'products' | 'updated';
 type SortDir = 'asc' | 'desc';
 
 function SortHeader({

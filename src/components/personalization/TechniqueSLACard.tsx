@@ -75,7 +75,7 @@ export function TechniqueSLACard({
   className,
 }: TechniqueSLACardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [sortBy, setSortBy] = useState<'sla' | 'cost'>('sla');
+  const [sortBy, setSortBy] = useState<'cost' | 'sla'>('sla');
 
   const { data: techniques, isLoading } = useQuery({
     queryKey: ['techniques-sla-external', productId],
@@ -88,7 +88,7 @@ export function TechniqueSLACard({
         limit: 100,
       });
       return result.records.map((t) => {
-        const ext = t as Technique & Pick<ExternalTechnique, 'setup_price' | 'handling_price'>;
+        const ext = t as Pick<ExternalTechnique, 'handling_price' | 'setup_price'> & Technique;
         return {
           ...t,
           setup_cost: ext.setup_price ?? t.setup_cost,

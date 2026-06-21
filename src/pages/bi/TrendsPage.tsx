@@ -70,7 +70,7 @@ interface AggregatedProduct {
   recentViews: number;
   baselineViews: number;
   trendingScore: number;
-  classification: 'rising' | 'stable' | 'falling' | 'new';
+  classification: 'falling' | 'new' | 'rising' | 'stable';
 }
 
 interface AggregatedSearch {
@@ -247,7 +247,7 @@ export default function TrendsPage() {
         buildQ('search_analytics', sincePrevious),
       ]);
       const trendErr = ve || se;
-      if (trendErr) throw new Error(trendErr.message, { cause: trendErr });
+      if (trendErr) throw new Error(trendErr.message ?? String(trendErr));
 
       // Buckets atual + anterior (mesmo número de dias)
       const cur = new Map<string, { date: string; views: number; searches: number }>();

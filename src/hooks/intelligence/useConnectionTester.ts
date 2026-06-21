@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import { getErrorCopy } from '@/lib/connection-error-copy';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
-export type ConnectionType = 'supabase' | 'bitrix24' | 'n8n' | 'mcp' | 'webhook_outbound';
-export type ErrorKind = 'timeout' | 'network' | 'dns' | 'http' | 'auth' | 'config' | 'unknown';
+export type ConnectionType = 'bitrix24' | 'mcp' | 'n8n' | 'supabase' | 'webhook_outbound';
+export type ErrorKind = 'auth' | 'config' | 'dns' | 'http' | 'network' | 'timeout' | 'unknown';
 
 export interface TestResult {
   ok: boolean;
@@ -20,7 +20,7 @@ export interface TestResult {
 }
 
 interface TestOptions {
-  env_key?: 'promobrind' | 'crm';
+  env_key?: 'crm' | 'promobrind';
   config?: Record<string, string>;
   connectionId?: string;
   silent?: boolean;
@@ -33,12 +33,12 @@ export function useConnectionTester() {
   const test = useCallback(
     async (
       type: ConnectionType,
-      optionsOrConfig: TestOptions | Record<string, string> = {},
+      optionsOrConfig: Record<string, string> | TestOptions = {},
       legacyConnectionId?: string,
     ): Promise<TestResult> => {
       let config: Record<string, string> | undefined;
       let connection_id: string | undefined;
-      let env_key: 'promobrind' | 'crm' | undefined;
+      let env_key: 'crm' | 'promobrind' | undefined;
       let silent = false;
       if (
         'config' in optionsOrConfig ||
@@ -129,7 +129,7 @@ export function useConnectionTester() {
   const fetchLastTest = useCallback(
     async (
       type: ConnectionType,
-      opts: { env_key?: 'promobrind' | 'crm'; connectionId?: string } = {},
+      opts: { env_key?: 'crm' | 'promobrind'; connectionId?: string } = {},
     ): Promise<{
       tested_at: string | null;
       ok: boolean | null;

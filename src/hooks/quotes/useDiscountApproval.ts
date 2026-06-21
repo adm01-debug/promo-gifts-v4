@@ -14,7 +14,7 @@ export interface DiscountApprovalRequest {
   seller_id: string;
   requested_discount_percent: number;
   max_allowed_percent: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected';
   admin_id: string | null;
   admin_notes: string | null;
   seller_notes: string | null;

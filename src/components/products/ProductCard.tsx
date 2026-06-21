@@ -112,7 +112,7 @@ export interface ProductCardProps {
   noveltyDaysRemaining?: number;
   activeColorFilter?: ActiveColorFilter | null;
   priority?: boolean;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
   /**
    * FIX ISSUE-02 2026-06-09: Imagem real da variante de cor via useColorEnrichment (ProductGrid).
    * Injetada quando filtro de cor ativo no catálogo lightweight (batch colors = {name,hex} sem images[]).
@@ -326,7 +326,7 @@ export const ProductCard = memo(
       const [pendingVariant, setPendingVariant] = useState<ExternalVariantStock | null>(null);
 
       const handleStatusClick = useCallback(
-        (type: string, _value?: string | number) => {
+        (type: string, _value?: number | string) => {
           if (onStatusClick) {
             onStatusClick(type, _value);
             return;
@@ -658,7 +658,6 @@ export const ProductCard = memo(
             />
           </div>
 
-
           {/* Word Magic Badge — visível quando AI está ativa */}
           <WordMagicBadge visible={isAIActive} />
 
@@ -818,7 +817,6 @@ export const ProductCard = memo(
                 }
               }}
             />
-
 
             <div className="flex-1" />
 

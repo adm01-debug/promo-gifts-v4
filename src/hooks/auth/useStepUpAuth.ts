@@ -7,14 +7,14 @@ import { useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type StepUpAction =
-  | 'promote_dev'
   | 'demote_dev'
-  | 'mcp_full_issue'
   | 'mcp_full_escalate'
+  | 'mcp_full_issue'
   | 'mcp_key_revoke'
   | 'mcp_key_rotate'
-  | 'secret_rotation'
-  | 'secret_revoke';
+  | 'promote_dev'
+  | 'secret_revoke'
+  | 'secret_rotation';
 
 interface ChallengeRequest {
   action: StepUpAction;

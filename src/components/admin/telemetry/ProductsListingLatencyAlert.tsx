@@ -140,7 +140,7 @@ function Metric({
 }: {
   label: string;
   value: string;
-  tone?: 'ok' | 'warning' | 'critical';
+  tone?: 'critical' | 'ok' | 'warning';
 }) {
   return (
     <div className="rounded-lg border border-border/40 bg-muted/30 p-2.5">

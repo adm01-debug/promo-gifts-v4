@@ -100,7 +100,7 @@ export function SupplierComparisonModal({
 }: SupplierComparisonModalProps) {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<SupplierComparisonSort>('score');
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const { result: comparison, isLoading } = useSupplierComparison(product ?? null, {
@@ -242,7 +242,7 @@ export function SupplierComparisonModal({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'table' | 'grid')}>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'table')}>
                 <TabsList className="h-9 bg-muted/50 p-1">
                   <TabsTrigger
                     value="table"
@@ -529,8 +529,8 @@ function KPICard({
   color,
 }: {
   label: string;
-  value: string | number;
-  color: 'success' | 'primary' | 'neutral';
+  value: number | string;
+  color: 'neutral' | 'primary' | 'success';
 }) {
   return (
     <div

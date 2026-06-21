@@ -10,7 +10,7 @@ interface Props {
   savedAt?: string;
   /** Threshold em % a partir do qual o badge aparece (default 2). */
   threshold?: number;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
 }
 
 const fmt = (v: number) =>

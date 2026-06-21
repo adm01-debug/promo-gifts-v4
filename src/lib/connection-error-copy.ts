@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { ErrorKind } from '@/hooks/intelligence';
 
-export type ErrorTone = 'timeout' | 'network' | 'dns' | 'auth' | 'http' | 'config' | 'unknown';
+export type ErrorTone = 'auth' | 'config' | 'dns' | 'http' | 'network' | 'timeout' | 'unknown';
 
 export interface ErrorCopy {
   /** Título humano e curto. */

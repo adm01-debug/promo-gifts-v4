@@ -35,8 +35,8 @@ export function useSuppliersManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'product' | 'engraving'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'engraving' | 'product'>('all');
+  const [filterStatus, setFilterStatus] = useState<'active' | 'all' | 'inactive'>('all');
   const [editingSupplier, setEditingSupplier] = useState<Partial<Supplier> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -110,7 +110,7 @@ export function useSuppliersManager() {
     return null;
   };
 
-  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => {
+  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => {
     setPixKeys((prev) => {
       const updated = prev.map((k) => {
         if (k.id !== id)

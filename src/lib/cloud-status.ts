@@ -22,7 +22,7 @@ import { logger } from '@/lib/logger';
 import { pingHealth } from '@/lib/external-db/health-check';
 import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 
-export type CloudStatus = 'healthy' | 'warming' | 'degraded' | 'down' | 'unknown';
+export type CloudStatus = 'degraded' | 'down' | 'healthy' | 'unknown' | 'warming';
 
 export interface CloudStatusSnapshot {
   status: CloudStatus;

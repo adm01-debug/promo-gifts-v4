@@ -27,8 +27,8 @@
 
 import { logger } from '@/lib/logger';
 
-export type TriggerSource = 'hover' | 'focus' | 'drawer-open';
-export type FetchSource = 'initial' | 'polling' | 'prefetch' | 'mutation' | 'filter-change';
+export type TriggerSource = 'drawer-open' | 'focus' | 'hover';
+export type FetchSource = 'filter-change' | 'initial' | 'mutation' | 'polling' | 'prefetch';
 export type BadgeRenderSource = 'cache' | 'network';
 
 export interface BadgeRenderStat {
@@ -305,7 +305,7 @@ export const notificationsMetrics = {
     });
   },
 
-  recordTriggerToFetch(sample: Omit<TriggerToFetchTiming, 'totalMs' | 'withinTtl' | 'at'>) {
+  recordTriggerToFetch(sample: Omit<TriggerToFetchTiming, 'at' | 'totalMs' | 'withinTtl'>) {
     const totalMs = Number((sample.debounceMs + sample.fetchMs).toFixed(2));
     const withinTtl = totalMs < TRIGGER_TO_FETCH_TTL_MS;
     const full: TriggerToFetchTiming = {

@@ -6,23 +6,23 @@ import { supabase } from '@/integrations/supabase/client';
 // 'audit_log' table not yet in generated schema — bypass type checking via raw client cast
 const db = supabase as unknown as ReturnType<typeof createClient>;
 
-export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';
+export type AuditAction = 'DELETE' | 'INSERT' | 'UPDATE';
 
 export type AuditEntityType =
-  | 'products'
-  | 'product_variants'
-  | 'product_images'
-  | 'product_videos'
-  | 'quotes'
-  | 'quote_items'
-  | 'orders'
-  | 'order_items'
-  | 'suppliers'
   | 'categories'
-  | 'material_types'
   | 'color_variations'
   | 'companies'
-  | 'company_contacts';
+  | 'company_contacts'
+  | 'material_types'
+  | 'order_items'
+  | 'orders'
+  | 'product_images'
+  | 'product_variants'
+  | 'product_videos'
+  | 'products'
+  | 'quote_items'
+  | 'quotes'
+  | 'suppliers';
 
 interface AuditLogParams {
   action: AuditAction;

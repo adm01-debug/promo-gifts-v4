@@ -4,7 +4,7 @@ import { Building2 } from 'lucide-react';
 interface AvatarLogoProps {
   name?: string | null;
   logoUrl?: string | null;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'lg' | 'md' | 'sm' | 'xl';
   className?: string;
   fallbackClassName?: string;
 }

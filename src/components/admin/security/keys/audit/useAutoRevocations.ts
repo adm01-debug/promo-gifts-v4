@@ -13,7 +13,7 @@ export interface AutoRevocationRow {
   key_id: string;
   created_by: string;
   revoked_at: string;
-  source: 'trigger' | 'cron' | 'manual';
+  source: 'cron' | 'manual' | 'trigger';
   reason: string;
   key_name: string | null;
   key_prefix: string | null;

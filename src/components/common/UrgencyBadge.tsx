@@ -3,12 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 type UrgencyType =
-  | 'limited-stock'
   | 'ending-soon'
-  | 'trending'
   | 'flash-sale'
+  | 'high-demand'
   | 'last-units'
-  | 'high-demand';
+  | 'limited-stock'
+  | 'trending';
 
 interface UrgencyBadgeProps {
   type: UrgencyType;

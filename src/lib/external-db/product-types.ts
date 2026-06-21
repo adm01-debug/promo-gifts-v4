@@ -32,7 +32,7 @@ export interface PromobrindProduct {
   active: boolean;
   stock_quantity?: number | null;
   colors?: Array<string | { name: string; hex?: string; stock?: number }> | null;
-  materials?: Array<string | Record<string, unknown>> | null;
+  materials?: Array<Record<string, unknown> | string> | null;
   dimensions?: string | null;
   min_quantity?: number | null;
   created_at?: string | null;

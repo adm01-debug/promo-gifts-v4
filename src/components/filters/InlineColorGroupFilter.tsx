@@ -16,7 +16,7 @@ interface InlineColorSwatchProps {
   isSelected: boolean;
   onClick: () => void;
   label: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   hasVariations?: boolean;
   isExpanded?: boolean;
   onExpandToggle?: () => void;
@@ -113,7 +113,7 @@ interface InlineColorGroupFilterProps {
   onChange: (selection: ColorFilterSelection) => void;
   showNuances?: boolean;
   showVariations?: boolean;
-  swatchSize?: 'sm' | 'md' | 'lg';
+  swatchSize?: 'lg' | 'md' | 'sm';
 }
 
 export function InlineColorGroupFilter({

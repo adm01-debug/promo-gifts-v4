@@ -8,7 +8,7 @@ export interface PasswordResetRequest {
   id: string;
   email: string;
   user_id: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected';
   requested_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;

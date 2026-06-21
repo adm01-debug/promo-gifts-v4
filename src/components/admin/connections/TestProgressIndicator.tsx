@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type TestProgressPhase = 'idle' | 'running' | 'completed' | 'failed';
+export type TestProgressPhase = 'completed' | 'failed' | 'idle' | 'running';
 
 interface Props {
   phase: TestProgressPhase;

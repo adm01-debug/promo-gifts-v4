@@ -39,7 +39,7 @@ const STATUS_LABELS: Record<PriceFreshnessStatus, string> = {
  * contexto mais rico do que aria-label sozinho consegue, complementamos
  * com `title` (lido por SRs como descrição auxiliar e útil offline).
  */
-function formatAbsoluteDateLong(value: string | Date): string | null {
+function formatAbsoluteDateLong(value: Date | string): string | null {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return formatPriceDateLong(d);
@@ -47,7 +47,7 @@ function formatAbsoluteDateLong(value: string | Date): string | null {
 
 function buildAccessibleLabel(
   freshness: PriceFreshness,
-  priceUpdatedAt?: string | Date | null,
+  priceUpdatedAt?: Date | string | null,
 ): { ariaLabel: string; title: string } {
   const absolute = priceUpdatedAt ? formatAbsoluteDateLong(priceUpdatedAt) : null;
   const relative = formatRelativeDaysShort(freshness.daysSinceUpdate);
@@ -92,7 +92,7 @@ function buildClassificationRule(thresholdDays: number): string {
 
 interface FreshnessTooltipProps {
   freshness: PriceFreshness;
-  priceUpdatedAt?: string | Date | null;
+  priceUpdatedAt?: Date | string | null;
 }
 
 function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipProps) {
@@ -149,9 +149,9 @@ function FreshnessTooltipBody({ freshness, priceUpdatedAt }: FreshnessTooltipPro
 }
 
 export interface PriceFreshnessBadgeProps {
-  priceUpdatedAt?: string | Date | null;
+  priceUpdatedAt?: Date | string | null;
   thresholdDays?: number | null;
-  variant?: 'inline' | 'compact' | 'icon-only' | 'pdp';
+  variant?: 'compact' | 'icon-only' | 'inline' | 'pdp';
   className?: string;
   /** Force render even when status is `fresh`/`unknown` in compact/icon-only variants. */
   alwaysShow?: boolean;
@@ -167,10 +167,10 @@ export interface PriceFreshnessBadgeProps {
    * fornecedor neste contexto (ex.: orçamento). Quando preenchido, o alerta
    * stale/aging é substituído por um pill verde "Confirmado por você".
    */
-  confirmedAt?: string | Date | null;
+  confirmedAt?: Date | string | null;
 }
 
-function formatConfirmedRelative(value: string | Date): string {
+function formatConfirmedRelative(value: Date | string): string {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return 'agora';
   const diffMs = Date.now() - d.getTime();
@@ -218,7 +218,7 @@ function formatCompactRelative(days: number | null): string {
  * garantir consistência entre cards, lista e tabela. A data por extenso
  * + hora local fica reservada ao tooltip (camada de detalhamento).
  */
-function formatAbsoluteDate(value: string | Date): string | null {
+function formatAbsoluteDate(value: Date | string): string | null {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return formatPriceDateShort(d);

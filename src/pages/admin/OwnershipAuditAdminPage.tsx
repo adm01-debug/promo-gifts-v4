@@ -54,7 +54,7 @@ interface RlsCoverageEntry {
   has_insert: boolean;
   has_update: boolean;
   has_delete: boolean;
-  missing_ops: Array<'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE'>;
+  missing_ops: Array<'DELETE' | 'INSERT' | 'SELECT' | 'UPDATE'>;
   severity: RlsSeverity;
 }
 

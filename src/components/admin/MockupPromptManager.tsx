@@ -227,7 +227,7 @@ export function MockupPromptManager() {
   const setPromptField = (
     id: string,
     config: PromptConfig,
-    field: 'prompt_text' | 'ai_model',
+    field: 'ai_model' | 'prompt_text',
     val: string,
   ) => {
     setEditedPrompts((p) => ({ ...p, [id]: { ...getEdited(config), [field]: val } }));

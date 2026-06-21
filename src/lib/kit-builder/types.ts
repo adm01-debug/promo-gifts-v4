@@ -209,7 +209,7 @@ export interface ExternalProductForKit {
     | null;
   category_id?: string | null;
   colors?: ExternalColorEntry[] | null;
-  materials?: (string | ExternalMaterialEntry)[] | null;
+  materials?: (ExternalMaterialEntry | string)[] | null;
   // Tipo do produto (product, packaging, etc.)
   product_type?: string | null;
   // Peso em gramas

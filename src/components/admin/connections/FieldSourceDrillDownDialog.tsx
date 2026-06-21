@@ -13,9 +13,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 export type FieldSourceKind =
-  | 'integration_credentials'
+  | 'ambos (sync trigger)'
   | 'external_connections'
-  | 'ambos (sync trigger)';
+  | 'integration_credentials';
 
 export type FieldDrillDownSample = {
   /** Identificador da linha amostrada (ex.: nome do secret, env_key, id da conexão) */
@@ -23,7 +23,7 @@ export type FieldDrillDownSample = {
   /** Valor mascarado ou status textual exato (ex.: "active", "••••a1b2", "2026-04-25T17:30Z") */
   display: string;
   /** Selo opcional para classificar o estado */
-  badge?: { text: string; tone: 'ok' | 'warn' | 'error' | 'neutral' };
+  badge?: { text: string; tone: 'error' | 'neutral' | 'ok' | 'warn' };
 };
 
 export type FieldDrillDownData = {
@@ -33,7 +33,7 @@ export type FieldDrillDownData = {
   notes: string;
   /** Origem técnica: query SQL, RPC, Edge Function, hook, etc. */
   technicalSource: {
-    kind: 'edge_function' | 'table_query' | 'rpc' | 'trigger' | 'hook';
+    kind: 'edge_function' | 'hook' | 'rpc' | 'table_query' | 'trigger';
     name: string;
     snippet: string;
     docsHref?: string;

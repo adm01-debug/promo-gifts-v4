@@ -59,9 +59,9 @@ interface Props {
   /** Rótulo exibido no botão / cabeçalho */
   label: string;
   /** Variant do botão trigger */
-  triggerVariant?: 'outline' | 'ghost' | 'secondary' | 'default';
+  triggerVariant?: 'default' | 'ghost' | 'outline' | 'secondary';
   /** Tamanho do botão */
-  triggerSize?: 'sm' | 'default';
+  triggerSize?: 'default' | 'sm';
   /** Controle externo opcional do estado aberto (ex.: abrir a partir do modal de detalhes). */
   open?: boolean;
   /** Callback quando o estado aberto muda (apenas em modo controlado). */

@@ -16,7 +16,7 @@
 import { captureException } from '@/lib/sentry';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'error' | 'info' | 'warn';
 
 export interface ClientLogger {
   scope: string;

@@ -2,7 +2,7 @@ import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { getProductImageUrl, type PromobrindProduct } from '@/lib/external-db/product-types';
 
-export type AlertLevel = 'low' | 'critical' | 'out';
+export type AlertLevel = 'critical' | 'low' | 'out';
 
 export interface StockAlert {
   id: string;

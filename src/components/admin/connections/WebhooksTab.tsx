@@ -127,7 +127,7 @@ export function WebhooksTab() {
     load();
   };
 
-  const remove = async (table: 'outbound_webhooks' | 'inbound_webhook_endpoints', id: string) => {
+  const remove = async (table: 'inbound_webhook_endpoints' | 'outbound_webhooks', id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) toast.error('Erro ao remover webhook', { description: sanitizeError(error) });
     else {

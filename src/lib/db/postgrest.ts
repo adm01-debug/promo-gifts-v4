@@ -18,7 +18,7 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
 
-export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
+export type Operation = 'batch_insert' | 'delete' | 'insert' | 'select' | 'update' | 'upsert';
 
 export interface InvokeOptions<T = Record<string, unknown>> {
   table: string;
@@ -34,7 +34,7 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   secondaryOrderBy?: { column: string; ascending?: boolean };
   limit?: number;
   offset?: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
   /** AbortSignal — when aborted, the underlying HTTP request is cancelled. */
   signal?: AbortSignal;
 }
@@ -213,7 +213,7 @@ function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
 
 // FIX 2026-06-14 (catalog-search-audit): _search agora aceita MÚLTIPLAS colunas.
 // Valor string[] => OR de ILIKE (name OU sku OU supplier_reference); string => 1 coluna (legado, inalterado).
-const SEARCH_COLUMNS: Record<string, string | string[]> = {
+const SEARCH_COLUMNS: Record<string, string[] | string> = {
   v_products_public: ['name', 'sku', 'supplier_reference'],
   products: ['name', 'sku', 'supplier_reference'],
   categories: 'name',
@@ -409,11 +409,15 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     query = query.range(from, from + options.limit - 1);
   }
 
-  const { data, error, count: dbCount } = await (
-    options.signal
-      ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(options.signal)
-      : query
-  );
+  const {
+    data,
+    error,
+    count: dbCount,
+  } = await (options.signal
+    ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(
+        options.signal,
+      )
+    : query);
 
   if (error) {
     if (error.message?.includes('410') || error.message?.includes('Gone')) {

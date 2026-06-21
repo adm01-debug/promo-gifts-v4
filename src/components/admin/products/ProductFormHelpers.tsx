@@ -14,17 +14,17 @@ import type { ProductFormData } from './ProductFormSchema';
 // ============================================
 
 export type SectionId =
-  | 'info'
-  | 'price'
-  | 'commercial'
-  | 'flags'
-  | 'dimensions'
-  | 'packaging'
-  | 'fiscal'
-  | 'seo'
-  | 'marketing'
   | 'classification'
-  | 'media';
+  | 'commercial'
+  | 'dimensions'
+  | 'fiscal'
+  | 'flags'
+  | 'info'
+  | 'marketing'
+  | 'media'
+  | 'packaging'
+  | 'price'
+  | 'seo';
 
 export interface SectionDef {
   id: SectionId;

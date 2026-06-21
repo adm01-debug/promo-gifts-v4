@@ -426,7 +426,7 @@ describe('calculateDiscountAmount — table-driven', () => {
   const cases: Array<{
     label: string;
     subtotal: number;
-    type: 'percent' | 'amount';
+    type: 'amount' | 'percent';
     value: number;
     expected: number;
   }> = [
@@ -484,7 +484,7 @@ describe('calculateDiscountAmount — property-based fuzz (500+ iterations)', ()
   const testInputs = Array.from({ length: ITERATIONS }, (_, i) => {
     const subtotal = randRange(-100, 50000);
     const discountValue = randRange(-100, 500);
-    const discountType: 'percent' | 'amount' = rand() > 0.5 ? 'percent' : 'amount';
+    const discountType: 'amount' | 'percent' = rand() > 0.5 ? 'percent' : 'amount';
     return { index: i, subtotal, discountValue, discountType };
   });
 
@@ -560,7 +560,7 @@ describe('calculateDiscountAmount — property-based fuzz (500+ iterations)', ()
     const largeInputs = Array.from({ length: 100 }, () => ({
       subtotal: randRange(0, 1_000_000),
       discountValue: randRange(0, 2_000_000),
-      discountType: (rand() > 0.5 ? 'percent' : 'amount') as 'percent' | 'amount',
+      discountType: (rand() > 0.5 ? 'percent' : 'amount') as 'amount' | 'percent',
     }));
 
     it('large amounts always clamp to subtotal', () => {
@@ -587,7 +587,7 @@ describe('calculateDiscountAmount — property-based fuzz (500+ iterations)', ()
     const nearZeroInputs = Array.from({ length: 50 }, () => ({
       subtotal: randRange(-0.01, 0.1),
       discountValue: randRange(-0.01, 0.1),
-      discountType: (rand() > 0.5 ? 'percent' : 'amount') as 'percent' | 'amount',
+      discountType: (rand() > 0.5 ? 'percent' : 'amount') as 'amount' | 'percent',
     }));
 
     it('near-zero inputs never produce negative result', () => {

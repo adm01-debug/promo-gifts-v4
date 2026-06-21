@@ -39,7 +39,7 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ─── Período ─────────────────────────────────────────────────────
 
-type DatePeriod = 'today' | '7d' | '30d' | 'all';
+type DatePeriod = '7d' | '30d' | 'all' | 'today';
 
 const PERIODS: { key: DatePeriod; label: string }[] = [
   { key: 'today', label: 'Hoje' },
@@ -81,7 +81,7 @@ function formatEventDate(dateStr: string | null | undefined): string {
 
 // ─── Tab config ──────────────────────────────────────────────────
 
-type TabKey = 'stockout' | 'low' | 'new' | 'restocked';
+type TabKey = 'low' | 'new' | 'restocked' | 'stockout';
 
 interface TabDef {
   key: TabKey;

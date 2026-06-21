@@ -33,7 +33,7 @@ interface VariantThumbProps {
   productName: string;
   colorName?: string;
   colorHex?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   /** Quando true, mostra um ring colorido com o hex da variação. */
   showColorRing?: boolean;
 }

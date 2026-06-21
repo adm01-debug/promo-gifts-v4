@@ -70,7 +70,7 @@ interface ProfileLite {
 
 const ACTION_LABEL: Record<
   RoleAction,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }
 > = {
   'role.granted': { label: 'Concedido', variant: 'default' },
   'role.changed': { label: 'Alterado', variant: 'secondary' },
@@ -81,7 +81,7 @@ const ACTION_LABEL: Record<
 
 export function RoleAuditLogPanel() {
   const [search, setSearch] = useState('');
-  const [actionFilter, setActionFilter] = useState<'all' | RoleAction>('all');
+  const [actionFilter, setActionFilter] = useState<RoleAction | 'all'>('all');
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['role-audit-log', actionFilter],

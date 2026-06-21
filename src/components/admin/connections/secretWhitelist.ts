@@ -36,7 +36,7 @@ const NAME_SHAPE = /^[A-Z][A-Z0-9_]{2,63}$/;
 export interface SecretNameValidation {
   ok: boolean;
   /** Stable code so callers can branch (e.g. show different chips). */
-  code?: 'empty' | 'bad_shape' | 'not_whitelisted';
+  code?: 'bad_shape' | 'empty' | 'not_whitelisted';
   message?: string;
   hint?: string;
 }

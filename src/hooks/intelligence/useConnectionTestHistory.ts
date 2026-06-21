@@ -11,13 +11,13 @@ export interface TestHistoryItem {
   message: string | null;
   /** Tipo semântico da falha (gravado pelo backend; null em sucessos ou registros antigos). */
   error_kind?: string | null;
-  triggered_by?: 'manual' | 'cron' | 'webhook';
+  triggered_by?: 'cron' | 'manual' | 'webhook';
   attempts?: number;
 }
 
 interface Options {
   type: ConnectionType;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Bumped externally after a "Testar conexão" succeeds — triggers refetch. */
   refreshKey?: number | string;

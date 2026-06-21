@@ -25,7 +25,7 @@ const TooltipPortal = TooltipPrimitive.Portal;
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
-    variant?: 'default' | 'compact';
+    variant?: 'compact' | 'default';
   }
 >(({ className, sideOffset = 6, variant = 'compact', ...props }, ref) => {
   const { tooltipStyle } = useTheme();

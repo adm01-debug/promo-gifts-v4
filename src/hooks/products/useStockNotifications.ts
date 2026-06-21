@@ -18,7 +18,7 @@ import { shouldRetry } from '@/lib/db/postgrest';
 
 const STALE = 2 * 60 * 1000;
 
-export type StockNotificationKind = 'stockout' | 'low' | 'new' | 'restocked';
+export type StockNotificationKind = 'low' | 'new' | 'restocked' | 'stockout';
 
 export interface StockNotificationCounts {
   stockout: number;

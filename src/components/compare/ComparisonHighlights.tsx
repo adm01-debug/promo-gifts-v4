@@ -2,7 +2,7 @@
  * ComparisonHighlights — Utility to highlight best/worst in a comparison table row.
  */
 
-export type HighlightResult = 'best' | 'worst' | 'neutral';
+export type HighlightResult = 'best' | 'neutral' | 'worst';
 
 export const highlightClasses: Record<HighlightResult, string> = {
   best: 'bg-success/10',
@@ -12,7 +12,7 @@ export const highlightClasses: Record<HighlightResult, string> = {
 
 export function useComparisonHighlight(
   values: number[],
-  mode: 'lower-is-better' | 'higher-is-better',
+  mode: 'higher-is-better' | 'lower-is-better',
 ): HighlightResult[] {
   if (values.length < 2) return values.map(() => 'neutral');
   const valid = values.filter((v) => !isNaN(v) && isFinite(v));

@@ -723,7 +723,7 @@ export function PromoFlixPlayer({
     [flash],
   );
   const stepRate = useCallback(
-    (direction: 1 | -1) => {
+    (direction: -1 | 1) => {
       const v = videoRef.current;
       if (!v) return;
       const idx = PLAYBACK_RATES.indexOf(v.playbackRate as (typeof PLAYBACK_RATES)[number]);

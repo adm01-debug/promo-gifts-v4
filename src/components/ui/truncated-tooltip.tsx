@@ -7,7 +7,7 @@ interface TruncatedTooltipProps {
   className?: string;
   tooltipClassName?: string;
   delayDuration?: number;
-  side?: 'top' | 'right' | 'bottom' | 'left';
+  side?: 'bottom' | 'left' | 'right' | 'top';
 }
 
 /**

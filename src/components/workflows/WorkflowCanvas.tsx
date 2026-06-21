@@ -29,7 +29,7 @@ import { WorkflowEditDialog } from './WorkflowEditDialog';
 export interface WorkflowStep {
   id: string;
   name: string;
-  type: 'agent' | 'tool' | 'condition' | 'output';
+  type: 'agent' | 'condition' | 'output' | 'tool';
   description: string;
   agentModel?: string;
   prompt?: string;
@@ -41,7 +41,7 @@ export interface WorkflowDefinition {
   name: string;
   description: string;
   steps: WorkflowStep[];
-  status: 'draft' | 'active' | 'paused';
+  status: 'active' | 'draft' | 'paused';
 }
 
 const WORKFLOW_STATUS_CLASSES: Record<WorkflowDefinition['status'], string> = {

@@ -2,7 +2,7 @@ import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import type { Json } from '@/integrations/supabase/types';
 
 import { logger } from '@/lib/logger';
-export type TelemetryEventType = 'error' | 'performance' | 'ux_action' | 'api_fail';
+export type TelemetryEventType = 'api_fail' | 'error' | 'performance' | 'ux_action';
 
 export interface TelemetryPayload {
   event_type: TelemetryEventType;

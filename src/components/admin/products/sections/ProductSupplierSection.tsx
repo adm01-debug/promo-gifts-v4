@@ -35,7 +35,7 @@ import { Truck, Plus, Star, Trash2, Clock, DollarSign, Loader2, Users } from 'lu
 import { useProductSupplierSources, type SupplierSourceInput } from '@/hooks/products';
 import { cn } from '@/lib/utils';
 
-interface Props extends Pick<FormSectionProps, 'setValue' | 'errors'> {
+interface Props extends Pick<FormSectionProps, 'errors' | 'setValue'> {
   supplierId: string;
   onSupplierChange: (id: string, name?: string, markup?: number | null) => void;
   productId?: string;

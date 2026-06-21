@@ -204,7 +204,7 @@ export function useVariantStock() {
   }, [rawAlerts]);
 
   const dismissAlertsBySeverity = useCallback(
-    (severity: 'error' | 'warning' | 'info') => {
+    (severity: 'error' | 'info' | 'warning') => {
       setDismissedAlerts((prev) => {
         const next = new Set(prev);
         rawAlerts.filter((a) => a.severity === severity).forEach((a) => next.add(a.id));

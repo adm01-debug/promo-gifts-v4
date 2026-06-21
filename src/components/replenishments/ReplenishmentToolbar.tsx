@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 
 type ViewMode = 'grid' | 'list' | 'table';
-type SortMode = 'name' | 'price-asc' | 'price-desc' | 'newest' | 'stock';
+type SortMode = 'name' | 'newest' | 'price-asc' | 'price-desc' | 'stock';
 
 interface SupplierOption {
   id: string;
@@ -101,7 +101,9 @@ export function ReplenishmentToolbar({
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <RefreshCw className="h-[18px] w-[18px] shrink-0 text-info" aria-hidden="true" />
           <div className="flex flex-col">
-            <h2 className="whitespace-nowrap text-[17px] font-semibold sm:text-[20px]">Reposição</h2>
+            <h2 className="whitespace-nowrap text-[17px] font-semibold sm:text-[20px]">
+              Reposição
+            </h2>
             <p className="hidden text-[11px] text-muted-foreground lg:block">
               Produtos repostos nos últimos 30 dias
             </p>
@@ -155,7 +157,6 @@ export function ReplenishmentToolbar({
             />
           </div>
         </div>
-
 
         <Button
           variant={selectionMode ? 'default' : 'outline'}
@@ -258,7 +259,6 @@ export function ReplenishmentToolbar({
         )}
       </div>
 
-
       {/* Active Filter Chips */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-1" role="list" aria-label="Filtros ativos">
@@ -339,7 +339,6 @@ function SearchInput({
           <X className="h-3.5 w-3.5" />
         </button>
       )}
-
     </div>
   );
 }

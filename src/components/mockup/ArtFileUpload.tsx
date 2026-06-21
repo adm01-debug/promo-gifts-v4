@@ -63,7 +63,7 @@ export function ArtFileUpload({
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFiles = useCallback(
-    async (files: FileList | File[]) => {
+    async (files: File[] | FileList) => {
       if (!userId) {
         toast.error('Faça login para anexar arquivos');
         return;

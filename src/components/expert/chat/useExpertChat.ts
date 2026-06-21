@@ -24,7 +24,7 @@ import {
 import { logger } from '@/lib/logger';
 export interface Message {
   id?: string;
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
   timestamp?: number;
   isError?: boolean;
@@ -90,7 +90,7 @@ export function useExpertChat({
     tags: [],
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [historyDateFilter, setHistoryDateFilter] = useState<'all' | 'today' | 'week' | 'month'>(
+  const [historyDateFilter, setHistoryDateFilter] = useState<'all' | 'month' | 'today' | 'week'>(
     'all',
   );
   const [autoPlayTts, setAutoPlayTts] = useState(() => {

@@ -157,7 +157,7 @@ export function useFavoriteQuickAdd() {
     (
       product: Product,
       opts?: { shiftKey?: boolean; variant?: FavoriteVariantInfo; forceListId?: string },
-    ): { resolved: true } | { resolved: false; reason: 'picker-needed' } => {
+    ): { resolved: false; reason: 'picker-needed' } | { resolved: true } => {
       if (!user) {
         toggleFavorite(product.id, opts?.variant);
         return { resolved: true };

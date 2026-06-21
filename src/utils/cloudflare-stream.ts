@@ -28,7 +28,7 @@ interface CloudflareThumbnailOptions {
   time?: string;
   height?: number;
   width?: number;
-  fit?: 'crop' | 'scale-down' | 'contain';
+  fit?: 'contain' | 'crop' | 'scale-down';
 }
 
 function appendThumbnailOptions(url: URL, options: CloudflareThumbnailOptions = {}) {
@@ -45,7 +45,9 @@ export function getCloudflareThumbnailUrl(
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
 
-  const thumbnailUrl = new URL(`https://${CF_STREAM_SUBDOMAIN}/${streamId}/thumbnails/thumbnail.jpg`);
+  const thumbnailUrl = new URL(
+    `https://${CF_STREAM_SUBDOMAIN}/${streamId}/thumbnails/thumbnail.jpg`,
+  );
   appendThumbnailOptions(thumbnailUrl, options);
 
   return thumbnailUrl.toString();

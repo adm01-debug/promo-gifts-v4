@@ -65,7 +65,7 @@ export interface CreateCartInput {
   company_logo_url?: string;
 }
 
-export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
+export type CartStatus = 'em_negociacao' | 'novo' | 'pronto_orcamento';
 
 // Raw row returned by Supabase nested select: `seller_carts.*, seller_cart_items(*)`
 type SellerCartRawRow = Omit<SellerCart, 'items'> & {

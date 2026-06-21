@@ -19,7 +19,7 @@ export interface KillSwitchHit {
   operation?: string | null;
   target?: string | null;
   origin?: string | null;
-  user_role?: 'anon' | 'authenticated' | 'admin';
+  user_role?: 'admin' | 'anon' | 'authenticated';
 }
 
 type QueuedHit = KillSwitchHit & { source: 'front'; occurred_at: string };

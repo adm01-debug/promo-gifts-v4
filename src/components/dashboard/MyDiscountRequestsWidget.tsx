@@ -24,7 +24,7 @@ import { useInfiniteScroll } from './widget-filters/useInfiniteScroll';
 
 const PAGE_SIZE = 20;
 
-const STATUS_VARIANT: Record<string, 'secondary' | 'outline' | 'default' | 'destructive'> = {
+const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
   pending: 'secondary',
   approved: 'default',
   rejected: 'destructive',

@@ -51,7 +51,7 @@ export function useProductImageGallery({
 
   // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    type: 'single' | 'bulk';
+    type: 'bulk' | 'single';
     url?: string;
   } | null>(null);
 
@@ -133,7 +133,16 @@ export function useProductImageGallery({
       else if (!img.cf_sync_status || img.cf_sync_status === 'pending') cfPending++;
       if (img.blurhash) withBlurhash++;
     });
-    return { byType, byVariant, withAlt, withoutVariant, total: externalImages.length, cfVerified, cfPending, withBlurhash };
+    return {
+      byType,
+      byVariant,
+      withAlt,
+      withoutVariant,
+      total: externalImages.length,
+      cfVerified,
+      cfPending,
+      withBlurhash,
+    };
   }, [externalImages]);
 
   const variantMap = useMemo(() => {
@@ -264,7 +273,7 @@ export function useProductImageGallery({
       variantCode: string,
       imageType: string,
       shouldBePrimary: boolean,
-    ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    ): Promise<{ ok: false; error: string } | { ok: true }> => {
       if (!productId) return { ok: true };
       try {
         const variant = variantCode !== 'none' ? variantMap.get(variantCode) : null;
@@ -726,7 +735,7 @@ export function useProductImageGallery({
               'Imagem';
             const variantLabel =
               ext.supplier_code || ext.variant_id
-                ? variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name ?? ''
+                ? (variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name ?? '')
                 : '';
             const altText = template
               .replace('{tipo}', typeLabel)

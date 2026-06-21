@@ -3,7 +3,7 @@
  * Extracted to a separate module to enable tree-shaking of the heavy Dialog component
  */
 
-export type TechniqueCategory = 'laser' | 'serigrafia' | 'digital' | 'other';
+export type TechniqueCategory = 'digital' | 'laser' | 'other' | 'serigrafia';
 
 export type LaserTone = 'claro' | 'escuro';
 

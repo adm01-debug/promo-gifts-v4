@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
-export type ReportFrequency = 'daily' | 'weekly' | 'monthly';
-export type ReportType = 'sales' | 'quotes' | 'clients' | 'products' | 'orders';
+export type ReportFrequency = 'daily' | 'monthly' | 'weekly';
+export type ReportType = 'clients' | 'orders' | 'products' | 'quotes' | 'sales';
 
 export interface ScheduledReport {
   id: string;

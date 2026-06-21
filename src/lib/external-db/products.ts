@@ -154,7 +154,7 @@ export async function fetchPromobrindProducts(options?: {
       }
 
       const pageSize = offset >= 1000 ? 125 : BASE_PAGE_SIZE;
-      const countMode: 'planned' | 'none' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
+      const countMode: 'none' | 'planned' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
       let page: InvokeResult<PromobrindProduct>;
       try {
         page = await dbInvoke<PromobrindProduct>({

@@ -31,7 +31,7 @@ function redactValue(value: unknown): unknown {
   return value;
 }
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = 'debug' | 'error' | 'info' | 'warn';
 
 interface LogEntry {
   level: LogLevel;

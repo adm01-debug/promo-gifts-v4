@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type StepUpReason = 'step_up_required' | 'step_up_invalid';
+export type StepUpReason = 'step_up_invalid' | 'step_up_required';
 
 export interface StepUpAttemptRow {
   id: string;
@@ -32,7 +32,7 @@ export interface StepUpAttemptRow {
 }
 
 export interface StepUpFilters {
-  reason: 'all' | StepUpReason;
+  reason: StepUpReason | 'all';
   userQuery: string;
   keyId: string;
   fromDate?: string;

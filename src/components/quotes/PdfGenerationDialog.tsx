@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 const PREVIEW_SCROLL_STYLE = { maxHeight: 'calc(90vh - 160px)' } as const;
-type Stage = 'preview' | 'generating' | 'ready';
+type Stage = 'generating' | 'preview' | 'ready';
 
 interface PdfGenerationDialogProps {
   proposalData: ProposalTemplateData | null;

@@ -32,7 +32,7 @@ import { ReplenishmentCardSkeleton } from './ReplenishmentCardSkeleton';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 type ViewMode = 'grid' | 'list' | 'table';
-type SortMode = 'name' | 'price-asc' | 'price-desc' | 'newest' | 'stock';
+type SortMode = 'name' | 'newest' | 'price-asc' | 'price-desc' | 'stock';
 
 function useLoadingProgress(isLoading: boolean): number {
   const [progress, setProgress] = useState(0);
@@ -41,8 +41,14 @@ function useLoadingProgress(isLoading: boolean): number {
 
   useEffect(() => {
     const clearAll = () => {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-      if (timeoutRef.current)  { clearTimeout(timeoutRef.current);   timeoutRef.current  = null; }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
 
     if (isLoading) {

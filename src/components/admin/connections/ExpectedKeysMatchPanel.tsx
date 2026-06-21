@@ -198,7 +198,7 @@ export function ExpectedKeysMatchPanel({
 
               <ul className="space-y-1">
                 {d.expectedSecrets.map((s) => {
-                  const state: 'ok' | 'empty' | 'missing' = !s.present
+                  const state: 'empty' | 'missing' | 'ok' = !s.present
                     ? 'missing'
                     : !s.hasValue
                       ? 'empty'

@@ -19,7 +19,7 @@ export interface NavItem {
   adminOnly?: boolean;
   devOnly?: boolean;
   requiredPermission?: { action: string; resource: string };
-  badge?: string | number;
+  badge?: number | string;
   exact?: boolean;
   children?: NavItem[];
   shortcut?: string;

@@ -76,7 +76,7 @@ interface SupplierFormDialogProps {
   updateContact: (id: string, field: keyof SupplierContact, value: string) => void;
   addContact: () => void;
   removeContact: (id: string) => void;
-  updatePixKey: (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => void;
+  updatePixKey: (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => void;
   addPixKey: () => void;
   removePixKey: (id: string) => void;
 }

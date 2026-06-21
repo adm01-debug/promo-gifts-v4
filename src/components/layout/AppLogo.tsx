@@ -48,7 +48,7 @@ interface AppLogoProps {
   textClassName?: string;
   subtextClassName?: string;
   showText?: boolean;
-  variant?: 'light' | 'dark' | 'brand' | 'sidebar';
+  variant?: 'brand' | 'dark' | 'light' | 'sidebar';
   onClick?: () => void;
 }
 

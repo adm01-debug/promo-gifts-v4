@@ -44,8 +44,8 @@ import { toErrorMessage } from '@/lib/to-error-message';
 interface RepairAction {
   table: string;
   owner_column: string;
-  issue: 'null_owner' | 'missing_user';
-  action: 'deleted' | 'deactivated' | 'manual_review' | 'skipped' | 'failed';
+  issue: 'missing_user' | 'null_owner';
+  action: 'deactivated' | 'deleted' | 'failed' | 'manual_review' | 'skipped';
   rows_affected: number;
   dry_run: boolean;
 }
@@ -72,7 +72,7 @@ const ACTION_META: Record<
   RepairAction['action'],
   {
     label: string;
-    variant: 'destructive' | 'secondary' | 'outline' | 'default';
+    variant: 'default' | 'destructive' | 'outline' | 'secondary';
     icon: typeof Trash2;
   }
 > = {
@@ -330,7 +330,7 @@ function Stat({
   label: string;
   value: number;
   icon: typeof Trash2;
-  tone: 'destructive' | 'warning' | 'muted';
+  tone: 'destructive' | 'muted' | 'warning';
 }) {
   const Icon = iconElement;
   const toneClass =

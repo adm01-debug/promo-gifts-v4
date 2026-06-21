@@ -65,7 +65,7 @@ const CF_BASE = 'https://imagedelivery.net/vKMs9Ow8bA_enuhLXZ2HAw';
  */
 export function getCdnVariantUrl(
   cloudflareImageId: string,
-  variant: 'public' | 'thumbnail' | 'small' | 'medium' | 'large' = 'public',
+  variant: 'large' | 'medium' | 'public' | 'small' | 'thumbnail' = 'public',
 ): string {
   return `${CF_BASE}/${cloudflareImageId}/${variant}`;
 }

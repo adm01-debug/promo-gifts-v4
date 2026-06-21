@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PartyPopper, Gift, CalendarHeart, Trophy, Sparkles, RefreshCw, X } from 'lucide-react';
 
-export type Occasion = 'welcome' | 'year-end' | 'event' | 'birthday' | 'vip' | 'reactivation';
+export type Occasion = 'birthday' | 'event' | 'reactivation' | 'vip' | 'welcome' | 'year-end';
 
 export interface OccasionMeta {
   id: Occasion;

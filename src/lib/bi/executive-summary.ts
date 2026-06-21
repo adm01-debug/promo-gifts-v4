@@ -18,7 +18,7 @@ export interface CategoryMapRow {
   label: string;
   clientSharePct: number;
   industrySharePct: number;
-  trend: 'up' | 'down' | 'stable' | 'n/a';
+  trend: 'down' | 'n/a' | 'stable' | 'up';
   deltaPct: number | null;
 }
 

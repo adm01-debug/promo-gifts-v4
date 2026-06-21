@@ -7,23 +7,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type AuditAction =
-  | 'mcp_key.issued'
-  | 'mcp_key.rotated'
-  | 'mcp_key.updated'
-  | 'mcp_key.revoked'
-  | 'mcp_key.scope_escalated'
   | 'mcp_key.auto_revoked'
   | 'mcp_key.issue_denied'
   | 'mcp_key.issue_error'
+  | 'mcp_key.issued'
   | 'mcp_key.revoke_denied'
   | 'mcp_key.revoke_error'
-  | 'mcp_key.update_denied'
-  | 'mcp_key.update_error'
+  | 'mcp_key.revoked'
   | 'mcp_key.rotate_denied'
   | 'mcp_key.rotate_error'
-  | 'mcp_tool.granted'
+  | 'mcp_key.rotated'
+  | 'mcp_key.scope_escalated'
+  | 'mcp_key.update_denied'
+  | 'mcp_key.update_error'
+  | 'mcp_key.updated'
   | 'mcp_tool.denied'
-  | 'mcp_tool.error';
+  | 'mcp_tool.error'
+  | 'mcp_tool.granted';
 
 export interface AuditFeedRow {
   id: string;
@@ -39,7 +39,7 @@ export interface AuditFeedRow {
   started_at?: string | null;
   finished_at?: string | null;
   duration_ms?: number | null;
-  status?: 'success' | 'error' | 'denied' | 'partial' | null;
+  status?: 'denied' | 'error' | 'partial' | 'success' | null;
   payload_summary?: Record<string, unknown> | null;
   source?: string | null;
   // Derivados
@@ -51,7 +51,7 @@ export interface AuditFeedRow {
 }
 
 export interface AuditFilters {
-  action: 'all' | AuditAction;
+  action: AuditAction | 'all';
   query: string;
   onlyFull: boolean;
   keyId?: string;

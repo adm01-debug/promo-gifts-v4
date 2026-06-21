@@ -16,7 +16,7 @@ import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import { VisuallyHidden } from '@/components/a11y/VisuallyHidden';
 
-export type VariantActionMode = 'favorite' | 'compare' | 'collection' | 'share' | 'quote';
+export type VariantActionMode = 'collection' | 'compare' | 'favorite' | 'quote' | 'share';
 
 const MODE_CONFIG: Record<
   VariantActionMode,

@@ -7,7 +7,7 @@ import { useClientBI } from '@/hooks/bi/useClientBI';
 
 export interface ChurnRiskResult {
   atRisk: boolean;
-  severity: 'high' | 'medium' | 'low' | 'none';
+  severity: 'high' | 'low' | 'medium' | 'none';
   daysSinceLastOrder: number | null;
   averageInterval: number | null; // dias
   reason: string | null;

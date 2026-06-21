@@ -7,12 +7,12 @@ import { toast } from 'sonner';
 
 interface CredentialsChangedBannerProps {
   /** Callback executed in parallel with cache invalidation + secret list refresh. */
-  onRefreshed?: () => void | Promise<void>;
+  onRefreshed?: () => Promise<void> | void;
 }
 
 interface PendingChange {
   count: number;
-  lastEvent: 'INSERT' | 'UPDATE' | 'DELETE';
+  lastEvent: 'DELETE' | 'INSERT' | 'UPDATE';
   lastName: string | null;
   lastAt: number;
 }
@@ -40,7 +40,7 @@ export function CredentialsChangedBanner({ onRefreshed }: CredentialsChangedBann
         'postgres_changes',
         { event: '*', schema: 'public', table: 'integration_credentials' },
         (payload) => {
-          const event = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
+          const event = payload.eventType as 'DELETE' | 'INSERT' | 'UPDATE';
           // Coluna real em integration_credentials é `secret_name` —
           // typo histórico (`name`) escondia o nome do secret alterado
           // no aviso de auto-refresh.

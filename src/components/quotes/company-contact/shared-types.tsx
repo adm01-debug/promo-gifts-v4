@@ -28,7 +28,7 @@ export function CompanyAvatar({
 }: {
   name: string;
   logoUrl?: string | null;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
 }) {
   const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-8 h-8 text-xs';
   if (logoUrl) {
@@ -40,7 +40,9 @@ export function CompanyAvatar({
           dim,
           'flex-shrink-0 rounded-full border border-border bg-background object-cover',
         )}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = 'none';
+        }}
         loading="lazy"
       />
     );

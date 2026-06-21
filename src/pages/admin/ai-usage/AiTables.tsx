@@ -25,7 +25,7 @@ interface LogEntry {
   function_name: string;
   model: string | null;
   total_tokens: number;
-  estimated_cost_usd: string | number | null;
+  estimated_cost_usd: number | string | null;
   duration_ms: number | null;
   status: string;
 }

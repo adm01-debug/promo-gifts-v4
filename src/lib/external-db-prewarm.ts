@@ -15,12 +15,12 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 
 type PrewarmTable =
-  | 'products'
+  | 'categories'
+  | 'color_groups'
   | 'product_images'
   | 'product_variants'
-  | 'categories'
-  | 'suppliers'
-  | 'color_groups';
+  | 'products'
+  | 'suppliers';
 
 // Tabelas principais que convém ter no pool antes do primeiro uso
 const PREWARM_TABLES: readonly PrewarmTable[] = [

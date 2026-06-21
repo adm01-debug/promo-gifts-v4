@@ -6,7 +6,7 @@ import { useState, useEffect, createContext, useContext, type ReactNode } from '
  */
 
 interface AriaLiveContextType {
-  announce: (message: string, priority?: 'polite' | 'assertive') => void;
+  announce: (message: string, priority?: 'assertive' | 'polite') => void;
   announceStatus: (message: string) => void;
   announceAlert: (message: string) => void;
   announceProgress: (current: number, total: number, label?: string) => void;
@@ -43,7 +43,7 @@ export function AriaLiveProvider({ children }: { children: ReactNode }) {
     }
   }, [assertiveMessage]);
 
-  const announce = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+  const announce = (message: string, priority: 'assertive' | 'polite' = 'polite') => {
     if (priority === 'assertive') {
       setAssertiveMessage(message);
     } else {
@@ -167,7 +167,7 @@ export function FormErrorAnnouncer({ errors }: FormErrorAnnouncerProps) {
  * Component for announcing action results
  */
 interface ActionResultAnnouncerProps {
-  result: { type: 'success' | 'error'; message: string } | null;
+  result: { type: 'error' | 'success'; message: string } | null;
 }
 
 export function ActionResultAnnouncer({ result }: ActionResultAnnouncerProps) {
@@ -186,7 +186,7 @@ export function ActionResultAnnouncer({ result }: ActionResultAnnouncerProps) {
   return null;
 }
 
-const ACTION_MESSAGES: Record<'loaded' | 'filtered' | 'sorted' | 'updated', string> = {
+const ACTION_MESSAGES: Record<'filtered' | 'loaded' | 'sorted' | 'updated', string> = {
   loaded: 'carregados',
   filtered: 'filtrados',
   sorted: 'ordenados',
@@ -199,7 +199,7 @@ const ACTION_MESSAGES: Record<'loaded' | 'filtered' | 'sorted' | 'updated', stri
 interface ListUpdateAnnouncerProps {
   count: number;
   itemName?: string;
-  action?: 'loaded' | 'filtered' | 'sorted' | 'updated';
+  action?: 'filtered' | 'loaded' | 'sorted' | 'updated';
 }
 
 export function ListUpdateAnnouncer({

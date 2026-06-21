@@ -7,15 +7,15 @@ import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import type { ProductFormData } from './ProductFormSchema';
 
 export type StepId =
-  | 'essentials'
-  | 'commercial'
-  | 'packaging'
-  | 'fiscal'
-  | 'engraving'
   | 'classification'
-  | 'media'
+  | 'commercial'
   | 'content'
-  | 'kits';
+  | 'engraving'
+  | 'essentials'
+  | 'fiscal'
+  | 'kits'
+  | 'media'
+  | 'packaging';
 
 export interface StepDef {
   id: StepId;

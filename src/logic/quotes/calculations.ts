@@ -55,7 +55,7 @@ export const applyMarkup = (baseValue: number, markupPercent: number): number =>
  */
 export const calculateDiscountAmount = (
   subtotal: number,
-  discountType: 'percent' | 'amount',
+  discountType: 'amount' | 'percent',
   discountValue: number,
 ): number => {
   const safeValue = Math.max(0, discountValue || 0);
