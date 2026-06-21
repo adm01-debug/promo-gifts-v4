@@ -120,17 +120,30 @@ vi.mock('@/components/collections/AddToCollectionModal', () => ({
 }));
 vi.mock('@/components/products/BulkActionBar', () => ({ BulkActionBar: () => null }));
 
-vi.mock('@/stores/useFavoritesStore', () => ({
-  useFavoritesStore: vi.fn(() => ({ isFavorite: vi.fn(() => false), toggleFavorite: vi.fn() })),
-}));
-vi.mock('@/stores/useComparisonStore', () => ({
-  useComparisonStore: vi.fn(() => ({
+// NoveltyProductGrid subscribes via Zustand selectors (useStore((s) => s.x)),
+// so the mocks must apply the selector to a fake state instead of returning the
+// whole object regardless of the selector argument.
+vi.mock('@/stores/useFavoritesStore', () => {
+  const state = { isFavorite: vi.fn(() => false), toggleFavorite: vi.fn() };
+  return {
+    useFavoritesStore: vi.fn((selector?: (s: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+    ),
+  };
+});
+vi.mock('@/stores/useComparisonStore', () => {
+  const state = {
     isInCompare: vi.fn(() => false),
     addToCompare: vi.fn(),
     removeFromCompare: vi.fn(),
     canAddMore: true,
-  })),
-}));
+  };
+  return {
+    useComparisonStore: vi.fn((selector?: (s: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+    ),
+  };
+});
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

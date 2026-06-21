@@ -72,7 +72,7 @@ const product: NoveltyWithDetails = {
 };
 
 function getArticle(container: HTMLElement): HTMLElement {
-  const el = container.querySelector('article');
+  const el = container.querySelector('[data-testid="novelty-grid-card"]');
   if (!el) throw new Error('article não encontrado');
   return el as HTMLElement;
 }
