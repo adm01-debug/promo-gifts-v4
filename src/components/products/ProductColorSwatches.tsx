@@ -23,7 +23,7 @@
  *  quebrar a linha mesmo no mobile mais estreito 320px).
  * ──────────────────────────────────────────────────────────────────────────────
  */
-import { memo, useId } from 'react';
+import { memo, useId, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -90,6 +90,15 @@ export const ProductColorSwatches = memo(
   }: ProductColorSwatchesProps) => {
     const idPrefix = useId();
 
+    // BUG-PCS-01 FIX (2026-06-21): window.location.search lida inline a cada render sem
+    // memoização — recria URLSearchParams desnecessariamente e não reage a mudanças de URL.
+    // DEVE ficar antes dos early returns para respeitar Rules of Hooks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reads URL once per mount; selectedName drives reactive updates
+    const urlColor = useMemo(() => {
+      if (typeof window === 'undefined') return null;
+      return new URLSearchParams(window.location.search).get('cor')?.toLowerCase() ?? null;
+    }, []);
+
     if (colors === undefined) {
       return (
         <div
@@ -143,10 +152,6 @@ export const ProductColorSwatches = memo(
     const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
     const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
 
-    // Resolve o estado selecionado o mais cedo possível
-    const queryParams =
-      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const urlColor = queryParams?.get('cor')?.toLowerCase() ?? null;
     const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
 
     return (
@@ -184,7 +189,9 @@ export const ProductColorSwatches = memo(
             : null;
 
           return (
-            <Tooltip key={`${c.name}-${idx}`}>
+            // BUG-PCS-02 FIX (2026-06-21): chave composta name+idx é instável ao reordenar.
+            // Nome da cor é único por produto; chave estável evita re-mounts desnecessários.
+            <Tooltip key={c.name}>
               <TooltipTrigger asChild>
                 <button
                   type="button"

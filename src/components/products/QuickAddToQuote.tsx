@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Plus, Check, ShoppingCart, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +56,9 @@ export function QuickAddToQuote({
     undefined,
   );
   const { activeCart, carts, addToActiveCart, canCreateCart } = useSellerCartContext();
+  // BUG-QAQ-01 FIX (2026-06-21): label sem htmlFor e Input sem id quebravam acessibilidade
+  // (clicar no label não focava o input). useId garante unicidade mesmo com múltiplas instâncias.
+  const qtyInputId = useId();
 
   const handleVariantSelect = (v: ExternalVariantStock | null) => {
     setSelectedVariant(v);
@@ -269,7 +272,9 @@ export function QuickAddToQuote({
             )}
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Quantidade</label>
+              <label htmlFor={qtyInputId} className="text-sm text-muted-foreground">
+                Quantidade
+              </label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -281,6 +286,7 @@ export function QuickAddToQuote({
                   -
                 </Button>
                 <Input
+                  id={qtyInputId}
                   type="number"
                   min={minQuantity}
                   value={quantity}
