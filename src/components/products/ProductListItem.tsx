@@ -138,8 +138,8 @@ export const ProductListItem = memo(
         prevListFilterRef.current = listFilterKey;
       }
     }, [listFilterKey]);
-    const favStore = useFavoritesStore();
-    const compStore = useComparisonStore();
+    const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+    const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
     const handleStatusClick = useCallback(
       (type: string, _value?: string | number) => {
@@ -186,12 +186,12 @@ export const ProductListItem = memo(
           : undefined;
 
         if (variantPickerMode === 'favorite') {
-          favStore.addFavorite(product.id, variantInfo);
+          favAddFavorite(product.id, variantInfo);
           toast.success(
             `"${product.name}" favoritado${variant?.color_name ? ` — ${variant.color_name}` : ''}`,
           );
         } else if (variantPickerMode === 'compare') {
-          const result = compStore.addToCompare(product.id, variantInfo);
+          const result = compAddToCompare(product.id, variantInfo);
           if (!result) {
             showErrorToast({ title: 'Limite de 4 produtos para comparação atingido' });
           } else {
@@ -225,7 +225,7 @@ export const ProductListItem = memo(
           setShareDialogOpen(true);
         }
       },
-      [variantPickerMode, product, favStore, compStore, carts],
+      [variantPickerMode, product, favAddFavorite, compAddToCompare, carts],
     );
 
     const formatPrice = (price: number) =>
@@ -241,19 +241,6 @@ export const ProductListItem = memo(
           return 'text-destructive';
         default:
           return 'text-success';
-      }
-    };
-
-    const getStockLabel = (status: string) => {
-      switch (status) {
-        case 'in-stock':
-          return 'Em estoque';
-        case 'low-stock':
-          return 'Estoque baixo';
-        case 'out-of-stock':
-          return 'Estoque zerado';
-        default:
-          return 'Em estoque';
       }
     };
 
@@ -603,7 +590,6 @@ export const ProductListItem = memo(
               >
                 <Package className="h-2.5 w-2.5" aria-hidden="true" />
                 {displayStock.toLocaleString('pt-BR')} Unid
-
               </span>
             </div>
           </div>
@@ -625,14 +611,9 @@ export const ProductListItem = memo(
                 'flex items-center gap-1 text-[11px] font-medium sm:text-xs',
                 getStockColor(displayStatus),
               )}
-              data-testid="product-stock-value"
-              data-stock-qty={displayStock}
             >
               <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden="true" />
-              <span className="whitespace-nowrap">
-                {displayStock.toLocaleString('pt-BR')} Unid
-              </span>
-
+              <span className="whitespace-nowrap">{displayStock.toLocaleString('pt-BR')} Unid</span>
             </span>
           </div>
 
@@ -673,13 +654,9 @@ export const ProductListItem = memo(
                     prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
                   );
                 }}
-                onClear={() => setUserSelectedColorName(null)}
               />
-
             </div>
           </div>
-
-
 
           {/* Price column — right-aligned, always visible */}
           <div

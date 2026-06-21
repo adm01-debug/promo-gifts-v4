@@ -27,7 +27,12 @@ interface RecentlyViewedStore extends RecentlyViewedState, RecentlyViewedActions
 function loadFromStorage(): RecentlyViewedItem[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    // Corrupted non-array payload would crash on the first add/remove (`items.filter`) —
+    // fall back to empty instead of breaking "recently viewed". Mirrors the guard in
+    // useFavoritesStore / useComparisonStore (same localStorage-corruption class).
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     logger.warn('[useRecentlyViewedStore] Failed to load from localStorage', err);
     return [];
@@ -42,9 +47,24 @@ function saveToStorage(items: RecentlyViewedItem[]) {
   }
 }
 
-// Debounce tracking to prevent duplicate rapid additions
+// Debounce tracking to prevent duplicate rapid additions (module-level — survives re-renders)
 let lastAddedId: string | null = null;
 let lastAddedTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearDedupTimer() {
+  if (lastAddedTimer !== null) {
+    clearTimeout(lastAddedTimer);
+    lastAddedTimer = null;
+  }
+  lastAddedId = null;
+}
+
+// Clear the dedup timer on page unload so it doesn't fire in HMR teardown.
+// removeEventListener before add makes this idempotent on HMR re-evaluation.
+if (typeof window !== 'undefined') {
+  window.removeEventListener('beforeunload', clearDedupTimer);
+  window.addEventListener('beforeunload', clearDedupTimer);
+}
 
 export const useRecentlyViewedStore = create<RecentlyViewedStore>((set, get) => {
   const initial = loadFromStorage();

@@ -73,6 +73,12 @@ export function useMockupGenerator() {
   >([]);
   const [artAttachments, setArtAttachments] = useState<ArtFileAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Re-entrancy guard for generateMockup: setIsLoading(true) is async/batched and
+  // cannot block a synchronous second call (a fast double-click, or the two buttons
+  // wired to the same handler). Flipped synchronously before the first await so a
+  // concurrent invocation returns immediately — preventing duplicate edge calls,
+  // duplicate history rows, and orphaned storage PNGs.
+  const isGeneratingRef = useRef(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [mockupAnnotations, setMockupAnnotations] = useState<
     { id: string; x: number; y: number; text: string }[]
@@ -158,7 +164,7 @@ export function useMockupGenerator() {
         maxWidthCm: widths.length ? Math.max(...widths) : null,
         maxHeightCm: heights.length ? Math.max(...heights) : null,
         maxColors: colors.length ? Math.max(...colors) : null,
-        isCurved: opts.some((o: CustomizationOption) => o.is_curved === true),
+        isCurved: opts.some((o: CustomizationOption) => o.is_curved),
         techniquesAvailable: opts.length,
       };
     });
@@ -230,11 +236,13 @@ export function useMockupGenerator() {
   }, [selectedTechnique]);
 
   useEffect(() => {
+    let isMounted = true;
     const restoreDraft = async () => {
       if (isLoadingData || hasDraftRestored || isRestoringDraft.current) return;
       isRestoringDraft.current = true;
       try {
         const draft = await loadDraft();
+        if (!isMounted) return;
         if (
           draft &&
           (draft.productId ||
@@ -265,13 +273,17 @@ export function useMockupGenerator() {
           draftNoticeTimeoutRef.current = setTimeout(() => setShowDraftRestoredNotice(false), 5000);
         }
       } catch (err) {
+        if (!isMounted) return;
         logger.error('Erro ao restaurar rascunho:', err);
       } finally {
-        setHasDraftRestored(true);
+        if (isMounted) setHasDraftRestored(true);
         isRestoringDraft.current = false;
       }
     };
     restoreDraft();
+    return () => {
+      isMounted = false;
+    };
   }, [isLoadingData, techniques, loadDraft, hasDraftRestored, getProductById]);
 
   const urlParamsApplied = useRef(false);
@@ -459,7 +471,8 @@ export function useMockupGenerator() {
         );
         logoColorAnalysis.analyzeImage(logoData);
       };
-      reader.onerror = () => {
+      reader.onerror = (e) => {
+        logger.error('[useMockupGenerator] FileReader error ao ler imagem:', e);
         toast.error('Erro ao ler o arquivo de imagem. Tente novamente.');
       };
       reader.readAsDataURL(processedFile);
@@ -510,6 +523,9 @@ export function useMockupGenerator() {
   );
 
   const generateMockup = useCallback(async () => {
+    // Re-entrancy guard (see isGeneratingRef): block a second concurrent generation
+    // that slips through before the isLoading-driven `disabled` re-render commits.
+    if (isGeneratingRef.current) return;
     const areasWithLogos = personalizationAreas.filter((a) => a.logoPreview);
     if (!selectedClient || !productSelection || !selectedTechnique || areasWithLogos.length === 0) {
       toast.error('Selecione empresa, produto, técnica e faça upload de pelo menos um logo');
@@ -547,6 +563,7 @@ export function useMockupGenerator() {
       }
     }
 
+    isGeneratingRef.current = true;
     setIsLoading(true);
     setGeneratedMockup(null);
     setGeneratedBatchMockups([]);
@@ -620,6 +637,7 @@ export function useMockupGenerator() {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      isGeneratingRef.current = false;
     }
   }, [
     selectedClient,
@@ -699,12 +717,15 @@ export function useMockupGenerator() {
       else setProductSelection(null);
       setSelectedTechnique(technique || null);
       // BUG-LOADFROMHISTORY-CLIENT FIX: client_id was always null (BUG-CLIENT-ID) so
-      // the client was never restored. Use client_name as fallback for old rows.
-      // After migration 20260620000001, new rows have a real client_id.
+      // the client was never restored. Restore the client for display when only the
+      // name exists (old rows), but keep `id` empty — NEVER fall back to client_name
+      // as the id, otherwise re-saving writes a human name into the client_id column
+      // (saveMockupToDb persists `client?.id`). After migration 20260620000001, new
+      // rows carry a real client_id.
       setSelectedClient(
         mockup.client_id || mockup.client_name
           ? {
-              id: mockup.client_id ?? mockup.client_name ?? '',
+              id: mockup.client_id ?? '',
               name: mockup.client_name || 'Cliente',
             }
           : null,

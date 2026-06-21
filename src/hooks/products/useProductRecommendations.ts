@@ -61,7 +61,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (relatedError || !relatedItems?.length) return [];
 
-      const productCounts = relatedItems.reduce(
+      const productCounts = relatedItems.reduce<Record<string, FrequentlyBoughtTogether>>(
         (acc, item) => {
           const key = item.product_sku || item.product_id;
           if (!key) return acc;
@@ -79,7 +79,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
           acc[key].timesOrderedTogether++;
           return acc;
         },
-        {} as Record<string, FrequentlyBoughtTogether>,
+        {},
       );
 
       return Object.values(productCounts)
@@ -173,23 +173,20 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (error || !recentQuoteItems?.length) return [];
 
-      const productCounts = recentQuoteItems.reduce(
-        (acc, item) => {
-          const key = item.product_sku || item.product_name;
-          if (!acc[key]) {
-            acc[key] = {
-              sku: item.product_sku,
-              name: item.product_name,
-              image: item.product_image_url,
-              price: item.unit_price,
-              count: 0,
-            };
-          }
-          acc[key].count++;
-          return acc;
-        },
-        {} as Record<string, ProductCount>,
-      );
+      const productCounts = recentQuoteItems.reduce<Record<string, ProductCount>>((acc, item) => {
+        const key = item.product_sku || item.product_name;
+        if (!acc[key]) {
+          acc[key] = {
+            sku: item.product_sku,
+            name: item.product_name,
+            image: item.product_image_url,
+            price: item.unit_price,
+            count: 0,
+          };
+        }
+        acc[key].count++;
+        return acc;
+      }, {});
 
       const sorted = Object.values(productCounts)
         .sort((a, b) => b.count - a.count)
@@ -202,7 +199,8 @@ export function useProductRecommendations(productId?: string, productSku?: strin
         const { fetchPromobrindProducts, getProductPrice, getProductImageUrl } =
           await import('@/lib/external-db');
         const productsData = await fetchPromobrindProducts({ limit: 500 });
-        const matchedProducts = productsData.filter((p) => skus.includes(p.sku));
+        const skuSet = new Set(skus);
+        const matchedProducts = productsData.filter((p) => skuSet.has(p.sku));
 
         return matchedProducts.map((p) => {
           const imageUrl = getProductImageUrl(p);

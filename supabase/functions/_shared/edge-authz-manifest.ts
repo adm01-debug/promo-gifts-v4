@@ -59,7 +59,6 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "commemorative-dates": { category: "public", rationale: "Calendário público" },
   "categories-api": { category: "public", rationale: "Catálogo de categorias público" },
   "materials-api": { category: "public", rationale: "Catálogo de materiais público" },
-  "generate-mockup": { category: "public", rationale: "Geração de mockup — token público assinado", enforcedBy: "custom", skipAnonBypassTest: true },
   "product-webhook": { category: "public", rationale: "Webhook de produto — HMAC inline", enforcedBy: "custom", skipAnonBypassTest: true },
   "webhook-inbound": { category: "public", rationale: "Webhook inbound — assinatura HMAC", enforcedBy: "custom", skipAnonBypassTest: true },
   "semantic-search": { category: "public", rationale: "Busca semântica — rate-limited, sem dados sensíveis", skipAnonBypassTest: true },
@@ -96,6 +95,10 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "generate-ad-prompt": { category: "authenticated", rationale: "Geração de prompt para anúncio" },
   "generate-product-seo": { category: "authenticated", rationale: "SEO de produto" },
   "analyze-logo-colors": { category: "authenticated", rationale: "Análise de cores de logo" },
+  // generate-mockup: compositor canvas server-side — exige JWT via authenticateRequest()
+  // (NÃO é "token público assinado": não existe verificação de assinatura no código).
+  // GUARD: manter como "authenticated" — não reverter para "public". verify_jwt=true (config.toml).
+  "generate-mockup": { category: "authenticated", rationale: "Geração de mockup (compositor canvas) — authenticateRequest (JWT obrigatório)", enforcedBy: "custom" },
   "magic-up-score": { category: "authenticated", rationale: "Scoring criativo do user" },
   "voice-agent": { category: "authenticated", rationale: "Voice agent do user" },
   "quote-sync": { category: "authenticated", rationale: "Sync do orçamento do próprio vendedor" },

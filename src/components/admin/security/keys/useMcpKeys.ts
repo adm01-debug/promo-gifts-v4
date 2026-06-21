@@ -97,7 +97,7 @@ export function useMcpKeys() {
     }
 
     const ids = [...new Set((keys ?? []).map((k) => k.created_by).filter(Boolean))];
-    let creators: Map<string, { email: string | null; name: string | null }> = new Map();
+    let creators = new Map<string, { email: string | null; name: string | null }>();
     if (ids.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')

@@ -74,6 +74,9 @@ export function useSalesGoals() {
       return data as SalesGoal[];
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   // Get active goal for current period
@@ -96,6 +99,9 @@ export function useSalesGoals() {
       return data as SalesGoal | null;
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   // Create goal mutation

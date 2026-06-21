@@ -85,8 +85,11 @@ const INTERNAL_SORT_LABELS: Readonly<Record<string, string>> = {
 
 export default function FiltersPage() {
   const navigate = useNavigate();
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
 
   const state = useFiltersPageState();
   // GAP-19 FIX: FiltersPage usa VirtualizedProductGrid SEM onLoadMore — todos os
@@ -145,7 +148,7 @@ export default function FiltersPage() {
         state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
         toast.success(action.response);
       } else if (action.action === 'sort' && action.data.sortBy) {
-        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || 'name';
+        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || DEFAULT_SORT_VALUE;
         state.setSortBy(sortValue);
         toast.success(action.response);
       } else if (action.action === 'clear') {

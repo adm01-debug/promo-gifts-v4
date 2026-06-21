@@ -20,11 +20,13 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { logger } from '@/lib/logger';
 
 export function DiscountApprovalQueue() {
   const { isAdmin, rolesLoaded } = useAuth();
   const qc = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const { data, isLoading: queryLoading } = useQuery({
     queryKey: ['discount-approval-queue'],
@@ -48,7 +50,15 @@ export function DiscountApprovalQueue() {
   const isLoading = !rolesLoaded || queryLoading;
 
   const respond = useMutation({
-    mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
+    mutationFn: async ({
+      id,
+      quoteId,
+      approved,
+    }: {
+      id: string;
+      quoteId: string;
+      approved: boolean;
+    }) => {
       const { data: u } = await supabase.auth.getUser();
       const { error } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
@@ -61,12 +71,24 @@ export function DiscountApprovalQueue() {
         })
         .eq('id', id);
       if (error) throw error;
+
+      // BUG-045: transition quote out of pending_approval after admin decides.
+      // approved → 'pending' (ready to send); rejected → 'draft' (needs discount adjustment).
+      // Without this the quote is stuck in pending_approval indefinitely.
+      const { error: qErr } = await supabase
+        // rls-allow: admin-only via has_role; RLS filtra
+        .from('quotes')
+        .update({ status: approved ? 'pending' : 'draft' })
+        .eq('id', quoteId);
+      if (qErr) logger.warn('[DiscountApprovalQueue] quote status update failed', qErr);
     },
+    onMutate: ({ id }) => setProcessingId(id),
     onSuccess: () => {
       toast.success('Resposta registrada');
       qc.invalidateQueries({ queryKey: ['discount-approval-queue'] });
     },
     onError: (e: unknown) => toast.error(sanitizeError(e)),
+    onSettled: () => setProcessingId(null),
   });
 
   if (isLoading) {
@@ -95,21 +117,22 @@ export function DiscountApprovalQueue() {
   return (
     <div className="space-y-3">
       {data.map((req) => {
-        const quote = (
-          req as {
-            quotes?: {
-              quote_number?: string;
-              client_name?: string;
-              client_company?: string;
-              total?: number;
-              subtotal?: number;
-              discount_percent?: number;
-              negotiation_markup_percent?: number;
-              real_subtotal?: number;
-              real_discount_percent?: number;
-            };
-          }
-        ).quotes;
+        const reqTyped = req as {
+          quote_id: string;
+          quotes?: {
+            quote_number?: string;
+            client_name?: string;
+            client_company?: string;
+            total?: number;
+            subtotal?: number;
+            discount_percent?: number;
+            negotiation_markup_percent?: number;
+            real_subtotal?: number;
+            real_discount_percent?: number;
+          };
+        };
+        const quote = reqTyped.quotes;
+        const quoteId = reqTyped.quote_id;
         const markup = Number(quote?.negotiation_markup_percent ?? 0);
         const apparent = Number(quote?.discount_percent ?? 0);
         const realPct = Number(quote?.real_discount_percent ?? req.requested_discount_percent);
@@ -178,14 +201,14 @@ export function DiscountApprovalQueue() {
                 <Button
                   variant="outline"
                   className="border-destructive/50 text-destructive hover:bg-destructive/10"
-                  onClick={() => respond.mutate({ id: req.id, approved: false })}
-                  disabled={respond.isPending}
+                  onClick={() => respond.mutate({ id: req.id, quoteId, approved: false })}
+                  disabled={processingId === req.id}
                 >
                   <XCircle className="mr-2 h-4 w-4" /> Recusar
                 </Button>
                 <Button
-                  onClick={() => respond.mutate({ id: req.id, approved: true })}
-                  disabled={respond.isPending}
+                  onClick={() => respond.mutate({ id: req.id, quoteId, approved: true })}
+                  disabled={processingId === req.id}
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                 </Button>

@@ -10,7 +10,7 @@
  * Bypass total no servidor: o endpoint funciona mesmo com circuito aberto,
  * o que é exatamente o que torna este card útil para diagnóstico em outage.
  */
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -96,29 +96,42 @@ export function BreakerStatusCard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState<number>(Date.now());
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchStatus = useCallback(async () => {
+    // Abort any in-flight request before starting a new one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(FN_URL, {
         method: 'GET',
         headers: { apikey: ANON_KEY },
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as BreakerStatusResponse;
       setSnap(json);
     } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
       setError(toErrorMessage(e));
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     fetchStatus();
     const id = setInterval(fetchStatus, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      abortRef.current?.abort();
+    };
   }, [fetchStatus]);
 
   // Tick local (1s) só para atualizar o countdown sem refetch.

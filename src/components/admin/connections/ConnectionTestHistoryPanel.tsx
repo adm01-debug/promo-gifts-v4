@@ -179,7 +179,7 @@ function LatencySparkline({
     .slice(-12);
   if (sorted.length < 2) return null;
 
-  const values = sorted.map((i) => i.latency_ms as number);
+  const values = sorted.map((i) => i.latency_ms!);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = Math.max(1, max - min);
@@ -189,7 +189,7 @@ function LatencySparkline({
 
   const points = sorted.map((it, idx) => {
     const x = idx * stepX;
-    const y = pad + innerH - (((it.latency_ms as number) - min) / range) * innerH;
+    const y = pad + innerH - ((it.latency_ms! - min) / range) * innerH;
     return { x, y, ok: it.ok };
   });
   const path = points

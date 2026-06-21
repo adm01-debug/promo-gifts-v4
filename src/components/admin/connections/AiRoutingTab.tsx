@@ -236,7 +236,7 @@ export function AiRoutingTab() {
         <CardContent className="space-y-2">
           {isLoading && <p className="text-sm text-muted-foreground">Carregando roteamentos…</p>}
           {error && <p className="text-sm text-destructive">Erro ao carregar: {String(error)}</p>}
-          {!isLoading && routings && routings.length === 0 && (
+          {!isLoading && routings?.length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhum roteamento cadastrado.</p>
           )}
 

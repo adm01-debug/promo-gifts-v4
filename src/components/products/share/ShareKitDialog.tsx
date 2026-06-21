@@ -99,7 +99,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
     } else if (activeItem) {
       const images = [activeItem.imageUrl].filter(Boolean) as string[];
       if (images.length === 0 && (product.images?.[0] || product.image_url)) {
-        images.push((product.images?.[0] || product.image_url) as string);
+        images.push((product.images?.[0] || product.image_url)!);
       }
       return images;
     }

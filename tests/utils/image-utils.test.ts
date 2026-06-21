@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getCdnUrl,
   getSrcSet,
+  isImageDeliveryUrl,
   getImageSizes,
   getCardImage,
   getHeroImage,
@@ -11,7 +12,6 @@ import {
   getColorThumbnail,
   categorizeImages,
   type ProductImageMeta,
-  type CdnVariant,
 } from '@/utils/image-utils';
 
 // Helper to create test image
@@ -71,6 +71,33 @@ describe('image-utils', () => {
       expect(srcSet).toContain('card 480w');
       expect(srcSet).toContain('medium 800w');
       expect(srcSet).toContain('large 1200w');
+    });
+  });
+
+  describe('isImageDeliveryUrl — validação de host (anti substring-bypass)', () => {
+    it('aceita o host canônico e subdomínios', () => {
+      expect(isImageDeliveryUrl('https://imagedelivery.net/abc/img/public')).toBe(true);
+      expect(isImageDeliveryUrl('https://cdn.imagedelivery.net/abc/img/public')).toBe(true);
+    });
+
+    it('rejeita hosts maliciosos que contêm a string mas não são o host', () => {
+      expect(isImageDeliveryUrl('https://evil.com/?x=imagedelivery.net')).toBe(false);
+      expect(isImageDeliveryUrl('https://imagedelivery.net.evil.com/img')).toBe(false);
+      expect(isImageDeliveryUrl('https://evil.com/imagedelivery.net/img')).toBe(false);
+    });
+
+    it('rejeita nulo, vazio e URLs malformadas', () => {
+      expect(isImageDeliveryUrl(null)).toBe(false);
+      expect(isImageDeliveryUrl(undefined)).toBe(false);
+      expect(isImageDeliveryUrl('')).toBe(false);
+      expect(isImageDeliveryUrl('/relativo/img.png')).toBe(false);
+      expect(isImageDeliveryUrl('não-é-url')).toBe(false);
+    });
+
+    it('getCdnUrl/getSrcSet ignoram URLs com host forjado', () => {
+      const forged = 'https://evil.com/imagedelivery.net/abc/img/public';
+      expect(getCdnUrl(forged)).toBe(forged); // não transforma
+      expect(getSrcSet(forged)).toBeUndefined();
     });
   });
 

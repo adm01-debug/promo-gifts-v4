@@ -1,7 +1,8 @@
 /**
  * Configuração centralizada de status de orçamentos
- * Fonte única de verdade para labels, cores e estilos de cada status.
+ * Fonte única de verdade para labels, cores, estilos e transições válidas.
  */
+import type { QuoteStatus } from '@/types/quote';
 
 export interface QuoteStatusConfig {
   label: string;
@@ -89,4 +90,26 @@ export function getQuoteStatusLabel(status: string): string {
 /** Helper: get status color for charts */
 export function getQuoteStatusColor(status: string): string {
   return QUOTE_STATUS_CONFIG[status]?.color || 'hsl(var(--muted-foreground))';
+}
+
+/**
+ * Valid status transitions for quotes (SSOT — enforced at service layer).
+ * Terminal states (converted, cancelled) have empty arrays: no outgoing transitions.
+ */
+export const QUOTE_VALID_TRANSITIONS: Readonly<Record<QuoteStatus, readonly QuoteStatus[]>> = {
+  draft: ['pending', 'pending_approval', 'sent', 'cancelled'],
+  pending_approval: ['draft', 'pending', 'cancelled'],
+  pending: ['draft', 'sent', 'expired', 'cancelled'],
+  sent: ['approved', 'rejected', 'viewed', 'pending', 'expired', 'cancelled'],
+  viewed: ['approved', 'rejected', 'pending', 'expired', 'cancelled'],
+  approved: ['converted', 'sent', 'cancelled'],
+  converted: [],
+  rejected: ['draft', 'sent', 'cancelled'],
+  expired: ['draft', 'pending', 'sent', 'cancelled'],
+  cancelled: [],
+};
+
+/** Returns true if moving from → to is a permitted transition. */
+export function isValidQuoteTransition(from: QuoteStatus, to: QuoteStatus): boolean {
+  return (QUOTE_VALID_TRANSITIONS[from] as readonly string[]).includes(to);
 }

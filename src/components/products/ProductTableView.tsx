@@ -572,7 +572,6 @@ export const ProductTableView = memo(
                 userSelectedColorName || getActiveColorName(product, activeColorFilter);
               const isSelected = selectionMode && selectedIds?.has(product.id);
 
-
               return (
                 <div
                   key={vr.key}
@@ -624,7 +623,12 @@ export const ProductTableView = memo(
                       style={{ touchAction: 'manipulation' }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) {
+                        if (
+                          variantPickerOpen ||
+                          collectionModalOpen ||
+                          shareDialogOpen ||
+                          quickViewOpen
+                        ) {
                           return;
                         }
                         quickViewTriggerRef.current = e.currentTarget;
@@ -635,7 +639,12 @@ export const ProductTableView = memo(
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) {
+                          if (
+                            variantPickerOpen ||
+                            collectionModalOpen ||
+                            shareDialogOpen ||
+                            quickViewOpen
+                          ) {
                             return;
                           }
                           quickViewTriggerRef.current = e.currentTarget;
@@ -696,7 +705,6 @@ export const ProductTableView = memo(
                       <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
                     )}
                   </div>
-
 
                   <div
                     className={cn(

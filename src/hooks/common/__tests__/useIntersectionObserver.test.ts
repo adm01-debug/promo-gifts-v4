@@ -41,7 +41,7 @@ class MockIntersectionObserver {
   constructor(cb: IOCallback) {
     this.callback = cb;
     MockIntersectionObserver.instances.push(this);
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this
     sharedIO = this;
   }
 

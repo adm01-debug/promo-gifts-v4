@@ -40,7 +40,7 @@ export function readFutureStockPreference(): FutureStockPreference {
     const win = (FUTURE_STOCK_WINDOWS as readonly number[]).includes(
       parsed.futureStockWindowDays as number,
     )
-      ? (parsed.futureStockWindowDays as FutureStockWindow)
+      ? parsed.futureStockWindowDays!
       : DEFAULT_FUTURE_STOCK_PREFERENCE.futureStockWindowDays;
     return { includeFutureStock: include, futureStockWindowDays: win };
   } catch {
@@ -120,7 +120,7 @@ export function useFutureStockShortcut(toggle: () => void, enabled = true): void
         const tag = target.tagName;
         const ceAttr = target.getAttribute?.('contenteditable');
         const isCE =
-          target.isContentEditable === true ||
+          target.isContentEditable ||
           ceAttr === '' ||
           ceAttr === 'true' ||
           ceAttr === 'plaintext-only';

@@ -42,6 +42,9 @@ export function QuoteVersionHistory({
     setIsCreating(false);
     if (newQuote?.id) {
       onCreateVersion?.();
+      // Refresh version list so it includes the new version when the user
+      // navigates back to the parent quote (avoids stale list).
+      await fetchVersions();
       navigate(`/orcamentos/${newQuote.id}`);
     }
   };

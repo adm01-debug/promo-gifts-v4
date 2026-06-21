@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file -- DefaultAccessPolicy is a private implementation detail of DevInfraGate, intentionally co-located */
 import { type GateFlagProvider, type GateValue } from './types';
 import { EnvGateProvider, LocalStorageGateProvider } from './providers';
 import type { AppRole } from '@/contexts/AuthContext';
@@ -12,7 +13,7 @@ export const DEFAULT_ALLOWED_ROLES: AppRole[] = ['dev', 'supervisor', 'admin'];
  * SRP: Define apenas o contrato de verificação de permissão.
  */
 export interface AccessPolicy {
-  hasAccess(roles: AppRole[]): boolean;
+  hasAccess: (roles: AppRole[]) => boolean;
 }
 
 /**
@@ -47,8 +48,8 @@ class DefaultAccessPolicy implements AccessPolicy {
 export class DevInfraGate {
   private readonly providers: GateFlagProvider[];
   private readonly accessPolicy: AccessPolicy;
-  private readonly cache: Map<string, boolean> = new Map();
-  private readonly listeners: Set<() => void> = new Set();
+  private readonly cache = new Map<string, boolean>();
+  private readonly listeners = new Set<() => void>();
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private envFlagCache: GateValue | null = null;
@@ -84,7 +85,7 @@ export class DevInfraGate {
    * Handler reativo a mudanças no localStorage.
    * Bug Fix: Agora trata `event.key === null`, que ocorre quando `localStorage.clear()` é chamado.
    */
-  private handleStorageEvent = (event: StorageEvent): void => {
+  private readonly handleStorageEvent = (event: StorageEvent): void => {
     const relevantKeys = ['show_dev_infra_messages', 'lov:bridge-metrics-overlay:open'];
     // Se o key for null, o storage foi limpo totalmente (localStorage.clear())
     if (event.key === null || relevantKeys.includes(event.key)) {

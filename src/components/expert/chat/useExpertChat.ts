@@ -127,7 +127,7 @@ export function useExpertChat({
   const handleAutoSend = useCallback((text: string) => {
     setInput(text);
     setTimeout(() => {
-      const sendBtn = document.querySelector('[data-oracle-send]') as HTMLButtonElement;
+      const sendBtn = document.querySelector<HTMLButtonElement>('[data-oracle-send]');
       sendBtn?.click();
     }, 50);
   }, []);

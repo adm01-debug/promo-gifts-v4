@@ -271,7 +271,7 @@ export default function Auth() {
           description =
             'Detectamos muitas tentativas seguidas. Por segurança, sua conta foi bloqueada por alguns minutos.';
           // Extrai o tempo de espera da mensagem do Supabase (ex: "after 47 seconds")
-          const secondsMatch = error.message.match(/after (\d+) seconds?/i);
+          const secondsMatch = /after (\d+) seconds?/i.exec(error.message);
           const waitSeconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 60;
           hint = `Aguarde ${waitSeconds} segundos antes de tentar novamente.`;
 
@@ -388,7 +388,7 @@ export default function Auth() {
         return;
       }
 
-      if (profileData && profileData.is_active === false) {
+      if (profileData?.is_active === false) {
         toast({
           variant: 'destructive',
           title: 'Acesso Bloqueado',

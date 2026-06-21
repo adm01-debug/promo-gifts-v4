@@ -8,5 +8,5 @@ export type GateValue = boolean | 'auto';
  * Segue o princípio de Interface Segregation do SOLID.
  */
 export interface GateFlagProvider {
-  getFlag(): GateValue;
+  getFlag: () => GateValue;
 }

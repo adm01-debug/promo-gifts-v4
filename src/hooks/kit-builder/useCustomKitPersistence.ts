@@ -167,7 +167,7 @@ export function useCustomKitPersistence() {
       try {
         await supabase
           .from('custom_kits')
-          .update({ last_used_at: new Date().toISOString() } as never)
+          .update({ last_used_at: new Date().toISOString() })
           .eq('id', kitId)
           .eq('user_id', user.id);
         queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -187,13 +187,13 @@ export function useCustomKitPersistence() {
           // Desfixa qualquer outro kit fixado primeiro
           await supabase
             .from('custom_kits')
-            .update({ is_pinned: false } as never)
+            .update({ is_pinned: false })
             .eq('user_id', user.id)
             .eq('is_pinned', true);
         }
         await supabase
           .from('custom_kits')
-          .update({ is_pinned: value } as never)
+          .update({ is_pinned: value })
           .eq('id', kitId)
           .eq('user_id', user.id);
         queryClient.invalidateQueries({ queryKey: QUERY_KEY });

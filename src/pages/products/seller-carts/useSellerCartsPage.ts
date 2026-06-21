@@ -84,12 +84,14 @@ export function useSellerCartsPage() {
   const weightVolume = useMemo(() => {
     if (!activeCart) return null;
     // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
-    const dimMap = new Map(allProducts.map((p) => [p.id, p]));
+    const dimMap = new Map(allProducts.map((p) => [p.id, p] as const));
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
-      const product = dimMap.get(item.product_id);
+      const product = dimMap.get(item.product_id) as
+        | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
+        | undefined;
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
@@ -317,6 +319,10 @@ export function useSellerCartsPage() {
           color_name: item.color_name || undefined,
           color_hex: item.color_hex || undefined,
           notes: item.notes ?? undefined,
+          // Preserva a ordem original ao desfazer (espelha o snapshot do CartHeaderButton):
+          // sem sort_order, restoreItems insere com sort_order nulo e o trigger reatribui
+          // MAX+1 em ordem não-determinística (Promise.all), embaralhando os itens.
+          sort_order: item.sort_order ?? undefined,
         }));
         restoreItems(activeCart.id, addItems);
       },

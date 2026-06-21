@@ -31,6 +31,7 @@ vi.mock('@/hooks/products', () => ({
   useSupplierSalesRanking: vi.fn(() => ({ data: new Map() })),
   useColorEnrichment: vi.fn(() => ({ data: new Map() })),
   useProductFuzzySearch: vi.fn(() => ({ results: [], hasSearch: false })),
+  noveltyToProduct: vi.fn(),
 }));
 
 // useCatalogState importa useCatalogFiltering por path direto, não pelo barrel.
@@ -88,7 +89,6 @@ global.IntersectionObserver = class IntersectionObserver {
   readonly root: Element | Document | null = null;
   readonly rootMargin: string = '';
   readonly thresholds: ReadonlyArray<number> = [];
-  constructor(_callback?: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
   disconnect() {}
   observe() {}
   unobserve() {}

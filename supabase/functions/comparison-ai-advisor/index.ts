@@ -1,13 +1,10 @@
-import { buildPublicCorsHeaders, getCorsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 import { authenticateRequest, requireRole, authErrorResponse } from '../_shared/auth.ts';
 // Comparison AI Advisor — Lovable AI Gateway
 // Recebe lista slim de produtos e retorna 3-5 bullets + bestFor highVolume/fastDelivery/premium.
 
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { safeErrorFields } from '../_shared/log-safety.ts';
-
-// Fallback CORS headers — sobrescritos per-request via getCorsHeaders(req).
-let corsHeaders: Record<string, string> = buildPublicCorsHeaders();
 
 const ProductSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
@@ -67,7 +64,8 @@ const ToolSchema = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: getCorsHeaders(req) });
 
-  corsHeaders = getCorsHeaders(req);
+  // Request-local: never share CORS state across concurrent requests in the isolate.
+  const corsHeaders = getCorsHeaders(req);
   // Auth: exige vendedor autenticado (agente ou acima)
   try {
     const authCtx = await authenticateRequest(req);

@@ -70,10 +70,12 @@ export function useProductsByCategory({
       // categoryIdsKey real) para o effect estabilizar. Ao reabilitar (enabled
       // true) ou trocar categorias, fetchProductIds muda de identidade e o
       // effect reavalia: sentinela !== categoryIdsKey → fetch dispara.
+      fetchTokenRef.current += 1; // supersede any in-flight fetch so its finally block won't set isLoading
+      setIsLoading(false);
       setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       setCategoriesCount((prev) => (prev === 0 ? prev : 0));
       setSource((prev) => (prev === null ? prev : null));
-      lastFetchedKey.current = '\0disabled:' + categoryIdsKey;
+      lastFetchedKey.current = `\0disabled:${categoryIdsKey}`;
       return;
     }
 
@@ -176,6 +178,8 @@ export function useCategoryDescendants(categoryIds: string[]) {
 
   useEffect(() => {
     if (categoryIdsKey === '') {
+      fetchTokenRef.current += 1; // supersede any in-flight fetch so its finally block won't set isLoading
+      setIsLoading(false);
       setDescendantIds((prev) => (prev.length === 0 ? prev : []));
       return;
     }

@@ -87,8 +87,8 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
             <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
           </Button>
         </div>
-        <div className="py-6 text-center text-muted-foreground">
-          <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" />
+        <div role="alert" className="py-6 text-center text-muted-foreground">
+          <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" aria-hidden="true" />
           <p>Produto não encontrado</p>
         </div>
       </div>
@@ -128,6 +128,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
           return (
             <button
               key={variant.id}
+              type="button"
               onClick={() => onSelect(variant, fullProduct)}
               className={cn(
                 'group relative flex flex-col items-center gap-1.5 rounded-lg border p-2 text-left transition-all duration-200',

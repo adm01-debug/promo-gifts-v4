@@ -46,8 +46,9 @@ export function useQuoteViewData(id: string | undefined) {
     if (data?.client_id) {
       try {
         const company = await selectCrmById<QuoteClientCompany>('companies', data.client_id);
-        // Only fall back to live company CNPJ if the quote has none stored.
-        if (!data.client_cnpj && company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
+        // Do NOT re-populate the CNPJ from the live company: the quote's client_cnpj is the
+        // source of truth and may have been intentionally cleared (clearable-CNPJ migrations
+        // 20260620120000/160000). Re-filling it here would resurrect a CNPJ the user removed.
         const bId = company?.bitrix_company_id ?? company?.bitrix_id;
         if (bId) setBitrixCompanyId(String(bId));
       } catch {
@@ -83,6 +84,20 @@ export function useQuoteViewData(id: string | undefined) {
     // Apenas 'fob_pre' (FOB Pré-negociado) tem custo no total. 'fob' = cliente paga, sem cost.
     const shipValue = quote.shipping_type === 'fob_pre' ? quote.shipping_cost || 0 : 0;
     const computedTotal = fullSubtotal - discountValue + shipValue;
+
+    // Persisted subtotal/discount/total are the SSOT: calculateQuoteTotals scales the
+    // aggregate once, whereas the per-line markup above rounds each unit price, so
+    // re-summing diverges by a few cents from what the list/dashboard/WhatsApp show
+    // (quote.total). Prefer the persisted values so the PDF total matches; fall back to the
+    // computed values for legacy rows that never persisted them.
+    const hasPersistedTotals = typeof quote.subtotal === 'number' && quote.subtotal > 0;
+    const displaySubtotal = hasPersistedTotals ? quote.subtotal : fullSubtotal;
+    const displayDiscount =
+      hasPersistedTotals && typeof quote.discount_amount === 'number'
+        ? quote.discount_amount
+        : discountValue;
+    const displayTotal =
+      typeof quote.total === 'number' && quote.total > 0 ? quote.total : computedTotal;
 
     return {
       quoteNumber: (quote.quote_number || '').replace(/\s+/g, ''),
@@ -136,11 +151,11 @@ export function useQuoteViewData(id: string | undefined) {
             notes: p.notes || undefined,
           })) ?? [],
       })),
-      subtotal: fullSubtotal,
-      discount: discountValue || undefined,
+      subtotal: displaySubtotal,
+      discount: displayDiscount || undefined,
       shippingCost: quote.shipping_cost || undefined,
       shippingType: quote.shipping_type || undefined,
-      total: computedTotal,
+      total: displayTotal,
       notes: quote.notes || undefined,
       paymentTerms: quote.payment_terms || undefined,
       deliveryTime: quote.delivery_time || undefined,

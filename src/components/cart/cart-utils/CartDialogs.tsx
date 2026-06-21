@@ -28,7 +28,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-          <Columns className="h-3.5 w-3.5" />
+          <Columns aria-hidden="true" className="h-3.5 w-3.5" />
           Comparar
         </Button>
       </DialogTrigger>
@@ -39,8 +39,11 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
         <ScrollArea className="max-h-[65vh]">
           <div className={cn('grid gap-4', carts.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
             {carts.map((cart) => {
-              const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
-              const totalQty = cart.items.reduce((s, i) => s + i.quantity, 0);
+              const subtotal = cart.items.reduce(
+                (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+                0,
+              );
+              const totalQty = cart.items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
               const statusCfg = getStatusCfg(cart.status);
               return (
                 <Card key={cart.id} className="space-y-3 p-4">
@@ -54,7 +57,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <Building2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
@@ -93,7 +96,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
                           />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                            <Package className="h-3 w-3 text-muted-foreground" />
+                            <Package aria-hidden="true" className="h-3 w-3 text-muted-foreground" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -130,7 +133,7 @@ export function SaveTemplateDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-          <Save className="h-3.5 w-3.5" />
+          <Save aria-hidden="true" className="h-3.5 w-3.5" />
           Salvar como Template
         </Button>
       </DialogTrigger>
@@ -139,17 +142,29 @@ export function SaveTemplateDialog({
           <DialogTitle>Salvar Template de Carrinho</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <Input
-            placeholder='Ex: "Kit Onboarding"'
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Textarea
-            placeholder="Descrição opcional..."
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            rows={2}
-          />
+          <div className="space-y-1.5">
+            <label htmlFor="dlg-tpl-name" className="text-sm font-medium">
+              Nome do template
+            </label>
+            <Input
+              id="dlg-tpl-name"
+              placeholder='Ex: "Kit Onboarding"'
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="dlg-tpl-desc" className="text-sm font-medium text-muted-foreground">
+              Descrição <span className="font-normal">(opcional)</span>
+            </label>
+            <Textarea
+              id="dlg-tpl-desc"
+              placeholder="Descreva o propósito deste template..."
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              rows={2}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">
             {cart.items.length} itens serão salvos no template
           </p>
@@ -197,7 +212,7 @@ export function LoadTemplateDialog({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-          <BookTemplate className="h-3.5 w-3.5" />
+          <BookTemplate aria-hidden="true" className="h-3.5 w-3.5" />
           Usar Template ({templates.length})
         </Button>
       </DialogTrigger>
@@ -229,10 +244,11 @@ export function LoadTemplateDialog({
                     <Button
                       size="sm"
                       variant="ghost"
+                      aria-label={`Excluir template ${t.name}`}
                       className="h-7 text-xs text-destructive"
                       onClick={() => onDelete(t.id)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 aria-hidden="true" className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>

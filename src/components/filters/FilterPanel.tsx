@@ -322,10 +322,17 @@ export function FilterPanel({
             const config = SECTION_CONFIG[sId];
             if (!config) return false;
             if (!state.sectionMatchesSearch(sId, config.title)) return false;
-            // SF-D: Técnicas ocultas até a tabela personalization_techniques ter
-            // dados no DB. Quando techniqueOptions.length > 0 a seção aparece
-            // automaticamente sem precisar alterar este arquivo.
-            if (sId === 'tecnicas' && state.techniqueOptions.length === 0) return false;
+            // SF-TECNICAS-DEAD-FILTER FIX: a seção Técnicas era exibida assim que
+            // personalization_techniques tinha qualquer linha (techniqueOptions > 0),
+            // mas a FILTRAGEM por técnica é um no-op estrutural: nenhum mapper hidrata
+            // product.metadata.techniques (catálogo leve E completo), então
+            // `techniquesDataAvailable` é SEMPRE false → selecionar uma técnica não
+            // filtra nada, não gera chip nem entra no activeFiltersCount, apesar de a
+            // seção mostrar um badge. Era um controle "morto" e enganoso. Ocultamos a
+            // seção até existir filtragem server-side por técnica (futuro
+            // useProductsByTechnique + RPC, análogo a cor/material/metadados). Quando
+            // isso existir, troque esta linha pelo gate de disponibilidade real.
+            if (sId === 'tecnicas') return false;
             if (sId === 'tags' && state.tagOptions.length === 0) return false;
             return true;
           });

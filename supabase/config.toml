@@ -93,6 +93,15 @@ verify_jwt = false
 [functions.word-magic]
 verify_jwt = true
 
+# Mockup module: pin gateway JWT enforcement so the in-function authenticateRequest()
+# is backed by gateway-level verify_jwt (defense-in-depth) and the posture is explicit
+# in source — protects against silent drift/reverts of these production endpoints.
+[functions.generate-mockup]
+verify_jwt = true
+
+[functions.analyze-logo-colors]
+verify_jwt = true
+
 [auth]
 enable_signup = false
 enable_anonymous_sign_ins = false

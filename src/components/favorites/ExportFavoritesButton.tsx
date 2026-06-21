@@ -32,7 +32,7 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 function csvEscape(v: unknown): string {
@@ -144,7 +144,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
       const cellH = (pageH - margin * 2 - 20) / rowsPerPage;
 
       // Strip non-Latin-1 chars for jsPDF Helvetica (Latin-1 only)
-      const sanitize = (s: string) => s.replace(/[\u0100-\uFFFF]/g, '?');
+      const sanitize = (s: string) => s.replace(/[^\x20-\xFF]/g, '?');
       // Header
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
@@ -211,7 +211,7 @@ export function ExportFavoritesButton({ products, rawItems, listName }: Props) {
         if (variant) doc.text(`Cor: ${variant}`, x + 4, y + cellH * 0.6 + 28);
         if (note) {
           // Strip non-Latin-1 chars (jsPDF built-in Helvetica is Latin-1 only)
-          const safeNote = note.replace(/[^ -\xFF]/g, '?');
+          const safeNote = note.replace(/[^\x20-\xFF]/g, '?');
           const noteLines = doc.splitTextToSize(`Nota: ${safeNote}`, cellW - 8).slice(0, 2);
           doc.text(noteLines, x + 4, y + cellH * 0.6 + 33);
         }

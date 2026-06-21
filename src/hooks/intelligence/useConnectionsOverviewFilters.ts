@@ -35,8 +35,9 @@ export function applyFilters(
   consecutiveFailuresMap?: Map<string, ConsecutiveFailureInfo>,
   now: number = Date.now(),
 ): OverviewRow[] {
+  const typesSet = new Set(filters.types);
   return rows.filter((r) => {
-    if (filters.types.length > 0 && !filters.types.includes(r.type)) return false;
+    if (typesSet.size > 0 && !typesSet.has(r.type)) return false;
 
     if (filters.status === 'ok' && r.last_test_ok !== true) return false;
     if (filters.status === 'fail' && r.last_test_ok !== false) return false;

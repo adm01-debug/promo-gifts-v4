@@ -81,11 +81,26 @@ const CDN_VARIANTS: Record<CdnVariant, string> = {
 };
 
 /**
+ * True só quando o HOST da URL é (sub)domínio de imagedelivery.net.
+ * Valida o hostname parseado em vez de `includes(...)` — um substring match
+ * aceitaria `https://evil.com/?x=imagedelivery.net` ou `imagedelivery.net.evil.com`.
+ */
+export function isImageDeliveryUrl(url: string | null | undefined): url is string {
+  if (!url) return false;
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'imagedelivery.net' || hostname.endsWith('.imagedelivery.net');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Gera URL do CDN com variante de tamanho.
  */
 export function getCdnUrl(url: string | null | undefined, variant: CdnVariant = 'public'): string {
   if (!url) return '/placeholder.svg';
-  if (url.includes('imagedelivery.net')) {
+  if (isImageDeliveryUrl(url)) {
     // Remove variante existente e aplica a nova
     const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
     return `${base}${CDN_VARIANTS[variant]}`;
@@ -97,7 +112,7 @@ export function getCdnUrl(url: string | null | undefined, variant: CdnVariant = 
  * Gera srcSet para imagens responsivas.
  */
 export function getSrcSet(url: string | null | undefined): string | undefined {
-  if (!url || !url.includes('imagedelivery.net')) return undefined;
+  if (!isImageDeliveryUrl(url)) return undefined;
   const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
   return [
     `${base}/thumbnail 150w`,
@@ -319,7 +334,7 @@ export const GALLERY_TYPES: ImageTypeCode[] = [
 ];
 
 /** Tipos técnicos — documentação/embalagem, não aparecem na galeria */
-export const TECHNICAL_IMAGE_TYPES: Set<string> = new Set([
+export const TECHNICAL_IMAGE_TYPES = new Set<string>([
   'box',
   'pouch',
   'location',

@@ -43,6 +43,7 @@ vi.mock('@/hooks/products', () => ({
   getCategoryIcon: () => '📦',
   useProductIntelligence: () => ({ badges: [] }),
   useProductIntelligenceBadges: () => ({ badges: [] }),
+  noveltyToProduct: vi.fn(),
 }));
 
 vi.mock('@/hooks/products/useCategoryIcons', () => ({

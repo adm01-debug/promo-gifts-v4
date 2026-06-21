@@ -24,7 +24,15 @@
  *     dispara duas ações sensíveis em paralelo e a primeira "rouba" o token
  *     destinado à segunda.
  */
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { StepUpAuthDialog } from '@/components/auth/StepUpAuthDialog';
 import type { StepUpAction } from '@/hooks/auth';
 
@@ -93,7 +101,7 @@ export function DevChallengeProvider({ children }: { children: ReactNode }) {
     const pending = pendingRef.current;
     // Apenas a solicitação mais recente pode consumir o token. Se uma nova
     // solicitação superou esta, descartamos o token silenciosamente.
-    if (!pending || pending.requestId !== requestId) {
+    if (pending?.requestId !== requestId) {
       setOpen(false);
       return;
     }
@@ -103,8 +111,10 @@ export function DevChallengeProvider({ children }: { children: ReactNode }) {
     pending.resolve(token);
   };
 
+  const value = useMemo(() => ({ challenge }), [challenge]);
+
   return (
-    <DevChallengeContext.Provider value={{ challenge }}>
+    <DevChallengeContext.Provider value={value}>
       {children}
       {current && (
         <StepUpAuthDialog

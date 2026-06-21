@@ -149,7 +149,7 @@ jobs:
           PW_VER=$(node -p "require('./node_modules/@playwright/test/package.json').version")
           echo "version=$PW_VER" >> "$GITHUB_OUTPUT"
           ENGINE_VAR="PW_BROWSER_${{ matrix.project }}"
-          ENGINE="${!ENGINE_VAR}"
+          ENGINE="$(printenv "${ENGINE_VAR}")"
           echo "engine=$ENGINE" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers

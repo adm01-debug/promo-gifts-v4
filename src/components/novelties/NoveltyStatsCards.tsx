@@ -11,7 +11,6 @@ import { useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-
 import { logger } from '@/lib/logger';
 
 /**

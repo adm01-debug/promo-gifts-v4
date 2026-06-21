@@ -146,8 +146,17 @@ export function LogoPreviewCanvas({
             {techniqueColorConfig && (
               <Badge
                 variant="outline"
+                role="button"
+                tabIndex={0}
+                aria-label="Configurar cores da técnica"
                 className="cursor-pointer gap-1 bg-background/90 text-[10px] backdrop-blur-sm hover:bg-accent"
                 onClick={onColorConfigClick}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onColorConfigClick?.();
+                  }
+                }}
               >
                 <Palette className="h-3 w-3" />
                 {techniqueColorConfig.category === 'laser'

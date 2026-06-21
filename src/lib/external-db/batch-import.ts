@@ -45,8 +45,7 @@ export interface ImportRow {
   box_quantity?: number | null;
   box_volume_cm3?: number | null;
   box_image?: string | null;
-  // Mídia
-  image_url?: string | null;
+  // Mídia (NOTE: `products` has no `image_url` column — use `primary_image_url`)
   primary_image_url?: string | null;
   og_image_url?: string | null;
   // Flags
@@ -61,6 +60,20 @@ export interface ImportRow {
   gender?: string | null;
   dimensions?: string | null;
   [key: string]: unknown;
+}
+
+/**
+ * Defensive: `products` has no `image_url` column. If a row still carries one (e.g. a CSV
+ * header literally named "image_url"), fold it into `primary_image_url` so the chunk insert
+ * does not fail with PGRST204 ("Could not find the 'image_url' column").
+ */
+export function sanitizeImportRow(row: ImportRow): ImportRow {
+  if (!('image_url' in row)) return row;
+  const { image_url, ...rest } = row as ImportRow & { image_url?: unknown };
+  if (image_url && !rest.primary_image_url) {
+    rest.primary_image_url = String(image_url);
+  }
+  return rest;
 }
 
 export interface BatchImportProgress {
@@ -151,8 +164,10 @@ export async function executeBatchImport(
     try {
       const response = await dbInvoke<{ id: string; sku: string; name: string }>({
         table: 'products',
-        operation: 'batch_insert',
-        data: chunk as unknown as Record<string, unknown>,
+        // upsert mode targets the unique `sku` index so existing products are updated
+        // instead of throwing a 23505 unique violation.
+        operation: mode === 'upsert' ? 'upsert' : 'batch_insert',
+        data: chunk.map(sanitizeImportRow) as unknown as Record<string, unknown>,
         ...(mode === 'upsert' ? { onConflict: 'sku' } : {}),
       });
 

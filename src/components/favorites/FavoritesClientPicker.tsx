@@ -141,7 +141,9 @@ export function FavoritesClientPicker({ selectedClientId, selectedClientName, on
             ))}
             {list.length === 0 && !isLoading && (
               <p className="py-4 text-center text-xs text-muted-foreground">
-                Nenhuma empresa encontrada
+                {debounced.length < 2
+                  ? 'Digite pelo menos 2 caracteres para buscar'
+                  : 'Nenhuma empresa encontrada'}
               </p>
             )}
           </div>

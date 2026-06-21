@@ -106,8 +106,11 @@ export default function FavoritesPage() {
   useUndoStack();
   useLegacyFavoritesMigration();
 
-  const { favorites, clearFavorites, favoriteCount, toggleFavorite, isFavorite } =
-    useFavoritesStore();
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const clearFavorites = useFavoritesStore((s) => s.clearFavorites);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
 
   const { lists, createList, updateList, deleteList, generateShareToken, revokeShareToken } =
     useFavoriteLists();
@@ -142,7 +145,8 @@ export default function FavoritesPage() {
     }
   }, [lists, selectedListId]);
 
-  const { enriched, rawItems, removeItem, removeItems, updateItem } = useEnrichedFavoriteItems(selectedListId);
+  const { enriched, rawItems, removeItem, removeItems, updateItem } =
+    useEnrichedFavoriteItems(selectedListId);
   const isRemoteListView = !!selectedListId && !showTrash;
 
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
@@ -262,7 +266,10 @@ export default function FavoritesPage() {
     if (searchQuery.trim()) {
       // FIX 2026-06-15 (favorites-search-accent): NFD strip espelhando PR #755/#750.
       const norm = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        s
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
       const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
@@ -312,7 +319,8 @@ export default function FavoritesPage() {
   const selectedIds = sel.selectedIds;
 
   const stats = useMemo(() => {
-    const source = isRemoteListView ? productsWithVariant : legacyFavoriteProducts;
+    // Use filteredProducts so stats reflect what's visible (respects search + price-drop filter)
+    const source = filteredProducts;
     if (source.length === 0) return null;
     const prices = source.map((p) => p.price ?? 0).filter((v) => v > 0);
     return {
@@ -321,7 +329,7 @@ export default function FavoritesPage() {
       minPrice: prices.length ? Math.min(...prices) : 0,
       maxPrice: prices.length ? Math.max(...prices) : 0,
     };
-  }, [productsWithVariant, legacyFavoriteProducts, isRemoteListView]);
+  }, [filteredProducts]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);

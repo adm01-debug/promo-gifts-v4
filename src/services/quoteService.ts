@@ -15,6 +15,11 @@ import {
   round2,
 } from '@/hooks/quotes/quoteHelpers';
 import { sanitizeMessage } from '@/lib/security/sanitize-message';
+import {
+  QUOTE_STATUS_CONFIG,
+  isValidQuoteTransition,
+} from '@/lib/quote-status-config';
+import type { QuoteStatus } from '@/types/quote';
 
 import { logger } from '@/lib/logger';
 export const quoteService = {
@@ -197,6 +202,24 @@ export const quoteService = {
   },
 
   async updateQuoteStatus(quoteId: string, status: Quote['status']) {
+    // Fetch current status to enforce valid transition at the service layer.
+    // rls-allow: SELECT por id; RLS (can_access_quote) valida ownership
+    const { data: current, error: fetchErr } = await supabase
+      .from('quotes')
+      .select('status')
+      .eq('id', quoteId)
+      .single();
+    if (fetchErr) throw fetchErr;
+    if (!current) throw new Error('Orçamento não encontrado');
+
+    const fromStatus = current.status as QuoteStatus;
+    const toStatus = status as QuoteStatus;
+    if (fromStatus !== toStatus && !isValidQuoteTransition(fromStatus, toStatus)) {
+      const fromLabel = QUOTE_STATUS_CONFIG[fromStatus]?.label ?? fromStatus;
+      const toLabel = QUOTE_STATUS_CONFIG[toStatus]?.label ?? toStatus;
+      throw new Error(`Transição de status inválida: "${fromLabel}" → "${toLabel}"`);
+    }
+
     // rls-allow: UPDATE de status por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').update({ status }).eq('id', quoteId);
     if (error) throw error;

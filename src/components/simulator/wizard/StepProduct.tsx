@@ -145,8 +145,11 @@ export function StepProduct({ wizard }: StepProductProps) {
               className="h-7 shrink-0 gap-1.5 rounded-lg text-xs"
               onClick={() => {
                 if (draft.product_data) {
-                  wizard.selectProduct(draft.product_data);
-                  wizard.setQuantity(draft.quantity);
+                  wizard.loadDraft({
+                    product: draft.product_data,
+                    quantity: draft.quantity,
+                    personalizations: draft.personalizations ?? [],
+                  });
                 }
               }}
             >
@@ -221,19 +224,7 @@ export function StepProduct({ wizard }: StepProductProps) {
                 <button
                   key={tip}
                   type="button"
-                  onClick={() => {
-                    const input =
-                      document.querySelector<HTMLInputElement>('[data-simulator-search]');
-                    if (input) {
-                      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                        window.HTMLInputElement.prototype,
-                        'value',
-                      )?.set;
-                      nativeInputValueSetter?.call(input, tip);
-                      input.dispatchEvent(new Event('input', { bubbles: true }));
-                      input.focus();
-                    }
-                  }}
+                  onClick={() => setSearchTerm(tip)}
                   className="rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium transition-all hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
                 >
                   {tip}

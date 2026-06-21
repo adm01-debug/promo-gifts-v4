@@ -131,7 +131,7 @@ export function FocusTrap({
         tabIndex={active ? 0 : -1}
         onFocus={focusLast}
         style={SENTINEL_STYLE}
-        aria-hidden="true"
+        aria-hidden={active ? undefined : true}
       />
 
       {children}
@@ -141,7 +141,7 @@ export function FocusTrap({
         tabIndex={active ? 0 : -1}
         onFocus={focusFirst}
         style={SENTINEL_STYLE}
-        aria-hidden="true"
+        aria-hidden={active ? undefined : true}
       />
     </div>
   );

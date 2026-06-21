@@ -169,4 +169,55 @@ describe('Theme Presets Consistency & Contrast', () => {
       expect(['classic', 'gx']).toContain(preset.category);
     });
   });
+
+  // BUG-THEME-17 regression: boostGlowAlpha must boost the FIRST alpha only.
+  // For two-component dark shadows like `0 0 30px hsl(H / 0.4), 0 0 60px hsl(H / 0.15)`,
+  // the core neon glow (first, 0.4) must be boosted; the ambient (second, 0.15) stays.
+  describe('GX dark shadow-glow: core neon boosted, ambient preserved (BUG-THEME-17)', () => {
+    const GX_PRESETS = THEME_PRESETS.filter((p) => p.category === 'gx');
+
+    it.each(GX_PRESETS)(
+      'preset $name ($id) dark shadow-glow must not end with a high-alpha ambient component',
+      (preset) => {
+        const shadow = preset.dark['shadow-glow'];
+        // Multi-component shadows are comma-separated.
+        // If two components exist, the last alpha (ambient) must be < 0.3.
+        const components = shadow.split(',');
+        if (components.length >= 2) {
+          const lastComponent = components[components.length - 1];
+          const lastAlphaMatch = /\/\s*([0-9.]+)\s*\)/.exec(lastComponent);
+          if (lastAlphaMatch) {
+            const lastAlpha = parseFloat(lastAlphaMatch[1]);
+            expect
+              .soft(
+                lastAlpha,
+                `${preset.id} dark shadow-glow ambient alpha ${lastAlpha} should be < 0.3 (boostGlowAlpha must target the FIRST component)`,
+              )
+              .toBeLessThan(0.3);
+          }
+        }
+      },
+    );
+
+    it.each(GX_PRESETS)(
+      'preset $name ($id) dark shadow-glow-primary must not end with a high-alpha ambient component',
+      (preset) => {
+        const shadow = preset.dark['shadow-glow-primary'];
+        const components = shadow.split(',');
+        if (components.length >= 2) {
+          const lastComponent = components[components.length - 1];
+          const lastAlphaMatch = /\/\s*([0-9.]+)\s*\)/.exec(lastComponent);
+          if (lastAlphaMatch) {
+            const lastAlpha = parseFloat(lastAlphaMatch[1]);
+            expect
+              .soft(
+                lastAlpha,
+                `${preset.id} dark shadow-glow-primary ambient alpha ${lastAlpha} should be < 0.3`,
+              )
+              .toBeLessThan(0.3);
+          }
+        }
+      },
+    );
+  });
 });

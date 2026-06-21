@@ -3,7 +3,15 @@
  * Expõe dados e operações do carrinho em toda a aplicação
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import {
   useSellerCarts,
   type SellerCart,
@@ -30,13 +38,17 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => void;
-  addToActiveCart: (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => void;
+  addToActiveCart: (
+    item: AddToCartInput,
+    cartId?: string,
+    options?: { silent?: boolean },
+  ) => Promise<boolean>;
   removeItem: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
   updateItemNotes: (itemId: string, notes: string) => void;
   updateItemSortOrder: (items: { id: string; sort_order: number }[]) => void;
   updateCartNotes: (cartId: string, notes: string) => void;
-  flushCartNotes: (cartId: string, notes: string) => Promise<void>;
+  flushCartNotes: (cartId: string, notes: string) => Promise<boolean>;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
@@ -88,14 +100,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  const resolvedActiveCartId =
-    activeCartId && carts.find((c) => c.id === activeCartId)
-      ? activeCartId
-      : carts.length > 0
-        ? carts[0].id
-        : null;
+  const resolvedActiveCartId = useMemo(
+    () =>
+      activeCartId && carts.find((c) => c.id === activeCartId)
+        ? activeCartId
+        : carts.length > 0
+          ? carts[0].id
+          : null,
+    [activeCartId, carts],
+  );
 
-  const activeCart = carts.find((c) => c.id === resolvedActiveCartId) || null;
+  const activeCart = useMemo(
+    () => carts.find((c) => c.id === resolvedActiveCartId) ?? null,
+    [carts, resolvedActiveCartId],
+  );
 
   // Persiste apenas selecoes explicitas (nao-nulas) sob a chave do usuario. Nao
   // persistir null impede o clobber do valor recem-hidratado no primeiro render.
@@ -117,7 +135,10 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           toast.success(`Carrinho criado para ${input.company_name}`);
         }
         return result;
-      } catch {
+      } catch (err) {
+        toast.error('Erro ao criar carrinho', {
+          description: err instanceof Error ? err.message : 'Tente novamente',
+        });
         return undefined;
       }
     },
@@ -126,54 +147,67 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const deleteCart = useCallback(
     (cartId: string) => {
-      deleteCartMutation.mutate(cartId);
-      clearActionHistory(cartId);
-      if (activeCartId === cartId) {
-        setActiveCartId(null);
-        // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
-        if (user?.id) {
-          try {
-            localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
-          } catch {
-            // no-op: storage unavailable
+      // Limpa histórico/seleção SOMENTE após o delete confirmar. Antes isso rodava
+      // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
+      // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
+      deleteCartMutation.mutate(cartId, {
+        onSuccess: () => {
+          clearActionHistory(cartId);
+          if (activeCartId === cartId) {
+            setActiveCartId(null);
+            // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
+            if (user?.id) {
+              try {
+                localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
+              } catch {
+                // no-op: storage unavailable
+              }
+            }
           }
-        }
-      }
+        },
+      });
     },
     [deleteCartMutation, activeCartId, user?.id],
   );
 
+  // Retorna Promise<boolean> (true = adicionado) para que chamadores em lote
+  // (bulk/template) consigam aguardar e reportar contagem real de sucesso/falha
+  // em vez de assumir sucesso (fire-and-forget). Nunca rejeita: o onError do
+  // mutation já exibe o toast de falha; aqui devolvemos false.
   const addToActiveCart = useCallback(
-    (item: AddToCartInput, cartId?: string, options?: { silent?: boolean }) => {
+    async (
+      item: AddToCartInput,
+      cartId?: string,
+      options?: { silent?: boolean },
+    ): Promise<boolean> => {
       const targetId = cartId || resolvedActiveCartId;
 
       if (!targetId) {
         toast.error('Selecione uma empresa antes de adicionar produtos', {
           description: 'Crie um carrinho vinculado a uma empresa primeiro.',
         });
-        return;
+        return false;
       }
 
       const targetCart = carts.find((c) => c.id === targetId);
 
-      addItem.mutate(
-        { cartId: targetId, item },
-        {
-          onSuccess: () => {
-            // silent: usado em lote (template/bulk) onde o chamador exibe um
-            // único toast agregado — evita N toasts empilhados.
-            if (!options?.silent) {
-              toast.success(`${item.product_name} adicionado ao carrinho`, {
-                description: targetCart?.company_name,
-              });
-            }
-            // Update active cart if we explicitly added to a specific one
-            if (cartId && cartId !== resolvedActiveCartId) {
-              setActiveCartId(cartId);
-            }
-          },
-        },
-      );
+      try {
+        await addItem.mutateAsync({ cartId: targetId, item });
+        // silent: usado em lote (template/bulk) onde o chamador exibe um
+        // único toast agregado — evita N toasts empilhados.
+        if (!options?.silent) {
+          toast.success(`${item.product_name} adicionado ao carrinho`, {
+            description: targetCart?.company_name,
+          });
+        }
+        // Update active cart if we explicitly added to a specific one
+        if (cartId && cartId !== resolvedActiveCartId) {
+          setActiveCartId(cartId);
+        }
+        return true;
+      } catch {
+        return false;
+      }
     },
     [resolvedActiveCartId, addItem, carts],
   );
@@ -214,14 +248,15 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   // Awaitable version of updateCartNotes for the pre-navigation flush path.
-  // Errors are swallowed intentionally: a failed notes save must not block
-  // the navigation or quote generation flow.
+  // Returns true when the save succeeds, false on error — caller decides
+  // whether to warn the user. Navigation always proceeds (non-blocking).
   const flushCartNotes = useCallback(
-    async (cartId: string, notes: string) => {
+    async (cartId: string, notes: string): Promise<boolean> => {
       try {
         await updateCartNotesMutation.mutateAsync({ cartId, notes });
+        return true;
       } catch {
-        // non-blocking: navigation proceeds regardless
+        return false;
       }
     },
     [updateCartNotesMutation],
@@ -275,36 +310,58 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [restoreItemsMutation],
   );
 
-  return (
-    <SellerCartContext.Provider
-      value={{
-        carts,
-        activeCart,
-        activeCartId: resolvedActiveCartId,
-        isLoading,
-        totalItems,
-        canCreateCart,
-        setActiveCartId,
-        createCart,
-        deleteCart,
-        addToActiveCart,
-        removeItem,
-        updateItemQuantity,
-        updateItemNotes,
-        updateItemSortOrder,
-        updateCartNotes,
-        flushCartNotes,
-        updateCartStatus,
-        duplicateCart: duplicateCartFn,
-        moveItemToCart,
-        duplicateItemToCart,
-        clearCart,
-        restoreItems,
-      }}
-    >
-      {children}
-    </SellerCartContext.Provider>
+  const ctxValue = useMemo(
+    () => ({
+      carts,
+      activeCart,
+      activeCartId: resolvedActiveCartId,
+      isLoading,
+      totalItems,
+      canCreateCart,
+      setActiveCartId,
+      createCart,
+      deleteCart,
+      addToActiveCart,
+      removeItem,
+      updateItemQuantity,
+      updateItemNotes,
+      updateItemSortOrder,
+      updateCartNotes,
+      flushCartNotes,
+      updateCartStatus,
+      duplicateCart: duplicateCartFn,
+      moveItemToCart,
+      duplicateItemToCart,
+      clearCart,
+      restoreItems,
+    }),
+    [
+      carts,
+      activeCart,
+      resolvedActiveCartId,
+      isLoading,
+      totalItems,
+      canCreateCart,
+      setActiveCartId,
+      createCart,
+      deleteCart,
+      addToActiveCart,
+      removeItem,
+      updateItemQuantity,
+      updateItemNotes,
+      updateItemSortOrder,
+      updateCartNotes,
+      flushCartNotes,
+      updateCartStatus,
+      duplicateCartFn,
+      moveItemToCart,
+      duplicateItemToCart,
+      clearCart,
+      restoreItems,
+    ],
   );
+
+  return <SellerCartContext.Provider value={ctxValue}>{children}</SellerCartContext.Provider>;
 }
 
 /** useSellerCartContext — lança erro se o contexto estiver ausente (uso normal). */

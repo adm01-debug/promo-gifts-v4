@@ -179,7 +179,7 @@ export async function fetchOptionForTechnique(
     );
   }
 
-  const cobraPorCor = area.cobra_por_cor !== false;
+  const cobraPorCor = area.cobra_por_cor;
   const effectiveColors =
     !cobraPorCor || (area.max_colors ?? 0) <= 1 ? 1 : Math.max(1, settings.colors);
 
@@ -189,7 +189,10 @@ export async function fetchOptionForTechnique(
     p_num_cores: effectiveColors,
   };
 
-  if (settings.width > 0 && settings.height > 0) {
+  // Só envia dimensões para tabelas que usam faixa dimensional. Enviar largura/altura
+  // a uma técnica não-dimensional (ex.: Serigrafia/UV em caneta) faz o RPC não
+  // retornar preço → caía no fallback heurístico em vez do preço oficial.
+  if (area.usa_dimensao && settings.width > 0 && settings.height > 0) {
     rpcParams.p_largura_cm = settings.width;
     rpcParams.p_altura_cm = settings.height;
   }

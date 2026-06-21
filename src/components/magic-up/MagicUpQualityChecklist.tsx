@@ -10,7 +10,7 @@ export function MagicUpQualityChecklist({ diagnosis }: MagicUpQualityChecklistPr
   return (
     <section className="rounded-lg border bg-muted/30 p-3" aria-label="Checklist de curadoria">
       <p className="text-sm font-semibold">Checklist comercial</p>
-      <ul role="list" className="mt-2 space-y-2">
+      <ul className="mt-2 space-y-2">
         {diagnosis.criteria.map((criterion) => (
           <li key={criterion.id} className="flex items-start gap-2 rounded-md bg-background/60 p-2">
             {criterion.passed ? (

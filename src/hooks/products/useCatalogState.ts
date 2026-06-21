@@ -105,6 +105,7 @@ export function validateSortOption(s: string | null | undefined): SortOption {
   // para o state, URL sync e <Select value>. Object.hasOwn seria ideal mas e
   // ES2022 e o tsconfig.app usa lib ES2020; hasOwnProperty.call e ES5, sempre
   // tipado, e considera apenas chaves proprias do objeto literal.
+  // eslint-disable-next-line prefer-object-has-own -- tsconfig.app targets ES2020; Object.hasOwn is ES2022
   if (Object.prototype.hasOwnProperty.call(SORT_ALIASES, s)) {
     return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
   }
@@ -133,9 +134,13 @@ export function useCatalogState() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { isFavorite, toggleFavorite: baseToggleFavorite, favoriteCount } = useFavoritesStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const baseToggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const favQuickAdd = useFavoriteQuickAdd();
-  const { isInCompare, toggleCompare: baseToggleCompare, canAddMore } = useComparisonStore();
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const baseToggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
 
   const toggleFavorite = useCallback(
     (productId: string) => {
@@ -876,11 +881,11 @@ export function useCatalogState() {
 
   const handleFavoriteProduct = useCallback(
     (product: Product, e?: React.MouseEvent) => {
-      const result = favQuickAdd.handleFavoriteClick(product as never, { shiftKey: e?.shiftKey });
+      const result = favQuickAdd.handleFavoriteClick(product, { shiftKey: e?.shiftKey });
       if (!result.resolved && result.reason === 'picker-needed') {
         const target = favQuickAdd.defaultList;
         if (target) {
-          void favQuickAdd.addToList(target.id, product as never);
+          void favQuickAdd.addToList(target.id, product);
           toast({
             title: 'Adicionado aos Favoritos',
             description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,

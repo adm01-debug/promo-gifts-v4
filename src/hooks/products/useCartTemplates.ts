@@ -32,6 +32,21 @@ export interface CartTemplate {
 
 const QUERY_KEY = 'cart-templates';
 
+// Runtime guard: rejeita itens que não tenham os campos obrigatórios para evitar
+// crash no componente ao renderizar um template com JSON malformado no banco.
+function parseTemplateItems(raw: unknown): CartTemplateItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (item): item is CartTemplateItem =>
+      item !== null &&
+      typeof item === 'object' &&
+      typeof (item as Record<string, unknown>).product_id === 'string' &&
+      typeof (item as Record<string, unknown>).product_name === 'string' &&
+      typeof (item as Record<string, unknown>).product_price === 'number' &&
+      typeof (item as Record<string, unknown>).quantity === 'number',
+  );
+}
+
 export function useCartTemplates() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -49,7 +64,7 @@ export function useCartTemplates() {
       if (error) throw error;
       return (data || []).map((t) => ({
         ...t,
-        items: (t.items as unknown as CartTemplateItem[]) || [],
+        items: parseTemplateItems(t.items),
       }));
     },
     enabled: !!userId,
@@ -75,7 +90,7 @@ export function useCartTemplates() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Template salvo com sucesso');
     },
     onError: (err: Error) => toast.error('Operação falhou', { description: sanitizeError(err) }),
@@ -87,10 +102,11 @@ export function useCartTemplates() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Template excluído');
     },
-    onError: (err: Error) => toast.error('Não foi possível excluir o template', { description: sanitizeError(err) }),
+    onError: (err: Error) =>
+      toast.error('Não foi possível excluir o template', { description: sanitizeError(err) }),
   });
 
   return {

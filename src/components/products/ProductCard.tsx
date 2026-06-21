@@ -121,6 +121,7 @@ export interface ProductCardProps {
   colorEnrichmentImage?: string | null;
 }
 
+// eslint-disable-next-line react/require-optimization
 export const ProductCard = memo(
   forwardRef<HTMLElement, ProductCardProps>(
     (
@@ -658,7 +659,6 @@ export const ProductCard = memo(
             />
           </div>
 
-
           {/* Word Magic Badge — visível quando AI está ativa */}
           <WordMagicBadge visible={isAIActive} />
 
@@ -818,7 +818,6 @@ export const ProductCard = memo(
                 }
               }}
             />
-
 
             <div className="flex-1" />
 

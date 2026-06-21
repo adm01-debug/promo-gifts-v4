@@ -91,7 +91,6 @@ export function CartSidebar({
   const [loadOpen, setLoadOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
@@ -118,7 +117,7 @@ export function CartSidebar({
         <div className="relative z-10 grid grid-cols-2 gap-3 border-t border-primary/10 pt-4 text-xs">
           <div className="space-y-1">
             <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-              <Package className="h-3 w-3 opacity-60" /> SKUs
+              <Package aria-hidden="true" className="h-3 w-3 opacity-60" /> SKUs
             </p>
             <p className="text-sm font-bold tabular-nums">{cart.items.length}</p>
           </div>
@@ -131,7 +130,7 @@ export function CartSidebar({
           {weightVolume && weightVolume.weightKg > 0 && (
             <div className="space-y-1">
               <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                <Weight className="h-3 w-3 opacity-60" /> Peso
+                <Weight aria-hidden="true" className="h-3 w-3 opacity-60" /> Peso
               </p>
               <p className="text-sm font-bold tabular-nums">
                 {weightVolume.weightKg >= 1
@@ -143,7 +142,7 @@ export function CartSidebar({
           {weightVolume && weightVolume.volumeCm3 > 0 && (
             <div className="space-y-1">
               <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                <Box className="h-3 w-3 opacity-60" /> Volume
+                <Box aria-hidden="true" className="h-3 w-3 opacity-60" /> Volume
               </p>
               <p className="text-sm font-bold tabular-nums">
                 {weightVolume.volumeM3 >= 0.001
@@ -162,7 +161,10 @@ export function CartSidebar({
             onClick={() => onGenerateQuote(cart)}
           >
             Gerar Orçamento
-            <ArrowRight className="h-4 w-4 transition-transform group-hover/cta:translate-x-1" />
+            <ArrowRight
+              aria-hidden="true"
+              className="h-4 w-4 transition-transform group-hover/cta:translate-x-1"
+            />
           </Button>
         </div>
 
@@ -191,7 +193,8 @@ export function CartSidebar({
       {/* Insights compactos */}
       <Card className="space-y-3 border-border/30 p-4 shadow-sm">
         <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          <Sparkles className="h-3.5 w-3.5 fill-warning/20 text-warning" /> Inteligência de Vendas
+          <Sparkles aria-hidden="true" className="h-3.5 w-3.5 fill-warning/20 text-warning" />{' '}
+          Inteligência de Vendas
         </h4>
         <SmartSuggestions cart={cart} allProducts={allProducts} isLoading={isLoadingProducts} />
         <ActionHistoryPanel cartId={cart.id} />
@@ -211,6 +214,7 @@ export function CartSidebar({
           {otherCarts.map((c) => (
             <button
               key={c.id}
+              type="button"
               onClick={() => onSetActiveCartId(c.id)}
               className="flex w-full items-center gap-2.5 rounded-lg border border-border/30 p-2.5 text-left transition-all hover:border-border/60 hover:bg-muted/20"
             >
@@ -223,7 +227,7 @@ export function CartSidebar({
                 />
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Building2 aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -249,7 +253,6 @@ export function CartSidebar({
           if (!open) {
             setTplName('');
             setTplDesc('');
-            setIsSavingTemplate(false);
           }
         }}
       >
@@ -258,17 +261,29 @@ export function CartSidebar({
             <DialogTitle>Salvar Template de Carrinho</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Input
-              placeholder='Ex: "Kit Onboarding"'
-              value={tplName}
-              onChange={(e) => setTplName(e.target.value)}
-            />
-            <Textarea
-              placeholder="Descrição opcional..."
-              value={tplDesc}
-              onChange={(e) => setTplDesc(e.target.value)}
-              rows={2}
-            />
+            <div className="space-y-1.5">
+              <label htmlFor="tpl-name" className="text-sm font-medium">
+                Nome do template
+              </label>
+              <Input
+                id="tpl-name"
+                placeholder='Ex: "Kit Onboarding"'
+                value={tplName}
+                onChange={(e) => setTplName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="tpl-desc" className="text-sm font-medium text-muted-foreground">
+                Descrição <span className="font-normal">(opcional)</span>
+              </label>
+              <Textarea
+                id="tpl-desc"
+                placeholder="Descreva o propósito deste template..."
+                value={tplDesc}
+                onChange={(e) => setTplDesc(e.target.value)}
+                rows={2}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               {cart.items.length} itens serão salvos no template
             </p>
@@ -278,14 +293,12 @@ export function CartSidebar({
               Cancelar
             </Button>
             <Button
-              disabled={!tplName.trim() || isSavingTemplate}
+              disabled={!tplName.trim()}
               onClick={() => {
-                setIsSavingTemplate(true);
                 onSaveTemplate(tplName.trim(), tplDesc.trim());
                 setSaveOpen(false);
                 setTplName('');
                 setTplDesc('');
-                setIsSavingTemplate(false);
               }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
@@ -339,7 +352,7 @@ export function CartSidebar({
                           className="h-7 text-xs text-destructive"
                           onClick={() => onDeleteTemplate.mutate(t.id)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 aria-hidden="true" className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>

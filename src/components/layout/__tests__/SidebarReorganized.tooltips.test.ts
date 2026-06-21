@@ -9,10 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const SOURCE = readFileSync(
-  resolve(__dirname, '..', 'SidebarReorganized.tsx'),
-  'utf-8',
-);
+const SOURCE = readFileSync(resolve(__dirname, '..', 'SidebarReorganized.tsx'), 'utf-8');
 
 /** Extrai todos os objetos `{ ... label: '...', href: '...', ... }` declarados. */
 function extractItems(): Array<{ label: string; tooltip?: string; href?: string }> {
@@ -22,8 +19,8 @@ function extractItems(): Array<{ label: string; tooltip?: string; href?: string 
   for (const m of SOURCE.matchAll(re)) {
     const block = m[0];
     const label = m[1];
-    const tooltipMatch = block.match(/tooltip:\s*'([^']+)'/);
-    const hrefMatch = block.match(/href:\s*'([^']+)'/);
+    const tooltipMatch = /tooltip:\s*'([^']+)'/.exec(block);
+    const hrefMatch = /href:\s*'([^']+)'/.exec(block);
     items.push({
       label,
       tooltip: tooltipMatch?.[1],
@@ -35,8 +32,19 @@ function extractItems(): Array<{ label: string; tooltip?: string; href?: string 
 
 // Termos técnicos proibidos em copy comercial (case-insensitive).
 const TECH_BLOCKLIST = [
-  'API', 'endpoint', 'webhook', 'JWT', 'RLS', 'SQL', 'log',
-  'debug', 'config', 'cache', 'token', 'CDN', 'JSON',
+  'API',
+  'endpoint',
+  'webhook',
+  'JWT',
+  'RLS',
+  'SQL',
+  'log',
+  'debug',
+  'config',
+  'cache',
+  'token',
+  'CDN',
+  'JSON',
 ];
 
 describe('SidebarReorganized — tooltips comerciais', () => {

@@ -25,7 +25,8 @@ export function RecentComparisonsSidebar() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<RecentRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const { clearCompare, addToCompare } = useComparisonStore();
+  const clearCompare = useComparisonStore((s) => s.clearCompare);
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
 
   useEffect(() => {
     if (!open) return;

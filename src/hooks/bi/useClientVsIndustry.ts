@@ -50,16 +50,16 @@ function buildInsight(metrics: MetricComparison[]): string | null {
   const ltv = metrics.find((m) => m.label === 'LTV');
   const freq = metrics.find((m) => m.label === 'Frequência (pedidos)');
 
-  if (ticket && ticket.classification === 'above' && ticket.deltaPercent >= 25) {
+  if (ticket?.classification === 'above' && ticket.deltaPercent >= 25) {
     return `Este cliente compra ${Math.round(ticket.deltaPercent)}% mais por pedido que a média do setor — bom alvo para upsell premium.`;
   }
-  if (ltv && ltv.classification === 'below' && ltv.deltaPercent <= -25) {
+  if (ltv?.classification === 'below' && ltv.deltaPercent <= -25) {
     return `LTV ${Math.abs(Math.round(ltv.deltaPercent))}% abaixo da média do ramo — potencial de crescimento via cross-sell.`;
   }
-  if (freq && freq.classification === 'above' && freq.deltaPercent >= 30) {
+  if (freq?.classification === 'above' && freq.deltaPercent >= 30) {
     return `Cliente compra ${Math.round(freq.deltaPercent)}% mais frequentemente que o setor — cultive a recorrência com programas de fidelidade.`;
   }
-  if (freq && freq.classification === 'below' && freq.deltaPercent <= -30) {
+  if (freq?.classification === 'below' && freq.deltaPercent <= -30) {
     return `Frequência ${Math.abs(Math.round(freq.deltaPercent))}% abaixo do setor — oportunidade clara de reativação.`;
   }
   const allOnPar = metrics.every(

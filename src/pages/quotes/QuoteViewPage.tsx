@@ -205,7 +205,7 @@ export default function QuoteViewPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {(quote.status === 'sent' || isSyncing) && (
+                {quote.status === 'sent' && (
                   <DropdownMenuItem
                     onClick={async () => {
                       try {
@@ -218,7 +218,7 @@ export default function QuoteViewPage() {
                           quote.id ?? '',
                           'status_change',
                           'Status revertido para Pendente',
-                          { oldValue: 'sent', newValue: 'pending' },
+                          { oldValue: quote.status, newValue: 'pending' },
                         );
                         setQuote((prev) => (prev ? { ...prev, status: 'pending' } : prev));
                         toast.success('Sincronização cancelada');
@@ -413,13 +413,13 @@ export default function QuoteViewPage() {
         isGeneratingPDF={isGeneratingPDF}
       />
 
-      {showPresentation && quote?.items && quote.items.length > 0 && (
+      {showPresentation && displayItems.length > 0 && (
         <PresentationMode
           title={`Proposta ${quote.quote_number || ''}`}
           subtitle={quote.client_company || quote.client_name || undefined}
           brandName="Promo Brindes"
           onClose={() => setShowPresentation(false)}
-          slides={quote.items.map((item) => ({
+          slides={displayItems.map((item) => ({
             id: item.id || item.product_id,
             title: item.product_name,
             subtitle: item.product_sku ? `SKU: ${item.product_sku}` : undefined,

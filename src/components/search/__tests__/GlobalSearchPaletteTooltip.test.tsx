@@ -32,7 +32,7 @@ describe('GlobalSearchPalette Tooltip Static Check', () => {
         value={mockThemeContext as unknown as Parameters<typeof ThemeContext.Provider>[0]['value']}
       >
         <TooltipProvider delayDuration={0}>
-          <Tooltip open={true}>
+          <Tooltip open>
             <TooltipTrigger>Trigger</TooltipTrigger>
             <TooltipContent>
               Fale com o Flow <kbd className="ml-1 text-[9px] opacity-60">Ctrl+Shift+V</kbd>

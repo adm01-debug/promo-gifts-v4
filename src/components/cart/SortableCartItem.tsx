@@ -115,7 +115,7 @@ export const SortableCartItem = memo(
       zIndex: isDragging ? 50 : undefined,
     };
 
-    const itemTotal = item.product_price * item.quantity;
+    const itemTotal = (Number(item.product_price) || 0) * (Number(item.quantity) || 0);
     const stock = stockMap.get(item.product_id);
     const isLowStock = stock !== undefined && stock < item.quantity;
     const isOutOfStock = stock !== undefined && stock === 0;
@@ -123,7 +123,12 @@ export const SortableCartItem = memo(
     const handleNotesChange = (value: string) => {
       setLocalNotes(value);
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => onUpdateNotes(item.id, value), 800);
+      debounceRef.current = setTimeout(() => {
+        onUpdateNotes(item.id, value);
+        // Clear the ref so the server-sync effect (guarded by !debounceRef.current)
+        // re-enables after the write settles; otherwise it stays disabled forever.
+        debounceRef.current = undefined;
+      }, 800);
     };
 
     return (
@@ -148,22 +153,28 @@ export const SortableCartItem = memo(
           {/* Product image */}
           <div className="group/img-container relative aspect-square overflow-hidden bg-muted/20">
             <button
+              type="button"
               {...attributes}
               {...listeners}
               className="absolute left-2.5 top-2.5 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground opacity-0 shadow-sm backdrop-blur-md transition-all duration-300 hover:text-primary active:cursor-grabbing group-hover:opacity-100"
               aria-label="Arrastar"
             >
-              <GripVertical className="h-4 w-4" />
+              <GripVertical aria-hidden="true" className="h-4 w-4" />
             </button>
 
-            <div
+            <button
+              type="button"
               data-testid="cart-item-image"
-              className="relative z-10 h-full w-full cursor-pointer"
+              aria-label={`Ver produto ${item.product_name}`}
+              className="relative z-10 h-full w-full cursor-pointer bg-transparent p-0"
               onClick={() => onNavigate(`/produto/${item.product_id}`)}
             >
               {!item.product_image_url && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Package className="h-14 w-14 animate-pulse text-muted-foreground/20" />
+                  <Package
+                    aria-hidden="true"
+                    className="h-14 w-14 animate-pulse text-muted-foreground/20"
+                  />
                 </div>
               )}
               <motion.img
@@ -178,18 +189,20 @@ export const SortableCartItem = memo(
                 )}
                 loading="lazy"
               />
-            </div>
+            </button>
 
-            {/* Quick view overlay */}
+            {/* Quick view overlay — mouse-only enhancement; keyboard path is via dropdown menu */}
             <div
               data-testid="cart-item-view"
-              className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-primary/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100"
-              onClick={() => onNavigate(`/produto/${item.product_id}`)}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-primary/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:pointer-events-auto group-hover:opacity-100"
             >
               <Button
                 variant="secondary"
                 size="sm"
+                tabIndex={-1}
                 className="gap-2 border border-white/20 bg-card/90 text-[11px] font-bold shadow-lg hover:bg-card"
+                onClick={() => onNavigate(`/produto/${item.product_id}`)}
               >
                 <Eye className="h-3.5 w-3.5" />
                 Ver Produto
@@ -201,11 +214,12 @@ export const SortableCartItem = memo(
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
+                    type="button"
                     data-testid="cart-item-menu-trigger"
                     className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:text-primary"
-                    aria-label="Mais opções"
+                    aria-label={`Mais opções para ${item.product_name}`}
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
@@ -214,14 +228,15 @@ export const SortableCartItem = memo(
                     className="rounded-lg py-2"
                     onClick={() => onNavigate(`/produto/${item.product_id}`)}
                   >
-                    <Eye className="mr-2.5 h-4 w-4 opacity-70" /> Ver Produto
+                    <Eye aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" /> Ver Produto
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     data-testid="cart-item-action-simulate"
                     className="rounded-lg py-2"
                     onClick={() => onNavigate(`/simulador?product=${item.product_id}`)}
                   >
-                    <Calculator className="mr-2.5 h-4 w-4 opacity-70" /> Simular Personalização
+                    <Calculator aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" /> Simular
+                    Personalização
                   </DropdownMenuItem>
                   {otherCarts.length > 0 && (
                     <>
@@ -231,7 +246,8 @@ export const SortableCartItem = memo(
                           data-testid="cart-item-action-move"
                           className="rounded-lg py-2"
                         >
-                          <MoveRight className="mr-2.5 h-4 w-4 opacity-70" /> Mover para...
+                          <MoveRight aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" />{' '}
+                          Mover para...
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="min-w-[180px] rounded-xl p-1.5">
                           {otherCarts.map((c) => (
@@ -252,7 +268,8 @@ export const SortableCartItem = memo(
                           data-testid="cart-item-action-duplicate"
                           className="rounded-lg py-2"
                         >
-                          <CopyPlus className="mr-2.5 h-4 w-4 opacity-70" /> Duplicar para...
+                          <CopyPlus aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" />{' '}
+                          Duplicar para...
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="min-w-[180px] rounded-xl p-1.5">
                           {otherCarts.map((c) => (
@@ -276,7 +293,7 @@ export const SortableCartItem = memo(
                     className="rounded-lg py-2 text-destructive focus:bg-destructive/5 focus:text-destructive"
                     onClick={() => onRemove(item.id, item.product_name)}
                   >
-                    <Trash2 className="mr-2.5 h-4 w-4 opacity-70" /> Remover Item
+                    <Trash2 aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" /> Remover Item
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -295,7 +312,7 @@ export const SortableCartItem = memo(
                     : 'border-warning/20 bg-warning/90 text-warning-foreground',
                 )}
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
                 {isOutOfStock ? 'SEM ESTOQUE' : `ESTOQUE: ${stock}`}
               </motion.div>
             )}
@@ -338,13 +355,15 @@ export const SortableCartItem = memo(
                   </span>
                 )}
               </div>
-              <h4
+              <button
+                type="button"
                 data-testid="cart-item-name"
-                className="line-clamp-2 min-h-[2.5rem] cursor-pointer text-sm font-semibold leading-tight transition-colors group-hover:text-primary"
+                aria-label={`Ver produto ${item.product_name}`}
+                className="line-clamp-2 min-h-[2.5rem] w-full cursor-pointer text-left text-sm font-semibold leading-tight transition-colors hover:text-primary group-hover:text-primary"
                 onClick={() => onNavigate(`/produto/${item.product_id}`)}
               >
                 {item.product_name}
-              </h4>
+              </button>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border border-border/10 bg-muted/20 p-2">
@@ -372,8 +391,13 @@ export const SortableCartItem = memo(
                 className="flex items-center gap-0 overflow-hidden rounded-lg border border-border/50 bg-background shadow-sm transition-colors hover:border-primary/30"
               >
                 <button
+                  type="button"
                   data-testid="cart-qty-decrement"
-                  aria-label="Diminuir quantidade"
+                  aria-label={
+                    item.quantity <= 1
+                      ? `Remover ${item.product_name}`
+                      : `Diminuir quantidade de ${item.product_name}`
+                  }
                   className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90"
                   onClick={() => {
                     if (item.quantity <= 1) {
@@ -385,11 +409,16 @@ export const SortableCartItem = memo(
                 >
                   {item.quantity <= 1 ? (
                     <Trash2
+                      aria-hidden="true"
                       data-testid="cart-qty-remove-icon"
                       className="h-4 w-4 text-destructive"
                     />
                   ) : (
-                    <Minus data-testid="cart-qty-decrement-icon" className="h-4 w-4" />
+                    <Minus
+                      aria-hidden="true"
+                      data-testid="cart-qty-decrement-icon"
+                      className="h-4 w-4"
+                    />
                   )}
                 </button>
                 <input
@@ -408,8 +437,9 @@ export const SortableCartItem = memo(
                   className="m-0 h-9 w-12 appearance-none border-x border-border/30 bg-transparent text-center text-sm font-bold tabular-nums transition-all [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/20 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <button
+                  type="button"
                   data-testid="cart-qty-increment"
-                  aria-label="Aumentar quantidade"
+                  aria-label={`Aumentar quantidade de ${item.product_name}`}
                   disabled={item.quantity >= 999999}
                   className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground active:scale-90 active:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-40"
                   onClick={() => {
@@ -417,7 +447,7 @@ export const SortableCartItem = memo(
                     onUpdateQuantity(item.id, item.quantity + 1);
                   }}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus aria-hidden="true" className="h-4 w-4" />
                 </button>
               </div>
               <div className="flex flex-col items-end">
@@ -434,6 +464,7 @@ export const SortableCartItem = memo(
             <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
               <CollapsibleTrigger asChild>
                 <button
+                  type="button"
                   data-testid="cart-item-notes-toggle"
                   className={cn(
                     'flex w-full items-center gap-2 rounded-lg border border-transparent p-2 text-[10px] font-bold uppercase tracking-wider transition-all',
@@ -441,12 +472,17 @@ export const SortableCartItem = memo(
                       ? 'border-primary/10 bg-primary/5 text-primary'
                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                   )}
-                  aria-label="Notas do item"
+                  aria-label={
+                    item.notes
+                      ? `Ver observações de ${item.product_name}`
+                      : `Adicionar observação a ${item.product_name}`
+                  }
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <MessageSquare aria-hidden="true" className="h-3.5 w-3.5" />
                   {item.notes ? 'Ver Observações' : 'Adicionar Observação'}
                   <div className="flex-1" />
                   <ChevronDown
+                    aria-hidden="true"
                     className={cn(
                       'h-3.5 w-3.5 transition-transform duration-300',
                       notesOpen && 'rotate-180',
@@ -457,6 +493,7 @@ export const SortableCartItem = memo(
               <CollapsibleContent className="pt-2">
                 <Textarea
                   data-testid="cart-item-notes-input"
+                  aria-label={`Observações para ${item.product_name}`}
                   value={localNotes}
                   onChange={(e) => handleNotesChange(e.target.value)}
                   placeholder="Ex: personalizar com logo do cliente..."

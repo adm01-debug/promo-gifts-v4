@@ -88,7 +88,6 @@ export const ProductColorSwatches = memo(
     selectedName,
     onClear,
   }: ProductColorSwatchesProps) => {
-
     const idPrefix = useId();
 
     if (colors === undefined) {
@@ -117,7 +116,10 @@ export const ProductColorSwatches = memo(
       if (hideWhenEmpty) {
         return (
           <div
-            className={cn('min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]', className)}
+            className={cn(
+              'min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]',
+              className,
+            )}
             data-testid="colors-empty-hidden"
           />
         );
@@ -155,7 +157,7 @@ export const ProductColorSwatches = memo(
               //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
               'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
-              'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
+              'flex h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"
@@ -174,13 +176,12 @@ export const ProductColorSwatches = memo(
           const hasStockInfo = typeof c.stockQty === 'number';
           const isOutOfStock = hasStockInfo && c.stockQty === 0 && !c.hasUpcomingRestock;
           const isUpcoming = hasStockInfo && c.stockQty === 0 && c.hasUpcomingRestock === true;
-          const formattedRestock =
-            c.nextRestockDate
-              ? new Date(`${c.nextRestockDate}T00:00:00`).toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: 'short',
-                })
-              : null;
+          const formattedRestock = c.nextRestockDate
+            ? new Date(`${c.nextRestockDate}T00:00:00`).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: 'short',
+              })
+            : null;
 
           return (
             <Tooltip key={`${c.name}-${idx}`}>

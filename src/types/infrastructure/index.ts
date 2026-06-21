@@ -5,4 +5,4 @@
  * Estes tipos representam a estrutura EXATA das tabelas do banco.
  */
 
-export * from './promobrind';
+export type * from './promobrind';

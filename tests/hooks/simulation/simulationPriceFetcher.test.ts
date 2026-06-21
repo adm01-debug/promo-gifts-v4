@@ -20,14 +20,12 @@ vi.mock('@/lib/external-rpc', () => ({
 }));
 
 vi.mock('@/hooks/simulation/useGravacaoPriceV2', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/hooks/simulation/useGravacaoPriceV2')>(
-      '@/hooks/simulation/useGravacaoPriceV2',
-    );
+  const actual = await vi.importActual<typeof import('@/hooks/simulation/useGravacaoPriceV2')>(
+    '@/hooks/simulation/useGravacaoPriceV2',
+  );
   return {
     ...actual,
-    fetchProductPrintAreasV2: (...args: unknown[]) =>
-      fetchProductPrintAreasV2Mock(...args),
+    fetchProductPrintAreasV2: (...args: unknown[]) => fetchProductPrintAreasV2Mock(...args),
   };
 });
 
@@ -72,6 +70,7 @@ const printArea = {
   technique_name: 'Serigrafia',
   grupo_tecnica: 'SILK',
   cobra_por_cor: true,
+  usa_dimensao: true,
 };
 
 const flatRpcResponse = {
@@ -143,6 +142,28 @@ describe('fetchAllOptions', () => {
         p_altura_cm: 5,
       }),
     );
+  });
+
+  it('omits dimensions in the RPC call when the area is non-dimensional (usa_dimensao=false)', async () => {
+    // Regression (BUG-DIM): passing largura/altura to a non-dimensional table
+    // (Serigrafia/UV em caneta) makes fn_get_customization_price return no price.
+    fetchProductPrintAreasV2Mock.mockResolvedValue([{ ...printArea, usa_dimensao: false }]);
+    invokeExternalRpcMock.mockResolvedValue(flatRpcResponse);
+
+    await fetchAllOptions({
+      selectedTechniqueIds: ['tech-silk'],
+      techniques: [baseTechnique],
+      techniqueSettings: { 'tech-silk': baseSettings }, // width/height > 0
+      quantity: 100,
+      productUnitPrice: 5,
+      productId: 'prod-1',
+    });
+
+    expect(invokeExternalRpcMock).toHaveBeenCalledTimes(1);
+    const params = invokeExternalRpcMock.mock.calls[0][1] as Record<string, unknown>;
+    expect(params).not.toHaveProperty('p_largura_cm');
+    expect(params).not.toHaveProperty('p_altura_cm');
+    expect(params).toMatchObject({ p_area_id: 'area-123', p_quantidade: 100 });
   });
 
   it('marks technique as unavailable when no print area matches', async () => {

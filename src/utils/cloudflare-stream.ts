@@ -16,10 +16,10 @@ export function extractCloudflareStreamId(url: string | null | undefined): strin
 
   try {
     const pathname = new URL(trimmed).pathname;
-    const match = pathname.match(CLOUDFLARE_STREAM_ID_REGEX);
+    const match = CLOUDFLARE_STREAM_ID_REGEX.exec(pathname);
     return match?.[1] ?? null;
   } catch {
-    const match = trimmed.match(CLOUDFLARE_STREAM_ID_REGEX);
+    const match = CLOUDFLARE_STREAM_ID_REGEX.exec(trimmed);
     return match?.[1] ?? null;
   }
 }
@@ -45,7 +45,9 @@ export function getCloudflareThumbnailUrl(
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
 
-  const thumbnailUrl = new URL(`https://${CF_STREAM_SUBDOMAIN}/${streamId}/thumbnails/thumbnail.jpg`);
+  const thumbnailUrl = new URL(
+    `https://${CF_STREAM_SUBDOMAIN}/${streamId}/thumbnails/thumbnail.jpg`,
+  );
   appendThumbnailOptions(thumbnailUrl, options);
 
   return thumbnailUrl.toString();

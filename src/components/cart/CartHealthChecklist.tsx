@@ -49,7 +49,12 @@ export function CartHealthChecklist({
 
     return [
       { id: 'company', label: 'Empresa vinculada', ok: !!cart.company_id },
-      { id: 'prices', label: 'Todos os itens com preço', ok: noZeroPriceItems, onFix: onAddProducts },
+      {
+        id: 'prices',
+        label: 'Todos os itens com preço',
+        ok: noZeroPriceItems,
+        onFix: onAddProducts,
+      },
       { id: 'items', label: 'Mix de produtos (≥ 3 SKUs)', ok: hasMinItems, onFix: onAddProducts },
       { id: 'value', label: 'Valor mínimo (R$ 500,00)', ok: hasMinValue, onFix: onAddProducts },
       { id: 'notes', label: 'Observações do pedido', ok: hasNotes, onFix: onFocusNotes },
@@ -76,9 +81,12 @@ export function CartHealthChecklist({
       <div className="relative z-10 flex items-center justify-between">
         <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           {pct === 100 ? (
-            <ShieldCheck className="h-3.5 w-3.5 animate-pulse text-primary" />
+            <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 animate-pulse text-primary" />
           ) : (
-            <Sparkles className="h-3.5 w-3.5 text-primary/60 transition-colors group-hover/checklist:text-primary" />
+            <Sparkles
+              aria-hidden="true"
+              className="h-3.5 w-3.5 text-primary/60 transition-colors group-hover/checklist:text-primary"
+            />
           )}
           Saúde do Carrinho
         </h4>
@@ -101,7 +109,14 @@ export function CartHealthChecklist({
         </div>
       </div>
 
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
+      <div
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Saúde do carrinho: ${pct}%`}
+        className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/40"
+      >
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -141,9 +156,9 @@ export function CartHealthChecklist({
             >
               <div className="flex-shrink-0">
                 {c.ok ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                  <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
                 ) : (
-                  <AlertCircle className="h-3.5 w-3.5 text-warning transition-transform group-hover/item:scale-110" />
+                  <AlertCircle aria-hidden="true" className="h-3.5 w-3.5 text-warning transition-transform group-hover/item:scale-110" />
                 )}
               </div>
               <span
@@ -157,7 +172,7 @@ export function CartHealthChecklist({
                 {c.label}
               </span>
               {!c.ok && c.onFix && (
-                <ArrowRight className="h-3 w-3 text-primary opacity-0 transition-opacity group-hover/item:opacity-100" />
+                <ArrowRight aria-hidden="true" className="h-3 w-3 text-primary opacity-0 transition-opacity group-hover/item:opacity-100" />
               )}
             </button>
           </motion.li>

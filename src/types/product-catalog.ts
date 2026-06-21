@@ -100,6 +100,13 @@ export interface Product {
     ramo: string[];
     nicho: string[];
   };
+  /**
+   * Tags descritivas planas vindas da coluna `products.tags` quando ela é um
+   * array (ex.: ["caneta", "metal", "bambu"]). Sinal de similaridade primário
+   * usado pelo Match de Produtos — preservado separadamente das tags de
+   * marketing estruturadas (que ficam vazias quando a fonte é um array plano).
+   */
+  descriptiveTags?: string[];
 
   subcategory?: string;
   groups?: Array<{ id: number; name: string }>;

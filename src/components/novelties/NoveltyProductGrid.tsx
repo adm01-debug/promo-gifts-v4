@@ -147,8 +147,7 @@ export function NoveltyProductGrid() {
   // `products` (total geral), gerando counts inflados que não refletiam a seleção.
   // Exemplo: selecionar categoria "Têxtil" → fornecedor deve mostrar counts só de têxteis.
   const { suppliers, categories } = useMemo(() => {
-    const normSearch = (s: string) =>
-      s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const normSearch = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const q = searchQuery.trim() ? normSearch(searchQuery.trim()) : '';
     const searchMatch = (p: (typeof products)[0]) =>
       !q ||
@@ -233,20 +232,28 @@ export function NoveltyProductGrid() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedSupplier, selectedCategory, sortMode]);
 
-  // Effect 2: Clear stale selection when the filtered set changes (ISSUE-7/ISSUE-39).
-  // Separated from Effect 1 to avoid stale `sel` closure — at this point
-  // filteredProducts has been recomputed and sel is current.
+  // Effect 2: Clear stale selection when the visible SET changes (ISSUE-7/ISSUE-39).
+  // Keyed on the membership-changing filter VALUES (not filteredProducts.length):
+  // switching e.g. supplier A→B that both yield the same count would otherwise leave
+  // A's selection active and let a bulk action run over items invisible in B's view.
+  // sortMode is excluded on purpose — reordering keeps the same products selected.
+  // Depending on scalar filter values (not `sel`) also avoids a circular dependency.
   useEffect(() => {
     if (selectionMode) sel.clearSelection();
-    // sel is derived from filteredProducts so we depend on filteredProducts.length
-    // (a stable scalar) rather than sel itself to avoid circular dep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredProducts.length, selectionMode]);
+  }, [searchQuery, selectedSupplier, selectedCategory, selectionMode]);
 
   const paginatedProducts = useMemo(() => {
     return filteredProducts.slice(0, visibleCount);
   }, [filteredProducts, visibleCount]);
-  const hasMore = visibleCount < filteredProducts.length;
+  // FIX (auditoria Novidades 2026-06-20, P1): a paginação por scroll (`visibleCount`)
+  // só existe na GRADE virtualizada. Nas views list/table TODOS os filteredProducts
+  // são renderizados de uma vez, mas nada avança `visibleCount` nessas views — então
+  // o sentinel "Role para ver mais N novidades" ficava preso permanentemente (ex.:
+  // "mais 617 novidades") mesmo com tudo já visível. Restringir `hasMore` ao modo
+  // grid corrige o sentinel e mantém o comportamento do VirtualizedNoveltyGrid
+  // (renderizado apenas no modo grid) inalterado.
+  const hasMore = viewMode === 'grid' && visibleCount < filteredProducts.length;
   // Handler estável para carregar mais itens quando o wrapper virtualizado
   // chega perto do fim do scroll interno.
   const handleLoadMore = useCallback(() => {
@@ -290,13 +297,12 @@ export function NoveltyProductGrid() {
   if (error) logger.error('Erro ao carregar novidades:', error);
 
   // Favorites & Compare stores for ProductListItem integration
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const {
-    isInCompare,
-    addToCompare,
-    removeFromCompare,
-    canAddMore: canAddToCompare,
-  } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const removeFromCompare = useComparisonStore((s) => s.removeFromCompare);
+  const canAddToCompare = useComparisonStore((s) => s.canAddMore);
   const onToggleCompare = useCallback(
     (productId: string) => {
       if (isInCompare(productId)) {
@@ -779,7 +785,9 @@ export function NoveltyProductGrid() {
                 Atualizando novidades...
               </>
             ) : (
-              <span className="text-xs">Role para ver mais {filteredProducts.length - visibleCount} novidades</span>
+              <span className="text-xs">
+                Role para ver mais {filteredProducts.length - visibleCount} novidades
+              </span>
             )}
           </div>
         </div>

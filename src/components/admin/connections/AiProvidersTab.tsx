@@ -178,7 +178,7 @@ export function AiProvidersTab() {
         <CardContent className="space-y-2">
           {isLoading && <p className="text-sm text-muted-foreground">Carregando providers…</p>}
           {error && <p className="text-sm text-destructive">Erro ao carregar: {String(error)}</p>}
-          {!isLoading && providers && providers.length === 0 && (
+          {!isLoading && providers?.length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhum provider cadastrado.</p>
           )}
           <div className="divide-y divide-border/50">

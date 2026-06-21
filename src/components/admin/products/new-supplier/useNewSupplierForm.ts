@@ -475,7 +475,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         if (logoUrl) {
           try {
             const tempPath = new URL(logoUrl).pathname.split('/supplier-logos/').pop();
-            if (tempPath && tempPath.startsWith('suppliers/new-')) {
+            if (tempPath?.startsWith('suppliers/new-')) {
               const ext = tempPath.split('.').pop() || 'png';
               const canonicalPath = `suppliers/${result.id}.${ext}`;
               const { error: moveError } = await supabase.storage

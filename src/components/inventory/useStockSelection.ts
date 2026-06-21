@@ -47,8 +47,10 @@ export const rowKey = (r: { productId: string; variantId: string }) =>
 
 export function useStockSelection(rows: StockSelectionRow[]) {
   const navigate = useNavigate();
-  const favStore = useFavoritesStore();
-  const compStore = useComparisonStore();
+  const favIsFavorite = useFavoritesStore((s) => s.isFavorite);
+  const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+  const compCompareItems = useComparisonStore((s) => s.compareItems);
+  const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
   const [enabled, setEnabled] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -112,8 +114,8 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     let added = 0;
     try {
       for (const r of selectedRows) {
-        if (!favStore.isFavorite(r.product.productId)) {
-          favStore.addFavorite(r.product.productId, buildVariantInfo(r));
+        if (!favIsFavorite(r.product.productId)) {
+          favAddFavorite(r.product.productId, buildVariantInfo(r));
           added++;
         }
       }
@@ -122,11 +124,11 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     } catch {
       toast.error('Não foi possível favoritar todos os itens. Tente novamente.');
     }
-  }, [selectedRows, favStore, clear]);
+  }, [selectedRows, favIsFavorite, favAddFavorite, clear]);
 
   const bulkCompare = useCallback(() => {
     if (selectedRows.length === 0) return;
-    const slots = Math.max(0, 4 - compStore.compareItems.length);
+    const slots = Math.max(0, 4 - compCompareItems.length);
     if (slots === 0) {
       toast.error('Limite de 4 itens para comparação já atingido');
       return;
@@ -135,7 +137,7 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     try {
       let added = 0;
       for (const r of slice) {
-        if (compStore.addToCompare(r.product.productId, buildVariantInfo(r))) added++;
+        if (compAddToCompare(r.product.productId, buildVariantInfo(r))) added++;
       }
       const skipped = selectedRows.length - added;
       toast.success(
@@ -145,7 +147,7 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     } catch {
       toast.error('Não foi possível atualizar a comparação. Tente novamente.');
     }
-  }, [selectedRows, compStore, clear]);
+  }, [selectedRows, compCompareItems, compAddToCompare, clear]);
 
   const bulkQuote = useCallback(() => {
     if (selectedRows.length === 0) return;

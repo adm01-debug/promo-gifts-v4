@@ -207,7 +207,7 @@ export const Header = React.memo(({ onMenuToggle, sidebarOpen }: HeaderProps) =>
 
           <div className="lg:hidden">
             <AppLogo
-              showText={true}
+              showText
               iconClassName="h-8 w-8 sm:h-9 sm:w-9"
               textClassName="text-[14px] sm:text-[16px]"
               subtextClassName="text-[8px] sm:text-[9px]"

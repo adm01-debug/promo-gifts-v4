@@ -88,13 +88,10 @@ export function TechniqueMultiSelector({
       </div>
     );
 
-  const grouped = techniques.reduce(
-    (acc, tech) => {
-      (acc[tech.componentName] ??= []).push(tech);
-      return acc;
-    },
-    {} as Record<string, ProductTechnique[]>,
-  );
+  const grouped = techniques.reduce<Record<string, ProductTechnique[]>>((acc, tech) => {
+    (acc[tech.componentName] ??= []).push(tech);
+    return acc;
+  }, {});
   const isSelected = (techId: string) =>
     selectedTechniques.some((st) => st.technique.id === techId);
 

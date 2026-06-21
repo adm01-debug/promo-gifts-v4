@@ -117,107 +117,104 @@ export function RotateMcpKeyDialog({ source, open, onOpenChange, onRotated }: Pr
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5" /> Rotacionar chave MCP
-            </DialogTitle>
-            <DialogDescription>
-              {source && (
-                <>
-                  Será criada uma <strong>nova chave</strong> com nome{' '}
-                  <code className="font-mono text-xs">{source.name} (rotacionada)</code>, mesmos
-                  escopos e expiração da original. A chave antiga <strong>continua ativa</strong> —
-                  revogue manualmente quando o cliente concluir a migração.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5" /> Rotacionar chave MCP
+          </DialogTitle>
+          <DialogDescription>
+            {source && (
+              <>
+                Será criada uma <strong>nova chave</strong> com nome{' '}
+                <code className="font-mono text-xs">{source.name} (rotacionada)</code>, mesmos
+                escopos e expiração da original. A chave antiga <strong>continua ativa</strong> —
+                revogue manualmente quando o cliente concluir a migração.
+              </>
+            )}
+          </DialogDescription>
+        </DialogHeader>
 
-          {generated ? (
-            <div className="space-y-3">
-              <Alert>
-                <Key className="h-4 w-4" />
-                <AlertTitle>Nova chave gerada</AlertTitle>
-                <AlertDescription>
-                  Copie agora — esta é a única vez que será exibida em texto puro.
-                </AlertDescription>
-              </Alert>
-              <div className="break-all rounded-md bg-muted p-3 font-mono text-xs">{generated}</div>
-              <Button onClick={() => copy(generated)} className="w-full">
-                <Copy className="mr-1 h-4 w-4" /> Copiar chave
+        {generated ? (
+          <div className="space-y-3">
+            <Alert>
+              <Key className="h-4 w-4" />
+              <AlertTitle>Nova chave gerada</AlertTitle>
+              <AlertDescription>
+                Copie agora — esta é a única vez que será exibida em texto puro.
+              </AlertDescription>
+            </Alert>
+            <div className="break-all rounded-md bg-muted p-3 font-mono text-xs">{generated}</div>
+            <Button onClick={() => copy(generated)} className="w-full">
+              <Copy className="mr-1 h-4 w-4" /> Copiar chave
+            </Button>
+            <Button variant="outline" onClick={() => handleOpenChange(false)} className="w-full">
+              Fechar
+            </Button>
+          </div>
+        ) : source ? (
+          <div className="space-y-4">
+            {source.is_full && (
+              <>
+                <Alert variant="destructive">
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Chave FULL — fricção adicional obrigatória</AlertTitle>
+                  <AlertDescription>
+                    Rotacionar uma chave com escopo <code className="font-mono">*</code> cria outra
+                    chave full. Justificativa, confirmação explícita e{' '}
+                    <strong>verificação dupla (senha + código por e-mail)</strong> são obrigatórias.
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <Label htmlFor="rot-just">
+                    Justificativa <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    id="rot-just"
+                    value={justification}
+                    onChange={(e) => setJustification(e.target.value)}
+                    placeholder="Ex: Substituindo chave antiga por suspeita de exposição em log."
+                    rows={3}
+                    maxLength={1000}
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo — registrada no
+                    audit log.
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="rot-confirm">
+                    Confirmação <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="rot-confirm"
+                    value={confirmation}
+                    onChange={(e) => setConfirmation(e.target.value)}
+                    placeholder={`Digite "${FULL_SCOPE_CONFIRMATION}"`}
+                    className="font-mono"
+                  />
+                </div>
+              </>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancelar
               </Button>
-              <Button variant="outline" onClick={() => handleOpenChange(false)} className="w-full">
-                Fechar
+              <Button onClick={submit} disabled={submitting}>
+                <RefreshCw className="mr-1 h-4 w-4" />
+                {submitting
+                  ? 'Rotacionando…'
+                  : source.is_full
+                    ? 'Verificar e rotacionar'
+                    : 'Rotacionar'}
               </Button>
-            </div>
-          ) : source ? (
-            <div className="space-y-4">
-              {source.is_full && (
-                <>
-                  <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Chave FULL — fricção adicional obrigatória</AlertTitle>
-                    <AlertDescription>
-                      Rotacionar uma chave com escopo <code className="font-mono">*</code> cria
-                      outra chave full. Justificativa, confirmação explícita e{' '}
-                      <strong>verificação dupla (senha + código por e-mail)</strong> são
-                      obrigatórias.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div>
-                    <Label htmlFor="rot-just">
-                      Justificativa <span className="text-destructive">*</span>
-                    </Label>
-                    <Textarea
-                      id="rot-just"
-                      value={justification}
-                      onChange={(e) => setJustification(e.target.value)}
-                      placeholder="Ex: Substituindo chave antiga por suspeita de exposição em log."
-                      rows={3}
-                      maxLength={1000}
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {justification.length}/{FULL_SCOPE_MIN_JUSTIFICATION} mínimo — registrada no
-                      audit log.
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="rot-confirm">
-                      Confirmação <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="rot-confirm"
-                      value={confirmation}
-                      onChange={(e) => setConfirmation(e.target.value)}
-                      placeholder={`Digite "${FULL_SCOPE_CONFIRMATION}"`}
-                      className="font-mono"
-                    />
-                  </div>
-                </>
-              )}
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => handleOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={submit} disabled={submitting}>
-                  <RefreshCw className="mr-1 h-4 w-4" />
-                  {submitting
-                    ? 'Rotacionando…'
-                    : source.is_full
-                      ? 'Verificar e rotacionar'
-                      : 'Rotacionar'}
-                </Button>
-              </DialogFooter>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
-    </>
+            </DialogFooter>
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
   );
 }

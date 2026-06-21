@@ -245,7 +245,16 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
   const daysAsNovelty = calcDaysAsNovelty(detectedAt);
   const stock = p.stock_quantity ?? 0;
   const minQty = p.min_quantity ?? 10;
-  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(stock, minQty);
+  // FIX (2026-06-20): min_quantity é o mínimo PEDÍVEL, não o limiar de low-stock.
+  // Antes passado como 2º arg (lowStockThreshold) → estoque positivo abaixo do
+  // mínimo aparecia como "low-stock" (pedível) em vez de "out-of-stock". Agora vai
+  // ao 3º arg da SSOT (order-gate), alinhando Novidades ao catálogo principal.
+  // Passamos o valor BRUTO (não o default 10): ausência de min = sem gate.
+  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(
+    stock,
+    undefined,
+    p.min_quantity,
+  );
 
   return {
     novelty_id: p.id,
@@ -454,10 +463,15 @@ export function useExpiringNovelties(maxDays = 7) {
         offset += PAGE_SIZE;
       }
 
-      return allRaw
-        .map(toNovelty)
-        .filter((n) => n.days_remaining <= maxDays) // is_active já garantido pelo predicado DB
-        .sort((a, b) => a.days_remaining - b.days_remaining);
+      return (
+        allRaw
+          .map(toNovelty)
+          // is_active is re-derived in toNovelty from the live timestamp, so a row that
+          // expires between query build and mapping can come back is_active=false with
+          // days_remaining=0; keep the guard so an already-expired item is not shown.
+          .filter((n) => n.is_active && n.days_remaining <= maxDays)
+          .sort((a, b) => a.days_remaining - b.days_remaining)
+      );
     },
     // ISSUE-40 FIX: expiração iminente — staletime curto garante que um produto
     // que cruzou o limite de `maxDays` saia do widget antes do cleanup cron rodar.
@@ -510,7 +524,9 @@ export function useNoveltyStats() {
       }));
   }, [allNovelties]);
 
-  const query = useQuery<Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierName' | 'topSupplierCount'>>({
+  const query = useQuery<
+    Omit<NoveltyStatsDisplay, 'supplierBreakdown' | 'topSupplierName' | 'topSupplierCount'>
+  >({
     queryKey: ['novelty-stats'],
     queryFn: async () => {
       const now = new Date();
@@ -558,11 +574,26 @@ export function useNoveltyStats() {
           fromTable('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
         ]);
 
-      if (todayRes.error) { handleQueryError('useNovelties', 'products', todayRes.error); return emptyBase; }
-      if (weekRes.error) { handleQueryError('useNovelties', 'products', weekRes.error); return emptyBase; }
-      if (fifteenRes.error) { handleQueryError('useNovelties', 'products', fifteenRes.error); return emptyBase; }
-      if (activeRes.error) { handleQueryError('useNovelties', 'products', activeRes.error); return emptyBase; }
-      if (totalRes.error) { handleQueryError('useNovelties', 'products', totalRes.error); return emptyBase; }
+      if (todayRes.error) {
+        handleQueryError('useNovelties', 'products', todayRes.error);
+        return emptyBase;
+      }
+      if (weekRes.error) {
+        handleQueryError('useNovelties', 'products', weekRes.error);
+        return emptyBase;
+      }
+      if (fifteenRes.error) {
+        handleQueryError('useNovelties', 'products', fifteenRes.error);
+        return emptyBase;
+      }
+      if (activeRes.error) {
+        handleQueryError('useNovelties', 'products', activeRes.error);
+        return emptyBase;
+      }
+      if (totalRes.error) {
+        handleQueryError('useNovelties', 'products', totalRes.error);
+        return emptyBase;
+      }
 
       const activeCount = activeRes.count ?? 0;
       const totalProducts = totalRes.count ?? 0;

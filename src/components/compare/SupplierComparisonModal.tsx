@@ -413,7 +413,7 @@ export function SupplierComparisonModal({
                     >
                       Score
                     </TableHead>
-                    <TableHead scope="col" className="w-[140px]"></TableHead>
+                    <TableHead scope="col" className="w-[140px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
