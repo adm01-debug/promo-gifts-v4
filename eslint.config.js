@@ -430,6 +430,12 @@ export default [
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
       // Batch 182: 5 zero-violation rules (saved: prefer-return-this-type 0v✓, prefer-as-const 0v✓, class-literal-property-style 0v✓, ban-tslint-comment 0v✓, no-shadow 0v✓ — Batch 183+)
+      // Batch 184: 5 zero-violation rules (saved: no-var-requires 0v✓ — Batch 185+; excluded: non-nullable-type-assertion-style 38v)
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
+      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/no-misused-new': 'error',
+      '@typescript-eslint/no-namespace': 'error',
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
       // Batch 183: 5 zero-violation rules (saved from probe 182A)
       '@typescript-eslint/prefer-return-this-type': 'error',
       '@typescript-eslint/prefer-as-const': 'error',
