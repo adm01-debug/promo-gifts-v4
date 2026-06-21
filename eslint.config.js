@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 223: 5 zero-violation rules (no saved rules — Batch 224 probes fresh)
+      '@typescript-eslint/no-unsafe-enum-comparison': 'error',
+      '@typescript-eslint/adjacent-overload-signatures': 'error',
+      '@typescript-eslint/no-array-delete': 'error',
+      '@typescript-eslint/prefer-function-type': 'error',
+      '@typescript-eslint/no-unnecessary-qualifier': 'error',
       // Batch 222: 5 zero-violation rules (no saved rules — Batch 223 probes fresh)
       '@typescript-eslint/consistent-generic-constructors': 'error',
       '@typescript-eslint/class-literal-property-style': 'error',
