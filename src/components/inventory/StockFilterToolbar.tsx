@@ -572,10 +572,10 @@ export function StockFilterToolbar({
 
         {/* 3. Search — commit on Enter / botão "Busca" (sem lupa interna) */}
         <StockHelpTooltip
-          title="Busca no Estoque"
-          description='Preencha filtros, "Em Estoque", quantidade e o texto desejado, depois pressione Enter ou clique em "Busca" para aplicar. Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens).'
-          example='"caneca azul" casa "Caneca cerâmica azul royal" e SKU CANECA-AZ-01.'
-          emptyHint="Use menos palavras, verifique a grafia ou limpe outros filtros ativos."
+          title="Buscar produto"
+          description="Digite nome, SKU ou cor e pressione Enter. Ignora acentos e maiúsculas."
+          example='"caneca azul" acha "Caneca cerâmica azul royal".'
+          emptyHint="Use menos palavras ou limpe os filtros."
         >
           <div className="relative flex max-w-md flex-1 items-center gap-2">
             <div className="relative flex-1">
