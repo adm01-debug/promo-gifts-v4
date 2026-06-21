@@ -13,7 +13,7 @@ export interface EmaRiskSummaryRow {
   total: number;
 }
 
-export type EtlStatus = 'OK' | 'WARN' | 'ERROR';
+export type EtlStatus = 'ERROR' | 'OK' | 'WARN';
 
 export interface EmaEtlHealth {
   /** ISO timestamp do último cálculo EMA (EMA_FRESCOR.valor) */

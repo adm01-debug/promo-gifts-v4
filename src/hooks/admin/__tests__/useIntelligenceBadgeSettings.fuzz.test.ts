@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Fuzz da camada de sanitização do useIntelligenceBadgeSettings.
  *

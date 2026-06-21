@@ -199,10 +199,8 @@ export function ReplenishmentTableView({
             const rowStatus = hasColorStock
               ? getStockStatus(activeColor?.stockQty ?? 0, 10)
               : product.stock_status;
-            const stockConfig = STOCK_CONFIG[rowStatus];
-            const stockQty = hasColorStock
-              ? (activeColor?.stockQty ?? 0)
-              : product.stock_quantity;
+            const stockConfig = STOCK_CONFIG[rowStatus as StockStatus];
+            const stockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : product.stock_quantity;
 
             return (
               <TableRow

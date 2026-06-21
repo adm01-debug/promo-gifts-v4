@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * useRuptureAlerts — testes do hardening:
  * - flag off ⇒ não dispara query
@@ -90,4 +91,3 @@ describe('useRuptureAlerts', () => {
     expect(result.current.alerts).toEqual([]);
   });
 });
-

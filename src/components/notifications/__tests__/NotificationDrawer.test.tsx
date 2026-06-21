@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NotificationBell } from '../NotificationDrawer';
 import { useNotifications } from '@/hooks/ui';

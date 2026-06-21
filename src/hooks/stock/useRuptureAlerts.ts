@@ -6,8 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 
-export type RuptureLevel = 'RUPTURA' | 'CRÍTICO' | 'ALERTA' | 'ATENÇÃO' | 'OK';
-export type ConfidenceLevel = 'ALTA' | 'MÉDIA' | 'BAIXA' | 'INSUFICIENTE';
+export type RuptureLevel = 'ALERTA' | 'ATENÇÃO' | 'CRÍTICO' | 'OK' | 'RUPTURA';
+export type ConfidenceLevel = 'ALTA' | 'BAIXA' | 'INSUFICIENTE' | 'MÉDIA';
 
 export interface RuptureAlertRow {
   vss_id: string | null;
@@ -61,7 +61,10 @@ export function useRuptureAlerts(): UseRuptureAlertsResult {
       const client = supabase as unknown as {
         from: (n: string) => {
           select: (c: string) => {
-            eq: (k: string, v: boolean) => {
+            eq: (
+              k: string,
+              v: boolean,
+            ) => {
               order: (
                 k: string,
                 o?: { ascending?: boolean },
@@ -78,9 +81,9 @@ export function useRuptureAlerts(): UseRuptureAlertsResult {
         .from('mv_stock_rupture_alert')
         .select(
           'vss_id, variant_id, supplier_id, supplier_name, supplier_sku,' +
-          'nivel_alerta, cobertura_dias, lead_time_efetivo, ema_diaria, stock_total,' +
-          'prioridade, is_preferred, score_composto, confidence_level,' +
-          'anomalia_spike, gap_unidades, valor_estoque_reais',
+            'nivel_alerta, cobertura_dias, lead_time_efetivo, ema_diaria, stock_total,' +
+            'prioridade, is_preferred, score_composto, confidence_level,' +
+            'anomalia_spike, gap_unidades, valor_estoque_reais',
         )
         .eq('is_preferred', true)
         .order('score_composto', { ascending: false })

@@ -11,7 +11,11 @@ type AnyRpc = (
   args: Record<string, unknown>,
 ) => Promise<{ data: unknown; error: Error | null }>;
 
-interface SparkRow { day: string; units_depleted: number; stock_close: number; }
+interface SparkRow {
+  day: string;
+  units_depleted: number;
+  stock_close: number;
+}
 
 interface Props {
   variantId: string;
@@ -25,16 +29,16 @@ export function RuptureSparkline({ variantId, days = 7, width = 56, height = 24 
     queryKey: ['sparkline', variantId, days],
     staleTime: 10 * 60_000,
     queryFn: async (): Promise<SparkRow[]> => {
-      const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
+      const { data: rpcData, error } = await (supabase.rpc as unknown as AnyRpc)(
         'fn_variant_sparkline',
         { p_variant_id: variantId, p_days: days },
       );
       if (error) return [];
-      return (data as SparkRow[]) ?? [];
+      return (rpcData as SparkRow[]) ?? [];
     },
   });
 
-  if (data.length === 0) return <span className="text-muted-foreground text-xs">—</span>;
+  if (data.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
 
   const maxVal = Math.max(...data.map((d) => d.units_depleted), 1);
   const barW = Math.floor(width / data.length) - 1;
@@ -68,12 +72,16 @@ export function RuptureSparkline({ variantId, days = 7, width = 56, height = 24 
           </svg>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
-          <div className="font-semibold">{totalDepleted.toLocaleString('pt-BR')} un em {days}d</div>
+          <div className="font-semibold">
+            {totalDepleted.toLocaleString('pt-BR')} un em {days}d
+          </div>
           {data
             .filter((d) => d.units_depleted > 0)
             .slice(-3)
             .map((d) => (
-              <div key={d.day}>{d.day}: {d.units_depleted.toLocaleString('pt-BR')} un</div>
+              <div key={d.day}>
+                {d.day}: {d.units_depleted.toLocaleString('pt-BR')} un
+              </div>
             ))}
         </TooltipContent>
       </Tooltip>

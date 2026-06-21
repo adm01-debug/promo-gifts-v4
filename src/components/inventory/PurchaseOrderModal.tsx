@@ -33,10 +33,7 @@ function calcSuggestedQty(row: RuptureAlertRow): number {
   return Math.max(1, Math.ceil(gap * row.ema_diaria));
 }
 
-type AnyRpc = (
-  fn: string,
-  args: Record<string, unknown>,
-) => Promise<{ error: Error | null }>;
+type AnyRpc = (fn: string, args: Record<string, unknown>) => Promise<{ error: Error | null }>;
 
 export function PurchaseOrderModal({ open, onOpenChange, row }: Props) {
   const { toast } = useToast();
@@ -51,6 +48,7 @@ export function PurchaseOrderModal({ open, onOpenChange, row }: Props) {
   const displaySku = row.supplier_sku ?? row.variant_id.slice(0, 16);
 
   async function handleSubmit() {
+    if (!row) return;
     const qtyNum = parseInt(qty || String(suggested), 10);
     if (isNaN(qtyNum) || qtyNum <= 0) {
       toast({ title: 'Quantidade inválida', variant: 'destructive' });
@@ -138,8 +136,7 @@ export function PurchaseOrderModal({ open, onOpenChange, row }: Props) {
           {/* ETA */}
           <div className="space-y-1.5">
             <Label htmlFor="po-eta">
-              Previsão de chegada{' '}
-              <span className="text-xs text-muted-foreground">(opcional)</span>
+              Previsão de chegada <span className="text-xs text-muted-foreground">(opcional)</span>
             </Label>
             <Input
               id="po-eta"
@@ -152,8 +149,7 @@ export function PurchaseOrderModal({ open, onOpenChange, row }: Props) {
           {/* Notas */}
           <div className="space-y-1.5">
             <Label htmlFor="po-notes">
-              Observações{' '}
-              <span className="text-xs text-muted-foreground">(opcional)</span>
+              Observações <span className="text-xs text-muted-foreground">(opcional)</span>
             </Label>
             <Textarea
               id="po-notes"

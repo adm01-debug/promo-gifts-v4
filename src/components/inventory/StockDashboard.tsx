@@ -28,7 +28,6 @@ import { VariantStockTable } from './VariantStockTable';
 import { buildStockKpiCards } from './stockKpiCards';
 import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
 
-
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
   import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
@@ -80,8 +79,7 @@ function HeaderSlotPortal({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const resolve = () =>
-      document.getElementById('stock-toolbar-slot') ??
-      document.getElementById('stock-header-slot');
+      document.getElementById('stock-toolbar-slot') ?? document.getElementById('stock-header-slot');
     setSlot(resolve());
     const mo = new MutationObserver(() => {
       const next = resolve();
@@ -203,7 +201,6 @@ export function StockDashboard() {
     ).length;
   }, [ruptureAlerts]);
 
-
   const activeFilterLabel = useMemo(() => {
     switch (filters.status) {
       case 'in_stock':
@@ -238,12 +235,11 @@ export function StockDashboard() {
       const t = f.expectedDate ? Date.parse(f.expectedDate) : NaN;
       if (!Number.isFinite(t)) continue;
       if (t < now || t > horizon) continue;
-      variantSet.add(f.variantId);
+      if (f.variantId) variantSet.add(f.variantId);
       units += f.expectedQuantity || 0;
     }
     return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };
   }, [futureStock]);
-
 
   if (isLoading) {
     const pct = loadingProgress
@@ -344,7 +340,6 @@ export function StockDashboard() {
         </Suspense>
       )}
 
-
       {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
       <Card>
         <CardContent className="p-4">
@@ -444,7 +439,6 @@ export function StockDashboard() {
           );
         })}
 
-
         <StatCard
           title="Estoque Futuro (30 dias)"
           // SSOT: valor primário = variações distintas com reposição prevista
@@ -467,7 +461,6 @@ export function StockDashboard() {
               : undefined
           }
         />
-
       </div>
 
       {/* Active Filter Badge */}
@@ -490,7 +483,6 @@ export function StockDashboard() {
           </span>
         </div>
       )}
-
 
       {/* Stock Table */}
       <Card>

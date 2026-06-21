@@ -60,7 +60,7 @@ const FIXED_VALUE: OrganizationContextType = {
   currentRole: 'owner',
   isLoading: false,
   switchOrganization: noop,
-  createOrganization: async () => FIXED_ORG,
+  createOrganization: () => Promise.resolve(FIXED_ORG),
   refetch: noopAsync,
 };
 

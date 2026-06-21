@@ -26,15 +26,24 @@ export function useSavedStockViews() {
   const client = supabase as unknown as {
     from: (n: string) => {
       select: (c: string) => {
-        eq: (k: string, v: string) => {
-          order: (k: string, o: { ascending: boolean }) => Promise<{
-            data: SavedStockView[] | null; error: Error | null;
+        eq: (
+          k: string,
+          v: string,
+        ) => {
+          order: (
+            k: string,
+            o: { ascending: boolean },
+          ) => Promise<{
+            data: SavedStockView[] | null;
+            error: Error | null;
           }>;
         };
       };
       insert: (r: Partial<SavedStockView>) => Promise<{ error: Error | null }>;
       delete: () => { eq: (k: string, v: string) => Promise<{ error: Error | null }> };
-      update: (r: Partial<SavedStockView>) => { eq: (k: string, v: string) => Promise<{ error: Error | null }> };
+      update: (r: Partial<SavedStockView>) => {
+        eq: (k: string, v: string) => Promise<{ error: Error | null }>;
+      };
     };
     auth: { getUser: () => Promise<{ data: { user: { id: string } | null } }> };
   };
@@ -43,7 +52,9 @@ export function useSavedStockViews() {
     queryKey: ['saved-stock-views'],
     staleTime: 60_000,
     queryFn: async (): Promise<SavedStockView[]> => {
-      const { data: { user } } = await client.auth.getUser();
+      const {
+        data: { user },
+      } = await client.auth.getUser();
       if (!user) return [];
       const { data, error } = await client
         .from(TABLE)
@@ -57,10 +68,14 @@ export function useSavedStockViews() {
 
   const saveView = useMutation({
     mutationFn: async ({ name, filters }: { name: string; filters: Record<string, unknown> }) => {
-      const { data: { user } } = await client.auth.getUser();
+      const {
+        data: { user },
+      } = await client.auth.getUser();
       if (!user) throw new Error('Não autenticado');
       const { error } = await client.from(TABLE).insert({
-        user_id: user.id, name, filters: filters as unknown as SavedStockView['filters'],
+        user_id: user.id,
+        name,
+        filters: filters as unknown as SavedStockView['filters'],
       });
       if (error) throw error;
     },
@@ -68,7 +83,12 @@ export function useSavedStockViews() {
       void qc.invalidateQueries({ queryKey: ['saved-stock-views'] });
       toast({ title: '💾 View salva!' });
     },
-    onError: (err) => toast({ title: 'Erro ao salvar', description: (err as Error).message, variant: 'destructive' }),
+    onError: (err) =>
+      toast({
+        title: 'Erro ao salvar',
+        description: (err as Error).message,
+        variant: 'destructive',
+      }),
   });
 
   const deleteView = useMutation({
@@ -76,7 +96,9 @@ export function useSavedStockViews() {
       const { error } = await client.from(TABLE).delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['saved-stock-views'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['saved-stock-views'] });
+    },
   });
 
   return {

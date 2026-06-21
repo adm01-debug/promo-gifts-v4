@@ -475,7 +475,7 @@ const FALLBACK_AUTH: AuthContextType = {
   mfaRequired: false,
   rolesLoaded: false,
   refreshAAL: async () => {},
-  signIn: async () => ({ error: { message: 'AuthProvider indisponível' }, data: null }),
+  signIn: () => Promise.resolve({ error: { message: 'AuthProvider indisponível' }, data: null }),
   signOut: async () => {},
   refreshProfile: async () => {},
   refreshSession: async () => {},

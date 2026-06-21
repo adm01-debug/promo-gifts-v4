@@ -23,18 +23,18 @@ export type BridgeHealth = {
  * @deprecated Caminho B — bridge descontinuada. Retorna ok=true imediatamente.
  * Mantido apenas para compatibilidade com importadores existentes.
  */
-export async function pingHealth(_timeoutMs = 2500): Promise<BridgeHealth> {
+export function pingHealth(_timeoutMs = 2500): Promise<BridgeHealth> {
   // external-db-bridge foi descontinuada nas PRs #230-232 (Caminho B).
   // Retornamos ok=true para não bloquear o cloud-status probe nem o prewarm.
-  return { ok: true, ms: 0 };
+  return Promise.resolve({ ok: true, ms: 0 });
 }
 
 /**
  * @deprecated Caminho B — bridge descontinuada. Retorna ok=true imediatamente.
  * Mantido apenas para compatibilidade com importadores existentes.
  */
-export async function waitForBridgeReady(_totalTimeoutMs = 5000): Promise<BridgeHealth> {
-  return { ok: true, ms: 0 };
+export function waitForBridgeReady(_totalTimeoutMs = 5000): Promise<BridgeHealth> {
+  return Promise.resolve({ ok: true, ms: 0 });
 }
 
 /** Limpa o cache — mantido para compatibilidade com testes existentes. */
