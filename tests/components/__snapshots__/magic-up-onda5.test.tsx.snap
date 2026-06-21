@@ -84,7 +84,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — empate de scores [7
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-1"
           data-variation-index="0"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -152,7 +151,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — empate de scores [7
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-2"
           data-variation-index="1"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -214,7 +212,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — empate de scores [7
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-3"
           data-variation-index="2"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -308,7 +305,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — estado base com 3 v
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-1"
           data-variation-index="0"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -370,7 +366,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — estado base com 3 v
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-2"
           data-variation-index="1"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -438,7 +433,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — estado base com 3 v
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-3"
           data-variation-index="2"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -532,7 +526,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — scores ausentes exi
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-1"
           data-variation-index="0"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -594,7 +587,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — scores ausentes exi
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-2"
           data-variation-index="1"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -656,7 +648,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — scores ausentes exi
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-3"
           data-variation-index="2"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -749,7 +740,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — variação ativa em
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-1"
           data-variation-index="0"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -812,7 +802,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — variação ativa em
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-2"
           data-variation-index="1"
-          type="button"
         >
           Marcar vencedora
         </button>
@@ -880,7 +869,6 @@ exports[`MagicUpVariationComparator snapshots > snapshot — variação ativa em
           class="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-all duration-300 ease-out focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 touch-manipulation active:scale-[0.96] hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary/10 hover:text-primary font-bold active:bg-primary/20 rounded-lg px-3 min-h-[36px] h-6 w-full text-[11px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           data-testid="variation-winner-button-3"
           data-variation-index="2"
-          type="button"
         >
           Marcar vencedora
         </button>

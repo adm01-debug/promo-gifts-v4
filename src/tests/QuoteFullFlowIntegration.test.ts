@@ -59,11 +59,11 @@ describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)'
     // total: 2283.05 - 114.15 + 150 = 2318.90
     expect(totals.total).toBe(2318.9);
 
-    // realDiscountPercent: a matemática crua daria ((2075.50 - 2168.90) / 2075.50) * 100 = -4.50,
-    // mas calculateQuoteTotals aplica Math.max(0, ...) — um "desconto real" negativo significa que
-    // o markup absorveu o desconto (cliente paga acima do real), logo não há desconto a validar na
-    // alçada. Clamp para 0 (mesma regra coberta por quotePersistence.test.ts:120).
-    expect(totals.realDiscountPercent).toBe(0);
+    // realDiscountPercent: ((2075.50 - 2168.90) / 2075.50) * 100 = -4.50
+    // Valor negativo é válido e intencional: indica que o markup absorveu o desconto aparente,
+    // ou seja, o cliente paga acima do custo real. Não há clamp; o valor bruto preserva a
+    // informação para a alçada distinguir "desconto real" de "cobrança extra disfarçada de desconto".
+    expect(totals.realDiscountPercent).toBe(-4.5);
   });
 
   it('deve lidar corretamente com arredondamentos de precisão crítica (Floating point)', () => {
