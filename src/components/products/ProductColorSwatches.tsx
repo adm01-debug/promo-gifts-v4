@@ -26,6 +26,7 @@
 import { memo, useId, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { getColorSwatchClasses, resolveSwatchBackground } from '@/components/shared/ColorSwatch';
 
 export interface ColorDotLike {
   name: string;
