@@ -201,6 +201,7 @@ export function useFavoriteLists() {
       listId: string;
       expiresInDays?: number;
     }) => {
+      if (!user) throw new Error('not-authenticated');
       // Gera token aleatório de 32 bytes em hex
       const bytes = new Uint8Array(32);
       crypto.getRandomValues(bytes);
@@ -212,6 +213,7 @@ export function useFavoriteLists() {
         .from('favorite_lists')
         .update({ shared_token: token, shared_expires_at: expiresAt })
         .eq('id', listId)
+        .eq('user_id', user.id)
         .select()
         .single();
       if (error) throw error;
@@ -225,10 +227,12 @@ export function useFavoriteLists() {
 
   const revokeShareToken = useMutation({
     mutationFn: async (listId: string) => {
+      if (!user) throw new Error('not-authenticated');
       const { error } = await supabase
         .from('favorite_lists')
         .update({ shared_token: null, shared_expires_at: null })
-        .eq('id', listId);
+        .eq('id', listId)
+        .eq('user_id', user.id);
       if (error) throw error;
     },
     onSuccess: () => {
