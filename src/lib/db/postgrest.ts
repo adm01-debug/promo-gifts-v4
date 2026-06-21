@@ -35,6 +35,8 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   limit?: number;
   offset?: number;
   countMode?: 'estimated' | 'exact' | 'none' | 'planned';
+  /** Conflict target column(s) for upsert (PostgREST onConflict). Defaults to the PK. */
+  onConflict?: string;
   /** AbortSignal — when aborted, the underlying HTTP request is cancelled. */
   signal?: AbortSignal;
 }
@@ -319,7 +321,10 @@ type WriteResult = { data: unknown; error: { message?: string } | null };
 type WriteBuilder = PromiseLike<WriteResult> & {
   insert: (values: unknown) => WriteBuilder;
   update: (values: unknown) => WriteBuilder;
-  upsert: (values: unknown) => WriteBuilder;
+  upsert: (
+    values: unknown,
+    options?: { onConflict?: string; ignoreDuplicates?: boolean },
+  ) => WriteBuilder;
   delete: () => WriteBuilder;
   select: (columns?: string) => WriteBuilder;
   eq: (column: string, value: unknown) => WriteBuilder;
@@ -403,7 +408,9 @@ async function dbInvokeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>
       builder = base.insert(payload).select();
       break;
     case 'upsert':
-      builder = base.upsert(payload).select();
+      builder = base
+        .upsert(payload, options.onConflict ? { onConflict: options.onConflict } : undefined)
+        .select();
       break;
     case 'update':
       builder = applyScope(base.update(payload)).select();

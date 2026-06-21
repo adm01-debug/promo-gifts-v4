@@ -708,7 +708,10 @@ type RestWriteClient = {
     insert: (values: unknown) => RestWriteBuilder;
     update: (values: unknown) => RestWriteBuilder;
     delete: () => RestWriteBuilder;
-    upsert: (values: unknown) => RestWriteBuilder;
+    upsert: (
+      values: unknown,
+      options?: { onConflict?: string; ignoreDuplicates?: boolean },
+    ) => RestWriteBuilder;
   };
 };
 export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
@@ -752,7 +755,14 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
       builder = tbl.insert(payloadOf(options.data)).select();
       break;
     case 'upsert':
-      builder = tbl.upsert(payloadOf(options.data)).select();
+      // Forward onConflict so bulk "update by SKU" targets the unique sku index instead of
+      // the PK (otherwise existing rows 23505-conflict on the PK and fail).
+      builder = tbl
+        .upsert(
+          payloadOf(options.data),
+          options.onConflict ? { onConflict: options.onConflict } : undefined,
+        )
+        .select();
       break;
     case 'update':
       builder = scoped(tbl.update(payloadOf(options.data))).select();

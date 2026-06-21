@@ -450,17 +450,30 @@ async function upsertProducts(
 
       let existingRows: Array<{ id: string; external_id: string | null; sku: string | null }> = [];
       if (externalIds.length > 0 || skus.length > 0) {
-        const filters: string[] = [];
-        if (externalIds.length > 0) filters.push(`external_id.in.(${externalIds.join(',')})`);
-        if (skus.length > 0) filters.push(`sku.in.(${skus.join(',')})`);
-
-        const { data: existingData, error: existingError } = await supabase
-          .from('products')
-          .select('id,external_id,sku')
-          .or(filters.join(','));
-        chunkRoundtrips += 1;
-        if (existingError) throw existingError;
-        existingRows = existingData ?? [];
+        // SECURITY (CWE-943): never interpolate caller-controlled sku/external_id into the
+        // PostgREST `.or()` filter DSL — a value containing ',', ')' or '.' breaks out of
+        // the in.(...) list and injects arbitrary filter expressions. Use parameterized
+        // `.in()` probes (supabase-js URL-encodes the values) and merge results by id.
+        const byId = new Map<string, { id: string; external_id: string | null; sku: string | null }>();
+        if (externalIds.length > 0) {
+          const { data, error } = await supabase
+            .from('products')
+            .select('id,external_id,sku')
+            .in('external_id', externalIds);
+          chunkRoundtrips += 1;
+          if (error) throw error;
+          for (const row of data ?? []) byId.set(row.id, row);
+        }
+        if (skus.length > 0) {
+          const { data, error } = await supabase
+            .from('products')
+            .select('id,external_id,sku')
+            .in('sku', skus);
+          chunkRoundtrips += 1;
+          if (error) throw error;
+          for (const row of data ?? []) byId.set(row.id, row);
+        }
+        existingRows = Array.from(byId.values());
       }
 
       const existingByExternalId = new Map(
@@ -479,6 +492,9 @@ async function upsertProducts(
       const withoutExternalId: NormalizedProduct[] = [];
 
       for (const item of chunk) {
+        // 'variations' is NOT a products column (variant data lives in product_variants).
+        // Leaving it in the upsert payload 400s the entire chunk (PGRST204), so strip it.
+        delete (item as Record<string, unknown>).variations;
         const existing = item.external_id
           ? (existingByExternalId.get(item.external_id) ?? existingBySku.get(item.sku))
           : existingBySku.get(item.sku);
