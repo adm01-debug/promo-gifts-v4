@@ -348,6 +348,18 @@ describe("buildInsertPayload", () => {
       buildInsertPayload({}, 'uid', null, { subtotal: 50, discountAmount: 60, total: -10 })
     ).toThrow(/exceder/i);
   });
+
+  // Regressão: o contato CRM selecionado não pode sumir ao salvar o orçamento.
+  // create_quote_transactional lê contact_id do _quote jsonb.
+  it("preserva contact_id do CRM no payload", () => {
+    const p = buildInsertPayload({ contact_id: 'c-789' }, 'uid', null, BASE_TOTALS);
+    expect(p.contact_id).toBe('c-789');
+  });
+
+  it("contact_id ausente → null (não undefined)", () => {
+    const p = buildInsertPayload({}, 'uid', null, BASE_TOTALS);
+    expect(p.contact_id).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -374,6 +386,20 @@ describe("buildUpdatePayload", () => {
     expect(() =>
       buildUpdatePayload({}, { subtotal: 50, discountAmount: 100, total: -50 })
     ).toThrow(/exceder/i);
+  });
+
+  // Regressão: update_quote_transactional só persiste contact_id quando a chave
+  // existe no _quote_patch (CASE WHEN _quote_patch ? 'contact_id'). A chave deve
+  // estar sempre presente para refletir o estado atual (definir OU limpar o contato).
+  it("preserva contact_id do CRM no patch", () => {
+    const p = buildUpdatePayload({ contact_id: 'c-789' }, BASE_TOTALS);
+    expect(p.contact_id).toBe('c-789');
+  });
+
+  it("contact_id ausente → chave presente como null (permite limpar o contato)", () => {
+    const p = buildUpdatePayload({}, BASE_TOTALS);
+    expect('contact_id' in p).toBe(true);
+    expect(p.contact_id).toBeNull();
   });
 });
 

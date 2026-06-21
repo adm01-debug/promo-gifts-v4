@@ -80,9 +80,16 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
-  // Negative value is valid: means markup > apparent discount (seller has margin).
+  // SSOT (logic/quotes/calculations.ts:calculateRealDiscountPercent): clamp com
+  // Math.max(0, …). Um "desconto real" negativo significa que o markup absorveu o
+  // desconto (cliente paga acima do real) — não há desconto a validar na alçada,
+  // e exibir -X% confundiria o vendedor (NegotiationMarkupCard mostra este valor).
+  // Sem o clamp, a UI (que usa calculateRealDiscountPercent, clamped) divergiria do
+  // valor persistido por calculateQuoteTotals.
   const realDiscountPercent =
-    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
+    realSubtotal > 0
+      ? Math.max(0, round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
+      : 0;
 
   return {
     subtotal: round2(subtotal),
@@ -111,6 +118,7 @@ export function buildInsertPayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     client_cnpj: quote.client_cnpj || null,
+    contact_id: quote.contact_id || null,
     seller_id: userId,
     organization_id: orgId,
     status: quote.status || 'draft',
@@ -143,6 +151,7 @@ export function buildUpdatePayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     client_cnpj: quote.client_cnpj || null,
+    contact_id: quote.contact_id || null,
     status: quote.status,
     subtotal: round2(totals.subtotal),
     discount_percent: round2(quote.discount_percent || 0),

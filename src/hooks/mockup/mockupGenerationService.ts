@@ -513,12 +513,11 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const row =
-    (
-      rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null
-    )?.[0] ?? null;
-  const logoUrl = row?.logo_url ?? null;
-  const mockupUrl = row?.mockup_url ?? null;
+  // Explicit array narrowing instead of a double-cast through `unknown` (which would
+  // hide an unexpected payload shape). Field values are read individually below.
+  const row = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  const logoUrl = (row?.logo_url as string | null | undefined) ?? null;
+  const mockupUrl = (row?.mockup_url as string | null | undefined) ?? null;
 
   let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
   if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
