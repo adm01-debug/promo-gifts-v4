@@ -17,7 +17,7 @@ import {
   type ColorDotLike,
   ProductColorSwatches,
 } from '@/components/products/ProductColorSwatches';
-import { getStockStatus } from '@/components/inventory/StockBadge';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 
@@ -197,7 +197,7 @@ export function ReplenishmentTableView({
             const hasColorStock = typeof activeColor?.stockQty === 'number';
             const rowImage = activeColor?.image || product.product_image;
             const rowStatus = hasColorStock
-              ? getStockStatus(activeColor?.stockQty ?? 0, 10)
+              ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
               : product.stock_status;
             const stockConfig = STOCK_CONFIG[rowStatus as StockStatus];
             const stockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : product.stock_quantity;

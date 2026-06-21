@@ -153,18 +153,21 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   </QueryClientProvider>
 );
 
-describe('NoveltyProductGrid › sentinel "Role para ver mais" por view mode', () => {
+describe('NoveltyProductGrid › sentinel de paginação (novelty-infinite-loader) por view mode', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('mostra o sentinel no modo grid quando há mais itens que o visibleCount', () => {
     render(<NoveltyProductGrid />, { wrapper });
-    // 45 itens, visibleCount inicial 40 → faltam 5.
-    expect(screen.getByText(/Role para ver mais 5 novidades/)).toBeInTheDocument();
+    // 45 itens, visibleCount inicial 40 → faltam 5 ⇒ hasMore=true (só no grid).
+    // O sentinel atual é o bloco 'novelty-infinite-loader' ('Carregando mais N de M'),
+    // renderizado pelo proprio NoveltyProductGrid (o copy antigo 'Role para ver mais' foi removido).
+    expect(screen.getByTestId('novelty-infinite-loader')).toBeInTheDocument();
+    expect(screen.getByText(/Carregando mais/)).toBeInTheDocument();
   });
 
   it('NÃO mostra o sentinel no modo list (tudo já renderizado de uma vez)', async () => {
     render(<NoveltyProductGrid />, { wrapper });
-    expect(screen.getByText(/Role para ver mais/)).toBeInTheDocument();
+    expect(screen.getByTestId('novelty-infinite-loader')).toBeInTheDocument();
 
     // Abre o popover de layout e troca para "Lista".
     fireEvent.click(screen.getByTestId('layout-popover-trigger'));
@@ -174,8 +177,8 @@ describe('NoveltyProductGrid › sentinel "Role para ver mais" por view mode', (
     await waitFor(() => {
       // Todos os 45 itens estão no DOM (list não pagina).
       expect(screen.getAllByTestId('list-item')).toHaveLength(45);
-      // E o sentinel desapareceu.
-      expect(screen.queryByText(/Role para ver mais/)).toBeNull();
+      // E o sentinel desapareceu (hasMore=false fora do grid).
+      expect(screen.queryByTestId('novelty-infinite-loader')).toBeNull();
     });
   });
 });

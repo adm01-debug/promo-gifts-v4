@@ -20,6 +20,7 @@ import { Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StockBadge, getStockStatus, type StockStatus } from '@/components/inventory/StockBadge';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import {
   ProductColorSwatches,
   type ColorDotLike,
@@ -122,7 +123,8 @@ export const BaseProductGridCard = memo(
 
     // Estoque/status da cor selecionada (paridade com a lista do Catálogo). Com cor
     // ativa, exibe o estoque DAQUELA cor (stockQty agregado em colors); sem cor, o
-    // total. Usa getStockStatus(...,10) p/ consistência com o status do total.
+    // total (resolvedStockStatus via getStockStatus). Per-cor usa getCatalogStockStatus
+    // (SSOT pública): qty>=10 → in-stock, qty<=0/negativo → out-of-stock.
     const activeColor = useMemo(() => {
       if (!activeColorName || !colors?.length) return undefined;
       return colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
@@ -130,7 +132,7 @@ export const BaseProductGridCard = memo(
     const hasColorStock = typeof activeColor?.stockQty === 'number';
     const displayStockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : (stockQuantity ?? 0);
     const displayStockStatus = hasColorStock
-      ? getStockStatus(activeColor?.stockQty ?? 0, 10)
+      ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
       : resolvedStockStatus;
 
     return (
