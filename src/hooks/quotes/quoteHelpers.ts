@@ -36,6 +36,13 @@ export function validateDiscount(
   if (quote.discount_percent && (quote.discount_percent < 0 || quote.discount_percent > 100)) {
     throw new Error('Desconto em porcentagem deve estar entre 0% e 100%');
   }
+  // BUG-008: NaN comparisons always return false, so a NaN discountAmount would
+  // silently pass the checks below and be persisted as NaN. Guard first.
+  if (!Number.isFinite(totals.discountAmount)) {
+    throw new Error(
+      `Valor de desconto inválido: ${totals.discountAmount}. Recarregue a página e tente novamente.`,
+    );
+  }
   if (totals.discountAmount < 0) {
     throw new Error('O valor do desconto não pode ser negativo');
   }
