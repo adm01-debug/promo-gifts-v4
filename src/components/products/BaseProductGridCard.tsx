@@ -123,7 +123,8 @@ export const BaseProductGridCard = memo(
 
     // Estoque/status da cor selecionada (paridade com a lista do Catálogo). Com cor
     // ativa, exibe o estoque DAQUELA cor (stockQty agregado em colors); sem cor, o
-    // total. Usa getStockStatus(...,10) p/ consistência com o status do total.
+    // total (resolvedStockStatus via getStockStatus). Per-cor usa getCatalogStockStatus
+    // (SSOT pública): qty>=10 → in-stock, qty<=0/negativo → out-of-stock.
     const activeColor = useMemo(() => {
       if (!activeColorName || !colors?.length) return undefined;
       return colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
