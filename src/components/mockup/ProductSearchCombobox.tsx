@@ -237,7 +237,10 @@ export function ProductSearchCombobox({
                           }
                           return (
                             <div className="flex h-full w-full items-center justify-center">
-                              <Package className="h-5 w-5 text-muted-foreground" />
+                              <Package
+                                aria-hidden="true"
+                                className="h-5 w-5 text-muted-foreground"
+                              />
                             </div>
                           );
                         })()}
