@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 166: 5 zero-violation rules (excluded: @typescript-eslint/no-unsafe-enum-comparison 0v✓ — saved Batch 167)
+      'yoda': 'error',
+      'no-template-curly-in-string': 'error',
+      '@typescript-eslint/prefer-namespace-keyword': 'error',
+      'react/jsx-no-target-blank': 'error',
+      'no-irregular-whitespace': 'error',
       // Batch 165: 5 zero-violation rules (excluded: yoda 0v✓, no-template-curly-in-string 0v✓, @typescript-eslint/prefer-namespace-keyword 0v✓, react/jsx-no-target-blank 0v✓, no-irregular-whitespace 0v✓, @typescript-eslint/no-unsafe-enum-comparison 0v✓ — saved Batch 166)
       'no-useless-catch': 'error',
       'wrap-iife': 'error',
