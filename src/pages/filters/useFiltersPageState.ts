@@ -399,8 +399,6 @@ export function useFiltersPageState() {
       { replace: true },
     );
   }, [viewMode, setSearchParams]);
-  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
-  const [commandAction, setCommandAction] = useState<string | null>(null);
   // FIX-12: removido estado 'appliedFilters' — declarado mas nunca consumido (dead code).
   // Era exportado no return mas nenhum consumer o utilizava, gerando re-renders desnecessários.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -684,13 +682,22 @@ export function useFiltersPageState() {
         value: `${totalMateriais} selecionado${totalMateriais > 1 ? 's' : ''}`,
         key: 'materiais',
       });
-    const totalRamos =
-      (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
-    if (totalRamos > 0)
+    // BUG-SF-05 FIX 2026-06-21: chips separados para ramos e segmentos de atividade.
+    // Antes: chip único 'Nichos' com key='ramosAtividade' era exibido mesmo quando
+    // apenas segmentosAtividade estava ativo, causando label confuso e X que removia ambos.
+    // Agora: chip 'Ramos' (limpa ramos+segmentos via clearSingleFilter) e chip
+    // 'Segmentos' (limpa só segmentos via branch Array.isArray do clearSingleFilter).
+    if ((filters.ramosAtividade?.length || 0) > 0)
       summary.push({
-        label: 'Nichos',
-        value: `${totalRamos} selecionado${totalRamos > 1 ? 's' : ''}`,
+        label: 'Ramos',
+        value: `${filters.ramosAtividade!.length} selecionado${filters.ramosAtividade!.length > 1 ? 's' : ''}`,
         key: 'ramosAtividade',
+      });
+    if ((filters.segmentosAtividade?.length || 0) > 0)
+      summary.push({
+        label: 'Segmentos',
+        value: `${filters.segmentosAtividade!.length} selecionado${filters.segmentosAtividade!.length > 1 ? 's' : ''}`,
+        key: 'segmentosAtividade',
       });
     const genderArr = filters.gender || [];
     if (genderArr.length > 0)
@@ -799,10 +806,6 @@ export function useFiltersPageState() {
     setGridColumns,
     selectionMode,
     setSelectionMode,
-    voiceOverlayOpen,
-    setVoiceOverlayOpen,
-    commandAction,
-    setCommandAction,
     // FIX-12: appliedFilters/setAppliedFilters removidos (dead code — nenhum consumer)
     mobileFiltersOpen,
     setMobileFiltersOpen,
