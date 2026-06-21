@@ -1,6 +1,7 @@
-import { Component, type ReactNode } from 'react';
+import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -26,6 +27,14 @@ export class ErrorBoundary extends Component<Props, State> {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao renderizar este componente.';
     return { hasError: true, errorMessage: message };
+  }
+
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    // getDerivedStateFromError only updates UI state; without this hook the incident is
+    // invisible in monitoring. Forward it to the structured logger/telemetry.
+    logger.error('[ErrorBoundary] render error caught', error, {
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   handleRetry = () => {

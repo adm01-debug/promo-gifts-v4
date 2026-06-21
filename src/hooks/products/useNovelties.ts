@@ -136,10 +136,15 @@ export function useExpiringNovelties(maxDays = 7) {
         offset += PAGE_SIZE;
       }
 
-      return allRaw
-        .map(toNovelty)
-        .filter((n) => n.days_remaining <= maxDays) // is_active já garantido pelo predicado DB
-        .sort((a, b) => a.days_remaining - b.days_remaining);
+      return (
+        allRaw
+          .map(toNovelty)
+          // is_active is re-derived in toNovelty from the live timestamp, so a row that
+          // expires between query build and mapping can come back is_active=false with
+          // days_remaining=0; keep the guard so an already-expired item is not shown.
+          .filter((n) => n.is_active && n.days_remaining <= maxDays)
+          .sort((a, b) => a.days_remaining - b.days_remaining)
+      );
     },
     // ISSUE-40 FIX: expiração iminente — staletime curto garante que um produto
     // que cruzou o limite de `maxDays` saia do widget antes do cleanup cron rodar.

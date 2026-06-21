@@ -30,8 +30,14 @@ export function useIPValidation() {
           .catch(() => null)
           .finally(() => clearTimeout(ipTimeout));
         if (response) {
-          const ipData = await response.json();
-          return ipData.ip;
+          try {
+            const ipData = (await response.json()) as { ip?: string };
+            return ipData?.ip ?? null;
+          } catch {
+            // Non-JSON body (e.g. a rate-limit HTML page) would otherwise throw and be
+            // swallowed by the outer catch — treat it as "IP unknown" explicitly.
+            return null;
+          }
         }
         return null;
       }
@@ -72,6 +78,8 @@ export function useIPValidation() {
       try {
         const currentIP = await fetchCurrentIP();
 
+        // Fail-secure when the IP cannot be identified (deliberate — covered by
+        // useIPValidation.test "returns error when current IP cannot be identified").
         if (!currentIP) {
           return {
             isAllowed: false,

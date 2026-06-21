@@ -416,8 +416,6 @@ export function useFavoriteListItems(listId: string | null) {
               return;
             }
             const results = await Promise.allSettled(
-              // RPC real (verificado no BD) ainda ausente de types.ts; usa o helper
-              // `untypedRpc` do projeto — mesmo padrão das chamadas acima neste arquivo.
               trashed.map((t) =>
                 untypedRpc('restore_favorite_from_trash', {
                   _trash_id: t.id,
@@ -425,14 +423,31 @@ export function useFavoriteListItems(listId: string | null) {
                 }),
               ),
             );
-            const restoredCount = results.filter((r) => r.status === 'fulfilled').length;
+            // restore_favorite_from_trash returns {ok:false} as an HTTP 200 body, so a
+            // failed restore still settles 'fulfilled'. Count only RPCs that returned ok
+            // (matches the single-item path, which checks data.ok).
+            const restoredCount = results.filter((r) => {
+              if (r.status !== 'fulfilled') return false;
+              const { data, error } = r.value as {
+                data?: { ok?: boolean } | null;
+                error?: unknown;
+              };
+              return !error && data?.ok === true;
+            }).length;
+            const failedCount = trashed.length - restoredCount;
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
             qc.invalidateQueries({ queryKey: ['favorite-trash'] });
             qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
-            toast.success(
-              `${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`,
-            );
+            if (failedCount > 0) {
+              toast.warning(`${restoredCount} de ${trashed.length} itens restaurados`, {
+                description: `${failedCount} não puderam ser restaurados (lista de origem indisponível).`,
+              });
+            } else {
+              toast.success(
+                `${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`,
+              );
+            }
           },
         },
         duration: 8000,

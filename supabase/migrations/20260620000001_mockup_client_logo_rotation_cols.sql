@@ -57,12 +57,17 @@ WHERE client_name IS NULL
   AND (area_config ->> 'clientName') <> '';
 
 -- Backfill logo_rotation / logo_scale from area_config for older rows.
+-- NOTE: `ADD COLUMN ... DEFAULT <const>` above already filled every existing row with
+-- 0/100, so these columns are never NULL. A `WHERE logo_rotation IS NULL` clause would
+-- therefore match nothing and silently leave older rows clobbered at the default while
+-- their real values still sit in area_config. Backfill wherever the JSONB carries the
+-- authoritative value instead, falling back to the current (default) column value.
 UPDATE public.generated_mockups
 SET
-  logo_rotation = COALESCE((area_config ->> 'logoRotation')::numeric, 0),
-  logo_scale    = COALESCE((area_config ->> 'logoScale')::numeric, 100)
-WHERE (logo_rotation IS NULL OR logo_scale IS NULL)
-  AND area_config IS NOT NULL;
+  logo_rotation = COALESCE((area_config ->> 'logoRotation')::numeric, logo_rotation),
+  logo_scale    = COALESCE((area_config ->> 'logoScale')::numeric, logo_scale)
+WHERE area_config IS NOT NULL
+  AND (area_config ? 'logoRotation' OR area_config ? 'logoScale');
 
 -- Index on client_id speeds up admin queries like "all mockups for client X".
 CREATE INDEX IF NOT EXISTS idx_generated_mockups_client_id
