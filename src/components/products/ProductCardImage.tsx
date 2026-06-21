@@ -143,7 +143,7 @@ export const ProductCardImage = memo(
     const rawStatus = VALID_STOCK_STATUSES.has(product.stockStatus as string)
       ? product.stockStatus
       : stockQty !== null
-        ? getCatalogStockStatus(stockQty)
+        ? getCatalogStockStatus(stockQty, undefined, product.minQuantity)
         : undefined;
     const reconciledStatus =
       rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0 ? 'out-of-stock' : rawStatus;

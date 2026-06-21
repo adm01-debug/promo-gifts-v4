@@ -29,8 +29,11 @@ export const CATALOG_LOW_STOCK_THRESHOLD = 10;
 /**
  * Deriva o status de catálogo a partir da quantidade em estoque.
  *
- * Regras:
+ * Regras (avaliadas nesta ordem):
  * - `qty <= 0` (inclui valores negativos anômalos): `'out-of-stock'`
+ * - `minOrderQuantity >= 1` e `qty < minOrderQuantity`: `'out-of-stock'`
+ *   (o item TEM estoque, mas abaixo do mínimo exigido pelo fornecedor →
+ *   não pode ser pedido, logo é indisponível para o cliente)
  * - `0 < qty < lowStockThreshold`: `'low-stock'`
  * - `qty >= lowStockThreshold`: `'in-stock'`
  *
@@ -38,15 +41,33 @@ export const CATALOG_LOW_STOCK_THRESHOLD = 10;
  * são normalizadas para `0` e, portanto, resultam em `'out-of-stock'` — o
  * estado seguro para exibição (nunca anuncia disponibilidade sem dado válido).
  *
+ * BUG-STOCK-01 (2026-06-18) → CONSOLIDADO (2026-06-20): a regra de
+ * `min_quantity` (estoque positivo porém abaixo do mínimo pedível = zerado)
+ * vivia apenas em `useProductsLightweight.getStockStatus`, divergente do
+ * caminho pesado (`product-mapper`, que ignorava min_quantity) e de
+ * `useNovelties` (que passava min_quantity como limiar de low-stock). Agora a
+ * regra pertence a esta SSOT e todos os callers a aplicam de forma idêntica.
+ *
  * @param stock quantidade em estoque (pode ser nula/indefinida)
  * @param lowStockThreshold limiar de "estoque baixo" (padrão {@link CATALOG_LOW_STOCK_THRESHOLD})
+ * @param minOrderQuantity quantidade mínima pedível (min_quantity do fornecedor);
+ *   quando informada (>= 1), estoque positivo abaixo dela vira `'out-of-stock'`.
  */
 export function getCatalogStockStatus(
   stock: number | null | undefined,
   lowStockThreshold: number = CATALOG_LOW_STOCK_THRESHOLD,
+  minOrderQuantity?: number | null,
 ): CatalogStockStatus {
   const qty = typeof stock === 'number' && Number.isFinite(stock) ? stock : 0;
   if (qty <= 0) return 'out-of-stock';
+  if (
+    typeof minOrderQuantity === 'number' &&
+    Number.isFinite(minOrderQuantity) &&
+    minOrderQuantity >= 1 &&
+    qty < minOrderQuantity
+  ) {
+    return 'out-of-stock';
+  }
   if (qty < lowStockThreshold) return 'low-stock';
   return 'in-stock';
 }

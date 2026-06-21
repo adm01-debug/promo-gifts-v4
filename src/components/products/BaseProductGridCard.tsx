@@ -124,9 +124,9 @@ export const BaseProductGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA por breakpoint (não min-h). Mobile = 400px, ≥sm = 430px.
-          // Garante cards idênticos mesmo com +N nos swatches ou título 1↔2 linhas.
-          'h-[400px] max-h-[400px] overflow-hidden sm:h-[430px] sm:max-h-[430px]',
+          // min-h apenas: o virtualizer precisa medir a altura real do card.
+          // Nunca usar h-fixo, max-h nem overflow-hidden — quebra measureElement.
+          'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
           className,
         )}

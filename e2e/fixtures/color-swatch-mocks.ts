@@ -1,100 +1,86 @@
 /**
- * Fixture determinística para specs de bolinha-de-cor (color swatch).
+ * Fixture determinística para o cenário de cor esgotada (out-of-stock).
  *
- * Intercepta os endpoints consumidos por `useExternalVariantStock`:
- *   - GET /rest/v1/product_variants?product_id=eq.{productId}&...
- *   - GET /rest/v1/product_images?product_id=eq.{productId}&...
- *
- * Injeta um catálogo mínimo para um único produto:
- *   - "Azul Mock"  → stock 50   (in-stock)
- *   - "Preto Mock" → stock 0    (out-of-stock) ← usado pelo spec para validar data-stock-state="out"
- *
- * Desta forma os testes de out-of-stock são determinísticos e não dependem
- * do seed real do banco de dados.
+ * installColorStockMock injeta uma variante "Preto Mock" com stock_quantity=0
+ * via page.route, interceptando chamadas GET a product_variants.
+ * O cenário valida que:
+ *   - O swatch out-of-stock mantém dimensões > 0 (layout estável)
+ *   - data-stock-state="out" é renderizado
+ *   - O swatch permanece clicável e ganha aria-checked="true" ao ser clicado
  */
 import type { Page, Route } from '@playwright/test';
 
-interface MockVariantRow {
-  id: string;
-  product_id: string;
-  sku: string;
-  supplier_sku: string | null;
-  color_code: string | null;
-  color_name: string | null;
-  color_hex: string | null;
-  size_code: string | null;
-  stock_quantity: number | null;
-  selected_thumbnail: string | null;
-  images: string[] | null;
-  bitrix_product_id: string | number | null;
-  is_active: boolean;
-}
-
-interface InstallOptions {
+export interface ColorStockMockOptions {
   productId: string;
+  mockColorName?: string;
+  mockStockQty?: number;
 }
 
-function makeVariants(productId: string): MockVariantRow[] {
-  return [
-    {
-      id: `mock-v-blue-${productId}`,
-      product_id: productId,
-      sku: `MOCK-BLUE-${productId}`,
-      supplier_sku: null,
-      color_code: null,
-      color_name: 'Azul Mock',
-      color_hex: '#3b82f6',
-      size_code: null,
-      stock_quantity: 50,
-      selected_thumbnail: null,
-      images: null,
-      bitrix_product_id: null,
-      is_active: true,
-    },
-    {
-      id: `mock-v-black-${productId}`,
-      product_id: productId,
-      sku: `MOCK-BLACK-${productId}`,
-      supplier_sku: null,
-      color_code: null,
-      color_name: 'Preto Mock',
-      color_hex: '#111111',
-      size_code: null,
-      stock_quantity: 0,
-      selected_thumbnail: null,
-      images: null,
-      bitrix_product_id: null,
-      is_active: true,
-    },
-  ];
-}
+export async function installColorStockMock(
+  page: Page,
+  options: ColorStockMockOptions,
+): Promise<void> {
+  const { productId, mockColorName = 'Preto Mock', mockStockQty = 0 } = options;
 
-function fulfill(route: Route, rows: unknown[]): Promise<void> {
-  return route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: {
-      'content-range': `0-${Math.max(0, rows.length - 1)}/${rows.length}`,
-      'access-control-expose-headers': 'content-range',
-    },
-    body: JSON.stringify(rows),
-  });
-}
-
-export async function installColorStockMock(page: Page, { productId }: InstallOptions): Promise<void> {
-  const variants = makeVariants(productId);
-
-  await page.route(/\/rest\/v1\/product_variants(\?|$)/, async (route: Route) => {
+  await page.route(/\/rest\/v1\/product_variants/, async (route: Route) => {
     if (route.request().method() !== 'GET') return route.fallback();
-    const url = route.request().url();
-    if (!url.includes(`product_id=eq.${productId}`)) return route.fallback();
-    await fulfill(route, variants);
-  });
 
-  await page.route(/\/rest\/v1\/product_images(\?|$)/, async (route: Route) => {
-    if (route.request().method() !== 'GET') return route.fallback();
-    const url = route.request().url();
-    if (!url.includes(`product_id=eq.${productId}`)) return route.fallback();
-    await fulfill(route, []);
+    // Fetch the real response first
+    let response;
+    try {
+      response = await route.fetch();
+    } catch {
+      return route.fallback();
+    }
+
+    let rows: unknown[] = [];
+    try {
+      rows = await response.json();
+    } catch {
+      return route.fallback();
+    }
+
+    if (!Array.isArray(rows)) return route.fallback();
+
+    // Only inject the mock variant if this response is for the target product
+    const hasTargetProduct = rows.some(
+      (r) => r && typeof r === 'object' && (r as Record<string, unknown>).product_id === productId,
+    );
+    // Also inject when the URL references the productId (batch queries via `in.(...)`)
+    const urlHasProduct = route.request().url().includes(productId);
+
+    if (!hasTargetProduct && !urlHasProduct) {
+      return route.fulfill({
+        status: response.status(),
+        headers: Object.fromEntries(response.headers()),
+        body: JSON.stringify(rows),
+      });
+    }
+
+    const mockVariant = {
+      id: `mock-preto-${productId}`,
+      product_id: productId,
+      sku: `MOCK-PRETO-${productId.slice(0, 8).toUpperCase()}`,
+      name: mockColorName,
+      color_id: null,
+      color_name: mockColorName,
+      color_hex: '#000000',
+      color_code: null,
+      stock_quantity: mockStockQty,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const enhanced = [...rows, mockVariant];
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: {
+        'content-range': `0-${enhanced.length - 1}/${enhanced.length}`,
+        'access-control-expose-headers': 'content-range',
+      },
+      body: JSON.stringify(enhanced),
+    });
   });
 }

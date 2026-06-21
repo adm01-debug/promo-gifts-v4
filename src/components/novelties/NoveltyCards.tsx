@@ -104,9 +104,8 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // min-h garante consistência visual sem clips: o CSS grid stretch
-          // alinha as alturas por linha. h/max-h fixo + overflow-hidden quebravam
-          // o measureElement do virtualizer (altura sempre 400px, scroll errado).
+          // min-h apenas: o virtualizer precisa medir a altura real do card.
+          // Nunca usar h-fixo, max-h nem overflow-hidden aqui.
           'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
