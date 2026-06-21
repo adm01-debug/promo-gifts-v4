@@ -168,17 +168,18 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
       days_since: 5,
     };
 
-    const { unmount } = renderWithProviders(
+    const { unmount, container: noveltyContainer } = renderWithProviders(
       <NoveltyGridCard product={noveltyProduct as any} onSelect={vi.fn()} />,
     );
-    const noveltyArticle = document.querySelector("article")!;
+    const noveltyArticle = noveltyContainer.querySelector("article")!;
     expect(noveltyArticle.className).toMatch(/h-\[400px\]/);
     expect(noveltyArticle.className).toMatch(/max-h-\[400px\]/);
+    expect(noveltyArticle.className).toMatch(/overflow-hidden/);
     expect(noveltyArticle.className).toMatch(/sm:h-\[430px\]/);
     expect(noveltyArticle.className).toMatch(/sm:max-h-\[430px\]/);
     unmount();
 
-    renderWithProviders(
+    const { container: repContainer2 } = renderWithProviders(
       <ReplenishmentGridCard
         product={replenishmentProduct as any}
         onClick={vi.fn()}
@@ -187,9 +188,10 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
         onToggleSelect={vi.fn()}
       />,
     );
-    const replenishmentArticle = document.querySelector("article")!;
+    const replenishmentArticle = repContainer2.querySelector("article")!;
     expect(replenishmentArticle.className).toMatch(/h-\[400px\]/);
     expect(replenishmentArticle.className).toMatch(/max-h-\[400px\]/);
+    expect(replenishmentArticle.className).toMatch(/overflow-hidden/);
     expect(replenishmentArticle.className).toMatch(/sm:h-\[430px\]/);
     expect(replenishmentArticle.className).toMatch(/sm:max-h-\[430px\]/);
   });
