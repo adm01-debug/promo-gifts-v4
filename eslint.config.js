@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 228: 5 zero-violation rules (saved: only-throw-error 0v✓ — Batch 229+)
+      '@typescript-eslint/typedef': 'error',
+      '@typescript-eslint/no-useless-constructor': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      '@typescript-eslint/no-meaningless-void-operator': 'error',
+      '@typescript-eslint/dot-notation': 'error',
       // Batch 227: 5 zero-violation rules (saved: typedef, no-useless-constructor, prefer-optional-chain 0v✓ — Batch 228+)
       '@typescript-eslint/prefer-for-of': 'error',
       '@typescript-eslint/no-for-in-array': 'error',
