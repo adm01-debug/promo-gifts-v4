@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 168: 5 zero-violation rules (excluded: no-console 10v — saved: no-sequences 0v✓, no-shadow-restricted-names 0v✓, no-sparse-arrays 0v✓, no-unexpected-multiline 0v✓ — Batch 169)
+      'no-alert': 'error',
+      '@typescript-eslint/no-extraneous-class': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      'no-lone-blocks': 'error',
+      'no-script-url': 'error',
       // Batch 167: 5 zero-violation rules (excluded: no-plusplus 360v, no-continue 111v, no-bitwise 191v, no-param-reassign 21v, prefer-destructuring 201v)
       '@typescript-eslint/no-unsafe-enum-comparison': 'error',
       'no-useless-escape': 'error',
