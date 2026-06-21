@@ -126,6 +126,8 @@ function FlatVariantRow({
   selectionEnabled,
   isSelected,
   onToggleSelect,
+  emaAlert,
+  emaEnabled,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
@@ -140,6 +142,8 @@ function FlatVariantRow({
   selectionEnabled?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  emaAlert?: RuptureAlertRow;
+  emaEnabled?: boolean;
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
