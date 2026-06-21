@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 153: 5 zero-violation rules (excluded: jsx-a11y/no-interactive-element-to-noninteractive-role 0v✓ — saved Batch 154; also: jsx-handler-names 204v, jsx-no-bind 3666v, no-noninteractive-element-interactions 55v)
+      '@typescript-eslint/no-unsafe-declaration-merging': 'error',
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/parameter-properties': 'error',
+      'react/no-multi-comp': 'error',
+      'jsx-a11y/media-has-caption': 'error',
       // Batch 152: 5 zero-violation rules (excluded: no-set-state 12v, jsx-sort-props 17658v, jsx-max-depth 9467v, consistent-type-definitions 98v)
       'react/sort-comp': 'error',
       'react/no-direct-mutation-state': 'error',
