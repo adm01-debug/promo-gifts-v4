@@ -10,8 +10,10 @@
  * - `bestSeller.enabled`      → liga/desliga a badge 🏅 Best-seller
  * - `bestSeller.minAvgDailyDepletion7d` → limiar (média/dia 7d) que define best-seller
  *
- * Padrão usa cache module-level + broadcast, igual a useRetestCooldownSetting,
- * para que todos os cards montados reajam instantaneamente após salvar.
+ * Padrão usa cache module-level + broadcast + guard de requisição única,
+ * igual a useRetestCooldownSetting, para que todos os cards montados reajam
+ * instantaneamente após salvar — e para que dezenas de cards montando no mesmo
+ * tick disparem apenas UM fetch (evita N+1 em admin_settings).
  */
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,6 +51,10 @@ function sanitize(raw: unknown): IntelligenceBadgeSettings {
 }
 
 let cached: IntelligenceBadgeSettings | null = null;
+// Promise da única requisição em voo. Garante que, mesmo com dezenas de cards
+// montando no mesmo tick (catálogo), só UM fetch ao admin_settings aconteça —
+// os demais apenas aguardam o broadcast. (Corrige o N+1 de intelligence_badges.)
+let inflight: Promise<void> | null = null;
 const listeners = new Set<(s: IntelligenceBadgeSettings) => void>();
 function broadcast(s: IntelligenceBadgeSettings) {
   cached = s;
@@ -60,8 +66,31 @@ interface Row {
 }
 
 /**
- * Read-only snapshot (sem subscribe). Útil em hooks de cálculo. Faz fetch
- * preguiçoso uma única vez e mantém em cache.
+ * Dispara no máximo um fetch global (lazy) e popula o cache via broadcast.
+ * Idempotente: se já há valor em cache ou uma requisição em voo, não faz nada.
+ */
+function ensureFetched(): void {
+  if (cached !== null || inflight !== null) return;
+  inflight = (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('value')
+        .eq('key', SETTING_KEY)
+        .maybeSingle<Row>();
+      // RLS permite admin; demais usuários (ou linha ausente) caem no default.
+      broadcast(error || !data ? DEFAULT_INTELLIGENCE_BADGE_SETTINGS : sanitize(data.value));
+    } catch {
+      broadcast(DEFAULT_INTELLIGENCE_BADGE_SETTINGS);
+    } finally {
+      inflight = null;
+    }
+  })();
+}
+
+/**
+ * Read-only snapshot (sem subscribe a mutações). Útil em hooks de cálculo.
+ * Faz fetch preguiçoso uma única vez (compartilhado) e mantém em cache.
  */
 export function useIntelligenceBadgeSettingsValue(): IntelligenceBadgeSettings {
   const [settings, setSettings] = useState<IntelligenceBadgeSettings>(
@@ -71,21 +100,10 @@ export function useIntelligenceBadgeSettingsValue(): IntelligenceBadgeSettings {
   useEffect(() => {
     const sub = (s: IntelligenceBadgeSettings) => setSettings(s);
     listeners.add(sub);
-    if (cached === null) {
-      // dispara fetch único — RLS permite admin; outros usuários caem no default
-      void (async () => {
-        const { data, error } = await supabase
-          .from('admin_settings')
-          .select('value')
-          .eq('key', SETTING_KEY)
-          .maybeSingle<Row>();
-        if (error || !data) {
-          broadcast(DEFAULT_INTELLIGENCE_BADGE_SETTINGS);
-          return;
-        }
-        broadcast(sanitize(data.value));
-      })();
-    }
+    // Se o valor já chegou entre render e efeito (corrida), sincroniza do cache;
+    // caso contrário, dispara o fetch único compartilhado.
+    if (cached !== null) setSettings(cached);
+    else ensureFetched();
     return () => {
       listeners.delete(sub);
     };

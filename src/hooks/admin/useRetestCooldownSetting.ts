@@ -22,11 +22,38 @@ interface SettingRow {
 // Module-level cache so all <RetestButton> instances share a single fetch and
 // stay in sync after a save without round-tripping to the DB.
 let cached: number | null = null;
+// Promise da única requisição em voo: vários botões montando juntos disparam
+// apenas UM fetch ao admin_settings (evita N+1); os demais aguardam o broadcast.
+let inflight: Promise<void> | null = null;
 const listeners = new Set<(ms: number) => void>();
 
 function broadcast(ms: number): void {
   cached = ms;
   for (const l of listeners) l(ms);
+}
+
+/** Lazy single-flight fetch do cooldown global. Idempotente. */
+function ensureFetched(): void {
+  if (cached !== null || inflight !== null) return;
+  inflight = (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('value')
+        .eq('key', SETTING_KEY)
+        .maybeSingle<SettingRow>();
+      if (error || !data) {
+        broadcast(DEFAULT_MS);
+        return;
+      }
+      const ms = Number(data.value?.ms);
+      broadcast(Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_MS);
+    } catch {
+      broadcast(DEFAULT_MS);
+    } finally {
+      inflight = null;
+    }
+  })();
 }
 
 export function useRetestCooldownSetting() {
@@ -35,34 +62,22 @@ export function useRetestCooldownSetting() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const sub = (ms: number) => setCooldownMs(ms);
+    // Atualiza valor e encerra o loading assim que o broadcast (fetch único
+    // compartilhado) chegar — inclusive para instâncias que não dispararam o fetch.
+    const sub = (ms: number) => {
+      setCooldownMs(ms);
+      setLoading(false);
+    };
     listeners.add(sub);
+    if (cached !== null) {
+      // valor já disponível (inclui corrida entre render e efeito)
+      setCooldownMs(cached);
+      setLoading(false);
+    } else {
+      ensureFetched();
+    }
     return () => {
       listeners.delete(sub);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (cached !== null) return;
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('value')
-        .eq('key', SETTING_KEY)
-        .maybeSingle<SettingRow>();
-      if (cancelled) return;
-      if (error || !data) {
-        broadcast(DEFAULT_MS);
-        setLoading(false);
-        return;
-      }
-      const ms = Number(data.value?.ms);
-      broadcast(Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_MS);
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
     };
   }, []);
 
