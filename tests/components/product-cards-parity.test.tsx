@@ -174,6 +174,8 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     const noveltyArticle = document.querySelector("article")!;
     expect(noveltyArticle.className).toMatch(/h-\[400px\]/);
     expect(noveltyArticle.className).toMatch(/max-h-\[400px\]/);
+    expect(noveltyArticle.className).toMatch(/sm:h-\[430px\]/);
+    expect(noveltyArticle.className).toMatch(/sm:max-h-\[430px\]/);
     unmount();
 
     renderWithProviders(
@@ -188,6 +190,8 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     const replenishmentArticle = document.querySelector("article")!;
     expect(replenishmentArticle.className).toMatch(/h-\[400px\]/);
     expect(replenishmentArticle.className).toMatch(/max-h-\[400px\]/);
+    expect(replenishmentArticle.className).toMatch(/sm:h-\[430px\]/);
+    expect(replenishmentArticle.className).toMatch(/sm:max-h-\[430px\]/);
   });
 
   it("ordem dos campos é idêntica (categoria → cores → estoque)", async () => {
