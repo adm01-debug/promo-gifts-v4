@@ -80,13 +80,17 @@ interface ProductTableViewProps {
 type SortCol = 'name' | 'sku' | 'price' | 'stock' | 'supplier';
 type SortDir = 'asc' | 'desc';
 
+// BUG-TVW-01 FIX (2026-06-21): Intl.NumberFormat era recriado em cada chamada de formatPrice
+// (potencialmente centenas de vezes por render em tabelas virtualizadas). Mover para módulo.
+const tablePriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(price);
+  const formatted = tablePriceFormatter.format(price);
 
   const parts = formatted.split(/\s/);
   if (parts.length >= 2) {
@@ -572,7 +576,6 @@ export const ProductTableView = memo(
                 userSelectedColorName || getActiveColorName(product, activeColorFilter);
               const isSelected = selectionMode && selectedIds?.has(product.id);
 
-
               return (
                 <div
                   key={vr.key}
@@ -624,7 +627,12 @@ export const ProductTableView = memo(
                       style={{ touchAction: 'manipulation' }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) {
+                        if (
+                          variantPickerOpen ||
+                          collectionModalOpen ||
+                          shareDialogOpen ||
+                          quickViewOpen
+                        ) {
                           return;
                         }
                         quickViewTriggerRef.current = e.currentTarget;
@@ -635,7 +643,12 @@ export const ProductTableView = memo(
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) {
+                          if (
+                            variantPickerOpen ||
+                            collectionModalOpen ||
+                            shareDialogOpen ||
+                            quickViewOpen
+                          ) {
                             return;
                           }
                           quickViewTriggerRef.current = e.currentTarget;
@@ -696,7 +709,6 @@ export const ProductTableView = memo(
                       <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
                     )}
                   </div>
-
 
                   <div
                     className={cn(
