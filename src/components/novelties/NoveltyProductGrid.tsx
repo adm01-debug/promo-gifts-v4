@@ -832,35 +832,10 @@ export function NoveltyProductGrid() {
         </AnimatePresence>
       </div>
 
-      {/* ISSUE-30 / Janela: sentinela de scroll infinito.
-          - Skeleton row dá feedback visual claro de que mais itens estão chegando.
-          - Texto auxiliar muda conforme o estado (fetch remoto vs. paginação local).
-          - Visível sempre que hasMore=true; o próprio scroll da janela dispara onLoadMore. */}
-      {hasMore && viewMode === 'grid' && (
-        <div
-          data-testid="novelty-infinite-loader"
-          aria-live="polite"
-          aria-busy={isFetching}
-          className="space-y-3 py-4"
-        >
-          <div
-            className={cn(
-              'grid',
-              `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
-            )}
-          >
-            {Array.from({ length: Math.min(gridColumns * 2, 12) }).map((_, i) => (
-              <NoveltyCardSkeleton key={`load-more-${i}`} />
-            ))}
-          </div>
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {isFetching
-              ? 'Atualizando novidades...'
-              : `Carregando mais ${Math.min(pageSize, filteredProducts.length - visibleCount)} de ${filteredProducts.length - visibleCount}`}
-          </div>
-        </div>
-      )}
+      {/* O loader/sentinela de paginação infinita agora vive DENTRO do
+          container de scroll do grid (ver renderContent), para que apareça
+          junto à barra de rolagem interna dos produtos. */}
+
 
 
       {selectionMode && (
