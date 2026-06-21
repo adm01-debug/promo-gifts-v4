@@ -425,6 +425,14 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 134: 7 rules (all zero-violation — skipped: react/prefer-stateless-function 0v complex-refactor, react/static-property-placement 0v, @typescript-eslint/no-unnecessary-qualifier 0v, react/prefer-es6-class 0v, react/no-this-in-sfc 0v, no-continue 111v, no-bitwise 191v, no-plusplus 360v, no-void 84v, no-console 10v)
+      'react/no-danger': 'error',
+      'react/no-danger-with-children': 'error',
+      'react/no-did-update-set-state': 'error',
+      'react/no-find-dom-node': 'error',
+      'react/no-is-mounted': 'error',
+      'operator-assignment': 'error',
+      'no-alert': 'error',
       // Batch 133: 7 rules (all zero-violation — removed: react/require-optimization 5v, return-await 6v, no-aria-hidden-on-focusable 6v, no-onchange 6v, no-loop-func 7v, no-console 10v, no-void 84v, no-continue 111v, no-bitwise 191v, no-plusplus 360v)
       '@typescript-eslint/no-extraneous-class': 'error',
       '@typescript-eslint/no-shadow': 'error',
