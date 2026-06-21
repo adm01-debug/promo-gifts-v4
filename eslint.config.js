@@ -415,7 +415,13 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
-      // Batch 242: 5 zero-violation rules (242A: comma-spacing 13v, key-spacing 113v, object-curly-spacing 47715v, dot-location 3299v, callback-return 4v; saved for 243+: semi-style 0v, space-before-blocks 0v, space-in-parens 0v, no-sync 0v, no-process-exit 0v, no-mixed-requires 0v, handle-callback-err 0v)
+      // Batch 243: 5 zero-violation rules (all confirmed 0v in probe 242A; saved for 244: no-mixed-requires 0v, handle-callback-err 0v)
+      'semi-style': 'error',
+      'space-before-blocks': 'error',
+      'space-in-parens': 'error',
+      'no-sync': 'error',
+      'no-process-exit': 'error',
+      // Batch 242: 5 zero-violation rules (242A: comma-spacing 13v, key-spacing 113v, object-curly-spacing 47715v, dot-location 3299v, callback-return 4v)
       'block-spacing': 'error',
       'comma-style': 'error',
       'computed-property-spacing': 'error',
