@@ -94,7 +94,7 @@ export const MockupResultCard = memo(
                 <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
                 <div className="animation-delay-150 absolute inset-2 animate-ping rounded-full bg-primary/30" />
                 <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-sm">
-                  <Sparkles className="h-12 w-12 animate-pulse text-primary" />
+                  <Sparkles className="h-12 w-12 animate-pulse text-primary" aria-hidden="true" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -145,9 +145,9 @@ export const MockupResultCard = memo(
                   )}
                 >
                   {showSuccess ? (
-                    <CheckCircle2 className="h-4 w-4 animate-scale-in" />
+                    <CheckCircle2 className="h-4 w-4 animate-scale-in" aria-hidden="true" />
                   ) : (
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-4 w-4" aria-hidden="true" />
                   )}
                 </div>
                 <div>
@@ -166,7 +166,7 @@ export const MockupResultCard = memo(
                   techniqueName={techniqueName}
                 />
                 <Button size="sm" onClick={onDownload} className="gap-1.5">
-                  <Download className="h-4 w-4" /> Baixar
+                  <Download className="h-4 w-4" aria-hidden="true" /> Baixar
                 </Button>
               </div>
             </div>
@@ -182,7 +182,7 @@ export const MockupResultCard = memo(
                   onClick={() => setShowBeforeAfter(!showBeforeAfter)}
                   className="gap-1.5"
                 >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                  <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
                   {showBeforeAfter ? 'Resultado' : 'Antes / Depois'}
                 </Button>
               </div>
@@ -220,7 +220,7 @@ export const MockupResultCard = memo(
                     disabled={zoom <= 0.5}
                     aria-label="Diminuir zoom"
                   >
-                    <ZoomOut className="h-4 w-4" />
+                    <ZoomOut className="h-4 w-4" aria-hidden="true" />
                   </Button>
                   <span className="w-12 text-center text-xs font-medium">
                     {Math.round(zoom * 100)}%
@@ -233,7 +233,7 @@ export const MockupResultCard = memo(
                     onClick={handleZoomIn}
                     disabled={zoom >= 3}
                   >
-                    <ZoomIn className="h-4 w-4" />
+                    <ZoomIn className="h-4 w-4" aria-hidden="true" />
                   </Button>
                   <Button
                     size="icon"
@@ -242,7 +242,7 @@ export const MockupResultCard = memo(
                     onClick={handleZoomReset}
                     aria-label="Resetar zoom para 100%"
                   >
-                    <RotateCcw className="h-3.5 w-3.5" />
+                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -271,7 +271,7 @@ export const MockupResultCard = memo(
                   onClick={() => setIsFullscreen(true)}
                   className="gap-1 text-muted-foreground hover:text-foreground"
                 >
-                  <Maximize2 className="h-3.5 w-3.5" /> Tela cheia
+                  <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" /> Tela cheia
                 </Button>
               </div>
               {onReset && (
@@ -299,7 +299,7 @@ export const MockupResultCard = memo(
                       onClick={() => setIsClientMode(true)}
                       className="gap-1.5 shadow-md"
                     >
-                      <Maximize2 className="h-4 w-4" /> Modo Apresentação
+                      <Maximize2 className="h-4 w-4" aria-hidden="true" /> Modo Apresentação
                     </Button>
                     <Button
                       size="sm"
@@ -307,7 +307,7 @@ export const MockupResultCard = memo(
                       onClick={onDownload}
                       className="gap-1.5 shadow-md"
                     >
-                      <Download className="h-4 w-4" /> Baixar
+                      <Download className="h-4 w-4" aria-hidden="true" /> Baixar
                     </Button>
                     <Button
                       size="icon"
@@ -316,7 +316,7 @@ export const MockupResultCard = memo(
                       className="h-8 w-8 shadow-md"
                       onClick={() => setIsFullscreen(false)}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
                 )}
@@ -328,7 +328,7 @@ export const MockupResultCard = memo(
                     onClick={() => setIsClientMode(false)}
                     className="absolute right-3 top-3 z-20 gap-1.5 bg-background/50 shadow-md hover:bg-background/80"
                   >
-                    <X className="h-4 w-4" /> Sair do modo limpo
+                    <X className="h-4 w-4" aria-hidden="true" /> Sair do modo limpo
                   </Button>
                 )}
 
@@ -342,7 +342,7 @@ export const MockupResultCard = memo(
                       onClick={() => setFullscreenZoom((z) => Math.max(z - 0.25, 0.25))}
                       disabled={fullscreenZoom <= 0.25}
                     >
-                      <ZoomOut className="h-4 w-4" />
+                      <ZoomOut className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <span className="w-14 text-center text-xs font-medium">
                       {Math.round(fullscreenZoom * 100)}%
@@ -354,7 +354,7 @@ export const MockupResultCard = memo(
                       className="h-8 w-8"
                       onClick={() => setFullscreenZoom((z) => Math.min(z + 0.25, 5))}
                     >
-                      <ZoomIn className="h-4 w-4" />
+                      <ZoomIn className="h-4 w-4" aria-hidden="true" />
                     </Button>
                     <Button
                       size="icon"
@@ -363,7 +363,7 @@ export const MockupResultCard = memo(
                       className="h-8 w-8"
                       onClick={() => setFullscreenZoom(1)}
                     >
-                      <RotateCcw className="h-3.5 w-3.5" />
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
                   </div>
                 )}

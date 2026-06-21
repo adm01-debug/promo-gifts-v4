@@ -158,7 +158,7 @@ export function LogoPreviewCanvas({
                   }
                 }}
               >
-                <Palette className="h-3 w-3" />
+                <Palette aria-hidden="true" className="h-3 w-3" />
                 {techniqueColorConfig.category === 'laser'
                   ? `Laser ${techniqueColorConfig.laserTone === 'claro' ? 'Claro' : 'Escuro'}`
                   : techniqueColorConfig.category === 'serigrafia'

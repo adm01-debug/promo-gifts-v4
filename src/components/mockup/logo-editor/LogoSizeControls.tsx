@@ -39,7 +39,7 @@ export function LogoSizeControls({
       <div className="w-1/2 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Ruler className="h-4 w-4 text-primary" />
+            <Ruler aria-hidden="true" className="h-4 w-4 text-primary" />
             <span className="text-xs font-semibold">Área de Gravação</span>
           </div>
           {maxWidth && maxHeight && maxWidth > 0 && maxHeight > 0 && (
@@ -62,7 +62,7 @@ export function LogoSizeControls({
                 disabled={logoWidth <= 1}
                 onClick={() => onSizeChange(Math.max(1, logoWidth - 0.5), logoHeight)}
               >
-                <Minus className="h-3 w-3" />
+                <Minus aria-hidden="true" className="h-3 w-3" />
               </Button>
               <span className="min-w-[44px] rounded bg-muted/50 px-1.5 py-0.5 text-center text-xs font-bold">
                 {logoWidth}cm
@@ -75,7 +75,7 @@ export function LogoSizeControls({
                 disabled={logoWidth >= effectiveMaxW}
                 onClick={() => onSizeChange(Math.min(effectiveMaxW, logoWidth + 0.5), logoHeight)}
               >
-                <Plus className="h-3 w-3" />
+                <Plus aria-hidden="true" className="h-3 w-3" />
               </Button>
             </div>
           </div>
@@ -101,7 +101,7 @@ export function LogoSizeControls({
                 disabled={logoHeight <= 1}
                 onClick={() => onSizeChange(logoWidth, Math.max(1, logoHeight - 0.5))}
               >
-                <Minus className="h-3 w-3" />
+                <Minus aria-hidden="true" className="h-3 w-3" />
               </Button>
               <span className="min-w-[44px] rounded bg-muted/50 px-1.5 py-0.5 text-center text-xs font-bold">
                 {logoHeight}cm
@@ -114,7 +114,7 @@ export function LogoSizeControls({
                 disabled={logoHeight >= effectiveMaxH}
                 onClick={() => onSizeChange(logoWidth, Math.min(effectiveMaxH, logoHeight + 0.5))}
               >
-                <Plus className="h-3 w-3" />
+                <Plus aria-hidden="true" className="h-3 w-3" />
               </Button>
             </div>
           </div>
@@ -136,7 +136,7 @@ export function LogoSizeControls({
               className="h-7 px-1.5 text-[10px] text-primary hover:text-primary"
               onClick={() => onSizeChange(maxWidth, maxHeight)}
             >
-              <Target className="mr-1 h-3 w-3" />
+              <Target aria-hidden="true" className="mr-1 h-3 w-3" />
               Máxima
             </Button>
           )}
@@ -146,7 +146,7 @@ export function LogoSizeControls({
       {/* Right: Logo Scale */}
       <div className="w-1/2 space-y-3">
         <div className="flex items-center gap-2">
-          <Ruler className="h-4 w-4 text-primary" />
+          <Ruler aria-hidden="true" className="h-4 w-4 text-primary" />
           <span className="text-xs font-semibold">Tamanho da Logo</span>
         </div>
 
@@ -162,7 +162,7 @@ export function LogoSizeControls({
                 disabled={!logoPreview || logoScale <= 10}
                 onClick={() => onLogoScaleChange?.(Math.max(10, logoScale - 5))}
               >
-                <Minus className="h-3 w-3" />
+                <Minus aria-hidden="true" className="h-3 w-3" />
               </Button>
               <span className="min-w-[44px] rounded bg-muted/50 px-1.5 py-0.5 text-center text-xs font-bold">
                 {logoScale}%
@@ -175,7 +175,7 @@ export function LogoSizeControls({
                 disabled={!logoPreview || logoScale >= 500}
                 onClick={() => onLogoScaleChange?.(Math.min(500, logoScale + 5))}
               >
-                <Plus className="h-3 w-3" />
+                <Plus aria-hidden="true" className="h-3 w-3" />
               </Button>
             </div>
           </div>
@@ -191,7 +191,7 @@ export function LogoSizeControls({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Lock className="h-3 w-3 text-primary" />
+            <Lock aria-hidden="true" className="h-3 w-3 text-primary" />
             <span>Proporção protegida</span>
           </div>
           <Button
@@ -201,7 +201,7 @@ export function LogoSizeControls({
             onClick={() => onLogoScaleChange?.(100)}
             disabled={!logoPreview || logoScale === 100}
           >
-            <Target className="mr-1 h-3 w-3" />
+            <Target aria-hidden="true" className="mr-1 h-3 w-3" />
             Resetar 100%
           </Button>
         </div>

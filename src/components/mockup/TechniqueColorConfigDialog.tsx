@@ -152,7 +152,7 @@ export function TechniqueColorConfigDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5 text-primary" />
+            <Palette aria-hidden="true" className="h-5 w-5 text-primary" />
             Configuração de Cores
           </DialogTitle>
           <DialogDescription>
@@ -197,7 +197,7 @@ export function TechniqueColorConfigDialog({
                       </span>
                       {laserTone === key && (
                         <div className="absolute right-2 top-2">
-                          <Check className="h-4 w-4 text-primary" />
+                          <Check aria-hidden="true" className="h-4 w-4 text-primary" />
                         </div>
                       )}
                     </label>
@@ -206,7 +206,7 @@ export function TechniqueColorConfigDialog({
               </RadioGroup>
 
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
-                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
                   O logo será convertido automaticamente para monocromia no tom selecionado. A
                   gravação a laser produz apenas um tom sobre o material.
@@ -288,7 +288,7 @@ export function TechniqueColorConfigDialog({
                 </div>
               ) : (
                 <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/5 p-3 dark:border-warning/40 dark:bg-warning/10">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
                   <div className="text-xs text-warning dark:text-warning">
                     <p className="mb-1 font-medium">Cores não detectadas</p>
                     <p>
@@ -300,7 +300,7 @@ export function TechniqueColorConfigDialog({
               )}
 
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
-                <Paintbrush className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <Paintbrush aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
                   {colorCount === 1
                     ? 'O logo será convertido para monocromia na cor Pantone selecionada.'
@@ -314,7 +314,7 @@ export function TechniqueColorConfigDialog({
           {(category === 'digital' || category === 'other') && (
             <div className="flex flex-col items-center gap-3 py-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-destructive via-success to-info">
-                <Zap className="h-8 w-8 text-primary-foreground" />
+                <Zap aria-hidden="true" className="h-8 w-8 text-primary-foreground" />
               </div>
               <Badge className="px-3 py-1 text-sm">Policromia (Full Color)</Badge>
               <p className="max-w-xs text-center text-sm text-muted-foreground">
@@ -330,7 +330,7 @@ export function TechniqueColorConfigDialog({
             Cancelar
           </Button>
           <Button onClick={handleConfirm} disabled={!isValid}>
-            <Check className="mr-1.5 h-4 w-4" />
+            <Check aria-hidden="true" className="mr-1.5 h-4 w-4" />
             Confirmar
           </Button>
         </DialogFooter>

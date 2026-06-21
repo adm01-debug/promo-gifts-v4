@@ -55,12 +55,12 @@ export function GenerateButton({
       >
         {isGenerating ? (
           <>
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
             Gerando…
           </>
         ) : (
           <>
-            <Sparkles className="mr-2 h-5 w-5" />
+            <Sparkles className="mr-2 h-5 w-5" aria-hidden="true" />
             {label}
           </>
         )}

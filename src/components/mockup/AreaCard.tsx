@@ -152,7 +152,7 @@ export const AreaCard = memo(
                 className="pointer-events-none h-7 w-7 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                 title="Substituir logo"
               >
-                <RefreshCw className="h-3.5 w-3.5" />
+                <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -168,14 +168,14 @@ export const AreaCard = memo(
               title="Remover logo"
               aria-label={`Remover logo de ${area.name}`}
             >
-              <X className="h-3.5 w-3.5" />
+              <X aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>
           </div>
         ) : (
           <>
             {/* Position indicator - before upload button */}
             <div className="hidden flex-shrink-0 items-center gap-1 text-[10px] text-muted-foreground sm:flex">
-              <MapPin className="h-3 w-3" />
+              <MapPin aria-hidden="true" className="h-3 w-3" />
               <span>{area.positionX}%</span>
               <span>×</span>
               <span>{area.positionY}%</span>
@@ -198,7 +198,7 @@ export const AreaCard = memo(
                 size="sm"
                 className="pointer-events-none h-7 gap-1 bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
               >
-                <Upload className="h-3 w-3" />
+                <Upload aria-hidden="true" className="h-3 w-3" />
                 Adicionar Logo
               </Button>
             </div>
@@ -220,7 +220,7 @@ export const AreaCard = memo(
             }}
             aria-label={`Remover área ${area.name}`}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>

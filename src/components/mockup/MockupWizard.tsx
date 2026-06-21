@@ -43,7 +43,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
         id: 1,
         label: 'Empresa',
         description: 'Selecione o cliente',
-        icon: <Building2 className="h-4 w-4" />,
+        icon: <Building2 aria-hidden="true" className="h-4 w-4" />,
         isCompleted: hasClient,
         isActive: currentStep === 1,
       },
@@ -51,7 +51,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
         id: 2,
         label: 'Produto',
         description: 'Escolha o produto',
-        icon: <Package className="h-4 w-4" />,
+        icon: <Package aria-hidden="true" className="h-4 w-4" />,
         isCompleted: hasProduct,
         isActive: currentStep === 2,
       },
@@ -59,7 +59,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
         id: 3,
         label: 'Técnica',
         description: 'Método de personalização',
-        icon: <Paintbrush className="h-4 w-4" />,
+        icon: <Paintbrush aria-hidden="true" className="h-4 w-4" />,
         isCompleted: hasTechnique,
         isActive: currentStep === 3,
       },
@@ -67,7 +67,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
         id: 4,
         label: 'Logo',
         description: 'Faça upload da arte',
-        icon: <Upload className="h-4 w-4" />,
+        icon: <Upload aria-hidden="true" className="h-4 w-4" />,
         isCompleted: hasLogo,
         isActive: currentStep === 4,
       },
@@ -75,7 +75,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
         id: 5,
         label: 'Posição',
         description: 'Ajuste o posicionamento',
-        icon: <Move className="h-4 w-4" />,
+        icon: <Move aria-hidden="true" className="h-4 w-4" />,
         isCompleted: hasPositioned && hasLogo,
         isActive: currentStep === 5,
       },
@@ -83,7 +83,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
         id: 6,
         label: 'Gerar',
         description: 'Crie o mockup com IA',
-        icon: <Sparkles className="h-4 w-4" />,
+        icon: <Sparkles aria-hidden="true" className="h-4 w-4" />,
         isCompleted: hasGenerated,
         isActive: currentStep === 6,
       },
@@ -157,7 +157,11 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
                         'transition-transform group-hover/step:scale-110 group-hover/step:shadow-lg',
                     )}
                   >
-                    {step.isCompleted ? <CheckCircle2 className="h-5 w-5" /> : step.icon}
+                    {step.isCompleted ? (
+                      <CheckCircle2 aria-hidden="true" className="h-5 w-5" />
+                    ) : (
+                      step.icon
+                    )}
                   </div>
 
                   {/* Label */}

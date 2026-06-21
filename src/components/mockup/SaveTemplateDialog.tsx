@@ -66,7 +66,7 @@ export function SaveTemplateDialog({
             Cancelar
           </Button>
           <Button onClick={onSave}>
-            <Save className="mr-1 h-4 w-4" />
+            <Save aria-hidden="true" className="mr-1 h-4 w-4" />
             Salvar Template
           </Button>
         </DialogFooter>
