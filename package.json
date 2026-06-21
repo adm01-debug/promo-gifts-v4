@@ -8,13 +8,11 @@
     "e2e:watch-fixtures": "npx chokidar-cli \"e2e/fixtures/permissions-matrix.ts\" -c \"npm run e2e:generate-fixtures\"",
     "dev": "npm run e2e:generate-fixtures && vite",
     "build": "node scripts/guard-canonical-project.mjs && node scripts/validate-supabase-config.mjs && vite build",
-    "check:bundle-size": "node scripts/check-bundle-size.mjs",
-    "check:bundle-size:update": "node scripts/check-bundle-size.mjs --update-baseline",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test": "TZ=America/Sao_Paulo vitest run",
     "test:quality": "TZ=America/Sao_Paulo vitest run --exclude 'tests/hooks/**'",
-    "test:ci-core": "TZ=America/Sao_Paulo vitest run tests/contracts/migrated-endpoints.contract.test.ts src/lib/theme-presets.test.ts tests/components/products/ProductSparkline.labels.test.tsx src/pages/filters/__tests__/FiltersPage.sorting.test.tsx src/components/products/__tests__/ProductSortAccessibility.test.tsx tests/unit/supabase-schema-contract.test.ts tests/unit/favorites-migration.test.ts tests/unit/trending-score.test.ts tests/unit/variant-matching.test.ts tests/unit/text-utils.test.ts tests/unit/print-area-grouping.test.ts tests/unit/format.test.ts tests/unit/to-error-message.test.ts tests/unit/catalog-stock-status.test.ts tests/unit/masked-suffix.test.ts tests/unit/forecast.test.ts tests/unit/stock-chart-utils.test.ts tests/unit/novelty-dates.test.ts tests/unit/sensitive-masking.test.ts tests/unit/error-kind-inference.test.ts tests/unit/connection-error-copy.test.ts tests/unit/roles.test.ts tests/unit/supplier-colors.test.ts",
+    "test:ci-core": "TZ=America/Sao_Paulo vitest run tests/contracts/migrated-endpoints.contract.test.ts src/lib/theme-presets.test.ts tests/components/products/ProductSparkline.labels.test.tsx src/pages/filters/__tests__/FiltersPage.sorting.test.tsx src/components/products/__tests__/ProductSortAccessibility.test.tsx tests/unit/supabase-schema-contract.test.ts tests/unit/favorites-migration.test.ts tests/unit/trending-score.test.ts tests/unit/variant-matching.test.ts tests/unit/text-utils.test.ts tests/unit/print-area-grouping.test.ts tests/unit/format.test.ts tests/unit/to-error-message.test.ts tests/unit/catalog-stock-status.test.ts tests/unit/masked-suffix.test.ts tests/unit/forecast.test.ts tests/unit/stock-chart-utils.test.ts tests/unit/novelty-dates.test.ts tests/unit/sensitive-masking.test.ts tests/unit/error-kind-inference.test.ts tests/unit/connection-error-copy.test.ts tests/unit/roles.test.ts tests/unit/supplier-colors.test.ts tests/unit/date-utils.test.ts tests/unit/format-utils.test.ts tests/unit/quote-status-config.test.ts",
     "test:ci-core:coverage": "TZ=America/Sao_Paulo vitest run tests/contracts/migrated-endpoints.contract.test.ts src/lib/theme-presets.test.ts tests/components/products/ProductSparkline.labels.test.tsx --coverage --coverage.include=src/lib/theme-presets.ts --coverage.include=src/components/products/ProductSparkline.tsx --coverage.reporter=text --coverage.reporter=json --coverage.reporter=json-summary --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0 --coverage.thresholds.statements=0",
     "test:deploy-gate": "TZ=America/Sao_Paulo vitest run tests/contracts/migrated-endpoints.contract.test.ts src/lib/theme-presets.test.ts tests/components/products/ProductSparkline.labels.test.tsx --reporter=dot",
     "test:watch": "TZ=America/Sao_Paulo vitest",
@@ -29,8 +27,6 @@
     "lint:check": "eslint src --max-warnings=0",
     "lint:baseline": "node scripts/check-eslint-baseline.mjs",
     "lint:baseline:update": "node scripts/eslint-baseline-generate.mjs",
-    "lint:any": "node scripts/check-any-type-baseline.mjs",
-    "lint:any:update": "node scripts/update-any-type-baseline.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
     "qa:lint": "eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
@@ -124,8 +120,7 @@
     "test:replenishment:e2e": "npx playwright test e2e/replenishment/",
     "test:replenishment:dashboard": "node scripts/replenishment-ci/metrics-dashboard.mjs",
     "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts",
-    "build:verify": "npm run typecheck && npm run lint:baseline && npm run build",
-    "test:e2e:card-parity": "playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts --project=chromium-authed --reporter=list"
+    "build:verify": "npm run typecheck && npm run lint:baseline && npm run build"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

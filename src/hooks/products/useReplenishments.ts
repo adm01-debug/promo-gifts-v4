@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { untypedRpc } from '@/lib/supabase-untyped';
-import { logger } from '@/lib/logger';
 
 /**
  * Módulo Reposição — FONTE ÚNICA DE VERDADE: RPC `fn_get_reposicao_listing`.
@@ -208,9 +207,9 @@ async function fetchReposicao(limit: number): Promise<ReplenishmentWithDetails[]
 
   if (error) {
     if (isGoneError(error)) {
-      logger.warn(
+      console.warn(
         '[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.',
-        { message: error.message },
+        error.message,
       );
       return [];
     }
@@ -256,9 +255,9 @@ export function useReplenishmentStats() {
 
       if (error) {
         if (isGoneError(error)) {
-          logger.warn(
+          console.warn(
             '[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.',
-            { message: error.message },
+            error.message,
           );
           return {
             totalReplenishments: 0,
@@ -283,7 +282,7 @@ export function useReplenishmentStats() {
       const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments: Number(d.restockedLast30Days ?? 0),
+        totalReplenishments: Number(d.totalReplenishments ?? d.restockedLast30Days ?? 0),
         activeReplenishments: Number(d.activeReplenishments ?? 0),
         expiringSoon: Number(d.expiringSoon ?? 0),
         totalProducts: Number(d.totalVariants ?? 0),

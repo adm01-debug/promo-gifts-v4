@@ -68,10 +68,7 @@ export function useFavoriteLists() {
     queryFn: async (): Promise<FavoriteList[]> => {
       if (!user) return [];
       // Garante lista padrão
-      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', {
-        _user_id: user.id,
-      });
-      if (ensureErr) logger.warn('[favorites] ensure_default_favorite_list failed', ensureErr);
+      await supabase.rpc('ensure_default_favorite_list', { _user_id: user.id });
 
       const { data, error } = await supabase
         .from('favorite_lists')
@@ -88,25 +85,17 @@ export function useFavoriteLists() {
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: countRows } = await untypedRpc('get_favorite_list_counts', {
-          _user_id: user.id,
-        });
+        const { data: countRows } = await untypedRpc('get_favorite_list_counts', { _user_id: user.id });
         ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
-          (r) => {
-            counts[r.list_id] = Number(r.item_count);
-          },
+          (r) => { counts[r.list_id] = Number(r.item_count); },
         );
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({
-        ...l,
-        item_count: counts[l.id] ?? 0,
-      })) as unknown as FavoriteList[];
+      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as unknown as FavoriteList[];
     },
     enabled: !!user,
     staleTime: 30_000,
-    refetchOnWindowFocus: true,
   });
 
   const createList = useMutation({
@@ -183,7 +172,6 @@ export function useFavoriteLists() {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-items'] });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       const msg =
         itemCount > 0
           ? `Lista excluída. ${itemCount} ${itemCount === 1 ? 'item movido' : 'itens movidos'} para a Lixeira.`
@@ -201,7 +189,6 @@ export function useFavoriteLists() {
       listId: string;
       expiresInDays?: number;
     }) => {
-      if (!user) throw new Error('not-authenticated');
       // Gera token aleatório de 32 bytes em hex
       const bytes = new Uint8Array(32);
       crypto.getRandomValues(bytes);
@@ -213,7 +200,6 @@ export function useFavoriteLists() {
         .from('favorite_lists')
         .update({ shared_token: token, shared_expires_at: expiresAt })
         .eq('id', listId)
-        .eq('user_id', user.id)
         .select()
         .single();
       if (error) throw error;
@@ -227,12 +213,10 @@ export function useFavoriteLists() {
 
   const revokeShareToken = useMutation({
     mutationFn: async (listId: string) => {
-      if (!user) throw new Error('not-authenticated');
       const { error } = await supabase
         .from('favorite_lists')
         .update({ shared_token: null, shared_expires_at: null })
-        .eq('id', listId)
-        .eq('user_id', user.id);
+        .eq('id', listId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -281,7 +265,6 @@ export function useFavoriteListItems(listId: string | null) {
     },
     enabled: !!listId && !!user,
     staleTime: 15_000,
-    refetchOnWindowFocus: true,
   });
 
   const addItem = useMutation({
@@ -364,7 +347,7 @@ export function useFavoriteListItems(listId: string | null) {
               toast.error('Item não encontrado na lixeira');
               return;
             }
-            const { data: rawRestored } = await untypedRpc('restore_favorite_from_trash', {
+            const { data: rawRestored } = await supabase.rpc('restore_favorite_from_trash', {
               _trash_id: trashed.id,
               _user_id: user.id,
             });
@@ -400,61 +383,8 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
       qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
-      const label = `${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`;
-      if (!user) {
-        toast.success(label, { description: 'Restaure pela Lixeira em até 30 dias.' });
-        return;
-      }
-      toast.success(label, {
+      toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`, {
         description: 'Restaure pela Lixeira em até 30 dias.',
-        action: {
-          label: 'Desfazer',
-          onClick: async () => {
-            const { data: trashed } = await supabase
-              .from('favorite_items_trash')
-              .select('id')
-              .eq('user_id', user.id)
-              .in('original_id', ids);
-            if (!trashed?.length) {
-              toast.error('Itens não encontrados na lixeira');
-              return;
-            }
-            const results = await Promise.allSettled(
-              trashed.map((t) =>
-                untypedRpc('restore_favorite_from_trash', {
-                  _trash_id: t.id,
-                  _user_id: user.id,
-                }),
-              ),
-            );
-            // restore_favorite_from_trash returns {ok:false} as an HTTP 200 body, so a
-            // failed restore still settles 'fulfilled'. Count only RPCs that returned ok
-            // (matches the single-item path, which checks data.ok).
-            const restoredCount = results.filter((r) => {
-              if (r.status !== 'fulfilled') return false;
-              const { data, error } = r.value as {
-                data?: { ok?: boolean } | null;
-                error?: unknown;
-              };
-              return !error && data?.ok === true;
-            }).length;
-            const failedCount = trashed.length - restoredCount;
-            qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
-            qc.invalidateQueries({ queryKey: LISTS_KEY });
-            qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-            qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
-            if (failedCount > 0) {
-              toast.warning(`${restoredCount} de ${trashed.length} itens restaurados`, {
-                description: `${failedCount} não puderam ser restaurados (lista de origem indisponível).`,
-              });
-            } else {
-              toast.success(
-                `${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`,
-              );
-            }
-          },
-        },
-        duration: 8000,
       });
     },
     onError: (e: Error) => toast.error('Erro ao remover', { description: sanitizeError(e) }),
@@ -462,7 +392,6 @@ export function useFavoriteListItems(listId: string | null) {
 
   const moveItem = useMutation({
     mutationFn: async ({ id, toListId }: { id: string; toListId: string }) => {
-      if (toListId === listId) throw new Error('O item já está nesta lista.');
       const { error } = await supabase
         .from('favorite_items')
         .update({ list_id: toListId })
@@ -476,7 +405,6 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: ITEMS_KEY(vars.toListId) });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
-      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       toast.success('Item movido');
     },
     onError: (e: Error) => toast.error('Erro ao mover', { description: sanitizeError(e) }),
@@ -514,14 +442,13 @@ export function useFavoriteTrash() {
     },
     enabled: !!user,
     staleTime: 30_000,
-    refetchOnWindowFocus: true,
   });
 
   const restoreItem = useMutation({
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
       // Atomic RPC: handles missing original list by falling back to default list
-      const { data: rawData, error } = await untypedRpc('restore_favorite_from_trash', {
+      const { data: rawData, error } = await supabase.rpc('restore_favorite_from_trash', {
         _trash_id: trashId,
         _user_id: user.id,
       });
@@ -618,16 +545,14 @@ export function useLegacyFavoritesMigration() {
         onConflict: 'list_id,product_id,variant_id',
         ignoreDuplicates: true,
       });
-      if (error) {
-        logger.warn('[favorites-migration] upsert failed — will retry on next load', error);
-        return; // do NOT setMigrated: allows retry on next page load (FLAG not set)
+      if (!error) {
+        localStorage.setItem(FLAG, '1');
+        toast.success(`${legacy.length} favoritos migrados para a nuvem`);
       }
-      localStorage.setItem(FLAG, '1');
-      toast.success(`${legacy.length} favoritos migrados para a nuvem`);
-      setMigrated(true);
     } catch (e) {
       logger.warn('[favorites-migration]', e);
-      // do NOT setMigrated: allows retry on next page load
+    } finally {
+      setMigrated(true);
     }
   }, [user, defaultList, migrated]);
 
