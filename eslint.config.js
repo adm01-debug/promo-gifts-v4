@@ -429,6 +429,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 173: 5 zero-violation rules (saved: no-eval 0v✓, no-implied-eval 0v✓ — Batch 174)
+      'no-floating-decimal': 'error',
+      'no-implicit-globals': 'error',
+      'no-labels': 'error',
+      'no-extra-label': 'error',
+      'no-caller': 'error',
       // Batch 172: 5 zero-violation rules (excluded: no-implicit-coercion 443v — saved: no-floating-decimal 0v✓, no-implicit-globals 0v✓ — Batch 173)
       'no-extend-native': 'error',
       '@typescript-eslint/no-unsafe-declaration-merging': 'error',
