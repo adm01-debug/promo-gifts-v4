@@ -421,10 +421,10 @@ export function StockFilterToolbar({
         {/* Botão dedicado: Estoque Futuro */}
         <Popover>
           <StockHelpTooltip
-            title="Estoque Futuro"
-            description="Inclui no cálculo da régua de quantidade o que está chegando dentro da janela escolhida (7, 15 ou 30 dias). Quando desligado, considera apenas o que está disponível agora. Esta janela é independente da janela 'Projetar risco em Nd' da tabela (que controla apenas o cálculo do Risco de Ruptura)."
-            example="Janela 15 dias: soma reposições confirmadas com chegada até daqui a 15 dias."
-            emptyHint="Sem reposições previstas? Aumente a janela para 30 dias."
+            title="Em Estoque / Estoque Futuro"
+            description="Mostre só o que tem agora, ou inclua o que está chegando em 7, 15 ou 30 dias."
+            example="Janela 15 dias: vende o que chega até lá."
+            emptyHint="Sem chegadas? Aumente para 30 dias."
           >
 
             <PopoverTrigger asChild>
