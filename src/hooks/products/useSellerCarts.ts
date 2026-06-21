@@ -6,7 +6,6 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -14,11 +13,6 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 // ============================================
 // TYPES
 // ============================================
-
-// Row type for the nested PostgREST query `seller_carts.select('*, seller_cart_items(*)')`.
-type SellerCartRowWithItems = Database['public']['Tables']['seller_carts']['Row'] & {
-  seller_cart_items: Database['public']['Tables']['seller_cart_items']['Row'][];
-};
 
 export interface SellerCart {
   id: string;
@@ -133,8 +127,11 @@ export function useSellerCarts() {
       if (error) throw error;
       if (!data?.length) return [];
 
-      return (data as unknown as SellerCartRowWithItems[]).map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row;
+      return data.map((row) => {
+        const { seller_cart_items: rowItems, ...cart } = row as unknown as Omit<
+          SellerCart,
+          'items' | 'notes' | 'status'
+        > & { notes?: unknown; status?: unknown; seller_cart_items?: unknown };
         return {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
@@ -211,9 +208,8 @@ export function useSellerCarts() {
           .from('seller_cart_items')
           .update({
             // clamp do TETO: somatório de adds repetidos não pode ultrapassar 999999.
-            // updated_at NÃO é enviado: o trigger update_updated_at_column sobrescreve
-            // qualquer valor do cliente com now() (enviá-lo é payload morto/enganoso).
             quantity: clampQuantity(existing.quantity + quantityToAdd),
+            updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
         if (error) throw error;
@@ -241,12 +237,6 @@ export function useSellerCarts() {
               .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
             if (retryErr) throw retryErr;
-          } else {
-            // O 23505 garante que existe uma linha conflitante commitada, mas não
-            // conseguimos relê-la (visibilidade/timing). NÃO resolver como sucesso:
-            // isso descartaria silenciosamente a quantidade do usuário. Propaga o erro
-            // para o onError (toast) e permite nova tentativa.
-            throw error;
           }
         } else if (error) {
           throw error;
@@ -399,7 +389,7 @@ export function useSellerCarts() {
 
       // Copy items
       if (sourceCart.items.length > 0) {
-        const newItems = sourceCart.items.map((i, idx) => ({
+        const newItems = sourceCart.items.map((i) => ({
           cart_id: newCart.id,
           product_id: i.product_id,
           product_name: i.product_name,
@@ -410,11 +400,7 @@ export function useSellerCarts() {
           color_name: i.color_name,
           color_hex: i.color_hex,
           notes: i.notes,
-          // Reindexa 0..n-1 na ordem de exibição (a query traz items já ordenados
-          // por sort_order asc). Copiar sort_order verbatim arriscaria carregar
-          // valores duplicados/com buracos de um reorder parcial anterior para o
-          // novo carrinho — diferente de duplicateItemToCart, que delega ao trigger.
-          sort_order: idx,
+          sort_order: i.sort_order,
         }));
         const { error: itemsErr } = await supabase.from('seller_cart_items').insert(newItems);
         if (itemsErr) {
@@ -451,24 +437,13 @@ export function useSellerCarts() {
       const item = (cartsQuery.data || []).flatMap((c) => c.items).find((i) => i.id === itemId);
       if (!item) throw new Error('Item não encontrado');
 
-      // Lê a quantidade ATUAL do item de origem no banco. A do cache (cartsQuery)
-      // pode estar defasada (edição em outra aba, write em debounce ainda em voo) —
-      // e como o item de origem será DELETADO na mesclagem, usar o valor obsoleto
-      // perderia unidades silenciosamente e furaria o guard de overflow.
-      const { data: freshSource } = await supabase
-        .from('seller_cart_items')
-        .select('quantity')
-        .eq('id', itemId)
-        .maybeSingle();
-      const sourceQty = freshSource?.quantity ?? item.quantity;
-
       // Se o carrinho destino já tiver a mesma variante, um UPDATE puro de
       // cart_id violaria unique_cart_item_variant. Mesclamos: soma a quantidade
       // no item existente do destino e remove o item de origem.
       const existing = await findVariantInCart(targetCartId, item.product_id, item.color_name);
       if (existing && existing.id !== itemId) {
         const previousQty = existing.quantity;
-        const projected = previousQty + sourceQty;
+        const projected = previousQty + item.quantity;
         // Rejeita antes de qualquer escrita: mover com overflow silenciosamente
         // apagaria unidades que não cabem no destino. Falhar é mais seguro que
         // perder quantidade.
@@ -606,21 +581,9 @@ export function useSellerCarts() {
 
           const existing = await findVariantInCart(cartId, item.product_id, colorName);
           if (existing) {
-            // Restaura o snapshot COMPLETO (não só quantity): se a variante ainda
-            // existir (race com re-add durante a janela de undo), preservar apenas a
-            // quantidade descartaria notes/cor/preço do estado anterior. updated_at
-            // fica a cargo do trigger. sort_order não é tocado aqui para não colidir.
             const { error } = await supabase
               .from('seller_cart_items')
-              .update({
-                quantity: safeQty,
-                notes: item.notes ?? null,
-                color_hex: item.color_hex || null,
-                product_price: item.product_price,
-                product_name: item.product_name,
-                product_sku: item.product_sku || null,
-                product_image_url: item.product_image_url || null,
-              })
+              .update({ quantity: safeQty, updated_at: new Date().toISOString() })
               .eq('id', existing.id);
             if (error) throw error;
           } else {
