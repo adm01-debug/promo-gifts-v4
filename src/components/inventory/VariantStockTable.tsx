@@ -811,12 +811,16 @@ function VariantStockTableInner({
                       <Package className="h-8 w-8 opacity-30" />
                     </div>
                     <p className="mb-1 font-semibold text-foreground">
-                      Nenhuma variação encontrada
+                      {ruptureFilterActive
+                        ? 'Nenhuma variação em risco de ruptura'
+                        : 'Nenhuma variação encontrada'}
                     </p>
                     <p className="max-w-xs text-sm">
-                      {inlineSearch
-                        ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`
-                        : 'Ajuste os filtros para visualizar os SKUs.'}
+                      {ruptureFilterActive
+                        ? 'Nenhuma variação com cobertura projetada ≤ 30 dias para os filtros atuais. Toda a operação está saudável neste recorte.'
+                        : inlineSearch
+                          ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`
+                          : 'Ajuste os filtros para visualizar os SKUs.'}
                     </p>
                   </div>
                 </TableCell>
