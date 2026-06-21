@@ -631,6 +631,7 @@ function SellerCartsContent() {
                 {viewMode === 'table' ? (
                   (() => {
                     const { sorted, start, pageItems, safePage, totalPages } = cartTableData;
+                    const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2';
                     const renderSortHdr = (
                       key: SortKey,
                       label: string,
