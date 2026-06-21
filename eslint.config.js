@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 199: 5 zero-violation rules
+      'no-object-constructor': 'error',
+      'no-restricted-exports': 'error',
+      'no-restricted-globals': 'error',
+      'no-restricted-properties': 'error',
+      'no-unneeded-ternary': 'error',
       // Batch 198: 5 zero-violation rules (saved: no-object-constructor 0v✓ — Batch 199+)
       'no-extra-label': 'error',
       'no-floating-decimal': 'error',
