@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 161: 5 zero-violation rules (excluded: jsx-a11y/aria-role 0v✓, @typescript-eslint/no-non-null-asserted-nullish-coalescing 0v✓ — saved Batch 162)
+      'no-div-regex': 'error',
+      'grouped-accessor-pairs': 'error',
+      'default-case-last': 'error',
+      'jsx-a11y/autocomplete-valid': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
       // Batch 160: 5 zero-violation rules (excluded: no-div-regex 0v✓, grouped-accessor-pairs 0v✓, default-case-last 0v✓, jsx-a11y/autocomplete-valid 0v✓, jsx-a11y/aria-proptypes 0v✓ — saved Batch 161)
       'jsx-a11y/aria-props': 'error',
       '@typescript-eslint/no-duplicate-enum-values': 'error',
