@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
+import { useEffect, useRef, type RefObject } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { NoveltyWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import {
@@ -22,15 +22,20 @@ interface VirtualizedNoveltyGridProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
-  /** Incrementa p/ rolar a janela ao topo (troca de filtros). */
+  /** Incrementa p/ rolar o container ao topo (troca de filtros). */
   scrollToTopToken?: number;
+  /**
+   * Elemento de scroll EXTERNO (overflow-y-auto). A página de Novidades
+   * cria um container com altura fixa para que a barra de rolagem fique
+   * ao lado dos produtos — não no body. Obrigatório.
+   */
+  scrollElementRef: RefObject<HTMLElement | null>;
 }
 
 /**
- * Grade virtualizada de Novidades — agora ancorada ao SCROLL DA JANELA
- * (useWindowVirtualizer), espelhando o comportamento do Catálogo:
- * sidebar/header sticky, página rola naturalmente, infinite scroll
- * dispara conforme o usuário se aproxima do fim do documento.
+ * Grade virtualizada de Novidades — agora ancorada num container de scroll
+ * INTERNO (passado via `scrollElementRef`). A janela do navegador permanece
+ * sem barra de rolagem; o scrollbar aparece à direita do grid de produtos.
  */
 export function VirtualizedNoveltyGrid({
   products,
@@ -45,47 +50,22 @@ export function VirtualizedNoveltyGrid({
   isLoadingMore = false,
   onLoadMore,
   scrollToTopToken = 0,
+  scrollElementRef,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [scrollMargin, setScrollMargin] = useState(0);
 
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
-  // Estimativa adaptativa por nº de colunas — cards mais estreitos são mais altos
-  // por causa do wrap do nome do produto. Manter o estimado próximo do medido
-  // reduz o re-layout do virtualizer e elimina "jitter" durante o scroll.
   const estimatedRowHeight = numCols <= 2 ? 520 : numCols <= 3 ? 480 : numCols <= 4 ? 460 : 440;
 
-  // Mede o offset do container em relação ao topo do documento — necessário
-  // para o useWindowVirtualizer alinhar suas posições absolutas.
-  useLayoutEffect(() => {
-    const el = parentRef.current;
-    if (!el) return;
-    const update = () => {
-      const top = el.getBoundingClientRect().top + window.scrollY;
-      setScrollMargin(top);
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(document.documentElement);
-    window.addEventListener('resize', update);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', update);
-    };
-  }, []);
-
-  const virtualizer = useWindowVirtualizer({
+  const virtualizer = useVirtualizer({
     count: rowCount,
+    getScrollElement: () => scrollElementRef.current,
     estimateSize: () => estimatedRowHeight,
-    // overscan 5 → buffer ~2 viewports em monitores comuns: rolagem rápida
-    // não revela área em branco, sem inflar custo de render (cada row tem ≤ 6 cards).
     overscan: 5,
-    scrollMargin,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
-
 
   // Reset de scroll ao topo quando os filtros mudam (skip 1º render).
   const isFirstScrollRef = useRef(true);
@@ -94,28 +74,27 @@ export function VirtualizedNoveltyGrid({
       isFirstScrollRef.current = false;
       return;
     }
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-  }, [scrollToTopToken]);
+    scrollElementRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [scrollToTopToken, scrollElementRef]);
 
-  // Infinite scroll baseado no scroll da JANELA. Dispara onLoadMore quando o
-  // fim do documento se aproxima (>= 1 viewport de antecedência).
+  // Infinite scroll baseado no scroll do CONTAINER interno.
   useEffect(() => {
     if (!onLoadMore) return;
+    const el = scrollElementRef.current;
+    if (!el) return;
     const onScroll = () => {
       if (!hasMore || isLoadingMore) return;
-      const doc = document.documentElement;
-      const remaining = doc.scrollHeight - window.scrollY - window.innerHeight;
-      const threshold = Math.max(640, window.innerHeight);
+      const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const threshold = Math.max(640, el.clientHeight);
       if (remaining < threshold) onLoadMore();
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    // Dispara uma vez após montagem para o caso de já estarmos no fim.
+    el.addEventListener('scroll', onScroll, { passive: true });
     const t = setTimeout(onScroll, 180);
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      el.removeEventListener('scroll', onScroll);
       clearTimeout(t);
     };
-  }, [products.length, hasMore, isLoadingMore, onLoadMore]);
+  }, [products.length, hasMore, isLoadingMore, onLoadMore, scrollElementRef]);
 
   return (
     <div
@@ -145,7 +124,7 @@ export function VirtualizedNoveltyGrid({
                 top: 0,
                 left: 0,
                 width: '100%',
-                transform: `translateY(${virtualRow.start - scrollMargin}px)`,
+                transform: `translateY(${virtualRow.start}px)`,
               }}
               className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)} pb-8`}
             >

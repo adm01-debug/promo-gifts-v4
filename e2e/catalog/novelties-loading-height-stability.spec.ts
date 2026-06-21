@@ -1,27 +1,26 @@
 /**
- * E2E — Estabilidade visual durante a transição skeleton→cards no /novidades
- * (modelo WINDOW SCROLL).
+ * E2E — Estabilidade da altura do container interno do grid em /novidades.
  *
- * Após a migração para `useWindowVirtualizer`, o wrapper interno deixou de ser
- * o container de scroll — quem rola é a janela. Este teste valida que:
- *  1. O bloco de loading (`[data-testid="novelty-loading-grid"]`) reserva altura
- *     suficiente, evitando layout shift quando o virtualizer monta.
- *  2. Após a transição, o virtualizer renderiza `role="listitem"`.
- *  3. A altura total do documento permanece >= à área reservada pelo skeleton.
- *  4. Rolar a janela faz `window.scrollY` avançar e o virtualizer continua ativo.
+ * O grid usa scroll INTERNO (`[data-testid="novelty-grid-scroll"]`) com altura
+ * calculada via ResizeObserver. Este teste valida:
+ *  1. O bloco de loading (`novelty-loading-grid`) reserva altura quando aparece.
+ *  2. Após a montagem, a altura do container fica estável entre leituras (sem
+ *     jitter visível) e não colapsa após o skeleton sumir.
+ *  3. O `scrollHeight` interno aumenta (cresce) durante a paginação infinita,
+ *     mas o `clientHeight` (altura visível) permanece estável.
  */
 import { test, expect, requireAuth } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
 
-test.describe('Novidades — estabilidade visual (window scroll)', () => {
+test.describe('Novidades — estabilidade de altura do container interno', () => {
   test.beforeEach(() => requireAuth());
 
-  test('skeleton reserva altura e a transição não colapsa o documento', async ({ page }) => {
+  test('container interno mantém clientHeight estável durante paginação', async ({ page }) => {
     await gotoAndSettle(page, '/novidades');
 
     await expect(page.getByTestId('page-title-novidades')).toBeVisible();
 
-    // 1) Captura altura reservada pelo skeleton (pode já ter sumido em ambiente rápido).
+    // 1) Captura altura reservada pelo skeleton, se ainda visível.
     const loadingGrid = page.getByTestId('novelty-loading-grid');
     let skeletonReservedHeight = 0;
     try {
@@ -30,44 +29,47 @@ test.describe('Novidades — estabilidade visual (window scroll)', () => {
       skeletonReservedHeight = box?.height ?? 0;
       expect(skeletonReservedHeight).toBeGreaterThanOrEqual(400);
     } catch {
-      // Skeleton já desapareceu — segue para validação final.
+      /* skeleton já sumiu em ambiente rápido */
     }
 
-    // 2) Virtualizer monta (lista presente).
-    const list = page.locator('div[role="list"][aria-label="Grade de novidades"]');
-    await expect(list).toBeVisible({ timeout: 15_000 });
+    const scroller = page.getByTestId('novelty-grid-scroll');
+    await expect(scroller).toBeVisible({ timeout: 15_000 });
 
-    const itemCount = await page.locator('div[role="listitem"]').count();
-    if (itemCount === 0) {
-      test.skip(true, 'Nenhuma novidade no dataset atual — transição não aplicável.');
+    const items = await page.locator('div[role="listitem"]').count();
+    if (items === 0) {
+      test.skip(true, 'Sem novidades no dataset — transição não aplicável.');
       return;
     }
 
-    // 3) Documento (não mais o wrapper) deve ter altura >= ao reservado pelo skeleton.
-    const docHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+    // 2) Após montar, clientHeight do container >= ao reservado (com tolerância).
+    const initial = await scroller.evaluate((el) => ({
+      ch: el.clientHeight,
+      sh: el.scrollHeight,
+    }));
+    expect(initial.ch).toBeGreaterThanOrEqual(320);
     if (skeletonReservedHeight > 0) {
-      expect(docHeight).toBeGreaterThanOrEqual(
-        Math.min(skeletonReservedHeight, 420) - 24,
-      );
+      expect(initial.ch).toBeGreaterThanOrEqual(Math.min(skeletonReservedHeight, 320) - 24);
     }
 
-    // 4) Rolagem da janela funciona e o virtualizer continua respondendo.
-    const beforeY = await page.evaluate(() => window.scrollY);
-    await page.evaluate(() =>
-      window.scrollTo(0, document.documentElement.scrollHeight - window.innerHeight - 24),
-    );
-    await page.waitForTimeout(400);
-    const afterY = await page.evaluate(() => window.scrollY);
-    expect(afterY).toBeGreaterThan(beforeY + 100);
-    expect(await page.locator('div[role="listitem"]').count()).toBeGreaterThan(0);
+    // 3) Amostragem de clientHeight enquanto rola — DEVE permanecer estável
+    //    (jitter <= 4px). scrollHeight pode crescer (paginação infinita).
+    const samples: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      await scroller.evaluate((el, step) => el.scrollBy({ top: step }), 600);
+      await page.waitForTimeout(200);
+      const m = await scroller.evaluate((el) => ({
+        ch: el.clientHeight,
+        sh: el.scrollHeight,
+      }));
+      samples.push(m.ch);
+    }
+    const minCh = Math.min(...samples);
+    const maxCh = Math.max(...samples);
+    // Jitter de altura visível ≤ 4px (tolerância p/ arredondamento sub-pixel).
+    expect(maxCh - minCh).toBeLessThanOrEqual(4);
 
-    // 5) Estabilidade pós-scroll: altura do documento estável entre leituras
-    //    consecutivas (sem oscilação tardia do virtualizer).
-    const h1 = await page.evaluate(() => document.documentElement.scrollHeight);
-    await page.waitForTimeout(300);
-    const h2 = await page.evaluate(() => document.documentElement.scrollHeight);
-    // Tolerância maior aqui: paginação infinita pode disparar perto do fim e
-    // legitimamente aumentar a altura. Aceitamos crescimento, rejeitamos colapso.
-    expect(h2).toBeGreaterThanOrEqual(h1 - 8);
+    // 4) scrollHeight cresceu ou permaneceu (nunca colapsa).
+    const finalSh = await scroller.evaluate((el) => el.scrollHeight);
+    expect(finalSh).toBeGreaterThanOrEqual(initial.sh - 8);
   });
 });
