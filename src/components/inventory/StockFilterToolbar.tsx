@@ -91,13 +91,34 @@ export function StockFilterToolbar({
     },
   );
 
-  // Sincroniza o sub-flag da régua com o toggle do toolbar:
-  // se "Estoque Futuro" está ligado, a régua de quantidade também conta o futuro.
-  // Isso torna a seção "Estoque" do popover (removida) desnecessária.
+  // ============================================================
+  // SSOT — Sincronização "Estoque Futuro" ↔ régua de quantidade
+  // ============================================================
+  // Em /estoque a seção "Estoque" do popover foi REMOVIDA (redundante com
+  // o toggle do toolbar). Para evitar regressão de UX entre /estoque e o
+  // Super Filtro (/filtros), o toggle do toolbar passa a controlar duas
+  // flags ao mesmo tempo:
+  //
+  //   • filters.includeFutureStock         → liga/desliga "Estoque Futuro"
+  //   • filters.minQtyIncludesFutureStock  → faz a régua "Preciso de X un"
+  //                                          considerar também o estoque
+  //                                          futuro (em vez de só o atual).
+  //
+  // Sem esse espelhamento, o usuário ligava "Estoque Futuro" mas a régua
+  // continuava estrita (filtrando só pelo on-hand) — provocando o hint
+  // "régua estrita" testado em stock-filters-no-text.spec.ts.
+  //
+  // ⚠️ O Super Filtro (/filtros) mantém a seção "Estoque" no sidebar
+  //    (FilterPanel.tsx → renderer 'estoque') porque lá o toggle global
+  //    de Estoque Futuro não existe — o controle é feito dentro da seção.
+  //    NÃO remover a seção 'estoque' do Super Filtro: ver
+  //    src/components/filters/filter-panel/types.ts (SECTION_GROUPS) e o
+  //    spec super-filtro-estoque-section.spec.ts.
   const setIncludeFutureStock = (v: boolean) => {
     onUpdateFilter('includeFutureStock', v);
     onUpdateFilter('minQtyIncludesFutureStock', v);
   };
+
 
   // Atalho: Shift+F alterna inclusão do Estoque Futuro.
   useFutureStockShortcut(() => {
