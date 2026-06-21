@@ -17,8 +17,10 @@ export function useCustomKitsRealtime() {
     if (!user?.id) return;
 
     const channel = supabase
-      // BUG-RT-CHANNEL FIX: sufixo único por montagem. O nome por-usuário colidia se dois
-      // componentes montassem o hook em paralelo (ou remount antes do removeChannel async).
+      // BUG-RT-CHANNEL FIX: sufixo único por montagem. `user:${id}:custom-kits` sozinho
+      // colide quando o hook remonta (removeChannel é assíncrono) ou monta em paralelo,
+      // reaproveitando o canal JÁ inscrito e aplicando .on('postgres_changes') APÓS
+      // subscribe() → "cannot add postgres_changes callbacks ... after subscribe()" (crash de render).
       .channel(`user:${user.id}:custom-kits:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
