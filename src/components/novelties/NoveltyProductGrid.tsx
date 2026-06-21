@@ -771,27 +771,36 @@ export function NoveltyProductGrid() {
         </AnimatePresence>
       </div>
 
-      {/* ISSUE-30 FIX: sentinela de scroll infinito com estado correto.
-          hasMore=true indica produtos em memória ainda não renderizados (não
-          um fetch em andamento). O spinner aparece só quando isFetching=true
-          para não transmitir ao usuário que há I/O quando os dados já estão
-          no cache. O texto varia conforme a causa real do estado. */}
-      {hasMore && (
-        <div className="flex justify-center py-6">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isFetching ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Atualizando novidades...
-              </>
-            ) : (
-              <span className="text-xs">
-                Role para ver mais {filteredProducts.length - visibleCount} novidades
-              </span>
+      {/* ISSUE-30 / Janela: sentinela de scroll infinito.
+          - Skeleton row dá feedback visual claro de que mais itens estão chegando.
+          - Texto auxiliar muda conforme o estado (fetch remoto vs. paginação local).
+          - Visível sempre que hasMore=true; o próprio scroll da janela dispara onLoadMore. */}
+      {hasMore && viewMode === 'grid' && (
+        <div
+          data-testid="novelty-infinite-loader"
+          aria-live="polite"
+          aria-busy={isFetching}
+          className="space-y-3 py-4"
+        >
+          <div
+            className={cn(
+              'grid',
+              `${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)}`,
             )}
+          >
+            {Array.from({ length: Math.min(gridColumns * 2, 12) }).map((_, i) => (
+              <NoveltyCardSkeleton key={`load-more-${i}`} />
+            ))}
+          </div>
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {isFetching
+              ? 'Atualizando novidades...'
+              : `Carregando mais ${Math.min(pageSize, filteredProducts.length - visibleCount)} de ${filteredProducts.length - visibleCount}`}
           </div>
         </div>
       )}
+
 
       {selectionMode && (
         <BulkActionBar
