@@ -430,6 +430,12 @@ export default [
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
       // Batch 182: 5 zero-violation rules (saved: prefer-return-this-type 0v✓, prefer-as-const 0v✓, class-literal-property-style 0v✓, ban-tslint-comment 0v✓, no-shadow 0v✓ — Batch 183+)
+      // Batch 187: 5 zero-violation rules (saved: prefer-readonly 0v✓, await-thenable 0v✓ — Batch 188+; excluded: no-redeclare 8v, no-deprecated 134v)
+      '@typescript-eslint/typedef': 'error',
+      '@typescript-eslint/prefer-for-of': 'error',
+      '@typescript-eslint/no-array-constructor': 'error',
+      '@typescript-eslint/no-implied-eval': 'error',
+      '@typescript-eslint/no-empty-object-type': 'error',
       // Batch 186: 5 zero-violation rules (saved: typedef 0v✓, prefer-for-of 0v✓ — Batch 187+; excluded: sort-type-constituents 746v, switch-exhaustiveness-check 34v)
       '@typescript-eslint/parameter-properties': 'error',
       '@typescript-eslint/consistent-type-exports': 'error',
