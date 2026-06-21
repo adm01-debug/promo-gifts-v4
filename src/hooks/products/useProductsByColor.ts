@@ -55,6 +55,11 @@ export function useProductsByColor({
   const fetchProductIds = useCallback(async () => {
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
+      // Abort any in-flight request and invalidate its token so the stale
+      // setState in its finally/resolve path cannot overwrite the cleared state.
+      abortControllerRef.current?.abort();
+      ++fetchTokenRef.current;
+      setIsLoading(false);
       setProductIds(new Set());
       lastFetchedKey.current = '';
       return;
