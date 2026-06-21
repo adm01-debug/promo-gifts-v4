@@ -23,14 +23,13 @@ const baseSummary: StockDashboardSummary = {
   incomingStockValue: 0,
 };
 
-
 describe('buildStockKpiCards', () => {
   it('returns the 4 canonical cards in order', () => {
     const cards = buildStockKpiCards(baseSummary);
     expect(cards.map((c) => c.slug)).toEqual([
       'total-de-variacoes',
       'em-estoque',
-      'critico',
+      'risco-de-ruptura',
       'sem-estoque',
     ]);
   });
@@ -41,27 +40,31 @@ describe('buildStockKpiCards', () => {
 
     expect(bySlug['total-de-variacoes'].value).toBe(baseSummary.totalVariants);
     expect(bySlug['em-estoque'].value).toBe(baseSummary.variantsInStock);
-    expect(bySlug['critico'].value).toBe(baseSummary.variantsCritical);
     expect(bySlug['sem-estoque'].value).toBe(baseSummary.variantsOutOfStock);
 
-    // Sanity: garantir que NÃO estamos usando os contadores por produto
     expect(bySlug['em-estoque'].value).not.toBe(baseSummary.productsInStock);
-    expect(bySlug['critico'].value).not.toBe(baseSummary.productsCritical);
     expect(bySlug['sem-estoque'].value).not.toBe(baseSummary.productsOutOfStock);
   });
 
-  it('marks all 4 primary cards with unit "variações"', () => {
-    for (const card of buildStockKpiCards(baseSummary)) {
-      expect(card.unit).toBe('variações');
-    }
+  it('Risco de Ruptura uses EMA count (≤ 15 dias) when provided', () => {
+    const cards = buildStockKpiCards(baseSummary, 987);
+    const rupture = cards.find((c) => c.slug === 'risco-de-ruptura')!;
+    expect(rupture.title).toBe('Risco de Ruptura');
+    expect(rupture.value).toBe(987);
+    expect(rupture.subtitle).toMatch(/15 dias/);
+    expect(rupture.tooltip).toMatch(/EMA/);
   });
 
-  it('mentions "produtos" in subtitle/tooltip for cross-reference', () => {
-    const cards = buildStockKpiCards(baseSummary);
-    expect(cards[0].subtitle).toContain('produtos');
-    expect(cards[3].subtitle).toContain('produtos');
-    for (const card of cards) {
-      expect(card.tooltip.length).toBeGreaterThan(20);
+  it('Risco de Ruptura falls back to variantsCritical when EMA count is null/undefined', () => {
+    const cards = buildStockKpiCards(baseSummary, null);
+    const rupture = cards.find((c) => c.slug === 'risco-de-ruptura')!;
+    expect(rupture.value).toBe(baseSummary.variantsCritical);
+    expect(rupture.tooltip).toMatch(/fallback/);
+  });
+
+  it('marks all 4 primary cards with unit "variações"', () => {
+    for (const card of buildStockKpiCards(baseSummary, 0)) {
+      expect(card.unit).toBe('variações');
     }
   });
 
@@ -73,7 +76,7 @@ describe('buildStockKpiCards', () => {
     expect(cards[3].filter).toBe('out_of_stock');
   });
 
-  it('handles a zero-summary safely (no division-by-zero / NaN)', () => {
+  it('handles a zero-summary safely (no NaN)', () => {
     const empty: StockDashboardSummary = {
       ...baseSummary,
       totalProducts: 0,
@@ -85,7 +88,7 @@ describe('buildStockKpiCards', () => {
       variantsCritical: 0,
       variantsOutOfStock: 0,
     };
-    for (const card of buildStockKpiCards(empty)) {
+    for (const card of buildStockKpiCards(empty, 0)) {
       expect(card.value).toBe(0);
       expect(card.subtitle).not.toMatch(/NaN/);
     }
