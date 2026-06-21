@@ -1,5 +1,5 @@
 export type Json =
-  Json[] | boolean | number | string | { [key: string]: Json | undefined } | null
+  Json[] | Record<string, Json | undefined> | boolean | number | string | null
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
