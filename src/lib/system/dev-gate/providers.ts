@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file -- EnvGateProvider and LocalStorageGateProvider are sibling implementations of the same GateFlagProvider interface */
 import { type GateValue, type GateFlagProvider } from './types';
 
 const TRUTHY = new Set(['true', '1', 'on', 'yes']);

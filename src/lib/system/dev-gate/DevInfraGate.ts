@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file -- DefaultAccessPolicy is a private implementation detail of DevInfraGate, intentionally co-located */
 import { type GateFlagProvider, type GateValue } from './types';
 import { EnvGateProvider, LocalStorageGateProvider } from './providers';
 import type { AppRole } from '@/contexts/AuthContext';

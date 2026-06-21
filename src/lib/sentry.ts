@@ -21,7 +21,7 @@ interface BufferedError {
   context?: Record<string, unknown>;
 }
 const ERROR_BUFFER: BufferedError[] = [];
-let bufferedUser: { id: string; email?: string } | null | undefined = undefined;
+let bufferedUser: { id: string; email?: string } | null | undefined;
 const BUFFER_MAX = 50;
 
 /**

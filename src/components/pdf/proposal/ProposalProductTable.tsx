@@ -79,7 +79,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
   // Group items by kit_group_id
   const groups: { kitName: string | null; items: { item: ProposalItem; globalIdx: number }[] }[] =
     [];
-  let currentGroupId: string | null | undefined = undefined;
+  let currentGroupId: string | null | undefined;
 
   items.forEach((item, idx) => {
     const gid = item.kit_group_id || null;
