@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 // Animated counter hook
 function useCountUp(target: number, duration = 600) {
