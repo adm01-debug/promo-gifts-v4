@@ -38,9 +38,12 @@ interface OrganizationContextType {
   refetch: () => Promise<void>;
 }
 
-// Organização fixa — corresponde ao único registro existente em `organizations`.
+// Organização fixa — corresponde ao ÚNICO registro real existente em `organizations`
+// (id canônico de produção; owner = admin; dona de todos os orçamentos).
+// IMPORTANTE: este id DEVE bater com organizations.id no banco; caso contrário a RLS
+// de `quotes` (user_is_org_member) bloqueia a criação de orçamentos.
 const FIXED_ORG: Organization = {
-  id: '35c6a2a6-5d6d-4ddb-8dbd-8e842a0118e5', // allowed: prod org seed record
+  id: '5db5aee1-064b-4ef4-9193-345dcd8274ea', // allowed: canonical prod org (organizations.id)
   name: 'Promo Brindes',
   slug: 'promo-brindes',
   logo_url: null,

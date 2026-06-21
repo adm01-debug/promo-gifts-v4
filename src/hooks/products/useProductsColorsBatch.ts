@@ -21,6 +21,10 @@ export interface ProductColorDot {
   /** Imagem da variante (primary_image_url) — usada pelos cards para trocar a
    *  foto principal ao clicar no swatch (mini-carrossel de variantes). */
   image: string | null;
+  /** Estoque agregado desta cor: SOMA de stock_quantity das variantes ativas que
+   *  compartilham (color_name|color_hex). Usado pelos cards (Novidades/Reposição,
+   *  grid/lista/tabela) para exibir o estoque da cor selecionada. */
+  stockQty: number;
 }
 
 type VariantRow = {
@@ -29,6 +33,7 @@ type VariantRow = {
   color_hex: string | null;
   selected_thumbnail: string | null;
   images: string[] | null;
+  stock_quantity: number | null;
 };
 
 /**
@@ -104,7 +109,7 @@ export function useProductsColorsBatch(productIds: string[]) {
           let from = 0;
           for (let page = 0; page < MAX_PAGES; page += 1) {
             const { data, error } = await untypedFrom(resolveTable('product_variants'))
-              .select('product_id, color_name, color_hex, selected_thumbnail, images')
+              .select('product_id, color_name, color_hex, selected_thumbnail, images, stock_quantity')
               .in('product_id', chunk)
               .eq('is_active', true)
               .not('color_name', 'is', null)
@@ -137,6 +142,10 @@ export function useProductsColorsBatch(productIds: string[]) {
             const image =
               row.selected_thumbnail?.trim() ||
               (Array.isArray(row.images) && row.images.length > 0 ? row.images[0] : null);
+            const rowStock =
+              typeof row.stock_quantity === 'number' && Number.isFinite(row.stock_quantity)
+                ? Math.max(0, row.stock_quantity)
+                : 0;
             const key = `${name.toLowerCase()}|${(hex || '').toLowerCase()}`;
 
             let dedupMap = results.get(pid);
@@ -148,9 +157,13 @@ export function useProductsColorsBatch(productIds: string[]) {
             // mas se a primeira não tinha imagem e a próxima tem, preenche.
             const existing = dedupMap.get(key);
             if (!existing) {
-              dedupMap.set(key, { name, hex, image });
-            } else if (!existing.image && image) {
-              dedupMap.set(key, { ...existing, image });
+              dedupMap.set(key, { name, hex, image, stockQty: rowStock });
+            } else {
+              dedupMap.set(key, {
+                ...existing,
+                image: existing.image || image,
+                stockQty: existing.stockQty + rowStock,
+              });
             }
           }
 

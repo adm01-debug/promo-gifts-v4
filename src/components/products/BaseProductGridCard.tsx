@@ -120,6 +120,19 @@ export const BaseProductGridCard = memo(
       typeof basePrice === 'number' && Number.isFinite(basePrice) && basePrice > 0;
     const resolvedStockStatus = stockStatus ?? getStockStatus(stockQuantity ?? 0, 10);
 
+    // Estoque/status da cor selecionada (paridade com a lista do Catálogo). Com cor
+    // ativa, exibe o estoque DAQUELA cor (stockQty agregado em colors); sem cor, o
+    // total. Usa getStockStatus(...,10) p/ consistência com o status do total.
+    const activeColor = useMemo(() => {
+      if (!activeColorName || !colors?.length) return undefined;
+      return colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
+    }, [activeColorName, colors]);
+    const hasColorStock = typeof activeColor?.stockQty === 'number';
+    const displayStockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : (stockQuantity ?? 0);
+    const displayStockStatus = hasColorStock
+      ? getStockStatus(activeColor?.stockQty ?? 0, 10)
+      : resolvedStockStatus;
+
     return (
       <article
         data-testid={testId}
@@ -152,7 +165,7 @@ export const BaseProductGridCard = memo(
             productImageUrl={activeImage ?? undefined}
             productPrice={basePrice ?? 0}
             productMinQuantity={minQuantity || 1}
-            isOutOfStock={resolvedStockStatus === 'out-of-stock'}
+            isOutOfStock={displayStockStatus === 'out-of-stock'}
           />
         )}
 
@@ -242,6 +255,7 @@ export const BaseProductGridCard = memo(
               hideWhenEmpty={false}
               selectedName={activeColorName}
               onSelect={(c) => setActiveColorName(c.name)}
+              onClear={() => setActiveColorName(null)}
             />
           </div>
 
@@ -270,8 +284,8 @@ export const BaseProductGridCard = memo(
               <Skeleton className="h-5 w-16 rounded-full" aria-label="Carregando estoque" />
             ) : (
               <StockBadge
-                status={resolvedStockStatus}
-                quantity={stockQuantity ?? 0}
+                status={displayStockStatus}
+                quantity={displayStockQty}
                 showQuantity
                 size="sm"
               />

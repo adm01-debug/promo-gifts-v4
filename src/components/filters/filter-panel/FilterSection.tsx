@@ -22,21 +22,22 @@ export const SECTION_ICON_COLORS: Record<string, string> = {
 };
 
 export const SECTION_TOOLTIPS: Record<string, string> = {
-  cores: 'Filtre por família de cores, variações e nuances',
-  categorias: 'Navegue pela árvore de categorias do catálogo',
-  estoque: 'Defina a quantidade mínima de estoque por cor',
-  preco: 'Defina a faixa de preço unitário desejada',
-  fornecedores: 'Selecione um ou mais fornecedores',
-  publico: 'Filtre por público-alvo do produto',
-  'datas-comemorativas': 'Encontre produtos ideais para cada data',
-  endomarketing: 'Produtos para ações de endomarketing',
-  materiais: 'Filtre por tipo de material e acabamento',
-  'ramos-atividade': 'Filtre por ramo de atividade e segmento',
-  tecnicas: 'Selecione técnicas de gravação disponíveis',
-  tags: 'Etiquetas e classificações adicionais',
-  'opcoes-rapidas': 'Atalhos para filtros comuns',
-  ordenacao: 'Defina a ordem de exibição dos resultados',
+  cores: 'Mostre só produtos na cor que o cliente pediu.',
+  categorias: 'Vá direto ao tipo de brinde (canecas, canetas, mochilas…).',
+  estoque: 'Diga quantas unidades o cliente quer e veja quem entrega.',
+  preco: 'Trabalhe dentro do orçamento do cliente.',
+  fornecedores: 'Filtre por fornecedor de confiança.',
+  publico: 'Pense em quem vai receber: cliente, funcionário, evento.',
+  'datas-comemorativas': 'Sugestões prontas para Natal, Dia das Mães, etc.',
+  endomarketing: 'Brindes para campanhas internas da empresa.',
+  materiais: 'Escolha pelo material: inox, madeira, plástico…',
+  'ramos-atividade': 'Brindes que combinam com o segmento do cliente.',
+  tecnicas: 'Como personalizar: silk, laser, bordado, tampografia.',
+  tags: 'Etiquetas extras para refinar a busca.',
+  'opcoes-rapidas': 'Atalhos para os filtros mais usados.',
+  ordenacao: 'Escolha a ordem: mais barato, mais estoque, novidades.',
 };
+
 
 export function FilterSection({
   id,
@@ -73,6 +74,8 @@ export function FilterSection({
         )}
       >
         <CollapsibleTrigger
+          data-testid={`filter-section-trigger-${id}`}
+          data-state-open={isOpen ? 'true' : 'false'}
           className={cn(
             'group flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium transition-all duration-200',
             isOpen

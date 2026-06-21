@@ -31,6 +31,7 @@ import {
   TechniquesFilter,
   TagsFilter,
   QuickOptionsFilter,
+  StockFilter,
 } from './filter-panel/sections/SimpleFilters';
 import { SizeFilter } from './filter-panel/sections/SizeFilter';
 
@@ -251,6 +252,12 @@ export function FilterPanel({
     ),
     'opcoes-rapidas': () => (
       <QuickOptionsFilter
+        filters={filters}
+        toggleBooleanFilter={state.toggleBooleanFilter}
+      />
+    ),
+    estoque: () => (
+      <StockFilter
         filters={filters}
         toggleBooleanFilter={state.toggleBooleanFilter}
         onMinStockChange={(v) => onFilterChange({ ...filters, minStock: v })}

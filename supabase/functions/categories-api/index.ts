@@ -16,6 +16,11 @@ const CategoriesRequestSchema = z.object({
 // 'agente' e 'coordenador'/'supervisor' por compatibilidade futura.
 const INTERNAL_ROLES = ['vendedor', 'agente', 'coordenador', 'supervisor', 'admin', 'dev'];
 
+// BUGFIX 2026-06-21: product_category_assignments nao tem coluna is_active.
+// Estrategia 2 precisa verificar status ativo via products em lotes para evitar
+// URL length limit do PostgREST com arrays grandes de UUIDs (27k+ assignments).
+const PCA_BATCH_SIZE = 200;
+
 Deno.serve(async (req) => {
   // CORS preflight MUST be handled BEFORE auth — OPTIONS requests don't
   // carry auth tokens, so authenticateRequest would reject them with 401.
@@ -186,11 +191,14 @@ Deno.serve(async (req) => {
         let primarySource = 'none';
 
         // ESTRATÉGIA 1: Usar products.category_id diretamente
+        // BUGFIX 2026-06-21: adicionado .eq('is_deleted', false) alem de .eq('is_active', true)
+        // para bloquear produtos soft-deleted que ainda apareciam nos resultados.
         const { data: directProducts, error: directError } = await externalClient
           .from('products')
           .select('id')
           .in('category_id', targetCategoryIds)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('is_deleted', false);
 
         if (!directError && directProducts && directProducts.length > 0) {
           directProducts.forEach((p: any) => allProductIds.add(p.id));
@@ -207,19 +215,64 @@ Deno.serve(async (req) => {
         }
 
         // ESTRATÉGIA 2: product_category_assignments (tabela N:N)
+        // BUGFIX 2026-06-21: PCA nao tem coluna is_active — produtos inativos
+        // vazavam nos resultados (696 casos = 2.49% dos assignments).
+        // Fix: buscar assignments, depois verificar status ativo em lotes de
+        // PCA_BATCH_SIZE=200 UUIDs para respeitar o URL length limit do PostgREST.
         const { data: assignments, error: assignError } = await externalClient
           .from('product_category_assignments')
           .select('product_id')
           .in('category_id', targetCategoryIds);
 
         if (!assignError && assignments && assignments.length > 0) {
-          assignments.forEach((a: any) => allProductIds.add(a.product_id));
-          if (primarySource === 'none') primarySource = 'product_category_assignments';
-          else primarySource += '+product_category_assignments';
-          console.log('Category product strategy result', {
-            strategy: 'product_category_assignments',
-            count: assignments.length,
-          });
+          // Deduplica e exclui IDs ja capturados pela Estrategia 1
+          const uniqueAssignedIds = [
+            ...new Set(
+              (assignments as Array<{ product_id: string }>)
+                .map((a) => a.product_id)
+                .filter((id) => !allProductIds.has(id)),
+            ),
+          ];
+
+          if (uniqueAssignedIds.length > 0) {
+            // Verificacao em lotes: evita URL length limit do PostgREST
+            const batches: string[][] = [];
+            for (let i = 0; i < uniqueAssignedIds.length; i += PCA_BATCH_SIZE) {
+              batches.push(uniqueAssignedIds.slice(i, i + PCA_BATCH_SIZE));
+            }
+
+            const batchResults = await Promise.all(
+              batches.map((batch) =>
+                externalClient
+                  .from('products')
+                  .select('id')
+                  .in('id', batch)
+                  .eq('is_active', true)
+                  .eq('is_deleted', false)
+                  .then(({ data }) => (data ?? []) as Array<{ id: string }>),
+              ),
+            );
+
+            let pcaActiveCount = 0;
+            for (const batchData of batchResults) {
+              for (const p of batchData) {
+                allProductIds.add(p.id);
+                pcaActiveCount++;
+              }
+            }
+
+            if (pcaActiveCount > 0) {
+              if (primarySource === 'none') primarySource = 'product_category_assignments';
+              else primarySource += '+product_category_assignments';
+              console.log('Category product strategy result', {
+                strategy: 'product_category_assignments',
+                rawAssignments: assignments.length,
+                uniqueNew: uniqueAssignedIds.length,
+                activeCount: pcaActiveCount,
+                filteredInactive: uniqueAssignedIds.length - pcaActiveCount,
+              });
+            }
+          }
         } else {
           console.log('Category product strategy empty', {
             strategy: 'product_category_assignments',
@@ -228,19 +281,50 @@ Deno.serve(async (req) => {
         }
 
         // ESTRATÉGIA 3: product_categories (fallback legacy)
+        // Nota: esta tabela nao existe no banco atual — a query falha silenciosamente,
+        // o que e o comportamento correto (nao ha dados a migrar desta fonte).
         const { data: fallbackData, error: fallbackError } = await externalClient
           .from('product_categories')
           .select('product_id')
           .in('category_id', targetCategoryIds);
 
         if (!fallbackError && fallbackData && fallbackData.length > 0) {
-          fallbackData.forEach((a: any) => allProductIds.add(a.product_id));
-          if (primarySource === 'none') primarySource = 'product_categories';
-          else primarySource += '+product_categories';
-          console.log('Category product strategy result', {
-            strategy: 'product_categories',
-            count: fallbackData.length,
-          });
+          // BUGFIX 2026-06-21: mesmo tratamento que Estrategia 2 — so incluir ativos
+          const legacyIds = [
+            ...new Set(
+              (fallbackData as Array<{ product_id: string }>)
+                .map((a) => a.product_id)
+                .filter((id) => !allProductIds.has(id)),
+            ),
+          ];
+          if (legacyIds.length > 0) {
+            const legacyBatches: string[][] = [];
+            for (let i = 0; i < legacyIds.length; i += PCA_BATCH_SIZE) {
+              legacyBatches.push(legacyIds.slice(i, i + PCA_BATCH_SIZE));
+            }
+            const legacyResults = await Promise.all(
+              legacyBatches.map((batch) =>
+                externalClient
+                  .from('products')
+                  .select('id')
+                  .in('id', batch)
+                  .eq('is_active', true)
+                  .eq('is_deleted', false)
+                  .then(({ data }) => (data ?? []) as Array<{ id: string }>),
+              ),
+            );
+            let legacyCount = 0;
+            for (const bd of legacyResults) {
+              for (const p of bd) { allProductIds.add(p.id); legacyCount++; }
+            }
+            if (legacyCount > 0) {
+              if (primarySource === 'none') primarySource = 'product_categories';
+              else primarySource += '+product_categories';
+              console.log('Category product strategy result', {
+                strategy: 'product_categories', count: legacyCount,
+              });
+            }
+          }
         } else {
           console.log('Category product strategy empty', {
             strategy: 'product_categories',
@@ -249,7 +333,7 @@ Deno.serve(async (req) => {
         }
 
         const productIds = [...allProductIds];
-        console.log('Total unique products by categories', {
+        console.log('Total unique active products by categories', {
           count: productIds.length,
           source: primarySource,
         });

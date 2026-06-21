@@ -407,7 +407,7 @@ export async function runWithConcurrency<T>(
 // ── Types ─────────────────────────────────────────────────────────────────────
 const OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER = 999;
 type RestError = { message: string };
-type RestCountMode = 'estimated' | 'exact' | 'planned';
+type RestCountMode = 'exact' | 'planned' | 'estimated';
 type RestQueryResult = {
   data: Record<string, unknown>[] | null;
   error: RestError | null;

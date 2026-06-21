@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 // Animated counter hook
 function useCountUp(target: number, duration = 600) {
@@ -41,7 +43,10 @@ interface StatCardProps {
   clickHint?: string;
   isActive?: boolean;
   subtitle?: string;
+  /** Tooltip nativo (atributo `title` no botão) — útil para esclarecer unidade (variações vs produtos). */
+  tooltip?: string;
 }
+
 
 const variantStyles = {
   default: {
@@ -92,7 +97,9 @@ export function StatCard({
   clickHint,
   isActive,
   subtitle,
+  tooltip,
 }: StatCardProps) {
+
   const styles = variantStyles[variant];
 
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
@@ -110,7 +117,7 @@ export function StatCard({
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-  return (
+  const cardButton = (
     <button
       type="button"
       data-testid="stock-stat-card"
@@ -195,13 +202,22 @@ export function StatCard({
           </div>
         </div>
       </div>
-
-      {/* Click hint on hover */}
-      {clickHint && onClick && (
-        <div className="absolute bottom-0 left-0 right-0 pb-1 text-center text-[9px] text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/60">
-          {clickHint}
-        </div>
-      )}
     </button>
   );
+
+  if (!tooltip) return cardButton;
+
+  return (
+    <TooltipProvider delayDuration={250}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex w-full">{cardButton}</span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-[240px] text-xs leading-snug">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
+

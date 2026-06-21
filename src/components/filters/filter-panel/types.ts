@@ -121,6 +121,10 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Faixa de Preço',
     icon: React.createElement(DollarSign, { className: 'h-4 w-4' }),
   },
+  estoque: {
+    title: 'Estoque',
+    icon: React.createElement(Package, { className: 'h-4 w-4' }),
+  },
   fornecedores: {
     title: 'Fornecedores',
     icon: React.createElement(Truck, { className: 'h-4 w-4' }),
@@ -168,7 +172,7 @@ export const SECTION_GROUPS = [
     label: 'PRODUTO',
     // SF-E FIX: 'tamanhos' reabilitada — useProductsBySize consulta product_variants
     // server-side e retorna Set<product_id>; catalogo leve nao precisa de variations.
-    sections: ['cores', 'categorias', 'preco', 'materiais', 'genero', 'tamanhos'],
+    sections: ['cores', 'categorias', 'preco', 'estoque', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
   {

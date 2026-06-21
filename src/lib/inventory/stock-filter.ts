@@ -58,6 +58,8 @@ export interface FilterContext {
   includeFutureStock: boolean;
   futureCutoffMs: number; // 0 quando desativado
   minQtyIncludesFutureStock: boolean;
+  /** Set de variantId sinalizadas como risco de ruptura (EMA ≤ 30d). */
+  ruptureRiskIds?: ReadonlySet<string>;
 }
 
 /** Deriva o contexto de filtragem a partir dos filtros brutos, normalizando strings uma única vez. */
@@ -66,6 +68,10 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorGroupN = normalize(filters.colorGroup);
   const includeFutureStock = Boolean(filters.includeFutureStock);
   const windowDays = filters.futureStockWindowDays ?? 15;
+  const ruptureRiskIds =
+    filters.ruptureRiskVariantIds && filters.ruptureRiskVariantIds.size > 0
+      ? filters.ruptureRiskVariantIds
+      : undefined;
   return {
     searchN: normalize(filters.search),
     colorName,
@@ -76,10 +82,12 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     categoryN: normalize(filters.categoryId),
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
-    hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
+    // ruptureRiskIds também restringe variantes → liga o pipeline de projeção.
+    hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup) || Boolean(ruptureRiskIds),
     includeFutureStock,
     futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
     minQtyIncludesFutureStock: Boolean(filters.minQtyIncludesFutureStock),
+    ruptureRiskIds,
   };
 }
 
@@ -91,6 +99,10 @@ export function selectMatchingVariants(
 ): VariantStock[] {
   if (!ctx.hasVariantFilter) return product.variants;
   return product.variants.filter((v) => {
+    // Rupture-risk pré-filtro: a variante DEVE pertencer ao set sinalizado
+    // pelo motor EMA (cobertura ≤ 30d). Sem isso o card "Risco de Ruptura"
+    // mostraria 1000 e a tabela exibiria variações Em Estoque/Esgotadas.
+    if (ctx.ruptureRiskIds && !ctx.ruptureRiskIds.has(v.variantId)) return false;
     const cn = normalize(v.colorName);
     const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;
@@ -218,20 +230,46 @@ export function buildStockIndexes(products: ProductStockSummary[]): StockIndexes
 }
 
 // ---------- predicados auxiliares ----------
+// SSOT: janela do filtro "incoming" (Estoque Futuro). DEVE bater com o card
+// "Estoque Futuro (30d)" em StockDashboard.tsx — assim tabela e card mostram
+// o mesmo número de variações.
+export const INCOMING_WINDOW_DAYS = 30;
+
+function hasIncomingWithinWindow(v: VariantStock, nowMs: number, cutoffMs: number): boolean {
+  // Mesma lógica do card: considera reposições com data em [agora, agora+30d].
+  // Em trânsito sem data NÃO conta — o card também ignora entradas sem expectedDate.
+  if (v.futureSegments && v.futureSegments.length > 0) {
+    for (const seg of v.futureSegments) {
+      const qty = seg?.quantity;
+      if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0) continue;
+      if (!seg.date) continue;
+      const t = Date.parse(seg.date);
+      if (Number.isNaN(t) || t < nowMs || t > cutoffMs) continue;
+      return true;
+    }
+    return false;
+  }
+  if (!v.futureStock || v.futureStock <= 0) return false;
+  const dateStr = v.expectedReplenishDate ?? v.futureStockDate;
+  if (!dateStr) return false;
+  const t = Date.parse(dateStr);
+  if (Number.isNaN(t) || t < nowMs || t > cutoffMs) return false;
+  return true;
+}
+
 function matchStatus(
   product: ProductStockSummary,
   variantsForFilter: VariantStock[],
   status: StockStatus | 'all',
   hasVariantFilter: boolean,
+  incomingNowMs: number,
+  incomingCutoffMs: number,
 ): boolean {
   if (status === 'all') return true;
   if (status === 'incoming') {
-    if (hasVariantFilter) {
-      return variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0);
-    }
-    return (
-      product.totalInTransitStock > 0 ||
-      variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0)
+    // Unificado com o card "Estoque Futuro (30d)".
+    return variantsForFilter.some((v) =>
+      hasIncomingWithinWindow(v, incomingNowMs, incomingCutoffMs),
     );
   }
   if (hasVariantFilter) {
@@ -329,6 +367,10 @@ export function applyStockFilters(
 ): ProductStockSummary[] {
   const ctx = buildFilterContext(filters);
   const idx = indexes ?? buildStockIndexes(products);
+  // Janela do filtro "incoming" — fixa em INCOMING_WINDOW_DAYS para casar com
+  // o card "Estoque Futuro (30d)". Calculada uma única vez por execução.
+  const incomingNowMs = Date.now();
+  const incomingCutoffMs = incomingNowMs + INCOMING_WINDOW_DAYS * 86_400_000;
   // Construído de forma lazy — só paga o custo de Map<productId> quando o filtro está ativo.
   const alertProductIds = filters.showOnlyWithAlerts
     ? new Set(alerts.map((a) => a.productId))
@@ -377,7 +419,7 @@ export function applyStockFilters(
     const pNorm = idx.productNormals.get(p.productId);
     const variantsForFilter = selectMatchingVariants(p, ctx);
     if (ctx.hasVariantFilter && variantsForFilter.length === 0) continue;
-    if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter)) continue;
+    if (!matchStatus(p, variantsForFilter, filters.status, ctx.hasVariantFilter, incomingNowMs, incomingCutoffMs)) continue;
     if (!matchSearchIdx(p, variantsForFilter, ctx.searchN, pNorm)) continue;
     if (
       ctx.categoryN &&

@@ -74,6 +74,8 @@ export const AdminProductFormPage = lazyWithRetry(
   () => import('@/pages/admin/AdminProductFormPage'),
 );
 export const AdminTelemetriaPage = lazyWithRetry(() => import('@/pages/admin/AdminTelemetriaPage'));
+export const EmaHealthPage = lazyWithRetry(() => import('@/pages/admin/EmaHealthPage'));
+
 export const AdminClientPerformancePage = lazyWithRetry(
   () => import('@/pages/admin/AdminClientPerformancePage'),
 );

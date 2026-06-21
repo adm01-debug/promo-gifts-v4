@@ -235,12 +235,9 @@ export function useFilterPanelState(
         filters.isNew,
         filters.hasPersonalization,
         filters.onSale,
-        filters.inStock,
         filters.hasCommercialPackaging,
-      ].filter(Boolean).length +
-      // BUG-MINSTOCK-BADGE FIX: filtro minStock (input na seção opcoes-rapidas,
-      // também ativável via preset/voz) não era contado — badge ficava abaixo do real.
-      (filters.minStock > 0 ? 1 : 0);
+      ].filter(Boolean).length;
+    const stockCount = [filters.inStock].filter(Boolean).length + (filters.minStock > 0 ? 1 : 0);
     return {
       cores: colorCount,
       categorias: filters.categories?.length || 0,
@@ -251,6 +248,7 @@ export function useFilterPanelState(
       'datas-comemorativas': filters.datasComemorativas?.length || 0,
       endomarketing: filters.endomarketing?.length || 0,
       materiais: materialCount,
+      estoque: stockCount,
       'ramos-atividade': ramoCount,
       tecnicas: (filters.techniques || []).length,
       tags: (filters.tags || []).length,

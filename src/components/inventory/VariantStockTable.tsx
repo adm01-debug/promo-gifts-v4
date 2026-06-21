@@ -35,6 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useRuptureAlerts, type RuptureAlertRow } from '@/hooks/stock/useRuptureAlerts';
+import { RuptureLevelBadge } from './risk/RuptureLevelBadge';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 
 /**
  * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
@@ -123,6 +126,8 @@ function FlatVariantRow({
   selectionEnabled,
   isSelected,
   onToggleSelect,
+  emaAlert,
+  emaEnabled,
 }: {
   variant: VariantStock;
   product: ProductStockSummary;
@@ -137,6 +142,8 @@ function FlatVariantRow({
   selectionEnabled?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  emaAlert?: RuptureAlertRow;
+  emaEnabled?: boolean;
 }) {
   const navigate = useNavigate();
   const isOut = variant.status === 'out_of_stock' || variant.currentStock <= 0;
@@ -295,6 +302,28 @@ function FlatVariantRow({
             projection={projection}
           />
         </TableCell>
+        {emaEnabled && (
+          <TableCell
+            className="hidden lg:table-cell"
+            data-testid="stock-row-ema-coverage"
+          >
+            {emaAlert ? (
+              <div className="flex flex-col items-start gap-0.5">
+                <RuptureLevelBadge level={emaAlert.nivel_alerta} className="text-[10px]" />
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {emaAlert.cobertura_dias !== null && Number.isFinite(emaAlert.cobertura_dias)
+                    ? `${emaAlert.cobertura_dias!.toFixed(1)} d`
+                    : '—'}
+                  {emaAlert.lead_time_efetivo !== null
+                    ? ` · LT ${emaAlert.lead_time_efetivo}d`
+                    : ''}
+                </span>
+              </div>
+            ) : (
+              <EmptyCell />
+            )}
+          </TableCell>
+        )}
         <TableCell className="hidden sm:table-cell">
           <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             <Button
@@ -350,15 +379,47 @@ interface VariantStockTableProps {
    * ao comportamento estático (≤ mínimo do produto).
    */
   targetQuantity?: number;
+  /**
+   * Sinaliza que o filtro dimensional "Risco de Ruptura" (set EMA ≤30d) está
+   * ativo. Usado APENAS para customizar o texto do estado vazio — a filtragem
+   * em si acontece upstream em `applyStockFilters`.
+   */
+  ruptureFilterActive?: boolean;
+}
+
+/**
+ * Wrapper público: decide se monta o hook `useRuptureAlerts` (que exige
+ * QueryClientProvider) somente quando a flag `useEmaRupture` está ativa.
+ * Mantém compat com testes legados que renderizam sem provider.
+ */
+export function VariantStockTable(props: VariantStockTableProps) {
+  const emaEnabled = isFeatureEnabled('useEmaRupture');
+  if (emaEnabled) {
+    return <VariantStockTableWithEma {...props} />;
+  }
+  return <VariantStockTableInner {...props} emaEnabled={false} />;
+}
+
+function VariantStockTableWithEma(props: VariantStockTableProps) {
+  const { byVariantId } = useRuptureAlerts();
+  return <VariantStockTableInner {...props} emaEnabled emaByVariantId={byVariantId} />;
+}
+
+interface VariantStockTableInnerProps extends VariantStockTableProps {
+  emaEnabled: boolean;
+  emaByVariantId?: Map<string, RuptureAlertRow>;
 }
 
 /** Tabela de variações de estoque em modo flat (1 SKU = 1 linha) com scroll virtual. */
-export function VariantStockTable({
+function VariantStockTableInner({
   products,
   className,
   isLoading,
   targetQuantity,
-}: VariantStockTableProps) {
+  ruptureFilterActive,
+  emaEnabled,
+  emaByVariantId,
+}: VariantStockTableInnerProps) {
   // Scroll container ref para o useVirtualizer
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const deepLinkConsumedRef = useRef<string | null>(null);
@@ -602,7 +663,7 @@ export function VariantStockTable({
     },
   }));
 
-  const colSpan = selection.enabled ? 7 : 6;
+  const colSpan = (selection.enabled ? 7 : 6) + (emaEnabled ? 1 : 0);
   const virtualItems = rowVirtualizer.getVirtualItems();
   // Spacers mantêm o scrollbar calibrado sem renderizar todas as linhas.
   const virtualTopPad = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0;
@@ -679,40 +740,10 @@ export function VariantStockTable({
           </span>
         </div>
 
-        {/* Chips de filtro por status — sincroniza com grouped/flat e persiste. */}
-        <div
-          className="flex flex-wrap items-center gap-1"
-          role="group"
-          aria-label="Filtrar por status de estoque"
-          data-testid="stock-status-filter"
-        >
-          {STATUS_FILTER_VALUES.map((value) => {
-            const active = statusFilter === value;
-            const count = statusCounts[value] ?? 0;
-            const disabled = value !== 'all' && count === 0;
-            return (
-              <Button
-                key={value}
-                type="button"
-                variant={active ? 'secondary' : 'ghost'}
-                size="sm"
-                disabled={disabled}
-                aria-pressed={active}
-                data-testid={`stock-status-chip-${value}`}
-                onClick={() => {
-                  setStatusFilter(value);
-                  rowVirtualizer.scrollToIndex(0);
-                }}
-                className="h-6 gap-1 px-2 text-[11px]"
-              >
-                <span>{STATUS_FILTER_LABEL[value]}</span>
-                <span className="rounded-sm bg-muted px-1 text-[10px] text-muted-foreground">
-                  {count}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
+        {/* Chips de status removidos — os StatCards do StockDashboard são a
+            fonte única de filtro por status (Total / Em Estoque / Risco de
+            Ruptura / Sem Estoque / Estoque Futuro). */}
+
 
         <div className="flex items-center gap-2">
           {/* Contagem total */}
@@ -759,6 +790,15 @@ export function VariantStockTable({
 
               <TableHead className="hidden md:table-cell">Em Trânsito</TableHead>
               <TableHead>Status</TableHead>
+              {emaEnabled && (
+                <TableHead
+                  className="hidden lg:table-cell"
+                  data-testid="stock-thead-ema-coverage"
+                  title="Cobertura projetada via EMA α=0.3 — dados pré-computados em mv_stock_rupture_alert"
+                >
+                  Cobertura (EMA)
+                </TableHead>
+              )}
               <TableHead className="hidden sm:table-cell">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -771,12 +811,16 @@ export function VariantStockTable({
                       <Package className="h-8 w-8 opacity-30" />
                     </div>
                     <p className="mb-1 font-semibold text-foreground">
-                      Nenhuma variação encontrada
+                      {ruptureFilterActive
+                        ? 'Nenhuma variação em risco de ruptura'
+                        : 'Nenhuma variação encontrada'}
                     </p>
                     <p className="max-w-xs text-sm">
-                      {inlineSearch
-                        ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`
-                        : 'Ajuste os filtros para visualizar os SKUs.'}
+                      {ruptureFilterActive
+                        ? 'Nenhuma variação com cobertura projetada ≤ 30 dias para os filtros atuais. Toda a operação está saudável neste recorte.'
+                        : inlineSearch
+                          ? `Nenhum resultado para "${inlineSearch}". Tente outro termo.`
+                          : 'Ajuste os filtros para visualizar os SKUs.'}
                     </p>
                   </div>
                 </TableCell>
@@ -806,6 +850,8 @@ export function VariantStockTable({
                       selectionEnabled={selection.enabled}
                       isSelected={selection.isSelected(k)}
                       onToggleSelect={() => selection.toggle(k)}
+                      emaEnabled={emaEnabled}
+                      emaAlert={emaEnabled ? emaByVariantId.get(variant.variantId) : undefined}
                     />
                   );
                 })}
