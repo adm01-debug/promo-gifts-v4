@@ -19,7 +19,7 @@ const STOCK_ALERT_SELECT =
   'id, name, sku, stock_quantity, min_quantity, brand, primary_image_url, images';
 
 export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 10) {
-  return useQuery<StockAlert[], Error>({
+  return useQuery<StockAlert[]>({
     queryKey: ['stock-alerts', lowStockThreshold, criticalStockThreshold],
     queryFn: async () => {
       const result = await dbInvoke<PromobrindProduct>({

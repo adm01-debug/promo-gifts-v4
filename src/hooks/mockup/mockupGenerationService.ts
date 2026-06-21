@@ -115,7 +115,7 @@ const MOCKUP_HISTORY_COLUMNS =
   'client_id, client_name, area_name, area_config, created_at';
 
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
-  let query = untypedFrom<Record<string, unknown>>('generated_mockups')
+  let query = untypedFrom('generated_mockups')
     .select(MOCKUP_HISTORY_COLUMNS)
     .order('created_at', { ascending: false })
     .limit(200);
@@ -500,9 +500,7 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   // prevent the DB delete from proceeding.
   // BUG-DELETE-ORPHANED-MOCKUP-PNG FIX: also fetch mockup_url so the composite
   // PNG (${userId}/mockups/${ts}-${uuid}.png) is removed — previously leaked.
-  let selectQuery = untypedFrom<Record<string, unknown>>('generated_mockups')
-    .select('logo_url, mockup_url')
-    .eq('id', id);
+  let selectQuery = untypedFrom('generated_mockups').select('logo_url, mockup_url').eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
   const row =

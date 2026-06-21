@@ -119,7 +119,7 @@ function buildArgs(limit: number, since?: string | null): Record<string, unknown
 // ─── Contadores (server-side, exatos, filtrados por período) ──────
 
 export function useStockNotificationCounts(since?: string | null) {
-  return useQuery<StockNotificationCounts, Error>({
+  return useQuery<StockNotificationCounts>({
     queryKey: ['stock-notif-counts', since ?? 'all'],
     queryFn: async () => {
       const args: Record<string, unknown> = {};
@@ -146,7 +146,7 @@ export function useStockNotificationCounts(since?: string | null) {
 // ─── Listas por categoria, filtradas por período ──────────────────
 
 export function useStockoutAlerts(limit = 50, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-stockout', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -154,9 +154,7 @@ export function useStockoutAlerts(limit = 50, since?: string | null) {
         buildArgs(limit, since),
       )) as RpcResult<StockoutRow[]>;
       if (error) throw new Error(error.message);
-      return (data ?? []).map((r) =>
-        baseItem(r, 'stockout', 'stockout', r.last_stock_update_at),
-      );
+      return (data ?? []).map((r) => baseItem(r, 'stockout', 'stockout', r.last_stock_update_at));
     },
     staleTime: STALE,
     retry: shouldRetry,
@@ -164,7 +162,7 @@ export function useStockoutAlerts(limit = 50, since?: string | null) {
 }
 
 export function useLowStockAlerts(limit = 50, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-low', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -183,7 +181,7 @@ export function useLowStockAlerts(limit = 50, since?: string | null) {
 }
 
 export function useNoveltyAlerts(limit = 30, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-novelty', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -203,7 +201,7 @@ export function useNoveltyAlerts(limit = 30, since?: string | null) {
 }
 
 export function useRecentRestocks(limit = 30, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-restocks', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -211,9 +209,7 @@ export function useRecentRestocks(limit = 30, since?: string | null) {
         buildArgs(limit, since),
       )) as RpcResult<RestockRow[]>;
       if (error) throw new Error(error.message);
-      return (data ?? []).map((r) =>
-        baseItem(r, 'restocked', 'restocked', r.last_restock_date),
-      );
+      return (data ?? []).map((r) => baseItem(r, 'restocked', 'restocked', r.last_restock_date));
     },
     staleTime: STALE,
     retry: shouldRetry,
