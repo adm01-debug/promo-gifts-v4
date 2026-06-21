@@ -457,24 +457,6 @@ export function StockDashboard() {
             if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
           }}
           tooltip="Variações com reposição prevista nos próximos 30 dias."
-
-            />
-          );
-        })}
-
-
-        <StatCard
-          title="Estoque Futuro (30 dias)"
-          // SSOT: valor primário = variações distintas com reposição prevista
-          // nos próximos 30 dias. Total de unidades vira trend secundário.
-          value={futureStock30dVariantCount}
-          icon={<Truck className="h-6 w-6 text-primary" />}
-          isActive={filters.status === 'incoming'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
-          }}
-          clickHint="Variações com reposição prevista nos próximos 30 dias"
           trend={
             futureStock30dUnits > 0
               ? {
