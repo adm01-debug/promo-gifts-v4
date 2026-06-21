@@ -457,11 +457,9 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         inscricao_estadual: inscricaoEstadual.trim() || null,
         tax_regime: regimeTributario || null,
         state_uf: estadoFaturamento || null,
-        // NOTE: `suppliers` has NO instagram/facebook/linkedin/youtube/tiktok columns — the
-        // earlier "BUG-19 FIX" referenced columns that were never created, so writing them
-        // throws PGRST204 and blocks supplier creation entirely. They are intentionally
-        // omitted; persisting social links requires an additive migration (5 text columns
-        // or a `social_media` jsonb) before they can be re-added here.
+        // NOTE: the suppliers table has NO instagram/facebook/linkedin/youtube/tiktok
+        // columns, so sending them made PostgREST reject the whole insert (PGRST204).
+        // They are omitted here until dedicated columns exist; the UI inputs are kept.
         created_at: now,
         updated_at: now,
       };
@@ -477,7 +475,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         if (logoUrl) {
           try {
             const tempPath = new URL(logoUrl).pathname.split('/supplier-logos/').pop();
-            if (tempPath?.startsWith('suppliers/new-')) {
+            if (tempPath && tempPath.startsWith('suppliers/new-')) {
               const ext = tempPath.split('.').pop() || 'png';
               const canonicalPath = `suppliers/${result.id}.${ext}`;
               const { error: moveError } = await supabase.storage

@@ -22,6 +22,7 @@ import {
 import { useAuditLog, fetchAuditHistory } from '@/hooks/admin';
 import { toast } from 'sonner';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
+import { ORGANIZATION_ID } from '@/components/admin/products/new-supplier/types';
 import { Loader2, ArrowLeft, History, Pencil, Copy, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,23 +55,17 @@ function withoutPriceFreshnessThreshold(data: Record<string, unknown>): Record<s
 }
 
 /**
- * `products.key_benefits` and `products.use_cases` are Postgres `text[]` columns, but the
- * form edits them as multiline textareas (one item per line). Writing a raw string to a
- * `text[]` column throws "malformed array literal", so split into a trimmed, non-empty array.
+ * Convert a multi-line textarea value into a clean Postgres text[] (one entry per
+ * non-empty line). products.key_benefits and products.use_cases are ARRAY columns;
+ * sending a raw string makes PostgREST reject the write ("malformed array literal").
  */
-function linesToArray(value: string | null | undefined): string[] | null {
+function splitLines(value: string | null | undefined): string[] | null {
   if (!value) return null;
   const arr = value
     .split('\n')
-    .map((line) => line.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
   return arr.length > 0 ? arr : null;
-}
-
-/** Inverse of {@link linesToArray}: render a `text[]` column (or a legacy string) for editing. */
-function arrayToLines(value: unknown): string {
-  if (Array.isArray(value)) return value.join('\n');
-  return typeof value === 'string' ? value : '';
 }
 
 export default function AdminProductFormPage() {
@@ -164,6 +159,7 @@ export default function AdminProductFormPage() {
       category_id: p.category_id ?? p.main_category_id ?? '',
       supplier_id: p.supplier_id ?? '',
       supplier_reference: p.supplier_reference ?? '',
+      supplier_product_url: p.supplier_product_url ?? '',
       sale_price: getProductPrice(p) ?? 0,
       cost_price: p.cost_price ?? 0,
       suggested_price: p.suggested_price ?? null,
@@ -189,6 +185,7 @@ export default function AdminProductFormPage() {
       box_length_mm: p.box_length_mm ?? null,
       box_weight_kg: p.box_weight_kg ?? null,
       box_quantity: p.box_quantity ?? null,
+      box_inner_quantity: p.box_inner_quantity ?? null,
       box_volume_cm3: p.box_volume_cm3 ?? null,
       packaging_material: p.packaging_material ?? '',
       packaging_color: p.packaging_color ?? '',
@@ -240,9 +237,10 @@ export default function AdminProductFormPage() {
       slug: p.slug ?? '',
       canonical_url: p.canonical_url ?? '',
       video_url: p.videos?.[0] ?? p.video_url ?? '',
-      // key_benefits/use_cases are text[] in the DB — render one item per line for editing.
-      key_benefits: arrayToLines(p.key_benefits),
-      use_cases: arrayToLines(p.use_cases),
+      key_benefits: Array.isArray(p.key_benefits)
+        ? p.key_benefits.join('\n')
+        : (p.key_benefits ?? ''),
+      use_cases: Array.isArray(p.use_cases) ? p.use_cases.join('\n') : (p.use_cases ?? ''),
     };
   }, []);
 
@@ -269,6 +267,10 @@ export default function AdminProductFormPage() {
       const productData: Record<string, unknown> = {
         sku: data.sku,
         name: data.name,
+        // REQUIRED by the products RLS INSERT/UPDATE policy, which gates on
+        // is_org_owner_or_admin(organization_id). Without it the row's org is NULL and
+        // the WITH CHECK fails → "new row violates row-level security policy".
+        organization_id: ORGANIZATION_ID,
         description: data.description || null,
         short_description: data.short_description || null,
         meta_description: data.meta_description || null,
@@ -280,9 +282,6 @@ export default function AdminProductFormPage() {
         cost_price: data.cost_price ?? null,
         suggested_price: data.suggested_price ?? null,
         stock_quantity: data.stock_quantity ?? 0,
-        // NOTE: `stock_unit` is intentionally NOT written — the column does not exist on
-        // `products` (writing it throws PGRST204). The unit is treated as 'un' on every
-        // read path. Persisting it would require a base-table column + Gold-view change.
         product_type: data.product_type || 'product',
         is_kit: data.product_type === 'kit',
         min_quantity: data.min_quantity ?? 1,
@@ -321,6 +320,7 @@ export default function AdminProductFormPage() {
         box_length_mm: data.box_length_mm ?? null,
         box_weight_kg: data.box_weight_kg ?? null,
         box_quantity: data.box_quantity ?? null,
+        box_inner_quantity: data.box_inner_quantity ?? null,
         box_volume_cm3: data.box_volume_cm3 ?? null,
         packaging_material: data.packaging_material || null,
         packaging_color: data.packaging_color || null,
@@ -328,8 +328,6 @@ export default function AdminProductFormPage() {
         ncm_code: data.ncm_code || null,
         ean: data.ean || null,
         gtin: data.gtin || null,
-        // The real column is `origin_country` (not `country_of_origin`); the latter does
-        // not exist and would throw PGRST204 on save.
         origin_country: data.country_of_origin || null,
         supplier_product_url: data.supplier_product_url || null,
         supply_mode: data.supply_mode || null,
@@ -346,14 +344,12 @@ export default function AdminProductFormPage() {
         slug: data.slug || null,
         canonical_url: data.canonical_url || null,
         videos: data.video_url ? [data.video_url] : [],
-        key_benefits: linesToArray(data.key_benefits),
-        use_cases: linesToArray(data.use_cases),
+        key_benefits: splitLines(data.key_benefits),
+        use_cases: splitLines(data.use_cases),
         updated_at: new Date().toISOString(),
       };
 
       if (images.length > 0) {
-        // `products` has no `image_url` column — `images` (jsonb) + `primary_image_url`
-        // are the real columns. Writing `image_url` throws PGRST204.
         productData.images = images;
         productData.primary_image_url = images[0];
       }
