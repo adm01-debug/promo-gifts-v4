@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 184: 5 zero-violation rules (saved: no-var-requires 0v✓ — Batch 185+; excluded: non-nullable-type-assertion-style 38v)
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
+      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/no-misused-new': 'error',
+      '@typescript-eslint/no-namespace': 'error',
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
       // Batch 183: 5 zero-violation rules (saved from probe 182A)
       '@typescript-eslint/prefer-return-this-type': 'error',
       '@typescript-eslint/prefer-as-const': 'error',
