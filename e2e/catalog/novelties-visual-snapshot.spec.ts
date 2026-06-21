@@ -40,8 +40,16 @@ for (const vp of VIEWPORTS) {
 
       await expect(page).toHaveScreenshot(`novidades-initial-${vp.name}.png`, {
         fullPage: false,
-        maxDiffPixelRatio: 0.02,
+        // Tolerância de 1–2px por borda/antialiasing (sem mascarar regressões):
+        // - threshold: sensibilidade por pixel (0..1) no algoritmo pixelmatch.
+        // - maxDiffPixels: nº absoluto de px diferentes aceitos.
+        // - maxDiffPixelRatio: fração máxima de px diferentes.
+        threshold: 0.2,
+        maxDiffPixels: 200,
+        maxDiffPixelRatio: 0.005,
         animations: 'disabled',
+        caret: 'hide',
+        scale: 'css',
       });
 
       // Rola o container ~2 alturas internas e captura de novo.
@@ -50,8 +58,12 @@ for (const vp of VIEWPORTS) {
 
       await expect(page).toHaveScreenshot(`novidades-scrolled-${vp.name}.png`, {
         fullPage: false,
-        maxDiffPixelRatio: 0.02,
+        threshold: 0.2,
+        maxDiffPixels: 200,
+        maxDiffPixelRatio: 0.005,
         animations: 'disabled',
+        caret: 'hide',
+        scale: 'css',
       });
     });
   });
