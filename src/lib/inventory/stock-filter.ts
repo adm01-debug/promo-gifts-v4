@@ -58,6 +58,8 @@ export interface FilterContext {
   includeFutureStock: boolean;
   futureCutoffMs: number; // 0 quando desativado
   minQtyIncludesFutureStock: boolean;
+  /** Set de variantId sinalizadas como risco de ruptura (EMA ≤ 30d). */
+  ruptureRiskIds?: ReadonlySet<string>;
 }
 
 /** Deriva o contexto de filtragem a partir dos filtros brutos, normalizando strings uma única vez. */
@@ -66,6 +68,10 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorGroupN = normalize(filters.colorGroup);
   const includeFutureStock = Boolean(filters.includeFutureStock);
   const windowDays = filters.futureStockWindowDays ?? 15;
+  const ruptureRiskIds =
+    filters.ruptureRiskVariantIds && filters.ruptureRiskVariantIds.size > 0
+      ? filters.ruptureRiskVariantIds
+      : undefined;
   return {
     searchN: normalize(filters.search),
     colorName,
@@ -76,10 +82,12 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     categoryN: normalize(filters.categoryId),
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
-    hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
+    // ruptureRiskIds também restringe variantes → liga o pipeline de projeção.
+    hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup) || Boolean(ruptureRiskIds),
     includeFutureStock,
     futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
     minQtyIncludesFutureStock: Boolean(filters.minQtyIncludesFutureStock),
+    ruptureRiskIds,
   };
 }
 
