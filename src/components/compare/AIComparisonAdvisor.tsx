@@ -2,7 +2,7 @@
  * AIComparisonAdvisor — Botão que chama edge function `comparison-ai-advisor` (Lovable AI).
  * Cache: sessionStorage por 30 min para combinação de IDs.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Product } from '@/types/product-catalog';
 import { Brain, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,13 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
     products.length >= 2 ? readCache(cacheKey(products)) : null,
   );
 
+  // Keep advice in sync with the comparison set. Without this, removing/swapping
+  // a product left stale advice on screen referencing products no longer present.
+  const cacheId = products.length >= 2 ? cacheKey(products) : '';
+  useEffect(() => {
+    setResult(cacheId ? readCache(cacheId) : null);
+  }, [cacheId]);
+
   const fetchAdvice = async () => {
     if (products.length < 2) return;
     const key = cacheKey(products);
@@ -93,10 +100,13 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
       writeCache(key, advice);
       setResult(advice);
     } catch (e: unknown) {
+      // supabase-js wraps non-2xx responses as FunctionsHttpError, whose message
+      // is generic ("non-2xx status code") — the real status lives in `.context`.
+      const status = (e as { context?: { status?: number } })?.context?.status;
       const msg = e instanceof Error ? e.message : 'Falha ao consultar IA';
-      if (msg.includes('429') || msg.toLowerCase().includes('rate')) {
+      if (status === 429 || msg.includes('429') || msg.toLowerCase().includes('rate')) {
         toast.error('Muitas requisições. Tente novamente em 1 minuto.');
-      } else if (msg.includes('402')) {
+      } else if (status === 402 || msg.includes('402')) {
         toast.error('Créditos de IA esgotados. Contate o administrador.');
       } else {
         toast.error('Não foi possível obter recomendação da IA.');

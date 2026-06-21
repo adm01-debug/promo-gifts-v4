@@ -26,6 +26,7 @@ import { OtherSuppliersRow } from './OtherSuppliersRow';
 import type { CompareVariantInfo } from '@/stores/useComparisonStore';
 // Runtime/UI Product (from useProducts) — distinct from src/types/product.ts (DB-oriented).
 import type { Product } from '@/types/product-catalog';
+import { leadTimeProxy, leadTimeLabel } from '@/lib/comparison-utils';
 
 export interface CompareEntry {
   product: Product;
@@ -40,32 +41,6 @@ interface CompareTableViewProps {
   getStockStatusLabel: (s: string) => { label: string; color: string };
   onRemove: (index: number) => void;
   differencesOnly?: boolean;
-}
-
-function leadTimeProxy(status: string | undefined): number {
-  switch (status) {
-    case 'in-stock':
-      return 1;
-    case 'low-stock':
-      return 2;
-    case 'out-of-stock':
-      return 4;
-    default:
-      return 2;
-  }
-}
-
-function leadTimeLabel(status: string | undefined): string {
-  switch (status) {
-    case 'in-stock':
-      return '1-3 dias';
-    case 'low-stock':
-      return '5-10 dias';
-    case 'out-of-stock':
-      return 'Sob consulta';
-    default:
-      return '—';
-  }
 }
 
 function allEqual<T>(arr: T[]): boolean {
