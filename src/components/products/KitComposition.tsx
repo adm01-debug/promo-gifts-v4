@@ -26,6 +26,11 @@ import { KitComponentCard } from './kit-composition/KitComponentCard';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 
+// BUG-KIT-01 FIX (2026-06-21): formatWeight era recriada como arrow function dentro
+// do componente em cada render. Movida para módulo — é uma função pura sem deps.
+const formatWeight = (grams: number) =>
+  grams >= 1000 ? `${(grams / 1000).toFixed(1)} kg` : `${grams} g`;
+
 interface KitCompositionProps {
   items: KitComponent[];
   onViewProduct?: (productId: string) => void;
@@ -44,9 +49,6 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
     const personalizableCount = items.filter((i) => i.allowsPersonalization).length;
     return { totalPieces, totalWeight, packagingCount, productCount, personalizableCount };
   }, [items]);
-
-  const formatWeight = (grams: number) =>
-    grams >= 1000 ? `${(grams / 1000).toFixed(1)} kg` : `${grams} g`;
 
   const packagingItems = items.filter((i) => i.isPackaging);
   const productItems = items.filter((i) => !i.isPackaging);
@@ -161,9 +163,9 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
               >
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <span>
-                  Este kit é vendido como <strong className="text-foreground">conjunto único</strong>{' '}
-                  pelo fornecedor. Os componentes abaixo são informativos — não estão disponíveis
-                  para compra avulsa.
+                  Este kit é vendido como{' '}
+                  <strong className="text-foreground">conjunto único</strong> pelo fornecedor. Os
+                  componentes abaixo são informativos — não estão disponíveis para compra avulsa.
                 </span>
               </div>
 

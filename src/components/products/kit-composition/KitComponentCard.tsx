@@ -28,6 +28,10 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 import type { KitComponent } from '@/types/product-catalog';
 
+// BUG-KIT-02 FIX (2026-06-21): formatWeight era recriada dentro de KitComponentCard
+// em cada render. Movida para módulo — função pura sem deps de props/state.
+const formatWeight = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${g} g`);
+
 /* ── Copy Button ── */
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -125,8 +129,6 @@ export function KitComponentCard({
   const borderColor = isPackaging ? 'border-warning/25' : 'border-border';
   // Galeria extra (além da capa): mostra mini-thumbs clicáveis se houver >1 foto.
   const extraImages = (item.images ?? []).filter((url) => url && url !== item.imageUrl);
-
-  const formatWeight = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${g} g`);
 
   return (
     <div
@@ -387,8 +389,8 @@ export function KitComponentCard({
       {extraImages.length > 0 && (
         <div className="px-4 pb-3">
           <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Eye className="h-3 w-3" />
-            +{extraImages.length} {extraImages.length === 1 ? 'foto' : 'fotos'}
+            <Eye className="h-3 w-3" />+{extraImages.length}{' '}
+            {extraImages.length === 1 ? 'foto' : 'fotos'}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {extraImages.slice(0, 6).map((url, i) => (
