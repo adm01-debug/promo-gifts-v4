@@ -1,66 +1,86 @@
 /**
- * Fixture determinística para specs de swatches de cor out-of-stock.
+ * Fixture de mock de estoque por cor para `color-swatch-sweep.spec.ts`.
  *
- * installColorStockMock — Intercepta chamadas REST de variantes para um
- * produto específico e injeta uma variante "Preto Mock" com stock_quantity=0.
+ * `installColorStockMock` injeta, de forma determinística, uma variante de cor
+ * ESGOTADA ("Preto Mock", quantidade 0) para um produto específico, aumentando a
+ * resposta REST real de `/rest/v1/product_variants` (não substitui — preserva o
+ * catálogo real e apenas prepende a variante mockada com `product_id` = alvo).
  *
- * Intercepta APENAS requests com `product_id=eq.{productId}` (single-product)
- * deixando requests em lote `product_id=in.(...)` passarem normalmente.
- * Isso garante que os swatches do catálogo (useProductsColorsBatch)
- * mostrem dados reais, enquanto hooks de detalhe (useExternalVariantStock)
- * recebem o cenário determinístico.
- *
- * Uso:
- *   await installColorStockMock(page, { productId });
- *   await page.reload();
- *   // swatch "Preto Mock" aparece apenas em contextos de detalhe (quickview etc.)
+ * Objetivo do teste: garantir que um swatch de cor esgotada mantém layout estável
+ * (boundingBox > 0) e continua clicável (`aria-checked`). É best-effort: se a rota
+ * de novidades/reposição servir cores por outro endpoint, o swatch simplesmente
+ * não aparece e o guard de visibilidade do spec pula as asserções.
  */
 import type { Page, Route } from '@playwright/test';
 
-interface ColorStockMockOptions {
-  /** Product ID real cuja variante será substituída pela "Preto Mock" esgotada. */
+export const MOCK_OUT_OF_STOCK_COLOR_NAME = 'Preto Mock';
+
+export interface InstallColorStockMockOptions {
+  /** Produto que receberá a variante de cor esgotada mockada. */
   productId: string;
 }
 
-const NOW = new Date().toISOString();
+/** Shape mínimo de `product_variants` consumido pelo catálogo (cor + estoque). */
+interface MockVariantRow {
+  id: string;
+  product_id: string;
+  sku: string;
+  name: string;
+  color_id: string | null;
+  color_name: string;
+  color_hex: string;
+  color_code: string | null;
+  stock_quantity: number;
+  is_active: boolean;
+  updated_at: string;
+}
 
 export async function installColorStockMock(
   page: Page,
-  { productId }: ColorStockMockOptions,
+  { productId }: InstallColorStockMockOptions,
 ): Promise<void> {
-  const MOCK_ROW = {
-    id: 'mock-preto-variant-001',
+  const mockVariant: MockVariantRow = {
+    id: `mock-${productId}-preto`,
     product_id: productId,
-    sku: 'MOCK-PRETO-001',
-    supplier_sku: null,
-    color_code: 'PRETO',
-    color_name: 'Preto Mock',
-    color_hex: '#1a1a1a',
-    size_code: null,
-    stock_quantity: 0,
-    selected_thumbnail: null,
-    images: null,
-    bitrix_product_id: null,
+    sku: `MOCK-${productId}-PRETO`,
+    name: MOCK_OUT_OF_STOCK_COLOR_NAME,
+    color_id: null,
+    color_name: MOCK_OUT_OF_STOCK_COLOR_NAME,
+    color_hex: '#000000',
+    color_code: null,
+    stock_quantity: 0, // esgotada → data-stock-state="out"
     is_active: true,
-    updated_at: NOW,
+    updated_at: new Date().toISOString(),
   };
 
-  // Only intercept single-product requests (`eq.` filter), not batch (`in.` filter).
-  // Escape all regex-special chars in productId to prevent regex injection.
-  const escapedId = productId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // Use (?:&|$) to prevent prefix matches where product_id=eq.123 matches eq.1234.
-  const singleProductRe = new RegExp(
-    `\\/rest\\/v1\\/product_variants.*product_id=eq\\.${escapedId}(?:&|$)`,
-  );
-
-  await page.route(singleProductRe, async (route: Route) => {
+  await page.route(/\/rest\/v1\/product_variants(\?|$)/, async (route: Route) => {
+    // Só aumenta leituras; deixa mutações seguirem o fluxo normal.
     if (route.request().method() !== 'GET') return route.fallback();
-    const rows = [MOCK_ROW];
+
+    // Não contamina buscas explícitas de OUTROS produtos: injeta apenas em buscas
+    // em massa (sem filtro product_id — o componente filtra por product_id mesmo)
+    // ou quando o request mira o produto-alvo. PostgREST usa `eq.<id>` / `in.(...)`.
+    const productFilter = new URL(route.request().url()).searchParams.get('product_id');
+    const targetsOurProduct = !productFilter || productFilter.includes(productId);
+    if (!targetsOurProduct) return route.fallback();
+
+    let realRows: unknown[];
+    try {
+      const upstream = await route.fetch();
+      const parsed = (await upstream.json()) as unknown;
+      realRows = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // Não mascara falha real de rede/auth/API com um 200 fabricado: deixa o
+      // request original seguir (e falhar de verdade) para o teste enxergar.
+      return route.fallback();
+    }
+
+    const rows = [mockVariant, ...realRows];
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       headers: {
-        'content-range': `0-0/1`,
+        'content-range': `0-${Math.max(0, rows.length - 1)}/${rows.length}`,
         'access-control-expose-headers': 'content-range',
       },
       body: JSON.stringify(rows),

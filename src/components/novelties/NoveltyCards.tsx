@@ -26,7 +26,6 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
-import { getRecencyVariant } from '@/lib/novelty-dates';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
 
@@ -78,7 +77,7 @@ export const NoveltyGridCard = memo(
   }: NoveltyCardProps) => {
     // ISSUE-5 FIX: computar freshness ao renderizar (não do cache) — evita badge
     // "recém-chegado" exibido com dado stale por até 2 min após cruzar 5 dias.
-    const fresh = getRecencyVariant(product.detected_at) === 'hot';
+    const fresh = product.is_highlighted;
 
     // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
     // num swatch troca a foto principal pela imagem da variante selecionada.
@@ -97,16 +96,18 @@ export const NoveltyGridCard = memo(
     return (
       <article
         data-testid="novelty-grid-card"
+        role="button"
         tabIndex={0}
         aria-label={`Novidade: ${product.product_name ?? 'Produto'}`}
-        data-selected={isSelected}
+        aria-pressed={isSelected}
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
-          // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
-          // Reposição em todos os viewports.
-          'h-[400px] max-h-[400px] overflow-hidden sm:h-[430px] sm:max-h-[430px]',
+          // Altura MÍNIMA flexível (NÃO fixa, sem max-h, sem overflow-hidden no article):
+          // conteúdo longo + skeleton de preço/estoque pode crescer sem recorte. Altura
+          // fixa/max + overflow-hidden invalidam a medição do virtualizer (measureElement)
+          // e quebram o scroll do módulo /novidades. Paridade com BaseProductGridCard.
+          'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
@@ -378,8 +379,6 @@ export function NoveltyTableView({
         <TableBody>
           {products.map((product) => {
             const isSelected = selectedSet.has(product.product_id);
-            // ISSUE-38 FIX: tabIndex + onKeyDown — TableRow com onClick mas sem teclado
-            // viola WCAG 2.1 SC 2.1.1. tr não é natively focusable/activatable.
             return (
               <TableRow
                 key={product.novelty_id}

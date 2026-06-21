@@ -176,6 +176,9 @@ export function useCatalogSelection(
           }
         });
 
+        // Export is async/dynamic-imported: only show success + clear the selection
+        // AFTER it actually resolves, otherwise a failure shows both a success and an
+        // error toast and wipes the selection so the user cannot retry.
         import('@/lib/export-collection-pdf')
           .then(({ exportCollectionPDF }) =>
             exportCollectionPDF({
@@ -184,12 +187,13 @@ export function useCatalogSelection(
               variantMap,
             }),
           )
+          .then(() => {
+            toast.success(`PDF gerado com ${selections.length} produtos`);
+            clearSelection();
+          })
           .catch((err) => {
             toast.error('Erro ao gerar PDF', { description: String(err?.message ?? err) });
           });
-
-        toast.success(`PDF gerado com ${selections.length} produtos`);
-        clearSelection();
       }
     },
     [

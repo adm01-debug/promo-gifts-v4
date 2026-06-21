@@ -71,6 +71,10 @@ export function CartCompanyPickerDialog({
   const [recents, setRecents] = useState<CompanyItem[]>([]);
   const [favorites, setFavorites] = useState<CompanyItem[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  // Synchronous guard: state alone leaves a same-tick window where a fast
+  // double-click/tap fires handleSelect twice before the re-render disables it,
+  // creating two carts for the same company (and wasting a cart slot).
+  const creatingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { createCart, canCreateCart } = useSellerCartContext();
   const { user } = useAuth();
@@ -81,6 +85,7 @@ export function CartCompanyPickerDialog({
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
+      creatingRef.current = false;
       setIsCreating(false);
       return;
     }
@@ -180,39 +185,49 @@ export function CartCompanyPickerDialog({
 
   const isFavorite = useCallback((id: string) => favorites.some((f) => f.id === id), [favorites]);
 
-  const toggleFavorite = useCallback((company: CompanyItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const next = prev.some((f) => f.id === company.id)
-        ? prev.filter((f) => f.id !== company.id)
-        : [company, ...prev].slice(0, 20);
-      writeList(favKey, next);
-      return next;
-    });
-  }, [favKey]);
+  const toggleFavorite = useCallback(
+    (company: CompanyItem, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setFavorites((prev) => {
+        const next = prev.some((f) => f.id === company.id)
+          ? prev.filter((f) => f.id !== company.id)
+          : [company, ...prev].slice(0, 20);
+        writeList(favKey, next);
+        return next;
+      });
+    },
+    [favKey],
+  );
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {
-      if (isCreating) return;
+      if (creatingRef.current) return;
+      creatingRef.current = true;
+      setIsCreating(true);
       const input: CreateCartInput = {
         company_id: company.id,
         company_name: company.name,
         company_location: company.ramo || undefined,
         company_logo_url: company.logo_url || undefined,
       };
-      const result = await createCart(input);
-      if (result) {
-        const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
-          0,
-          MAX_RECENT,
-        );
-        writeList(recentKey, nextRecents);
-        setRecents(nextRecents);
-        onCreated?.(result.id);
-        onOpenChange(false);
+      try {
+        const result = await createCart(input);
+        if (result) {
+          const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
+            0,
+            MAX_RECENT,
+          );
+          writeList(recentKey, nextRecents);
+          setRecents(nextRecents);
+          onCreated?.(result.id);
+          onOpenChange(false);
+        }
+      } finally {
+        creatingRef.current = false;
+        setIsCreating(false);
       }
     },
-    [createCart, onCreated, onOpenChange, recents, recentKey, isCreating],
+    [createCart, onCreated, onOpenChange, recents, recentKey],
   );
 
   const isLoading = loadingLocal || loadingServer;

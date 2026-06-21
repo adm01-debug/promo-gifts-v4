@@ -67,12 +67,6 @@ export interface CreateCartInput {
 
 export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
 
-/** Raw row returned by `select('*, seller_cart_items(*)')` before mapping. */
-type SellerCartDbRow = Omit<SellerCart, 'items' | 'status'> & {
-  seller_cart_items: SellerCartItem[];
-  status: string;
-};
-
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
@@ -133,13 +127,19 @@ export function useSellerCarts() {
       if (error) throw error;
       if (!data?.length) return [];
 
-      return data.map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row as SellerCartDbRow;
+      // PostgREST nested-join row shape (the generated types.ts does not model the
+      // `seller_cart_items(*)` embed). Typed precisely so the destructure + spread
+      // below stay checked, instead of `as any`.
+      type SellerCartRow = Omit<SellerCart, 'items'> & {
+        seller_cart_items: SellerCartItem[] | null;
+      };
+      return (data as unknown as SellerCartRow[]).map((row) => {
+        const { seller_cart_items: rowItems, ...cart } = row;
         return {
           ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
-          items: (rowItems ?? []) as SellerCartItem[],
+          notes: cart.notes ?? null,
+          status: (cart.status ?? 'novo') as CartStatus,
+          items: rowItems ?? [],
         };
       });
     },

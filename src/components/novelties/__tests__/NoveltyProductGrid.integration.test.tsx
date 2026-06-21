@@ -21,11 +21,22 @@ function getByPlaceholderPartial(text: string): HTMLInputElement {
 
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
-  noveltyToProduct: vi.fn((n: NoveltyWithDetails) => ({
+  // ISSUE-35: o grid importa noveltyToProduct como função estável de módulo
+  // (não mais via sel.noveltyToProduct). O mock precisa expô-la no nível raiz.
+  noveltyToProduct: (n: NoveltyWithDetails) => ({
     id: n.product_id,
     name: n.product_name || '',
+    product_name: n.product_name || '',
     price: n.base_price,
-  })),
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id, name: n.supplier_name },
+    category: { id: n.category_id, name: n.category_name },
+    images: [n.product_image],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  }),
   useNoveltiesWithDetails: vi.fn(() => ({
     data: [
       {
@@ -63,30 +74,6 @@ vi.mock('@/hooks/products', () => ({
     isFetching: false,
     error: null,
   })),
-  // Faithful-enough mapper novidade→Product (a real vive em
-  // useNoveltiesSelectionMode.ts). NoveltyProductGrid a usa em um useMemo
-  // incondicional (productMap) — o mock precisa exportá-la.
-  noveltyToProduct: (n: NoveltyWithDetails) => ({
-    id: n.product_id,
-    name: n.product_name,
-    shortDescription: n.product_description || '',
-    description: n.product_description,
-    category_id: n.category_id,
-    category_name: n.category_name,
-    price: n.base_price || 0,
-    sku: n.product_sku || '',
-    images: n.product_image ? [n.product_image] : [],
-    image_url: n.product_image || undefined,
-    stock: n.stock_quantity,
-    colors: [],
-    materials: [],
-    brand: null,
-    is_active: n.is_active,
-    minQuantity: n.min_quantity || 1,
-    newArrival: true,
-    category: { id: n.category_id || '', name: n.category_name || '' },
-    supplier: { id: n.supplier_id || '', name: n.supplier_name || '' },
-  }),
   // Faithful-enough local sort used by the grid (the real one lives in
   // useNovelties.ts and sorts by the real NoveltyWithDetails fields).
   sortNovelties: (arr: NoveltyWithDetails[], sortBy: string) => {
@@ -125,22 +112,6 @@ vi.mock('@/hooks/products', () => ({
     }
     return arr;
   },
-  // Direct module export consumed by NoveltyProductGrid (ISSUE-35: stable ref
-  // via top-level import instead of sel.noveltyToProduct).
-  noveltyToProduct: (n: NoveltyWithDetails) => ({
-    id: n.product_id,
-    name: n.product_name || '',
-    product_name: n.product_name || '',
-    price: n.base_price,
-    sku: n.product_sku || '',
-    stock: n.stock_quantity,
-    supplier: { id: n.supplier_id, name: n.supplier_name },
-    category: { id: n.category_id, name: n.category_name },
-    images: [n.product_image],
-    colors: [],
-    materials: [],
-    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-  }),
   useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),
@@ -160,20 +131,6 @@ vi.mock('@/hooks/products', () => ({
       tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
     }),
   })),
-  noveltyToProduct: (n: NoveltyWithDetails) => ({
-    id: n.product_id,
-    name: n.product_name || '',
-    product_name: n.product_name || '',
-    price: n.base_price,
-    sku: n.product_sku || '',
-    stock: n.stock_quantity,
-    supplier: { id: n.supplier_id, name: n.supplier_name },
-    category: { id: n.category_id, name: n.category_name },
-    images: [n.product_image],
-    colors: [],
-    materials: [],
-    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-  }),
 }));
 
 vi.mock('@/stores/useFavoritesStore', () => ({
