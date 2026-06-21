@@ -193,13 +193,13 @@ describe('rest-native WRITE (Plano A)', () => {
         operation: 'update',
         data: { is_active: false },
       } as InvokeOptions),
-    ).rejects.toThrow(/mass mutation guard/i);
+    ).rejects.toThrow(/mass-mutation guard/i);
   });
 
   it('A2: delete SEM filtro/id é proibido', async () => {
     await expect(
       executeRestNativeWrite({ table: 'products', operation: 'delete' } as InvokeOptions),
-    ).rejects.toThrow(/mass mutation guard/i);
+    ).rejects.toThrow(/mass-mutation guard/i);
   });
 
   it('A2: update COM id é permitido e aplica eq(id)', async () => {
