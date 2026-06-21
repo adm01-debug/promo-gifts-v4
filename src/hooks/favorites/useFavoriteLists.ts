@@ -85,14 +85,21 @@ export function useFavoriteLists() {
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: countRows } = await untypedRpc('get_favorite_list_counts', { _user_id: user.id });
+        const { data: countRows } = await untypedRpc('get_favorite_list_counts', {
+          _user_id: user.id,
+        });
         ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
-          (r) => { counts[r.list_id] = Number(r.item_count); },
+          (r) => {
+            counts[r.list_id] = Number(r.item_count);
+          },
         );
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as unknown as FavoriteList[];
+      return (data ?? []).map((l) => ({
+        ...l,
+        item_count: counts[l.id] ?? 0,
+      })) as unknown as FavoriteList[];
     },
     enabled: !!user,
     staleTime: 30_000,
@@ -347,7 +354,7 @@ export function useFavoriteListItems(listId: string | null) {
               toast.error('Item não encontrado na lixeira');
               return;
             }
-            const { data: rawRestored } = await supabase.rpc('restore_favorite_from_trash', {
+            const { data: rawRestored } = await untypedRpc('restore_favorite_from_trash', {
               _trash_id: trashed.id,
               _user_id: user.id,
             });
@@ -448,7 +455,7 @@ export function useFavoriteTrash() {
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
       // Atomic RPC: handles missing original list by falling back to default list
-      const { data: rawData, error } = await supabase.rpc('restore_favorite_from_trash', {
+      const { data: rawData, error } = await untypedRpc('restore_favorite_from_trash', {
         _trash_id: trashId,
         _user_id: user.id,
       });
