@@ -48,7 +48,7 @@ export function ChatInputBar({
         isFromVoiceRef.current = true;
         setIsFromVoice(true);
         setTimeout(() => {
-          const sendBtn = document.querySelector('[data-oracle-send]')!;
+          const sendBtn = document.querySelector<HTMLButtonElement>('[data-oracle-send]');
           sendBtn?.click();
         }, 100);
       }
