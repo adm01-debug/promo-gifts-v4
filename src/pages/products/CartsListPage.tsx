@@ -119,7 +119,7 @@ function CartsListContent() {
             data-testid="page-title-carrinhos"
             className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
           >
-            <ShoppingCart className="h-7 w-7" />
+            <ShoppingCart aria-hidden="true" className="h-7 w-7" />
             Carrinhos
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -135,9 +135,13 @@ function CartsListContent() {
           disabled={!canCreateCart}
           data-testid="carts-list-new"
           className="gap-2"
-          title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+          title={
+            !canCreateCart
+              ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+              : undefined
+          }
         >
-          <Plus className="h-4 w-4" />
+          <Plus aria-hidden="true" className="h-4 w-4" />
           Novo carrinho
         </Button>
       </header>
@@ -145,11 +149,15 @@ function CartsListContent() {
       {/* Toolbar: busca + chips de status + ordenação (padrão Orçamentos) */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por empresa…"
+            aria-label="Buscar carrinhos por empresa"
             data-testid="carts-list-search"
             className="h-9 pl-9 pr-9"
           />
@@ -160,7 +168,7 @@ function CartsListContent() {
               aria-label="Limpar busca"
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              <X className="h-3.5 w-3.5" />
+              <X aria-hidden="true" className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
@@ -228,9 +236,13 @@ function CartsListContent() {
             onClick={() => setPickerOpen(true)}
             disabled={!canCreateCart}
             className="gap-2"
-            title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+            title={
+              !canCreateCart
+                ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+                : undefined
+            }
           >
-            <Plus className="h-4 w-4" /> Novo carrinho
+            <Plus aria-hidden="true" className="h-4 w-4" /> Novo carrinho
           </Button>
         </EmptyState>
       ) : filteredCarts.length === 0 ? (
@@ -248,7 +260,7 @@ function CartsListContent() {
             disabled={!hasActiveFilters}
             className="gap-2"
           >
-            <X className="h-4 w-4" /> Limpar filtros
+            <X aria-hidden="true" className="h-4 w-4" /> Limpar filtros
           </Button>
         </EmptyState>
       ) : (
@@ -347,6 +359,7 @@ function CartRow({ cart, onOpen }: CartRowProps) {
     <TableRow
       role="button"
       tabIndex={0}
+      aria-label={`Abrir carrinho de ${cart.company_name}`}
       onClick={onOpen}
       onKeyDown={handleKey}
       data-testid={`cart-row-${cart.id}`}
@@ -401,7 +414,7 @@ function CartRow({ cart, onOpen }: CartRowProps) {
           className="gap-1"
         >
           Abrir
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
         </Button>
       </TableCell>
     </TableRow>
