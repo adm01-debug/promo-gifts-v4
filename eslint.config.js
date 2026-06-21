@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 210: 5 zero-violation rules (saved: @typescript-eslint/prefer-regexp-exec 0v✓ — Batch 211+)
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      '@typescript-eslint/no-unnecessary-qualifier': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/prefer-find': 'error',
       // Batch 209: 5 zero-violation rules (saved: @typescript-eslint/no-confusing-non-null-assertion 0v✓, @typescript-eslint/no-unnecessary-boolean-literal-compare 0v✓ — Batch 210+)
       '@typescript-eslint/triple-slash-reference': 'error',
       '@typescript-eslint/unified-signatures': 'error',
