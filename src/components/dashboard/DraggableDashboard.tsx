@@ -236,7 +236,7 @@ export function DraggableWidget({
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Settings2">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Configurar widget">
                       <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>

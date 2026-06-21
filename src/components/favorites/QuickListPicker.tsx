@@ -40,15 +40,23 @@ export function QuickListPicker({
 }: Props) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreate = async () => {
     const name = newName.trim();
-    if (!name) return;
-    const id = await onCreateAndPick(name);
-    onPick(id);
-    setNewName('');
-    setCreating(false);
-    onOpenChange(false);
+    if (!name || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const id = await onCreateAndPick(name);
+      onPick(id);
+      setNewName('');
+      setCreating(false);
+      onOpenChange(false);
+    } catch {
+      // Error toast already handled by useFavoriteQuickAdd.createAndAdd
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -133,8 +141,13 @@ export function QuickListPicker({
                 placeholder="Nome da nova lista"
                 className="h-7 text-xs"
               />
-              <Button size="sm" className="h-7 px-2 text-xs" onClick={handleCreate}>
-                OK
+              <Button
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleCreate}
+                disabled={isSubmitting || !newName.trim()}
+              >
+                {isSubmitting ? '…' : 'OK'}
               </Button>
             </div>
           ) : (

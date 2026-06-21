@@ -429,8 +429,14 @@ export function useMockupGenerator() {
         toast.error('Por favor, selecione uma imagem válida');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('A imagem deve ter no máximo 5MB');
+      // BUG-SVG-UPLOAD FIX: reject SVGs at upload time — the edge function
+      // (assertNotSvg) rejects them at generation, but early rejection gives cleaner UX.
+      if (file.type === 'image/svg+xml') {
+        toast.error('Logos SVG não são suportados. Converta para PNG ou JPG e tente novamente.');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('A imagem deve ter no máximo 10MB');
         return;
       }
       let processedFile = file;
@@ -452,6 +458,9 @@ export function useMockupGenerator() {
           prev.map((area) => (area.id === areaId ? { ...area, logoPreview: logoData } : area)),
         );
         logoColorAnalysis.analyzeImage(logoData);
+      };
+      reader.onerror = () => {
+        toast.error('Erro ao ler o arquivo de imagem. Tente novamente.');
       };
       reader.readAsDataURL(processedFile);
     },
@@ -511,6 +520,33 @@ export function useMockupGenerator() {
       toast.error('O produto selecionado não possui imagem');
       return;
     }
+    // BUG-NO-DIM-VALIDATION FIX: warn if any logo exceeds the technique/area limit.
+    // Non-blocking — we still generate; the server will composite what it receives.
+    for (const area of areasWithLogos) {
+      const techW =
+        selectedTechnique && 'maxWidth' in selectedTechnique
+          ? (selectedTechnique as TechniqueWithLimits).maxWidth
+          : null;
+      const techH =
+        selectedTechnique && 'maxHeight' in selectedTechnique
+          ? (selectedTechnique as TechniqueWithLimits).maxHeight
+          : null;
+      const maxW = area.maxWidthCm ?? techW;
+      const maxH = area.maxHeightCm ?? techH;
+      if (maxW && area.logoWidth > maxW + 0.5) {
+        toast.warning(
+          `"${area.name}": logo ${area.logoWidth.toFixed(1)} cm excede o limite de ${maxW} cm de largura.`,
+          { duration: 5000 },
+        );
+      }
+      if (maxH && area.logoHeight > maxH + 0.5) {
+        toast.warning(
+          `"${area.name}": logo ${area.logoHeight.toFixed(1)} cm excede o limite de ${maxH} cm de altura.`,
+          { duration: 5000 },
+        );
+      }
+    }
+
     setIsLoading(true);
     setGeneratedMockup(null);
     setGeneratedBatchMockups([]);
@@ -644,7 +680,7 @@ export function useMockupGenerator() {
   }, []);
 
   const loadFromHistory = useCallback(
-    (mockup: GeneratedMockup) => {
+    async (mockup: GeneratedMockup) => {
       const product = mockup.product_id ? getProductById(mockup.product_id) : null;
       // BUG-11 FIX: technique_id is now always null (BUG-10 fix) because the FK points to
       // personalization_techniques but the UI loads from tabela_preco_gravacao_oficial.
@@ -662,12 +698,20 @@ export function useMockupGenerator() {
         });
       else setProductSelection(null);
       setSelectedTechnique(technique || null);
+      // BUG-LOADFROMHISTORY-CLIENT FIX: client_id was always null (BUG-CLIENT-ID) so
+      // the client was never restored. Use client_name as fallback for old rows.
+      // After migration 20260620000001, new rows have a real client_id.
       setSelectedClient(
-        mockup.client_id ? { id: mockup.client_id, name: mockup.client_name || 'Cliente' } : null,
+        mockup.client_id || mockup.client_name
+          ? {
+              id: mockup.client_id ?? mockup.client_name ?? '',
+              name: mockup.client_name || 'Cliente',
+            }
+          : null,
       );
       const restoredArea: PersonalizationArea = {
         id: crypto.randomUUID(),
-        name: 'Frente',
+        name: mockup.location_name ?? 'Frente',
         positionX: mockup.position_x ?? 50,
         positionY: mockup.position_y ?? 50,
         logoWidth: mockup.logo_width_cm ?? 5,
@@ -684,7 +728,9 @@ export function useMockupGenerator() {
       setActiveTab('generator');
       if (mockup.logo_url) logoColorAnalysis.analyzeImage(mockup.logo_url);
       // BUG-04 FIX: clear stale draft.
-      clearDraft();
+      // BUG-F-LOADHISTORY FIX: await clearDraft() — same race as resetForm (BUG-F).
+      // Without await, the 1 s auto-save debounce can fire and re-persist the old draft.
+      await clearDraft();
       toast.success('Configurações carregadas!');
     },
     [techniques, getProductById, logoColorAnalysis, clearDraft, positionHistory],

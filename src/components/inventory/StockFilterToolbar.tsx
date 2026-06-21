@@ -634,7 +634,7 @@ export function StockFilterToolbar({
         </StockHelpTooltip>
 
         {activeFiltersCount > 0 && (
-          <Button variant="ghost" onClick={handleReset} size="icon" className="shrink-0">
+          <Button variant="ghost" onClick={handleReset} size="icon" aria-label="Limpar filtros" className="shrink-0">
             <X className="h-4 w-4" />
           </Button>
         )}

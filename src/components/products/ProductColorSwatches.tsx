@@ -44,7 +44,8 @@ export interface ColorDotLike {
 
 interface ProductColorSwatchesProps {
   colors: readonly ColorDotLike[] | undefined;
-  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5. */
+  /** Máximo de bolinhas visíveis antes de mostrar `+N`. Default 5.
+   *  Ignorado quando `wrap` é true (exibe todas as cores). */
   max?: number;
   /** Tamanho do dot. Ver tabela na JSDoc do arquivo. */
   size?: 'xs' | 'sm' | 'md';
@@ -52,13 +53,21 @@ interface ProductColorSwatchesProps {
   /** Esconde quando vazio. Default true. */
   hideWhenEmpty?: boolean;
   /**
-   * Handler disparado ao clicar/teclar Enter numa bolinha.
-   * Recebe a cor selecionada. Sempre chamado com `event.stopPropagation()`
-   * já aplicado (evita ativar o onClick do card pai).
+   * Quando true: exibe TODAS as cores em múltiplas linhas (flex-wrap), sem
+   * truncar nem mostrar chip "+N". Usado nos cards de grid de Catálogo,
+   * Super Filtro, Novidades e Reposição. Default false (legado).
    */
+  wrap?: boolean;
+  /** Handler de seleção. Recebe a cor e o índice. stopPropagation já aplicado. */
   onSelect?: (color: ColorDotLike, index: number) => void;
   /** Nome da cor atualmente selecionada — recebe ring de destaque. */
   selectedName?: string | null;
+  /**
+   * Handler opcional de "limpar seleção" (botão "Todos"). Quando definido E
+   * existir `selectedName`, é renderizado um chip inline ao lado das bolinhas
+   * que dispara o handler. stopPropagation já aplicado.
+   */
+  onClear?: () => void;
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
@@ -70,21 +79,23 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
 export const ProductColorSwatches = memo(
   ({
     colors,
-    // `max` permanece na interface (API pública) mas não é mais consumido —
-    // main passou a exibir todas as cores; não desestruturado p/ evitar no-unused-vars.
+    max = 5,
     size = 'sm',
     className,
     hideWhenEmpty = true,
+    wrap = false,
     onSelect,
     selectedName,
+    onClear,
   }: ProductColorSwatchesProps) => {
+
     const idPrefix = useId();
 
     if (colors === undefined) {
       return (
         <div
           className={cn(
-            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)]',
+            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] py-[var(--swatch-container-py)]',
             className,
           )}
           aria-busy="true"
@@ -106,14 +117,14 @@ export const ProductColorSwatches = memo(
       if (hideWhenEmpty) {
         return (
           <div
-            className={cn('min-h-[var(--swatch-size-sm)]', className)}
+            className={cn('min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]', className)}
             data-testid="colors-empty-hidden"
           />
         );
       }
       return (
         <div
-          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 opacity-40"
+          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 py-[var(--swatch-container-py)] opacity-40"
           role="status"
           aria-live="polite"
           data-testid="colors-unavailable"
@@ -124,7 +135,12 @@ export const ProductColorSwatches = memo(
       );
     }
 
-    const visible = colors;
+    // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
+    // Em modo `wrap`, exibe todas as cores sem chip de overflow.
+    const effectiveMax = wrap ? colors.length : Math.max(1, max);
+    const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
+    const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
+
     // Resolve o estado selecionado o mais cedo possível
     const queryParams =
       typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -134,7 +150,12 @@ export const ProductColorSwatches = memo(
     return (
       <div
         className={cn(
-          'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-visible py-[var(--swatch-container-py)]',
+          wrap
+            ? // Modo wrap: múltiplas linhas, altura automática, sem clipping nas bordas.
+              //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
+              'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+            : // Modo legado: uma única linha + chip "+N".
+              'flex h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"
@@ -243,6 +264,40 @@ export const ProductColorSwatches = memo(
             </Tooltip>
           );
         })}
+        {overflow > 0 && (
+          <span
+            className={cn(
+              'inline-flex shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-semibold leading-none text-muted-foreground',
+              SIZE_CLASS[size],
+            )}
+            aria-label={`Mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+            data-testid="color-swatches-overflow"
+            title={`+${overflow}`}
+          >
+            +{overflow}
+          </span>
+        )}
+        {onClear && normalizedSelected && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onClear();
+              }
+            }}
+            aria-label="Mostrar todas as variações"
+            data-testid="color-swatches-clear"
+            className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/50 bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            Todos
+          </button>
+        )}
       </div>
     );
   },

@@ -44,7 +44,6 @@ interface SortableCartItemProps {
   item: SellerCartItem;
   index: number;
   otherCarts: SellerCart[];
-  companyAccentColor?: string | null;
   stockMap: Map<string, number>;
   onRemove: (id: string, name: string) => void;
   onUpdateQuantity: (id: string, qty: number) => void;
@@ -59,7 +58,6 @@ export const SortableCartItem = memo(
     item,
     index,
     otherCarts,
-    companyAccentColor,
     stockMap,
     onRemove,
     onUpdateQuantity,
@@ -71,6 +69,15 @@ export const SortableCartItem = memo(
     const [notesOpen, setNotesOpen] = useState(!!item.notes);
     const [localNotes, setLocalNotes] = useState(item.notes || '');
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+    // Sync localNotes from server when no pending debounce (user not typing).
+    // Keeps the field current after React Query refetches without clobbering an
+    // in-progress edit.
+    useEffect(() => {
+      if (!debounceRef.current) {
+        setLocalNotes(item.notes || '');
+      }
+    }, [item.notes]);
 
     // C2: rascunho local da quantidade — permite digitar livremente (incl. multi-digito
     // e estado vazio transitorio) e so persiste no commit (blur/Enter), evitando uma
@@ -103,7 +110,7 @@ export const SortableCartItem = memo(
 
     const style = {
       transform: CSS.Transform.toString(transform),
-      transition,
+      transition: isDragging ? undefined : transition,
       opacity: isDragging ? 0.5 : 1,
       zIndex: isDragging ? 50 : undefined,
     };
@@ -138,10 +145,6 @@ export const SortableCartItem = memo(
             isOutOfStock && 'opacity-60',
           )}
         >
-          {companyAccentColor && (
-            <div className="h-1 w-full" style={{ backgroundColor: companyAccentColor }} />
-          )}
-
           {/* Product image */}
           <div className="group/img-container relative aspect-square overflow-hidden bg-muted/20">
             <button
@@ -391,6 +394,9 @@ export const SortableCartItem = memo(
                 </button>
                 <input
                   type="number"
+                  min={1}
+                  max={999999}
+                  aria-label={`Quantidade para ${item.product_name}`}
                   data-testid="cart-qty-input"
                   value={qtyDraft}
                   onFocus={(e) => e.target.select()}

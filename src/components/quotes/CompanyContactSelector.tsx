@@ -87,35 +87,44 @@ export function CompanyContactSelector({
         orderBy: { column: 'first_name', ascending: true },
         limit: 50,
       });
-      return Promise.all(
-        contactsData.map(async (ct) => {
-          let email: string | null = null;
-          let phone: string | null = null;
-          try {
-            const [emails, phones] = await Promise.all([
-              selectCrm<CrmContactEmail>('contact_emails', {
-                filters: { contact_id: ct.id },
-                limit: 1,
-              }),
-              selectCrm<CrmContactPhone>('contact_phones', {
-                filters: { contact_id: ct.id },
-                limit: 1,
-              }),
-            ]);
-            if (emails.length > 0) email = emails[0].email;
-            if (phones.length > 0) phone = phones[0].numero;
-          } catch {
-            /* silently fail */
-          }
-          return {
-            id: ct.id,
-            name: ct.full_name || [ct.first_name, ct.last_name].filter(Boolean).join(' '),
-            cargo: ct.cargo,
-            email,
-            phone,
-          };
-        }),
-      );
+      const contactIds = contactsData.map((ct) => ct.id);
+      const [allEmails, allPhones] = await Promise.all([
+        contactIds.length > 0
+          ? selectCrm<CrmContactEmail>('contact_emails', {
+              filters: { contact_id: { in: contactIds } },
+              select: 'contact_id, email',
+              limit: contactIds.length,
+            }).catch(() => [] as CrmContactEmail[])
+          : Promise.resolve([] as CrmContactEmail[]),
+        contactIds.length > 0
+          ? selectCrm<CrmContactPhone>('contact_phones', {
+              filters: { contact_id: { in: contactIds } },
+              select: 'contact_id, numero',
+              limit: contactIds.length,
+            }).catch(() => [] as CrmContactPhone[])
+          : Promise.resolve([] as CrmContactPhone[]),
+      ]);
+
+      const emailByContact = new Map<string, string>();
+      for (const e of allEmails) {
+        if (e.contact_id && !emailByContact.has(e.contact_id)) {
+          emailByContact.set(e.contact_id, e.email);
+        }
+      }
+      const phoneByContact = new Map<string, string>();
+      for (const p of allPhones) {
+        if (p.contact_id && !phoneByContact.has(p.contact_id)) {
+          phoneByContact.set(p.contact_id, p.numero);
+        }
+      }
+
+      return contactsData.map((ct) => ({
+        id: ct.id,
+        name: ct.full_name || [ct.first_name, ct.last_name].filter(Boolean).join(' '),
+        cargo: ct.cargo,
+        email: emailByContact.get(ct.id) ?? null,
+        phone: phoneByContact.get(ct.id) ?? null,
+      }));
     },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,

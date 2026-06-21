@@ -65,7 +65,9 @@ export default function ReplenishmentsPage() {
 
         <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-[1fr_280px]">
           <main className="order-2 min-w-0 xl:order-1">
-            <ReplenishmentProductGrid />
+            <EnhancedErrorBoundary>
+              <ReplenishmentProductGrid />
+            </EnhancedErrorBoundary>
           </main>
           <aside className="order-1 xl:sticky xl:top-4 xl:order-2 xl:self-start">
             <EnhancedErrorBoundary>

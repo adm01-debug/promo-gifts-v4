@@ -33,9 +33,12 @@ const statusOrder: Record<string, number> = {
   pending_approval: 1,
   pending: 2,
   sent: 5,
+  viewed: 5,
   approved: 5,
+  converted: 5,
   rejected: 5,
   expired: 5,
+  cancelled: 5,
 };
 
 function formatTs(ts?: string) {
@@ -69,7 +72,8 @@ export function QuoteStatusTimeline({
 
   const isRejected = status === 'rejected';
   const isExpired = status === 'expired';
-  const isFinalNegative = isRejected || isExpired;
+  const isCancelled = status === 'cancelled';
+  const isFinalNegative = isRejected || isExpired || isCancelled;
 
   // Filter out pending_approval step if not relevant to this quote
   const relevantSteps =
@@ -83,6 +87,9 @@ export function QuoteStatusTimeline({
     }
     if (idx === relevantSteps.length - 1 && isExpired) {
       return { key: 'expired', label: 'Expirado', icon: AlertTriangle };
+    }
+    if (idx === relevantSteps.length - 1 && isCancelled) {
+      return { key: 'cancelled', label: 'Cancelado', icon: AlertTriangle };
     }
     return step;
   });
@@ -123,7 +130,7 @@ export function QuoteStatusTimeline({
                     isSync &&
                     'border-success bg-primary/10 text-primary ring-2 ring-primary/20',
                   isCurrent &&
-                    isRejected &&
+                    (isRejected || isCancelled) &&
                     'border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/20',
                   isCurrent &&
                     isExpired &&
@@ -147,7 +154,7 @@ export function QuoteStatusTimeline({
                   isCompleted && 'text-primary',
                   isCurrent && !isFinalNegative && !isSync && 'font-semibold text-primary',
                   isCurrent && isSync && 'font-semibold text-primary',
-                  isCurrent && isRejected && 'font-semibold text-destructive',
+                  isCurrent && (isRejected || isCancelled) && 'font-semibold text-destructive',
                   isCurrent && isExpired && 'font-semibold text-muted-foreground',
                   !isCompleted && !isCurrent && 'text-muted-foreground/50',
                 )}

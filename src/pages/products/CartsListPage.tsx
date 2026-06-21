@@ -135,6 +135,7 @@ function CartsListContent() {
           disabled={!canCreateCart}
           data-testid="carts-list-new"
           className="gap-2"
+          title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
         >
           <Plus className="h-4 w-4" />
           Novo carrinho
@@ -223,7 +224,12 @@ function CartsListContent() {
           title="Nenhum carrinho aberto"
           description="Crie um carrinho para começar a montar uma proposta para um cliente."
         >
-          <Button onClick={() => setPickerOpen(true)} disabled={!canCreateCart} className="gap-2">
+          <Button
+            onClick={() => setPickerOpen(true)}
+            disabled={!canCreateCart}
+            className="gap-2"
+            title={!canCreateCart ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.' : undefined}
+          >
             <Plus className="h-4 w-4" /> Novo carrinho
           </Button>
         </EmptyState>

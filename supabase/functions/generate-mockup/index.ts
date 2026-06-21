@@ -14,6 +14,10 @@ interface GenerateMockupBody {
   // so the prompt has NO visual effect. Kept for response provenance/back-compat.
   techniqueName?: string;
   techniquePrompt?: string;
+  // areaName is sent by the client for multi-area batch tracking; the edge function
+  // does not use it internally (single-area compositor) but declaring it prevents
+  // implicit `any` in the parsed body and documents the full client contract.
+  areaName?: string;
   positionX?: number;
   positionY?: number;
   logoWidthCm?: number;

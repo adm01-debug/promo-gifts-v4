@@ -4,7 +4,7 @@
  * Converts raw PromobrindProduct to the internal Product format.
  */
 import { getCatalogStockStatus, type CatalogStockStatus } from '@/lib/catalog-stock-status';
-import type { Product } from '@/types/product-catalog';
+import type { Product, ProductVariation } from '@/types/product-catalog';
 import {
   type PromobrindProduct,
   getProductImageUrl,
@@ -81,18 +81,8 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   if (images.length === 0 && imageUrl) images = [imageUrl];
   if (images.length === 0) images = ['/placeholder.svg'];
 
-  type InternalVariation = {
-    id: string;
-    sku: string;
-    color: { name: string; hex: string };
-    stock: number;
-    image: string | null;
-    images: string[];
-    videos: unknown[];
-    size_code: string | null;
-  };
   // Mapear variações
-  const variations: InternalVariation[] = [];
+  const variations: ProductVariation[] = [];
   if (p.colors && Array.isArray(p.colors)) {
     p.colors.forEach((c, index: number) => {
       if (typeof c === 'object' && c !== null && 'name' in c) {
@@ -140,7 +130,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     images,
     sku: p.sku,
     stock,
-    colors: colors as never,
+    colors,
     materials: parseMaterials(p.materials),
     supplier_reference: p.supplier_reference,
     brand: p.brand,
@@ -197,7 +187,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
         : null) ??
       (typeof p.updated_at === 'string' && p.updated_at.trim() !== '' ? p.updated_at : null),
     priceFreshnessThresholdDays: p.price_freshness_threshold_days ?? null,
-    variations: variations.length > 0 ? (variations as never) : undefined,
+    variations: variations.length > 0 ? variations : undefined,
     productVideos: p.product_videos?.length ? p.product_videos : undefined,
     kitItems:
       p.kit_components?.map((c) => {

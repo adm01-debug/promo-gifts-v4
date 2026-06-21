@@ -15,6 +15,7 @@ import { ArrowRight, TrendingUp, TrendingDown, Minus, GitCompare } from 'lucide-
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { QuoteVersion } from '@/hooks/quotes';
+import { STATUS_LABELS } from '@/hooks/quotes/quoteHelpers';
 import { formatCurrency } from '@/lib/format';
 
 interface QuoteItem {
@@ -82,13 +83,6 @@ function DiffBadge({
   );
 }
 
-const QUOTE_STATUS_LABELS: Record<string, string> = {
-  draft: 'Rascunho',
-  sent: 'Enviado',
-  approved: 'Aprovado',
-  rejected: 'Rejeitado',
-  expired: 'Expirado',
-} as const;
 
 export function QuoteVersionCompare({
   open,
@@ -209,7 +203,7 @@ export function QuoteVersionCompare({
                         v{detail.version} — {detail.quote_number}
                       </span>
                       <Badge variant={detail.status === 'approved' ? 'default' : 'outline'}>
-                        {QUOTE_STATUS_LABELS[detail.status] || detail.status}
+                        {STATUS_LABELS[detail.status] || detail.status}
                       </Badge>
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">

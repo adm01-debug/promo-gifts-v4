@@ -1,5 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'child_process';
+import { readdirSync, readFileSync, statSync } from 'fs';
+import { join } from 'path';
+
+// GAP (auditoria 200-commits): busca 100% via Node fs, SEM dependência do binário
+// de sistema `rg` (ripgrep). A versão anterior usava execSync('rg ...') e, quando
+// o runner não tinha ripgrep (ex.: pós-migração da imagem default Node 20→24),
+// ou falhava com status 127 ou era inteiramente PULADA por um `describe.skipIf`
+// — deixando o guard sem cobertura no quality-gate. Agora roda igual em qualquer
+// ambiente (local == CI), restaurando a cobertura.
+
+/** Coleta recursivamente arquivos com as extensões dadas, respeitando dirs excluídos. */
+function findFiles(dir: string, extensions: string[], excludeDirs: string[]): string[] {
+  const results: string[] = [];
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return results;
+  }
+  for (const entry of entries) {
+    const full = join(dir, entry);
+    let stat;
+    try {
+      stat = statSync(full);
+    } catch {
+      continue;
+    }
+    if (stat.isDirectory()) {
+      if (!excludeDirs.some((ex) => full.includes(ex))) {
+        results.push(...findFiles(full, extensions, excludeDirs));
+      }
+    } else if (extensions.some((ext) => entry.endsWith(ext))) {
+      results.push(full);
+    }
+  }
+  return results;
+}
 
 describe('Integridade do Sistema de Skeletons', () => {
   it('não deve haver importações de componentes de skeleton legados', () => {
@@ -11,68 +47,84 @@ describe('Integridade do Sistema de Skeletons', () => {
       '@/components/common/ContextualSkeleton',
     ];
 
+    const excludedFiles = [
+      'src/components/loading/ModernSkeletons.tsx',
+      'src/components/layout/SkeletonLoaders.tsx',
+    ];
+
     expect(forbiddenPatterns).not.toHaveLength(0);
+
+    const files = findFiles('src', ['.ts', '.tsx'], ['src/components/loading', 'src/tests']).filter(
+      (f) => !excludedFiles.some((ex) => f.endsWith(ex)),
+    );
+
     for (const pattern of forbiddenPatterns) {
-      try {
-        const command = `rg -l "${pattern}" src/ --glob '!src/components/loading/ModernSkeletons.tsx' --glob '!src/tests/*' --glob '!src/components/layout/SkeletonLoaders.tsx'`;
-        const result = execSync(command).toString().trim();
-        if (result) throw new Error(`Importação legada encontrada (${pattern}):\n${result}`);
-      } catch (error: unknown) {
-        const e = error as { status?: number; message?: string };
-        if (e.status !== 1) expect(e.message).toBe('');
+      const matches = files.filter((f) => {
+        try {
+          return readFileSync(f, 'utf8').includes(pattern);
+        } catch {
+          return false;
+        }
+      });
+      if (matches.length > 0) {
+        throw new Error(`Importação legada encontrada (${pattern}):\n${matches.join('\n')}`);
       }
     }
   });
 
   it('uso de Skeletons customizados deve seguir o padrão centralizado', () => {
-    try {
-      const globExclusions = [
-        'src/components/loading/*',
-        'src/components/ui/skeleton.tsx',
-        'src/components/layout/SkeletonLoaders.tsx',
-        'src/tests/*',
-        'src/routes/AppRoutes.tsx',
-        'src/components/kit-builder/*',
-        'src/components/kit-library/*',
-        'src/pages/Index.tsx',
-        'src/components/catalog/CatalogHeader.tsx',
-        'src/pages/clients/ClientsPage.tsx',
-        'src/pages/quotes/QuotesListPage.tsx',
-        'src/pages/tools/MagicUp.tsx',
-        'src/pages/mockups/MockupHistoryPage.tsx',
-        'src/pages/tools/DropboxBrowserPage.tsx',
-        'src/pages/kit-builder/KitLibraryPage.tsx',
-        'src/components/bi/*',
-        'src/components/common/LoadingOverlay.tsx',
-        'src/components/**/*.test.tsx',
-        'src/components/**/*.test.ts',
-      ]
-        .map((e) => `--glob '!${e}'`)
-        .join(' ');
+    const excludeDirs = [
+      'src/components/loading',
+      'src/components/ui',
+      'src/components/layout/SkeletonLoaders.tsx',
+      'src/tests',
+      'src/routes',
+      'src/components/kit-builder',
+      'src/components/kit-library',
+      'src/components/bi',
+    ];
 
-      const command = `rg -l "Skeleton" src/ --glob "*.tsx" ${globExclusions}`;
-      const result = execSync(command).toString().trim();
-      if (!result) return;
+    const excludeFiles = [
+      'src/pages/Index.tsx',
+      'src/components/catalog/CatalogHeader.tsx',
+      'src/pages/clients/ClientsPage.tsx',
+      'src/pages/quotes/QuotesListPage.tsx',
+      'src/pages/tools/MagicUp.tsx',
+      'src/pages/mockups/MockupHistoryPage.tsx',
+      'src/pages/tools/DropboxBrowserPage.tsx',
+      'src/pages/kit-builder/KitLibraryPage.tsx',
+      'src/components/common/LoadingOverlay.tsx',
+    ];
 
-      const files = result.split('\n');
-      expect(files.filter(Boolean)).not.toHaveLength(0);
-      for (const file of files) {
-        if (!file) return;
-        const content = execSync(`cat ${file}`).toString();
-        const hasValidImport =
-          content.includes('@/components/ui/skeleton') ||
-          content.includes('@/components/loading/ModernSkeletons');
-        expect(hasValidImport, `O arquivo ${file} usa Skeletons sem importação centralizada.`).toBe(
-          true,
-        );
+    const filesToCheck = findFiles('src', ['.tsx'], excludeDirs)
+      .filter((f) => !excludeFiles.some((ex) => f.endsWith(ex)))
+      .filter((f) => !f.includes('.test.'))
+      .filter((f) => {
+        try {
+          return readFileSync(f, 'utf8').includes('Skeleton');
+        } catch {
+          return false;
+        }
+      });
+
+    for (const file of filesToCheck) {
+      let content: string;
+      try {
+        content = readFileSync(file, 'utf8');
+      } catch {
+        continue;
       }
-    } catch (error: unknown) {
-      if ((error as { status?: number }).status !== 1) throw error;
+      const hasValidImport =
+        content.includes('@/components/ui/skeleton') ||
+        content.includes('@/components/loading/ModernSkeletons');
+      expect(hasValidImport, `O arquivo ${file} usa Skeletons sem importação centralizada.`).toBe(
+        true,
+      );
     }
   });
 
   it('os skeletons de página devem usar o SkeletonMonitor', () => {
-    const content = execSync('cat src/components/layout/SkeletonLoaders.tsx').toString();
+    const content = readFileSync('src/components/layout/SkeletonLoaders.tsx', 'utf8');
     expect(content).toContain('SkeletonMonitor');
     expect(content).toContain('makeSkeleton');
   });

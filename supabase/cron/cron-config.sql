@@ -64,6 +64,20 @@ SELECT cron.schedule(
 );
 
 -- =====================================================
+-- JOB 4: Purge favorite trash (daily at 04:00 UTC)
+-- =====================================================
+-- Removes items from favorite_items_trash that have been there
+-- for more than 30 days (TTL enforced by purge_favorite_trash_old).
+-- Runs as the postgres role which has EXECUTE on the function.
+SELECT cron.schedule(
+  'purge-favorite-trash',
+  '0 4 * * *', -- Todo dia às 04:00 UTC
+  $$
+  SELECT public.purge_favorite_trash_old();
+  $$
+);
+
+-- =====================================================
 -- Visualizar jobs agendados
 -- =====================================================
 -- SELECT * FROM cron.job;
@@ -74,3 +88,4 @@ SELECT cron.schedule(
 -- SELECT cron.unschedule('process-notification-queue');
 -- SELECT cron.unschedule('send-daily-digest');
 -- SELECT cron.unschedule('cleanup-old-notifications');
+-- SELECT cron.unschedule('purge-favorite-trash');

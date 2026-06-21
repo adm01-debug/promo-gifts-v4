@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -53,6 +53,7 @@ import { PdfGenerationDialog } from '@/components/quotes/PdfGenerationDialog';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { useQuoteViewData } from '@/pages/quotes/quote-view/useQuoteViewData';
 import { useDiscountApproval, type DiscountApprovalRequest } from '@/hooks/quotes';
+import { applyNegotiationMarkup } from '@/hooks/quotes/quoteMarkup';
 
 const statusConfig = Object.fromEntries(
   Object.entries(QUOTE_STATUS_CONFIG).map(([k, v]) => [
@@ -87,6 +88,14 @@ export default function QuoteViewPage() {
     logQuoteHistory,
     duplicateQuote,
   } = useQuoteViewData(id);
+
+  // Itens com a margem de negociação já aplicada (espelha o PDF). Os componentes
+  // de tabela/totais recalculam a partir dos itens, então recebem os valores já
+  // inflados e permanecem coerentes entre si e com o total persistido.
+  const displayItems = useMemo(
+    () => applyNegotiationMarkup(quote?.items || [], quote?.negotiation_markup_percent),
+    [quote],
+  );
 
   useEffect(() => {
     if (id && quote?.status === 'pending_approval') {
@@ -308,9 +317,9 @@ export default function QuoteViewPage() {
               clientCnpj={clientCnpj}
             />
             <Separator />
-            <QuoteItemsTable items={(quote.items || []) as never} />
+            <QuoteItemsTable items={displayItems as never} />
             <QuoteTotalsSummary
-              items={quote.items || []}
+              items={displayItems}
               discountPercent={quote.discount_percent}
               discountAmount={quote.discount_amount}
               shippingType={quote.shipping_type}
@@ -349,14 +358,22 @@ export default function QuoteViewPage() {
                         </div>
                       </div>
                     )}
-                    {quote.shipping_method && (
+                    {quote.shipping_type && (
                       <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
                         <Truck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                         <div>
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                             Frete
                           </p>
-                          <p className="mt-0.5 text-sm font-medium">{quote.shipping_method}</p>
+                          <p className="mt-0.5 text-sm font-medium">
+                            {quote.shipping_type === 'cif'
+                              ? 'CIF — Cortesia'
+                              : quote.shipping_type === 'fob'
+                                ? 'FOB — Por conta do cliente'
+                                : quote.shipping_type === 'fob_pre'
+                                  ? `FOB Pré-negociado${quote.shipping_cost ? ` (${quote.shipping_cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})` : ''}`
+                                  : quote.shipping_type}
+                          </p>
                         </div>
                       </div>
                     )}

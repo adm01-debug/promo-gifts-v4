@@ -16,8 +16,9 @@
  *
  * Strict boundary "> hoje (TZ Brasil)" — a RPC já aplica essa regra.
  */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const log = createClientLogger('reposicao.variants-summary');
@@ -30,7 +31,10 @@ export interface VariantSummaryEntry {
 }
 
 /** Map<productId, Map<colorNameKey, VariantSummaryEntry>> */
-export type VariantsSummaryByProduct = ReadonlyMap<string, ReadonlyMap<string, VariantSummaryEntry>>;
+export type VariantsSummaryByProduct = ReadonlyMap<
+  string,
+  ReadonlyMap<string, VariantSummaryEntry>
+>;
 
 /** Normaliza nome de cor para casamento estável (lowercase + trim + sem diacríticos). */
 export function normalizeColorKey(name: string | null | undefined): string {
@@ -65,9 +69,9 @@ const EMPTY: VariantsSummaryByProduct = new Map();
  * Retorna Map vazio quando productIds for vazio (não dispara a RPC).
  */
 export function useReposicaoVariantsSummary(productIds: readonly string[]) {
-  // Ordenação estável p/ chave de cache idempotente
-  const sortedIds = [...productIds].sort();
-  const key = sortedIds.join(',');
+  // Memoizado: evita recriar array/string em cada render mesmo que os IDs não mudem.
+  const sortedIds = useMemo(() => [...productIds].sort(), [productIds]);
+  const key = useMemo(() => sortedIds.join(','), [sortedIds]);
 
   return useQuery<VariantsSummaryByProduct>({
     queryKey: ['reposicao-variants-summary', key],
@@ -76,11 +80,9 @@ export function useReposicaoVariantsSummary(productIds: readonly string[]) {
     gcTime: 5 * 60_000,
     queryFn: async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC ainda não tipada em types.ts (será regenerada no próximo deploy)
-        const { data, error } = await (supabase as any).rpc(
-          'fn_get_reposicao_variants_summary',
-          { p_product_ids: sortedIds },
-        );
+        const { data, error } = await untypedRpc('fn_get_reposicao_variants_summary', {
+          p_product_ids: sortedIds,
+        });
         if (error) {
           log.warn('rpc_failed', { error: error.message, ids: sortedIds.length });
           return EMPTY;
@@ -91,7 +93,10 @@ export function useReposicaoVariantsSummary(productIds: readonly string[]) {
           const inner = new Map<string, VariantSummaryEntry>();
           for (const v of row.variants_summary ?? []) {
             const k = normalizeColorKey(v.nome);
-            if (!k) continue;
+            if (!k) {
+              log.warn('variant_sem_nome_de_cor', { variant_id: v.variant_id, product_id: row.product_id });
+              continue;
+            }
             inner.set(k, {
               variantId: v.variant_id,
               stockQty: v.stock_qty,

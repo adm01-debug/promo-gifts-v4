@@ -1,0 +1,6 @@
+{
+  "generatedAt": "2026-06-20T13:33:10.058Z",
+  "description": "Baseline de `as any` / `: any` em código de produção (excluindo testes e comentários JSDoc). Falha apenas em REGRESSÃO (contagem cresce).",
+  "productionAnyCount": 0,
+  "counts": {}
+}

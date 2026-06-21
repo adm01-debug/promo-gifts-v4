@@ -31,12 +31,16 @@ Deno.serve(async (req) => {
 
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    // 1) Orcamentos enviados ha >=2d
+    // 1) Orcamentos enviados ha >=2d sem resposta do cliente.
+    // Usa sent_at (data em que o status virou 'sent') como referência — não updated_at,
+    // pois qualquer edição no orçamento reseta updated_at e zeraria o timer de follow-up.
+    // Fallback: quotes sem sent_at preenchido (legados) são ignorados intencionalmente.
     const { data: quotes, error: qErr } = await supabase
       .from("quotes")
-      .select("id, quote_number, client_name, seller_id, updated_at")
-      .in("status", ["sent", "pending"])
-      .lte("updated_at", twoDaysAgo)
+      .select("id, quote_number, client_name, seller_id, sent_at")
+      .in("status", ["sent"])
+      .not("sent_at", "is", null)
+      .lte("sent_at", twoDaysAgo)
       .limit(500);
 
     if (qErr) throw qErr;

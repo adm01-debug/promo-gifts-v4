@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, master, develop ]
 
+# Cancela runs antigos do mesmo branch/PR — evita gastar slots em commits superados.
+concurrency:
+  group: replenishment-quality-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -42,6 +47,45 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: E2E — Paridade visual /novidades vs /reposicao (informativo)
+        # Roda primeiro em modo informativo para coletar artefatos mesmo se falhar.
+        id: card_parity_info
+        continue-on-error: true
+        run: |
+          bunx playwright install --with-deps chromium
+          npm run test:e2e:card-parity -- --pass-with-no-tests
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - name: Card parity — gate estrito (tolerância 4px)
+        # Falha o workflow se widthDiff/heightDiff > 4px ou ratio fora de [0.9, 1.1].
+        # Só ativa quando os secrets de auth estão presentes (do contrário, skipa).
+        if: ${{ env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != '' }}
+        run: |
+          echo "::group::Card parity strict run (sem --pass-with-no-tests)"
+          npm run test:e2e:card-parity
+          echo "::endgroup::"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - name: Upload Playwright artifacts (parity)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-parity-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+
       - name: Coverage Report
         # continue-on-error: coverage is informational; --include was removed in Vitest 4.x
         continue-on-error: true
@@ -50,3 +94,180 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+  card-parity-matrix:
+    # Roda a spec de paridade /novidades vs /reposicao em uma matriz de
+    # projects do Playwright (cada project = combinação browser × viewport
+    # definida em playwright.config.ts). Cobre desktop (chromium/firefox/
+    # webkit) e mobile (Chrome/Safari) em paralelo.
+    runs-on: ubuntu-latest
+    needs: audit
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium-authed
+          - firefox-authed
+          - webkit-authed
+          - mobile-chrome
+          - mobile-safari
+    env:
+      # Mapeia browser → install target (evita baixar os 3 engines em cada shard).
+      PW_BROWSER_chromium-authed: chromium
+      PW_BROWSER_firefox-authed: firefox
+      PW_BROWSER_webkit-authed: webkit
+      PW_BROWSER_mobile-chrome: chromium
+      PW_BROWSER_mobile-safari: webkit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+
+      - name: ⏱️ Job start
+        id: t_job
+        run: echo "ts=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      # Cache do store do Bun (~/.bun/install/cache) por bun.lockb.
+      - name: Cache Bun store
+        id: bun-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-store-${{ runner.os }}-${{ hashFiles('bun.lockb') }}
+          restore-keys: bun-store-${{ runner.os }}-
+
+      - name: Install dependencies
+        id: bun-install
+        run: |
+          T0=$(date +%s)
+          bun install --frozen-lockfile
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
+
+      # Resolve a versão do Playwright para chavear o cache de browsers.
+      - name: Resolve Playwright version
+        id: pw
+        run: |
+          PW_VER=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          echo "version=$PW_VER" >> "$GITHUB_OUTPUT"
+          ENGINE_VAR="PW_BROWSER_${{ matrix.project }}"
+          ENGINE="${!ENGINE_VAR}"
+          echo "engine=$ENGINE" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ steps.pw.outputs.engine }}
+
+      - name: Install Playwright browser (${{ steps.pw.outputs.engine }})
+        id: pw-install
+        run: |
+          T0=$(date +%s)
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            bunx playwright install-deps ${{ steps.pw.outputs.engine }}
+          else
+            bunx playwright install --with-deps ${{ steps.pw.outputs.engine }}
+          fi
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
+
+      - name: Run card-parity (${{ matrix.project }}) — informativo
+        id: pw-info
+        continue-on-error: true
+        run: |
+          T0=$(date +%s)
+          bunx playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts \
+            --project=${{ matrix.project }} \
+            --reporter=list \
+            --pass-with-no-tests
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - name: Run card-parity (${{ matrix.project }}) — gate estrito 4px
+        id: pw-strict
+        if: ${{ env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != '' }}
+        run: |
+          T0=$(date +%s)
+          bunx playwright test e2e/catalog/novidades-reposicao-card-parity.spec.ts \
+            --project=${{ matrix.project }} \
+            --reporter=list
+          echo "duration=$(( $(date +%s) - T0 ))" >> "$GITHUB_OUTPUT"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - name: 📊 Timing report (cold vs warm)
+        if: always()
+        run: |
+          BUN_HIT="${{ steps.bun-cache.outputs.cache-hit }}"
+          PW_HIT="${{ steps.pw-cache.outputs.cache-hit }}"
+          [ "$BUN_HIT" = "true" ] && BUN_STATE="warm ♻️" || BUN_STATE="cold ❄️"
+          [ "$PW_HIT" = "true" ]  && PW_STATE="warm ♻️"  || PW_STATE="cold ❄️"
+          [ "$BUN_HIT" = "true" ] && [ "$PW_HIT" = "true" ] && OVERALL="warm ♻️" || OVERALL="cold ❄️"
+
+          JOB_TOTAL=$(( $(date +%s) - ${{ steps.t_job.outputs.ts }} ))
+          BUN_DUR="${{ steps.bun-install.outputs.duration }}"
+          PW_DUR="${{ steps.pw-install.outputs.duration }}"
+          INFO_DUR="${{ steps.pw-info.outputs.duration }}"
+          STRICT_DUR="${{ steps.pw-strict.outputs.duration }}"
+
+          {
+            echo "### ⏱️ card-parity-matrix · \`${{ matrix.project }}\` ($OVERALL)"
+            echo ""
+            echo "| Etapa | Cache | Duração (s) |"
+            echo "|---|---|---|"
+            echo "| Bun install | $BUN_STATE | ${BUN_DUR:-n/a} |"
+            echo "| Playwright install (${{ steps.pw.outputs.engine }}) | $PW_STATE | ${PW_DUR:-n/a} |"
+            echo "| Playwright run (informativo) | — | ${INFO_DUR:-n/a} |"
+            echo "| Playwright run (gate estrito 4px) | — | ${STRICT_DUR:-skipped} |"
+            echo "| **Job total** | — | **$JOB_TOTAL** |"
+            echo ""
+            echo "_Compare runs cold vs warm na aba **Summary** do workflow para medir o ganho do cache._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Também emite JSON como artefato p/ análise histórica.
+          mkdir -p timing-reports
+          cat > "timing-reports/${{ matrix.project }}.json" <<EOF
+          {
+            "project": "${{ matrix.project }}",
+            "engine": "${{ steps.pw.outputs.engine }}",
+            "playwright_version": "${{ steps.pw.outputs.version }}",
+            "cache": { "bun": "$BUN_STATE", "playwright": "$PW_STATE", "overall": "$OVERALL" },
+            "durations_s": {
+              "bun_install": ${BUN_DUR:-null},
+              "playwright_install": ${PW_DUR:-null},
+              "run_info": ${INFO_DUR:-null},
+              "run_strict": ${STRICT_DUR:-null},
+              "job_total": $JOB_TOTAL
+            },
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "sha": "${{ github.sha }}"
+          }
+          EOF
+
+      - name: Upload timing report (${{ matrix.project }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-parity-timing-${{ matrix.project }}
+          path: timing-reports/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload artifacts (${{ matrix.project }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-parity-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+

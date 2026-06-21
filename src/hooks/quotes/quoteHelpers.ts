@@ -20,14 +20,16 @@ export const round2 = (n: number | null | undefined): number => {
 };
 
 /**
- * Markup persistido sempre dentro de [0, MARKUP_MAX_PERCENT].
- * O banco agora REJEITA (CHECK valid_negotiation_markup_range) markup fora de faixa em vez de
- * clampar em silêncio; calculateQuoteTotals já lança erro acima do teto, mas markup negativo
- * escapava e seria gravado cru. Este clamp garante que o valor enviado nunca dispare o CHECK
- * e que o markup gravado seja exatamente o usado no cálculo.
+ * Clamp markup to [0, ∞) — negative markup makes no semantic sense and would
+ * slip past calculateQuoteTotals (which only throws for > MARKUP_MAX_PERCENT).
+ * The upper bound is intentionally NOT enforced here: calculateQuoteTotals
+ * already throws before buildInsertPayload is reached, and the DB CHECK
+ * (valid_negotiation_markup_range) acts as the final guard. Capping silently
+ * at 50 here would persist a different value than what the user entered, which
+ * is a worse outcome than letting the DB reject it with an explicit error.
  */
 const clampMarkup = (v: number | null | undefined): number =>
-  round2(Math.max(0, Math.min(MARKUP_MAX_PERCENT, v || 0)));
+  round2(Math.max(0, v || 0));
 
 export function validateDiscount(
   quote: Partial<Quote>,
@@ -78,10 +80,9 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
+  // Negative value is valid: means markup > apparent discount (seller has margin).
   const realDiscountPercent =
-    realSubtotal > 0
-      ? round2(Math.max(0, ((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
-      : 0;
+    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
 
   return {
     subtotal: round2(subtotal),
@@ -98,12 +99,13 @@ export function buildInsertPayload(
   userId: string,
   orgId: string | null,
   totals: { subtotal: number; discountAmount: number; total: number },
-): TablesInsert<'quotes'> {
+): TablesInsert<'quotes'> & { contact_id?: string | null } {
+  // contact_id: coluna real de `quotes` ausente do types.ts gerado (stale). A intersecção
+  // mantém o payload tipado e evita TS2353. Ver src/lib/supabase-untyped.ts.
   validateDiscount(quote, totals);
   return {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
-    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,
@@ -131,11 +133,11 @@ export function buildInsertPayload(
 export function buildUpdatePayload(
   quote: Partial<Quote>,
   totals: { subtotal: number; discountAmount: number; total: number },
-): TablesUpdate<'quotes'> {
+): TablesUpdate<'quotes'> & { contact_id?: string | null } {
+  // contact_id: idem buildInsertPayload — coluna real ausente do types.ts gerado (stale).
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
-    contact_id: quote.contact_id || null,
     client_name: quote.client_name || '',
     client_email: quote.client_email || null,
     client_phone: quote.client_phone || null,

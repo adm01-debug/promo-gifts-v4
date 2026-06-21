@@ -51,10 +51,16 @@ export function VirtualizedNoveltyGrid({
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
+  // ISSUE-18 FIX: estimateSize adaptado ao nro de colunas — cards mais estreitos
+  // (mais colunas) são mais baixos porque o texto ocupa mais linhas quando a
+  // largura da coluna é menor. Valor fixo (480px) causava saltos de scroll ao
+  // trocar de layout porque o estimado divergia muito do medido.
+  const estimatedRowHeight = numCols <= 2 ? 460 : numCols <= 3 ? 440 : 420;
+
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 480,
+    estimateSize: () => estimatedRowHeight,
     overscan: 3,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
@@ -78,7 +84,11 @@ export function VirtualizedNoveltyGrid({
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const handleScroll = () => {
       if (!hasMore || isLoadingMore) return;
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 640) {
+      // ISSUE-33 FIX: threshold responsivo — pelo menos 1 viewport de antecedência.
+      // Threshold fixo (640px) era quase a tela inteira em mobile (375px) causando
+      // pre-loads prematuros, e muito pouco em monitores grandes (>1080px).
+      const threshold = Math.max(640, el.clientHeight);
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
         onLoadMore();
       }
     };

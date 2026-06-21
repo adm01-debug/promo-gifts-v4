@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 import { logger } from '@/lib/logger';
 interface BreachCheckResult {
@@ -26,12 +26,17 @@ export function usePasswordBreachCheck() {
     isChecking: false,
     error: null,
   });
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const checkPassword = useCallback(async (password: string): Promise<boolean> => {
     if (!password || password.length < 8) {
       setResult({ isBreached: false, count: null, isChecking: false, error: null });
       return false;
     }
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setResult((prev) => ({ ...prev, isChecking: true, error: null }));
 
@@ -40,11 +45,14 @@ export function usePasswordBreachCheck() {
       const prefix = hash.substring(0, 5);
       const suffix = hash.substring(5);
 
+      const timeout = setTimeout(() => controller.abort(), 8000);
       const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
         headers: {
-          'Add-Padding': 'true', // Privacy enhancement
+          'Add-Padding': 'true',
         },
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       if (!response.ok) {
         throw new Error('Erro ao verificar senha');
@@ -75,6 +83,9 @@ export function usePasswordBreachCheck() {
       });
       return false;
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return false;
+      }
       logger.error('Erro ao verificar senha vazada:', error);
       setResult({
         isBreached: false,

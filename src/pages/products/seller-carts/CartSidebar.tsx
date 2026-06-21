@@ -91,6 +91,7 @@ export function CartSidebar({
   const [loadOpen, setLoadOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
@@ -194,7 +195,7 @@ export function CartSidebar({
         </h4>
         <SmartSuggestions cart={cart} allProducts={allProducts} isLoading={isLoadingProducts} />
         <ActionHistoryPanel cartId={cart.id} />
-        {cartAge >= 3 && (
+        {cartAge >= 3 && cart.status !== 'pronto_orcamento' && (
           <p className="rounded-lg border border-warning/10 bg-warning/5 px-2.5 py-1.5 text-[10px] text-warning">
             ⏰ Carrinho há {cartAge} dias — considere fazer follow-up!
           </p>
@@ -241,7 +242,17 @@ export function CartSidebar({
       )}
 
       {/* Save Template (controlled) */}
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+      <Dialog
+        open={saveOpen}
+        onOpenChange={(open) => {
+          setSaveOpen(open);
+          if (!open) {
+            setTplName('');
+            setTplDesc('');
+            setIsSavingTemplate(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Salvar Template de Carrinho</DialogTitle>
@@ -267,12 +278,14 @@ export function CartSidebar({
               Cancelar
             </Button>
             <Button
-              disabled={!tplName.trim()}
+              disabled={!tplName.trim() || isSavingTemplate}
               onClick={() => {
+                setIsSavingTemplate(true);
                 onSaveTemplate(tplName.trim(), tplDesc.trim());
                 setSaveOpen(false);
                 setTplName('');
                 setTplDesc('');
+                setIsSavingTemplate(false);
               }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
@@ -322,6 +335,7 @@ export function CartSidebar({
                         <Button
                           size="sm"
                           variant="ghost"
+                          aria-label={`Excluir template ${t.name}`}
                           className="h-7 text-xs text-destructive"
                           onClick={() => onDeleteTemplate.mutate(t.id)}
                         >

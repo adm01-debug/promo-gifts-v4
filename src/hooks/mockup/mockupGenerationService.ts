@@ -105,12 +105,14 @@ export function getTechniquePrompt(technique: Technique): string {
 // Explicit column list (incl. layout_url + area_config). Geometry now lives in
 // dedicated top-level columns (position_x/y, logo_width_cm/height_cm — added by
 // migration 20251215011449) AND mirrored in area_config for backward-compat with
-// older records. Uses untypedFrom because the generated types.ts is stale and does
-// not yet reflect those columns (pending `npm run types:generate:supabase`).
+// older records. client_id/client_name/logo_rotation/logo_scale added by
+// migration 20260620000001. Uses untypedFrom because the generated types.ts is stale.
+// user_id and thumbnail_url omitted: never used by the mapper below.
 const MOCKUP_HISTORY_COLUMNS =
-  'id, user_id, product_id, product_name, product_sku, technique_id, technique_name, ' +
-  'mockup_url, thumbnail_url, layout_url, logo_url, position_x, position_y, ' +
-  'logo_width_cm, logo_height_cm, area_name, area_config, created_at';
+  'id, product_id, product_name, product_sku, technique_id, technique_name, ' +
+  'mockup_url, layout_url, logo_url, position_x, position_y, ' +
+  'logo_width_cm, logo_height_cm, logo_rotation, logo_scale, ' +
+  'client_id, client_name, area_name, area_config, created_at';
 
 export async function fetchMockupHistory(userId?: string): Promise<GeneratedMockup[]> {
   let query = untypedFrom<Record<string, unknown>>('generated_mockups')
@@ -139,10 +141,15 @@ export async function fetchMockupHistory(userId?: string): Promise<GeneratedMock
         (row.logo_width_cm as number | null) ?? (cfg.logoWidth as number | null) ?? null,
       logo_height_cm:
         (row.logo_height_cm as number | null) ?? (cfg.logoHeight as number | null) ?? null,
-      logo_rotation: (cfg.logoRotation as number | null) ?? null,
-      logo_scale: (cfg.logoScale as number | null) ?? null,
-      client_id: null,
-      client_name: (cfg.clientName as string | null) ?? null,
+      // BUG-MISSING-COLS FIX: read logo_rotation/logo_scale from top-level columns
+      // (added migration 20260620000001), falling back to area_config for older rows.
+      logo_rotation:
+        (row.logo_rotation as number | null) ?? (cfg.logoRotation as number | null) ?? null,
+      logo_scale: (row.logo_scale as number | null) ?? (cfg.logoScale as number | null) ?? null,
+      // BUG-CLIENT-ID FIX: client_id and client_name are now real columns
+      // (migration 20260620000001). Fall back to area_config for rows created before the migration.
+      client_id: (row.client_id as string | null) ?? null,
+      client_name: (row.client_name as string | null) ?? (cfg.clientName as string | null) ?? null,
       location_name: (row.area_name as string | null) ?? null,
       colors_count: (cfg.colorsCount as number | null) ?? null,
       annotations: (cfg.annotations as Array<Record<string, unknown>> | null) ?? null,
@@ -174,26 +181,19 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // BUG-7 FIX: was `|| ''` which stored empty string when upload fails or preview is
     // absent. Use null so the column receives a proper SQL NULL instead of a
     // semantically-invalid empty string for a URL field.
-    let logoUrl: string | null = area.logoPreview?.startsWith('data:')
-      ? null
-      : (area.logoPreview ?? null);
-    if (area.logoPreview?.startsWith('data:')) {
+    let logoUrl: string | null = area.logoPreview ?? null;
+    if (logoUrl?.startsWith('data:')) {
       logoUrl = await uploadLogoToStorage(
         userId,
-        area.logoPreview,
+        logoUrl,
         `${product.sku || 'product'}-${technique.code || 'tech'}`,
       );
     }
 
-    let safeProductId: string | null = null;
-    if (product.id) {
-      const { data: productRow } = await supabase
-        .from('products')
-        .select('id')
-        .eq('id', product.id)
-        .maybeSingle();
-      if (productRow) safeProductId = product.id;
-    }
+    // BUG-PRODUCT-EXTRA-SELECT FIX: use product.id directly — no pre-validation SELECT.
+    // Same pattern as BUG-A fix in useMockupDraft. The FK violation (23503) is
+    // caught below and retried with product_id: null (~200ms saved on every save).
+    const safeProductId = product.id || null;
 
     // BUG-10 FIX: generated_mockups.technique_id has a FK constraint pointing to
     // `personalization_techniques`, but the techniques shown in the UI come from
@@ -204,43 +204,66 @@ export async function saveMockupToDb(params: SaveMockupParams): Promise<string |
     // in the `technique_name` text column, which is what all read paths use). The FK
     // column should only be set once the UI loads techniques from `personalization_techniques`.
     const safeTechniqueId = null;
+    // BUG-CLIENT-ID FIX: persist client_id and client_name as top-level columns.
+    const safeClientId = client?.id || null;
     const clientName = client?.nome_fantasia || client?.razao_social || client?.name || null;
 
+    const insertPayload = {
+      user_id: userId,
+      product_id: safeProductId,
+      product_name: product.name,
+      product_sku: product.sku || null,
+      technique_id: safeTechniqueId,
+      technique_name: technique.name,
+      mockup_url: mockupUrl,
+      thumbnail_url: mockupUrl,
+      logo_url: logoUrl,
+      layout_url: extra?.layoutUrl || null,
+      position_x: area.positionX,
+      position_y: area.positionY,
+      logo_width_cm: area.logoWidth,
+      logo_height_cm: area.logoHeight,
+      // BUG-MISSING-COLS FIX: persist logo_rotation/scale as top-level columns
+      // (migration 20260620000001) so they survive without JSONB archaeology.
+      logo_rotation: area.logoRotation ?? 0,
+      logo_scale: area.logoScale ?? 100,
+      // BUG-CLIENT-ID FIX: persist client_id/name as top-level columns.
+      client_id: safeClientId,
+      client_name: clientName,
+      area_name: extra?.locationName || area.name || 'Frente',
+      ai_model_used: technique.code || technique.name || 'custom',
+      area_config: {
+        positionX: area.positionX,
+        positionY: area.positionY,
+        logoWidth: area.logoWidth,
+        logoHeight: area.logoHeight,
+        logoRotation: area.logoRotation ?? null,
+        logoScale: area.logoScale ?? null,
+        logoUrl,
+        clientName,
+        colorsCount: extra?.colorsCount || null,
+        annotations: annotations && annotations.length > 0 ? annotations : null,
+      },
+    };
+
     const { data: insertedRow, error } = await untypedFrom('generated_mockups')
-      .insert({
-        user_id: userId,
-        product_id: safeProductId,
-        product_name: product.name,
-        product_sku: product.sku || null,
-        technique_id: safeTechniqueId,
-        technique_name: technique.name,
-        mockup_url: mockupUrl,
-        thumbnail_url: mockupUrl,
-        logo_url: logoUrl,
-        layout_url: extra?.layoutUrl || null,
-        position_x: area.positionX,
-        position_y: area.positionY,
-        logo_width_cm: area.logoWidth,
-        logo_height_cm: area.logoHeight,
-        area_name: extra?.locationName || area.name || 'Frente',
-        ai_model_used: technique.code || technique.name || 'custom',
-        area_config: {
-          positionX: area.positionX,
-          positionY: area.positionY,
-          logoWidth: area.logoWidth,
-          logoHeight: area.logoHeight,
-          logoRotation: area.logoRotation ?? null,
-          logoScale: area.logoScale ?? null,
-          logoUrl,
-          clientName,
-          colorsCount: extra?.colorsCount || null,
-          annotations: annotations && annotations.length > 0 ? annotations : null,
-        },
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
 
     if (error) {
+      if (error.code === '23503' && safeProductId) {
+        // product_id FK violation — product UUID not in products table; retry with null.
+        logger.warn('[saveMockupToDb] FK violation on product_id — retrying with null', {
+          productId: safeProductId,
+        });
+        const { data: retryRow, error: retryError } = await untypedFrom('generated_mockups')
+          .insert({ ...insertPayload, product_id: null })
+          .select('id')
+          .single();
+        if (!retryError) return retryRow?.id || null;
+        logger.error('[saveMockupToDb] FK retry also failed:', retryError);
+      }
       logger.error('Error saving to history:', error);
       toast.error('Mockup gerado, mas não foi possível salvar no histórico.');
       return null;
@@ -306,44 +329,43 @@ async function extractEdgeErrorMessage(error: unknown): Promise<string> {
   return error instanceof Error ? error.message : 'Falha ao gerar mockup.';
 }
 
-/** Invokes the edge function for a single area, enforcing the 60s timeout. */
-async function invokeMockupForArea(
-  params: GenerateMockupParams,
-  area: PersonalizationArea,
-): Promise<string> {
-  // BUG-400c FIX (2026-06-18): the edge function contract (see
-  // supabase/functions/generate-mockup/index.ts) expects:
+/** Builds the edge function body for a single area. */
+function buildMockupPayload(params: GenerateMockupParams, area: PersonalizationArea) {
+  // BUG-400c FIX (2026-06-18): the edge function contract expects:
   //   - `logoBase64` for inline data: URLs OR `logoUrl` for an https URL
   //     (it validates logoUrl with isValidHttpUrl, which REJECTS data: URLs);
   //   - `logoWidthCm` / `logoHeightCm` (NOT logoWidth/logoHeight);
   //   - `techniqueName` as a string (NOT a Technique object).
-  // The previous payload sent `logoUrl: area.logoPreview` (a base64 data: URL
-  // right after upload) → 400 "Either logoBase64 or a valid logoUrl is required",
-  // and sent logoWidth/logoHeight so the logo always fell back to the 5×3 cm
-  // defaults. This broke the primary "upload a logo → generate" flow outright.
   const logo = area.logoPreview ?? '';
   const isDataUrl = logo.startsWith('data:');
   const logoPayload = isDataUrl ? { logoBase64: logo } : { logoUrl: logo };
+  return {
+    productImageUrl: params.productImage,
+    productName: params.productName,
+    techniqueName: params.technique.name,
+    techniquePrompt: getTechniquePrompt(params.technique),
+    ...logoPayload,
+    areaName: area.name,
+    positionX: area.positionX,
+    positionY: area.positionY,
+    logoWidthCm: area.logoWidth,
+    logoHeightCm: area.logoHeight,
+    logoRotation: area.logoRotation ?? 0,
+    logoScale: area.logoScale ?? 100,
+    // WYSIWYG: repassa dimensoes fisicas do produto para a edge function.
+    // Sem esses valores, posX/posY sao calculados com prodW=0 → fallback /20.
+    productWidthCm: params.productWidthCm ?? undefined,
+    productHeightCm: params.productHeightCm ?? undefined,
+  };
+}
 
+/** Single invocation attempt with 60s timeout. */
+async function invokeMockupOnce(
+  params: GenerateMockupParams,
+  area: PersonalizationArea,
+): Promise<string> {
   const generateCall = supabase.functions.invoke('generate-mockup', {
-    body: {
-      productImageUrl: params.productImage,
-      productName: params.productName,
-      techniqueName: params.technique.name,
-      techniquePrompt: getTechniquePrompt(params.technique),
-      ...logoPayload,
-      areaName: area.name,
-      positionX: area.positionX,
-      positionY: area.positionY,
-      logoWidthCm: area.logoWidth,
-      logoHeightCm: area.logoHeight,
-      logoRotation: area.logoRotation ?? 0,
-      logoScale: area.logoScale ?? 100,
-      // WYSIWYG: repassa dimensoes fisicas do produto para a edge function.
-      // Sem esses valores, posX/posY sao calculados com prodW=0 → fallback /20.
-      productWidthCm: params.productWidthCm ?? undefined,
-      productHeightCm: params.productHeightCm ?? undefined,
-    },
+    body: buildMockupPayload(params, area),
   });
 
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -361,6 +383,49 @@ async function invokeMockupForArea(
     return data.mockupUrl as string;
   } finally {
     if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * Returns true for transient infrastructure errors that warrant a retry.
+ * User/payload errors (bad logo format, SVG, missing logo) propagate immediately.
+ */
+function isTransientError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('esgotado') || // pt-BR timeout message
+    lower.includes('timeout') ||
+    lower.includes('network') ||
+    lower.includes('fetch') ||
+    lower.includes('etimedout') ||
+    lower.includes('econnreset') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('503') ||
+    lower.includes('502')
+  );
+}
+
+/**
+ * Invokes the edge function for a single area with one automatic retry on
+ * transient infrastructure failures (timeout, network drop, 502/503).
+ * BUG-NO-RETRY FIX: previously a single network glitch aborted the whole generation.
+ */
+async function invokeMockupForArea(
+  params: GenerateMockupParams,
+  area: PersonalizationArea,
+): Promise<string> {
+  try {
+    return await invokeMockupOnce(params, area);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isTransientError(msg)) {
+      logger.warn('[invokeMockupForArea] Transient error, retrying in 2 s:', msg);
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 2000);
+      });
+      return invokeMockupOnce(params, area);
+    }
+    throw err;
   }
 }
 
@@ -433,28 +498,42 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   // BUG-22 FIX: fetch logo_url before deleting the row so we can clean up
   // the uploaded logo from storage. Best-effort — storage failure must not
   // prevent the DB delete from proceeding.
+  // BUG-DELETE-ORPHANED-MOCKUP-PNG FIX: also fetch mockup_url so the composite
+  // PNG (${userId}/mockups/${ts}-${uuid}.png) is removed — previously leaked.
   let selectQuery = untypedFrom<Record<string, unknown>>('generated_mockups')
-    .select('logo_url')
+    .select('logo_url, mockup_url')
     .eq('id', id);
   if (userId) selectQuery = selectQuery.eq('user_id', userId);
   const { data: rows } = await selectQuery.limit(1);
-  const logoUrl =
-    (rows as unknown as Array<{ logo_url: string | null }> | null)?.[0]?.logo_url ?? null;
+  const row =
+    (
+      rows as unknown as Array<{ logo_url: string | null; mockup_url: string | null }> | null
+    )?.[0] ?? null;
+  const logoUrl = row?.logo_url ?? null;
+  const mockupUrl = row?.mockup_url ?? null;
 
   let deleteQuery = supabase.from('generated_mockups').delete().eq('id', id);
   if (userId) deleteQuery = deleteQuery.eq('user_id', userId);
   const { error } = await deleteQuery;
   if (error) throw error;
 
-  // Remove logo from storage after successful DB delete (best-effort)
-  if (logoUrl) {
+  // Remove both logo and composite mockup PNG from storage after successful DB
+  // delete (best-effort — storage failures must not surface to the caller).
+  // Extract the storage path directly from the URL — avoids an extra getPublicUrl('')
+  // round-trip and is robust to base-URL format variations (trailing slash, etc.).
+  // Supabase storage public URLs follow the pattern:
+  //   .../storage/v1/object/public/mockup-assets/<path>
+  const STORAGE_PATH_RE = /\/storage\/v1\/object\/public\/mockup-assets\/(.+)$/;
+  const pathsToRemove: string[] = [];
+  for (const url of [logoUrl, mockupUrl]) {
+    if (!url) continue;
+    const match = url.match(STORAGE_PATH_RE);
+    if (match?.[1]) pathsToRemove.push(match[1]);
+  }
+
+  if (pathsToRemove.length > 0) {
     try {
-      const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl('');
-      const bucketPublicBase = urlData?.publicUrl?.replace(/\/$/, '') ?? '';
-      if (bucketPublicBase && logoUrl.startsWith(`${bucketPublicBase}/`)) {
-        const storagePath = logoUrl.slice(bucketPublicBase.length + 1);
-        await supabase.storage.from('mockup-assets').remove([storagePath]);
-      }
+      await supabase.storage.from('mockup-assets').remove(pathsToRemove);
     } catch (storageErr) {
       logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
     }
@@ -499,10 +578,10 @@ export function buildTechniqueList(techniquesRaw: unknown[]): Technique[] {
       (t): t is Record<string, unknown> => !!t && typeof t === 'object' && 'id' in t && 'name' in t,
     )
     .map((t) => ({
+      ...t,
       id: String(t.id),
       name: String(t.name),
       code: t.code ? String(t.code) : null,
-      ...t,
     }));
 }
 

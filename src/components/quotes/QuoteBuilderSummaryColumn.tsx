@@ -730,7 +730,14 @@ export function QuoteBuilderSummaryColumn({
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-amber-500"
                   style={{
-                    width: `${Math.min(discountType === 'percent' ? discountValue : 0, 100)}%`,
+                    width: `${Math.min(
+                      discountType === 'percent'
+                        ? discountValue
+                        : presentedSubtotal > 0
+                          ? (discountValue / presentedSubtotal) * 100
+                          : 0,
+                      100,
+                    )}%`,
                   }}
                 />
               </div>

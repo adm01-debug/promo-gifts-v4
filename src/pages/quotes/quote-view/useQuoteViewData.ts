@@ -15,6 +15,7 @@ import {
   calcPersTotal,
   formatCNPJ,
 } from '@/pages/quotes/quote-view/QuoteActionHandlers';
+import { applyNegotiationMarkup } from '@/hooks/quotes/quoteMarkup';
 
 type QuoteClientCompany = {
   cnpj?: string | null;
@@ -40,10 +41,13 @@ export function useQuoteViewData(id: string | undefined) {
     const data = await fetchQuote(id);
     setQuote(data);
     setIsLoadingQuote(false);
+    // Prefer CNPJ stored on the quote (snapshot at creation) over live company data.
+    if (data?.client_cnpj) setClientCnpj(formatCNPJ(data.client_cnpj));
     if (data?.client_id) {
       try {
         const company = await selectCrmById<QuoteClientCompany>('companies', data.client_id);
-        if (company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
+        // Only fall back to live company CNPJ if the quote has none stored.
+        if (!data.client_cnpj && company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
         const bId = company?.bitrix_company_id ?? company?.bitrix_id;
         if (bId) setBitrixCompanyId(String(bId));
       } catch {
@@ -58,8 +62,11 @@ export function useQuoteViewData(id: string | undefined) {
 
   const proposalData: ProposalTemplateData | null = useMemo(() => {
     if (!quote) return null;
-    const prodSub = (quote.items || []).reduce((s, i) => s + i.quantity * i.unit_price, 0);
-    const persSub = (quote.items || []).reduce(
+    // Reaplica a margem de negociação aos valores apresentados ao cliente, para o
+    // PDF bater com o total persistido (lista/WhatsApp). No-op quando markup = 0.
+    const markedItems = applyNegotiationMarkup(quote.items || [], quote.negotiation_markup_percent);
+    const prodSub = markedItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+    const persSub = markedItems.reduce(
       (s, i) =>
         s +
         (i.personalizations || []).reduce(
@@ -98,38 +105,37 @@ export function useQuoteViewData(id: string | undefined) {
         // Profile has no signature URL field; left undefined until one exists.
         signatureUrl: undefined,
       },
-      items:
-        quote.items?.map((item) => ({
-          name: item.product_name,
-          sku: item.product_sku || undefined,
-          supplier_sku: item.product_sku || undefined,
-          composedCode: item.product_sku
-            ? item.color_name
-              ? `${item.product_sku}-${item.color_name}`
-              : item.product_sku
-            : undefined,
-          colorHex: item.color_hex || undefined,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          color: item.color_name || undefined,
-          imageUrl: item.product_image_url || undefined,
-          bitrix_product_id: item.bitrix_product_id ?? null,
-          kit_group_id: item.kit_group_id || null,
-          kit_name: item.kit_name || null,
+      items: markedItems.map((item) => ({
+        name: item.product_name,
+        sku: item.product_sku || undefined,
+        supplier_sku: item.product_sku || undefined,
+        composedCode: item.product_sku
+          ? item.color_name
+            ? `${item.product_sku}-${item.color_name}`
+            : item.product_sku
+          : undefined,
+        colorHex: item.color_hex || undefined,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        color: item.color_name || undefined,
+        imageUrl: item.product_image_url || undefined,
+        bitrix_product_id: item.bitrix_product_id ?? null,
+        kit_group_id: item.kit_group_id || null,
+        kit_name: item.kit_name || null,
 
-          personalizations:
-            item.personalizations?.map((p) => ({
-              technique_name: p.technique_name || 'Personalizacao',
-              colors_count: p.colors_count || 1,
-              width_cm: p.width_cm || undefined,
-              height_cm: p.height_cm || undefined,
-              area_cm2: p.area_cm2 || undefined,
-              unit_cost: p.unit_cost || 0,
-              setup_cost: p.setup_cost || 0,
-              total_cost: p.total_cost || 0,
-              notes: p.notes || undefined,
-            })) ?? [],
-        })) ?? [],
+        personalizations:
+          item.personalizations?.map((p) => ({
+            technique_name: p.technique_name || 'Personalizacao',
+            colors_count: p.colors_count || 1,
+            width_cm: p.width_cm || undefined,
+            height_cm: p.height_cm || undefined,
+            area_cm2: p.area_cm2 || undefined,
+            unit_cost: p.unit_cost || 0,
+            setup_cost: p.setup_cost || 0,
+            total_cost: p.total_cost || 0,
+            notes: p.notes || undefined,
+          })) ?? [],
+      })),
       subtotal: fullSubtotal,
       discount: discountValue || undefined,
       shippingCost: quote.shipping_cost || undefined,

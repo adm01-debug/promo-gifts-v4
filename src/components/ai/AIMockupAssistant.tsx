@@ -316,7 +316,7 @@ export function AIMockupAssistant({
               <Button
                 type="submit"
                 size="icon"
-                aria-label="Carregando"
+                aria-label={isLoading ? 'Enviando...' : 'Enviar pergunta'}
                 className="h-10 w-10 shrink-0 bg-primary text-white hover:bg-primary/90"
                 disabled={!input.trim() || isLoading}
               >

@@ -9,26 +9,36 @@ import {
 } from 'lucide-react';
 import { useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { logger } from '@/lib/logger';
+
+/**
+ * ISSUE-28 FIX: animated count-up que começa do valor ATUAL exibido (não de 0)
+ * quando o `end` muda. Isso evita reiniciar do zero na atualização de stats, que
+ * causava um efeito visualmente abrupto ao fazer refresh dos cards após 5 minutos.
+ */
 function useCountUp(end: number, duration = 800) {
   const [count, setCount] = useState(0);
+  // Rastreia o valor atual exibido para usar como ponto de partida da próxima animação.
+  const countRef = useRef(0);
+  countRef.current = count;
+
   useEffect(() => {
-    if (end === 0) {
-      setCount(0);
-      return;
-    }
+    const startValue = countRef.current;
+    if (startValue === end) return; // sem mudança — não reinicia animação
     let startTime: number | null = null;
+    let rafId: number;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
       const easeOutQuart = 1 - (1 - progress) ** 4;
-      setCount(Math.floor(end * easeOutQuart));
-      if (progress < 1) requestAnimationFrame(animate);
+      setCount(Math.round(startValue + (end - startValue) * easeOutQuart));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
     };
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [end, duration]);
   return count;
 }
