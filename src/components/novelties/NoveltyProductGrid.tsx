@@ -93,6 +93,32 @@ export function NoveltyProductGrid() {
   // ISSUE-46 FIX: ref para o input mobile (sm:hidden) — foca o visível conforme viewport
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
+  // Container de scroll INTERNO do grid (barra de rolagem à direita dos
+  // produtos, não no body). Altura calculada dinamicamente p/ preencher
+  // o restante da viewport abaixo do header/KPIs/toolbar sticky.
+  const gridScrollRef = useRef<HTMLDivElement>(null);
+  const [gridScrollHeight, setGridScrollHeight] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const update = () => {
+      const el = gridScrollRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const h = Math.max(360, window.innerHeight - top - 16);
+      setGridScrollHeight(h);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(document.documentElement);
+    window.addEventListener('resize', update);
+    // Re-mede após sticky se assentar (CSS vars do header/KPIs).
+    const t = setTimeout(update, 60);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+      clearTimeout(t);
+    };
+  }, []);
+
   useEffect(() => {
     if (isFetching) {
       setLoadingProgress(0);
