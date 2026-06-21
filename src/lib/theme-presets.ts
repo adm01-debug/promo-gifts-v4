@@ -981,11 +981,14 @@ export function loadThemeConfig(): ThemeConfig {
   return getDefaultConfig();
 }
 
-export function saveThemeConfig(config: ThemeConfig): void {
+export function saveThemeConfig(config: ThemeConfig): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  } catch {
+    return true;
+  } catch (err) {
     // QuotaExceededError — localStorage full or unavailable (private browsing)
+    console.error('[ThemePresets] saveThemeConfig failed (storage unavailable):', err);
+    return false;
   }
 }
 

@@ -65,26 +65,35 @@ export default function AdminTemasPage() {
     }
     setConfig(next);
     // Auto-save on every change for instant feedback.
-    // Also sync savedConfig so hasUnsavedChanges stays false after auto-save
+    // Sync savedConfig only when save succeeds; if localStorage is unavailable
+    // (private browsing / quota exceeded) hasUnsavedChanges will remain true
+    // so the "Salvar" button stays active — the user can still try a manual save.
     // (BUG-THEME-04: pulsating red dot was shown even when data was already saved).
-    saveThemeConfig(next);
-    setSavedConfig(next);
+    const saved = saveThemeConfig(next);
+    if (saved) setSavedConfig(next);
   };
 
   const handleSave = () => {
-    saveThemeConfig(config);
-    setSavedConfig(config);
-    toast.success('Tema salvo com sucesso!', {
-      description: `Skin "${THEME_PRESETS.find((p) => p.id === config.presetId)?.name}" aplicada.`,
-    });
+    const saved = saveThemeConfig(config);
+    if (saved) {
+      setSavedConfig(config);
+      toast.success('Tema salvo com sucesso!', {
+        description: `Skin "${THEME_PRESETS.find((p) => p.id === config.presetId)?.name}" aplicada.`,
+      });
+    } else {
+      toast.error('Não foi possível salvar o tema', {
+        description:
+          'O armazenamento local está indisponível ou cheio. Tente em uma janela normal.',
+      });
+    }
   };
 
   const handleReset = () => {
     clearThemeOverrides();
     const def = getDefaultConfig();
     setConfig(def);
-    setSavedConfig(def);
-    saveThemeConfig(def);
+    const saved = saveThemeConfig(def);
+    if (saved) setSavedConfig(def);
     // setAppTheme removed as theme is fixed
     toast.success('Tema restaurado ao padrão');
   };

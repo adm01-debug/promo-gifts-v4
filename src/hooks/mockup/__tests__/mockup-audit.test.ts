@@ -188,7 +188,8 @@ describe('Analise estatica — mockupGenerationService.ts', () => {
       expect(assertPos).toBeLessThan(invokePos);
     });
     it('detecta data URL SVG', () => {
-      expect(src).toContain("area.logoPreview.startsWith('data:image/svg')");
+      // Optional chaining (?.) is acceptable — null-safe guard before startsWith
+      expect(src).toMatch(/area\.logoPreview\??\.startsWith\('data:image\/svg'\)/);
     });
     it('mensagem de erro SVG em PT-BR', () => {
       expect(src).toContain('SVG não são suportados');
