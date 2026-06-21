@@ -1,6 +1,18 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.0.0
+// Versão: 3.1.0
+//
+// CHANGELOG v3.1.0 (2026-06-21 — bugfix/csp-clone):
+//   FIX: Imagens cross-origin de fornecedor (xbz, spot, worker, etc.) deixam de
+//        ser interceptadas. O SW só intercepta mesma-origem + CDN próprio
+//        (imagedelivery.net / cloudflarestream), que estão no connect-src.
+//        Antes, o fetch() do SW sobre imagens de fornecedor convertia um
+//        img-src (permitido) em connect-src (bloqueado) → violação de CSP.
+//   FIX: Navigation handler clonava a Response uma 2ª vez DENTRO do .then()
+//        assíncrono, após `return res` já ter entregue o corpo ao browser →
+//        "Response body is already used". Agora clona ambas as cópias de forma
+//        síncrona, antes do return.
+//   CHORE: CACHE_VERSION v8 → v9 (limpa caches antigos / respostas opacas).
 //
 // CHANGELOG v3.0.0 (2026-06-15 — perf/deep-optimization-2026):
 //   PERF: Cache de imagens com limite LRU (max 500 imagens, 90 dias TTL).
@@ -12,12 +24,12 @@
 // Estratégias por tipo de request:
 //   Navigation (SPA)        → Cache First + background update
 //   /assets/* (hashed)      → Cache First (imutável)
-//   Imagens (CDN/fornecedor) → Cache First + LRU (max 500, 90d TTL)
+//   Imagens (mesma origem / CDN próprio) → Cache First + LRU (max 500, 90d TTL)
 //   Google Fonts             → Stale-While-Revalidate
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate
 
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -73,13 +85,25 @@ function shouldSkipCache(request) {
   return false;
 }
 
-/** Verifica se a URL é uma imagem de produto (CDN ou fornecedor) */
-function isProductImage(url) {
-  return (
+/**
+ * Verifica se a imagem PODE ser interceptada/cacheada com segurança pelo SW.
+ * Regra: apenas mesma-origem OU CDN próprio (imagedelivery.net / cloudflarestream),
+ * que estão liberados no connect-src da CSP.
+ *
+ * Imagens cross-origin de fornecedor (cdn.xbzbrindes.com.br, www.spotgifts.com.br,
+ * promo-brindes-images.adm01.workers.dev, etc.) NÃO são interceptadas: o browser
+ * as carrega nativamente via <img>, governado por img-src ('https:' liberado).
+ * Interceptar com fetch() transformaria um img-src (permitido) em connect-src
+ * (bloqueado) → violação de CSP. Além disso, respostas opacas cross-origin não
+ * têm header `date` legível, o que quebraria a lógica de TTL/LRU deste cache.
+ */
+function isCacheableImage(url) {
+  const sameOrigin = url.origin === self.location.origin;
+  const ownCdn =
     url.hostname === 'imagedelivery.net' ||
-    url.hostname.includes('cloudflarestream.com') ||
-    /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(url.pathname)
-  );
+    url.hostname.includes('cloudflarestream.com');
+  const looksLikeImage = /\.(jpg|jpeg|png|gif|webp|avif|svg|ico)$/i.test(url.pathname);
+  return ownCdn || (sameOrigin && looksLikeImage);
 }
 
 /** Verifica se a URL é de Google Fonts */
@@ -184,10 +208,14 @@ self.addEventListener('fetch', (event) => {
         const networkUpdate = fetch('/index.html', { cache: 'no-cache' })
           .then((res) => {
             if (res && res.ok) {
-              const clone = res.clone();
+              // Clonar AMBAS as cópias de forma síncrona, ANTES de `return res`
+              // entregar o corpo ao browser. Clonar dentro do .then()
+              // assíncrono falha com "Response body is already used".
+              const indexClone = res.clone();
+              const rootClone = res.clone();
               caches.open(CACHE_NAME).then((c) => {
-                c.put('/index.html', clone);
-                c.put('/', res.clone());
+                c.put('/index.html', indexClone);
+                c.put('/', rootClone);
               });
             }
             return res;
@@ -218,8 +246,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── D) Imagens de produto → Cache First + LRU eviction (máx 500, 90d) ──────
-  if (isProductImage(url) || request.destination === 'image') {
+  // ── D) Imagens cacheáveis (mesma origem + CDN próprio) → Cache First + LRU ──
+  // Imagens cross-origin de fornecedor NÃO entram aqui: o browser as carrega
+  // nativamente via <img> (img-src), evitando o bloqueio de connect-src.
+  if (isCacheableImage(url)) {
     event.respondWith(
       caches.open(IMAGE_CACHE_NAME).then((cache) =>
         cache.match(request).then((cached) => {
