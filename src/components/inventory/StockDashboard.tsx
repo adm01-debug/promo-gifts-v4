@@ -25,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
+import { buildStockKpiCards } from './stockKpiCards';
+
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
   import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
@@ -388,77 +390,43 @@ export function StockDashboard() {
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-        <StatCard
-          title="Total de Variações"
-          value={summary.totalVariants.toLocaleString('pt-BR')}
-          icon={<Package className="h-6 w-6 text-primary" />}
-          isActive={filters.status === 'all'}
-          onClick={() => updateFilter('status', 'all')}
-          clickHint="Mostrar todos os produtos"
-          trend={{
-            value: summary.totalProducts,
-            label: `${summary.totalProducts.toLocaleString('pt-BR')} produtos`,
-          }}
-        />
-        <StatCard
-          title="Em Estoque"
-          value={summary.variantsInStock.toLocaleString('pt-BR')}
-          icon={<CheckCircle2 className="h-6 w-6 text-success" />}
-          variant="success"
-          isActive={filters.status === 'in_stock'}
-          onClick={() => updateFilter('status', filters.status === 'in_stock' ? 'all' : 'in_stock')}
-          clickHint="Filtrar variações em estoque"
-          trend={
-            summary.totalVariants > 0
-              ? {
-                  value: 1,
-                  label: `${Math.round((summary.variantsInStock / summary.totalVariants) * 100)}% das variações`,
+        {buildStockKpiCards(summary).map((card) => {
+          const ICONS: Record<typeof card.slug, React.ReactNode> = {
+            'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
+            'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
+            'critico': <TrendingDown className="h-6 w-6 text-warning" />,
+            'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
+          };
+          const isActive =
+            card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter;
+          return (
+            <StatCard
+              key={card.slug}
+              title={card.title}
+              value={card.value.toLocaleString('pt-BR')}
+              icon={ICONS[card.slug]}
+              variant={card.variant}
+              subtitle={card.subtitle}
+              tooltip={card.tooltip}
+              isActive={isActive}
+              onClick={() => {
+                if (!card.filter) return;
+                const next =
+                  card.filter === 'all'
+                    ? 'all'
+                    : filters.status === card.filter
+                      ? 'all'
+                      : card.filter;
+                updateFilter('status', next);
+                if (card.filter === 'out_of_stock' && criticalAlerts.length > 0) {
+                  setOutOfStockDialogOpen(true);
                 }
-              : undefined
-          }
-        />
-        <StatCard
-          title="Crítico"
-          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status === 'critical'`.
-          // Agora em granularidade de variação (cor/tamanho) — mais real para o vendedor.
-          value={summary.variantsCritical.toLocaleString('pt-BR')}
-          icon={<TrendingDown className="h-6 w-6 text-warning" />}
-          variant="warning"
-          isActive={filters.status === 'critical'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
-          }}
-          clickHint="Filtrar variações em estado crítico"
-          trend={
-            summary.totalVariants > 0 && summary.variantsCritical > 0
-              ? {
-                  value: -1,
-                  label: `${Math.round((summary.variantsCritical / summary.totalVariants) * 100)}% das variações`,
-                }
-              : undefined
-          }
-        />
+              }}
+              clickHint={card.tooltip}
+            />
+          );
+        })}
 
-        <StatCard
-          title="Sem Estoque"
-          value={summary.variantsOutOfStock.toLocaleString('pt-BR')}
-          icon={<XCircle className="h-6 w-6 text-destructive" />}
-          variant="error"
-          isActive={filters.status === 'out_of_stock'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'out_of_stock' ? 'all' : 'out_of_stock');
-            if (criticalAlerts.length > 0) setOutOfStockDialogOpen(true);
-          }}
-          clickHint="Filtrar variações sem estoque"
-          trend={
-            summary.variantsOutOfStock > 0
-              ? {
-                  value: -1,
-                  label: `${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos afetados`,
-                }
-              : undefined
-          }
-        />
 
         <StatCard
           title="Estoque Futuro"
