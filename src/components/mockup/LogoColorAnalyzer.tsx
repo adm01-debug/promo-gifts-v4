@@ -44,8 +44,11 @@ export function LogoColorAnalyzer({
 
   if (error) {
     return (
-      <div className={cn('flex items-center gap-2 py-4 text-sm text-destructive', className)}>
-        <AlertTriangle className="h-4 w-4" />
+      <div
+        role="alert"
+        className={cn('flex items-center gap-2 py-4 text-sm text-destructive', className)}
+      >
+        <AlertTriangle className="h-4 w-4" aria-hidden="true" />
         <span>{error}</span>
       </div>
     );
@@ -92,7 +95,7 @@ export function LogoColorAnalyzer({
         </div>
 
         {colors.map((color, index) => (
-          <ColorRow key={index} color={color} index={index} onPantoneChange={onPantoneChange} />
+          <ColorRow key={color.hex} color={color} index={index} onPantoneChange={onPantoneChange} />
         ))}
       </div>
     </div>
@@ -166,8 +169,10 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          type="button"
           className="flex w-full items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/50"
-          aria-label="Recolher"
+          aria-label={`Selecionar cor Pantone (atual: ${selectedCode})`}
+          aria-expanded={open}
         >
           <div
             className="h-6 w-6 shrink-0 rounded border border-border/50"
@@ -182,6 +187,7 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
           <div className="relative">
             <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Buscar código Pantone"
               placeholder="Buscar Pantone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -195,6 +201,7 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
             {results.map((p) => (
               <button
                 key={p.code}
+                type="button"
                 onClick={() => {
                   onChange(p.code);
                   setOpen(false);

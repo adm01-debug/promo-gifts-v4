@@ -3,6 +3,7 @@
  */
 
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,8 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
     try {
       await navigator.clipboard.writeText(mockupUrl);
       toast.success('Link copiado!');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('[ShareMenu] Falha ao copiar link:', err);
       toast.error('Erro ao copiar link');
     }
   };
@@ -49,7 +51,8 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success('PNG baixado!');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('[ShareMenu] Falha ao baixar PNG:', err);
       toast.error('Erro ao baixar PNG');
     }
   };
@@ -85,7 +88,8 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
 
       pdf.save(`${fileName}.pdf`);
       toast.success('PDF gerado!');
-    } catch {
+    } catch (err: unknown) {
+      logger.error('[ShareMenu] Falha ao gerar PDF:', err);
       toast.error('Erro ao gerar PDF');
     }
   };
@@ -106,29 +110,29 @@ export function ShareMenu({ mockupUrl, productName, techniqueName, className }: 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
-          <Share2 className="h-4 w-4" />
+        <Button variant="outline" size="sm" aria-label="Compartilhar mockup" className={className}>
+          <Share2 className="h-4 w-4" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Compartilhar</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
-          <Link2 className="mr-2 h-4 w-4" /> Copiar link
+          <Link2 className="mr-2 h-4 w-4" aria-hidden="true" /> Copiar link
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleWhatsApp} className="cursor-pointer">
-          <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+          <MessageCircle className="mr-2 h-4 w-4" aria-hidden="true" /> WhatsApp
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleEmail} className="cursor-pointer">
-          <Mail className="mr-2 h-4 w-4" /> Email
+          <Mail className="mr-2 h-4 w-4" aria-hidden="true" /> Email
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Baixar</DropdownMenuLabel>
         <DropdownMenuItem onClick={handleDownloadPNG} className="cursor-pointer">
-          <Download className="mr-2 h-4 w-4" /> Download PNG
+          <Download className="mr-2 h-4 w-4" aria-hidden="true" /> Download PNG
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
-          <FileText className="mr-2 h-4 w-4" /> Download PDF
+          <FileText className="mr-2 h-4 w-4" aria-hidden="true" /> Download PDF
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

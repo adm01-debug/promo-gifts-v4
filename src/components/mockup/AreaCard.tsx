@@ -54,7 +54,12 @@ export const AreaCard = memo(
         tabIndex={0}
         data-testid={`mockup-area-card-${area.id}`}
         aria-pressed={isActive}
-        onKeyDown={(e) => e.key === 'Enter' && onSelect()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
       >
         {/* Step number */}
         <div
@@ -124,7 +129,7 @@ export const AreaCard = memo(
             <div className="relative h-7 w-7 overflow-hidden rounded border border-border/30 bg-background">
               <img
                 src={area.logoPreview}
-                alt="Logo"
+                alt="Miniatura do logo enviado"
                 className="h-full w-full object-contain"
                 loading="lazy"
               />
@@ -143,7 +148,7 @@ export const AreaCard = memo(
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Atualizar"
+                aria-label="Substituir logo"
                 className="pointer-events-none h-7 w-7 text-muted-foreground hover:bg-primary/10 hover:text-primary"
                 title="Substituir logo"
               >
@@ -222,3 +227,4 @@ export const AreaCard = memo(
     );
   },
 );
+AreaCard.displayName = 'AreaCard';
