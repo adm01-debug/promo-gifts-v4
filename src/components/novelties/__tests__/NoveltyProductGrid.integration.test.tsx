@@ -21,6 +21,11 @@ function getByPlaceholderPartial(text: string): HTMLInputElement {
 
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
+  noveltyToProduct: vi.fn((n: NoveltyWithDetails) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    price: n.base_price,
+  })),
   useNoveltiesWithDetails: vi.fn(() => ({
     data: [
       {
