@@ -122,21 +122,26 @@ function daysSinceLocal(dateStr: string | null): number {
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
-    12, 0, 0, 0,
+    12,
+    0,
+    0,
+    0,
   ).getTime();
   return Math.max(0, Math.round((todayNoon - restockNoon) / 86_400_000));
 }
 
 function addDaysISO(dateStr: string | null, days: number): string {
-  const base = dateStr
-    ? new Date(`${dateStr.slice(0, 10)}T12:00:00`)
-    : new Date();
+  const base = dateStr ? new Date(`${dateStr.slice(0, 10)}T12:00:00`) : new Date();
   return new Date(base.getTime() + days * 86_400_000).toISOString();
 }
 
 // ─── Data Logic ──────────────────────────────────────────────────
 
-function deriveStockStatus(totalStock: number, isStockout: boolean, isLowStock: boolean): StockStatus {
+function deriveStockStatus(
+  totalStock: number,
+  isStockout: boolean,
+  isLowStock: boolean,
+): StockStatus {
   if (isStockout || totalStock <= 0) return 'out-of-stock';
   if (isLowStock) return 'low-stock';
   return 'in-stock';
@@ -202,7 +207,10 @@ async function fetchReposicao(limit: number): Promise<ReplenishmentWithDetails[]
 
   if (error) {
     if (isGoneError(error)) {
-      console.warn('[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.', error.message);
+      console.warn(
+        '[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.',
+        error.message,
+      );
       return [];
     }
     throw error;
@@ -247,21 +255,24 @@ export function useReplenishmentStats() {
 
       if (error) {
         if (isGoneError(error)) {
-          console.warn('[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.', error.message);
+          console.warn(
+            '[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.',
+            error.message,
+          );
           return {
-            totalReplenishments:    0,
-            activeReplenishments:   0,
-            expiringSoon:           0,
-            totalProducts:          0,
-            replenishmentRate:      0,
-            restockedToday:         0,
-            restockedThisWeek:      0,
-            restockedLast15Days:    0,
-            restockedLast30Days:    0,
-            topSupplierName:        null,
-            topSupplierCount:       0,
-            reorderedThisWeek:      0,
-            reorderedThisMonth:     0,
+            totalReplenishments: 0,
+            activeReplenishments: 0,
+            expiringSoon: 0,
+            totalProducts: 0,
+            replenishmentRate: 0,
+            restockedToday: 0,
+            restockedThisWeek: 0,
+            restockedLast15Days: 0,
+            restockedLast30Days: 0,
+            topSupplierName: null,
+            topSupplierCount: 0,
+            reorderedThisWeek: 0,
+            reorderedThisMonth: 0,
             upcomingRestockVariants: 0,
           };
         }
@@ -271,19 +282,19 @@ export function useReplenishmentStats() {
       const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments:     Number(d.restockedLast30Days  ?? 0),
-        activeReplenishments:    Number(d.activeReplenishments ?? 0),
-        expiringSoon:            Number(d.expiringSoon         ?? 0),
-        totalProducts:           Number(d.totalVariants        ?? 0),
-        replenishmentRate:       Number(d.replenishmentRate    ?? 0),
-        restockedToday:          Number(d.restockedToday       ?? 0),
-        restockedThisWeek:       Number(d.restockedThisWeek    ?? 0),
-        restockedLast15Days:     Number(d.restockedLast15Days  ?? 0),
-        restockedLast30Days:     Number(d.restockedLast30Days  ?? 0),
-        topSupplierName:         (d.topSupplierName as string) ?? null,
-        topSupplierCount:        Number(d.topSupplierCount     ?? 0),
-        reorderedThisWeek:       Number(d.reorderedThisWeek    ?? 0),
-        reorderedThisMonth:      Number(d.reorderedThisMonth   ?? 0),
+        totalReplenishments: Number(d.totalReplenishments ?? d.restockedLast30Days ?? 0),
+        activeReplenishments: Number(d.activeReplenishments ?? 0),
+        expiringSoon: Number(d.expiringSoon ?? 0),
+        totalProducts: Number(d.totalVariants ?? 0),
+        replenishmentRate: Number(d.replenishmentRate ?? 0),
+        restockedToday: Number(d.restockedToday ?? 0),
+        restockedThisWeek: Number(d.restockedThisWeek ?? 0),
+        restockedLast15Days: Number(d.restockedLast15Days ?? 0),
+        restockedLast30Days: Number(d.restockedLast30Days ?? 0),
+        topSupplierName: (d.topSupplierName as string) ?? null,
+        topSupplierCount: Number(d.topSupplierCount ?? 0),
+        reorderedThisWeek: Number(d.reorderedThisWeek ?? 0),
+        reorderedThisMonth: Number(d.reorderedThisMonth ?? 0),
         upcomingRestockVariants: Number(d.upcomingRestockVariants ?? 0),
       };
     },
