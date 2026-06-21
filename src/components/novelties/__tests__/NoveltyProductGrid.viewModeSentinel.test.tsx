@@ -120,17 +120,30 @@ vi.mock('@/components/collections/AddToCollectionModal', () => ({
 }));
 vi.mock('@/components/products/BulkActionBar', () => ({ BulkActionBar: () => null }));
 
-vi.mock('@/stores/useFavoritesStore', () => ({
-  useFavoritesStore: vi.fn(() => ({ isFavorite: vi.fn(() => false), toggleFavorite: vi.fn() })),
-}));
-vi.mock('@/stores/useComparisonStore', () => ({
-  useComparisonStore: vi.fn(() => ({
-    isInCompare: vi.fn(() => false),
+// O componente consome estes stores via seletor — useFavoritesStore((s) => s.isFavorite).
+// O mock precisa APLICAR o seletor; do contrário `isFavorite` recebe o objeto inteiro
+// (não a função) e a render do modo list quebra com "isFavorite is not a function".
+vi.mock('@/stores/useFavoritesStore', () => {
+  const state = { isFavorite: () => false, toggleFavorite: vi.fn() };
+  return {
+    useFavoritesStore: vi.fn((selector?: (s: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+    ),
+  };
+});
+vi.mock('@/stores/useComparisonStore', () => {
+  const state = {
+    isInCompare: () => false,
     addToCompare: vi.fn(),
     removeFromCompare: vi.fn(),
     canAddMore: true,
-  })),
-}));
+  };
+  return {
+    useComparisonStore: vi.fn((selector?: (s: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+    ),
+  };
+});
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
