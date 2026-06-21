@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 189: 5 zero-violation rules (saved: no-multi-str 0v✓, no-new-wrappers 0v✓, no-proto 0v✓, no-script-url 0v✓ — Batch 190+)
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
+      'no-caller': 'error',
+      'no-eval': 'error',
+      'no-extend-native': 'error',
+      'no-extra-bind': 'error',
       // Batch 188: 5 zero-violation rules (saved: consistent-indexed-object-style 0v✓ — Batch 189+; excluded: method-signature-style 50v, require-await 119v, prefer-destructuring 201v)
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/await-thenable': 'error',
