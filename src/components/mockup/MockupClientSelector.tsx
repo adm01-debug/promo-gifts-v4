@@ -103,11 +103,21 @@ export function MockupClientSelector({
   if (selectedClient) {
     return (
       <div
+        role="button"
+        tabIndex={0}
         className="group flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-md border border-border bg-background px-3 py-2 transition-colors hover:border-primary/50"
         data-testid="mockup-client-chip"
+        aria-label={`Empresa selecionada: ${selectedClient.name}. Clique para remover`}
         onClick={() => {
           onClientSelect(null);
           setTimeout(() => inputRef.current?.focus(), 50);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClientSelect(null);
+            setTimeout(() => inputRef.current?.focus(), 50);
+          }
         }}
       >
         <CompanyAvatar name={selectedClient.name} logoUrl={selectedClient.logo_url} />
@@ -127,7 +137,10 @@ export function MockupClientSelector({
             )}
           </div>
         </div>
-        <X className="h-4 w-4 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <X
+          className="h-4 w-4 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          aria-hidden="true"
+        />
       </div>
     );
   }

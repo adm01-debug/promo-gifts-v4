@@ -1512,7 +1512,7 @@ describe('Analise estatica — MockupColorSelector.tsx (role alert)', () => {
   });
 });
 
-describe('Analise estatica — MockupClientSelector.tsx (role alert)', () => {
+describe('Analise estatica — MockupClientSelector.tsx (role alert + chip keyboard)', () => {
   let src: string;
   beforeEach(() => {
     src = readSrc('src/components/mockup/MockupClientSelector.tsx');
@@ -1520,5 +1520,17 @@ describe('Analise estatica — MockupClientSelector.tsx (role alert)', () => {
 
   it('estado de erro do CRM tem role="alert"', () => {
     expect(src).toContain('role="alert"');
+  });
+  it('chip de empresa selecionada tem role="button"', () => {
+    expect(src).toContain('role="button"');
+  });
+  it('chip de empresa selecionada tem tabIndex={0}', () => {
+    expect(src).toContain('tabIndex={0}');
+  });
+  it('chip de empresa selecionada tem aria-label descritivo', () => {
+    expect(src).toContain('Empresa selecionada:');
+  });
+  it('chip responde a Enter e Space', () => {
+    expect(src).toContain("e.key === 'Enter' || e.key === ' '");
   });
 });
