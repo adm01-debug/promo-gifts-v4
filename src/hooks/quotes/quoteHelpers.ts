@@ -80,16 +80,13 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
-  // SSOT (logic/quotes/calculations.ts:calculateRealDiscountPercent): clamp com
-  // Math.max(0, …). Um "desconto real" negativo significa que o markup absorveu o
-  // desconto (cliente paga acima do real) — não há desconto a validar na alçada,
-  // e exibir -X% confundiria o vendedor (NegotiationMarkupCard mostra este valor).
-  // Sem o clamp, a UI (que usa calculateRealDiscountPercent, clamped) divergiria do
-  // valor persistido por calculateQuoteTotals.
+  // realDiscountPercent NÃO é clampado: um valor negativo é válido e significa que
+  // o markup absorveu o desconto aparente (cliente paga acima do subtotal real), logo
+  // não há concessão real a validar na alçada. A UI (calculateRealDiscountPercent) é
+  // responsável por exibir negativos como "sem desconto efetivo". Contrato coberto por
+  // QuoteFullFlowIntegration (-4.5) e quotePersistence (0 natural).
   const realDiscountPercent =
-    realSubtotal > 0
-      ? Math.max(0, round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
-      : 0;
+    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
 
   return {
     subtotal: round2(subtotal),
