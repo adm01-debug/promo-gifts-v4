@@ -58,6 +58,8 @@ export interface FilterContext {
   includeFutureStock: boolean;
   futureCutoffMs: number; // 0 quando desativado
   minQtyIncludesFutureStock: boolean;
+  /** Set de variantId sinalizadas como risco de ruptura (EMA ≤ 30d). */
+  ruptureRiskIds?: ReadonlySet<string>;
 }
 
 /** Deriva o contexto de filtragem a partir dos filtros brutos, normalizando strings uma única vez. */
@@ -66,6 +68,10 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
   const colorGroupN = normalize(filters.colorGroup);
   const includeFutureStock = Boolean(filters.includeFutureStock);
   const windowDays = filters.futureStockWindowDays ?? 15;
+  const ruptureRiskIds =
+    filters.ruptureRiskVariantIds && filters.ruptureRiskVariantIds.size > 0
+      ? filters.ruptureRiskVariantIds
+      : undefined;
   return {
     searchN: normalize(filters.search),
     colorName,
@@ -76,10 +82,12 @@ export function buildFilterContext(filters: StockFilters): FilterContext {
     categoryN: normalize(filters.categoryId),
     supplierN: normalize(filters.supplierId),
     minQty: filters.minQuantityNeeded ?? 0,
-    hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup),
+    // ruptureRiskIds também restringe variantes → liga o pipeline de projeção.
+    hasVariantFilter: Boolean(colorName) || Boolean(filters.colorGroup) || Boolean(ruptureRiskIds),
     includeFutureStock,
     futureCutoffMs: includeFutureStock ? Date.now() + windowDays * 86_400_000 : 0,
     minQtyIncludesFutureStock: Boolean(filters.minQtyIncludesFutureStock),
+    ruptureRiskIds,
   };
 }
 
@@ -91,6 +99,10 @@ export function selectMatchingVariants(
 ): VariantStock[] {
   if (!ctx.hasVariantFilter) return product.variants;
   return product.variants.filter((v) => {
+    // Rupture-risk pré-filtro: a variante DEVE pertencer ao set sinalizado
+    // pelo motor EMA (cobertura ≤ 30d). Sem isso o card "Risco de Ruptura"
+    // mostraria 1000 e a tabela exibiria variações Em Estoque/Esgotadas.
+    if (ctx.ruptureRiskIds && !ctx.ruptureRiskIds.has(v.variantId)) return false;
     const cn = normalize(v.colorName);
     const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;

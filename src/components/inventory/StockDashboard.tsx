@@ -192,19 +192,33 @@ export function StockDashboard() {
   // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 30 dias.
   // Quando o feature flag `useEmaRupture` estiver off, `alerts` vem vazio e
   // passamos `null` para o helper cair no fallback `variantsCritical`.
-  const { alerts: ruptureAlerts } = useRuptureAlerts();
-  const ruptureRisk30dCount = useMemo<number | null>(() => {
-    if (ruptureAlerts.length === 0) return null;
-    return ruptureAlerts.filter(
-      (a) =>
+  const { alerts: ruptureAlerts, byVariantId: ruptureByVariantId } = useRuptureAlerts();
+
+  // SSOT do "Risco de Ruptura": set de variantId únicos com cobertura ≤ 30d.
+  // O MESMO set alimenta o número do card E o filtro da tabela, garantindo
+  // invariante card-count === linhas-filtradas (deduplica fornecedores por
+  // variante via `byVariantId`).
+  const ruptureRiskVariantIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (ruptureByVariantId.size === 0) return null;
+    const ids = new Set<string>();
+    for (const a of ruptureByVariantId.values()) {
+      if (
         typeof a.cobertura_dias === 'number' &&
         Number.isFinite(a.cobertura_dias) &&
-        a.cobertura_dias <= 30,
-    ).length;
-  }, [ruptureAlerts]);
+        a.cobertura_dias <= 30
+      ) {
+        ids.add(a.variant_id);
+      }
+    }
+    return ids.size > 0 ? ids : null;
+  }, [ruptureByVariantId]);
 
+  const ruptureRisk30dCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : null;
+  const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
+  void ruptureAlerts; // mantido para upstream subscribers (cache warm)
 
   const activeFilterLabel = useMemo(() => {
+    if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
     switch (filters.status) {
       case 'in_stock':
         return 'Em Estoque';
@@ -221,9 +235,9 @@ export function StockDashboard() {
       default:
         return null;
     }
-  }, [filters.status]);
+  }, [filters.status, isRuptureRiskActive]);
 
-  const isFiltered = filters.status !== 'all';
+  const isFiltered = filters.status !== 'all' || isRuptureRiskActive;
 
   // Estoque futuro — janela de 30 dias (regra de negócio).
   // Contamos variações distintas com pelo menos uma reposição prevista nos
@@ -415,8 +429,14 @@ export function StockDashboard() {
             'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
           };
 
-          const isActive =
-            card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter;
+          // "Risco de Ruptura" usa o filtro dimensional ruptureRiskVariantIds
+          // (set EMA ≤ 30d) ao invés de filters.status='critical' — assim a
+          // tabela mostra EXATAMENTE as variações sinalizadas, sem mistura.
+          const isRuptureCard = card.slug === 'risco-de-ruptura';
+          const isActive = isRuptureCard
+            ? isRuptureRiskActive
+            : !isRuptureRiskActive &&
+              (card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter);
           return (
             <StatCard
               key={card.slug}
@@ -428,6 +448,21 @@ export function StockDashboard() {
               tooltip={card.tooltip}
               isActive={isActive}
               onClick={() => {
+                if (isRuptureCard) {
+                  // toggle do filtro dimensional + zera status pra não competir
+                  if (isRuptureRiskActive) {
+                    updateFilter('ruptureRiskVariantIds', undefined);
+                  } else if (ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+                    updateFilter('status', 'all');
+                    updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+                  } else {
+                    // Sem dados EMA (flag off ou sem alertas) → fallback antigo
+                    updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
+                  }
+                  updateFilter('sortBy', 'name');
+                  updateFilter('sortDirection', 'asc');
+                  return;
+                }
                 if (!card.filter) return;
                 const next =
                   card.filter === 'all'
@@ -435,8 +470,9 @@ export function StockDashboard() {
                     : filters.status === card.filter
                       ? 'all'
                       : card.filter;
+                // Qualquer outro card sai do modo "risco de ruptura"
+                if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
                 updateFilter('status', next);
-                // Ordenação alfabética (A→Z) ao clicar em qualquer card.
                 updateFilter('sortBy', 'name');
                 updateFilter('sortDirection', 'asc');
               }}
