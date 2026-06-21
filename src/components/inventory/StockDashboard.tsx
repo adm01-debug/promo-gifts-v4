@@ -225,11 +225,25 @@ export function StockDashboard() {
 
   const isFiltered = filters.status !== 'all';
 
-  // Future stock total
-  const futureStockTotal = useMemo(
-    () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity || 0), 0),
-    [futureStock],
-  );
+  // Estoque futuro — janela de 30 dias (regra de negócio).
+  // Contamos variações distintas com pelo menos uma reposição prevista nos
+  // próximos 30 dias; o total de unidades vira contexto secundário (trend).
+  const FUTURE_STOCK_WINDOW_DAYS = 30;
+  const { futureStock30dVariantCount, futureStock30dUnits } = useMemo(() => {
+    const now = Date.now();
+    const horizon = now + FUTURE_STOCK_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const variantSet = new Set<string>();
+    let units = 0;
+    for (const f of futureStock) {
+      const t = f.expectedDate ? Date.parse(f.expectedDate) : NaN;
+      if (!Number.isFinite(t)) continue;
+      if (t < now || t > horizon) continue;
+      variantSet.add(f.variantId);
+      units += f.expectedQuantity || 0;
+    }
+    return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };
+  }, [futureStock]);
+
 
   if (isLoading) {
     const pct = loadingProgress
