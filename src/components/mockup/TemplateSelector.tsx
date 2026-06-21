@@ -116,7 +116,7 @@ export function TemplateSelector({
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Excluir"
+                        aria-label={`Excluir template ${template.name}`}
                         className="h-5 w-5 text-destructive opacity-0 hover:text-destructive group-hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();

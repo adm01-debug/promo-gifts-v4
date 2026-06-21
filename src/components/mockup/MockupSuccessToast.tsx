@@ -61,6 +61,7 @@ export function showMockupSuccessToast({
             <Button
               size="sm"
               variant="outline"
+              aria-label="Abrir mockup em nova aba"
               onClick={() => {
                 window.open(mockupUrl, '_blank');
                 toast.dismiss(t);

@@ -182,7 +182,7 @@ export function MockupProductSelector({
           className="h-7 w-7 shrink-0 hover:bg-destructive/10 hover:text-destructive"
           onClick={handleClear}
           disabled={disabled}
-          aria-label="Fechar"
+          aria-label="Remover produto selecionado"
         >
           <X className="h-3.5 w-3.5" />
         </Button>
@@ -236,6 +236,7 @@ export function MockupProductSelector({
               <div className="group relative">
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input
+                  aria-label="Buscar produto por nome, SKU ou palavras-chave"
                   placeholder="Busque por nome, SKU ou palavras-chave..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -244,6 +245,8 @@ export function MockupProductSelector({
                 />
                 {searchQuery && (
                   <button
+                    type="button"
+                    aria-label="Limpar busca de produto"
                     onClick={() => setSearchQuery('')}
                     className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                   >
@@ -254,7 +257,11 @@ export function MockupProductSelector({
 
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-4">
-                  <p className="text-xs font-medium text-muted-foreground">
+                  <p
+                    className="text-xs font-medium text-muted-foreground"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
                     {isLoadingProducts
                       ? 'Carregando catálogo...'
                       : isSearching
@@ -265,6 +272,7 @@ export function MockupProductSelector({
                 <div className="flex items-center gap-2">
                   <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                   <select
+                    aria-label="Ordenar produtos"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="cursor-pointer border-none bg-transparent text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus:ring-0"
@@ -338,11 +346,18 @@ export function MockupProductSelector({
                               className="group relative flex cursor-pointer flex-col rounded-2xl border border-border/30 bg-card p-3 outline-none transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
                               role="button"
                               tabIndex={0}
-                              onKeyDown={(e) => e.key === 'Enter' && handleProductPick(product)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleProductPick(product);
+                                }
+                              }}
                             >
                               <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-muted">
                                 <img
-                                  src={product.image_url || product.images?.[0] || '/placeholder.svg'}
+                                  src={
+                                    product.image_url || product.images?.[0] || '/placeholder.svg'
+                                  }
                                   alt={product.name}
                                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                   loading="lazy"

@@ -57,7 +57,7 @@ export function LogoSizeControls({
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Remover"
+                aria-label="Diminuir largura"
                 className="h-7 w-7"
                 disabled={logoWidth <= 1}
                 onClick={() => onSizeChange(Math.max(1, logoWidth - 0.5), logoHeight)}
@@ -70,7 +70,7 @@ export function LogoSizeControls({
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Adicionar"
+                aria-label="Aumentar largura"
                 className="h-7 w-7"
                 disabled={logoWidth >= effectiveMaxW}
                 onClick={() => onSizeChange(Math.min(effectiveMaxW, logoWidth + 0.5), logoHeight)}
@@ -96,7 +96,7 @@ export function LogoSizeControls({
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Remover"
+                aria-label="Diminuir altura"
                 className="h-7 w-7"
                 disabled={logoHeight <= 1}
                 onClick={() => onSizeChange(logoWidth, Math.max(1, logoHeight - 0.5))}
@@ -109,7 +109,7 @@ export function LogoSizeControls({
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Adicionar"
+                aria-label="Aumentar altura"
                 className="h-7 w-7"
                 disabled={logoHeight >= effectiveMaxH}
                 onClick={() => onSizeChange(logoWidth, Math.min(effectiveMaxH, logoHeight + 0.5))}
@@ -157,7 +157,7 @@ export function LogoSizeControls({
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Remover"
+                aria-label="Diminuir escala"
                 className="h-7 w-7"
                 disabled={!logoPreview || logoScale <= 10}
                 onClick={() => onLogoScaleChange?.(Math.max(10, logoScale - 5))}
@@ -170,7 +170,7 @@ export function LogoSizeControls({
               <Button
                 variant="outline"
                 size="icon"
-                aria-label="Adicionar"
+                aria-label="Aumentar escala"
                 className="h-7 w-7"
                 disabled={!logoPreview || logoScale >= 500}
                 onClick={() => onLogoScaleChange?.(Math.min(500, logoScale + 5))}

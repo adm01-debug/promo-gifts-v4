@@ -183,7 +183,10 @@ export function MockupConfigPanel({
                   onTechniqueSelect(technique || null);
                 }}
               >
-                <SelectTrigger data-testid="mockup-technique-select-trigger">
+                <SelectTrigger
+                  data-testid="mockup-technique-select-trigger"
+                  aria-label="Selecionar técnica de personalização"
+                >
                   <SelectValue placeholder="Selecione uma técnica..." />
                 </SelectTrigger>
                 <SelectContent>

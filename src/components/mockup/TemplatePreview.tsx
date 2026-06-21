@@ -135,7 +135,7 @@ export function TemplatePreviewExpanded({
         <img
           loading="lazy"
           src={productImage}
-          alt="Produto"
+          alt=""
           className="absolute inset-0 h-full w-full object-contain opacity-30"
         />
       )}
@@ -156,6 +156,7 @@ export function TemplatePreviewExpanded({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                type="button"
                 onClick={() => onAreaClick?.(index, area)}
                 className={cn(
                   'absolute -translate-x-1/2 -translate-y-1/2 transform',

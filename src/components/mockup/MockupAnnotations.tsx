@@ -144,6 +144,7 @@ export function MockupAnnotations({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Input
+                    aria-label="Texto da anotação"
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     placeholder="Ex: ajustar 1cm à esquerda"
@@ -159,6 +160,7 @@ export function MockupAnnotations({
                       size="sm"
                       variant="destructive"
                       className="h-7 w-7 p-0"
+                      aria-label="Remover anotação"
                       onClick={() => removeAnnotation(ann.id)}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -185,7 +187,7 @@ export function MockupAnnotations({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Fechar"
+                aria-label="Remover anotação"
                 className="h-5 w-5"
                 onClick={() => removeAnnotation(ann.id)}
               >

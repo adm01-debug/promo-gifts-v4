@@ -332,8 +332,7 @@ describe('Analise estatica — useMockupGenerator.ts', () => {
       expect(src).toMatch(/const\s+loadFromHistory\s*=\s*useCallback\s*\(\s*async/);
     });
     it('clearDraft é awaited dentro de loadFromHistory', () => {
-      const block =
-        src.split('const loadFromHistory')[1]?.split('const wizardStep')[0] ?? '';
+      const block = src.split('const loadFromHistory')[1]?.split('const wizardStep')[0] ?? '';
       expect(block).toContain('await clearDraft()');
     });
   });
@@ -426,5 +425,1189 @@ describe('Analise estatica — useMockupTechniques.ts', () => {
       expect(setPos).toBeGreaterThan(-1);
       expect(guardPos).toBeLessThan(setPos);
     });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — useLogoProcessing.ts
+// =====================================================================
+
+describe('Analise estatica — useLogoProcessing.ts', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/logo-editor/useLogoProcessing.ts');
+  });
+
+  describe('catch block loga erros de processamento de logo', () => {
+    it('importa logger de @/lib/logger', () => {
+      expect(src).toContain("from '@/lib/logger'");
+    });
+    it('catch block chama logger.error', () => {
+      const catchBlock = src.split('.catch(')[1]?.split('.finally(')[0] ?? '';
+      expect(catchBlock).toContain('logger.error');
+    });
+    it('catch block ainda reseta processedLogoUrl para null', () => {
+      const catchBlock = src.split('.catch(')[1]?.split('.finally(')[0] ?? '';
+      expect(catchBlock).toContain('setProcessedLogoUrl(null)');
+    });
+    it('erro nao e silenciado — parametro tipado como unknown', () => {
+      expect(src).toMatch(/\.catch\s*\(\s*\(err\s*:\s*unknown\)/);
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ArtFileUpload.tsx
+// =====================================================================
+
+describe('Analise estatica — ArtFileUpload.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  describe('handleRemove — erro de storage nao silenciado', () => {
+    it('destructura { error: storageErr } do storage.remove', () => {
+      const removeBlock =
+        src.split('const handleRemove')[1]?.split('const handleDownload')[0] ?? '';
+      expect(removeBlock).toContain('error: storageErr');
+    });
+    it('storageErr e logado quando presente', () => {
+      const removeBlock =
+        src.split('const handleRemove')[1]?.split('const handleDownload')[0] ?? '';
+      expect(removeBlock).toContain('logger.error');
+      expect(removeBlock).toContain('storageErr');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ShareMenu.tsx
+// =====================================================================
+
+describe('Analise estatica — ShareMenu.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ShareMenu.tsx');
+  });
+
+  describe('catch blocks — erros de clipboard/download/pdf nao silenciados', () => {
+    it('importa logger de @/lib/logger', () => {
+      expect(src).toContain("from '@/lib/logger'");
+    });
+    it('handleCopyLink catch captura err como unknown', () => {
+      const copyBlock =
+        src.split('const handleCopyLink')[1]?.split('const handleDownloadPNG')[0] ?? '';
+      expect(copyBlock).toMatch(/catch\s*\(\s*err\s*:\s*unknown\s*\)/);
+    });
+    it('handleCopyLink catch loga o erro', () => {
+      const copyBlock =
+        src.split('const handleCopyLink')[1]?.split('const handleDownloadPNG')[0] ?? '';
+      expect(copyBlock).toContain('logger.error');
+    });
+    it('handleDownloadPNG catch captura err como unknown', () => {
+      const pngBlock =
+        src.split('const handleDownloadPNG')[1]?.split('const handleDownloadPDF')[0] ?? '';
+      expect(pngBlock).toMatch(/catch\s*\(\s*err\s*:\s*unknown\s*\)/);
+    });
+    it('handleDownloadPNG catch loga o erro', () => {
+      const pngBlock =
+        src.split('const handleDownloadPNG')[1]?.split('const handleDownloadPDF')[0] ?? '';
+      expect(pngBlock).toContain('logger.error');
+    });
+    it('handleDownloadPDF catch captura err como unknown', () => {
+      const pdfBlock =
+        src.split('const handleDownloadPDF')[1]?.split('const handleWhatsApp')[0] ?? '';
+      expect(pdfBlock).toMatch(/catch\s*\(\s*err\s*:\s*unknown\s*\)/);
+    });
+    it('handleDownloadPDF catch loga o erro', () => {
+      const pdfBlock =
+        src.split('const handleDownloadPDF')[1]?.split('const handleWhatsApp')[0] ?? '';
+      expect(pdfBlock).toContain('logger.error');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — AreaCard.tsx
+// =====================================================================
+
+describe('Analise estatica — AreaCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  describe('displayName — memo() component identificavel no React DevTools', () => {
+    it('exporta como memo()', () => {
+      expect(src).toContain('export const AreaCard = memo(');
+    });
+    it('define displayName apos o componente', () => {
+      expect(src).toContain("AreaCard.displayName = 'AreaCard'");
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — useMockupGenerator.ts
+// =====================================================================
+
+describe('Analise estatica — useMockupGenerator.ts', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/hooks/mockup/useMockupGenerator.ts');
+  });
+
+  describe('reader.onerror — erro de FileReader nao silenciado', () => {
+    it('importa logger de @/lib/logger', () => {
+      expect(src).toContain("from '@/lib/logger'");
+    });
+    it('onerror handler recebe parametro de evento', () => {
+      const onerrorBlock = src.split('reader.onerror')[1]?.split('reader.readAsDataURL')[0] ?? '';
+      expect(onerrorBlock).toContain('(e) =>');
+    });
+    it('onerror handler chama logger.error', () => {
+      const onerrorBlock = src.split('reader.onerror')[1]?.split('reader.readAsDataURL')[0] ?? '';
+      expect(onerrorBlock).toContain('logger.error');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupHistoryPanel.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupHistoryPanel.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  describe('displayName — componentes memo() identificaveis no React DevTools', () => {
+    it('MockupGridCard e exportado como memo()', () => {
+      expect(src).toContain('const MockupGridCard = memo(');
+    });
+    it('MockupGridCard define displayName', () => {
+      expect(src).toContain("MockupGridCard.displayName = 'MockupGridCard'");
+    });
+    it('MockupListRow e exportado como memo()', () => {
+      expect(src).toContain('const MockupListRow = memo(');
+    });
+    it('MockupListRow define displayName', () => {
+      expect(src).toContain("MockupListRow.displayName = 'MockupListRow'");
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupResultCard.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupResultCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  describe('displayName — memo() component identificavel no React DevTools', () => {
+    it('MockupResultCard e exportado como memo()', () => {
+      expect(src).toContain('export const MockupResultCard = memo(');
+    });
+    it('MockupResultCard define displayName', () => {
+      expect(src).toContain("MockupResultCard.displayName = 'MockupResultCard'");
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — SaveTemplateDialog.tsx
+// =====================================================================
+
+describe('Analise estatica — SaveTemplateDialog.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/SaveTemplateDialog.tsx');
+  });
+
+  describe('a11y — label associado ao input via htmlFor/id', () => {
+    it('Input tem id="template-name-input"', () => {
+      expect(src).toContain('id="template-name-input"');
+    });
+    it('label tem htmlFor="template-name-input"', () => {
+      expect(src).toContain('htmlFor="template-name-input"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupAnnotations.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupAnnotations.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupAnnotations.tsx');
+  });
+
+  describe('a11y — aria-label semantico no botao de remover anotacao', () => {
+    it('botao de remover tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Remover anotação"');
+    });
+    it('aria-label "Fechar" nao e usado no botao de remover anotacao', () => {
+      const beforeRemove = src.split('removeAnnotation(ann.id)')[0] ?? '';
+      expect(beforeRemove).not.toContain('aria-label="Fechar"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — LogoColorAnalyzer.tsx
+// =====================================================================
+
+describe('Analise estatica — LogoColorAnalyzer.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  describe('a11y — aria-label semantico e aria-expanded no PantoneDropdown', () => {
+    it('botao do dropdown nao usa aria-label="Recolher" (label enganoso)', () => {
+      expect(src).not.toContain('aria-label="Recolher"');
+    });
+    it('botao do dropdown tem aria-label descritivo com selectedCode', () => {
+      expect(src).toContain('aria-label={`Selecionar cor Pantone (atual:');
+      expect(src).toContain('selectedCode})`}');
+    });
+    it('botao do dropdown expoe estado aberto com aria-expanded', () => {
+      expect(src).toContain('aria-expanded={open}');
+    });
+  });
+
+  describe('React keys — ColorRow usa hex como key (nao index)', () => {
+    it('key de ColorRow e color.hex (nao index)', () => {
+      expect(src).toContain('key={color.hex}');
+    });
+    it('key de ColorRow nao e somente index', () => {
+      expect(src).not.toContain('key={index}');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — LogoSizeControls.tsx
+// =====================================================================
+
+describe('Analise estatica — LogoSizeControls.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/logo-editor/LogoSizeControls.tsx');
+  });
+
+  describe('a11y — aria-label descritivo nos botoes de largura', () => {
+    it('botao de diminuir largura tem aria-label="Diminuir largura"', () => {
+      expect(src).toContain('aria-label="Diminuir largura"');
+    });
+    it('botao de aumentar largura tem aria-label="Aumentar largura"', () => {
+      expect(src).toContain('aria-label="Aumentar largura"');
+    });
+  });
+
+  describe('a11y — aria-label descritivo nos botoes de altura', () => {
+    it('botao de diminuir altura tem aria-label="Diminuir altura"', () => {
+      expect(src).toContain('aria-label="Diminuir altura"');
+    });
+    it('botao de aumentar altura tem aria-label="Aumentar altura"', () => {
+      expect(src).toContain('aria-label="Aumentar altura"');
+    });
+  });
+
+  describe('a11y — aria-label descritivo nos botoes de escala', () => {
+    it('botao de diminuir escala tem aria-label="Diminuir escala"', () => {
+      expect(src).toContain('aria-label="Diminuir escala"');
+    });
+    it('botao de aumentar escala tem aria-label="Aumentar escala"', () => {
+      expect(src).toContain('aria-label="Aumentar escala"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupResultCard.tsx (zoom controls)
+// =====================================================================
+
+describe('Analise estatica — MockupResultCard.tsx (zoom controls)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  describe('a11y — aria-label correto nos controles de zoom', () => {
+    it('botoes de zoom usam "Diminuir zoom" (nao "Reduzir" generico)', () => {
+      expect(src).toContain('aria-label="Diminuir zoom"');
+      expect(src).not.toContain('aria-label="Reduzir"');
+    });
+    it('botoes de zoom usam "Aumentar zoom" (nao "Ampliar" generico)', () => {
+      expect(src).toContain('aria-label="Aumentar zoom"');
+      expect(src).not.toContain('aria-label="Ampliar"');
+    });
+    it('botao de reset de zoom nao usa aria-label="Rotacionar" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Rotacionar"');
+    });
+    it('botao de reset de zoom nao usa aria-label="Desfazer" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Desfazer"');
+    });
+    it('botoes de reset de zoom usam label descritivo', () => {
+      expect(src).toContain('aria-label="Resetar zoom para 100%"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ProductSearchCombobox.tsx
+// =====================================================================
+
+describe('Analise estatica — ProductSearchCombobox.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ProductSearchCombobox.tsx');
+  });
+
+  describe('a11y — aria-label semantico no botao de limpar selecao', () => {
+    it('botao de limpar nao usa aria-label="Fechar" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+    it('botao de limpar usa aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Remover produto selecionado"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — TemplateSelector.tsx
+// =====================================================================
+
+describe('Analise estatica — TemplateSelector.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TemplateSelector.tsx');
+  });
+
+  describe('a11y — aria-label contextual no botao de excluir template', () => {
+    it('botao de excluir usa aria-label com nome do template', () => {
+      expect(src).toContain('aria-label={`Excluir template ');
+      expect(src).toContain('template.name}`}');
+    });
+    it('aria-label generico "Excluir" nao existe mais', () => {
+      expect(src).not.toContain('aria-label="Excluir"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupProductSelector.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupProductSelector.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  describe('a11y — aria-label semantico no botao de limpar selecao', () => {
+    it('botao de limpar nao usa aria-label="Fechar" (acao incorreta)', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+    it('botao de limpar usa aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Remover produto selecionado"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupLightbox.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupLightbox.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupLightbox.tsx');
+  });
+
+  describe('a11y — aria-label correto nos controles de zoom', () => {
+    it('botao de diminuir zoom usa "Diminuir zoom" (nao "Reduzir" generico)', () => {
+      expect(src).toContain('aria-label="Diminuir zoom"');
+      expect(src).not.toContain('aria-label="Reduzir"');
+    });
+    it('botao de aumentar zoom usa "Aumentar zoom" (nao "Ampliar" generico)', () => {
+      expect(src).toContain('aria-label="Aumentar zoom"');
+      expect(src).not.toContain('aria-label="Ampliar"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupCompareDialog.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupCompareDialog.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupCompareDialog.tsx');
+  });
+
+  describe('a11y — aria-label contextual no botao de fechar', () => {
+    it('botao de fechar especifica o que esta sendo fechado', () => {
+      expect(src).toContain('aria-label="Fechar comparação de mockups"');
+    });
+    it('aria-label generico "Fechar" nao existe sozinho', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — AreaCard.tsx
+// =====================================================================
+
+describe('Analise estatica — AreaCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  describe('a11y — aria-label descritivo no botao de atualizar logo', () => {
+    it('botao de substituir logo nao usa aria-label generico "Atualizar"', () => {
+      expect(src).not.toContain('aria-label="Atualizar"');
+    });
+    it('botao de substituir logo usa aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Substituir logo"');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — ArtFileUpload.tsx
+// =====================================================================
+
+describe('Analise estatica — ArtFileUpload.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  describe('a11y — aria-labels contextuais com nome do arquivo', () => {
+    it('botao de baixar usa aria-label com nome do arquivo (nao generico "Baixar")', () => {
+      expect(src).toContain('aria-label={`Baixar arquivo ');
+      expect(src).not.toContain('aria-label="Baixar"');
+    });
+    it('botao de remover usa aria-label com nome do arquivo (nao generico "Remover")', () => {
+      expect(src).toContain('aria-label={`Remover arquivo ');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — MockupHistoryPanel.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupHistoryPanel.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  describe('a11y — paginacao com aria-labels semanticos', () => {
+    it('botao de pagina anterior usa "Página anterior" (nao "Voltar" ambiguo)', () => {
+      expect(src).toContain('aria-label="Página anterior"');
+      expect(src).not.toContain('aria-label="Voltar"');
+    });
+    it('botao de proxima pagina usa "Próxima página" (nao "Avançar" ambiguo)', () => {
+      expect(src).toContain('aria-label="Próxima página"');
+      expect(src).not.toContain('aria-label="Avançar"');
+    });
+  });
+
+  describe('a11y — botoes de acao do mockup com contexto do produto', () => {
+    it('botao regenerar usa aria-label com nome do produto', () => {
+      expect(src).toContain('aria-label={`Regenerar mockup de ');
+      expect(src).not.toContain('aria-label="Regenerar"');
+    });
+    it('botao baixar usa aria-label com nome do produto (nao "Download" em ingles)', () => {
+      expect(src).toContain('aria-label={`Baixar mockup de ');
+      expect(src).not.toContain('aria-label="Download"');
+    });
+    it('botao excluir usa aria-label com nome do produto', () => {
+      expect(src).toContain('aria-label={`Excluir mockup de ');
+      expect(src).not.toContain('aria-label="Excluir"');
+    });
+  });
+
+  describe('a11y — filtros com labels associados via htmlFor/id', () => {
+    it('filtro de cliente tem Label com htmlFor="filter-client"', () => {
+      expect(src).toContain('htmlFor="filter-client"');
+    });
+    it('SelectTrigger de cliente tem id="filter-client"', () => {
+      expect(src).toContain('id="filter-client"');
+    });
+    it('filtro de produto tem Label com htmlFor="filter-product"', () => {
+      expect(src).toContain('htmlFor="filter-product"');
+    });
+    it('Input de produto tem id="filter-product"', () => {
+      expect(src).toContain('id="filter-product"');
+    });
+    it('filtro de tecnica tem Label com htmlFor="filter-technique"', () => {
+      expect(src).toContain('htmlFor="filter-technique"');
+    });
+    it('filtro de periodo tem Label com htmlFor="filter-date-range"', () => {
+      expect(src).toContain('htmlFor="filter-date-range"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupClientSelector.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('a11y — botao de limpar busca acessivel', () => {
+    it('botao nativo de limpar busca tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Limpar busca de cliente"');
+    });
+    it('componente ainda possui logica de limpar busca (setSearchQuery)', () => {
+      expect(src).toContain('setSearchQuery');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupAnnotations.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupAnnotations.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupAnnotations.tsx');
+  });
+
+  describe('a11y — botao de remover anotacao em todas as vistas', () => {
+    it('aria-label "Remover anotacao" aparece pelo menos duas vezes (lista e popup)', () => {
+      const matches = src.match(/aria-label="Remover anota/g);
+      expect(matches).not.toBeNull();
+      expect((matches ?? []).length).toBeGreaterThanOrEqual(2);
+    });
+    it('botao destructive de remover tem aria-label (nao e apenas icone Trash2)', () => {
+      expect(src).toContain('variant="destructive"');
+      expect(src).toContain('aria-label="Remover anota');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupResultCard.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupResultCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  describe('a11y — botao de fechar tela cheia com label contextual', () => {
+    it('botao de fechar fullscreen usa "Fechar tela cheia" (nao generico "Fechar")', () => {
+      expect(src).toContain('aria-label="Fechar tela cheia"');
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+    it('controles de zoom no fullscreen tem aria-labels descritivos', () => {
+      expect(src).toContain('aria-label="Diminuir zoom"');
+      expect(src).toContain('aria-label="Aumentar zoom"');
+      expect(src).toContain('aria-label="Resetar zoom para 100%"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — ShareMenu.tsx
+// =====================================================================
+
+describe('Analise estatica — ShareMenu.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ShareMenu.tsx');
+  });
+
+  describe('a11y — botao de compartilhar com label acessivel', () => {
+    it('botao trigger do menu de compartilhar tem aria-label', () => {
+      expect(src).toContain('aria-label="Compartilhar mockup"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupSuccessToast.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupSuccessToast.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupSuccessToast.tsx');
+  });
+
+  describe('a11y — botao de abrir mockup com label acessivel', () => {
+    it('botao de abrir em nova aba tem aria-label (ExternalLink nao e apenas icone)', () => {
+      expect(src).toContain('aria-label="Abrir mockup em nova aba"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupConfigPanel.tsx
+// =====================================================================
+
+describe('Analise estatica — MockupConfigPanel.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupConfigPanel.tsx');
+  });
+
+  describe('a11y — SelectTrigger de tecnica com aria-label', () => {
+    it('SelectTrigger de tecnica tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Selecionar técnica de personalização"');
+    });
+    it('botao de limpar formulario tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Limpar formulário"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — teclado: role=button ativa com Enter E Space
+// =====================================================================
+
+describe('Analise estatica — AreaCard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  describe('a11y — role=button responde a Enter e Space', () => {
+    it('onKeyDown trata Enter para ativar a area', () => {
+      expect(src).toContain("e.key === 'Enter'");
+    });
+    it('onKeyDown trata Space para ativar a area (ARIA spec)', () => {
+      expect(src).toContain("e.key === ' '");
+    });
+    it('Space e Enter estao no mesmo handler (nao branches separadas)', () => {
+      expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+    });
+  });
+});
+
+describe('Analise estatica — MockupProductSelector.tsx (teclado)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  describe('a11y — cards de produto respondem a Enter e Space', () => {
+    it('onKeyDown trata Enter para selecionar produto', () => {
+      expect(src).toContain("e.key === 'Enter'");
+    });
+    it('onKeyDown trata Space para selecionar produto (ARIA spec)', () => {
+      expect(src).toContain("e.key === ' '");
+    });
+  });
+
+  describe('a11y — botao de limpar busca no dialog tem type e aria-label', () => {
+    it('botao de limpar busca de produto tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+    it('botao de limpar busca de produto tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Limpar busca de produto"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — type="button" em botoes nativos (previne submit)
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('html — botao nativo de limpar busca tem type explicito', () => {
+    it('botao de limpar tem type="button" para nao ser submit acidental', () => {
+      expect(src).toContain('type="button"');
+    });
+  });
+});
+
+describe('Analise estatica — LogoColorAnalyzer.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  describe('html — botoes nativos tem type="button" explicito', () => {
+    it('PopoverTrigger button tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+    it('ambos os botoes nativos tem type="button" (trigger + item lista)', () => {
+      const count = (src.match(/type="button"/g) ?? []).length;
+      expect(count).toBeGreaterThanOrEqual(2);
+    });
+  });
+});
+
+describe('Analise estatica — MockupColorSelector.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupColorSelector.tsx');
+  });
+
+  describe('html — botao de variante de cor tem type="button"', () => {
+    it('botao de selecao de cor/variante tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+  });
+});
+
+describe('Analise estatica — TemplatePreview.tsx (type=button)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TemplatePreview.tsx');
+  });
+
+  describe('html — marcador de area tem type="button"', () => {
+    it('botao marcador de area tem type="button"', () => {
+      expect(src).toContain('type="button"');
+    });
+    it('marcador de area tem aria-label contextual', () => {
+      expect(src).toContain('aria-label={`Selecionar');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — MockupWizard e ArtFileUpload
+// =====================================================================
+
+describe('Analise estatica — MockupWizard.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupWizard.tsx');
+  });
+
+  describe('a11y — etapas clicaveis respondem a Enter e Space', () => {
+    it('onKeyDown trata Enter para navegar a etapa', () => {
+      expect(src).toContain("e.key === 'Enter'");
+    });
+    it('onKeyDown trata Space para navegar a etapa (ARIA spec)', () => {
+      expect(src).toContain("e.key === ' '");
+    });
+    it('Enter e Space estao no mesmo bloco condicional', () => {
+      expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+    });
+    it('etapa clicavel tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label={isClickable');
+    });
+  });
+});
+
+describe('Analise estatica — ArtFileUpload.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  describe('a11y — input de arquivo tem aria-label', () => {
+    it('input type=file tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Upload de arquivos de arte vetorial"');
+    });
+  });
+});
+
+describe('Analise estatica — MockupLightbox.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupLightbox.tsx');
+  });
+
+  describe('a11y — botao de fechar lightbox com label contextual', () => {
+    it('botao de fechar usa "Fechar lightbox" (nao generico "Fechar")', () => {
+      expect(src).toContain('aria-label="Fechar lightbox"');
+    });
+    it('nao tem aria-label generico "Fechar" sem contexto', () => {
+      expect(src).not.toContain('aria-label="Fechar"');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — prefers-reduced-motion
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (reduced-motion)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('a11y — animacoes respeitam preferencia de reducao de movimento', () => {
+    it('importa useReducedMotion para respeitar preferencia do SO', () => {
+      expect(src).toContain('useReducedMotion');
+    });
+    it('duracao de animacao e zero quando reducedMotion esta ativo', () => {
+      expect(src).toContain('reducedMotion ? 0 :');
+    });
+    it('animacoes de y e scale sao suprimidas com reducedMotion', () => {
+      expect(src).toContain('reducedMotion ? { opacity: 0 }');
+    });
+  });
+});
+
+// =====================================================================
+// Analise estatica — aria-live para regioes de status assincrono
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (aria-live)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  describe('a11y — contagem de resultados anunciada para leitores de tela', () => {
+    it('span de contagem tem aria-live="polite"', () => {
+      expect(src).toContain('aria-live="polite"');
+    });
+    it('span de contagem tem aria-atomic="true" para anuncio completo', () => {
+      expect(src).toContain('aria-atomic="true"');
+    });
+  });
+});
+
+describe('Analise estatica — MockupProductSelector.tsx (aria-live)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  describe('a11y — contagem de resultados de produto anunciada para leitores de tela', () => {
+    it('paragrafo de contagem tem aria-live="polite"', () => {
+      expect(src).toContain('aria-live="polite"');
+    });
+    it('paragrafo de contagem tem aria-atomic="true"', () => {
+      expect(src).toContain('aria-atomic="true"');
+    });
+  });
+});
+
+describe('Analise estatica — LogoPreviewCanvas.tsx', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/logo-editor/LogoPreviewCanvas.tsx');
+  });
+
+  describe('a11y — badge clicavel de configuracao de cores tem semantica de botao', () => {
+    it('badge interativo tem role="button"', () => {
+      expect(src).toContain('role="button"');
+    });
+    it('badge interativo tem tabIndex={0} para navegacao por teclado', () => {
+      expect(src).toContain('tabIndex={0}');
+    });
+    it('badge interativo tem aria-label descritivo', () => {
+      expect(src).toContain('aria-label="Configurar cores da técnica"');
+    });
+    it('badge interativo responde a Enter e Space (ARIA spec)', () => {
+      expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — alt text quality (3 files)
+// =====================================================================
+
+describe('Analise estatica — TemplatePreview.tsx (alt text)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/TemplatePreview.tsx');
+  });
+
+  it('imagem decorativa de produto (opacity-30) usa alt vazio', () => {
+    expect(src).toContain('alt=""');
+  });
+  it('nao usa alt generico "Produto" para imagem decorativa', () => {
+    expect(src).not.toContain('alt="Produto"');
+  });
+});
+
+describe('Analise estatica — AreaCard.tsx (alt text)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  it('thumbnail do logo tem alt descritivo em PT-BR', () => {
+    expect(src).toContain('alt="Miniatura do logo enviado"');
+  });
+  it('nao usa alt generico "Logo"', () => {
+    expect(src).not.toContain('alt="Logo"');
+  });
+});
+
+describe('Analise estatica — MockupResultCard.tsx (alt text)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupResultCard.tsx');
+  });
+
+  it('mockup gerado tem alt descritivo em PT-BR', () => {
+    expect(src).toContain('alt="Mockup gerado com IA"');
+  });
+  it('nao usa alt em ingles "Generated mockup"', () => {
+    expect(src).not.toContain('alt="Generated mockup"');
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — GenerateButton.tsx (reduced-motion)
+// =====================================================================
+
+describe('Analise estatica — GenerateButton.tsx (reduced-motion)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/GenerateButton.tsx');
+  });
+
+  describe('prefers-reduced-motion: suprime animacoes decorativas', () => {
+    it('importa useReducedMotion para respeitar preferencia do SO', () => {
+      expect(src).toContain('useReducedMotion');
+    });
+    it('hover e tap scale sao suprimidos quando reducedMotion esta ativo', () => {
+      expect(src).toContain('!reducedMotion ? { scale: 1.02 }');
+    });
+    it('pulso de glow nao anima quando reducedMotion esta ativo', () => {
+      expect(src).toContain('reducedMotion ? { opacity: 0.5 }');
+    });
+    it('transicao de pulso tem duration zero quando reducedMotion esta ativo', () => {
+      expect(src).toContain('reducedMotion ? { duration: 0 }');
+    });
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — aria-label em controles de formulario (6 arquivos)
+// =====================================================================
+
+describe('Analise estatica — MockupClientSelector.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  it('campo de busca de empresa tem aria-label', () => {
+    expect(src).toContain('aria-label="Buscar empresa"');
+  });
+});
+
+describe('Analise estatica — LogoColorAnalyzer.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  it('campo de busca Pantone tem aria-label', () => {
+    expect(src).toContain('aria-label="Buscar código Pantone"');
+  });
+});
+
+describe('Analise estatica — MockupAnnotations.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupAnnotations.tsx');
+  });
+
+  it('input de texto de anotacao tem aria-label', () => {
+    expect(src).toContain('aria-label="Texto da anotação"');
+  });
+});
+
+describe('Analise estatica — MockupProductSelector.tsx (aria-label inputs)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupProductSelector.tsx');
+  });
+
+  it('campo de busca de produto tem aria-label', () => {
+    expect(src).toContain('aria-label="Buscar produto por nome, SKU ou palavras-chave"');
+  });
+  it('select de ordenacao tem aria-label', () => {
+    expect(src).toContain('aria-label="Ordenar produtos"');
+  });
+});
+
+describe('Analise estatica — MockupWizard.tsx (aria-current + nav landmark)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupWizard.tsx');
+  });
+
+  it('desktop stepper envolvido em <nav> com aria-label', () => {
+    expect(src).toContain('aria-label="Etapas do processo de criação de mockup"');
+  });
+  it('etapa ativa recebe aria-current="step"', () => {
+    expect(src).toContain("aria-current={step.isActive ? 'step' : undefined}");
+  });
+  it('step pills do mobile tem aria-current e aria-label descritivo', () => {
+    expect(src).toContain("aria-current={step.isActive ? 'step' : undefined}");
+    expect(src).toMatch(/`Etapa \$\{step\.id\}/);
+  });
+});
+
+describe('Analise estatica — AreaCard.tsx (aria-label input)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/AreaCard.tsx');
+  });
+
+  it('input de nome da area tem aria-label dinamico com indice', () => {
+    expect(src).toMatch(/aria-label=\{`Nome da área \$\{index \+ 1\}`\}/);
+  });
+});
+
+// =====================================================================
+// STATIC ANALYSIS — role="alert" em estados de erro
+// =====================================================================
+
+describe('Analise estatica — LogoColorAnalyzer.tsx (role alert)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/LogoColorAnalyzer.tsx');
+  });
+
+  it('container de erro tem role="alert" para anuncio imediato ao leitor de tela', () => {
+    expect(src).toContain('role="alert"');
+  });
+  it('icone de alerta e decorativo (aria-hidden)', () => {
+    expect(src).toContain('aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MockupColorSelector.tsx (role alert)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupColorSelector.tsx');
+  });
+
+  it('estado de produto nao encontrado tem role="alert"', () => {
+    expect(src).toContain('role="alert"');
+  });
+});
+
+describe('Analise estatica — MockupClientSelector.tsx (role alert + chip keyboard)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupClientSelector.tsx');
+  });
+
+  it('estado de erro do CRM tem role="alert"', () => {
+    expect(src).toContain('role="alert"');
+  });
+  it('chip de empresa selecionada tem role="button"', () => {
+    expect(src).toContain('role="button"');
+  });
+  it('chip de empresa selecionada tem tabIndex={0}', () => {
+    expect(src).toContain('tabIndex={0}');
+  });
+  it('chip de empresa selecionada tem aria-label descritivo', () => {
+    expect(src).toContain('Empresa selecionada:');
+  });
+  it('chip responde a Enter e Space', () => {
+    expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+  });
+});
+
+describe('Analise estatica — MockupHistoryPanel.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  it('icone History no cabecalho tem aria-hidden', () => {
+    expect(src).toContain('<History className="h-5 w-5 text-primary" aria-hidden="true"');
+  });
+  it('icone Columns2 no botao Comparar tem aria-hidden', () => {
+    expect(src).toContain('<Columns2 className="mr-1 h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Calendar no Label de periodo tem aria-hidden', () => {
+    expect(src).toContain('<Calendar className="h-3 w-3" aria-hidden="true"');
+  });
+  it('icone RefreshCw nos botoes Limpar filtros tem aria-hidden', () => {
+    expect(src).toContain('<RefreshCw className="mr-1 h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Wand2 no estado vazio tem aria-hidden', () => {
+    expect(src).toContain('<Wand2 className="h-10 w-10 text-primary/60" aria-hidden="true"');
+  });
+  it('icone Search no estado sem resultados tem aria-hidden', () => {
+    expect(src).toContain(
+      '<Search className="h-8 w-8 text-muted-foreground/50" aria-hidden="true"',
+    );
+  });
+  it('icone MapPin nos badges de localizacao tem aria-hidden', () => {
+    expect(src).toContain('<MapPin className="h-2.5 w-2.5" aria-hidden="true"');
+  });
+  it('icone Clock nas informacoes de tempo tem aria-hidden', () => {
+    expect(src).toContain('<Clock className="h-3 w-3" aria-hidden="true"');
+  });
+  it('icone ChevronLeft da paginacao tem aria-hidden', () => {
+    expect(src).toContain('<ChevronLeft className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone ChevronRight da paginacao tem aria-hidden', () => {
+    expect(src).toContain('<ChevronRight className="h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — ShareMenu.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ShareMenu.tsx');
+  });
+
+  it('icone Share2 no botao trigger tem aria-hidden', () => {
+    expect(src).toContain('<Share2 className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Link2 no item Copiar link tem aria-hidden', () => {
+    expect(src).toContain('<Link2 className="mr-2 h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Download no item Download PNG tem aria-hidden', () => {
+    expect(src).toContain('<Download className="mr-2 h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — ArtFileUpload.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/ArtFileUpload.tsx');
+  });
+
+  it('icone Upload na zona de drop tem aria-hidden', () => {
+    expect(src).toContain('<Upload className="h-6 w-6" aria-hidden="true"');
+  });
+  it('icone FileText no item de arquivo tem aria-hidden', () => {
+    expect(src).toContain('<FileText className="h-5 w-5 shrink-0 text-primary" aria-hidden="true"');
+  });
+  it('icone Download no botao de download tem aria-hidden', () => {
+    expect(src).toContain('<Download className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Trash2 no botao de remover tem aria-hidden', () => {
+    expect(src).toContain('<Trash2 className="h-4 w-4" aria-hidden="true"');
   });
 });

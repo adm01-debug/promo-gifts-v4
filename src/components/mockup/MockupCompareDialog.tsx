@@ -54,7 +54,7 @@ export function MockupCompareDialog({
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Fechar"
+              aria-label="Fechar comparação de mockups"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4" />
