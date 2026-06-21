@@ -565,6 +565,22 @@ describe('useCatalogFiltering — inStock + minStock parity', () => {
   it('minStock=0 retorna todos (default — não filtra)', () => {
     expect(run(catalog, { minStock: 0 }).length).toBe(catalog.length);
   });
+
+  it('inStock exclui produto com stock > 0 mas abaixo de minQuantity (BUG-CF-INSTOCK-01)', () => {
+    // Produto com estoque físico positivo (3 un.) mas min_quantity=5 → stockStatus='out-of-stock'
+    // O filtro "Em estoque" NÃO deve incluí-lo pois não é possível efetuar pedido.
+    const lowMoqProduct = makeP('low-moq', 3, {
+      stockStatus: 'out-of-stock', // stock=3 < minQuantity=5 → calculado por getCatalogStockStatus
+    });
+    const result = run([lowMoqProduct], { inStock: true });
+    expect(result).toHaveLength(0); // excluído porque stockStatus='out-of-stock'
+  });
+
+  it('inStock inclui produto com stock > 0 e stockStatus="in-stock" (regra normal)', () => {
+    const inStockProduct = makeP('normal', 10, { stockStatus: 'in-stock' });
+    const result = run([inStockProduct], { inStock: true });
+    expect(result).toHaveLength(1);
+  });
 });
 
 // FIX-TECHNIQUES-FILTER parity — graceful degradation quando catálogo leve não

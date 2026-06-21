@@ -166,11 +166,15 @@ export function useCatalogFiltering({
 
     // FIX-INSTOCK-VARIATIONS: considera variações além do estoque agregado,
     // alinhando com applyProductFilters.ts (FIX-03) e com o bloco minStock abaixo.
+    // BUG-CF-INSTOCK-01 FIX: usa stockStatus pré-computado (inclui regra de min_quantity)
+    // quando disponível, em vez de stock > 0. Produtos com stock < min_quantity são
+    // 'out-of-stock' (413 produtos afetados no catálogo atual) e não devem passar o
+    // filtro "Em estoque". Paridade com applyProductFilters.ts (BUG-APF-02 FIX).
     if (filters.inStock) {
       result = result.filter((p) => {
         if (p.variations && p.variations.length > 0)
           return p.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
-        return (p.stock || 0) > 0;
+        return p.stockStatus ? p.stockStatus !== 'out-of-stock' : (p.stock || 0) > 0;
       });
     }
 
