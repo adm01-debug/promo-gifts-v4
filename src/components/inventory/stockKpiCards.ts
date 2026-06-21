@@ -39,10 +39,24 @@ const pct = (n: number, total: number): string =>
  * Constrói os 4 cards principais a partir de um summary já agregado.
  * Todos os valores primários são em granularidade de VARIAÇÃO (cor/tamanho)
  * — o número que importa para o vendedor decidir vender ou não.
+ *
+ * @param ruptureRisk15dCount variações com cobertura ≤ 15 dias (vindo de
+ *   `mv_stock_rupture_alert`). Quando omitido (flag EMA off), o card "Risco
+ *   de Ruptura" cai no fallback `variantsCritical` (estado atual) para não
+ *   ficar vazio.
  */
-export function buildStockKpiCards(summary: StockDashboardSummary): StockKpiCardData[] {
+export function buildStockKpiCards(
+  summary: StockDashboardSummary,
+  ruptureRisk15dCount?: number | null,
+): StockKpiCardData[] {
   const { totalVariants, totalProducts, variantsInStock, variantsCritical, variantsOutOfStock } =
     summary;
+
+  const ruptureValue =
+    typeof ruptureRisk15dCount === 'number' && Number.isFinite(ruptureRisk15dCount)
+      ? ruptureRisk15dCount
+      : variantsCritical;
+  const ruptureFromEma = typeof ruptureRisk15dCount === 'number';
 
   return [
     {
@@ -70,17 +84,22 @@ export function buildStockKpiCards(summary: StockDashboardSummary): StockKpiCard
       variant: 'success',
     },
     {
-      slug: 'critico',
-      title: 'Crítico',
+      slug: 'risco-de-ruptura',
+      title: 'Risco de Ruptura',
       unit: 'variações',
-      value: variantsCritical,
-      subtitle: `${pct(variantsCritical, totalVariants)} das variações`,
-      tooltip:
-        `${variantsCritical.toLocaleString('pt-BR')} variações em estado crítico ` +
-        `(estoque baixo / abaixo do mínimo).`,
+      value: ruptureValue,
+      subtitle: ruptureFromEma
+        ? 'podem esgotar em até 15 dias'
+        : `${pct(ruptureValue, totalVariants)} em estado crítico`,
+      tooltip: ruptureFromEma
+        ? `${ruptureValue.toLocaleString('pt-BR')} variações com cobertura projetada ≤ 15 dias ` +
+          `(modelo EMA — média móvel exponencial de saídas).`
+        : `${ruptureValue.toLocaleString('pt-BR')} variações em estado crítico (fallback — ` +
+          `previsão EMA indisponível).`,
       filter: 'critical',
       variant: 'warning',
     },
+
     {
       slug: 'sem-estoque',
       title: 'Sem Estoque',
