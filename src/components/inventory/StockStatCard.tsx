@@ -117,13 +117,11 @@ export function StatCard({
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-  return (
+  const cardButton = (
     <button
       type="button"
       data-testid="stock-stat-card"
       data-stat-slug={slug}
-      title={tooltip}
-
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -204,13 +202,22 @@ export function StatCard({
           </div>
         </div>
       </div>
-
-      {/* Click hint on hover */}
-      {clickHint && onClick && (
-        <div className="absolute bottom-0 left-0 right-0 pb-1 text-center text-[9px] text-muted-foreground/0 transition-colors group-hover:text-muted-foreground/60">
-          {clickHint}
-        </div>
-      )}
     </button>
   );
+
+  if (!tooltip) return cardButton;
+
+  return (
+    <TooltipProvider delayDuration={250}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex w-full">{cardButton}</span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-[240px] text-xs leading-snug">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
+
