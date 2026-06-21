@@ -202,9 +202,10 @@ export const ProductColorSwatches = memo(
                     getColorSwatchClasses({ isActive: isSelected, isOutOfStock, hasBg: true }),
                     'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                     isSelected
-                      ? 'scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
+                      ? 'scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
                       : !isOutOfStock &&
                           'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
+
                     SIZE_CLASS[size],
                   )}
 
