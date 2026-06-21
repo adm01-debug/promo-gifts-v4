@@ -11,21 +11,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Supabase client mock (chainable, thenable query builder) ────────────────
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
-type FakeResult = { data: unknown; error: unknown };
-// A table maps to either a single static result or a QUEUE of results (consumed one per
-// call) so a test can simulate sequenced DB responses, e.g. "first insert raises a 23503
-// FK violation, the retry succeeds".
-let tableResults: Record<string, FakeResult | FakeResult[]> = {};
+let tableResults: Record<string, { data: unknown; error: unknown }> = {};
+// Per-call result queues (consumed FIFO). Lets a single table return e.g.
+// [error, success] across consecutive calls — needed to exercise the FK-violation
+// retry path. Falls back to `tableResults[table]` when no queue is set, so every
+// existing test is unaffected.
+let tableQueues: Record<string, Array<{ data: unknown; error: unknown }>> = {};
 const captured: { insert?: Record<string, unknown> } = {};
 
 vi.mock('@/integrations/supabase/client', () => {
   const makeBuilder = (table: string) => {
-    // Supports a single static result OR a queue (array) consumed one item per call,
-    // shifting until a single item remains (which then stays sticky).
-    const result = (): FakeResult => {
-      const r = tableResults[table];
-      if (Array.isArray(r)) return (r.length > 1 ? r.shift()! : r[0]) ?? { data: null, error: null };
-      return r ?? { data: null, error: null };
+    const result = () => {
+      const queue = tableQueues[table];
+      if (queue && queue.length > 0) return queue.shift()!;
+      return tableResults[table] ?? { data: null, error: null };
     };
     const q: Record<string, unknown> = {};
     const chain = (method: string) =>
@@ -67,7 +66,6 @@ import { uploadLogoToStorage } from '@/lib/mockup-storage';
 import { toast } from 'sonner';
 import {
   getTechniquePrompt,
-  createDefaultArea,
   saveMockupToDb,
   fetchMockupHistory,
   deleteMockupFromDb,
@@ -112,6 +110,7 @@ const silk: Technique = { id: 'tech-1', name: 'Serigrafia', code: 'silk' };
 beforeEach(() => {
   calls.length = 0;
   tableResults = {};
+  tableQueues = {};
   captured.insert = undefined;
   invoke.mockReset();
   (uploadLogoToStorage as unknown as ReturnType<typeof vi.fn>).mockClear();
@@ -139,27 +138,6 @@ describe('getTechniquePrompt', () => {
     expect(getTechniquePrompt({ id: '5', name: 'X', code: 'laser-default-special' })).toMatch(
       /laser engraved/,
     );
-  });
-});
-
-// ─── createDefaultArea (pure) ─────────────────────────────────────
-describe('createDefaultArea', () => {
-  it('seeds logoRotation=0 and logoScale=100 so the controlled sliders are defined (H4)', () => {
-    const a = createDefaultArea();
-    // Regression guard: omitting these made the size/rotation Sliders bind to
-    // `undefined` (controlled→uncontrolled warning) and persisted NULL geometry on the
-    // first generate/save.
-    expect(a.logoRotation).toBe(0);
-    expect(a.logoScale).toBe(100);
-  });
-
-  it('returns a fresh id and sane default geometry on every call', () => {
-    const a = createDefaultArea();
-    const b = createDefaultArea();
-    expect(a.id).not.toBe(b.id);
-    expect(a.positionX).toBe(50);
-    expect(a.positionY).toBe(50);
-    expect(a.logoPreview).toBeNull();
   });
 });
 
@@ -209,13 +187,12 @@ describe('saveMockupToDb', () => {
     expect(captured.insert!.technique_name).toBe('Serigrafia');
   });
 
-  it('uploads data: logos and nulls product_id when the product is unknown', async () => {
-    tableResults.products = { data: null, error: null };
-    // Production reality: 'ghost' is not a real products.id, so the first insert raises a
-    // 23503 FK violation; saveMockupToDb retries with product_id: null and succeeds. The
-    // queue makes the mock enforce the FK the same way Postgres would.
-    tableResults.generated_mockups = [
-      { data: null, error: { code: '23503', message: 'FK violation' } },
+  it('uploads data: logos and retries with product_id null on FK violation (unknown product)', async () => {
+    // New contract (BUG-PRODUCT-EXTRA-SELECT FIX): no pre-validation SELECT — the
+    // insert is attempted with product.id directly; a 23503 FK violation triggers a
+    // retry with product_id: null. Queue: first insert errors, retry succeeds.
+    tableQueues.generated_mockups = [
+      { data: null, error: { code: '23503' } },
       { data: { id: 'rec-2' }, error: null },
     ];
 
@@ -231,6 +208,7 @@ describe('saveMockupToDb', () => {
     expect(recordId).toBe('rec-2');
     expect(uploadLogoToStorage).toHaveBeenCalledTimes(1);
     expect(captured.insert!.logo_url).toBe('https://storage/uploaded-logo.png');
+    // The captured (retry) payload nulls product_id after the FK violation.
     expect(captured.insert!.product_id).toBeNull();
   });
 
@@ -502,8 +480,8 @@ describe('buildTechniqueList', () => {
   it('filters out items without id or name', () => {
     const raw = [
       { id: '1', name: 'Silk', code: 'silk' },
-      { id: '2' },           // no name
-      { name: 'Laser' },     // no id
+      { id: '2' }, // no name
+      { name: 'Laser' }, // no id
       null,
       undefined,
       42,

@@ -91,6 +91,28 @@ describe("product-mapper", () => {
       expect(result.materials).toEqual(["Metal", "Plástico"]);
     });
 
+    it("extracts descriptiveTags from a flat tags array (production shape)", () => {
+      const result = mapPromobrindToProduct({
+        ...baseProduct,
+        tags: ["caneta", "metal", "  Bambu  "],
+      } as any);
+      // Flat keyword arrays feed the Match module's descriptive-tag signal…
+      expect(result.descriptiveTags).toEqual(["caneta", "metal", "Bambu"]);
+      // …while the structured marketing tags stay empty for this shape.
+      expect(result.tags.publicoAlvo).toEqual([]);
+      expect(result.tags.nicho).toEqual([]);
+    });
+
+    it("leaves descriptiveTags empty when tags is a structured marketing object", () => {
+      const result = mapPromobrindToProduct({
+        ...baseProduct,
+        tags: { publicoAlvo: ["Executivo"], nicho: ["Escritório"] },
+      } as any);
+      expect(result.descriptiveTags).toEqual([]);
+      expect(result.tags.publicoAlvo).toEqual(["Executivo"]);
+      expect(result.tags.nicho).toEqual(["Escritório"]);
+    });
+
     it("creates variations from colors", () => {
       const result = mapPromobrindToProduct(baseProduct as any);
       expect(result.variations).toHaveLength(2);
