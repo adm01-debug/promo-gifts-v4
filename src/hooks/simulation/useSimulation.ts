@@ -160,9 +160,6 @@ export function useSimulation() {
         logo_url: c.logo_url,
       })) as Client[];
     },
-    staleTime: 15 * 60 * 1000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   const { data: techniques, isLoading: techniquesLoading } = useQuery({
@@ -184,9 +181,6 @@ export function useSimulation() {
         };
       });
     },
-    staleTime: 30 * 60 * 1000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   const techniqueCodes = useMemo(
@@ -208,9 +202,6 @@ export function useSimulation() {
         simulation_data: item.simulation_data as unknown as SimulationOption[],
       }));
     },
-    staleTime: 5 * 60 * 1000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
   const savedSimulations = (_savedSimulations ?? []) as unknown as SavedSimulation[];
 
@@ -467,7 +458,7 @@ export function useSimulation() {
   }, []);
 
   // ─── Mutations ────────────────────────────────────────────
-  const saveSimulationMutation = useMutation({
+  const saveSimulationMutation = useMutation<undefined, Error, undefined>({
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
@@ -498,7 +489,7 @@ export function useSimulation() {
     },
   });
 
-  const deleteSimulationMutation = useMutation({
+  const deleteSimulationMutation = useMutation<undefined, Error, string>({
     mutationFn: async (id: string) => {
       const { error } = await untypedFrom('personalization_simulations').delete().eq('id', id);
       if (error) throw error;
