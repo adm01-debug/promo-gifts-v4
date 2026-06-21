@@ -583,6 +583,12 @@ export default [
       '@typescript-eslint/no-this-alias': 'error',
       // Batch 120: 1 zero-violation rule
       '@typescript-eslint/no-implied-eval': 'error',
+      // Batch 121: 5 zero-violation rules (beyond @typescript-eslint/recommended)
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
+      '@typescript-eslint/no-unnecessary-parameter-property-assignment': 'error',
+      '@typescript-eslint/related-getter-setter-pairs': 'error',
     },
     settings: {
       react: { version: 'detect' },
