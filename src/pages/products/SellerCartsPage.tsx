@@ -843,6 +843,10 @@ function SellerCartsContent() {
                                   setPageSize(Number(e.target.value));
                                   setPage(1);
                                 }}
+                                onBlur={(e) => {
+                                  setPageSize(Number(e.target.value));
+                                  setPage(1);
+                                }}
                                 data-testid="cart-page-size"
                                 className="h-7 rounded-md border border-border/40 bg-background px-1.5"
                               >
