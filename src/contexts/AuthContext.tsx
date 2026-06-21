@@ -475,6 +475,7 @@ const FALLBACK_AUTH: AuthContextType = {
   mfaRequired: false,
   rolesLoaded: false,
   refreshAAL: async () => {},
+  // eslint-disable-next-line @typescript-eslint/require-await
   signIn: async () => ({ error: { message: 'AuthProvider indisponível' }, data: null }),
   signOut: async () => {},
   refreshProfile: async () => {},

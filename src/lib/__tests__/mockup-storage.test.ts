@@ -62,7 +62,7 @@ describe('downloadImageFromUrl', () => {
     vi.stubGlobal('open', openSpy);
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response('not found', { status: 404 })),
+      vi.fn(() => new Response('not found', { status: 404 })),
     );
 
     await downloadImageFromUrl('https://cdn.example.com/missing.png', 'file.png');

@@ -177,6 +177,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     const video = document.querySelector('video');
     if (video) {
       // Simulate SRC_NOT_SUPPORTED (code 4) on native playback (no HLS.js attached for .mp4)
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         Object.defineProperty(video, 'error', {
           value: { code: 4, message: 'SRC_NOT_SUPPORTED' },
@@ -194,6 +195,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     const retryButton = getByRole('button', { name: /Tentar Novamente/i });
     expect(retryButton).toBeDefined();
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       fireEvent.click(retryButton);
     });
@@ -217,6 +219,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         configurable: true,
       });
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('progress'));
       });
@@ -233,6 +236,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     const video = document.querySelector('video');
     if (video) {
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('loadeddata'));
       });
@@ -248,6 +252,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     const video = document.querySelector('video');
     if (video) {
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('canplay'));
       });
@@ -276,6 +281,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       const errorHandler = hlsInstance.on.mock.calls.find((call) => call[0] === 'hlsError')![1];
 
       // Simulate 1st fatal network error (should trigger startLoad)
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         errorHandler('hlsError', {
           fatal: true,
@@ -288,6 +294,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
       // Simulate 4 more fatal network errors (total 5, > 3 threshold)
       for (let i = 0; i < 4; i++) {
+        // eslint-disable-next-line @typescript-eslint/require-await
         await act(async () => {
           errorHandler('hlsError', {
             fatal: true,
@@ -310,6 +317,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       const errorHandler = hlsInstance.on.mock.calls.find((call) => call[0] === 'hlsError')![1];
 
       // Simulate fatal media error
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         errorHandler('hlsError', {
           fatal: true,
@@ -329,6 +337,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         (call) => call[0] === 'hlsManifestParsed',
       )![1];
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         manifestHandler('hlsManifestParsed', { levels: [] });
       });
@@ -346,6 +355,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         (call) => call[0] === 'hlsFragLoaded',
       )![1];
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fragLoadedHandler('hlsFragLoaded', {});
       });
@@ -382,6 +392,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(hlsInstance.autoLevelEnabled).toBe(true);
 
       // Trigger manifest parsed to clear loading state
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         manifestHandler('hlsManifestParsed', { levels: [{ height: 720 }, { height: 1080 }] });
       });
@@ -389,6 +400,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(queryByText(/Carregando/i)).toBeNull();
 
       // Simulate first level switch
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         levelSwitchedHandler('hlsLevelSwitched', { level: 1 });
       });
@@ -397,6 +409,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(queryByText(/Carregando/i)).toBeNull();
 
       // Simulate second level switch
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         levelSwitchedHandler('hlsLevelSwitched', { level: 2 });
       });
@@ -417,6 +430,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(manualLoadBtn).toBeDefined();
 
       // Click the button
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent.click(manualLoadBtn);
       });
@@ -455,6 +469,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       const { rerender, queryByText, getByText } = render(<PromoFlixPlayer src="error.mp4" />);
 
       const video = document.querySelector('video')!;
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         Object.defineProperty(video, 'error', { value: { code: 2 }, configurable: true });
         fireEvent(video, new Event('error'));
@@ -505,6 +520,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       const { findByText } = render(<PromoFlixPlayer src="corrupt.mp4" />);
       const video = document.querySelector('video')!;
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         Object.defineProperty(video, 'error', { value: { code: 3 }, configurable: true });
         fireEvent(video, new Event('error'));
@@ -558,6 +574,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
       // O navegador dispara `volumechange` quando o componente faz video.muted = true;
       // jsdom não dispara sozinho, então simulamos.
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('volumechange'));
       });
@@ -571,12 +588,14 @@ describe('PromoFlixPlayer Automated Tests', () => {
       const video = container.querySelector('video')!;
 
       // Consome o flag de supressão do mute forçado pelo autoplay (não persiste).
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('volumechange'));
       });
       expect(localStorage.getItem('promoflix_muted')).toBeNull();
 
       // Agora uma ação real do usuário (desmutar) deve persistir normalmente.
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         video.muted = false;
         fireEvent(video, new Event('volumechange'));

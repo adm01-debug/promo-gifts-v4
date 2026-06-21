@@ -96,7 +96,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     } as unknown as ReturnType<typeof useSecretsManager>);
   });
 
-  it('should render the table with correct data', async () => {
+  it('should render the table with correct data', () => {
     render(
       <TooltipProvider>
         <ConnectionsOverviewTable />
@@ -110,7 +110,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     expect(screen.getByText('Connection timeout')).toBeInTheDocument();
   });
 
-  it('should show status badges correctly', async () => {
+  it('should show status badges correctly', () => {
     render(
       <TooltipProvider>
         <ConnectionsOverviewTable />
@@ -121,7 +121,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     expect(screen.getAllByRole('row')).toHaveLength(3); // Header + 2 data rows
   });
 
-  it('should trigger refresh when button is clicked', async () => {
+  it('should trigger refresh when button is clicked', () => {
     const refreshMock = vi.fn();
     useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
@@ -143,7 +143,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     expect(refreshMock).toHaveBeenCalledTimes(1);
   });
 
-  it('should handle empty state', async () => {
+  it('should handle empty state', () => {
     useConnectionsOverviewMock.mockReturnValue({
       rows: [],
       loading: false,

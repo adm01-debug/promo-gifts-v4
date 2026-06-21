@@ -145,12 +145,14 @@ function getChildLink(label: string): HTMLElement | null {
 }
 
 async function clickHeader() {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     fireEvent.click(getGroupHeader());
   });
 }
 
 async function go(router: Router, delta: number) {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     router.navigate(delta);
   });

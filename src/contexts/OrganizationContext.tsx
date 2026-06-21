@@ -60,6 +60,7 @@ const OrganizationContext = createContext<OrganizationContextType>({
   currentRole: 'owner',
   isLoading: false,
   switchOrganization: noop,
+  // eslint-disable-next-line @typescript-eslint/require-await
   createOrganization: async () => FIXED_ORG,
   refetch: noopAsync,
 });
@@ -73,6 +74,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         currentRole: 'owner',
         isLoading: false,
         switchOrganization: noop,
+        // eslint-disable-next-line @typescript-eslint/require-await
         createOrganization: async () => FIXED_ORG,
         refetch: noopAsync,
       }}

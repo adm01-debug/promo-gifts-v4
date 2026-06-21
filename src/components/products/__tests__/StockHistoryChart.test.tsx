@@ -66,7 +66,7 @@ describe('StockHistoryChart Tooltips', () => {
     expect(potencialBadge).toBeInTheDocument();
   });
 
-  it('shows tooltip content on hover (KpiCard)', async () => {
+  it('shows tooltip content on hover (KpiCard)', () => {
     render(<StockHistoryChart productId="test-prod" />);
 
     const firstInfoButton = screen.getAllByRole('button', { name: /Sobre/i })[0];

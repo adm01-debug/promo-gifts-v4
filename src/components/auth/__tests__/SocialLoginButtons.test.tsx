@@ -63,6 +63,7 @@ describe('SocialLoginButtons (Google)', () => {
     const btn = getGoogleButton();
     expect(btn).toHaveTextContent('Continuar com Google');
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       btn.click();
     });
@@ -84,6 +85,7 @@ describe('SocialLoginButtons (Google)', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     signInWithOAuthMock.mockImplementation(() => new Promise(() => {}));
     render(<SocialLoginButtons />);
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
@@ -100,6 +102,7 @@ describe('SocialLoginButtons (Google)', () => {
     signInWithOAuthMock.mockImplementation(() => new Promise(() => {}));
     const onError = vi.fn();
     render(<SocialLoginButtons onError={onError} />);
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
@@ -128,6 +131,7 @@ describe('SocialLoginButtons (Google)', () => {
     });
     const onError = vi.fn();
     render(<SocialLoginButtons onError={onError} />);
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
@@ -152,6 +156,7 @@ describe('SocialLoginButtons (Google)', () => {
     signInWithOAuthMock.mockRejectedValue(new Error('Failed to fetch'));
     const onError = vi.fn();
     render(<SocialLoginButtons onError={onError} />);
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
@@ -171,12 +176,14 @@ describe('SocialLoginButtons (Google)', () => {
   it('6) visibilitychange (aba volta a ficar visível) → libera o spinner', async () => {
     signInWithOAuthMock.mockImplementation(() => new Promise(() => {}));
     render(<SocialLoginButtons />);
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
     expect(getGoogleButton()).toBeDisabled();
 
     // Simula aba voltando ao foreground
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       Object.defineProperty(document, 'visibilityState', {
         configurable: true,
@@ -200,6 +207,7 @@ describe('SocialLoginButtons (Google)', () => {
     render(<SocialLoginButtons retryRef={retryRef} />);
 
     // 1ª chamada via click
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
@@ -210,6 +218,7 @@ describe('SocialLoginButtons (Google)', () => {
     expect(typeof retryRef.current).toBe('function');
 
     // 2ª chamada via retry (ex: botão "Tentar novamente" do banner)
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       retryRef.current?.();
     });
@@ -235,6 +244,7 @@ describe('SocialLoginButtons (Google)', () => {
     signInWithOAuthMock.mockImplementation(() => new Promise(() => {}));
     render(<SocialLoginButtons />);
     expect(sessionStorage.getItem('__oauth_pending')).toBeNull();
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });
@@ -248,6 +258,7 @@ describe('SocialLoginButtons (Google)', () => {
       error: { message: 'Unsupported provider: provider is not enabled' },
     });
     render(<SocialLoginButtons />);
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getGoogleButton().click();
     });

@@ -100,6 +100,7 @@ function groupShouldAutoOpen(pathname: string): boolean {
 }
 
 async function go(router: Router, delta: number) {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     router.navigate(delta);
   });

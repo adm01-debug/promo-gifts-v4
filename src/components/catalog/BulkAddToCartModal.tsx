@@ -49,7 +49,7 @@ export function BulkAddToCartModal({
     }
   }, [open]);
 
-  const handleAdd = useCallback(async () => {
+  const handleAdd = useCallback(() => {
     if (!activeCart) return;
 
     const items =
@@ -127,7 +127,10 @@ export function BulkAddToCartModal({
             {variantSelections && variantSelections.some((s) => s.variant) && (
               <div className="max-h-32 space-y-1 overflow-y-auto">
                 {variantSelections.map((s) => (
-                  <div key={s.product.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div
+                    key={s.product.id}
+                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                  >
                     <span className="flex-1 truncate">{s.product.name}</span>
                     {s.variant ? (
                       <span className="shrink-0 font-medium text-foreground">

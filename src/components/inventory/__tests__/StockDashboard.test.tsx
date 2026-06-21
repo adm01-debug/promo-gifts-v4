@@ -367,6 +367,7 @@ describe('StockDashboard — info alerts', () => {
 describe('StockDashboard — keyboard shortcut', () => {
   it('Ctrl+Shift+S dispara refresh e toast', async () => {
     renderDashboard();
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'S', ctrlKey: true, shiftKey: true }),

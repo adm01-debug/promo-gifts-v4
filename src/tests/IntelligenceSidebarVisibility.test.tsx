@@ -43,7 +43,9 @@ const renderSidebarWithRole = (isAdmin: boolean) => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TooltipProvider>
-          <AuthContext.Provider value={mockAuthContext as unknown as React.ContextType<typeof AuthContext>}>
+          <AuthContext.Provider
+            value={mockAuthContext as unknown as React.ContextType<typeof AuthContext>}
+          >
             <SidebarReorganized isOpen={true} onToggle={vi.fn()} />
           </AuthContext.Provider>
         </TooltipProvider>
@@ -53,9 +55,9 @@ const renderSidebarWithRole = (isAdmin: boolean) => {
 };
 
 describe('Sidebar Visibility Regression (Intelligence & Trends)', () => {
-  it('shows Insights group and its items for regular users (non-admin)', async () => {
+  it('shows Insights group and its items for regular users (non-admin)', () => {
     renderSidebarWithRole(false);
-    
+
     // Check for "Insights" group by label (uppercase in some contexts, but we use the label from navGroups)
     const insightsLabel = screen.getByText(/INSIGHTS/i);
     expect(insightsLabel).toBeInTheDocument();

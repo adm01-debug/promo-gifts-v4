@@ -37,7 +37,7 @@ describe('useSimilarProducts', () => {
     vi.clearAllMocks();
   });
 
-  it('deve retornar lista vazia se o produto for nulo', async () => {
+  it('deve retornar lista vazia se o produto for nulo', () => {
     const { result } = renderHook(() => useSimilarProducts(null), {
       wrapper: createWrapper(),
     });

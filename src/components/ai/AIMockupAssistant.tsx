@@ -83,7 +83,7 @@ export function AIMockupAssistant({
     };
   }, []);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {

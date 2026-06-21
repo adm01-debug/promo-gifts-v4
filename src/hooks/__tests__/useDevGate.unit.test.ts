@@ -47,6 +47,7 @@ describe('useDevGate Hook — Unit Tests', () => {
     const spy = vi.spyOn(devInfraGate, 'shouldShow').mockReturnValue(false);
 
     vi.useFakeTimers();
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       devInfraGate.invalidateCache();
       vi.advanceTimersByTime(100);

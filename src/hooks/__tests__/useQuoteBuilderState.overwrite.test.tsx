@@ -43,12 +43,12 @@ const { updateQuoteSpy, createQuoteSpy, requestApprovalSpy, fetchQuoteSpy, VALID
         unit_price: 100,
         personalizations: [],
       },
-      updateQuoteSpy: vi.fn(async () => ({ id: 'quote-1' })),
-      createQuoteSpy: vi.fn(async () => ({ id: 'quote-1' })),
-      requestApprovalSpy: vi.fn(async () => undefined),
+      updateQuoteSpy: vi.fn(() => ({ id: 'quote-1' })),
+      createQuoteSpy: vi.fn(() => ({ id: 'quote-1' })),
+      requestApprovalSpy: vi.fn(() => undefined),
       // Referência estável: o efeito de load do hook depende de `fetchQuote`; um
       // spy recriado a cada render reentraria no efeito em loop.
-      fetchQuoteSpy: vi.fn(async () => loadedQuote),
+      fetchQuoteSpy: vi.fn(() => loadedQuote),
     };
   });
 
