@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 171: 5 zero-violation rules (saved: no-extend-native 0v✓, no-unsafe-declaration-merging 0v✓, no-constructor-return 0v✓ — Batch 172)
+      '@typescript-eslint/prefer-as-const': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-constructor': 'error',
+      'no-proto': 'error',
+      'no-iterator': 'error',
       // Batch 170: 5 zero-violation rules (excluded: no-throw-literal already in Batch 163 — saved: prefer-as-const 0v✓, no-useless-concat 0v✓, no-useless-constructor 0v✓ — Batch 171)
       'no-new-wrappers': 'error',
       'no-object-constructor': 'error',
