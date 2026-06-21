@@ -281,71 +281,12 @@ export function StockFilterToolbar({
                 />
               </FilterSection>
 
-              {/* FilterSection: Estoque */}
-              <FilterSection
-                id="estoque"
-                title="Estoque"
-                icon={<Package className="h-4 w-4" />}
-                openSections={openSections}
-                onToggle={toggleSection}
-                activeCount={sectionCounts.estoque}
-                activeSummary={
-                  filters.minQuantityNeeded ? `≥${filters.minQuantityNeeded}` : undefined
-                }
-              >
-                <div className="space-y-2 px-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      Mínimo por cor
-                    </span>
-                    <DebouncedPriceInput
-                      value={filters.minQuantityNeeded || ''}
-                      onChange={(v) => onUpdateFilter('minQuantityNeeded', v > 0 ? v : undefined)}
-                      fallback={0}
-                      placeholder="Ex: 500"
-                      min={0}
-                      className={
-                        filters.minQuantityNeeded && filters.minQuantityNeeded > 0
-                          ? 'border-brand-primary/60'
-                          : ''
-                      }
-                    />
-                    <span className="text-xs text-muted-foreground">un.</span>
-                  </div>
+              {/* Seção "Estoque" removida: o input "Preciso de X un..." no toolbar
+                  já controla minQuantityNeeded e o toggle "Em Estoque / Estoque Futuro"
+                  cobre includeFutureStock. minQtyIncludesFutureStock é derivado
+                  automaticamente do toggle do toolbar (ver normalização abaixo). */}
 
-                  {/* Sub-toggle: incluir Estoque Futuro no cálculo da régua */}
-                  <div className="flex items-start justify-between gap-2 rounded-md border border-border/40 bg-muted/30 px-2 py-1.5">
-                    <Label
-                      htmlFor="min-qty-include-future-switch"
-                      className="flex cursor-pointer flex-col gap-0.5"
-                    >
-                      <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
-                        <Sparkles className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-                        Incluir Estoque Futuro no cálculo
-                      </span>
-                      <span className="text-[10px] leading-tight text-muted-foreground">
-                        {filters.minQtyIncludesFutureStock
-                          ? 'Somando reposições previstas ao pool da régua.'
-                          : 'Régua estrita: usa apenas disponível agora.'}
-                      </span>
-                    </Label>
-                    <Switch
-                      id="min-qty-include-future-switch"
-                      data-testid="min-qty-include-future-switch"
-                      checked={!!filters.minQtyIncludesFutureStock}
-                      disabled={!filters.includeFutureStock}
-                      onCheckedChange={(v) => onUpdateFilter('minQtyIncludesFutureStock', v)}
-                      aria-label="Incluir Estoque Futuro no cálculo da régua de quantidade"
-                    />
-                  </div>
-                  {!filters.includeFutureStock && (
-                    <p className="px-0.5 text-[10px] leading-tight text-muted-foreground">
-                      Ative primeiro o botão <strong>Estoque Futuro</strong> (na barra) para poder
-                      incluir reposições no cálculo.
-                    </p>
-                  )}
-                </div>
-              </FilterSection>
+
 
               {/* FilterSection: Fornecedores */}
               <FilterSection
