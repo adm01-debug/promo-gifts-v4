@@ -68,8 +68,14 @@ interface StockRiskHeroProps {
   className?: string;
 }
 
-export function StockRiskHero({ onLevelFilter, className }: StockRiskHeroProps) {
-  const enabled = isFeatureEnabled('useEmaRupture');
+export function StockRiskHero(props: StockRiskHeroProps) {
+  // Gate via flag ANTES de chamar hooks que exigem QueryClientProvider.
+  // Preserva compat com testes legados que renderizam sem provider.
+  if (!isFeatureEnabled('useEmaRupture')) return null;
+  return <StockRiskHeroInner {...props} />;
+}
+
+function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
   const { alerts, isLoading } = useRuptureAlerts();
   const { data: health } = useEmaPipelineHealth();
 
