@@ -41,6 +41,14 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const PAGE = 500; // tamanho de página para paginação completa
     const UPDATE_BATCH = 50;
+    // HARDENING (auditoria Novidades 2026-06-20): guarda anti-loop infinito para os
+    // laços de paginação abaixo. Se um UPDATE falhar de forma PERSISTENTE numa página
+    // cheia, o SELECT seguinte re-traria as MESMAS linhas (flag ainda true) e o
+    // while(true) giraria até o timeout de 55s do cron. Espelha o MAX_PAGES dos hooks
+    // de novidades (useNovelties.ts, ISSUE-8). 1000 × 500 = 500k linhas/laço — ordens
+    // de grandeza acima de qualquer lote diário de expiração, então nunca trunca
+    // trabalho legítimo; só impede o giro infinito.
+    const MAX_LOOP_PAGES = 1000;
 
     // Utilitário: limpa um flag expirado em um banco específico, com paginação completa
     async function cleanExpiredFlag(
@@ -51,7 +59,14 @@ Deno.serve(async (req) => {
       extraClearFields: string[] = [],
     ): Promise<number> {
       let totalCleaned = 0;
+      let pageGuard = 0;
       while (true) {
+        if (pageGuard++ >= MAX_LOOP_PAGES) {
+          console.warn(
+            `⚠️ [${dbLabel}] ${flag}: limite de ${MAX_LOOP_PAGES} páginas atingido — abortando laço (possível UPDATE falhando em loop)`,
+          );
+          break;
+        }
         const { data: expired, error: selectError } = await db
           .from('products')
           .select('id')
@@ -106,7 +121,14 @@ Deno.serve(async (req) => {
     //    fn_reactivate_valid_novelties (Frente 3) na hora seguinte — ghost novelty de ~22h.
     try {
       let pnCleaned = 0;
+      let pnPageGuard = 0;
       while (true) {
+        if (pnPageGuard++ >= MAX_LOOP_PAGES) {
+          console.warn(
+            `⚠️ product_novelties: limite de ${MAX_LOOP_PAGES} páginas atingido — abortando laço (possível UPDATE falhando em loop)`,
+          );
+          break;
+        }
         const { data: expiredPn, error: pnSelectErr } = await supabase
           .from('product_novelties')
           .select('id')
