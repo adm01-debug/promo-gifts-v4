@@ -241,6 +241,18 @@ describe('SIM — filtros isolados (resultado exato)', () => {
     expect(out).not.toContain('2'); // stock 0, sem variações
     expect(out).toContain('7'); // stock 0 mas variação G tem 3
   });
+  it('inStock exclui produto com stock > 0 mas abaixo de minQuantity (BUG-APF-02)', () => {
+    // Produto com estoque físico positivo (3 un.) mas minQuantity=5 → stockStatus='out-of-stock'
+    // O filtro "Em estoque" NÃO deve incluí-lo pois não é possível efetuar pedido.
+    const lowStockProduct = makeProduct({
+      id: 'low-moq',
+      stock: 3,
+      stockStatus: 'out-of-stock', // stock=3 < minQuantity=5 → calculado por getCatalogStockStatus
+    });
+    const singleCatalog = [lowStockProduct];
+    const out = applyProductFilters(singleCatalog, f({ inStock: true }), 'newest', baseCtx());
+    expect(out).toHaveLength(0); // excluído porque stockStatus='out-of-stock'
+  });
   it('featured retorna apenas marcados', () => {
     expect(ids(run(f({ featured: true })))).toEqual(['1', '4']);
   });
