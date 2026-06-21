@@ -32,19 +32,33 @@ export interface CartTemplate {
 
 const QUERY_KEY = 'cart-templates';
 
-// Runtime guard: rejeita itens que não tenham os campos obrigatórios para evitar
-// crash no componente ao renderizar um template com JSON malformado no banco.
+// Runtime guard: rejeita itens malformados e normaliza campos numéricos.
+// `typeof NaN === 'number'` é true, por isso usamos Number.isFinite() em vez de typeof.
+// Aceita preços como string ("29.90") para compatibilidade com dados legados no banco.
+// Campos opcionais (color_name, color_hex, etc.) só são incluídos se forem string.
 function parseTemplateItems(raw: unknown): CartTemplateItem[] {
   if (!Array.isArray(raw)) return [];
-  return raw.filter(
-    (item): item is CartTemplateItem =>
-      item !== null &&
-      typeof item === 'object' &&
-      typeof (item as Record<string, unknown>).product_id === 'string' &&
-      typeof (item as Record<string, unknown>).product_name === 'string' &&
-      typeof (item as Record<string, unknown>).product_price === 'number' &&
-      typeof (item as Record<string, unknown>).quantity === 'number',
-  );
+  return raw.reduce<CartTemplateItem[]>((acc, item) => {
+    if (item === null || typeof item !== 'object') return acc;
+    const o = item as Record<string, unknown>;
+    if (typeof o.product_id !== 'string' || !o.product_id) return acc;
+    if (typeof o.product_name !== 'string' || !o.product_name) return acc;
+    const price = Number(o.product_price);
+    if (!Number.isFinite(price) || price < 0) return acc;
+    const qty = Math.trunc(Number(o.quantity));
+    if (!Number.isFinite(qty) || qty < 1) return acc;
+    acc.push({
+      product_id: o.product_id,
+      product_name: o.product_name,
+      product_price: price,
+      quantity: qty,
+      ...(typeof o.product_sku === 'string' && { product_sku: o.product_sku }),
+      ...(typeof o.product_image_url === 'string' && { product_image_url: o.product_image_url }),
+      ...(typeof o.color_name === 'string' && { color_name: o.color_name }),
+      ...(typeof o.color_hex === 'string' && { color_hex: o.color_hex }),
+    });
+    return acc;
+  }, []);
 }
 
 export function useCartTemplates() {

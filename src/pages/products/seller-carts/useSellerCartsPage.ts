@@ -349,6 +349,12 @@ export function useSellerCartsPage() {
 
   const handleLoadTemplate = useCallback(
     (items: CartTemplateItem[]) => {
+      if (items.length === 0) {
+        toast.warning('Template sem itens válidos', {
+          description: 'Nenhum item pôde ser carregado. Verifique se o template está correto.',
+        });
+        return;
+      }
       // silent: cada item entra sem toast individual; mostramos um único
       // toast agregado abaixo (evita empilhar N toasts ao aplicar template).
       items.forEach((item) => {

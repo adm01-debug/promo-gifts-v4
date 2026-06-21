@@ -15,7 +15,7 @@ import { formatCurrency } from '../CartUtilComponents';
  */
 export function csvCell(value: number | string | null | undefined): string {
   const raw = value === null || value === undefined ? '' : String(value);
-  const guarded = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  const guarded = /^[=+\-@\t\r\n]/.test(raw) ? `'${raw}` : raw;
   return `"${guarded.replace(/"/g, '""')}"`;
 }
 
