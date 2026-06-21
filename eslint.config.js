@@ -418,6 +418,13 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 122: 6 zero-violation rules + fix pre-existing violations (removed: no-object-type-as-default-prop many, strict-void-return many, non-nullable-type-assertion-style many, no-unsafe-type-assertion many, no-await-in-loop many, display-name many)
+      'react/no-unknown-property': ['error', { ignore: ['cmdk-input-wrapper'] }],
+      'array-callback-return': 'error',
+      'jsx-a11y/anchor-has-content': 'error',
+      'react/iframe-missing-sandbox': 'error',
+      'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
+      'react/jsx-fragments': ['error', 'syntax'],
       // Batch 119: 3 zero-violation rules (removed: jsx-newline many, forbid-component-props many, jsx-max-props-per-line many, jsx-closing-tag-location 3v)
       'react/jsx-equals-spacing': 'error',
       'react/jsx-tag-spacing': 'error',
