@@ -569,10 +569,18 @@ export function StockDashboard() {
           Painel de Risco do Fornecedor
         </button>
         {riskPanelOpen && (
-          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-            <SupplierRiskPanel products={allProductStocks} />
-          </Suspense>
+          <div className="space-y-4">
+            {isFeatureEnabled('useEmaRupture') && (
+              <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+                <RupturePanelEma />
+              </Suspense>
+            )}
+            <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+              <SupplierRiskPanel products={allProductStocks} />
+            </Suspense>
+          </div>
         )}
+
       </div>
 
       {/* Info Alerts */}
