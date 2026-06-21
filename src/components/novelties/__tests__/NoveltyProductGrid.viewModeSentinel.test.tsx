@@ -120,40 +120,29 @@ vi.mock('@/components/collections/AddToCollectionModal', () => ({
 }));
 vi.mock('@/components/products/BulkActionBar', () => ({ BulkActionBar: () => null }));
 
+// O componente consome estes stores via seletor — useFavoritesStore((s) => s.isFavorite).
+// O mock precisa APLICAR o seletor; do contrário `isFavorite` recebe o objeto inteiro
+// (não a função) e a render do modo list quebra com "isFavorite is not a function".
 vi.mock('@/stores/useFavoritesStore', () => {
-  const isFavorite = vi.fn(() => false);
-  const toggleFavorite = vi.fn();
-  const useFavoritesStore = vi.fn(
-    (
-      selector?: (s: {
-        isFavorite: typeof isFavorite;
-        toggleFavorite: typeof toggleFavorite;
-      }) => unknown,
-    ) => {
-      const state = { isFavorite, toggleFavorite };
-      return typeof selector === 'function' ? selector(state) : state;
-    },
-  );
-  return { useFavoritesStore };
+  const state = { isFavorite: () => false, toggleFavorite: vi.fn() };
+  return {
+    useFavoritesStore: vi.fn((selector?: (s: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+    ),
+  };
 });
 vi.mock('@/stores/useComparisonStore', () => {
-  const isInCompare = vi.fn(() => false);
-  const addToCompare = vi.fn();
-  const removeFromCompare = vi.fn();
-  const useComparisonStore = vi.fn(
-    (
-      selector?: (s: {
-        isInCompare: typeof isInCompare;
-        addToCompare: typeof addToCompare;
-        removeFromCompare: typeof removeFromCompare;
-        canAddMore: boolean;
-      }) => unknown,
-    ) => {
-      const state = { isInCompare, addToCompare, removeFromCompare, canAddMore: true };
-      return typeof selector === 'function' ? selector(state) : state;
-    },
-  );
-  return { useComparisonStore };
+  const state = {
+    isInCompare: () => false,
+    addToCompare: vi.fn(),
+    removeFromCompare: vi.fn(),
+    canAddMore: true,
+  };
+  return {
+    useComparisonStore: vi.fn((selector?: (s: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+    ),
+  };
 });
 
 const wrapper = ({ children }: { children: ReactNode }) => (
