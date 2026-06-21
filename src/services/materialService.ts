@@ -84,14 +84,22 @@ class MaterialService {
     // antiga) ou 503 (edge nova). Em ambos os casos devolvemos payload vazio
     // em vez de quebrar a UI com tela branca — o caller faz retry natural.
     const errCode: string | undefined = result?.code;
-    const errMsg: string = String(result?.error ?? '');
+    const errMsg = String(result?.error ?? '');
     const isSchemaWarmup =
-      errCode === 'PGRST002' ||
-      /schema cache/i.test(errMsg) ||
-      response.status === 503;
+      errCode === 'PGRST002' || /schema cache/i.test(errMsg) || response.status === 503;
     if (isSchemaWarmup) {
-      console.warn('[materialService] external schema cache warming up — empty payload', { status: response.status, errCode, errMsg });
-      return { data: [], records: [], count: 0, _unavailable: true, _retryable: true } as unknown as T;
+      console.warn('[materialService] external schema cache warming up — empty payload', {
+        status: response.status,
+        errCode,
+        errMsg,
+      });
+      return {
+        data: [],
+        records: [],
+        count: 0,
+        _unavailable: true,
+        _retryable: true,
+      } as unknown as T;
     }
 
     if (!response.ok) {

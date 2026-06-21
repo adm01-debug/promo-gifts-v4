@@ -93,9 +93,15 @@ export default function AdminTemasPage() {
     const def = getDefaultConfig();
     setConfig(def);
     const saved = saveThemeConfig(def);
-    if (saved) setSavedConfig(def);
-    // setAppTheme removed as theme is fixed
-    toast.success('Tema restaurado ao padrão');
+    if (saved) {
+      setSavedConfig(def);
+      toast.success('Tema restaurado ao padrão');
+    } else {
+      toast.error('Não foi possível salvar o tema restaurado', {
+        description:
+          'O armazenamento local está indisponível. O padrão será perdido ao recarregar.',
+      });
+    }
   };
 
   return (
