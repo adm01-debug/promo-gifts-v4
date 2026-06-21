@@ -21,12 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertTriangle, TrendingDown, Activity, Info, ShoppingCart } from 'lucide-react';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import {
@@ -56,9 +51,9 @@ function OptInEmpty() {
         <div>
           <p className="font-semibold">Motor EMA desativado</p>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            O painel preditivo de ruptura por fornecedor (EMA α=0.3) está disponível mas
-            desligado por padrão. Ative a feature flag <code>useEmaRupture</code> para
-            visualizar cobertura em dias, lead time efetivo e nível de alerta.
+            O painel preditivo de ruptura por fornecedor (EMA α=0.3) está disponível mas desligado
+            por padrão. Ative a feature flag <code>useEmaRupture</code> para visualizar cobertura em
+            dias, lead time efetivo e nível de alerta.
           </p>
         </div>
       </CardContent>
@@ -182,8 +177,8 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
                 </Badge>
               </CardTitle>
               <CardDescription className="mt-1">
-                EMA α=0.3 das vendas diárias × lead time real × fator segurança 1.5.
-                Ordenado por prioridade crescente.
+                EMA α=0.3 das vendas diárias × lead time real × fator segurança 1.5. Ordenado por
+                prioridade crescente.
               </CardDescription>
             </div>
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
@@ -229,7 +224,7 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
                     <th className="px-2 py-2 text-right">EMA/dia</th>
                     <th className="px-2 py-2 text-right">Cobertura</th>
                     <th className="px-2 py-2 text-right">Lead time</th>
-                    <th className="px-2 py-2"></th>
+                    <th className="px-2 py-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -241,9 +236,7 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
                       <td className="px-2 py-2">
                         <RuptureLevelBadge level={row.nivel_alerta} />
                       </td>
-                      <td className="px-2 py-2 text-foreground">
-                        {row.supplier_name ?? '—'}
-                      </td>
+                      <td className="px-2 py-2 text-foreground">{row.supplier_name ?? '—'}</td>
                       <td className="px-2 py-2 font-mono text-xs text-muted-foreground">
                         {row.supplier_sku ?? `${row.variant_id.slice(0, 8)}…`}
                       </td>
@@ -253,10 +246,8 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
                       <td className="px-2 py-2 text-right tabular-nums">
                         {formatNum(row.ema_diaria, 2)}
                       </td>
-                      <td className="px-2 py-2 text-right tabular-nums font-semibold">
-                        {row.cobertura_dias === null
-                          ? '—'
-                          : `${formatNum(row.cobertura_dias, 1)}d`}
+                      <td className="px-2 py-2 text-right font-semibold tabular-nums">
+                        {row.cobertura_dias === null ? '—' : `${formatNum(row.cobertura_dias, 1)}d`}
                       </td>
                       <td className="px-2 py-2 text-right">
                         <TooltipProvider delayDuration={150}>
@@ -303,7 +294,9 @@ function RupturePanelEmaInner({ focusedLevel }: Props) {
       {/* Etapa 5: Modal Pedir Reposição */}
       <PurchaseOrderModal
         open={poRow !== null}
-        onOpenChange={(open) => { if (!open) setPoRow(null); }}
+        onOpenChange={(open) => {
+          if (!open) setPoRow(null);
+        }}
         row={poRow}
       />
     </div>

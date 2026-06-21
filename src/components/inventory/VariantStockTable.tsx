@@ -303,14 +303,11 @@ function FlatVariantRow({
           />
         </TableCell>
         {emaEnabled && (
-          <TableCell
-            className="hidden lg:table-cell"
-            data-testid="stock-row-ema-coverage"
-          >
+          <TableCell className="hidden lg:table-cell" data-testid="stock-row-ema-coverage">
             {emaAlert ? (
               <div className="flex flex-col items-start gap-0.5">
                 <RuptureLevelBadge level={emaAlert.nivel_alerta} className="text-[10px]" />
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="text-[10px] tabular-nums text-muted-foreground">
                   {emaAlert.cobertura_dias !== null && Number.isFinite(emaAlert.cobertura_dias)
                     ? `${emaAlert.cobertura_dias!.toFixed(1)} d`
                     : '—'}
@@ -870,7 +867,7 @@ function VariantStockTableInner({
                       isSelected={selection.isSelected(k)}
                       onToggleSelect={() => selection.toggle(k)}
                       emaEnabled={emaEnabled}
-                      emaAlert={emaEnabled ? emaByVariantId.get(variant.variantId) : undefined}
+                      emaAlert={emaEnabled ? emaByVariantId?.get(variant.variantId) : undefined}
                     />
                   );
                 })}

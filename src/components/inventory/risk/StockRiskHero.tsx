@@ -13,47 +13,37 @@ import { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Activity, Clock, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isFeatureEnabled } from '@/lib/feature-flags';
-import {
-  useRuptureAlerts,
-  type RuptureLevel,
-} from '@/hooks/stock/useRuptureAlerts';
+import { useRuptureAlerts, type RuptureLevel } from '@/hooks/stock/useRuptureAlerts';
 import { useEmaPipelineHealth } from '@/hooks/stock/useEmaPipelineHealth';
 
 const LEVELS: RuptureLevel[] = ['RUPTURA', 'CRÍTICO', 'ALERTA', 'ATENÇÃO', 'OK'];
 
 const LEVEL_STYLES: Record<RuptureLevel, string> = {
-  RUPTURA:
-    'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15',
-  'CRÍTICO':
-    'border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10',
+  RUPTURA: 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15',
+  CRÍTICO: 'border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10',
   ALERTA: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/15',
-  'ATENÇÃO': 'border-warning/30 bg-warning/5 text-warning hover:bg-warning/10',
+  ATENÇÃO: 'border-warning/30 bg-warning/5 text-warning hover:bg-warning/10',
   OK: 'border-success/30 bg-success/5 text-success hover:bg-success/10',
 };
 
 const LEVEL_DESC: Record<RuptureLevel, string> = {
   RUPTURA: 'Estoque zerado ou cobertura ≤ 0d',
-  'CRÍTICO': 'Cobertura abaixo do lead time efetivo',
+  CRÍTICO: 'Cobertura abaixo do lead time efetivo',
   ALERTA: 'Cobertura entre 1× e 2× lead time',
-  'ATENÇÃO': 'Cobertura entre 2× e 3× lead time',
+  ATENÇÃO: 'Cobertura entre 2× e 3× lead time',
   OK: 'Cobertura > 3× lead time',
 };
 
-function formatRelative(iso: string | null): { label: string; tone: 'ok' | 'warn' | 'bad' } {
+function formatRelative(iso: string | null): { label: string; tone: 'bad' | 'ok' | 'warn' } {
   if (!iso) return { label: 'sem dados', tone: 'bad' };
   const ts = new Date(iso).getTime();
   if (!Number.isFinite(ts)) return { label: 'sem dados', tone: 'bad' };
   const diffMin = Math.max(0, Math.floor((Date.now() - ts) / 60_000));
-  const tone: 'ok' | 'warn' | 'bad' =
+  const tone: 'bad' | 'ok' | 'warn' =
     diffMin <= 60 * 26 ? 'ok' : diffMin <= 60 * 48 ? 'warn' : 'bad';
   if (diffMin < 60) return { label: `há ${diffMin} min`, tone };
   const diffH = Math.floor(diffMin / 60);
@@ -83,9 +73,9 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
   const counts = useMemo(() => {
     const out: Record<RuptureLevel, number> = {
       RUPTURA: 0,
-      'CRÍTICO': 0,
+      CRÍTICO: 0,
       ALERTA: 0,
-      'ATENÇÃO': 0,
+      ATENÇÃO: 0,
       OK: 0,
     };
     for (const a of alerts) {
@@ -110,7 +100,7 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
   }, [alerts]);
 
   // Saúde do pipeline → tom do pulse.
-  const pulseTone: 'ok' | 'warn' | 'bad' = useMemo(() => {
+  const pulseTone: 'bad' | 'ok' | 'warn' = useMemo(() => {
     if (!health || health.length === 0) return 'warn';
     if (health.some((h) => h.status === 'FALHA')) return 'bad';
     if (health.some((h) => h.status === 'ATRASO')) return 'warn';
@@ -120,9 +110,7 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
   // Última execução = maior `ultima_execucao` entre componentes.
   const lastRun = useMemo(() => {
     if (!health || health.length === 0) return null;
-    const valid = health
-      .map((h) => h.ultima_execucao)
-      .filter((v): v is string => Boolean(v));
+    const valid = health.map((h) => h.ultima_execucao).filter((v): v is string => Boolean(v));
     if (valid.length === 0) return null;
     return valid.sort().reverse()[0];
   }, [health]);
@@ -131,11 +119,7 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
   // (gate de flag já aplicado no wrapper StockRiskHero)
 
   const pulseColor =
-    pulseTone === 'ok'
-      ? 'bg-success'
-      : pulseTone === 'warn'
-        ? 'bg-warning'
-        : 'bg-destructive';
+    pulseTone === 'ok' ? 'bg-success' : pulseTone === 'warn' ? 'bg-warning' : 'bg-destructive';
 
   const total = alerts.length;
 
@@ -156,9 +140,7 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
             <span className="font-semibold uppercase tracking-wider">
               Risco preditivo (EMA α=0.3)
             </span>
-            {isLoading && (
-              <span className="text-[10px] text-muted-foreground/70">carregando…</span>
-            )}
+            {isLoading && <span className="text-[10px] text-muted-foreground/70">carregando…</span>}
             {!isLoading && total > 0 && (
               <span className="text-[10px] text-muted-foreground/70">
                 · {total} SKU{total > 1 ? 's' : ''} monitorado{total > 1 ? 's' : ''}
@@ -212,11 +194,13 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
           data-testid="risk-hero-horizons"
           aria-label="Projeção de rupturas por horizonte"
         >
-          {([
-            { key: 'd7', label: '7d', value: horizonCounts.d7 },
-            { key: 'd15', label: '15d', value: horizonCounts.d15 },
-            { key: 'd30', label: '30d', value: horizonCounts.d30 },
-          ] as const).map((h) => (
+          {(
+            [
+              { key: 'd7', label: '7d', value: horizonCounts.d7 },
+              { key: 'd15', label: '15d', value: horizonCounts.d15 },
+              { key: 'd30', label: '30d', value: horizonCounts.d30 },
+            ] as const
+          ).map((h) => (
             <div key={h.key} className="flex flex-col items-center leading-tight">
               <span
                 className={cn(
@@ -248,10 +232,7 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
                   )}
                 >
                   <span
-                    className={cn(
-                      'h-1.5 w-1.5 animate-pulse rounded-full',
-                      pulseColor,
-                    )}
+                    className={cn('h-1.5 w-1.5 animate-pulse rounded-full', pulseColor)}
                     aria-hidden
                   />
                   <Clock className="h-3 w-3" aria-hidden />
@@ -259,8 +240,8 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
                 </Badge>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-xs">
-                Pipeline noturno EMA · ETL roda 03:29 UTC. Status agregado de{' '}
-                {health?.length ?? 0} componente(s).
+                Pipeline noturno EMA · ETL roda 03:29 UTC. Status agregado de {health?.length ?? 0}{' '}
+                componente(s).
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
