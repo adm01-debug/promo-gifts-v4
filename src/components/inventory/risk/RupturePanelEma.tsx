@@ -103,7 +103,7 @@ function RupturePanelEmaInner() {
     return m;
   }, [kpis]);
 
-  if (!enabled) return <OptInEmpty />;
+  // (gate de flag já aplicado no wrapper RupturePanelEma)
 
   function toggleLevel(lvl: RuptureLevel) {
     setActiveLevels((prev) => {
