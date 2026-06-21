@@ -378,10 +378,16 @@ function VirtualizedProductGridInner({
                       }),
                 }}
               >
-                {rowProducts.map((product) =>
-                  viewMode === 'list' ? (
+                {rowProducts.map((product) => {
+                  // FAN-OUT: key composta productId|colorId garante unicidade quando o
+                  // mesmo produto vira múltiplos cards (1 por cor). Sem fan-out
+                  // (_cardColorId undefined) cai no product.id puro.
+                  const cardKey = product._cardColorId
+                    ? `${product.id}|${product._cardColorId}`
+                    : product.id;
+                  return viewMode === 'list' ? (
                     <ProductListItem
-                      key={product.id}
+                      key={cardKey}
                       product={product}
                       onClick={() => onProductClick?.(product.id)}
                       isFavorited={isFavorited?.(product.id)}
@@ -395,7 +401,7 @@ function VirtualizedProductGridInner({
                     />
                   ) : (
                     <div
-                      key={product.id}
+                      key={cardKey}
                       className={cn(
                         'relative',
                         selectionMode &&
@@ -442,8 +448,8 @@ function VirtualizedProductGridInner({
                         onStatusClick={onStatusClick}
                       />
                     </div>
-                  ),
-                )}
+                  );
+                })}
               </div>
             );
           })}
