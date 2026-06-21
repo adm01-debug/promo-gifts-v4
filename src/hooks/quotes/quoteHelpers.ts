@@ -80,9 +80,7 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const finalBeforeShipping = subtotal - discountAmount;
   // Negative value is valid: means markup > apparent discount (seller has margin).
   const realDiscountPercent =
-    realSubtotal > 0
-      ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100)
-      : 0;
+    realSubtotal > 0 ? round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100) : 0;
 
   return {
     subtotal: round2(subtotal),
@@ -99,7 +97,9 @@ export function buildInsertPayload(
   userId: string,
   orgId: string | null,
   totals: { subtotal: number; discountAmount: number; total: number },
-): TablesInsert<'quotes'> {
+): TablesInsert<'quotes'> & { contact_id: string | null } {
+  // contact_id: real column in `quotes` absent from the stale generated types.
+  // The intersection keeps the payload typed without TS2353.
   validateDiscount(quote, totals);
   return {
     quote_number: quote.quote_number ?? '',
@@ -109,6 +109,7 @@ export function buildInsertPayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     client_cnpj: quote.client_cnpj || null,
+    contact_id: quote.contact_id ?? null,
     seller_id: userId,
     organization_id: orgId,
     status: quote.status || 'draft',
@@ -131,7 +132,9 @@ export function buildInsertPayload(
 export function buildUpdatePayload(
   quote: Partial<Quote>,
   totals: { subtotal: number; discountAmount: number; total: number },
-): TablesUpdate<'quotes'> {
+): TablesUpdate<'quotes'> & { contact_id: string | null } {
+  // contact_id must always be present in the patch so update_quote_transactional
+  // (which checks `_quote_patch ? 'contact_id'`) can clear the field when needed.
   validateDiscount(quote, totals);
   return {
     client_id: quote.client_id || null,
@@ -140,6 +143,7 @@ export function buildUpdatePayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     client_cnpj: quote.client_cnpj || null,
+    contact_id: quote.contact_id ?? null,
     status: quote.status,
     subtotal: round2(totals.subtotal),
     discount_percent: round2(quote.discount_percent || 0),
