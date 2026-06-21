@@ -17,10 +17,7 @@ import { GOLD_READ_ALIASES } from '@/integrations/supabase/gold-relations';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
-import {
-  executeRestNativeWrite,
-  isRestNativeWriteEligible,
-} from '@/lib/external-db/rest-native';
+import { executeRestNativeWrite, isRestNativeWriteEligible } from '@/lib/external-db/rest-native';
 
 export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
 
@@ -304,6 +301,19 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     delete rawFilters._search;
   }
 
+  // Extract _name_prefix (meta-filter, NOT a real column). Implements the fast
+  // "starts-with" layer used by the simulator product search, the quote builder
+  // and global search. Before this was handled, the key leaked into `.eq()` and
+  // PostgREST rejected the whole request with 42703 ("column ... does not exist");
+  // callers running prefix+broad layers under Promise.all (simulator, global
+  // search) then surfaced ZERO results — the "0 produtos encontrados" bug.
+  let namePrefix: string | undefined;
+  if (rawFilters && '_name_prefix' in rawFilters) {
+    const raw = rawFilters._name_prefix;
+    if (typeof raw === 'string' && raw.trim() !== '') namePrefix = raw.trim();
+    delete rawFilters._name_prefix;
+  }
+
   const remappedFilters = rawFilters ? remapFilters(table, rawFilters) : undefined;
   const remappedSelect = options.select ? remapSelect(table, options.select) : '*';
   const remappedOrderCol = options.orderBy
@@ -388,6 +398,24 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     }
   }
 
+  if (namePrefix) {
+    // Prefix ILIKE across the table's configured search columns. For products this
+    // is name/sku/supplier_reference, so typing the start of a code ("9429" → SKU
+    // "94295") surfaces matches that FTS on search_vector cannot (FTS tokenizes
+    // codes whole — no substring/prefix). Wildcard syntax differs by API surface:
+    // `.or()` raw filters use `*`, `.ilike()` uses SQL `%` (mirrors the _search path).
+    const prefixCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+    const cols = Array.isArray(prefixCfg) ? prefixCfg : prefixCfg ? [prefixCfg] : ['name'];
+    const safe = namePrefix.replace(/[,()*%]/g, ' ').trim();
+    if (safe.length > 0) {
+      if (cols.length > 1) {
+        query = query.or(cols.map((c) => `${c}.ilike.${safe}*`).join(','));
+      } else {
+        query = query.ilike(cols[0], `${safe}%`);
+      }
+    }
+  }
+
   if (remappedFilters) {
     for (const [key, value] of Object.entries(remappedFilters)) {
       if (Array.isArray(value)) {
@@ -434,11 +462,15 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     query = query.range(from, from + options.limit - 1);
   }
 
-  const { data, error, count: dbCount } = await (
-    options.signal
-      ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(options.signal)
-      : query
-  );
+  const {
+    data,
+    error,
+    count: dbCount,
+  } = await (options.signal
+    ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(
+        options.signal,
+      )
+    : query);
 
   if (error) {
     if (error.message?.includes('410') || error.message?.includes('Gone')) {

@@ -136,6 +136,8 @@ export interface PrintAreaV2 {
   technique_name: string | null;
   grupo_tecnica: string | null;
   cobra_por_cor: boolean;
+  /** Tabela usa faixas dimensionais — só então dimensões devem ir ao RPC. */
+  usa_dimensao: boolean;
 }
 
 interface ProductPrintAreaRaw {
@@ -167,6 +169,7 @@ interface TabelaOficialRaw {
   nome: string;
   grupo_tecnica: string;
   cobra_por_cor: boolean;
+  usa_faixa_dimensional: boolean;
   max_cores: number;
   ativo: boolean;
 }
@@ -228,6 +231,7 @@ async function buildPrintAreasFromTables(productId: string): Promise<PrintAreaV2
       technique_name: tech?.nome ?? null,
       grupo_tecnica: tech?.grupo_tecnica ?? null,
       cobra_por_cor: tech?.cobra_por_cor ?? false,
+      usa_dimensao: Boolean(tech?.usa_faixa_dimensional),
     };
   });
 }

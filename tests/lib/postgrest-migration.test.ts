@@ -19,8 +19,26 @@ let nextResult: { data: unknown[] | null; error: { message: string } | null; cou
 
 vi.mock('@/integrations/supabase/client', () => {
   const CHAIN_METHODS = [
-    'select', 'eq', 'in', 'is', 'gte', 'lte', 'gt', 'lt', 'like', 'ilike', 'neq',
-    'not', 'order', 'range', 'insert', 'update', 'delete', 'upsert', 'or', 'textSearch',
+    'select',
+    'eq',
+    'in',
+    'is',
+    'gte',
+    'lte',
+    'gt',
+    'lt',
+    'like',
+    'ilike',
+    'neq',
+    'not',
+    'order',
+    'range',
+    'insert',
+    'update',
+    'delete',
+    'upsert',
+    'or',
+    'textSearch',
   ];
   return {
     supabase: {
@@ -29,9 +47,13 @@ vi.mock('@/integrations/supabase/client', () => {
         recorded.push(rec);
         const builder: Record<string, unknown> = {};
         for (const m of CHAIN_METHODS) {
-          builder[m] = vi.fn((...args: unknown[]) => { rec.calls.push({ m, args }); return builder; });
+          builder[m] = vi.fn((...args: unknown[]) => {
+            rec.calls.push({ m, args });
+            return builder;
+          });
         }
-        (builder as { then: unknown }).then = (resolve: (v: typeof nextResult) => unknown) => resolve(nextResult);
+        (builder as { then: unknown }).then = (resolve: (v: typeof nextResult) => unknown) =>
+          resolve(nextResult);
         return builder;
       }),
     },
@@ -42,7 +64,9 @@ import { dbInvoke, dbInvokeSingle } from '@/lib/db/postgrest';
 
 const callsOf = (table: string) => recorded.find((r) => r.table === table)?.calls ?? [];
 const callArgs = (table: string, method: string) =>
-  callsOf(table).filter((c) => c.m === method).map((c) => c.args);
+  callsOf(table)
+    .filter((c) => c.m === method)
+    .map((c) => c.args);
 
 beforeEach(() => {
   recorded = [];
@@ -52,7 +76,12 @@ beforeEach(() => {
 
 describe('postgrest helper — table aliases', () => {
   it('resolves products → v_products_public', async () => {
-    await dbInvoke({ table: 'products', operation: 'select', select: 'id,name', filters: { is_active: true } });
+    await dbInvoke({
+      table: 'products',
+      operation: 'select',
+      select: 'id,name',
+      filters: { is_active: true },
+    });
     expect(recorded.map((r) => r.table)).toContain('v_products_public');
     expect(callArgs('v_products_public', 'select')[0][0]).toBe('id,name');
     expect(callArgs('v_products_public', 'eq')).toContainEqual(['is_active', true]);
@@ -124,6 +153,34 @@ describe('postgrest helper — _search', () => {
     expect(textSearchCalls.length).toBeGreaterThan(0);
     expect(textSearchCalls[0][0]).toBe('search_vector');
     expect(textSearchCalls[0][1]).toBe('caneta');
+  });
+});
+
+describe('postgrest helper — _name_prefix', () => {
+  it('translates _name_prefix into a prefix .or() across name/sku/supplier_reference', async () => {
+    await dbInvoke({
+      table: 'products',
+      operation: 'select',
+      filters: { _name_prefix: '9429', active: true },
+    });
+    const orCalls = callArgs('v_products_public', 'or');
+    expect(orCalls.length).toBeGreaterThan(0);
+    expect(orCalls[0][0]).toBe('name.ilike.9429*,sku.ilike.9429*,supplier_reference.ilike.9429*');
+    // _name_prefix must NOT leak into an .eq() (that produced PostgREST 42703).
+    const eqCalls = callArgs('v_products_public', 'eq');
+    expect(eqCalls.some((a) => a[0] === '_name_prefix')).toBe(false);
+    // sibling real filters still apply
+    expect(eqCalls).toContainEqual(['active', true]);
+  });
+
+  it('never emits an .eq() on the _name_prefix meta key (regression: "0 produtos")', async () => {
+    await dbInvoke({
+      table: 'products',
+      operation: 'select',
+      filters: { _name_prefix: 'caneta' },
+    });
+    const eqCalls = callArgs('v_products_public', 'eq');
+    expect(eqCalls.some((a) => a[0] === '_name_prefix')).toBe(false);
   });
 });
 

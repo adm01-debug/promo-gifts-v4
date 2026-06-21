@@ -250,6 +250,10 @@ export interface SimulatorWizardState {
 export type WizardAction =
   | { type: 'SET_STEP'; payload: WizardStep }
   | { type: 'SELECT_PRODUCT'; payload: SelectedProduct | null }
+  | {
+      type: 'LOAD_DRAFT';
+      payload: { product: SelectedProduct; quantity: number; personalizations: Personalization[] };
+    }
   | { type: 'SET_QUANTITY'; payload: number }
   | { type: 'SET_AVAILABLE_LOCATIONS'; payload: EngravingLocation[] }
   | { type: 'SELECT_LOCATION'; payload: EngravingLocation | null }
