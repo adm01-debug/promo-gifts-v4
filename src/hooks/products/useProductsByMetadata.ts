@@ -91,7 +91,11 @@ export function useProductsByMetadata({
       // useProductsByColor / useProductsByCategory BUG-002 fix).
       ++fetchTokenRef.current;
       setIsLoading(false);
-      setProductIds(new Set());
+      // FIX BUG-RENDER-META-01: conditional setState prevents render loop.
+      // new Set() is a different object reference every call; when productIds is
+      // already empty, returning prev bails out of React's re-render cycle that
+      // would otherwise re-trigger this effect indefinitely after filter clear.
+      setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       lastFetchedKey.current = '';
       return;
     }

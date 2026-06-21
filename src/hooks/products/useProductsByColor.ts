@@ -60,7 +60,11 @@ export function useProductsByColor({
       abortControllerRef.current?.abort();
       ++fetchTokenRef.current;
       setIsLoading(false);
-      setProductIds(new Set());
+      // FIX BUG-RENDER-COLOR-01: conditional setState prevents render loop.
+      // new Set() creates a different object reference every call; when productIds is
+      // already empty, React's Object.is check on the prev ref short-circuits the
+      // re-render that would re-trigger this effect indefinitely.
+      setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       lastFetchedKey.current = '';
       return;
     }
