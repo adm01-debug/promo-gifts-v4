@@ -28,7 +28,7 @@ interface CartSelectorDialogProps {
 export function CartSelectorDialog({
   open,
   onOpenChange,
-  carts = [],
+  carts,
   productName,
   onSelect,
   onCreateNew,
