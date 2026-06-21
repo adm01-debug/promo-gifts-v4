@@ -389,55 +389,51 @@ export function StockDashboard() {
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
         <StatCard
-          title="Total de Produtos"
-          value={summary.totalProducts.toLocaleString('pt-BR')}
+          title="Total de Variações"
+          value={summary.totalVariants.toLocaleString('pt-BR')}
           icon={<Package className="h-6 w-6 text-primary" />}
           isActive={filters.status === 'all'}
           onClick={() => updateFilter('status', 'all')}
           clickHint="Mostrar todos os produtos"
           trend={{
-            value: summary.totalVariants,
-            label: `${summary.totalVariants.toLocaleString('pt-BR')} variações`,
+            value: summary.totalProducts,
+            label: `${summary.totalProducts.toLocaleString('pt-BR')} produtos`,
           }}
         />
         <StatCard
           title="Em Estoque"
-          value={summary.productsInStock.toLocaleString('pt-BR')}
+          value={summary.variantsInStock.toLocaleString('pt-BR')}
           icon={<CheckCircle2 className="h-6 w-6 text-success" />}
           variant="success"
           isActive={filters.status === 'in_stock'}
           onClick={() => updateFilter('status', filters.status === 'in_stock' ? 'all' : 'in_stock')}
-          clickHint="Filtrar produtos em estoque"
+          clickHint="Filtrar variações em estoque"
           trend={
-            summary.totalProducts > 0
+            summary.totalVariants > 0
               ? {
                   value: 1,
-                  label: `${Math.round((summary.productsInStock / summary.totalProducts) * 100)}% do total`,
+                  label: `${Math.round((summary.variantsInStock / summary.totalVariants) * 100)}% das variações`,
                 }
               : undefined
           }
         />
         <StatCard
           title="Crítico"
-          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status ===
-          // 'critical'` (o que o clique aplica). "Crítico" = produtos
-          // parcialmente sem estoque (overallStatus==='critical'). A régua
-          // por `min` (low_stock) foi descontinuada e o KPI ficava sempre 0;
-          // este card agora expõe um número real e clicável.
-          // Testado em VariantStockTable.kpi-consistency.test.tsx.
-          value={summary.productsCritical.toLocaleString('pt-BR')}
+          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status === 'critical'`.
+          // Agora em granularidade de variação (cor/tamanho) — mais real para o vendedor.
+          value={summary.variantsCritical.toLocaleString('pt-BR')}
           icon={<TrendingDown className="h-6 w-6 text-warning" />}
           variant="warning"
           isActive={filters.status === 'critical'}
           onClick={() => {
             updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
           }}
-          clickHint="Filtrar produtos em estado crítico (parcialmente sem estoque)"
+          clickHint="Filtrar variações em estado crítico"
           trend={
-            summary.totalProducts > 0 && summary.productsCritical > 0
+            summary.totalVariants > 0 && summary.variantsCritical > 0
               ? {
                   value: -1,
-                  label: `${Math.round((summary.productsCritical / summary.totalProducts) * 100)}% do catálogo`,
+                  label: `${Math.round((summary.variantsCritical / summary.totalVariants) * 100)}% das variações`,
                 }
               : undefined
           }
@@ -445,7 +441,7 @@ export function StockDashboard() {
 
         <StatCard
           title="Sem Estoque"
-          value={summary.productsOutOfStock.toLocaleString('pt-BR')}
+          value={summary.variantsOutOfStock.toLocaleString('pt-BR')}
           icon={<XCircle className="h-6 w-6 text-destructive" />}
           variant="error"
           isActive={filters.status === 'out_of_stock'}
@@ -453,16 +449,17 @@ export function StockDashboard() {
             updateFilter('status', filters.status === 'out_of_stock' ? 'all' : 'out_of_stock');
             if (criticalAlerts.length > 0) setOutOfStockDialogOpen(true);
           }}
-          clickHint="Filtrar produtos sem estoque"
+          clickHint="Filtrar variações sem estoque"
           trend={
-            summary.productsOutOfStock > 0
+            summary.variantsOutOfStock > 0
               ? {
                   value: -1,
-                  label: `${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos sem estoque`,
+                  label: `${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos afetados`,
                 }
               : undefined
           }
         />
+
         <StatCard
           title="Estoque Futuro"
           // SSOT: o valor primário é a contagem de reposições previstas (entidades
