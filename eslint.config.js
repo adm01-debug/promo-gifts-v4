@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 225: 5 zero-violation rules (saved: no-var-requires, related-getter-setter-pairs, triple-slash-reference 0v✓ — Batch 226+)
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-misused-spread': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
+      '@typescript-eslint/no-unsafe-function-type': 'error',
+      '@typescript-eslint/no-useless-default-assignment': 'error',
       // Batch 224: 5 zero-violation rules (saved: @typescript-eslint/consistent-type-imports 0v✓ — Batch 225+)
       '@typescript-eslint/no-inferrable-types': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
