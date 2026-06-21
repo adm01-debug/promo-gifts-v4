@@ -658,11 +658,16 @@ export function useCatalogState() {
     () => rawPaginatedProducts.map((p) => p.id),
     [rawPaginatedProducts],
   );
+  const paginatedProductMinQtys = useMemo(
+    () => new Map(rawPaginatedProducts.map((p) => [p.id, p.minQuantity])),
+    [rawPaginatedProducts],
+  );
   const { data: catalogColorEnrichmentMap } = useColorEnrichment({
     productIds: paginatedProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
     colorNuances: filters.colorNuances || [],
+    productMinQuantities: paginatedProductMinQtys,
   });
 
   const paginatedProducts = useMemo(() => {

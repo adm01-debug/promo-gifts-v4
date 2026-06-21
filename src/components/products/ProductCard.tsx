@@ -647,10 +647,6 @@ export const ProductCard = memo(
               hasMultipleVariants={hasMultipleVariants}
               safeVariantIdx={safeVariantIdx}
               onImageLoad={() => setImageLoaded(true)}
-              onVariantChange={(idx) => {
-                setActiveVariantIdx(idx);
-                setImageLoaded(false);
-              }}
               priority={priority}
               cardImageBlurhash={product.primary_image_blurhash}
               onStatusClick={handleStatusClick}

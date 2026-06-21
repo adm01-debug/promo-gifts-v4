@@ -31,6 +31,12 @@ interface UseColorEnrichmentOptions {
   colorVariations: string[];
   /** Active color nuance slugs (optional — callers without nuance filter omit this) */
   colorNuances?: string[];
+  /**
+   * Per-product minimum order quantities. When provided, stockStatus correctly
+   * reflects 'out-of-stock' for products where totalStock < minQuantity.
+   * Without this, products with stock=30 but minQuantity=50 would show 'in-stock'.
+   */
+  productMinQuantities?: Map<string, number>;
 }
 
 // Cached reference tables (shared across instances)
@@ -53,6 +59,7 @@ export function useColorEnrichment({
   colorGroups,
   colorVariations,
   colorNuances = [],
+  productMinQuantities,
 }: UseColorEnrichmentOptions) {
   const hasFilter = colorGroups.length > 0 || colorVariations.length > 0 || colorNuances.length > 0;
   const filterKey = `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}|${[...colorNuances].sort().join(',')}`;
@@ -61,6 +68,10 @@ export function useColorEnrichment({
   const enrichedIdsRef = useRef<Set<string>>(new Set());
   const accumulatedMapRef = useRef<Map<string, ColorEnrichmentData>>(new Map());
   const lastFilterKeyRef = useRef<string>(filterKey);
+  // Track productMinQuantities via ref so queryFn always reads the latest value
+  // without needing it in the queryKey (these are stable catalog data, not filter state).
+  const productMinQuantitiesRef = useRef<Map<string, number> | undefined>(productMinQuantities);
+  productMinQuantitiesRef.current = productMinQuantities;
 
   // Reset cache when filter changes — use useEffect to avoid mutating refs during render
   useEffect(() => {
@@ -376,7 +387,11 @@ export function useColorEnrichment({
         accumulatedMapRef.current.set(productId, {
           image: bestImage,
           stock: totalStock,
-          stockStatus: getCatalogStockStatus(totalStock),
+          stockStatus: getCatalogStockStatus(
+            totalStock,
+            undefined,
+            productMinQuantitiesRef.current?.get(productId),
+          ),
           colorName: bestColorName,
           colorHex: bestColorHex,
         });

@@ -71,8 +71,6 @@ interface ProductCardImageProps {
   safeVariantIdx: number;
   /** Called when the image finishes loading */
   onImageLoad?: () => void;
-  /** Called when the user clicks a variant dot in the carousel */
-  onVariantChange: (idx: number) => void;
   /** Whether to eagerly load the image (first visible cards) */
   priority?: boolean;
   /** Blurhash da imagem primária para usar como placeholder de cor */

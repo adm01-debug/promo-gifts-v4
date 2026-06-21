@@ -231,10 +231,15 @@ export const ProductGrid = memo(function ProductGrid({
     () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
     [products, hasActiveColorFilter],
   );
+  const productMinQuantities = useMemo(
+    () => new Map(products.map((p) => [p.id, p.minQuantity])),
+    [products],
+  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: allProductIds,
     colorGroups: activeColorFilter?.groups ?? [],
     colorVariations: activeColorFilter?.variations ?? [],
+    productMinQuantities,
   });
 
   useEffect(() => {

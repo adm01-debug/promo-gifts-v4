@@ -216,13 +216,16 @@ Deno.serve(async (req) => {
             .in('category_id', targetCategoryIds),
         ]);
 
-        // Coletar IDs de todas as estratégias
-        const allProductIds = new Set<string>();
+        // BUG-CAT-API-ACTIVE FIX: Strategy 1 already filters is_active=true.
+        // Strategies 2+3 use junction tables without an is_active column, so
+        // their product_ids need post-validation before inclusion.
+        const directActiveIds = new Set<string>();
+        const candidateExtraIds = new Set<string>();
         let primarySource = 'none';
 
-        // ESTRATÉGIA 1: Usar products.category_id diretamente
+        // ESTRATÉGIA 1: Usar products.category_id diretamente (já filtrado por is_active)
         if (!directError && directProducts && directProducts.length > 0) {
-          directProducts.forEach((p: any) => allProductIds.add(p.id));
+          directProducts.forEach((p: any) => directActiveIds.add(p.id as string));
           primarySource = 'products.category_id';
           console.log('Category product strategy result', {
             strategy: 'products.category_id',
@@ -235,14 +238,21 @@ Deno.serve(async (req) => {
           });
         }
 
-        // ESTRATÉGIA 2: product_category_assignments (tabela N:N)
+        // ESTRATÉGIA 2: product_category_assignments (tabela N:N) — coletar extras pendentes
         if (!assignError && assignments && assignments.length > 0) {
-          assignments.forEach((a: any) => allProductIds.add(a.product_id));
+          let extras = 0;
+          assignments.forEach((a: any) => {
+            if (!directActiveIds.has(a.product_id as string)) {
+              candidateExtraIds.add(a.product_id as string);
+              extras++;
+            }
+          });
           if (primarySource === 'none') primarySource = 'product_category_assignments';
           else primarySource += '+product_category_assignments';
           console.log('Category product strategy result', {
             strategy: 'product_category_assignments',
             count: assignments.length,
+            extras,
           });
         } else {
           console.log('Category product strategy empty', {
@@ -251,14 +261,21 @@ Deno.serve(async (req) => {
           });
         }
 
-        // ESTRATÉGIA 3: product_categories (fallback legacy)
+        // ESTRATÉGIA 3: product_categories (fallback legacy) — coletar extras pendentes
         if (!fallbackError && fallbackData && fallbackData.length > 0) {
-          fallbackData.forEach((a: any) => allProductIds.add(a.product_id));
+          let extras = 0;
+          fallbackData.forEach((a: any) => {
+            if (!directActiveIds.has(a.product_id as string)) {
+              candidateExtraIds.add(a.product_id as string);
+              extras++;
+            }
+          });
           if (primarySource === 'none') primarySource = 'product_categories';
           else primarySource += '+product_categories';
           console.log('Category product strategy result', {
             strategy: 'product_categories',
             count: fallbackData.length,
+            extras,
           });
         } else {
           console.log('Category product strategy empty', {
@@ -266,6 +283,21 @@ Deno.serve(async (req) => {
             error: fallbackError ? safeErrorFields(fallbackError) : undefined,
           });
         }
+
+        // Validate extras from strategies 2+3 against products.is_active=true
+        const validatedExtraIds = new Set<string>();
+        if (candidateExtraIds.size > 0) {
+          const { data: activeExtra, error: activeExtraError } = await externalClient
+            .from('products')
+            .select('id')
+            .in('id', [...candidateExtraIds])
+            .eq('is_active', true);
+          if (!activeExtraError && activeExtra) {
+            activeExtra.forEach((p: any) => validatedExtraIds.add(p.id as string));
+          }
+        }
+
+        const allProductIds = new Set<string>([...directActiveIds, ...validatedExtraIds]);
 
         const productIds = [...allProductIds];
         console.log('Total unique products by categories', {
