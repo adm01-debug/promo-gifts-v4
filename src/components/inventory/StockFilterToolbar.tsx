@@ -175,10 +175,10 @@ export function StockFilterToolbar({
         {/* 1. Advanced Filters Popover */}
         <Popover>
           <StockHelpTooltip
-            title="Filtros avançados"
-            description="Refine o dashboard por Categoria, Fornecedor, Grupo de cor, Status, Faixa de cobertura e mais. Combinam em AND entre seções e OR dentro da mesma seção."
-            example="Categoria = Canecas + Cor = Azul + Status = Crítico"
-            emptyHint="Tente remover uma seção por vez (Reset limpa tudo)."
+            title="Filtros"
+            description="Refine por categoria, fornecedor, cor ou status."
+            example="Canecas + Azul = só canecas azuis."
+            emptyHint="Sem resultado? Remova um filtro por vez."
           >
             <PopoverTrigger asChild>
               <Button
