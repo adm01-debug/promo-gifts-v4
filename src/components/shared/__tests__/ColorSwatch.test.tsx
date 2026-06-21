@@ -112,11 +112,13 @@ describe('<ColorSwatch />', () => {
     expect(span.className).toContain('border-dashed');
   });
 
-  it('aplica gradiente cônico em nome misto', () => {
+  it('aplica gradiente cônico em nome misto (via background shorthand)', () => {
     const { container } = render(<ColorSwatch name="Sortido" />);
     const span = container.firstChild as HTMLSpanElement;
-    // backgroundColor com conic-gradient é tratado pelo jsdom como string crua
-    expect(span.style.backgroundColor).toContain('conic-gradient');
+    // Gradiente vai em `background` (não em `backgroundColor`, que só aceita <color>).
+    const bg = span.style.background || span.getAttribute('style') || '';
+    expect(bg).toContain('conic-gradient');
+    expect(span.style.backgroundColor).toBe('');
   });
 
   it('propaga sizeClassName e className extras', () => {
