@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "SSOT da lista de status checks que DEVEM estar marcados como required no Branch Protection da branch `main`. Cada item precisa bater EXATAMENTE com o campo `name:` de um job dentro de algum workflow em .github/workflows/. Consumido por scripts/check-required-checks.mjs (rodado pelo Branch Protection Sentinel).",
+  "branch": "main",
+  "required_checks": [
+    {
+      "name": "Risco de Ruptura — fuzz (800 sims, 10 invariantes)",
+      "workflow": ".github/workflows/stock-rupture-fuzz.yml",
+      "rationale": "Bloqueia merges quando qualquer invariante do filtro de Risco de Ruptura quebra (fuzz 800 sims)."
+    }
+  ]
+}
