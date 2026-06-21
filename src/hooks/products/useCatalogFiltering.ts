@@ -258,6 +258,19 @@ export function useCatalogFiltering({
       }
     }
 
+    // BUG-CF-01 FIX: mirror applyProductFilters SF-MATERIAIS-INERT guard — lightweight catalog
+    // products have materials=[] until Silver/Gold hydration runs. Without this guard, a URL
+    // with ?materiais=plastico (text-based, not materialGroupSlugs) zeroes the grid because
+    // every product fails the filter. Only apply the legacy text filter when at least one
+    // product in the catalog actually has materials data populated.
+    // Mirrors applyProductFilters.ts: check both array and string forms because the filter
+    // code handles both. The key invariant is that lightweight catalog products have
+    // materials=[] (empty array) until Silver/Gold hydration, never a non-empty string.
+    const materialsDataAvailable = realProducts.some((p) => {
+      const m = p.materials as string[] | string;
+      return Array.isArray(m) ? m.length > 0 : typeof m === 'string' && m.length > 0;
+    });
+
     if (hasMaterialFilter && !isLoadingMaterialFilter) {
       if (materialFilteredProductIds.size > 0) {
         result = result.filter((p) => materialFilteredProductIds.has(p.id));
@@ -265,7 +278,7 @@ export function useCatalogFiltering({
         // FIX-22 parity: guard !materialFilterError mirrors applyProductFilters (FIX-22).
         return [];
       }
-    } else if (filters.materiais.length) {
+    } else if (materialsDataAvailable && filters.materiais.length > 0) {
       const lowerMateriais = filters.materiais.map((m) => m.toLowerCase());
       result = result.filter((p) => {
         const mats = (
