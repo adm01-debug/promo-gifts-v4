@@ -430,6 +430,12 @@ export default [
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
       // Batch 182: 5 zero-violation rules (saved: prefer-return-this-type 0v✓, prefer-as-const 0v✓, class-literal-property-style 0v✓, ban-tslint-comment 0v✓, no-shadow 0v✓ — Batch 183+)
+      // Batch 189: 5 zero-violation rules (saved: no-multi-str 0v✓, no-new-wrappers 0v✓, no-proto 0v✓, no-script-url 0v✓ — Batch 190+)
+      '@typescript-eslint/consistent-indexed-object-style': 'error',
+      'no-caller': 'error',
+      'no-eval': 'error',
+      'no-extend-native': 'error',
+      'no-extra-bind': 'error',
       // Batch 188: 5 zero-violation rules (saved: consistent-indexed-object-style 0v✓ — Batch 189+; excluded: method-signature-style 50v, require-await 119v, prefer-destructuring 201v)
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/await-thenable': 'error',
