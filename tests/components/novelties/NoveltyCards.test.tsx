@@ -80,7 +80,7 @@ describe("NoveltyGridCard", () => {
     const onSelect = vi.fn();
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
-    const article = document.querySelector("article")!;
+    const article = document.querySelector('[data-testid="novelty-grid-card"]')!;
     fireEvent.click(article);
     expect(onSelect).toHaveBeenCalledWith("np-1");
   });
@@ -104,7 +104,7 @@ describe("NoveltyGridCard", () => {
   it("has aria-label containing product name for screen readers", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
-    const article = document.querySelector("article")!;
+    const article = document.querySelector('[data-testid="novelty-grid-card"]')!;
     expect(article.getAttribute("aria-label")).toContain("Copo Personalizado");
   });
 
@@ -112,7 +112,7 @@ describe("NoveltyGridCard", () => {
     const onSelect = vi.fn();
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
-    const article = document.querySelector("article")!;
+    const article = document.querySelector('[data-testid="novelty-grid-card"]')!;
     fireEvent.keyDown(article, { key: "Enter" });
     expect(onSelect).toHaveBeenCalledWith("np-1");
   });
@@ -121,7 +121,7 @@ describe("NoveltyGridCard", () => {
     const onSelect = vi.fn();
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
-    const article = document.querySelector("article")!;
+    const article = document.querySelector('[data-testid="novelty-grid-card"]')!;
     fireEvent.keyDown(article, { key: " " });
     expect(onSelect).toHaveBeenCalledWith("np-1");
   });

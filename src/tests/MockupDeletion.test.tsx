@@ -240,7 +240,9 @@ describe('Mockup Deletion Flow', () => {
     mockMg.activeTab = 'history';
     renderWithProviders(<MockupGenerator />);
 
-    const regenerate = (await screen.findAllByLabelText('Regenerar'))[0];
+    // aria-label passou a ser descritivo ("Regenerar mockup de {produto}") —
+    // casa por prefixo via regex em vez do texto exato.
+    const regenerate = (await screen.findAllByLabelText(/^Regenerar/))[0];
     fireEvent.click(regenerate);
 
     expect(mockMg.loadFromHistory).toHaveBeenCalledTimes(1);

@@ -51,7 +51,12 @@ function makeRow(opts: {
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 beforeEach(() => {
-  useFavoritesStore.setState({ favorites: [], favoriteCount: 0, isLoaded: true });
+  useFavoritesStore.setState({
+    favorites: [],
+    favoriteCount: 0,
+    favoriteIds: new Set(),
+    isLoaded: true,
+  });
   useComparisonStore.setState({
     compareItems: [], compareIds: [], compareCount: 0,
     canAddMore: true, isLoaded: true,

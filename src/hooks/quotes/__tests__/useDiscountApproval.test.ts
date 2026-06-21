@@ -74,9 +74,11 @@ function setupInsertSuccess() {
   // requestApproval calls .select() on quotes (context), user_roles, and profiles.
   // Provide a chain that handles .eq().maybeSingle() and .eq() awaited directly.
   const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
-  mockSelect.mockReturnValue({
-    eq: vi.fn().mockReturnValue({ error: null, maybeSingle: maybeSingleFn }),
-  });
+  // Self-referential eq chain: o dedup-guard encadeia .eq().eq().maybeSingle()
+  // (quote_id + status), enquanto os demais selects usam um único .eq().maybeSingle().
+  const eqChain: Record<string, unknown> = { error: null, maybeSingle: maybeSingleFn };
+  eqChain.eq = vi.fn().mockReturnValue(eqChain);
+  mockSelect.mockReturnValue({ eq: vi.fn().mockReturnValue(eqChain) });
 }
 
 function setupInsertError(msg = 'RLS denied') {

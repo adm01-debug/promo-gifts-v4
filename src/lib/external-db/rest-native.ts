@@ -16,6 +16,7 @@
  * AUDIT: DB-introspected. READ whitelist entries verified to exist with RLS or security view.
  */
 import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
 import { reportSilentEmpty } from './silent-empty-report';
@@ -720,7 +721,7 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
   const hasScope = !!options.id || (!!options.filters && Object.keys(options.filters).length > 0);
   if ((options.operation === 'update' || options.operation === 'delete') && !hasScope)
     throw new Error(
-      `rest-native: ${options.operation} on '${table}' without filter/id forbidden (mass mutation guard).`,
+      `rest-native: ${options.operation} on '${table}' without filter/id forbidden (mass-mutation guard).`,
     );
   // Issue #537: fail-loud quando escopo é array vazio (evita 400 PostgREST)
   if (options.filters) {
@@ -733,8 +734,11 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
       );
     }
   }
-  const client = supabase as unknown as RestWriteClient;
-  const tbl = client.from(table);
+  // Use untypedFrom (the project's mockable table accessor) instead of the raw
+  // supabase client so every write call-site — and its tests — share one
+  // interceptable boundary. Writing through the bare client bypassed the
+  // untypedFrom mock that the write-path regression tests rely on.
+  const tbl = untypedFrom(table) as unknown as ReturnType<RestWriteClient['from']>;
   const scoped = (b: RestWriteBuilder): RestWriteBuilder => {
     let q = b as unknown as RestQuery;
     if (options.id) q = q.eq('id', options.id);

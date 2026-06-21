@@ -171,7 +171,7 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     const { unmount } = renderWithProviders(
       <NoveltyGridCard product={noveltyProduct as any} onSelect={vi.fn()} />,
     );
-    const noveltyArticle = document.querySelector("article")!;
+    const noveltyArticle = document.querySelector('[data-testid="novelty-grid-card"]')!;
     expect(noveltyArticle.className).toMatch(/h-\[400px\]/);
     expect(noveltyArticle.className).toMatch(/max-h-\[400px\]/);
     expect(noveltyArticle.className).toMatch(/sm:h-\[430px\]/);
