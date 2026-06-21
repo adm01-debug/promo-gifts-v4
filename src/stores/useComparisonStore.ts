@@ -58,11 +58,17 @@ function loadFromStorage(): CompareItem[] {
     // Corrupted/legacy non-array payload (e.g. `{}`) would crash at store init
     // when `.map` runs over it — fall back to empty instead of white-screening.
     if (!Array.isArray(parsed)) return [];
-    // Migrate old format (string[]) to new format (CompareItem[])
-    if (parsed.length > 0 && typeof parsed[0] === 'string') {
+    // BUG-CMP-01 FIX (2026-06-21): verificar TODOS os elementos, não apenas parsed[0].
+    // Array misto [{productId:'x'}, 'legacy_id'] falhava silenciosamente: parsed[0]
+    // é objeto → typeof !== 'string' → migração pulada → string retornada como
+    // CompareItem → .productId undefined em toda a UI de comparação.
+    if (parsed.length > 0 && parsed.every((item: unknown) => typeof item === 'string')) {
       return parsed.map((id: string) => ({ productId: id }));
     }
-    return parsed;
+    // Filtrar entradas inválidas para tolerar payload corrompido/parcialmente migrado.
+    return parsed.filter(
+      (item: unknown) => typeof item === 'object' && item !== null && 'productId' in item,
+    ) as CompareItem[];
   } catch {
     return [];
   }

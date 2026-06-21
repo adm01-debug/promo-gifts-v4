@@ -80,8 +80,12 @@ const extractPriceTiersFromSource = (
   return tiers;
 };
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+// BUG-IPC-01 FIX (2026-06-21): Intl.NumberFormat recriado a cada chamada — módulo-nível.
+const inlinePriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+const formatPrice = (price: number) => inlinePriceFormatter.format(price);
 
 export function InlinePriceCalculator({
   productId,
