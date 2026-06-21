@@ -417,6 +417,18 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 234: 5 zero-violation rules (probe 234A: all 0v✓)
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/adjacent-overload-signatures': 'error',
+      '@typescript-eslint/no-this-alias': 'error',
+      '@typescript-eslint/no-extraneous-class': 'error',
+      '@typescript-eslint/prefer-function-type': 'error',
+      // Batch 233: 5 zero-violation rules (saved: no-explicit-any 0v✓ — Batch 234+)
+      '@typescript-eslint/unified-signatures': 'error',
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/parameter-properties': 'error',
+      '@typescript-eslint/prefer-enum-initializers': 'error',
+      '@typescript-eslint/no-shadow': 'error',
       // Batch 232: 5 zero-violation rules (saved: unified-signatures, no-mixed-enums, parameter-properties 0v✓ — Batch 233+)
       '@typescript-eslint/no-non-null-asserted-nullish-coalescing': 'error',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
