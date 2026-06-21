@@ -20,6 +20,7 @@ import { Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StockBadge, getStockStatus, type StockStatus } from '@/components/inventory/StockBadge';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import {
   ProductColorSwatches,
   type ColorDotLike,
@@ -130,7 +131,7 @@ export const BaseProductGridCard = memo(
     const hasColorStock = typeof activeColor?.stockQty === 'number';
     const displayStockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : (stockQuantity ?? 0);
     const displayStockStatus = hasColorStock
-      ? getStockStatus(activeColor?.stockQty ?? 0, 10)
+      ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
       : resolvedStockStatus;
 
     return (
