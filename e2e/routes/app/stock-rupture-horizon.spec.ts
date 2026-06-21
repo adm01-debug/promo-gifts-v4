@@ -28,10 +28,10 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
       test.skip(true, 'sem dados seedados para validar horizonte de ruptura');
     }
 
-    // 1. Controle visível com default 3 dias.
+    // 1. Controle visível com default 3 dias (badge "3d" no botão).
     const horizonControl = page.getByTestId('rupture-horizon-control');
     await expect(horizonControl).toBeVisible();
-    await expect(horizonControl).toContainText('3 dias');
+    await expect(horizonControl).toContainText('3d');
 
     // Aplica filtro de quantidade-alvo para ativar a fórmula preditiva.
     await page.getByPlaceholder(/Preciso de X un/i).fill('100');
@@ -43,10 +43,10 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
     const count3d = Number((await lowChip.innerText()).match(/\d+/)?.[0] ?? '0');
 
     // 2. Troca para 30d — janela maior ⇒ mais SKUs em risco (monotonia ≥).
-    await horizonControl.locator('button[role="combobox"]').click();
-    await page.getByRole('option', { name: '30 dias' }).click();
+    await horizonControl.click();
+    await page.getByTestId('rupture-horizon-30').click();
     await page.waitForTimeout(400);
-    await expect(horizonControl).toContainText('30 dias');
+    await expect(horizonControl).toContainText('30d');
 
     const count30d = Number((await lowChip.innerText()).match(/\d+/)?.[0] ?? '0');
     expect(count30d).toBeGreaterThanOrEqual(count3d);
