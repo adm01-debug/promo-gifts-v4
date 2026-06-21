@@ -49,7 +49,7 @@ export function QuickViewThumb({
 }: QuickViewThumbProps) {
   const [open, setOpen] = useState(false);
   // Só busca quando o usuário pediu (evita N+1 em listas).
-  const { data: product } = useProduct(open ? productId : '');
+  const { data: product, isLoading } = useProduct(open ? productId : '');
 
   // Estado global: paridade com o ProductCard do catálogo.
   const isFavorite = useFavoritesStore((s) => s.isFavorite);
@@ -81,7 +81,8 @@ export function QuickViewThumb({
       </div>
       <ProductQuickView
         product={product ?? null}
-        open={open && !!product}
+        isLoading={isLoading}
+        open={open}
         onOpenChange={(v) => {
           if (!v) setOpen(false);
         }}

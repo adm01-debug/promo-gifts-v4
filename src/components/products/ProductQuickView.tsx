@@ -23,6 +23,7 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
 import { useProductImages } from '@/hooks/products/useProductImages';
 import {
@@ -48,6 +49,7 @@ const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'comp
 
 interface ProductQuickViewProps {
   product: Product | null;
+  isLoading?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isFavorited?: boolean;
@@ -65,6 +67,7 @@ interface ProductQuickViewProps {
 export const ProductQuickView = React.memo(
   ({
     product,
+    isLoading = false,
     open,
     onOpenChange,
     isFavorited = false,
@@ -168,8 +171,47 @@ export const ProductQuickView = React.memo(
       setImageError(false);
     }, [selectedColorId]);
 
-    // Early return if product is null
-    if (!product) return null;
+    // Show skeleton while loading; render nothing if no product and not loading
+    if (!product) {
+      if (!isLoading) return null;
+      return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent
+            className={cn(
+              'max-h-[90vh] w-full max-w-4xl overflow-y-auto p-0',
+              'data-[state=open]:animate-in data-[state=closed]:animate-out',
+              'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+              'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            )}
+          >
+            <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background">
+              <X className="h-4 w-4" />
+            </DialogClose>
+            <DialogTitle className="sr-only">Carregando produto...</DialogTitle>
+            <DialogDescription className="sr-only">Carregando dados do produto</DialogDescription>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <div className="bg-muted/30 p-6">
+                <Skeleton className="aspect-square w-full rounded-lg" />
+              </div>
+              <div className="flex flex-col gap-4 p-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+                <Skeleton className="h-8 w-1/3" />
+                <Skeleton className="h-6 w-1/2 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/6" />
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
 
     // Mapear cores do produto para o formato do seletor com ordenação padronizada
     const sortedColors = sortByColorGroup(

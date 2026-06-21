@@ -18,6 +18,7 @@ import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCdnUrl, getSrcSet } from '@/utils/image-utils';
 import { cn } from '@/lib/utils';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useProductBounds } from '@/hooks/products/useProductBounds';
 import { usePrefetchProduct } from '@/hooks/products/usePrefetchProduct';
 import {
@@ -672,11 +673,12 @@ export const ProductCard = memo(
                 : undefined;
             const liveStock = liveMatch?.stock_quantity ?? null;
             const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
+            // FIX BUG-CARD-02 (2026-06-21): effectiveStatus ignorava 'low-stock' e o
+            // limiar minQuantity da SSOT — produto com minQty=50 e liveStock=30 mostrava
+            // 'in-stock' no FAB. Delegado para getCatalogStockStatus (SSOT canônica).
             const effectiveStatus =
               liveStock !== null
-                ? liveStock <= 0
-                  ? 'out-of-stock'
-                  : 'in-stock'
+                ? getCatalogStockStatus(liveStock, undefined, product.minQuantity)
                 : (colorStock?.stockStatus ?? product.stockStatus);
             const isOutOfStock = effectiveStatus === 'out-of-stock';
 
@@ -833,13 +835,12 @@ export const ProductCard = memo(
               const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
               const displayStock =
                 liveStock !== null ? liveStock : (colorStock?.stock ?? product.stock);
+              // FIX BUG-CARD-01 (2026-06-21): displayStatus calculado inline ignorava
+              // minQuantity — produto com minQty=50, liveStock=30 mostrava 'low-stock'
+              // em vez de 'out-of-stock'. Delegado para getCatalogStockStatus (SSOT).
               const displayStatus =
                 liveStock !== null
-                  ? liveStock <= 0
-                    ? 'out-of-stock'
-                    : liveStock < 10
-                      ? 'low-stock'
-                      : 'in-stock'
+                  ? getCatalogStockStatus(liveStock, undefined, product.minQuantity)
                   : (colorStock?.stockStatus ?? product.stockStatus);
 
               return (

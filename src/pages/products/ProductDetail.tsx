@@ -96,17 +96,24 @@ export default function ProductDetail() {
     [similarItems, product?.category?.name],
   );
 
+  // FIX BUG-VW-01 (2026-06-21): product_views SELECT RLS limits non-admin users to
+  // only their own rows → regular users always saw their own visit count (1–5),
+  // not the global total. products.view_count is maintained by a SECURITY DEFINER
+  // trigger (fn_sync_product_view_count) which bypasses RLS and always reflects
+  // the correct all-user all-time total. Reading from products is both correct and
+  // one round-trip cheaper (no COUNT over N rows, just a single column read).
   const { data: viewCount = 0 } = useQuery({
-    queryKey: ['product-views-count', id],
+    queryKey: ['product-view-count', id],
     queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { count } = await supabase
-        .from('product_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('product_id', id ?? '')
-        .gte('created_at', thirtyDaysAgo.toISOString());
-      return count || 0;
+      const { data: row } = await supabase
+        .from('products')
+        .select('view_count')
+        .eq('id', id ?? '')
+        .maybeSingle();
+      // TS2339: view_count exists in the DB (migration 20250103080000, maintained by
+      // fn_sync_product_view_count trigger) but types.ts is stale and lacks the column.
+      // Type assertion bridges the gap until types are regenerated.
+      return (row as { view_count: number | null } | null)?.view_count ?? 0;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
