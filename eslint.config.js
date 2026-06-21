@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 224: 5 zero-violation rules (saved: @typescript-eslint/consistent-type-imports 0v✓ — Batch 225+)
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/no-empty-interface': 'error',
+      '@typescript-eslint/prefer-ts-expect-error': 'error',
+      '@typescript-eslint/consistent-type-exports': 'error',
       // Batch 223: 5 zero-violation rules (no saved rules — Batch 224 probes fresh)
       '@typescript-eslint/no-unsafe-enum-comparison': 'error',
       '@typescript-eslint/adjacent-overload-signatures': 'error',
