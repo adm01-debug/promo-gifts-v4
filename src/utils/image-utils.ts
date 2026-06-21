@@ -97,7 +97,7 @@ export function getCdnUrl(url: string | null | undefined, variant: CdnVariant = 
  * Gera srcSet para imagens responsivas.
  */
 export function getSrcSet(url: string | null | undefined): string | undefined {
-  if (!url || !url.includes('imagedelivery.net')) return undefined;
+  if (!url?.includes('imagedelivery.net')) return undefined;
   const base = url.replace(/\/(thumbnail|small|card|medium|large|public)$/, '');
   return [
     `${base}/thumbnail 150w`,
@@ -319,7 +319,7 @@ export const GALLERY_TYPES: ImageTypeCode[] = [
 ];
 
 /** Tipos técnicos — documentação/embalagem, não aparecem na galeria */
-export const TECHNICAL_IMAGE_TYPES: Set<string> = new Set([
+export const TECHNICAL_IMAGE_TYPES = new Set<string>([
   'box',
   'pouch',
   'location',

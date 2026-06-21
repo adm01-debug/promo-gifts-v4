@@ -34,6 +34,7 @@ export function AddressTab({ form }: AddressTabProps) {
           <select
             value={form.tipoLogradouro}
             onChange={(e) => form.setTipoLogradouro(e.target.value)}
+            onBlur={(e) => form.setTipoLogradouro(e.target.value)}
             className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
             <option value="">Selecione</option>
@@ -111,6 +112,7 @@ export function AddressTab({ form }: AddressTabProps) {
           <select
             value={form.estado}
             onChange={(e) => form.setEstado(e.target.value)}
+            onBlur={(e) => form.setEstado(e.target.value)}
             className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
             <option value="">Selecione</option>

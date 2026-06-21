@@ -275,6 +275,7 @@ export function MockupProductSelector({
                     aria-label="Ordenar produtos"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    onBlur={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="cursor-pointer border-none bg-transparent text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus:ring-0"
                   >
                     <option value="default">Relevância</option>

@@ -79,7 +79,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
   // Group items by kit_group_id
   const groups: { kitName: string | null; items: { item: ProposalItem; globalIdx: number }[] }[] =
     [];
-  let currentGroupId: string | null | undefined = undefined;
+  let currentGroupId: string | null | undefined;
 
   items.forEach((item, idx) => {
     const gid = item.kit_group_id || null;
@@ -173,7 +173,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                   let widthCm = p.width_cm;
                   let heightCm = p.height_cm;
                   if ((!widthCm || !heightCm) && p.notes) {
-                    const dimMatch = p.notes.match(/\|\s*([\d.]+)×([\d.]+)cm/);
+                    const dimMatch = /\|\s*([\d.]+)×([\d.]+)cm/.exec(p.notes);
                     if (dimMatch) {
                       widthCm = parseFloat(dimMatch[1]);
                       heightCm = parseFloat(dimMatch[2]);

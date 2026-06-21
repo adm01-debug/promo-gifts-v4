@@ -101,7 +101,7 @@ export function DevChallengeProvider({ children }: { children: ReactNode }) {
     const pending = pendingRef.current;
     // Apenas a solicitação mais recente pode consumir o token. Se uma nova
     // solicitação superou esta, descartamos o token silenciosamente.
-    if (!pending || pending.requestId !== requestId) {
+    if (pending?.requestId !== requestId) {
       setOpen(false);
       return;
     }

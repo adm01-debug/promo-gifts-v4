@@ -66,7 +66,7 @@ export function TechniqueColorConfigDialog({
   onOpenChange,
   techniqueName,
   techniqueCode,
-  detectedColors = [],
+  detectedColors,
   currentConfig,
   onConfirm,
 }: TechniqueColorConfigDialogProps) {

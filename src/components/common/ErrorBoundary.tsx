@@ -1,4 +1,4 @@
-import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { PureComponent, type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
@@ -17,16 +17,16 @@ interface State {
  * ErrorBoundary — catches render errors so a single broken component
  * doesn't crash the entire page. Provides a retry button to reset state.
  */
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, errorMessage: '' };
-  }
-
+export class ErrorBoundary extends PureComponent<Props, State> {
   static getDerivedStateFromError(error: unknown): State {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao renderizar este componente.';
     return { hasError: true, errorMessage: message };
+  }
+
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
   }
 
   componentDidCatch(error: unknown, errorInfo: ErrorInfo) {

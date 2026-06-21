@@ -48,7 +48,7 @@ function Layout() {
     <>
       <SidebarNavGroup
         group={group}
-        isOpen={true}
+        isOpen
         isCollapsed={false}
         onToggle={() => {}}
         onMobileClose={() => {}}

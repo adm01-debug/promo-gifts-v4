@@ -4,9 +4,7 @@ export type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
 
 export type TargetFieldKey = (typeof TARGET_FIELDS)[number]['key'];
 
-export interface ColumnMapping {
-  [sourceColumn: string]: TargetFieldKey | '';
-}
+export type ColumnMapping = Record<string, TargetFieldKey | ''>;
 
 export interface ValidationResult {
   row: number;

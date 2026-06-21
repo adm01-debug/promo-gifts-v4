@@ -67,7 +67,7 @@ export function useQuotes() {
         },
       )
       .subscribe((status, err) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        if ((status as string) === 'CHANNEL_ERROR' || (status as string) === 'TIMED_OUT') {
           logger.warn('[useQuotes] realtime channel error — falling back to poll', { status, err });
           // Invalidate once so stale data is refreshed immediately on reconnect
           queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -170,12 +170,12 @@ export function useQuotes() {
 
   const createQuote = async (quote: Partial<Quote>, items: QuoteItem[]) => {
     if (!user) return null;
-    return await createMutation.mutateAsync({ quote, items });
+    return createMutation.mutateAsync({ quote, items });
   };
 
   const updateQuote = async (quoteId: string, quote: Partial<Quote>, items: QuoteItem[]) => {
     if (!user) return null;
-    return await updateMutation.mutateAsync({ quoteId, quote, items });
+    return updateMutation.mutateAsync({ quoteId, quote, items });
   };
 
   const updateQuoteStatus = async (quoteId: string, status: Quote['status']) => {

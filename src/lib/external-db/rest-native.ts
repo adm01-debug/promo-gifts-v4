@@ -444,7 +444,7 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
 // ── PostgREST operator parsing ────────────────────────────────────────────────
 const POSTGREST_OP_REGEX = /^(eq|neq|gt|gte|lt|lte|like|ilike|is|in|not)\.(.+)$/;
 function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQuery {
-  const match = raw.match(POSTGREST_OP_REGEX);
+  const match = POSTGREST_OP_REGEX.exec(raw);
   if (!match) return query.eq(col, raw);
   const [, op, rest] = match;
   switch (op) {

@@ -19,7 +19,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     for (let i = 0; i < retries; i++) {
       try {
         const component = await componentImport();
-        if (!component || !component.default) {
+        if (!component?.default) {
           throw new Error('Component import returned null or missing default export');
         }
         return component;
@@ -59,6 +59,6 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       }
     }
 
-    throw lastError;
+    throw lastError ?? new Error('Max retries exhausted');
   });
 }

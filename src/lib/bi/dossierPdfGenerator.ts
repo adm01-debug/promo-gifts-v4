@@ -389,7 +389,7 @@ export function generateBIDossierPDF(data: DossierData): Blob {
 
   // ============ PÁGINA 5 — Mapa de Categorias ============
   const cat = data.categorySection;
-  if (cat && cat.hasData) {
+  if (cat?.hasData) {
     doc.addPage();
     y = 22;
     y = addSectionTitle(doc, 'Mapa de Categorias', y);

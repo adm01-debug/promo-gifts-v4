@@ -31,7 +31,7 @@ export function useCustomKitsRealtime() {
         },
       )
       .subscribe((status, err) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        if ((status as string) === 'CHANNEL_ERROR' || (status as string) === 'TIMED_OUT') {
           logger.warn(
             '[useCustomKitsRealtime] channel error — polling staleTime maintains freshness',
             { status, err },

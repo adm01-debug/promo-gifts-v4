@@ -350,7 +350,7 @@ export function PromoFlixPlayer({
             // (currentLevel = -1) por padrão. Valores legados (índice cru) são ignorados,
             // o que também corrige o bug histórico de travar em baixa resolução entre vídeos.
             const savedQuality = localStorage.getItem('promoflix_quality');
-            if (savedQuality && savedQuality.startsWith('h:')) {
+            if (savedQuality?.startsWith('h:')) {
               const targetH = parseInt(savedQuality.slice(2), 10);
               if (Number.isFinite(targetH) && targetH > 0) {
                 let bestIdx = -1;
@@ -967,7 +967,9 @@ export function PromoFlixPlayer({
         preload="auto"
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
-      />
+      >
+        <track kind="captions" />
+      </video>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.45)_100%)]" />
 
       {(isLoading || isReconnecting) && !hlsError && (
@@ -1365,8 +1367,8 @@ export function PromoFlixPlayer({
                     )}
                     {isRaioXActive && (
                       <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3 md:-right-1 md:-top-1">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
                       </span>
                     )}
                   </button>

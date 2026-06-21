@@ -164,7 +164,7 @@ export function useMockupGenerator() {
         maxWidthCm: widths.length ? Math.max(...widths) : null,
         maxHeightCm: heights.length ? Math.max(...heights) : null,
         maxColors: colors.length ? Math.max(...colors) : null,
-        isCurved: opts.some((o: CustomizationOption) => o.is_curved === true),
+        isCurved: opts.some((o: CustomizationOption) => o.is_curved),
         techniquesAvailable: opts.length,
       };
     });

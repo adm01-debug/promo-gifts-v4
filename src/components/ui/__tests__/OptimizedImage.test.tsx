@@ -13,7 +13,6 @@ class MockIntersectionObserver {
   unobserve = vi.fn();
   disconnect = vi.fn();
   takeRecords = vi.fn(() => []);
-  constructor(_cb?: unknown) {}
 }
 window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
@@ -131,13 +130,13 @@ describe('OptimizedImage', () => {
     expect(spy).not.toHaveBeenCalled();
     unmount();
 
-    render(<OptimizedImage {...defaultProps} src={cfSrc} debug={true} />);
+    render(<OptimizedImage {...defaultProps} src={cfSrc} debug />);
     expect(spy).toHaveBeenCalledWith(
       expect.stringContaining('[OptimizedImage] Cloudflare Image detected'),
     );
     spy.mockClear();
 
-    render(<OptimizedImage {...defaultProps} src="https://example.com/image.jpg" debug={true} />);
+    render(<OptimizedImage {...defaultProps} src="https://example.com/image.jpg" debug />);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });

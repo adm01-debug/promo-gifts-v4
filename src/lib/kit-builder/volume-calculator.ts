@@ -178,7 +178,7 @@ export function parseDimensionsString(
     .replace(/cm/g, '');
 
   // Tenta match com padrão NxNxN
-  const match = normalized.match(/(\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)/);
+  const match = /(\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)/.exec(normalized);
 
   if (match) {
     return {

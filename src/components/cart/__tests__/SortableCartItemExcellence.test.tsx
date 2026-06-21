@@ -11,8 +11,9 @@ vi.mock('framer-motion', async () => {
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
       <div {...props}>{children}</div>
     ),
-    img: ({ children, ...props }: React.HTMLAttributes<HTMLImageElement>) => (
-      <img {...(props as React.ImgHTMLAttributes<HTMLImageElement>)}>{children}</img>
+    img: ({ children: _children, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+      // eslint-disable-next-line jsx-a11y/alt-text -- alt is forwarded via {...props} from the tested component
+      <img {...props} />
     ),
   };
   return {

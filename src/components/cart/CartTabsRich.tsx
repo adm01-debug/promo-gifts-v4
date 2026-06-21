@@ -77,6 +77,7 @@ export function CartTabsRich({
         ref={tablistRef}
         role="tablist"
         aria-label="Carrinhos"
+        tabIndex={0}
         onKeyDown={handleTablistKeyDown}
         className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
       >

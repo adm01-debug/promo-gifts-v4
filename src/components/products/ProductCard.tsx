@@ -121,6 +121,7 @@ export interface ProductCardProps {
   colorEnrichmentImage?: string | null;
 }
 
+// eslint-disable-next-line react/require-optimization
 export const ProductCard = memo(
   forwardRef<HTMLElement, ProductCardProps>(
     (

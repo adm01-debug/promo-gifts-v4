@@ -132,16 +132,18 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       e.stopPropagation();
       setDragActive(false);
 
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        handleFileSelect(e.dataTransfer.files[0]);
+      const dtFile = e.dataTransfer.files?.[0];
+      if (dtFile) {
+        handleFileSelect(dtFile);
       }
     },
     [handleFileSelect],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelect(e.target.files[0]);
+    const inputFile = e.target.files?.[0];
+    if (inputFile) {
+      handleFileSelect(inputFile);
     }
   };
 

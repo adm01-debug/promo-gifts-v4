@@ -270,8 +270,8 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
             {boot ? (
               <span>
                 <span className="font-medium text-foreground">{boot.durationMs}ms</span>
-                {typeof boot.status === 'number' && <> · HTTP {boot.status}</>}
-                <> · às {formatTime(boot.ts)}</>
+                {typeof boot.status === 'number' && <> · HTTP {boot.status}</>}· às{' '}
+                {formatTime(boot.ts)}
               </span>
             ) : (
               <span className="italic">Aguardando primeiro heartbeat…</span>

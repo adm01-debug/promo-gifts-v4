@@ -680,7 +680,8 @@ export default function VisualSearchPage() {
                           "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm",
                           getConfidenceLabel(results.analysis.confidence).bg,
                           getConfidenceLabel(results.analysis.confidence).color
-                        )}>
+                        )}
+                        >
                           {Math.round(results.analysis.confidence * 100)}% Confiança
                         </div>
                       )}
@@ -1104,7 +1105,8 @@ export default function VisualSearchPage() {
                               <div className={cn(
                                 "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black shadow-lg backdrop-blur-md transition-all group-hover:scale-110",
                                 product.relevance >= 0.9 ? "bg-emerald-500 text-white" : "bg-white/95 text-foreground border border-border"
-                              )}>
+                              )}
+                              >
                                 {product.relevance >= 0.9 && <CheckCircle2 className="h-3 w-3" />}
                                 {Math.round(product.relevance * 100)}% Match
                               </div>

@@ -167,7 +167,7 @@ describe('Analise estatica — mockupGenerationService.ts', () => {
       expect(src).toContain('GENERATE_TIMEOUT_MS');
     });
     it('timeout >= 30000 ms', () => {
-      const match = src.match(/GENERATE_TIMEOUT_MS\s*=\s*(\d+)/);
+      const match = /GENERATE_TIMEOUT_MS\s*=\s*(\d+)/.exec(src);
       expect(match).not.toBeNull();
       expect(parseInt(match![1], 10)).toBeGreaterThanOrEqual(30_000);
     });

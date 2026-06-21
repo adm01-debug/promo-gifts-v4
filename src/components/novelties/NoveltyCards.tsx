@@ -95,7 +95,7 @@ export const NoveltyGridCard = memo(
     }, [activeColorName, colors, product.product_image]);
 
     return (
-      <article
+      <div
         data-testid="novelty-grid-card"
         role="button"
         tabIndex={0}
@@ -334,7 +334,7 @@ export const NoveltyGridCard = memo(
             )}
           </div>
         </div>
-      </article>
+      </div>
     );
   },
 );

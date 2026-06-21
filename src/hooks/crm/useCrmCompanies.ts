@@ -82,7 +82,7 @@ export function useCrmCompany(id: string | null | undefined) {
 export function useCrmInfiniteCompanySelector() {
   return useInfiniteQuery({
     queryKey: ['crm-companies-infinite'],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam }) => {
       const startedAt = performance.now();
       logger.debug(`[CRM-DB] useCrmInfiniteCompanySelector: Carregando offset=${pageParam}...`);
 

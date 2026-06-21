@@ -82,7 +82,7 @@ describe('Product Sort Standardization', () => {
     render(
       <Wrapper>
         <StickyFilterBar
-          isVisible={true}
+          isVisible
           activeFiltersCount={0}
           totalProducts={100}
           sortBy="name"
@@ -140,7 +140,7 @@ describe('Product Sort Standardization', () => {
     render(
       <Wrapper>
         <StickyFilterBar
-          isVisible={true}
+          isVisible
           activeFiltersCount={0}
           totalProducts={100}
           sortBy="name"

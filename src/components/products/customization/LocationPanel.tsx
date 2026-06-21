@@ -487,6 +487,7 @@ export function LocationPanel({
           ref={firstCardRef}
           id={pickerId}
           role="radiogroup"
+          tabIndex={0}
           aria-label={
             selectedTechnique
               ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`

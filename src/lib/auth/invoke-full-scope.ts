@@ -30,13 +30,11 @@ import { supabase } from '@/integrations/supabase/client';
 import type { StepUpAction } from '@/hooks/auth';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
 
-interface ChallengeFn {
-  (req: {
-    action: StepUpAction;
-    actionLabel: string;
-    targetRef?: string | null;
-  }): Promise<string | null>;
-}
+type ChallengeFn = (req: {
+  action: StepUpAction;
+  actionLabel: string;
+  targetRef?: string | null;
+}) => Promise<string | null>;
 
 export interface InvokeFullScopeOptions<TBody extends Record<string, unknown>> {
   /** `challenge` retornado por `useDevChallenge()`. */

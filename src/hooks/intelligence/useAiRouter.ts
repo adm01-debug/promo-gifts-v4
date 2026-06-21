@@ -402,7 +402,7 @@ export function useAiRoutingMutations() {
  */
 export function capabilitiesToArray(caps: Record<string, boolean>): string[] {
   return Object.entries(caps)
-    .filter(([, v]) => v === true)
+    .filter(([, v]) => v)
     .map(([k]) => k);
 }
 

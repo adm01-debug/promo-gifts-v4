@@ -157,7 +157,7 @@ export function useWizardPricing({ state, dispatch }: UseWizardPricingParams) {
             rpcParams,
           );
 
-          if (!result || !result.success) {
+          if (!result?.success) {
             allResults.push(createUnavailableResult(tech, 'Erro no cálculo de preço'));
             return;
           }

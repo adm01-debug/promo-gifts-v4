@@ -487,6 +487,7 @@ export function SupplierFormDialog({
                 <select
                   value={editingSupplier.tipo_logradouro || ''}
                   onChange={(e) => updateField('tipo_logradouro', e.target.value)}
+                  onBlur={(e) => updateField('tipo_logradouro', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Selecione</option>
@@ -559,6 +560,7 @@ export function SupplierFormDialog({
                 <select
                   value={editingSupplier.estado || ''}
                   onChange={(e) => updateField('estado', e.target.value)}
+                  onBlur={(e) => updateField('estado', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Selecione</option>
