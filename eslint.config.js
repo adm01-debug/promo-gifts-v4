@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 196: 5 zero-violation rules
+      'no-promise-executor-return': 'error',
+      'no-template-curly-in-string': 'error',
+      'no-unmodified-loop-condition': 'error',
+      'accessor-pairs': 'error',
+      'default-case-last': 'error',
       // Batch 195: 5 zero-violation rules (saved: no-promise-executor-return 0v✓, no-template-curly-in-string 0v✓, no-unmodified-loop-condition 0v✓ — Batch 196+)
       'prefer-template': 'error',
       'symbol-description': 'error',
