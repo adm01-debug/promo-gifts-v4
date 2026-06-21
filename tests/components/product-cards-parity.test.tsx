@@ -148,7 +148,7 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     expect(screen.getByTestId("sparkline-stub")).toBeInTheDocument();
   });
 
-  it("ambos os cards aplicam h-[400px] max-h-[400px] (altura fixa compartilhada)", async () => {
+  it("ambos os cards compartilham min-h-[420px] no root, sem altura fixa nem overflow-hidden (virtualizer-safe)", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     const { ReplenishmentGridCard } = await import(
       "@/components/replenishments/ReplenishmentCards"
@@ -172,11 +172,14 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
       <NoveltyGridCard product={noveltyProduct as any} onSelect={vi.fn()} />,
     );
     const noveltyArticle = noveltyContainer.querySelector("article")!;
-    expect(noveltyArticle.className).toMatch(/h-\[400px\]/);
-    expect(noveltyArticle.className).toMatch(/max-h-\[400px\]/);
-    expect(noveltyArticle.className).toMatch(/overflow-hidden/);
-    expect(noveltyArticle.className).toMatch(/sm:h-\[430px\]/);
-    expect(noveltyArticle.className).toMatch(/sm:max-h-\[430px\]/);
+    // O <article> raiz compartilha o piso min-h-[420px] e NÃO pode ter altura
+    // travada (max-h) nem overflow-hidden: isso quebra o measureElement do
+    // virtualizer e recorta conteúdo. A uniformidade vem do piso, não de altura
+    // fixa — a abordagem h-[400px]/sm:[430px] + overflow-hidden foi abandonada
+    // exatamente por esse motivo.
+    expect(noveltyArticle.className).toMatch(/min-h-\[420px\]/);
+    expect(noveltyArticle.className).not.toMatch(/max-h-\[/);
+    expect(noveltyArticle.className).not.toMatch(/overflow-hidden/);
     unmount();
 
     const { container: repContainer2 } = renderWithProviders(
@@ -189,11 +192,11 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
       />,
     );
     const replenishmentArticle = repContainer2.querySelector("article")!;
-    expect(replenishmentArticle.className).toMatch(/h-\[400px\]/);
-    expect(replenishmentArticle.className).toMatch(/max-h-\[400px\]/);
-    expect(replenishmentArticle.className).toMatch(/overflow-hidden/);
-    expect(replenishmentArticle.className).toMatch(/sm:h-\[430px\]/);
-    expect(replenishmentArticle.className).toMatch(/sm:max-h-\[430px\]/);
+    // Mesmo contrato de altura do card de Novidades (paridade): piso
+    // min-h-[420px], sem max-h nem overflow-hidden no root.
+    expect(replenishmentArticle.className).toMatch(/min-h-\[420px\]/);
+    expect(replenishmentArticle.className).not.toMatch(/max-h-\[/);
+    expect(replenishmentArticle.className).not.toMatch(/overflow-hidden/);
   });
 
   it("ordem dos campos é idêntica (categoria → cores → estoque)", async () => {
