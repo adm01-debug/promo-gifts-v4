@@ -425,6 +425,11 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 137: 4 rules (2 zero-violation + 2 with manual fixes)
+      'array-callback-return': 'error',
+      'prefer-object-has-own': 'error',
+      'no-restricted-properties': 'error',
+      'no-restricted-imports': 'error',
       // Batch 136: 5 rules (2 zero-violation + 3 with manual fixes)
       'no-undef-init': 'error',
       'vars-on-top': 'error',

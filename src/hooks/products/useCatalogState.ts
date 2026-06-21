@@ -105,6 +105,7 @@ export function validateSortOption(s: string | null | undefined): SortOption {
   // para o state, URL sync e <Select value>. Object.hasOwn seria ideal mas e
   // ES2022 e o tsconfig.app usa lib ES2020; hasOwnProperty.call e ES5, sempre
   // tipado, e considera apenas chaves proprias do objeto literal.
+  // eslint-disable-next-line prefer-object-has-own -- tsconfig.app targets ES2020; Object.hasOwn is ES2022
   if (Object.prototype.hasOwnProperty.call(SORT_ALIASES, s)) {
     return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
   }
