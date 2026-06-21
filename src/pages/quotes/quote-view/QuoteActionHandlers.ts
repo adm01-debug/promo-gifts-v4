@@ -17,10 +17,10 @@ export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export function calcPersTotal(totalCost: number, qty: number): number {
-  if (qty <= 0) return totalCost;
-  const roundedUnit = Math.round((totalCost / qty) * 100) / 100;
-  return Math.round(roundedUnit * qty * 100) / 100;
+// BUG-048c: use p.total_cost directly — it's pre-computed by the DB trigger.
+// round(round(x/n)*n) ≠ x for non-divisible values; qty param kept for compat.
+export function calcPersTotal(totalCost: number, _qty?: number): number {
+  return totalCost;
 }
 
 export function formatCNPJ(cnpj: string): string {

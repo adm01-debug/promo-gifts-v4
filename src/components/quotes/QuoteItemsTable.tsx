@@ -9,12 +9,7 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-/** Recalculate personalization total using rounded unit price to match UI display */
-function calcPersTotal(totalCost: number, qty: number): number {
-  if (qty <= 0) return totalCost;
-  const roundedUnit = Math.round((totalCost / qty) * 100) / 100;
-  return Math.round(roundedUnit * qty * 100) / 100;
-}
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export interface QuotePersonalization {
   id?: string;
@@ -74,12 +69,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
+    // BUG-048b: use p.total_cost directly — avoids round(round(x/n)*n) ≠ x
     const personalizationCost = allPersonalizations.reduce(
-      (acc: number, p: QuotePersonalization) =>
-        acc + calcPersTotal(p.total_cost ?? 0, item.quantity),
+      (acc: number, p: QuotePersonalization) => acc + (p.total_cost ?? 0),
       0,
     );
-    const itemTotal = item.quantity * item.unit_price + personalizationCost;
+    const itemTotal = round2(item.quantity * item.unit_price + personalizationCost);
 
     return (
       <tr

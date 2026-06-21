@@ -161,10 +161,12 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                     sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
                   );
                 }, 0) || 0;
-              const allInUnitPrice = item.unitPrice + persUnitCost;
+              const allInUnitPrice = item.unitPrice + persUnitCost; // display only (rounded per-unit)
               const itemDiscount = item.discount || 0;
-              // FIX #6: total da linha = (preço unitário all-in × qtd) − desconto da linha
-              const lineTotal = allInUnitPrice * item.quantity - itemDiscount;
+              // BUG-048c: use p.total_cost directly to avoid double-rounding
+              const persTotal =
+                item.personalizations?.reduce((s, p) => s + (p.total_cost || 0), 0) || 0;
+              const lineTotal = item.quantity * item.unitPrice + persTotal - itemDiscount;
               const isEven = globalIdx % 2 === 0;
 
               const gravacao = item.personalizations

@@ -4,12 +4,6 @@
 import { formatCurrency } from '@/lib/format';
 import type { QuoteItem } from './QuoteItemsTable';
 
-function calcPersTotal(totalCost: number, qty: number): number {
-  if (qty <= 0) return totalCost;
-  const roundedUnit = Math.round((totalCost / qty) * 100) / 100;
-  return Math.round(roundedUnit * qty * 100) / 100;
-}
-
 interface QuoteTotalsSummaryProps {
   items: QuoteItem[];
   discountPercent?: number;
@@ -27,13 +21,7 @@ export function QuoteTotalsSummary({
 }: QuoteTotalsSummaryProps) {
   const productSubtotal = items.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
   const personalizationTotal = items.reduce((acc, item) => {
-    return (
-      acc +
-      (item.personalizations ?? []).reduce(
-        (pAcc, p) => pAcc + calcPersTotal(p.total_cost ?? 0, item.quantity),
-        0,
-      )
-    );
+    return acc + (item.personalizations ?? []).reduce((pAcc, p) => pAcc + (p.total_cost ?? 0), 0);
   }, 0);
   const fullSubtotal = productSubtotal + personalizationTotal;
   const discountValue = discountPercent
