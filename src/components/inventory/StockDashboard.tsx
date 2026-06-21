@@ -380,6 +380,8 @@ export function StockDashboard() {
                 colorGroups={availableColorGroups}
                 totalProducts={allProductStocks.length}
                 filteredCount={productStocks.length}
+                ruptureRiskVariantIds={ruptureRiskVariantIds}
+                isRuptureRiskActive={isRuptureRiskActive}
               />
             </div>
           </div>
