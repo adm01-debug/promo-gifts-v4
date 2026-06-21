@@ -584,6 +584,9 @@ export default [
       // Batch 120: 1 zero-violation rule
       '@typescript-eslint/no-implied-eval': 'error',
       // Batch 121 audit: all candidates already active in earlier batches — no net-new rules
+      // Batch 122: 2 rules — violations fixed in source before enabling
+      '@typescript-eslint/require-array-sort-compare': 'error',
+      '@typescript-eslint/no-unnecessary-template-expression': 'error',
     },
     settings: {
       react: { version: 'detect' },
