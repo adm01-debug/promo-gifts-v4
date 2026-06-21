@@ -596,6 +596,8 @@ export default [
       '@typescript-eslint/method-signature-style': 'error',
       // Batch 124: 1 rule — 39 violations auto-fixed, 1 manual fix (no-non-null-asserted-nullish-coalescing side-effect)
       '@typescript-eslint/non-nullable-type-assertion-style': 'error',
+      // Batch 125: 1 rule — 19 violations auto-fixed (unnecessary boolean literal comparisons)
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
     },
     settings: {
       react: { version: 'detect' },
