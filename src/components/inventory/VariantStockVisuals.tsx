@@ -21,8 +21,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateStockStatus, type StockStatus } from '@/types/stock';
+import {
+  getColorSwatchClasses,
+  resolveSwatchBackground,
+} from '@/components/shared/ColorSwatch';
 
-const MIXED_COLOR_RE = /color(ido)?|sortido|multi/i;
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
@@ -121,13 +124,7 @@ export function RichColorSwatch({
   isActive = false,
 }: RichColorSwatchProps) {
   const label = name?.trim() || 'Sem cor';
-  // "Colorido"/"Sortido" — usa gradiente conic; "Padrão" — neutro.
-  const isMixed = MIXED_COLOR_RE.test(label);
-  const bg = hex
-    ? hex
-    : isMixed
-      ? 'conic-gradient(from 180deg, hsl(0 80% 60%), hsl(40 90% 55%), hsl(140 60% 50%), hsl(210 80% 55%), hsl(280 60% 55%), hsl(0 80% 60%))'
-      : undefined;
+  const bg = resolveSwatchBackground(hex, label);
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -137,18 +134,19 @@ export function RichColorSwatch({
             role="img"
             aria-label={label}
             className={cn(
-              // Mesmo visual do swatch do Catálogo de Produtos
-              // (src/components/products/ProductColorSwatches.tsx):
-              // border /40, shadow-sm; sem opacity quando "em estoque"
-              // para que cores claras (BRANCO) não fiquem cinza.
-              'relative inline-block h-[25px] w-[25px] shrink-0 cursor-help rounded-full border border-border/40 shadow-sm transition-all',
-              isActive && 'ring-2 ring-primary ring-offset-1',
+              // SSOT: src/components/shared/ColorSwatch.tsx — não duplicar
+              // regras visuais aqui. Tamanho fixo 25px (estoque).
+              'h-[25px] w-[25px] shrink-0 cursor-help',
+              getColorSwatchClasses({ isActive, isOutOfStock }),
               !bg && 'border-dashed border-muted-foreground/40',
-              // Esgotado: mesma marcação do catálogo (slash diagonal + grayscale leve).
-              isOutOfStock &&
-                'opacity-60 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
             )}
-            style={bg ? { backgroundColor: bg } : undefined}
+            style={
+              bg
+                ? bg.startsWith('conic-gradient')
+                  ? { backgroundImage: bg }
+                  : { backgroundColor: bg }
+                : undefined
+            }
           />
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs font-medium">
@@ -158,6 +156,7 @@ export function RichColorSwatch({
     </TooltipProvider>
   );
 }
+
 
 
 
