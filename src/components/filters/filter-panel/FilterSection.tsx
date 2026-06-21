@@ -74,6 +74,8 @@ export function FilterSection({
         )}
       >
         <CollapsibleTrigger
+          data-testid={`filter-section-trigger-${id}`}
+          data-state-open={isOpen ? 'true' : 'false'}
           className={cn(
             'group flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium transition-all duration-200',
             isOpen
