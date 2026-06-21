@@ -13,8 +13,10 @@ import {
 } from '@/lib/external-db';
 import { normalizeColors } from '@/utils/product-colors';
 
-function getStockStatus(stock: number): CatalogStockStatus {
-  return getCatalogStockStatus(stock);
+function getStockStatus(stock: number, minQuantity?: number | null): CatalogStockStatus {
+  // Passa min_quantity para a SSOT: estoque positivo abaixo do mínimo pedível
+  // do fornecedor é tratado como zerado (paridade com o catálogo lightweight).
+  return getCatalogStockStatus(stock, undefined, minQuantity);
 }
 
 // Janela de novidade alinhada ao módulo Novidades (useNovelties.NOVELTY_WINDOW_DAYS = 30)
@@ -160,7 +162,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     brand: p.brand,
     is_active: p.is_active ?? p.active,
     minQuantity: p.min_quantity || 1,
-    stockStatus: getStockStatus(stock),
+    stockStatus: getStockStatus(stock, p.min_quantity),
     featured: Boolean(p.is_featured || p.is_bestseller),
     newArrival:
       Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),

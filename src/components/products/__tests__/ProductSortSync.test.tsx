@@ -23,6 +23,7 @@ vi.mock('@/hooks/products', () => ({
     noveltyToProduct: vi.fn(),
   })),
   sortNovelties: (arr: unknown[]) => arr,
+  noveltyToProduct: vi.fn(),
 }));
 
 vi.mock('@/stores/useFavoritesStore', () => ({
