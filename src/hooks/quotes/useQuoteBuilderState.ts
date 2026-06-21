@@ -491,6 +491,16 @@ export function useQuoteBuilderState() {
           setClientId(quote.client_id || '');
           setContactId(quote.contact_id || '');
           setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
+          // BUG-007: validityDays Select showed '7 dias' even when the loaded quote had
+          // a different expiry. Sync to the closest preset so the UI is honest.
+          // If the date doesn't match a preset exactly, '' shows "Selecione" (placeholder).
+          if (quote.valid_until) {
+            const daysRemaining = Math.round(
+              (new Date(quote.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+            );
+            const PRESETS = ['1', '3', '7', '15', '30'];
+            setValidityDays(PRESETS.find((p) => parseInt(p, 10) === daysRemaining) ?? '');
+          }
           setNotes(quote.notes || '');
           setInternalNotes(quote.internal_notes || '');
           setQuoteNumber(quote.quote_number || '');
@@ -511,6 +521,14 @@ export function useQuoteBuilderState() {
               ramo_atividade: undefined,
             });
           }
+          // BUG-003: Log a warning when both fields are set — indicates data corruption
+          // (only one should be > 0 at a time). We pick percent as the canonical value.
+          if ((quote.discount_percent ?? 0) > 0 && (quote.discount_amount ?? 0) > 0) {
+            logger.warn(
+              '[useQuoteBuilderState] Both discount_percent and discount_amount are set on loaded quote — possible data corruption. Picking percent.',
+              { quoteId: quote.id },
+            );
+          }
           if (quote.discount_percent && quote.discount_percent > 0) {
             setDiscountType('percent');
             setDiscountValue(quote.discount_percent);
@@ -523,7 +541,10 @@ export function useQuoteBuilderState() {
           if (quote.payment_method) setPaymentMethod(quote.payment_method);
           if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
           if (quote.shipping_type) setShippingType(quote.shipping_type);
-          if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
+          // BUG-004: falsy check skips 0, which is valid for CIF (freight included).
+          // Use explicit null/undefined check instead.
+          if (quote.shipping_cost !== null && quote.shipping_cost !== undefined)
+            setShippingCost(quote.shipping_cost);
           if (quote.delivery_time) {
             if (quote.delivery_time.startsWith('date:')) {
               setDeliveryMode('data');
@@ -981,6 +1002,15 @@ export function useQuoteBuilderState() {
       } else if (!isFormValid) {
         const missing = validationErrors.map((e) => QUOTE_FIELD_LABELS[e] || e).join(', ');
         toast.error(`Preencha os campos obrigatórios: ${missing}`);
+        return;
+      }
+
+      // BUG-015: Block sending a quote whose validity date is already in the past.
+      // Drafts are exempt — sellers legitimately archive old drafts with expired dates.
+      if (status !== 'draft' && validUntil && new Date(validUntil) < new Date()) {
+        toast.error(
+          'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
+        );
         return;
       }
 
