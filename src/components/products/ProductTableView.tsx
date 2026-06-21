@@ -271,7 +271,14 @@ export const ProductTableView = memo(
         if (!batch || batch.length === 0) return p;
         return {
           ...p,
-          colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+          // FIX-COLOR-SEL-01 (tabela): idem VirtualizedProductGrid — image e stock incluídos.
+          colors: batch.map((c) => ({
+            name: c.name,
+            hex: c.hex || '',
+            group: '',
+            image: c.image || undefined,
+            stock: c.stockQty,
+          })),
         };
       });
     }, [products, colorsByProduct]);
