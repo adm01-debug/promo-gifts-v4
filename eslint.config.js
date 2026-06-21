@@ -425,7 +425,7 @@ export default [
       // Batch 118: 6 zero-violation rules (removed: no-unsafe-member-access many, method-signature-style many, destructuring-assignment many, jsx-child-element-spacing many, jsx-props-no-multi-spaces 1v, jsx-boolean-value 5v)
       'constructor-super': 'error',
       'react/jsx-uses-react': 'error',
-      'react/jsx-sort-default-props': 'error',
+      'react/sort-default-props': 'error',
       'react/sort-prop-types': 'error',
       'react/prefer-exact-props': 'error',
       'react/forbid-dom-props': 'error',
@@ -581,9 +581,7 @@ export default [
       'no-extend-native': 'error',
       'no-eval': 'error',
       '@typescript-eslint/no-this-alias': 'error',
-      // Batch 117: 3 zero-violation rules
-      'react/no-invalid-html-attribute': 'error',
-      'react/forbid-foreign-prop-types': 'error',
+      // Batch 120: 1 zero-violation rule
       '@typescript-eslint/no-implied-eval': 'error',
     },
     settings: {
