@@ -426,6 +426,13 @@ export default [
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
+      // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      'no-iterator': 'error',
+      'no-proto': 'error',
+      'no-sequences': 'error',
+      'prefer-object-has-own': 'error',
+      'no-useless-call': 'error',
+      // Batch 147: 5 zero-violation rules (excluded: restrict-template-expressions 8v, no-loop-func 7v)
       'no-alert': 'error',
       'no-implied-eval': 'error',
       'no-promise-executor-return': 'error',
