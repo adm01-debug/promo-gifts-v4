@@ -166,7 +166,7 @@ export function ShareActions({
               <Download className="mr-2 h-4 w-4" />
               {downloading
                 ? 'Baixando...'
-                : `Download (${selectedPhotosCount || product.images.length} fotos)`}
+                : `Download (${selectedPhotosCount || (product.images?.length ?? 0)} fotos)`}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -95,6 +95,13 @@ export function InlinePriceCalculator({
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [customQuantity, setCustomQuantity] = useState<number>(minQuantity);
   const [priceTiers, setPriceTiers] = useState<PriceTableRow[]>([]);
+
+  // BUG-IPC-01 FIX (2026-06-21): useState(minQuantity) apenas usa o valor inicial —
+  // se a prop minQuantity mudar (ex: troca de variante), customQuantity ficava abaixo
+  // do novo mínimo. Sincronizar explicitamente.
+  useEffect(() => {
+    setCustomQuantity((prev) => Math.max(prev, minQuantity));
+  }, [minQuantity]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -143,7 +150,11 @@ export function InlinePriceCalculator({
       }
     }
     fetchPriceTiers();
-  }, [productId, variantId, basePrice, minQuantity]);
+    // BUG-IPC-02 FIX (2026-06-21): minQuantity não é usado dentro de fetchPriceTiers
+    // mas estava na dep list — causava re-fetch desnecessário ao trocar variante.
+    // O reset de customQuantity é tratado pelo useEffect acima.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, variantId, basePrice]);
 
   const getCustomPrice = (qty: number) => {
     if (priceTiers.length === 0) return { unitPrice: basePrice, discount: 0 };
@@ -154,7 +165,9 @@ export function InlinePriceCalculator({
   };
 
   const customPriceInfo = getCustomPrice(customQuantity);
-  const customTotal = customPriceInfo.unitPrice * customQuantity + Number.EPSILON;
+  // BUG-IPC-03 FIX (2026-06-21): + Number.EPSILON (~2.2e-16) não afeta exibição (toFixed/Intl
+  // arredondam para 2 casas) e não corrige floating-point — era código sem efeito útil.
+  const customTotal = customPriceInfo.unitPrice * customQuantity;
 
   if (defaultOpen) {
     return (
