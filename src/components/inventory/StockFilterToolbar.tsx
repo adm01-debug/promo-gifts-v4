@@ -16,7 +16,10 @@ import {
   Truck,
   RotateCcw,
   Loader2,
+  TrendingDown,
 } from 'lucide-react';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
+import { RUPTURE_HORIZON_OPTIONS } from '@/lib/inventory/rupture-risk';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
