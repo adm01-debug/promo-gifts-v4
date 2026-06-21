@@ -218,6 +218,28 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : (error?.message || error?.error_description || error?.hint || error?.details || JSON.stringify(error) || 'Erro desconhecido');
     const errorCode = error?.code ?? null;
+
+    // PGRST002 = PostgREST do banco externo ainda está reconstruindo o schema cache
+    // (típico logo após auto-resume de projeto pausado). É transitório — devolvemos
+    // payload vazio com flag, em vez de 500 / tela branca, pra UI fazer retry suave.
+    const isSchemaCacheWarmup =
+      errorCode === 'PGRST002' || /schema cache/i.test(errorMessage);
+    if (isSchemaCacheWarmup) {
+      console.warn('[materials-api] external PostgREST schema cache warming up — returning empty payload', { errorMessage });
+      return new Response(
+        JSON.stringify({
+          data: [],
+          records: [],
+          count: 0,
+          _unavailable: true,
+          _retryable: true,
+          _message: 'Banco externo aquecendo o cache de schema. Tente novamente em alguns segundos.',
+          code: 'PGRST002',
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '5' } },
+      );
+    }
+
     console.error('Materials API error:', errorMessage, 'code:', errorCode, 'raw:', JSON.stringify(error));
     return new Response(JSON.stringify({ error: errorMessage, code: errorCode }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
