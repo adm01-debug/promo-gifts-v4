@@ -13,8 +13,9 @@ export type StockKpiFilter = 'all' | 'in_stock' | 'critical' | 'out_of_stock';
 export type StockKpiSlug =
   | 'total-de-variacoes'
   | 'em-estoque'
-  | 'critico'
+  | 'risco-de-ruptura'
   | 'sem-estoque';
+
 
 export interface StockKpiCardData {
   slug: StockKpiSlug;
