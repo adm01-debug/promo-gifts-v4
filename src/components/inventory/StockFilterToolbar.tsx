@@ -63,6 +63,10 @@ interface StockFilterToolbarProps {
   colorGroups: FilterOption[];
   totalProducts: number;
   filteredCount: number;
+  /** Variações em risco de ruptura (≤30d) — set vindo do dashboard. */
+  ruptureRiskVariantIds?: ReadonlySet<string> | null;
+  /** Indica se o filtro "Risco de Ruptura" está ativo no momento. */
+  isRuptureRiskActive?: boolean;
 }
 
 export function StockFilterToolbar({
