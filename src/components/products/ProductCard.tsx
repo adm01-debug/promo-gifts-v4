@@ -658,7 +658,6 @@ export const ProductCard = memo(
             />
           </div>
 
-
           {/* Word Magic Badge — visível quando AI está ativa */}
           <WordMagicBadge visible={isAIActive} />
 
@@ -818,7 +817,6 @@ export const ProductCard = memo(
                 }
               }}
             />
-
 
             <div className="flex-1" />
 

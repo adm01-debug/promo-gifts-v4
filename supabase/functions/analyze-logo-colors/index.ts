@@ -184,13 +184,31 @@ Return ONLY a JSON array, no markdown, no explanation. Example:
     const data = await aiResponse.json();
     const content = data.choices?.[0]?.message?.content || '[]';
 
-    let colors;
+    // STRICT output validation. The model can return prose, a truncated array, or
+    // objects with the wrong shape; previously any of these were silently coerced to
+    // `[]` with HTTP 200 (indistinguishable from "logo has no colors"), and a malformed
+    // element could otherwise reach the UI. Validate every element against
+    // { name: string, hex: "#RRGGBB" }, drop invalid entries, and cap at 10.
+    const ColorSchema = z.object({
+      name: z.string().min(1).max(60),
+      hex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    });
+
+    let colors: Array<{ name: string; hex: string }> = [];
     try {
       const jsonMatch = content.match(/\[[\s\S]*\]/);
-      colors = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      const raw = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      if (Array.isArray(raw)) {
+        colors = raw
+          .map((c: unknown) => {
+            const r = ColorSchema.safeParse(c);
+            return r.success ? { name: r.data.name, hex: r.data.hex.toUpperCase() } : null;
+          })
+          .filter((c): c is { name: string; hex: string } => c !== null)
+          .slice(0, 10);
+      }
     } catch {
       console.error('Failed to parse AI response:', { contentLength: content.length });
-      colors = [];
     }
 
     return new Response(JSON.stringify({ colors }), {

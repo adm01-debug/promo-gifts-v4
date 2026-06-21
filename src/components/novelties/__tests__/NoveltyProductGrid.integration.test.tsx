@@ -96,6 +96,22 @@ vi.mock('@/hooks/products', () => ({
     }
     return arr;
   },
+  // Direct module export consumed by NoveltyProductGrid (ISSUE-35: stable ref
+  // via top-level import instead of sel.noveltyToProduct).
+  noveltyToProduct: (n: NoveltyWithDetails) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    product_name: n.product_name || '',
+    price: n.base_price,
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id, name: n.supplier_name },
+    category: { id: n.category_id, name: n.category_name },
+    images: [n.product_image],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  }),
   useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),

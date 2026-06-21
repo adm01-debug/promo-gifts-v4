@@ -126,7 +126,7 @@ export const BaseProductGridCard = memo(
           'hover:border-primary/40 hover:shadow-md',
           // Altura FIXA por breakpoint (não min-h). Mobile = 400px, ≥sm = 430px.
           // Garante cards idênticos mesmo com +N nos swatches ou título 1↔2 linhas.
-          'h-[400px] max-h-[400px] sm:h-[430px] sm:max-h-[430px] overflow-hidden',
+          'h-[400px] max-h-[400px] overflow-hidden sm:h-[430px] sm:max-h-[430px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
           className,
         )}
@@ -221,7 +221,6 @@ export const BaseProductGridCard = memo(
           >
             {productName || '—'}
           </p>
-
 
           {/* 5 — Bolinhas de cores */}
           <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>

@@ -112,7 +112,6 @@ function SellerCartsContent() {
   const [visibleColumns, setVisibleColumns] =
     useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
   const [density, setDensity] = useState<CartTableDensity>('comfortable');
-  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
   // Ordenação + paginação (persistidas, namespaced por user)
   type SortKey = 'name' | 'price' | 'total';
@@ -649,6 +648,8 @@ function SellerCartsContent() {
                 {viewMode === 'table' ? (
                   (() => {
                     const { sorted, start, pageItems, safePage, totalPages } = cartTableData;
+                    // Density-aware cell padding (restored — referenced by every th/td below).
+                    const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
                     const renderSortHdr = (
                       key: SortKey,
                       label: string,
