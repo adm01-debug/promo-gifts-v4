@@ -390,13 +390,14 @@ export function StockDashboard() {
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-        {buildStockKpiCards(summary).map((card) => {
+        {buildStockKpiCards(summary, ruptureRisk15dCount).map((card) => {
           const ICONS: Record<typeof card.slug, React.ReactNode> = {
             'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
             'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
-            'critico': <TrendingDown className="h-6 w-6 text-warning" />,
+            'risco-de-ruptura': <TrendingDown className="h-6 w-6 text-warning" />,
             'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
           };
+
           const isActive =
             card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter;
           return (
