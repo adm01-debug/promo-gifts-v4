@@ -311,20 +311,30 @@ export function StockDashboard() {
         </Suspense>
       )}
 
-      {/* Advanced Filters (topo, logo após o título "Estoque") */}
+      {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
       <Card>
         <CardContent className="p-4">
-          <StockFilterToolbar
-            filters={filters}
-            onUpdateFilter={updateFilter}
-            onResetFilters={resetFilters}
-            categories={availableCategories}
-            suppliers={availableSuppliers}
-            colors={allColors}
-            colorGroups={availableColorGroups}
-            totalProducts={allProductStocks.length}
-            filteredCount={productStocks.length}
-          />
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+            <h1
+              data-testid="page-title-estoque"
+              className="shrink-0 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:pt-1"
+            >
+              Estoque
+            </h1>
+            <div className="min-w-0 flex-1">
+              <StockFilterToolbar
+                filters={filters}
+                onUpdateFilter={updateFilter}
+                onResetFilters={resetFilters}
+                categories={availableCategories}
+                suppliers={availableSuppliers}
+                colors={allColors}
+                colorGroups={availableColorGroups}
+                totalProducts={allProductStocks.length}
+                filteredCount={productStocks.length}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
