@@ -132,6 +132,19 @@ describe('postgrest write path', () => {
     expect(opsByName('select')).toHaveLength(1);
   });
 
+  it('UPSERT forwards onConflict to .upsert(values, { onConflict }) — needed by bulk import', async () => {
+    resolveValue = { data: [{ id: 'u2' }], error: null };
+    await dbInvoke({
+      table: 'products',
+      operation: 'upsert',
+      data: { sku: 'X' },
+      onConflict: 'sku',
+    });
+    const up = opsByName('upsert');
+    expect(up).toHaveLength(1);
+    expect(up[0].args[1]).toEqual({ onConflict: 'sku' });
+  });
+
   it('SELECT still reads (no write ops issued)', async () => {
     resolveValue = { data: [{ id: 'x' }], error: null, count: 1 };
     const result = await dbInvoke({ table: 'products', operation: 'select', limit: 1 });
