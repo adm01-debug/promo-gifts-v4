@@ -484,6 +484,9 @@ export function NoveltyProductGrid() {
                       name: c.name,
                       hex: c.hex || '',
                       group: '',
+                      image: c.image ?? undefined,
+                      images: c.image ? [c.image] : undefined,
+                      stock: c.stockQty,
                     })),
                   }
                 : prodBase;

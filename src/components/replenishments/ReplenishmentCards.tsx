@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 
 import {
   Table,
@@ -17,6 +17,7 @@ import {
   type ColorDotLike,
   ProductColorSwatches,
 } from '@/components/products/ProductColorSwatches';
+import { getStockStatus } from '@/components/inventory/StockBadge';
 import { cn } from '@/lib/utils';
 import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
 
@@ -159,6 +160,9 @@ export function ReplenishmentTableView({
   onToggleSelect,
   colorsByProduct,
 }: ReplenishmentTableViewProps) {
+  // Seleção de cor por linha (productId → nome da cor): troca foto, status e
+  // estoque exibidos da linha; "Todos" limpa. Estado por id (seguro p/ tabela).
+  const [colorByProduct, setColorByProduct] = useState<Map<string, string>>(new Map());
   return (
     <div
       className="overflow-hidden rounded-lg border border-border/50"
@@ -184,8 +188,21 @@ export function ReplenishmentTableView({
           {products.map((product) => {
             const recent = product.days_since <= 2;
             const isSelected = selectedIds.has(product.product_id);
-            const stockConfig = STOCK_CONFIG[product.stock_status];
-            const stockQty = product.stock_quantity;
+            const rowColors = colorsByProduct?.get(product.product_id);
+            const activeColorName = colorByProduct.get(product.product_id) ?? null;
+            const activeColor =
+              activeColorName && rowColors
+                ? rowColors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase())
+                : undefined;
+            const hasColorStock = typeof activeColor?.stockQty === 'number';
+            const rowImage = activeColor?.image || product.product_image;
+            const rowStatus = hasColorStock
+              ? getStockStatus(activeColor?.stockQty ?? 0, 10)
+              : product.stock_status;
+            const stockConfig = STOCK_CONFIG[rowStatus];
+            const stockQty = hasColorStock
+              ? (activeColor?.stockQty ?? 0)
+              : product.stock_quantity;
 
             return (
               <TableRow
@@ -233,9 +250,9 @@ export function ReplenishmentTableView({
                       testId="replenishment-table-row-thumb"
                       className="h-full w-full"
                     >
-                      {product.product_image ? (
+                      {rowImage ? (
                         <img
-                          src={product.product_image}
+                          src={rowImage}
                           alt={`Foto de ${product.product_name}`}
                           onError={(e) => {
                             const img = e.currentTarget as HTMLImageElement;
@@ -277,10 +294,21 @@ export function ReplenishmentTableView({
                 </TableCell>
                 <TableCell className="hidden px-2 py-1.5 md:table-cell">
                   <ProductColorSwatches
-                    colors={colorsByProduct?.get(product.product_id)}
+                    colors={rowColors}
                     max={5}
                     size="sm"
                     hideWhenEmpty={false}
+                    selectedName={activeColorName}
+                    onSelect={(c) =>
+                      setColorByProduct((prev) => new Map(prev).set(product.product_id, c.name))
+                    }
+                    onClear={() =>
+                      setColorByProduct((prev) => {
+                        const next = new Map(prev);
+                        next.delete(product.product_id);
+                        return next;
+                      })
+                    }
                   />
                 </TableCell>
                 <TableCell className="px-2 py-1.5 text-center">
