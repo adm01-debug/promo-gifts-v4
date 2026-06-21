@@ -417,6 +417,44 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 244: 5 zero-violation rules (node/deprecated — 244A: no-process-env 10v, global-require 1v, radix 16v, no-negated-condition 289v)
+      'no-mixed-requires': 'error',
+      'handle-callback-err': 'error',
+      'no-new-require': 'error',
+      'no-buffer-constructor': 'error',
+      'no-catch-shadow': 'error',
+      // Batch 243: 5 zero-violation rules (all confirmed 0v in probe 242A)
+      'semi-style': 'error',
+      'space-before-blocks': 'error',
+      'space-in-parens': 'error',
+      'no-sync': 'error',
+      'no-process-exit': 'error',
+      // Batch 242: 5 zero-violation rules (spacing/style — 242A: comma-spacing 13v, key-spacing 113v, object-curly-spacing 47715v)
+      'block-spacing': 'error',
+      'comma-style': 'error',
+      'computed-property-spacing': 'error',
+      'keyword-spacing': 'error',
+      'semi-spacing': 'error',
+      // Batch 241: 5 zero-violation rules (spacing/formatting — all confirmed 0v in probe 240A)
+      'rest-spread-spacing': 'error',
+      'switch-colon-spacing': 'error',
+      'space-unary-ops': 'error',
+      'template-curly-spacing': 'error',
+      'template-tag-spacing': 'error',
+      // Batch 240: 5 zero-violation rules (formatting/spacing — 240A: unicode-bom 23v, wrap-regex 103v, space-infix-ops 6v)
+      'no-whitespace-before-property': 'error',
+      'linebreak-style': 'error',
+      'generator-star-spacing': 'error',
+      'new-parens': 'error',
+      'yield-star-spacing': 'error',
+      // Batch 239: 5 zero-violation rules (react + core — 239A: no-set-state 12v, jsx-pascal-case 16v, forbid-component-props 11133v)
+      'react/forbid-prop-types': 'error',
+      'no-invalid-this': 'error',
+      'jsx-quotes': 'error',
+      'no-mixed-spaces-and-tabs': 'error',
+      'no-tabs': 'error',
+      // Batch 238: 1 zero-violation rule (@typescript-eslint — 238A-G probed all 134 @typescript-eslint rules)
+      '@typescript-eslint/consistent-type-imports': 'error',
       // Batch 237: 5 zero-violation rules (probe 237A: all 0v✓)
       '@typescript-eslint/no-implied-eval': 'error',
       '@typescript-eslint/prefer-for-of': 'error',
