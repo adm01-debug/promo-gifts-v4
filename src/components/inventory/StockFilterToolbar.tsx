@@ -175,10 +175,10 @@ export function StockFilterToolbar({
         {/* 1. Advanced Filters Popover */}
         <Popover>
           <StockHelpTooltip
-            title="Filtros avançados"
-            description="Refine o dashboard por Categoria, Fornecedor, Grupo de cor, Status, Faixa de cobertura e mais. Combinam em AND entre seções e OR dentro da mesma seção."
-            example="Categoria = Canecas + Cor = Azul + Status = Crítico"
-            emptyHint="Tente remover uma seção por vez (Reset limpa tudo)."
+            title="Filtros"
+            description="Refine por categoria, fornecedor, cor ou status."
+            example="Canecas + Azul = só canecas azuis."
+            emptyHint="Sem resultado? Remova um filtro por vez."
           >
             <PopoverTrigger asChild>
               <Button
@@ -421,10 +421,10 @@ export function StockFilterToolbar({
         {/* Botão dedicado: Estoque Futuro */}
         <Popover>
           <StockHelpTooltip
-            title="Estoque Futuro"
-            description="Inclui no cálculo da régua de quantidade o que está chegando dentro da janela escolhida (7, 15 ou 30 dias). Quando desligado, considera apenas o que está disponível agora. Esta janela é independente da janela 'Projetar risco em Nd' da tabela (que controla apenas o cálculo do Risco de Ruptura)."
-            example="Janela 15 dias: soma reposições confirmadas com chegada até daqui a 15 dias."
-            emptyHint="Sem reposições previstas? Aumente a janela para 30 dias."
+            title="Em Estoque / Estoque Futuro"
+            description="Mostre só o que tem agora, ou inclua o que está chegando em 7, 15 ou 30 dias."
+            example="Janela 15 dias: vende o que chega até lá."
+            emptyHint="Sem chegadas? Aumente para 30 dias."
           >
 
             <PopoverTrigger asChild>
@@ -526,20 +526,20 @@ export function StockFilterToolbar({
 
         {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip
-          title='Calculadora "Preciso de X un…"'
+          title='"Preciso de X unidades"'
           description={
             <>
-              Compara a quantidade pedida com estoque atual + em trânsito:
+              Digite a quantidade do pedido e veja quem atende:
               <br />
-              🟢 <strong>Atende agora</strong>: estoque ≥ X.
+              🟢 <strong>Atende agora</strong> — tem em estoque.
               <br />
-              🟡 <strong>Atende com reposição</strong>: estoque + chegando ≥ X.
+              🟡 <strong>Atende com reposição</strong> — chega a tempo.
               <br />
-              🔴 <strong>Não atende</strong>: nem com o que está chegando dá conta.
+              🔴 <strong>Não atende</strong> — falta produto.
             </>
           }
-          example="Digite 500 para ver quais produtos cobrem um pedido de 500 unidades."
-          emptyHint="Reduza a quantidade ou combine com filtro de fornecedor para alternativas."
+          example="Digite 500 → vê quem cobre um pedido de 500 un."
+          emptyHint="Reduza a quantidade ou troque de fornecedor."
         >
           <div className="relative w-full sm:w-48">
             <ShoppingCart className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -572,10 +572,10 @@ export function StockFilterToolbar({
 
         {/* 3. Search — commit on Enter / botão "Busca" (sem lupa interna) */}
         <StockHelpTooltip
-          title="Busca no Estoque"
-          description='Preencha filtros, "Em Estoque", quantidade e o texto desejado, depois pressione Enter ou clique em "Busca" para aplicar. Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens).'
-          example='"caneca azul" casa "Caneca cerâmica azul royal" e SKU CANECA-AZ-01.'
-          emptyHint="Use menos palavras, verifique a grafia ou limpe outros filtros ativos."
+          title="Buscar produto"
+          description="Digite nome, SKU ou cor e pressione Enter. Ignora acentos e maiúsculas."
+          example='"caneca azul" acha "Caneca cerâmica azul royal".'
+          emptyHint="Use menos palavras ou limpe os filtros."
         >
           <div className="relative flex max-w-md flex-1 items-center gap-2">
             <div className="relative flex-1">
