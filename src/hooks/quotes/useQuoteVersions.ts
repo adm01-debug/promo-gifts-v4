@@ -44,8 +44,12 @@ export function useQuoteVersions(quoteId?: string) {
 
         if (qErr || !currentQuote) throw qErr ?? new Error('Quote not found');
 
-        // Find the root quote ID (the original quote)
-        const rootId = currentQuote.parent_quote_id || currentQuote.id;
+        // Find the root quote ID (the original quote).
+        // Guard against self-referencing parent_quote_id (data corruption) which would
+        // cause the OR query to return the same row twice, corrupting the version tree.
+        const _parentId = currentQuote.parent_quote_id;
+        const rootId =
+          _parentId !== null && _parentId !== currentQuote.id ? _parentId : currentQuote.id;
 
         // Get all versions: the root + all children
         const { data, error } = await supabase
@@ -113,8 +117,10 @@ export function useQuoteVersions(quoteId?: string) {
           .eq('id', sourceQuoteId)
           .single();
 
-        const rootId = currentData?.parent_quote_id || sourceQuoteId;
-        const currentVersion = currentData?.version || 1;
+        const _parentId2 = currentData?.parent_quote_id ?? null;
+        const rootId =
+          _parentId2 !== null && _parentId2 !== sourceQuoteId ? _parentId2 : sourceQuoteId;
+        const currentVersion = currentData?.version ?? 1;
 
         // Find max version across all versions of this quote
         const { data: maxVersionData } = await supabase
@@ -125,7 +131,9 @@ export function useQuoteVersions(quoteId?: string) {
           .order('version', { ascending: false })
           .limit(1);
 
-        const maxVersion = maxVersionData?.[0]?.version || currentVersion;
+        // BUG-033: use ?? not || so version=0 (impossible but defensive) doesn't
+        // fall back to currentVersion and produce a duplicate version number.
+        const maxVersion = maxVersionData?.[0]?.version ?? currentVersion;
         const newVersion = maxVersion + 1;
 
         // Mark all existing versions as not latest
