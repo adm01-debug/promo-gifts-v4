@@ -91,10 +91,19 @@ export function StockFilterToolbar({
     },
   );
 
+  // Sincroniza o sub-flag da régua com o toggle do toolbar:
+  // se "Estoque Futuro" está ligado, a régua de quantidade também conta o futuro.
+  // Isso torna a seção "Estoque" do popover (removida) desnecessária.
+  const setIncludeFutureStock = (v: boolean) => {
+    onUpdateFilter('includeFutureStock', v);
+    onUpdateFilter('minQtyIncludesFutureStock', v);
+  };
+
   // Atalho: Shift+F alterna inclusão do Estoque Futuro.
   useFutureStockShortcut(() => {
-    onUpdateFilter('includeFutureStock', !filters.includeFutureStock);
+    setIncludeFutureStock(!filters.includeFutureStock);
   });
+
 
   // Accordion behavior: only one section open at a time
   const toggleSection = (id: string) => {
