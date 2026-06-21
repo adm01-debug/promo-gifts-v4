@@ -129,7 +129,10 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-search', debouncedSearch],
     queryFn: async () => {
       if (debouncedSearch.length < 3) return [];
-      const searchOpts = { orderBy: { column: 'razao_social', ascending: true }, limit: 30 } as const;
+      const searchOpts = {
+        orderBy: { column: 'razao_social', ascending: true },
+        limit: 30,
+      } as const;
       const [byRazao, byFantasia] = await Promise.all([
         searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, searchOpts),
         searchCrm<CrmCompany>('companies', 'nome_fantasia', debouncedSearch, searchOpts),
@@ -217,54 +220,52 @@ export function CartCompanyPickerDialog({
   const canSelect = canCreateCart && !isCreating;
 
   const renderRow = (company: CompanyItem) => (
-    <div
-      key={company.id}
-      role="button"
-      tabIndex={canSelect ? 0 : -1}
-      aria-disabled={!canSelect}
-      data-testid="cart-company-picker-select"
-      data-company-id={company.id}
-      className={cn(
-        'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
-        'group transition-colors hover:bg-accent/60',
-        !canSelect && 'pointer-events-none opacity-50',
-      )}
-      onClick={() => canSelect && handleSelect(company)}
-      onKeyDown={(e) => {
-        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          handleSelect(company);
-        }
-      }}
-    >
-      {company.logo_url ? (
-        <img
-          src={company.logo_url}
-          alt=""
-          className="h-9 w-9 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{company.name}</p>
-        {company.ramo && (
-          <p className="truncate text-[11px] text-muted-foreground">{company.ramo}</p>
+    <div key={company.id} className="group relative flex items-center rounded-lg">
+      <button
+        type="button"
+        disabled={!canSelect}
+        data-testid="cart-company-picker-select"
+        data-company-id={company.id}
+        className={cn(
+          'flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
+          'transition-colors hover:bg-accent/60',
+          !canSelect && 'cursor-not-allowed opacity-50',
         )}
-      </div>
+        onClick={() => handleSelect(company)}
+      >
+        {company.logo_url ? (
+          <img
+            src={company.logo_url}
+            alt=""
+            className="h-9 w-9 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1 pr-8">
+          <p className="truncate text-sm font-medium">{company.name}</p>
+          {company.ramo && (
+            <p className="truncate text-[11px] text-muted-foreground">{company.ramo}</p>
+          )}
+        </div>
+      </button>
       <button
         type="button"
         onClick={(e) => toggleFavorite(company, e)}
         className={cn(
-          'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+          'absolute right-2 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
           isFavorite(company.id)
             ? 'text-warning'
             : 'text-muted-foreground/40 opacity-0 hover:text-warning group-hover:opacity-100',
         )}
-        aria-label={isFavorite(company.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+        aria-label={
+          isFavorite(company.id)
+            ? `Remover ${company.name} dos favoritos`
+            : `Adicionar ${company.name} aos favoritos`
+        }
       >
         <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
       </button>
@@ -352,6 +353,7 @@ export function CartCompanyPickerDialog({
               <Search className="left-4.5 absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={inputRef}
+                aria-label="Buscar empresa por nome, CNPJ ou segmento"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Nome, CNPJ ou segmento..."

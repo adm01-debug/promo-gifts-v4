@@ -45,7 +45,8 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
 
   // Focus input on mount
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 100);
+    const t = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
   }, []);
 
   // Local companies cache
@@ -77,7 +78,10 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
     queryKey: ['cart-companies-search', debouncedSearch],
     queryFn: async () => {
       if (debouncedSearch.length < 3) return [];
-      const searchOpts = { orderBy: { column: 'razao_social', ascending: true }, limit: 20 } as const;
+      const searchOpts = {
+        orderBy: { column: 'razao_social', ascending: true },
+        limit: 20,
+      } as const;
       const [byRazao, byFantasia] = await Promise.all([
         searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, searchOpts),
         searchCrm<CrmCompany>('companies', 'nome_fantasia', debouncedSearch, searchOpts),
@@ -171,6 +175,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           ref={inputRef}
+          aria-label="Buscar empresa"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar empresa..."
@@ -193,6 +198,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                 <Button
                   variant="ghost"
                   size="sm"
+                  aria-label="Limpar histórico de busca"
                   className="h-5 text-[10px]"
                   onClick={clearHistory}
                 >

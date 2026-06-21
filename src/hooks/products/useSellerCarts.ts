@@ -3,13 +3,12 @@
  * Persiste no banco de dados, máx 3 carrinhos simultâneos
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
-import type { Tables } from '@/integrations/supabase/types';
 
 // ============================================
 // TYPES
@@ -23,7 +22,7 @@ export interface SellerCart {
   company_location: string | null;
   company_logo_url: string | null;
   notes: string | null;
-  status: CartStatus;
+  status: string;
   created_at: string;
   updated_at: string;
   items: SellerCartItem[];
@@ -67,10 +66,6 @@ export interface CreateCartInput {
 }
 
 export type CartStatus = 'novo' | 'em_negociacao' | 'pronto_orcamento';
-
-type CartWithItems = Tables<'seller_carts'> & {
-  seller_cart_items: Tables<'seller_cart_items'>[];
-};
 
 const QUERY_KEY = 'seller-carts';
 
@@ -116,36 +111,41 @@ export function useSellerCarts() {
     return data ?? null;
   };
 
-  // Fetch all carts with items — único round-trip via PostgREST nested select.
+  // Fetch all carts with items
   const cartsQuery = useQuery<SellerCart[]>({
     queryKey: [QUERY_KEY, userId],
     queryFn: async () => {
       if (!userId) return [];
 
-      const { data, error } = await supabase
+      const { data: carts, error: cartsError } = await supabase
         .from('seller_carts')
-        .select('*, seller_cart_items(*)')
+        .select('*')
         .eq('seller_id', userId)
-        .order('updated_at', { ascending: false })
-        .order('sort_order', { ascending: true, foreignTable: 'seller_cart_items' });
+        .order('updated_at', { ascending: false });
 
-      if (error) throw error;
-      if (!data?.length) return [];
+      if (cartsError) throw cartsError;
+      if (!carts?.length) return [];
 
-      return data.map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row as CartWithItems;
-        return {
-          ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
-          items: (rowItems ?? []) as SellerCartItem[],
-        };
-      });
+      const { data: items, error: itemsError } = await supabase
+        .from('seller_cart_items')
+        .select('*')
+        .in(
+          'cart_id',
+          carts.map((c) => c.id),
+        )
+        .order('sort_order', { ascending: true });
+
+      if (itemsError) throw itemsError;
+
+      return carts.map((cart) => ({
+        ...cart,
+        notes: cart.notes ?? null,
+        status: cart.status ?? 'novo',
+        items: (items || []).filter((i) => i.cart_id === cart.id),
+      }));
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   // Create cart
@@ -173,10 +173,10 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'novo' as CartStatus, items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'novo', items: [] } as SellerCart;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Operação falhou', { description: sanitizeError(err) });
@@ -190,7 +190,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Carrinho removido');
     },
     onError: (err: Error) => {
@@ -236,11 +236,10 @@ export function useSellerCarts() {
           const retryExisting = await findVariantInCart(cartId, item.product_id, colorName);
 
           if (retryExisting) {
-            const { error: retryErr } = await supabase
+            await supabase
               .from('seller_cart_items')
               .update({ quantity: clampQuantity(retryExisting.quantity + quantityToAdd) })
               .eq('id', retryExisting.id);
-            if (retryErr) throw retryErr;
           }
         } else if (error) {
           throw error;
@@ -252,7 +251,7 @@ export function useSellerCarts() {
       // INSERT/UPDATE/DELETE — não precisamos do round-trip manual aqui.
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível adicionar ao carrinho', { description: sanitizeError(err) });
@@ -266,7 +265,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível remover o item', { description: sanitizeError(err) });
@@ -287,7 +286,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível atualizar a quantidade', { description: sanitizeError(err) });
@@ -304,7 +303,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível salvar a observação', { description: sanitizeError(err) });
@@ -314,27 +313,22 @@ export function useSellerCarts() {
   // Update item sort order
   const updateItemSortOrder = useMutation({
     mutationFn: async (items: { id: string; sort_order: number }[]) => {
-      // Promise.all envia todos os UPDATEs em paralelo e rejeita com o primeiro
-      // erro — O(max_latency) vs O(N×latency) do loop serial. Em caso de falha
-      // parcial, onError já invalida a query para restaurar a ordem do servidor.
-      await Promise.all(
-        items.map(({ id, sort_order: sortOrder }) =>
-          supabase
-            .from('seller_cart_items')
-            .update({ sort_order: sortOrder })
-            .eq('id', id)
-            .then(({ error }) => {
-              if (error) throw error;
-            }),
-        ),
-      );
+      // Aplica em série e aborta no primeiro erro: evita reordenação parcial
+      // silenciosa (Promise.all engolia falhas individuais sem propagar).
+      for (const { id, sort_order } of items) {
+        const { error } = await supabase
+          .from('seller_cart_items')
+          .update({ sort_order })
+          .eq('id', id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       // Revalida do servidor para desfazer a ordem otimista que ficou parcial.
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.error('Não foi possível reordenar os itens', { description: sanitizeError(err) });
     },
   });
@@ -349,7 +343,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível salvar as observações', { description: sanitizeError(err) });
@@ -363,7 +357,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível atualizar o status', { description: sanitizeError(err) });
@@ -427,7 +421,7 @@ export function useSellerCarts() {
       return newCart.id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Carrinho duplicado com sucesso');
     },
     onError: (err: Error) => {
@@ -498,12 +492,12 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Item movido para outro carrinho');
     },
     onError: (err: Error) => {
       // Revalida do servidor: desfaz qualquer estado otimista/parcial da UI.
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.error('Não foi possível mover o item', { description: sanitizeError(err) });
     },
   });
@@ -550,7 +544,7 @@ export function useSellerCarts() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
       toast.success('Item duplicado para outro carrinho');
     },
     onError: (err: Error) => {
@@ -573,52 +567,61 @@ export function useSellerCarts() {
     mutationFn: async ({ cartId, items }: { cartId: string; items: AddToCartInput[] }) => {
       if (items.length === 0) return;
 
-      // Promise.all é seguro aqui: o constraint unique_cart_item_variant garante que
-      // o carrinho origem nunca tinha itens duplicados por (product_id, color_name),
-      // portanto não há disputa de linha entre as corrotinas paralelas.
-      // Per-item find+update/insert (em vez de upsert) mantém compatibilidade com
-      // NULL color_name (PostgREST não infere IS NULL em onConflict).
-      await Promise.all(
-        items.map(async (item) => {
-          const colorName = item.color_name ?? null;
-          const safeQty = clampQuantity(item.quantity ?? 1);
+      // Mirrors the addItem pattern (findVariantInCart + conditional update/insert) to
+      // safely handle NULL color_name. A bulk upsert with onConflict column list works on
+      // PG15+ with NULLS NOT DISTINCT, but per-item find+update/insert is more portable
+      // and avoids the PostgREST NULL-inference edge case entirely.
+      for (const item of items) {
+        const colorName = item.color_name ?? null;
+        const safeQty = clampQuantity(item.quantity ?? 1);
 
-          const existing = await findVariantInCart(cartId, item.product_id, colorName);
-          if (existing) {
-            const { error } = await supabase
-              .from('seller_cart_items')
-              .update({ quantity: safeQty, updated_at: new Date().toISOString() })
-              .eq('id', existing.id);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.from('seller_cart_items').insert({
-              cart_id: cartId,
-              product_id: item.product_id,
-              product_name: item.product_name,
-              product_sku: item.product_sku || null,
-              product_image_url: item.product_image_url || null,
-              product_price: item.product_price,
-              quantity: safeQty,
-              color_name: colorName,
-              color_hex: item.color_hex || null,
-              notes: item.notes ?? null,
-              sort_order: item.sort_order ?? null,
-            });
-            if (error) throw error;
-          }
-        }),
-      );
+        const existing = await findVariantInCart(cartId, item.product_id, colorName);
+        if (existing) {
+          const { error } = await supabase
+            .from('seller_cart_items')
+            .update({ quantity: safeQty, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('seller_cart_items').insert({
+            cart_id: cartId,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_sku: item.product_sku || null,
+            product_image_url: item.product_image_url || null,
+            product_price: item.product_price,
+            quantity: safeQty,
+            color_name: colorName,
+            color_hex: item.color_hex || null,
+            notes: item.notes ?? null,
+            sort_order: item.sort_order ?? null,
+          });
+          if (error) throw error;
+        }
+      }
 
       // updated_at do carrinho-pai é propagado pelo trigger
       // trg_touch_seller_cart_on_item_change (migration 20260617130000).
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
     onError: (err: Error) => {
       toast.error('Não foi possível restaurar os itens', { description: sanitizeError(err) });
     },
   });
+
+  const clearCart = useCallback(
+    async (cartId: string) => {
+      const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
+      if (error) {
+        toast.error('Não foi possível limpar o carrinho', { description: sanitizeError(error) });
+        throw error;
+      }
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+    },
+    [queryClient],
+  );
 
   return {
     carts,
@@ -638,11 +641,7 @@ export function useSellerCarts() {
     moveItemToCart,
     duplicateItemToCart,
     restoreItems,
-    clearCart: async (cartId: string) => {
-      const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
-    },
+    clearCart,
     refetch: cartsQuery.refetch,
   };
 }

@@ -33,20 +33,33 @@ import { ptBR } from 'date-fns/locale';
 // HELPERS
 // ============================================
 
-export function formatCurrency(value: number) {
+export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }> = {
-  novo: { label: 'Novo', color: 'bg-primary/10 text-primary border-primary/20' },
-  em_negociacao: { label: 'Em negociação', color: 'bg-warning/10 text-warning border-warning/20' },
+export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string; bg: string }> = {
+  novo: {
+    label: 'Novo',
+    color: 'bg-primary/10 text-primary border-primary/20',
+    bg: 'bg-primary/10',
+  },
+  em_negociacao: {
+    label: 'Em negociação',
+    color: 'bg-warning/10 text-warning border-warning/20',
+    bg: 'bg-warning/10',
+  },
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
     color: 'bg-success/10 text-success border-success/20',
+    bg: 'bg-success/10',
   },
 };
 
-export function getStatusCfg(status: string | undefined | null) {
+export function getStatusCfg(status: string | undefined | null): {
+  label: string;
+  color: string;
+  bg: string;
+} {
   return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.novo;
 }
 
@@ -103,7 +116,7 @@ export interface CartAction {
 
 const actionHistoryMap = new Map<string, CartAction[]>();
 
-export function recordAction(cartId: string, action: CartAction) {
+export function recordAction(cartId: string, action: CartAction): void {
   const list = actionHistoryMap.get(cartId) || [];
   list.unshift(action);
   if (list.length > 20) list.pop();
@@ -114,7 +127,7 @@ export function getActionHistory(cartId: string): CartAction[] {
   return actionHistoryMap.get(cartId) || [];
 }
 
-export function clearActionHistory(cartId: string) {
+export function clearActionHistory(cartId: string): void {
   actionHistoryMap.delete(cartId);
 }
 
@@ -148,8 +161,10 @@ export function SuggestionSkeleton() {
 // ============================================
 
 export function FollowUpTimer({ createdAt, status }: { createdAt: string; status?: string }) {
-  const days = differenceInDays(new Date(), new Date(createdAt));
-  const hours = differenceInHours(new Date(), new Date(createdAt));
+  const now = new Date();
+  const created = new Date(createdAt);
+  const days = differenceInDays(now, created);
+  const hours = differenceInHours(now, created);
 
   if (days < 1 || status === 'pronto_orcamento') return null;
 
@@ -202,8 +217,11 @@ export function SmartSuggestions({
 }) {
   const suggestions = useMemo(() => {
     const tips: { icon: typeof Lightbulb; text: string }[] = [];
-    const totalQty = cart.items.reduce((s, i) => s + i.quantity, 0);
-    const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
+    const totalQty = cart.items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
+    const subtotal = cart.items.reduce(
+      (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+      0,
+    );
 
     if (cart.items.length === 1) {
       tips.push({ icon: Lightbulb, text: 'Carrinhos com 3+ SKUs distintos convertem 40% mais' });
@@ -264,11 +282,11 @@ export function SmartSuggestions({
 
   return (
     <div className="space-y-2">
-      {suggestions.map((s, i) => {
+      {suggestions.map((s) => {
         const Icon = s.icon;
         return (
           <div
-            key={i}
+            key={s.text}
             className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2.5 text-[10px] leading-relaxed text-muted-foreground transition-colors hover:bg-primary/10"
           >
             <div className="mt-0.5 flex-shrink-0 rounded-full bg-background/80 p-1 shadow-sm">
@@ -303,8 +321,8 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
     <Collapsible>
       <CollapsibleTrigger asChild>
         <button
+          type="button"
           className="flex w-full items-center gap-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-          aria-label="Recolher"
         >
           <History className="h-3.5 w-3.5" />
           Histórico de ações ({history.length})
@@ -317,7 +335,7 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
             const Icon = ACTION_HISTORY_ICONS[action.type] || Package;
             return (
               <div
-                key={i}
+                key={`${action.type}-${action.time.getTime()}-${i}`}
                 className="flex items-center gap-2 py-1 text-[10px] text-muted-foreground"
               >
                 <Icon className="h-3 w-3 flex-shrink-0" />

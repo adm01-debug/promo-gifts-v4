@@ -69,7 +69,7 @@ export function buildCartCsv(cart: SellerCart): string {
   return [header, ...rows].join('\n');
 }
 
-export function exportCartToCSV(cart: SellerCart) {
+export function exportCartToCSV(cart: SellerCart): void {
   const csv = buildCartCsv(cart);
   // Prefixa BOM para o Excel reconhecer UTF-8 e exibir acentos corretamente.
   const BOM = '\uFEFF';
@@ -83,7 +83,7 @@ export function exportCartToCSV(cart: SellerCart) {
   toast.success('CSV exportado com sucesso');
 }
 
-export async function exportCartToPDF(cart: SellerCart) {
+export async function exportCartToPDF(cart: SellerCart): Promise<void> {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
@@ -133,7 +133,7 @@ export async function exportCartToPDF(cart: SellerCart) {
   toast.success('PDF exportado com sucesso');
 }
 
-export function shareCartLink(cartId: string) {
+export function shareCartLink(cartId: string): void {
   const url = `${window.location.origin}/carrinhos/${cartId}`;
   const clip = navigator.clipboard?.writeText?.(url);
   // Em contexto inseguro (HTTP) ou sem permissão, a Clipboard API pode estar
