@@ -2,10 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useGlobalErrorCatcher } from '@/hooks/ui/useErrorHandler';
 import { markBootSuccessful } from '@/lib/chunk-recovery';
-import { loadThemeConfig, applyRadius, applyThemePreset } from '@/lib/theme-presets';
 
 import { logger } from '@/lib/logger';
 /**
@@ -13,7 +11,6 @@ import { logger } from '@/lib/logger';
  */
 export function useAppBootstrap() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { actualTheme } = useTheme();
   const location = useLocation();
   const queryClient = useQueryClient();
   const initializedRef = useRef(false);
@@ -29,14 +26,7 @@ export function useAppBootstrap() {
     markBootSuccessful();
   }, []);
 
-  // 2. Theme and visual config sync.
-  useEffect(() => {
-    const cfg = loadThemeConfig();
-    applyThemePreset(cfg.presetId, actualTheme);
-    applyRadius(cfg.radius);
-  }, [actualTheme]);
-
-  // 3. Connectivity listeners.
+  // 2. Connectivity listeners.
   useEffect(() => {
     const handleStatusChange = () => {
       // Reserved for global offline/online notifications.
@@ -51,7 +41,7 @@ export function useAppBootstrap() {
     };
   }, []);
 
-  // 4. Catalog prefetch runs only after auth and outside the public boot graph.
+  // 3. Catalog prefetch runs only after auth and outside the public boot graph.
   useEffect(() => {
     if (authLoading || !isAuthenticated || catalogPrefetchedRef.current) return;
 

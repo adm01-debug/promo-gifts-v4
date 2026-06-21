@@ -17,7 +17,7 @@ interface ThemeContextType {
   setTheme: (theme: 'dark') => void;
   toggleTheme: () => void;
   setTooltipStyle: (style: TooltipStyle) => void;
-  isFallback?: boolean;
+  isFallback: boolean;
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -95,7 +95,15 @@ export function ThemeProvider({
   );
 
   const value = useMemo<ThemeContextType>(
-    () => ({ theme, actualTheme, tooltipStyle, setTheme, toggleTheme, setTooltipStyle }),
+    () => ({
+      theme,
+      actualTheme,
+      tooltipStyle,
+      setTheme,
+      toggleTheme,
+      setTooltipStyle,
+      isFallback: false,
+    }),
     [theme, actualTheme, tooltipStyle, setTheme, toggleTheme, setTooltipStyle],
   );
 
