@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 202: 5 zero-violation rules (saved: no-array-constructor 0v✓ — Batch 203+)
+      'no-unreachable-loop': 'error',
+      'no-unsafe-optional-chaining': 'error',
+      'no-useless-backreference': 'error',
+      'array-callback-return': 'error',
+      'default-param-last': 'error',
       // Batch 201: 5 zero-violation rules (saved: no-unreachable-loop 0v✓, no-unsafe-optional-chaining 0v✓, no-useless-backreference 0v✓ — Batch 202+)
       'no-shadow-restricted-names': 'error',
       'prefer-object-has-own': 'error',
