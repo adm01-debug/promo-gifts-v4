@@ -242,14 +242,16 @@ export function useCatalogFiltering({
     // (catálogo leve não hidrata esse campo), o filtro é pulado para não zerar a grade.
     if (filters.techniques?.length) {
       const techSet = new Set(filters.techniques.map((t: string) => t.toLowerCase()));
+      const toStringArray = (v: unknown): string[] =>
+        Array.isArray(v) ? v.filter((t): t is string => typeof t === 'string') : [];
       const techniquesDataAvailable = result.some(
-        (p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0,
+        (p) => toStringArray(p.metadata?.techniques).length > 0,
       );
       if (techniquesDataAvailable) {
         result = result.filter((p) => {
-          const metaTechs: string[] = (p.metadata?.techniques as string[]) ?? [];
+          const metaTechs = toStringArray(p.metadata?.techniques);
           if (metaTechs.length > 0) {
-            return metaTechs.some((t: string) => techSet.has(t.toLowerCase()));
+            return metaTechs.some((t) => techSet.has(t.toLowerCase()));
           }
           return true;
         });
