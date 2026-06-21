@@ -76,8 +76,8 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
           <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              O link expirou em {new Date(list.shared_expires_at!).toLocaleDateString('pt-BR')}.
-              Gere um novo abaixo.
+              O link expirou em{' '}
+              {new Date(list.shared_expires_at ?? '').toLocaleDateString('pt-BR')}. Gere um novo abaixo.
             </span>
           </div>
         )}
