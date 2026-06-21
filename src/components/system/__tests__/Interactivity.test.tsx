@@ -52,6 +52,7 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
     document.body.style.pointerEvents = 'none';
 
     // Advance timers to trigger the guard's interval check
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(400);
     });
@@ -92,11 +93,13 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
 
     // Click navigation
     const btn = screen.getByText('Go to 2');
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       btn.click();
     });
 
     // After navigation, guard should run its interval check
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(1000); // 1000ms covers all initial checks and interval
     });
@@ -112,6 +115,7 @@ describe('Overlay Interactivity & RootInteractivityGuard', () => {
 
     document.body.style.pointerEvents = 'none';
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(400);
     });

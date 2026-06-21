@@ -192,7 +192,7 @@ export function useSalesGoals() {
 
       return { goal: data as SalesGoal, justAchieved: isAchieved && wasNotAchieved };
     },
-    onSuccess: async ({ justAchieved }) => {
+    onSuccess: ({ justAchieved }) => {
       queryClient.invalidateQueries({ queryKey: ['sales-goals'] });
       queryClient.invalidateQueries({ queryKey: ['active-sales-goal'] });
 

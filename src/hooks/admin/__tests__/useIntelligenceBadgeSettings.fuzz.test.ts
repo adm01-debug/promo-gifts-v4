@@ -22,9 +22,11 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
+          // eslint-disable-next-line @typescript-eslint/require-await
           maybeSingle: async () => ({ data: { value: fetchValue }, error: null }),
         }),
       }),
+      // eslint-disable-next-line @typescript-eslint/require-await
       upsert: async () => ({ error: null }),
     }),
   },

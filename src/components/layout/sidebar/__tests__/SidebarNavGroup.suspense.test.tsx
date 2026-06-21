@@ -213,6 +213,7 @@ describe('SidebarNavGroup — sem flicker em navegações rápidas em sequência
   it('dois pushes consecutivos /carrinhos -> /orcamentos/novo aplicam só o destaque final, sem estado intermediário inconsistente', async () => {
     const { router, resolve } = setupRouterWithSuspense('/dashboard', '/orcamentos/novo');
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       // dispara DUAS navegações no mesmo tick — apenas a última deve valer.
       router.navigate('/carrinhos');
@@ -315,6 +316,7 @@ describe('SidebarNavGroup — sem flicker quando metadata da página resolve dep
     expect(screen.getByTestId('metadata-loading')).toBeInTheDocument();
 
     // Avança timers até a metadata resolver. Estado visual da sidebar NÃO muda.
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(60);
     });
@@ -339,6 +341,7 @@ describe('SidebarNavGroup — sem flicker quando metadata da página resolve dep
     expect(isLinkActive('Novo Orçamento')).toBe(false);
     expect(isGroupExpanded()).toBe(true);
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(60);
     });

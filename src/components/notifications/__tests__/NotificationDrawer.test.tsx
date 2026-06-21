@@ -56,7 +56,7 @@ describe('NotificationBell', () => {
     expect(screen.getByText('1')).toBeInTheDocument();
   });
 
-  it('shows empty state when there are no notifications', async () => {
+  it('shows empty state when there are no notifications', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
       notifications: [],
@@ -84,7 +84,7 @@ describe('NotificationBell', () => {
     expect(screen.getByText('Nenhuma notificação')).toBeInTheDocument();
   });
 
-  it('allows exporting notifications to CSV', async () => {
+  it('allows exporting notifications to CSV', () => {
     const _mockExport = vi.fn();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useNotifications as any).mockReturnValue({
@@ -122,7 +122,7 @@ describe('NotificationBell', () => {
     // Should have triggered a download link click (hard to test directly without more mocks, but presence is good)
   });
 
-  it('provides undo option after marking as read', async () => {
+  it('provides undo option after marking as read', () => {
     const undoMarkAsRead = vi.fn();
     const markAsRead = vi.fn();
 

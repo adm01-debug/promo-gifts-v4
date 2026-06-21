@@ -142,6 +142,7 @@ describe.skip('useCatalogState', () => {
   it('should update search query correctly', async () => {
     const { result } = renderHook(() => useCatalogState(), { wrapper });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       result.current.handleSearch('test search');
     });
@@ -152,6 +153,7 @@ describe.skip('useCatalogState', () => {
   it('should reset filters correctly', async () => {
     const { result } = renderHook(() => useCatalogState(), { wrapper });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       result.current.setFilters({
         ...result.current.filters,
@@ -163,6 +165,7 @@ describe.skip('useCatalogState', () => {
     // categories is an array of strings in FilterState
     expect(result.current.activeFiltersCount).toBe(2); // inStock + 1 category
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       result.current.resetFilters();
     });

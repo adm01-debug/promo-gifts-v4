@@ -133,6 +133,7 @@ class TelemetryService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async log(payload: TelemetryPayload): Promise<void> {
     try {
       if (import.meta.env.DEV) {

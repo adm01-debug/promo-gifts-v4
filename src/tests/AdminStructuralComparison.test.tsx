@@ -99,7 +99,7 @@ vi.mock('@/components/admin/connections/SecretField', () => ({
 }));
 
 describe('Admin Module Structural Comparison', () => {
-  it('Conexoes and Usuarios should share matching container hierarchy', async () => {
+  it('Conexoes and Usuarios should share matching container hierarchy', () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });
     const { container: usuarios } = render(<AdminUsuariosPage />, { wrapper });
 

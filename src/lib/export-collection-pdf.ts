@@ -12,7 +12,7 @@ interface ExportOptions {
   variantMap?: Map<string, { color_name?: string | null; color_hex?: string | null }>;
 }
 
-export async function exportCollectionPDF({
+export function exportCollectionPDF({
   collectionName,
   collectionDescription,
   products,

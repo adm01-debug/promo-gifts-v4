@@ -20,7 +20,7 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'test-user-id' } }),
 }));
 
-vi.mock('@/hooks/quotes', async () => {
+vi.mock('@/hooks/quotes', () => {
   return {
     useQuotes: () => ({
       createQuote: vi.fn(),

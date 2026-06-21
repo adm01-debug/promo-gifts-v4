@@ -142,7 +142,7 @@ describe('useOrgData', () => {
     expect(Array.isArray(result.current.data)).toBe(true);
   });
 
-  it('configura queryKey com tableName + orgId', async () => {
+  it('configura queryKey com tableName + orgId', () => {
     // O queryKey deve incluir o tableName e o id da org para cache correto
     const { result } = renderHook(() => useOrgData('categories', { filters: { type: 'main' } }), {
       wrapper: makeWrapper(),

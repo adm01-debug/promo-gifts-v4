@@ -1319,6 +1319,8 @@ export default [
       '@typescript-eslint/no-duplicate-type-constituents': 'error',
       // Batch 129: 1 rule — 739 auto-fixed + 6 manually sorted (inline-comment unions)
       '@typescript-eslint/sort-type-constituents': 'error',
+      // Batch 130: 1 rule — 119 violations: remove-async (sync handlers/stubs) + eslint-disable (Promise<T> stubs)
+      '@typescript-eslint/require-await': 'error',
       '@typescript-eslint/no-unsafe-enum-comparison': 'error',
       '@typescript-eslint/prefer-function-type': 'error',
       '@typescript-eslint/prefer-for-of': 'error',

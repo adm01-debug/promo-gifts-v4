@@ -170,7 +170,7 @@ describe('LocationPanel — Validação de Preço e Clamp', () => {
     expect(screen.getByTestId('total-price-display')).toHaveTextContent('600');
   });
 
-  it('exibe Alert e recalcula preço imediatamente quando técnica força clamp de dimensões', async () => {
+  it('exibe Alert e recalcula preço imediatamente quando técnica força clamp de dimensões', () => {
     render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
 
     // 1. Tech A com 7x4

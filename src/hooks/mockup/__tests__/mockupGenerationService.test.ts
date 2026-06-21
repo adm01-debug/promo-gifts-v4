@@ -55,7 +55,7 @@ vi.mock('@/integrations/supabase/client', () => {
 });
 
 vi.mock('@/lib/mockup-storage', () => ({
-  uploadLogoToStorage: vi.fn(async () => 'https://storage/uploaded-logo.png'),
+  uploadLogoToStorage: vi.fn(() => 'https://storage/uploaded-logo.png'),
   downloadImageAsPdfFromUrl: vi.fn(async () => {}),
 }));
 

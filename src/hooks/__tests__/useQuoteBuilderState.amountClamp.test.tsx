@@ -47,12 +47,12 @@ const { updateQuoteSpy, createQuoteSpy, requestApprovalSpy, fetchQuoteSpy, VALID
         unit_price: 100, // subtotal = 10 × 100 = 1000
         personalizations: [],
       },
-      updateQuoteSpy: vi.fn(async () => ({ id: 'quote-1' })),
-      createQuoteSpy: vi.fn(async () => ({ id: 'new-quote' })),
-      requestApprovalSpy: vi.fn(async () => undefined),
+      updateQuoteSpy: vi.fn(() => ({ id: 'quote-1' })),
+      createQuoteSpy: vi.fn(() => ({ id: 'new-quote' })),
+      requestApprovalSpy: vi.fn(() => undefined),
       // Referência estável: a factory de vi.mock('@/hooks/quotes') é içada ao topo do
       // arquivo; vi.hoisted garante que fetchQuoteSpy está inicializado nesse momento.
-      fetchQuoteSpy: vi.fn(async () => loadedQuote),
+      fetchQuoteSpy: vi.fn(() => loadedQuote),
     };
   });
 

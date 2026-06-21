@@ -49,7 +49,7 @@ export function BulkAddToCartModal({
     }
   }, [open]);
 
-  const handleAdd = useCallback(async () => {
+  const handleAdd = useCallback(() => {
     if (!activeCart) return;
 
     const items =

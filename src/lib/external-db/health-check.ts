@@ -23,6 +23,7 @@ export type BridgeHealth = {
  * @deprecated Caminho B — bridge descontinuada. Retorna ok=true imediatamente.
  * Mantido apenas para compatibilidade com importadores existentes.
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function pingHealth(_timeoutMs = 2500): Promise<BridgeHealth> {
   // external-db-bridge foi descontinuada nas PRs #230-232 (Caminho B).
   // Retornamos ok=true para não bloquear o cloud-status probe nem o prewarm.
@@ -33,6 +34,7 @@ export async function pingHealth(_timeoutMs = 2500): Promise<BridgeHealth> {
  * @deprecated Caminho B — bridge descontinuada. Retorna ok=true imediatamente.
  * Mantido apenas para compatibilidade com importadores existentes.
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function waitForBridgeReady(_totalTimeoutMs = 5000): Promise<BridgeHealth> {
   return { ok: true, ms: 0 };
 }

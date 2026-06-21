@@ -115,6 +115,7 @@ export interface BatchResult {
  *
  * Phase 4B (2026-06-01): removed ~100 lines of dead retry/backoff/auth/cold-start code.
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function invokeBridge<T>(_body: Record<string, unknown>): Promise<BridgeResponse<T>> {
   throw new KillSwitchActiveError(KILL_SWITCH_NAME, 'Bridge OFF. REST nativo ativo.');
 }

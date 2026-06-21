@@ -213,7 +213,7 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     });
   });
 
-  it('sorts locally by price-asc', async () => {
+  it('sorts locally by price-asc', () => {
     render(<NoveltyProductGrid />, { wrapper });
 
     // Find sort select and change to price-asc
@@ -228,7 +228,7 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     // Actually, newest was B then A. So order didn't change for B, but B is cheaper.
   });
 
-  it('resets page to 1 when filters change', async () => {
+  it('resets page to 1 when filters change', () => {
     // This is hard to test without many products, but we can verify the useEffect dependency
     render(<NoveltyProductGrid />, { wrapper });
     // If it didn't crash and we see the products, initial state is ok

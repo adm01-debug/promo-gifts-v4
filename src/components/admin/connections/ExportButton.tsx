@@ -53,7 +53,7 @@ export function ExportButton({
   const [busy, setBusy] = useState(false);
   const isEmpty = !rows || rows.length === 0;
 
-  const handle = async (fmt: 'csv' | 'json') => {
+  const handle = (fmt: 'csv' | 'json') => {
     if (isEmpty) {
       toast.info('Nada para exportar');
       return;
