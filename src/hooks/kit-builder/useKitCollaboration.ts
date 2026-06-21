@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { logger } from '@/lib/logger';
 
 export interface KitCollaboratorRow {
   id: string;
@@ -115,7 +116,12 @@ export function useKitComments(kitId: string | undefined) {
         { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },
         () => qc.invalidateQueries({ queryKey: key }),
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useKitCollaboration] realtime channel error', { status, err });
+          qc.invalidateQueries({ queryKey: key });
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
     };

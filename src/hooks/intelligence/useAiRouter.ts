@@ -170,6 +170,9 @@ export function useAiProviders() {
       if (error) throw error;
       return (data ?? []) as AiProvider[];
     },
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -244,6 +247,9 @@ export function useAiModels() {
       if (error) throw error;
       return (data ?? []) as AiModel[];
     },
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -322,6 +328,9 @@ export function useAiRouting() {
       if (error) throw error;
       return (data ?? []) as AiFunctionRouting[];
     },
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 

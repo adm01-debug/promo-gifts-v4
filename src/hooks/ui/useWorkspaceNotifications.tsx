@@ -312,7 +312,12 @@ export function useWorkspaceNotifications() {
           fetchNotifications({ silent: true, source: 'mutation' });
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useWorkspaceNotifications] realtime channel error — polling interval maintains freshness', { status, err });
+          fetchNotifications({ silent: true, source: 'mutation' });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

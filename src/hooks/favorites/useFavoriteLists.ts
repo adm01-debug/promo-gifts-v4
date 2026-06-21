@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedRpc } from '@/lib/supabase-untyped';
-import type { TablesUpdate } from '@/integrations/supabase/types';
+import type { Json, TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -68,7 +68,9 @@ export function useFavoriteLists() {
     queryFn: async (): Promise<FavoriteList[]> => {
       if (!user) return [];
       // Garante lista padrão
-      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', { _user_id: user.id });
+      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', {
+        _user_id: user.id,
+      });
       if (ensureErr) logger.warn('[favorites] ensure_default_favorite_list failed', ensureErr);
 
       const { data, error } = await supabase
@@ -86,7 +88,9 @@ export function useFavoriteLists() {
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: countRows } = await untypedRpc('get_favorite_list_counts', { _user_id: user.id });
+        const { data: countRows } = await untypedRpc('get_favorite_list_counts', {
+          _user_id: user.id,
+        });
         ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
           (r) => {
             counts[r.list_id] = Number(r.item_count);
@@ -95,7 +99,10 @@ export function useFavoriteLists() {
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as unknown as FavoriteList[];
+      return (data ?? []).map((l) => ({
+        ...l,
+        item_count: counts[l.id] ?? 0,
+      })) as unknown as FavoriteList[];
     },
     enabled: !!user,
     staleTime: 30_000,
@@ -291,7 +298,7 @@ export function useFavoriteListItems(listId: string | null) {
             user_id: user.id,
             product_id: input.productId,
             variant_id: input.variantId ?? null,
-            variant_info: (input.variantInfo ?? null) as never,
+            variant_info: (input.variantInfo ?? null) as unknown as Json,
             note: input.note ?? null,
             price_at_save: input.priceAtSave ?? null,
           },
@@ -313,7 +320,7 @@ export function useFavoriteListItems(listId: string | null) {
     mutationFn: async ({ id, ...patch }: Partial<FavoriteListItem> & { id: string }) => {
       const { data, error } = await supabase
         .from('favorite_items')
-        .update(patch as never)
+        .update(patch as unknown as TablesUpdate<'favorite_items'>)
         .eq('id', id)
         .select()
         .single();
@@ -401,7 +408,9 @@ export function useFavoriteListItems(listId: string | null) {
           onClick: async () => {
             const { data: trashed } = await supabase
               .from('favorite_items_trash')
-              .select('id')
+              .select(
+                'id, original_id, list_id, product_id, note, position, price_at_save, variant_id, variant_info',
+              )
               .eq('user_id', user.id)
               .in('original_id', ids);
             if (!trashed?.length) {
@@ -409,19 +418,30 @@ export function useFavoriteListItems(listId: string | null) {
               return;
             }
             const results = await Promise.allSettled(
-              trashed.map((t) =>
-                untypedRpc('restore_favorite_from_trash', {
-                  _trash_id: t.id,
-                  _user_id: user.id,
-                }),
-              ),
+              trashed.map(async (t) => {
+                const { error: insertErr } = await supabase.from('favorite_items').upsert({
+                  id: t.original_id,
+                  list_id: t.list_id,
+                  product_id: t.product_id,
+                  user_id: user.id,
+                  note: t.note,
+                  position: t.position ?? 0,
+                  price_at_save: t.price_at_save,
+                  variant_id: t.variant_id,
+                  variant_info: t.variant_info,
+                });
+                if (insertErr) throw insertErr;
+                await supabase.from('favorite_items_trash').delete().eq('id', t.id);
+              }),
             );
             const restoredCount = results.filter((r) => r.status === 'fulfilled').length;
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
             qc.invalidateQueries({ queryKey: ['favorite-trash'] });
             qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
-            toast.success(`${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`);
+            toast.success(
+              `${restoredCount} ${restoredCount === 1 ? 'item restaurado' : 'itens restaurados'}`,
+            );
           },
         },
         duration: 8000,
@@ -576,15 +596,17 @@ export function useLegacyFavoritesMigration() {
         setMigrated(true);
         return;
       }
-      const rows = legacy.map((f, idx) => ({
-        list_id: defaultList.id,
-        user_id: user.id,
-        product_id: f.productId,
-        variant_id: (f.variant?.variant_id as string | undefined) ?? null,
-        variant_info: f.variant ?? null,
-        position: idx,
-      }));
-      const { error } = await supabase.from('favorite_items').upsert(rows as never, {
+      const rows = legacy
+        .filter((f) => typeof f.productId === 'string' && f.productId.length > 0)
+        .map((f, idx) => ({
+          list_id: defaultList.id,
+          user_id: user.id,
+          product_id: f.productId,
+          variant_id: (f.variant?.variant_id as string | undefined) ?? null,
+          variant_info: (f.variant ?? null) as unknown as Json,
+          position: idx,
+        }));
+      const { error } = await supabase.from('favorite_items').upsert(rows, {
         onConflict: 'list_id,product_id,variant_id',
         ignoreDuplicates: true,
       });

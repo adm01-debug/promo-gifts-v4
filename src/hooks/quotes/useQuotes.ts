@@ -66,7 +66,13 @@ export function useQuotes() {
           queryClient.invalidateQueries({ queryKey: ['quotes'] });
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useQuotes] realtime channel error — falling back to poll', { status, err });
+          // Invalidate once so stale data is refreshed immediately on reconnect
+          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -85,6 +91,9 @@ export function useQuotes() {
       return quoteService.fetchQuotes(userId, scope);
     },
     enabled: !!userId,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
+    staleTime: 30_000,
   });
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({

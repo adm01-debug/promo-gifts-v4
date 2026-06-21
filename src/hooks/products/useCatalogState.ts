@@ -877,11 +877,11 @@ export function useCatalogState() {
 
   const handleFavoriteProduct = useCallback(
     (product: Product, e?: React.MouseEvent) => {
-      const result = favQuickAdd.handleFavoriteClick(product as never, { shiftKey: e?.shiftKey });
+      const result = favQuickAdd.handleFavoriteClick(product, { shiftKey: e?.shiftKey });
       if (!result.resolved && result.reason === 'picker-needed') {
         const target = favQuickAdd.defaultList;
         if (target) {
-          void favQuickAdd.addToList(target.id, product as never);
+          void favQuickAdd.addToList(target.id, product);
           toast({
             title: 'Adicionado aos Favoritos',
             description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,

@@ -4,7 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
 import { useFavoriteLists } from '@/hooks/favorites';
-import type { Product } from '@/types/product';
+import type { Json } from '@/integrations/supabase/types';
+import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
@@ -69,7 +70,7 @@ export function useFavoriteQuickAdd() {
             user_id: user.id,
             product_id: product.id,
             variant_id: variant?.variant_id ?? null,
-            variant_info: (variant ?? null) as never,
+            variant_info: (variant ?? null) as unknown as Json,
             // Snapshot the effective selling price (sale_price when available, otherwise price)
             price_at_save:
               typeof (product as { sale_price?: number }).sale_price === 'number'

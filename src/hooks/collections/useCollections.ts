@@ -374,7 +374,7 @@ export function useCollections() {
           thumbnail_url: variant?.thumbnail || null,
           price_at_save: priceAtSave ?? null,
           sort_order: 0,
-        } as never)
+        })
         .then();
     },
     [],
@@ -383,7 +383,7 @@ export function useCollections() {
   const restoreFromTrash = useCallback(
     async (collectionId: string, productId: string) => {
       const { data: trashed } = await supabase
-        .from('collection_items_trash' as never)
+        .from('collection_items_trash')
         .select('*')
         .eq('collection_id', collectionId)
         .eq('product_id', productId)
@@ -391,21 +391,20 @@ export function useCollections() {
         .limit(1)
         .maybeSingle();
       if (!trashed) return false;
-      const t = trashed as Record<string, unknown>;
       await supabase.from('collection_items').insert({
         collection_id: collectionId,
         product_id: productId,
-        color_name: t.color_name ?? null,
-        color_hex: t.color_hex ?? null,
-        thumbnail_url: t.thumbnail_url ?? null,
-        notes: t.notes ?? null,
-        price_at_save: t.price_at_save ?? null,
-        sort_order: t.sort_order ?? 0,
-      } as never);
+        color_name: trashed.color_name ?? null,
+        color_hex: trashed.color_hex ?? null,
+        thumbnail_url: trashed.thumbnail_url ?? null,
+        notes: trashed.notes ?? null,
+        price_at_save: trashed.price_at_save ?? null,
+        sort_order: trashed.sort_order ?? 0,
+      });
       await supabase
-        .from('collection_items_trash' as never)
+        .from('collection_items_trash')
         .delete()
-        .eq('id', t.id as string);
+        .eq('id', trashed.id);
       await loadCollections();
       return true;
     },

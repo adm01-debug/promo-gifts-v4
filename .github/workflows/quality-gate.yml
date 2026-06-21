@@ -68,6 +68,13 @@ jobs:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
 
+      # GATE 3.5: Bundle size (advisory — visibilidade de regressões de bundle)
+      # Falha se qualquer chunk JS ultrapassar 2 MB ou total JS ultrapassar 12 MB.
+      # Para apertar os limites após refactor: npm run check:bundle-size:update
+      - name: Gate 3.5 — Bundle size check
+        run: node scripts/check-bundle-size.mjs
+        continue-on-error: true
+
   # GATE 4: Unit tests (fast — no network)
   unit-tests:
     name: Vitest Unit Tests

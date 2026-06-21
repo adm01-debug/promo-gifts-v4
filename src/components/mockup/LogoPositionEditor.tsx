@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Move } from 'lucide-react';
 import { useProductBounds } from '@/hooks/products';
@@ -36,7 +36,7 @@ interface LogoPositionEditorProps {
   headerActions?: React.ReactNode;
 }
 
-export function LogoPositionEditor({
+export const LogoPositionEditor = memo(({
   productImageUrl,
   logoPreview,
   positionX,
@@ -58,7 +58,7 @@ export function LogoPositionEditor({
   onSizeChange,
   onLogoScaleChange,
   headerActions,
-}: LogoPositionEditorProps) {
+}: LogoPositionEditorProps) => {
   const { ref: containerRef, size: containerSize } = useElementSize<HTMLDivElement>();
   const productBounds = useProductBounds(productImageUrl);
   const { processedLogoUrl } = useLogoProcessing(logoPreview, techniqueColorConfig);
@@ -205,4 +205,4 @@ export function LogoPositionEditor({
       </CardContent>
     </Card>
   );
-}
+});
