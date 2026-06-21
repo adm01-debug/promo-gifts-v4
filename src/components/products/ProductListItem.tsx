@@ -47,6 +47,7 @@ import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { VariantPickerDialog, type VariantActionMode } from './VariantPickerDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
@@ -130,7 +131,9 @@ export const ProductListItem = memo(
     const actionBusyRef = useRef(false);
     const [activeVariantIdx, setActiveVariantIdx] = useState(0);
     // Cor selecionada manualmente via swatch (bolinha) — sobrescreve imagem/estoque exibidos
-    const [userSelectedColorName, setUserSelectedColorName] = useState<string | null>(null);
+    const setSelectedColor = useProductSelectionStore((st) => st.setSelectedColor);
+    const userSelectedColorName =
+      useProductSelectionStore((st) => st.selectedColors[product.id]) ?? null;
 
     // Reset variant index when color filter changes
     const listFilterKey = activeColorFilter
@@ -650,11 +653,30 @@ export const ProductListItem = memo(
                 wrap
                 hideWhenEmpty
                 className="justify-start"
-                selectedName={activeColorName}
+                selectedName={userSelectedColorName}
                 onSelect={(c) => {
-                  setUserSelectedColorName((prev) =>
-                    prev?.toLowerCase() === c.name.toLowerCase() ? null : c.name,
-                  );
+                  setSelectedColor(product.id, c.name);
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('cor', c.name);
+                    url.searchParams.set('pid', product.id);
+                    window.history.replaceState({}, '', url.toString());
+                  }
+                }}
+                onClear={() => {
+                  useProductSelectionStore.setState((state) => {
+                    const next = { ...state.selectedColors };
+                    delete next[product.id];
+                    return { selectedColors: next };
+                  });
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.get('pid') === product.id) {
+                      url.searchParams.delete('cor');
+                      url.searchParams.delete('pid');
+                      window.history.replaceState({}, '', url.toString());
+                    }
+                  }
                 }}
               />
             </div>
