@@ -62,15 +62,27 @@ const renderCard = (n: NoveltyWithDetails) =>
 
 describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   it('mostra "Últimos Nd" quando expiring_soon e não fresh', () => {
+    const staleDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { getByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', days_remaining: 5, is_highlighted: false }),
+      makeNovelty({
+        status: 'expiring_soon',
+        days_remaining: 5,
+        is_highlighted: false,
+        detected_at: staleDate,
+      }),
     );
     expect(getByTestId('novelty-expiring-badge').textContent).toContain('Últimos 5d');
   });
 
   it('mostra "Último dia" quando resta ≤ 1 dia', () => {
+    const staleDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { getByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', days_remaining: 1, is_highlighted: false }),
+      makeNovelty({
+        status: 'expiring_soon',
+        days_remaining: 1,
+        is_highlighted: false,
+        detected_at: staleDate,
+      }),
     );
     expect(getByTestId('novelty-expiring-badge').textContent).toContain('Último dia');
   });
