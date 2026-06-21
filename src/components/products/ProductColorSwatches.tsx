@@ -208,8 +208,10 @@ export const ProductColorSwatches = memo(
 
                     SIZE_CLASS[size],
                   )}
-
-                  style={{ backgroundColor: resolveSwatchBackground(c.hex, c.name).background ?? 'transparent' }}
+                  style={{
+                    backgroundColor:
+                      resolveSwatchBackground(c.hex, c.name).background ?? 'transparent',
+                  }}
                   aria-label={
                     isOutOfStock
                       ? `Opção de cor: ${c.name} — esgotada`
@@ -217,7 +219,6 @@ export const ProductColorSwatches = memo(
                         ? `Opção de cor: ${c.name} — reposição prevista${formattedRestock ? ` em ${formattedRestock}` : ''}`
                         : `Opção de cor: ${c.name}`
                   }
-
                   aria-describedby={tooltipId}
                   aria-checked={isSelected}
                   data-testid={`color-swatch-${c.name.toLowerCase().replace(/\s+/g, '-')}`}

@@ -215,8 +215,7 @@ describe(`stock-filter.fuzz — ${SIM_COUNT} simulações de Risco de Ruptura`, 
     if (failures.length > 0) {
       // Mostra até 10 falhas (suficiente para diagnosticar padrão)
       throw new Error(
-        `Falhas em ${failures.length}/${SIM_COUNT * 7} verificações:\n` +
-          failures.slice(0, 10).join('\n'),
+        `Falhas em ${failures.length}/${SIM_COUNT * 7} verificações:\n${failures.slice(0, 10).join('\n')}`,
       );
     }
   });
@@ -243,11 +242,7 @@ describe(`stock-filter.fuzz — ${SIM_COUNT} simulações de Risco de Ruptura`, 
   it('I9: fallback flag-off — status=critical filtra por overallStatus em 100 simulações', () => {
     for (let sim = 0; sim < 100; sim++) {
       const { products } = makeUniverse(sim + 2000, 30);
-      const out = applyStockFilters(
-        products,
-        { ...defaultStockFilters, status: 'critical' },
-        [],
-      );
+      const out = applyStockFilters(products, { ...defaultStockFilters, status: 'critical' }, []);
       // Todo produto retornado DEVE ter overallStatus === 'critical'
       for (const p of out) {
         expect(p.overallStatus).toBe('critical');
@@ -263,11 +258,7 @@ describe(`stock-filter.fuzz — ${SIM_COUNT} simulações de Risco de Ruptura`, 
     // descontinuada). O filtro DEVE retornar zero — nunca cair em "mostra tudo".
     for (let sim = 0; sim < 100; sim++) {
       const { products } = makeUniverse(sim + 3000, 25);
-      const ghostSet = new Set<string>([
-        `ghost-${sim}-a`,
-        `ghost-${sim}-b`,
-        `ghost-${sim}-c`,
-      ]);
+      const ghostSet = new Set<string>([`ghost-${sim}-a`, `ghost-${sim}-b`, `ghost-${sim}-c`]);
       const out = applyStockFilters(
         products,
         { ...defaultStockFilters, ruptureRiskVariantIds: ghostSet },

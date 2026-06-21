@@ -38,7 +38,7 @@ Responda SEMPRE em JSON com esta estrutura:
   "data": {
     "query": "termo de busca (se action=search)",
     "route": "rota para navegar (se action=navigate)",
-    "sortBy": "price-asc|price-desc|name|stock (se action=sort)",
+    "sortBy": "price-asc|price-desc|name|stock|newest|popularity|best-seller-supplier|best-seller-promo (se action=sort)",
     "oracleMessage": "mensagem para enviar ao Flow (se action=open_oracle)",
     "filters": {
       "category": "categoria (se detectada)",
@@ -82,7 +82,10 @@ export const VOICE_COMMAND_TOOL = {
           properties: {
             query: { type: 'string' },
             route: { type: 'string' },
-            sortBy: { type: 'string', enum: ['price-asc', 'price-desc', 'name', 'stock'] },
+            sortBy: {
+              type: 'string',
+              enum: ['price-asc', 'price-desc', 'name', 'stock', 'newest', 'popularity', 'best-seller-supplier', 'best-seller-promo'],
+            },
             oracleMessage: { type: 'string', description: 'Message to send to the Oracle AI consultant' },
             filters: {
               type: 'object',
