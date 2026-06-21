@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 158: 5 zero-violation rules (excluded: no-lone-blocks 0v✓, react/no-namespace 0v✓, react/no-is-mounted 0v✓, react/no-unused-class-component-methods 0v✓, jsx-a11y/iframe-has-title 0v✓ — saved Batch 159)
+      'no-multi-str': 'error',
+      'no-extend-native': 'error',
+      'no-global-assign': 'error',
+      'no-extra-label': 'error',
+      'no-label-var': 'error',
       // Batch 157: 5 zero-violation rules (excluded: no-multi-str 0v✓, no-extend-native 0v✓, no-global-assign 0v✓, no-extra-label 0v✓, no-label-var 0v✓ — saved Batch 158)
       'jsx-a11y/mouse-events-have-key-events': 'error',
       'no-caller': 'error',
