@@ -5,6 +5,7 @@ import type { StockDashboardSummary } from '@/types/stock';
 const baseSummary: StockDashboardSummary = {
   totalProducts: 7156,
   totalVariants: 18377,
+  totalColors: 0,
   productsInStock: 5256,
   productsLowStock: 0,
   productsCritical: 622,
@@ -13,10 +14,15 @@ const baseSummary: StockDashboardSummary = {
   variantsLowStock: 0,
   variantsCritical: 1500,
   variantsOutOfStock: 4877,
-  averageDaysUntilStockout: 0,
-  totalColors: 0,
-  totalCategories: 0,
+  totalStockValue: 0,
+  totalAvailableValue: 0,
+  averageDaysOfStock: 0,
+  stockTurnoverRate: 0,
+  totalAlerts: 0,
+  criticalAlerts: 0,
+  incomingStockValue: 0,
 };
+
 
 describe('buildStockKpiCards', () => {
   it('returns the 4 canonical cards in order', () => {
