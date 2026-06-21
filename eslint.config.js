@@ -415,7 +415,13 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
-      // Batch 240: 5 zero-violation rules (240A: unicode-bom 23v, wrap-regex 103v, space-infix-ops 6v; saved for 241: rest-spread-spacing 0v, switch-colon-spacing 0v, space-unary-ops 0v, template-curly-spacing 0v, template-tag-spacing 0v)
+      // Batch 241: 5 zero-violation rules (all confirmed 0v in probe 240A; saved from Batch 240)
+      'rest-spread-spacing': 'error',
+      'switch-colon-spacing': 'error',
+      'space-unary-ops': 'error',
+      'template-curly-spacing': 'error',
+      'template-tag-spacing': 'error',
+      // Batch 240: 5 zero-violation rules (240A: unicode-bom 23v, wrap-regex 103v, space-infix-ops 6v)
       'no-whitespace-before-property': 'error',
       'linebreak-style': 'error',
       'generator-star-spacing': 'error',
