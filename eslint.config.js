@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 186: 5 zero-violation rules (saved: typedef 0v✓, prefer-for-of 0v✓ — Batch 187+; excluded: sort-type-constituents 746v, switch-exhaustiveness-check 34v)
+      '@typescript-eslint/parameter-properties': 'error',
+      '@typescript-eslint/consistent-type-exports': 'error',
+      '@typescript-eslint/no-duplicate-type-constituents': 'error',
+      '@typescript-eslint/no-loss-of-precision': 'error',
+      '@typescript-eslint/default-param-last': 'error',
       // Batch 185: 5 zero-violation rules (saved: parameter-properties 0v✓, consistent-type-exports 0v✓ — Batch 186+; excluded: no-loop-func 7v)
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/no-dupe-class-members': 'error',
