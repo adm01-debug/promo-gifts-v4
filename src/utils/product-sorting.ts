@@ -73,10 +73,12 @@ export function sortProducts(
       break;
 
     case 'price-asc':
-      arr.sort(withIdTiebreak((a, b) => (a.price ?? 0) - (b.price ?? 0)));
+      // NULLS LAST: null prices sort after all real prices (consistent with server-side nullsFirst:false).
+      arr.sort(withIdTiebreak((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity)));
       break;
     case 'price-desc':
-      arr.sort(withIdTiebreak((a, b) => (b.price ?? 0) - (a.price ?? 0)));
+      // NULLS LAST: null prices sort after all real prices in descending order.
+      arr.sort(withIdTiebreak((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity)));
       break;
     case 'stock':
       arr.sort(withIdTiebreak((a, b) => (b.stock ?? 0) - (a.stock ?? 0)));

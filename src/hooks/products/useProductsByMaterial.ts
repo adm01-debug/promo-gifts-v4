@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { materialService } from '@/services/materialService';
+import { logger } from '@/lib/logger';
 import { useMemo } from 'react';
 
 export interface UseProductsByMaterialOptions {
@@ -46,11 +47,20 @@ export function useProductsByMaterial(
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['products-by-materials', stableTypesSlugs, stableGroupSlugs],
     queryFn: async () => {
-      const result = await materialService.getProductsByMaterials({
-        materialTypeSlugs: materialTypeSlugs.length > 0 ? materialTypeSlugs : undefined,
-        materialGroupSlugs: materialGroupSlugs.length > 0 ? materialGroupSlugs : undefined,
-      });
-      return result;
+      try {
+        const result = await materialService.getProductsByMaterials({
+          materialTypeSlugs: materialTypeSlugs.length > 0 ? materialTypeSlugs : undefined,
+          materialGroupSlugs: materialGroupSlugs.length > 0 ? materialGroupSlugs : undefined,
+        });
+        return result;
+      } catch (err) {
+        logger.error('[useProductsByMaterial] falha ao buscar produtos por material', {
+          error: err,
+          typeSlugs: stableTypesSlugs,
+          groupSlugs: stableGroupSlugs,
+        });
+        throw err;
+      }
     },
     enabled: shouldFetch,
     staleTime: 2 * 60 * 1000, // 2 minutos

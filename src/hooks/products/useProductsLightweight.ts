@@ -166,7 +166,11 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
   try {
     const categories = await fetchPromobrindCategories();
     return new Map(categories.map((c) => [String(c.id), c.name]));
-  } catch {
+  } catch (err) {
+    logger.warn(
+      '[loadCategoriesMap] falhou ao buscar categorias; nomes de categoria ausentes',
+      err,
+    );
     return new Map();
   }
 }
