@@ -106,7 +106,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
     return (
       <div ref={ref} className={cn('w-full transition-all duration-300', className)}>
         {/* Desktop Stepper */}
-        <div className="hidden py-1 md:block">
+        <nav aria-label="Etapas do processo de criação de mockup" className="hidden py-1 md:block">
           <div className="relative flex items-start justify-between">
             {/* Progress line background */}
             <div className="absolute left-[5%] right-[5%] top-5 h-1 rounded-full bg-muted" />
@@ -132,6 +132,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
                   role={isClickable ? 'button' : undefined}
                   tabIndex={isClickable ? 0 : undefined}
                   aria-label={isClickable ? `Ir para etapa ${step.id}: ${step.label}` : undefined}
+                  aria-current={step.isActive ? 'step' : undefined}
                   onKeyDown={(e) => {
                     if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
                       e.preventDefault();
@@ -180,7 +181,7 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
               );
             })}
           </div>
-        </div>
+        </nav>
 
         {/* Mobile Stepper - Progress Bar Style */}
         <div className="space-y-1.5 md:hidden">
@@ -225,6 +226,8 @@ export const MockupWizard = forwardRef<HTMLDivElement, MockupWizardProps>(
             {steps.map((step) => (
               <div
                 key={step.id}
+                aria-current={step.isActive ? 'step' : undefined}
+                aria-label={`Etapa ${step.id}: ${step.label}${step.isCompleted ? ' (concluída)' : step.isActive ? ' (atual)' : ''}`}
                 className={cn(
                   'h-1.5 rounded-full transition-all duration-300',
                   step.isActive ? 'w-6 bg-primary' : 'w-1.5',

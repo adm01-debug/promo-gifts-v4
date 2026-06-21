@@ -1454,6 +1454,24 @@ describe('Analise estatica — MockupProductSelector.tsx (aria-label inputs)', (
   });
 });
 
+describe('Analise estatica — MockupWizard.tsx (aria-current + nav landmark)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupWizard.tsx');
+  });
+
+  it('desktop stepper envolvido em <nav> com aria-label', () => {
+    expect(src).toContain('aria-label="Etapas do processo de criação de mockup"');
+  });
+  it('etapa ativa recebe aria-current="step"', () => {
+    expect(src).toContain("aria-current={step.isActive ? 'step' : undefined}");
+  });
+  it('step pills do mobile tem aria-current e aria-label descritivo', () => {
+    expect(src).toContain("aria-current={step.isActive ? 'step' : undefined}");
+    expect(src).toMatch(/`Etapa \$\{step\.id\}/);
+  });
+});
+
 describe('Analise estatica — AreaCard.tsx (aria-label input)', () => {
   let src: string;
   beforeEach(() => {
