@@ -179,7 +179,11 @@ export function usePushNotifications() {
           }
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[usePushNotifications] security realtime channel error', { status, err });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

@@ -235,11 +235,10 @@ export function useAdvancedFilters() {
 
   const resetFilterGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
     setFilters((prev) => {
-      const updates: Partial<AdvancedFilterState> = {};
-      keys.forEach((key) => {
-        updates[key] = defaultAdvancedFilters[key] as never;
-      });
-      return { ...prev, ...updates };
+      const defaults = Object.fromEntries(
+        keys.map((key) => [key, defaultAdvancedFilters[key]]),
+      ) as Partial<AdvancedFilterState>;
+      return { ...prev, ...defaults };
     });
   }, []);
 

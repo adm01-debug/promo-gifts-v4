@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2026-06-20T00:00:00.000Z",
+  "description": "Bundle size baseline (raw JS bytes). Update with: node scripts/check-bundle-size.mjs --update-baseline",
+  "limits": {
+    "maxChunkBytes": 2000000,
+    "maxTotalBytes": 12000000,
+    "warningThresholdPct": 75
+  }
+}
