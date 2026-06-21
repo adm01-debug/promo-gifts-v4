@@ -1,48 +1,5 @@
 {
-  "generatedAt": "2026-06-21T08:34:35.367Z",
+  "generatedAt": "2026-06-21T08:50:48.075Z",
   "totalErrors": 0,
-  "counts": {
-    "src/components/admin/connections/BridgeProductsPreviewPanel.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 6
-    },
-    "src/components/admin/connections/ConnectionTestHistoryPanel.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 2
-    },
-    "src/components/admin/connections/ExpectedKeysMatchPanel.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/admin/connections/useIncidentDetails.ts": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/favorites/ShareListDialog.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/mockup/approval/MockupLayoutButtons.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/components/products/PriceFreshnessBadge.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 2
-    },
-    "src/components/products/share/ShareKitDialog.tsx": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/hooks/bi/useClientSeasonality.ts": {
-      "@typescript-eslint/no-non-null-assertion": 3
-    },
-    "src/hooks/bi/useIndustryCategoryTrends.ts": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/hooks/products/useProductInsights.ts": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/hooks/useFutureStockPreference.ts": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/lib/external-db/products-detail.ts": {
-      "@typescript-eslint/no-non-null-assertion": 1
-    },
-    "src/lib/external-db/techniques.ts": {
-      "@typescript-eslint/no-non-null-assertion": 2
-    }
-  }
+  "counts": {}
 }

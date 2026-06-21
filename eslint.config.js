@@ -107,7 +107,9 @@ export default [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      // Disabled: non-nullable-type-assertion-style (Batch 124) forces `!` over `as NonNullable<T>`,
+      // making these two rules contradictory. Prefer the explicit style enforced by that rule.
+      '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/naming-convention': [
         'warn',
         { selector: 'interface', format: ['PascalCase'] },
