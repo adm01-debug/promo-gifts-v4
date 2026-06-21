@@ -99,7 +99,7 @@ export function SmartBadge({
 export interface KitComponentCardProps {
   item: KitComponent;
   index: number;
-  variant: 'packaging' | 'item';
+  variant: 'item' | 'packaging';
   onViewProduct?: (productId: string) => void;
   onZoomImage?: (url: string) => void;
 }
@@ -387,8 +387,8 @@ export function KitComponentCard({
       {extraImages.length > 0 && (
         <div className="px-4 pb-3">
           <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Eye className="h-3 w-3" />
-            +{extraImages.length} {extraImages.length === 1 ? 'foto' : 'fotos'}
+            <Eye className="h-3 w-3" />+{extraImages.length}{' '}
+            {extraImages.length === 1 ? 'foto' : 'fotos'}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {extraImages.slice(0, 6).map((url, i) => (

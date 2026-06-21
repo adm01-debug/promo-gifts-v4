@@ -73,7 +73,7 @@ export interface EnrichedArea extends PrintAreaTechnique {
   charges_per_color: boolean;
 }
 
-export type WizardStep = 'list' | 'component' | 'location' | 'technique' | 'details';
+export type WizardStep = 'component' | 'details' | 'list' | 'location' | 'technique';
 
 export const WIZARD_STEPS: { id: WizardStep; label: string; icon: React.ElementType }[] = [
   { id: 'component', label: 'Componente', icon: Layers },

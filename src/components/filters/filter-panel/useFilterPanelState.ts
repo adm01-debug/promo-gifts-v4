@@ -196,8 +196,8 @@ export function useFilterPanelState(
   }, []);
 
   const toggleArrayFilter = useCallback(
-    (key: keyof FilterState, value: string | number) => {
-      const currentValues = filters[key] as (string | number)[];
+    (key: keyof FilterState, value: number | string) => {
+      const currentValues = filters[key] as (number | string)[];
       const newValues = currentValues.includes(value)
         ? currentValues.filter((v) => v !== value)
         : [...currentValues, value];

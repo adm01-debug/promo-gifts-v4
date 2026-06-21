@@ -7,8 +7,8 @@ interface LoadingOverlayProps {
   fullScreen?: boolean;
   blur?: boolean;
   className?: string;
-  spinnerSize?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'card' | 'inline';
+  spinnerSize?: 'lg' | 'md' | 'sm';
+  variant?: 'card' | 'default' | 'inline';
 }
 
 const spinnerSizes = {
@@ -86,7 +86,7 @@ export function InlineLoader({
   size = 'sm',
 }: {
   className?: string;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
 }) {
   return (
     <Loader2 className={cn('animate-spin', size === 'sm' ? 'h-4 w-4' : 'h-5 w-5', className)} />

@@ -36,7 +36,7 @@ interface StatCardProps {
   value: number | string;
   icon: React.ReactNode;
   trend?: { value: number; label: string };
-  variant?: 'default' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'error' | 'success' | 'warning';
   onClick?: () => void;
   clickHint?: string;
   isActive?: boolean;

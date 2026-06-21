@@ -18,7 +18,7 @@ interface SimulatorPreferences {
   lastTechniqueSettings: Record<string, TechniqueSettings>;
   defaultColors: number;
   defaultAreaCm2: number;
-  preferredView: 'cards' | 'table' | 'matrix';
+  preferredView: 'cards' | 'matrix' | 'table';
   autoExpandResults: boolean;
   showUpsellSuggestions: boolean;
 }
@@ -188,7 +188,7 @@ export function useSimulatorPreferences() {
   );
 
   const setPreferredView = useCallback(
-    (view: 'cards' | 'table' | 'matrix') => {
+    (view: 'cards' | 'matrix' | 'table') => {
       savePreferences({ preferredView: view });
     },
     [savePreferences],

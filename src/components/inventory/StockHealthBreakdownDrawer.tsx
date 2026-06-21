@@ -17,7 +17,7 @@ import { StockThresholdsLegend } from './StockThresholdsLegend';
 import type { ProductStockSummary } from '@/types/stock';
 import { cn } from '@/lib/utils';
 
-type BucketKey = 'healthy' | 'low' | 'critical' | 'out';
+type BucketKey = 'critical' | 'healthy' | 'low' | 'out';
 
 const TAB_META: Record<BucketKey, { label: string; testid: string; tone: string }> = {
   healthy: { label: 'Adequado', testid: 'tab-healthy', tone: 'text-success' },

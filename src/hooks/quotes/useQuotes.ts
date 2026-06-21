@@ -29,7 +29,7 @@ type QuoteHistoryOptions = {
 
 type QuoteSyncResponse = {
   error?: string;
-  bitrix_deal_id?: string | number | null;
+  bitrix_deal_id?: number | string | null;
   success?: boolean;
 };
 

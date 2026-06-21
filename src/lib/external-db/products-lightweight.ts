@@ -80,7 +80,7 @@ async function fetchPage(params: {
   orderBy: { column: string; ascending?: boolean };
   limit: number;
   offset: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
 }): Promise<InvokeResult<LightweightProduct>> {
   try {
     return await dbInvoke<LightweightProduct>({
@@ -107,7 +107,7 @@ async function fetchPageResilient(params: {
   orderBy: { column: string; ascending?: boolean };
   limit: number;
   offset: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
 }): Promise<InvokeResult<LightweightProduct>> {
   try {
     return await fetchPage(params);

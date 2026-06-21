@@ -8,7 +8,7 @@ interface NoveltyBadgeProps {
    */
   daysElapsed?: number;
   showDays?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   className?: string;
   onClick?: (e: React.MouseEvent) => void;
 }

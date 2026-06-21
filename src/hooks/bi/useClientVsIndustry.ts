@@ -10,7 +10,7 @@ import { useClientBI } from '@/hooks/bi/useClientBI';
 import { isDemoClient } from '@/lib/bi/demoClient';
 import type { CrmCompany } from '@/types/crm';
 
-export type ComparisonClassification = 'above' | 'on_par' | 'below' | 'no_data';
+export type ComparisonClassification = 'above' | 'below' | 'no_data' | 'on_par';
 
 export interface MetricComparison {
   label: string;

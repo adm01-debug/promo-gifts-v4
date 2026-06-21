@@ -21,7 +21,7 @@ const SKIP_CONFIRM_KEY = 'connections.global_refresh.skip_confirm';
 
 interface GlobalRefreshFromDbButtonProps {
   /** Callback executed in parallel with cache invalidation + secret list refresh. */
-  onRefreshed?: () => void | Promise<void>;
+  onRefreshed?: () => Promise<void> | void;
   cooldownMs?: number;
   /** Enable `R` keyboard shortcut (default: true). */
   enableShortcut?: boolean;

@@ -20,7 +20,7 @@ const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
 type SidebarContext = {
-  state: 'expanded' | 'collapsed';
+  state: 'collapsed' | 'expanded';
   open: boolean;
   setOpen: (open: boolean) => void;
   openMobile: boolean;
@@ -148,8 +148,8 @@ const Sidebar = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
     side?: 'left' | 'right';
-    variant?: 'sidebar' | 'floating' | 'inset';
-    collapsible?: 'offcanvas' | 'icon' | 'none';
+    variant?: 'floating' | 'inset' | 'sidebar';
+    collapsible?: 'icon' | 'none' | 'offcanvas';
   }
 >(
   (
@@ -515,11 +515,12 @@ const sidebarMenuButtonVariants = cva(
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<'button'> & {
-    asChild?: boolean;
-    isActive?: boolean;
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>;
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+  React.ComponentProps<'button'> &
+    VariantProps<typeof sidebarMenuButtonVariants> & {
+      asChild?: boolean;
+      isActive?: boolean;
+      tooltip?: React.ComponentProps<typeof TooltipContent> | string;
+    }
 >(
   (
     {
@@ -681,7 +682,7 @@ const SidebarMenuSubButton = React.forwardRef<
   HTMLAnchorElement,
   React.ComponentProps<'a'> & {
     asChild?: boolean;
-    size?: 'sm' | 'md';
+    size?: 'md' | 'sm';
     isActive?: boolean;
   }
 >(({ asChild = false, size = 'md', isActive, className, ...props }, ref) => {

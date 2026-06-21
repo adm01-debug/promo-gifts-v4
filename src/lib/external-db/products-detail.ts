@@ -130,7 +130,7 @@ export async function fetchPromobrindProductById(
   const stillNeedsSupplier = !!product.supplier_id && !product.supplier_name;
 
   const enrichmentQueries: InvokeOptions[] = [];
-  const enrichmentSlots: Array<'category' | 'supplier' | 'materials'> = [];
+  const enrichmentSlots: Array<'category' | 'materials' | 'supplier'> = [];
 
   if (stillNeedsCategory) {
     enrichmentQueries.push({
@@ -311,7 +311,7 @@ export async function fetchPromobrindProductById(
 
   // Campos críticos auditados em todo fetch de kit (view OU base).
   // Lógica pura extraída para `./kit-coverage.ts` (testável sem rede/bridge).
-  const auditKitFields = (source: 'view' | 'base', rows: KitComponent[]): void => {
+  const auditKitFields = (source: 'base' | 'view', rows: KitComponent[]): void => {
     if (rows.length === 0) return;
     const report = computeKitCoverage(rows as unknown as Array<Record<string, unknown>>);
     logger.info(

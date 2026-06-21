@@ -23,21 +23,21 @@ import { createProductFuseOptions, rankProductSearchResults } from '@/utils/prod
 import type { PromobrindProduct } from '@/lib/external-db';
 
 export type SearchResultType =
-  | 'product'
-  | 'client'
-  | 'quote'
-  | 'collection'
-  | 'kit'
-  | 'mockup'
   | 'art_file'
   | 'cart_template'
-  | 'reminder'
-  | 'conversation'
-  | 'magic_up'
   | 'category'
+  | 'client'
+  | 'collection'
+  | 'command'
   | 'component'
+  | 'conversation'
+  | 'kit'
+  | 'magic_up'
   | 'media'
-  | 'command';
+  | 'mockup'
+  | 'product'
+  | 'quote'
+  | 'reminder';
 
 export interface SearchResult {
   id: string;
@@ -55,10 +55,10 @@ export interface SearchIntent {
     category?: string;
     color?: string;
     material?: string;
-    priceRange?: 'low' | 'medium' | 'high';
+    priceRange?: 'high' | 'low' | 'medium';
     status?: string;
     clientName?: string;
-    dateRange?: 'today' | 'week' | 'month' | 'year';
+    dateRange?: 'month' | 'today' | 'week' | 'year';
   };
   keywords: string[];
   originalQuery: string;
@@ -74,7 +74,7 @@ export interface PopularProduct {
 }
 
 export interface AppliedFilter {
-  type: 'category' | 'color' | 'price' | 'material' | 'stock' | 'featured' | 'kit';
+  type: 'category' | 'color' | 'featured' | 'kit' | 'material' | 'price' | 'stock';
   label: string;
 }
 

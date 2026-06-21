@@ -60,7 +60,7 @@ export interface TecnicaGravacaoWithVariantes extends TecnicaGravacaoRaw {
 // JSON TYPE
 // ============================================
 
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json = Json[] | boolean | number | string | { [key: string]: Json | undefined } | null;
 
 // ============================================
 // FORMULÁRIOS
@@ -133,50 +133,50 @@ export interface Database {
     Tables: {
       tecnica_gravacao: {
         Row: TecnicaGravacaoRaw;
-        Insert: Omit<TecnicaGravacaoRaw, 'id' | 'created_at' | 'updated_at' | 'slug'> & {
+        Insert: Omit<TecnicaGravacaoRaw, 'created_at' | 'id' | 'slug' | 'updated_at'> & {
           id?: string;
           created_at?: string;
           updated_at?: string;
           slug?: string;
         };
-        Update: Partial<Omit<TecnicaGravacaoRaw, 'id' | 'created_at'>>;
+        Update: Partial<Omit<TecnicaGravacaoRaw, 'created_at' | 'id'>>;
       };
       tecnica_gravacao_variante: {
         Row: TecnicaGravacaoVarianteRaw;
-        Insert: Omit<TecnicaGravacaoVarianteRaw, 'id' | 'created_at' | 'updated_at' | 'slug'> & {
+        Insert: Omit<TecnicaGravacaoVarianteRaw, 'created_at' | 'id' | 'slug' | 'updated_at'> & {
           id?: string;
           created_at?: string;
           updated_at?: string;
           slug?: string;
         };
-        Update: Partial<Omit<TecnicaGravacaoVarianteRaw, 'id' | 'created_at'>>;
+        Update: Partial<Omit<TecnicaGravacaoVarianteRaw, 'created_at' | 'id'>>;
       };
       fornecedor_gravacao: {
         Row: FornecedorGravacaoRaw;
-        Insert: Omit<FornecedorGravacaoRaw, 'id' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<FornecedorGravacaoRaw, 'created_at' | 'id' | 'updated_at'> & {
           id?: string;
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Omit<FornecedorGravacaoRaw, 'id' | 'created_at'>>;
+        Update: Partial<Omit<FornecedorGravacaoRaw, 'created_at' | 'id'>>;
       };
       tecnica_faixa_area: {
         Row: TecnicaFaixaAreaRaw;
-        Insert: Omit<TecnicaFaixaAreaRaw, 'id' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<TecnicaFaixaAreaRaw, 'created_at' | 'id' | 'updated_at'> & {
           id?: string;
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Omit<TecnicaFaixaAreaRaw, 'id' | 'created_at'>>;
+        Update: Partial<Omit<TecnicaFaixaAreaRaw, 'created_at' | 'id'>>;
       };
       tecnica_faixa_pontos: {
         Row: TecnicaFaixaPontosRaw;
-        Insert: Omit<TecnicaFaixaPontosRaw, 'id' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<TecnicaFaixaPontosRaw, 'created_at' | 'id' | 'updated_at'> & {
           id?: string;
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Omit<TecnicaFaixaPontosRaw, 'id' | 'created_at'>>;
+        Update: Partial<Omit<TecnicaFaixaPontosRaw, 'created_at' | 'id'>>;
       };
       hot_stamping_fita_opcao: {
         Row: HotStampingFitaOpcaoRaw;

@@ -29,7 +29,7 @@ type BannerVariant = {
   message: string;
 };
 
-const STATUS_CONFIG: Partial<Record<'down' | 'degraded' | 'warming', BannerVariant>> = {
+const STATUS_CONFIG: Partial<Record<'degraded' | 'down' | 'warming', BannerVariant>> = {
   down: {
     message: 'Backend indisponível. Verifique sua conexão e tente novamente.',
     icon: WifiOff,

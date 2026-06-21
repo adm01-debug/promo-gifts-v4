@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'pre-order' | 'incoming';
+export type StockStatus = 'in-stock' | 'incoming' | 'low-stock' | 'out-of-stock' | 'pre-order';
 
 const STOCK_INDICATOR_DOT_COLORS: Record<StockStatus, string> = {
   'in-stock': 'bg-primary',
@@ -18,7 +18,7 @@ interface StockBadgeProps {
   quantity?: number;
   showQuantity?: boolean;
   showIcon?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   expectedDate?: string;
   className?: string;
 }

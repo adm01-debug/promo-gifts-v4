@@ -11,7 +11,7 @@ export interface WorkspaceNotification {
   user_id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
+  type: 'error' | 'info' | 'success' | 'warning';
   category: string;
   is_read: boolean;
   action_url: string | null;
@@ -87,7 +87,7 @@ export function useWorkspaceNotifications() {
   const mountAtRef = useRef<number>(
     typeof performance !== 'undefined' ? performance.now() : Date.now(),
   );
-  const badgeSourceRef = useRef<'pending' | 'cache' | 'network'>('pending');
+  const badgeSourceRef = useRef<'cache' | 'network' | 'pending'>('pending');
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);

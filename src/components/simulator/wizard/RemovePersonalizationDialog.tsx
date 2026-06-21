@@ -22,7 +22,7 @@ interface RemovePersonalizationDialogProps {
   locationName: string;
   onConfirm: () => void;
   trigger?: React.ReactNode;
-  variant?: 'icon' | 'button';
+  variant?: 'button' | 'icon';
   className?: string;
 }
 

@@ -87,7 +87,7 @@ function MiniKpi({
   icon: typeof Activity;
   label: string;
   value: string;
-  tone?: 'default' | 'success' | 'warning' | 'destructive';
+  tone?: 'default' | 'destructive' | 'success' | 'warning';
   tooltip?: string;
   explain?: KpiExplain;
 }) {

@@ -77,7 +77,7 @@ interface ProductTableViewProps {
   scrollResetKey?: string;
 }
 
-type SortCol = 'name' | 'sku' | 'price' | 'stock' | 'supplier';
+type SortCol = 'name' | 'price' | 'sku' | 'stock' | 'supplier';
 type SortDir = 'asc' | 'desc';
 
 const formatPrice = (price: number) => {

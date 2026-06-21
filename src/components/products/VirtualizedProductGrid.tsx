@@ -43,7 +43,7 @@ interface VirtualizedProductGridProps {
   selectedIds?: Set<string>;
   /** External toggle handler */
   onToggleSelect?: (id: string) => void;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
   /**
    * BUG-SCROLL-01 FIX: Chave que muda SOMENTE em filter/sort — NUNCA em load-more.
    * Quando muda, o grid rola ao topo. Quando `undefined` (padrão legado), o scroll

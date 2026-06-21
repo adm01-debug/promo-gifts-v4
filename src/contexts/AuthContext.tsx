@@ -33,12 +33,12 @@ import {
 import { logger } from '@/lib/logger';
 // Tipos de role conforme app_role enum no banco.
 export type AppRole =
-  | 'dev'
-  | 'supervisor'
+  | 'admin'
   | 'agente'
   | 'coordenador'
-  | 'admin'
+  | 'dev'
   | 'manager'
+  | 'supervisor'
   | 'vendedor';
 
 export interface Profile {

@@ -14,7 +14,7 @@
 import { invokeExternalDb } from './bridge';
 import { logger } from '@/lib/logger';
 
-type Entity = 'categories' | 'suppliers' | 'material_types';
+type Entity = 'categories' | 'material_types' | 'suppliers';
 
 interface CacheEntry<T> {
   value: T;

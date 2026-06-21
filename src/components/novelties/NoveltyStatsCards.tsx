@@ -48,7 +48,7 @@ interface StatCardProps {
   suffix?: string;
   subtitle?: string;
   icon: React.ReactNode;
-  variant: 'success' | 'warning' | 'info' | 'default' | 'orange';
+  variant: 'default' | 'info' | 'orange' | 'success' | 'warning';
   delay?: number;
 }
 

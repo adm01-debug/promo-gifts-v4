@@ -17,19 +17,19 @@ import {
 import { cn } from '@/lib/utils';
 
 type EmptyStateVariant =
+  | 'analytics'
+  | 'cart'
+  | 'clients'
+  | 'collections'
+  | 'error'
+  | 'favorites'
+  | 'generic'
+  | 'notifications'
+  | 'orders'
   | 'products'
   | 'quotes'
-  | 'orders'
-  | 'clients'
   | 'search'
-  | 'collections'
-  | 'favorites'
-  | 'cart'
-  | 'notifications'
-  | 'analytics'
-  | 'error'
-  | 'security'
-  | 'generic';
+  | 'security';
 
 interface EmptyStateProps {
   variant?: EmptyStateVariant;

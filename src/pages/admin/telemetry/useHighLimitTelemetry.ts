@@ -14,17 +14,17 @@ import { supabase } from '@/integrations/supabase/client';
  * `errors / (errors + slow + very_slow)` dentro da janela.
  */
 
-export type RangePreset = '24h' | '7d' | '30d' | 'custom';
-export type OperationFilter = 'all' | 'select' | 'insert' | 'update' | 'delete' | 'rpc';
+export type RangePreset = '7d' | '24h' | '30d' | 'custom';
+export type OperationFilter = 'all' | 'delete' | 'insert' | 'rpc' | 'select' | 'update';
 export type ErrorKindFilter =
   | 'all'
-  | 'timeout'
-  | 'postgrest_error'
-  | 'validation'
-  | 'network'
-  | 'rate_limit'
   | 'auth'
-  | 'unknown';
+  | 'network'
+  | 'postgrest_error'
+  | 'rate_limit'
+  | 'timeout'
+  | 'unknown'
+  | 'validation';
 
 export interface HighLimitFiltersState {
   operation: OperationFilter;

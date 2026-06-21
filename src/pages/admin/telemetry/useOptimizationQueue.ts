@@ -38,7 +38,7 @@ export interface OptimizationItem {
   description: string | null;
   category: string;
   priority: number;
-  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped' | 'blocked';
+  status: 'blocked' | 'done' | 'failed' | 'pending' | 'running' | 'skipped';
   result: Record<string, unknown> | null;
   error: string | null;
   guardrail_status: string | null;
@@ -135,7 +135,7 @@ export function useOptimizationQueue() {
   }, [invalidate]);
 
   /** Executa um item: simula trabalho leve + checa guardrail. */
-  const runOne = useCallback(async (): Promise<'done' | 'blocked' | 'empty' | 'error'> => {
+  const runOne = useCallback(async (): Promise<'blocked' | 'done' | 'empty' | 'error'> => {
     const { data: claimedRaw, error: claimErr } = await supabase.rpc(
       'claim_next_optimization' as never,
     );
@@ -160,7 +160,7 @@ export function useOptimizationQueue() {
     const guardrailStatus =
       (guardrail as { status?: string } | null)?.status ?? 'insufficient_data';
 
-    let finalStatus: 'done' | 'blocked' = 'done';
+    let finalStatus: 'blocked' | 'done' = 'done';
     let notes = `Executado automaticamente · guardrail=${guardrailStatus}`;
     let errorMsg: string | null = null;
 

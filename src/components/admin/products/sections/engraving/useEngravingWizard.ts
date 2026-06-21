@@ -100,7 +100,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     queryClient.invalidateQueries({ queryKey: ['print-area-techniques', productId] });
 
   const createMutation = useMutation({
-    mutationFn: async (area: Omit<PrintAreaTechnique, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (area: Omit<PrintAreaTechnique, 'created_at' | 'id' | 'updated_at'>) => {
       const { error } = await untypedFrom('print_area_techniques').insert(area);
       if (error) throw new Error(error.message || 'Erro ao criar área');
     },
@@ -112,7 +112,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
+    mutationFn: async ({ id, ...payload }: Record<string, unknown> & { id: string }) => {
       const { error } = await untypedFrom('print_area_techniques').update(payload).eq('id', id);
       if (error) throw new Error(error.message || 'Erro ao atualizar área');
     },
@@ -170,7 +170,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     if (!selectedComponent || !selectedLocation || !selectedTechnique) return;
     const locationCode = `${selectedComponent.code}-${selectedLocation.code}`.toUpperCase();
     const locationName = `${selectedComponent.name} > ${selectedLocation.name}`;
-    const newArea: Omit<PrintAreaTechnique, 'id' | 'created_at' | 'updated_at'> = {
+    const newArea: Omit<PrintAreaTechnique, 'created_at' | 'id' | 'updated_at'> = {
       product_id: productId || 'pending',
       tabela_preco_id: selectedTechnique.id,
       location_code: locationCode,

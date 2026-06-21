@@ -14,8 +14,8 @@ const formatPrice = (price: number) => priceFormatter.format(price);
 interface ProductHoverPreviewProps {
   product: Product;
   children: React.ReactNode;
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  align?: 'start' | 'center' | 'end';
+  side?: 'bottom' | 'left' | 'right' | 'top';
+  align?: 'center' | 'end' | 'start';
 }
 
 export function ProductHoverPreview({

@@ -37,7 +37,7 @@ function formatDaysAgo(date: string): string {
   return `${days}d atrás`;
 }
 
-type Recency = 'hot' | 'warm' | 'normal';
+type Recency = 'hot' | 'normal' | 'warm';
 
 function getRecencyVariant(date: string): Recency {
   const days = daysSinceNoon(date);

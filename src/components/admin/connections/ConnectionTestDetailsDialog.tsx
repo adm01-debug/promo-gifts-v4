@@ -39,7 +39,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   connectionType?: ConnectionType;
   connectionLabel?: string;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Quando presente, abre os detalhes deste registro específico do histórico. */
   historyId?: string;
@@ -156,7 +156,7 @@ export function ConnectionTestDetailsDialog({
   const details = state ? state.details : internal.details;
   const loading = state ? state.loading : internal.loading;
 
-  const [tab, setTab] = useState<'resumo' | 'http' | 'timing' | 'resposta'>('resumo');
+  const [tab, setTab] = useState<'http' | 'resposta' | 'resumo' | 'timing'>('resumo');
   const [bodyExpanded, setBodyExpanded] = useState(false);
 
   useEffect(() => {

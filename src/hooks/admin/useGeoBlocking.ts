@@ -13,7 +13,7 @@ interface AllowedCountry {
 
 interface GeoBlockingSettings {
   enabled: boolean;
-  mode: 'whitelist' | 'blacklist';
+  mode: 'blacklist' | 'whitelist';
 }
 
 export function useGeoBlocking() {

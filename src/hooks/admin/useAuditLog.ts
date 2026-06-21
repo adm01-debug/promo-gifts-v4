@@ -2,23 +2,23 @@ import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
 
-export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';
+export type AuditAction = 'DELETE' | 'INSERT' | 'UPDATE';
 
 export type AuditEntityType =
-  | 'products'
-  | 'product_variants'
-  | 'product_images'
-  | 'product_videos'
-  | 'quotes'
-  | 'quote_items'
-  | 'orders'
-  | 'order_items'
-  | 'suppliers'
   | 'categories'
-  | 'material_types'
   | 'color_variations'
   | 'companies'
-  | 'company_contacts';
+  | 'company_contacts'
+  | 'material_types'
+  | 'order_items'
+  | 'orders'
+  | 'product_images'
+  | 'product_variants'
+  | 'product_videos'
+  | 'products'
+  | 'quote_items'
+  | 'quotes'
+  | 'suppliers';
 
 interface AuditLogParams {
   action: AuditAction;

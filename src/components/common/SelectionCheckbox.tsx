@@ -5,7 +5,7 @@ import React from 'react';
 
 import { cn } from '@/lib/utils';
 
-type CheckboxSize = 'sm' | 'md' | 'lg';
+type CheckboxSize = 'lg' | 'md' | 'sm';
 
 interface SelectionCheckboxProps {
   checked: boolean;

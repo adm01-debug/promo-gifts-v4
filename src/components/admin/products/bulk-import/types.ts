@@ -1,6 +1,6 @@
 import type { ImportRow } from '@/lib/external-db/batch-import';
 
-export type Step = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
+export type Step = 'complete' | 'importing' | 'mapping' | 'preview' | 'upload';
 
 export type TargetFieldKey = (typeof TARGET_FIELDS)[number]['key'];
 
@@ -73,7 +73,7 @@ export const TARGET_FIELDS = [
   { key: 'dimensions', label: 'Dimensões (texto)', required: false },
 ] as const;
 
-export const TEMPLATE_EXAMPLES: Record<string, string | number> = {
+export const TEMPLATE_EXAMPLES: Record<string, number | string> = {
   sku: 'PROD-001',
   name: 'Caneta Personalizada',
   sale_price: 5.99,

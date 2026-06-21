@@ -50,7 +50,7 @@ export interface Product {
 }
 
 export interface ProductCategoryRef {
-  id?: string | number;
+  id?: number | string;
   name?: string;
   icon?: string;
 }
@@ -105,7 +105,7 @@ export interface ProductMetadata {
 // Filtros de busca
 export interface ProductFilters {
   search?: string;
-  category_id?: string | number;
+  category_id?: number | string;
   category_name?: string;
   subcategory?: string;
   supplier_id?: string;
@@ -121,14 +121,14 @@ export interface ProductFilters {
 // Produto simplificado para listagens
 export type ProductListItem = Pick<
   Product,
-  | 'id'
-  | 'sku'
-  | 'name'
-  | 'price'
-  | 'images'
   | 'category_name'
-  | 'featured'
-  | 'new_arrival'
-  | 'stock_status'
   | 'colors'
+  | 'featured'
+  | 'id'
+  | 'images'
+  | 'name'
+  | 'new_arrival'
+  | 'price'
+  | 'sku'
+  | 'stock_status'
 >;

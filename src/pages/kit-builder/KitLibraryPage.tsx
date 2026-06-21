@@ -82,7 +82,7 @@ export default function KitLibraryPage() {
   const queryClient = useQueryClient();
   const { togglePinned } = useCustomKitPersistence();
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<'mine' | 'suggested' | 'favorites'>('mine');
+  const [tab, setTab] = useState<'favorites' | 'mine' | 'suggested'>('mine');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);

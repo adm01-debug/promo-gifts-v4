@@ -44,14 +44,14 @@ import { ensureDailyCatalogDefaults } from '@/hooks/products/dailyCatalogDefault
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
+  | 'best-seller-promo'
+  | 'best-seller-supplier'
+  | 'color-match'
   | 'name'
+  | 'newest'
   | 'price-asc'
   | 'price-desc'
-  | 'stock'
-  | 'newest'
-  | 'color-match'
-  | 'best-seller-supplier'
-  | 'best-seller-promo';
+  | 'stock';
 
 const VIEW_MODE_KEY = 'catalog-view-mode';
 const SORT_SESSION_KEY = 'catalog:sortBy';

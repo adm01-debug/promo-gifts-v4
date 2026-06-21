@@ -97,7 +97,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   // Extrair imagens
   let images: string[] = [];
   if (p.images && Array.isArray(p.images)) {
-    images = (p.images as (string | Record<string, string>)[])
+    images = (p.images as (Record<string, string> | string)[])
       .map((img) => {
         if (typeof img === 'string') return img;
         return img.url || img.src || img.image_url || '';
@@ -227,9 +227,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
                 if (typeof img === 'string') return img;
                 if (img && typeof img === 'object') {
                   const o = img as Record<string, unknown>;
-                  return (o.url ?? o.image_url ?? o.primary_image_url ?? null) as
-                    | string
-                    | null;
+                  return (o.url ?? o.image_url ?? o.primary_image_url ?? null) as string | null;
                 }
                 return null;
               })

@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 /** Opções de configuração do hook `useIntersectionObserver`. */
 export interface UseIntersectionObserverOptions {
   rootMargin?: string;
-  threshold?: number | number[];
+  threshold?: number[] | number;
   /** Quando true, para de observar após a primeira intersecção (one-shot) */
   once?: boolean;
   /** Quando true, considera visível antes de montar (útil para priority items) */
@@ -43,13 +43,13 @@ if (import.meta.hot) {
   });
 }
 
-function getObserverKey(rootMargin: string, threshold: number | number[]): string {
+function getObserverKey(rootMargin: string, threshold: number[] | number): string {
   return `${rootMargin}|${JSON.stringify(threshold)}`;
 }
 
 function getSharedObserver(
   rootMargin: string,
-  threshold: number | number[],
+  threshold: number[] | number,
 ): IntersectionObserver | null {
   if (typeof IntersectionObserver === 'undefined') return null;
 

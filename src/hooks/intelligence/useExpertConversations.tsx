@@ -16,7 +16,7 @@ export interface ExpertConversation {
 export interface ExpertMessage {
   id: string;
   conversation_id: string;
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
   created_at: string;
 }
@@ -135,7 +135,7 @@ export function useExpertConversations(clientId?: string) {
 
   const saveMessage = async (
     conversationId: string,
-    role: 'user' | 'assistant',
+    role: 'assistant' | 'user',
     content: string,
   ) => {
     try {

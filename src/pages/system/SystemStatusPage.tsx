@@ -29,21 +29,21 @@ import { cn } from '@/lib/utils';
 
 interface StatusItem {
   name: string;
-  status: 'ok' | 'error' | 'warning' | 'loading';
+  status: 'error' | 'loading' | 'ok' | 'warning';
   message: string;
   icon: React.ReactNode;
 }
 
 interface CrmTableCheck {
   name: string;
-  status: 'ok' | 'error' | 'loading';
+  status: 'error' | 'loading' | 'ok';
   rowCount?: number;
   message: string;
 }
 
 interface RlsCheck {
   table: string;
-  status: 'ok' | 'error' | 'warning';
+  status: 'error' | 'ok' | 'warning';
   msg: string;
   code?: string;
   httpStatus: number;
@@ -144,7 +144,7 @@ export default function SystemStatusPage() {
           .from(t)
           .select('*', { count: 'exact', head: true });
 
-        let status: 'ok' | 'error' | 'warning' = 'ok';
+        let status: 'error' | 'ok' | 'warning' = 'ok';
         let msg = 'Acessível';
         let suggestion = '';
 
@@ -272,7 +272,7 @@ export default function SystemStatusPage() {
     runCrmHealthCheck();
   }, [runCrmHealthCheck, runHealthCheck]);
 
-  const getStatusIcon = (status: 'ok' | 'error' | 'warning' | 'loading') => {
+  const getStatusIcon = (status: 'error' | 'loading' | 'ok' | 'warning') => {
     switch (status) {
       case 'ok':
         return <CheckCircle className="h-5 w-5 text-primary" />;
@@ -285,7 +285,7 @@ export default function SystemStatusPage() {
     }
   };
 
-  const getStatusBadge = (status: 'ok' | 'error' | 'warning' | 'loading') => {
+  const getStatusBadge = (status: 'error' | 'loading' | 'ok' | 'warning') => {
     switch (status) {
       case 'ok':
         return <Badge className="border-primary/30 bg-primary/20 text-primary">OK</Badge>;

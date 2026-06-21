@@ -127,7 +127,7 @@ function formatRelative(iso: string | null): string {
 
 function rowStatus(
   r: OverviewRow,
-): 'active' | 'degraded' | 'error' | 'unconfigured' | 'disabled' | 'never_tested' {
+): 'active' | 'degraded' | 'disabled' | 'error' | 'never_tested' | 'unconfigured' {
   // Persisted states (external_connections.status) take precedence
   const persisted = (r.status ?? '').toLowerCase();
   if (persisted === 'disabled' || persisted === 'inactive') return 'disabled';

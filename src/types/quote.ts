@@ -2,17 +2,17 @@
 // Orçamentos
 
 export type QuoteStatus =
-  | 'draft'
-  | 'pending'
-  | 'pending_approval'
-  | 'sent'
-  | 'viewed'
   | 'approved'
+  | 'cancelled'
   | 'converted'
-  | 'rejected'
+  | 'draft'
   | 'expired'
-  | 'cancelled';
-export type ClientResponse = 'approved' | 'rejected' | 'changes_requested';
+  | 'pending_approval'
+  | 'pending'
+  | 'rejected'
+  | 'sent'
+  | 'viewed';
+export type ClientResponse = 'approved' | 'changes_requested' | 'rejected';
 
 export interface Quote {
   id: string;

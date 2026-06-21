@@ -24,7 +24,7 @@ interface RetestButtonProps {
   timeoutMs?: number;
 }
 
-type DisabledKind = 'running' | 'cooldown' | 'credentials' | null;
+type DisabledKind = 'cooldown' | 'credentials' | 'running' | null;
 
 const STORAGE_PREFIX = 'retest:cooldown:';
 

@@ -19,8 +19,8 @@ import { Ban, Loader2 } from 'lucide-react';
 interface BlockIpButtonProps {
   defaultIp?: string;
   defaultReason?: string;
-  size?: 'sm' | 'default';
-  variant?: 'outline' | 'destructive' | 'ghost';
+  size?: 'default' | 'sm';
+  variant?: 'destructive' | 'ghost' | 'outline';
   onBlocked?: () => void;
 }
 

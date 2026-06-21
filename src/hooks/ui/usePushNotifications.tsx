@@ -97,7 +97,7 @@ export function usePushNotifications() {
   );
 
   const showSecurityAlert = useCallback(
-    (title: string, message: string, type: 'info' | 'warning' | 'critical' = 'warning') => {
+    (title: string, message: string, type: 'critical' | 'info' | 'warning' = 'warning') => {
       return showNotification(`${SECURITY_ALERT_ICONS[type]} ${title}`, {
         body: message,
         tag: 'security-alert',

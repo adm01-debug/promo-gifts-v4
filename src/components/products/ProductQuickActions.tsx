@@ -41,10 +41,10 @@ interface ProductQuickActionsProps {
     variantImages?: string[] | null;
   } | null;
   onConfirmPrice?: () => void;
-  priceConfirmedAt?: string | Date | null;
+  priceConfirmedAt?: Date | string | null;
 }
 
-type ModalType = 'precos' | 'personalizacao' | 'indicacao' | 'nicho' | null;
+type ModalType = 'indicacao' | 'nicho' | 'personalizacao' | 'precos' | null;
 type ActionKey = Exclude<ModalType, null>;
 
 const actions = [

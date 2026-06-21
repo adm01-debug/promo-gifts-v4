@@ -36,7 +36,7 @@ export function useOfflineGuard() {
    * Se offline, exibe toast explicativo e retorna false.
    */
   const guardedMutate = useCallback(
-    <T>(fn: () => T | Promise<T>): T | Promise<T> | false => {
+    <T>(fn: () => Promise<T> | T): Promise<T> | T | false => {
       if (isOffline) {
         toast.error('Sem conexão com a internet', {
           description: 'Verifique sua conexão Wi-Fi ou dados móveis e tente novamente.',

@@ -207,7 +207,7 @@ export function useCollections() {
                     await supabase.from('collection_items').insert(
                       items.map(
                         (
-                          item: { productId?: string; variant?: CollectionVariantInfo } | string,
+                          item: string | { productId?: string; variant?: CollectionVariantInfo },
                           idx: number,
                         ) => {
                           const isObj = typeof item === 'object';
@@ -309,7 +309,7 @@ export function useCollections() {
   );
 
   const updateCollection = useCallback(
-    (id: string, updates: Partial<Omit<Collection, 'id' | 'createdAt'>>) => {
+    (id: string, updates: Partial<Omit<Collection, 'createdAt' | 'id'>>) => {
       setCollections((prev) =>
         prev.map((col) =>
           col.id === id ? { ...col, ...updates, updatedAt: new Date().toISOString() } : col,

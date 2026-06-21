@@ -31,7 +31,7 @@ import {
 // O(N×M) recálculos em O(1) lookups após a primeira passagem de filtro.
 const _normalizeCache = new Map<string, string>();
 
-export const normalize = (s: string | undefined | null): string => {
+export const normalize = (s: string | null | undefined): string => {
   const key = s ?? '';
   const hit = _normalizeCache.get(key);
   if (hit !== undefined) return hit;

@@ -24,18 +24,18 @@
  */
 
 export type ImageTypeCode =
-  | 'main'
-  | 'gallery'
-  | 'product'
-  | 'set'
-  | 'logo'
   | 'ambient'
-  | 'detail'
-  | 'box'
-  | 'pouch'
-  | 'location'
   | 'area'
-  | 'component';
+  | 'box'
+  | 'component'
+  | 'detail'
+  | 'gallery'
+  | 'location'
+  | 'logo'
+  | 'main'
+  | 'pouch'
+  | 'product'
+  | 'set';
 
 export interface ProductImageMeta {
   id?: string;
@@ -68,7 +68,7 @@ export interface GroupedImages {
  * Variantes de tamanho do Cloudflare Images.
  * `card` (400×400) é usada nos cards de catálogo por dezenas de consumidores.
  */
-export type CdnVariant = 'thumbnail' | 'small' | 'card' | 'medium' | 'large' | 'public';
+export type CdnVariant = 'card' | 'large' | 'medium' | 'public' | 'small' | 'thumbnail';
 
 // CDN variant suffixes
 const CDN_VARIANTS: Record<CdnVariant, string> = {

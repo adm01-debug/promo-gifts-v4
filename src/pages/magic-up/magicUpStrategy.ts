@@ -55,18 +55,18 @@ export type MagicUpQualityDiagnosis = {
   strengths: string[];
   risks: string[];
   recommendations: string[];
-  source: 'heuristic' | 'ai';
+  source: 'ai' | 'heuristic';
 };
 
 export type MagicUpCurationStatus =
-  | 'draft'
-  | 'good'
-  | 'favorite'
-  | 'internal-approved'
-  | 'sent-to-client'
   | 'client-approved'
   | 'client-rejected'
-  | 'needs-adjustment';
+  | 'draft'
+  | 'favorite'
+  | 'good'
+  | 'internal-approved'
+  | 'needs-adjustment'
+  | 'sent-to-client';
 
 export type MagicUpCopyPack = {
   whatsapp: string;
@@ -76,7 +76,7 @@ export type MagicUpCopyPack = {
   cta: string;
 };
 
-export type MagicUpCampaignStatus = 'draft' | 'review' | 'sent' | 'approved' | 'rejected';
+export type MagicUpCampaignStatus = 'approved' | 'draft' | 'rejected' | 'review' | 'sent';
 
 export type MagicUpCampaign = MagicUpBrief & {
   id: string | null;
@@ -92,7 +92,7 @@ export type MagicUpBrandLogo = {
   id: string;
   label: string;
   url: string;
-  variant: 'principal' | 'colorida' | 'branca' | 'preta' | 'horizontal' | 'vertical' | 'icone';
+  variant: 'branca' | 'colorida' | 'horizontal' | 'icone' | 'preta' | 'principal' | 'vertical';
   isPrimary: boolean;
 };
 

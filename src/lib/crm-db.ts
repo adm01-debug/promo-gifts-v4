@@ -22,7 +22,7 @@ import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
 export interface CrmQuery {
   table: string;
-  operation: 'select' | 'search' | 'insert' | 'update' | 'delete';
+  operation: 'delete' | 'insert' | 'search' | 'select' | 'update';
   id?: string;
   filters?: Record<string, unknown>;
   select?: string;

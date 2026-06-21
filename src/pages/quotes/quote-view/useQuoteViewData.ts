@@ -19,8 +19,8 @@ import { applyNegotiationMarkup } from '@/hooks/quotes/quoteMarkup';
 
 type QuoteClientCompany = {
   cnpj?: string | null;
-  bitrix_company_id?: string | number | null;
-  bitrix_id?: string | number | null;
+  bitrix_company_id?: number | string | null;
+  bitrix_id?: number | string | null;
 };
 
 export function useQuoteViewData(id: string | undefined) {

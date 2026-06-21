@@ -18,9 +18,9 @@ interface ConfirmDialogProps {
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => Promise<void> | void;
   onCancel?: () => void;
-  variant?: 'default' | 'destructive' | 'warning' | 'info';
+  variant?: 'default' | 'destructive' | 'info' | 'warning';
   icon?: LucideIcon;
   loading?: boolean;
   impactPreview?: {
@@ -185,7 +185,7 @@ export function DeleteConfirmDialog({
   onOpenChange: (open: boolean) => void;
   entityName: string;
   itemName?: string;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => Promise<void> | void;
   loading?: boolean;
   affectedItems?: string[];
   /** Optional testid scope. Defaults to `delete-confirm-dialog`. */
@@ -230,7 +230,7 @@ export function UnsavedChangesDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDiscard: () => void;
-  onSave?: () => void | Promise<void>;
+  onSave?: () => Promise<void> | void;
   loading?: boolean;
 }) {
   return (

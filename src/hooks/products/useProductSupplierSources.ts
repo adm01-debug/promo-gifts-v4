@@ -37,7 +37,7 @@ export interface SupplierSource {
   updated_at: string;
 }
 
-export type SupplierSourceInput = Omit<SupplierSource, 'id' | 'created_at' | 'updated_at'>;
+export type SupplierSourceInput = Omit<SupplierSource, 'created_at' | 'id' | 'updated_at'>;
 
 interface RawSource {
   supplier_id: string | null;

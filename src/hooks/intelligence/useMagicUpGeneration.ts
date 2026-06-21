@@ -64,7 +64,7 @@ interface GenerationDeps {
    * - 'fast': Gemini 2.5 Flash Image Preview ("nano-banana"), mais rápido/barato
    *   para iterações e refinamentos
    */
-  imageModel?: 'pro' | 'fast';
+  imageModel?: 'fast' | 'pro';
 }
 
 export function useMagicUpGeneration(deps: GenerationDeps) {
@@ -382,7 +382,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
   );
 
   const handleDownload = useCallback(
-    async (format: 'png' | 'jpg' = 'png') => {
+    async (format: 'jpg' | 'png' = 'png') => {
       if (!currentVariation?.imageUrl) return;
       try {
         const resp = await fetch(currentVariation.imageUrl);

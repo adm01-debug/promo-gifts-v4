@@ -21,9 +21,9 @@ interface Props {
 const ROWS: Array<{
   key: string;
   label: string;
-  format: (p: Product) => string | number;
+  format: (p: Product) => number | string;
   raw: (p: Product) => number;
-  better: 'lower' | 'higher';
+  better: 'higher' | 'lower';
 }> = [
   {
     key: 'price',

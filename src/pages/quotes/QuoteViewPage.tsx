@@ -62,7 +62,7 @@ const statusConfig = Object.fromEntries(
   ]),
 ) as Record<
   string,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }
 >;
 
 export default function QuoteViewPage() {

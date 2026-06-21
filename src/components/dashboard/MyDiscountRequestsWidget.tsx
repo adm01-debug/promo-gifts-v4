@@ -24,7 +24,7 @@ import { useInfiniteScroll } from './widget-filters/useInfiniteScroll';
 
 const PAGE_SIZE = 20;
 
-const STATUS_VARIANT: Record<string, 'secondary' | 'outline' | 'default' | 'destructive'> = {
+const STATUS_VARIANT: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
   pending: 'secondary',
   approved: 'default',
   rejected: 'destructive',
@@ -84,7 +84,7 @@ export function MyDiscountRequestsWidget() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sentinelRef = useInfiniteScroll<HTMLDivElement>(handleLoadMore, {
+  const sentinelRef = useInfiniteScroll(handleLoadMore, {
     enabled: !!hasNextPage,
   });
 

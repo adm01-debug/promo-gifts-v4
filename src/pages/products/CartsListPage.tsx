@@ -36,8 +36,8 @@ import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/C
 import { cn } from '@/lib/utils';
 import type { SellerCart, CartStatus } from '@/hooks/products';
 
-type StatusFilter = 'all' | CartStatus;
-type SortKey = 'recent' | 'value-desc' | 'items-desc';
+type StatusFilter = CartStatus | 'all';
+type SortKey = 'items-desc' | 'recent' | 'value-desc';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recent', label: 'Mais recente' },

@@ -24,7 +24,7 @@ declare module 'canvas-confetti' {
     ticks?: number;
     origin?: Origin;
     colors?: string[];
-    shapes?: Array<'square' | 'circle' | 'star' | Shape>;
+    shapes?: Array<Shape | 'circle' | 'square' | 'star'>;
     scalar?: number;
     zIndex?: number;
     disableForReducedMotion?: boolean;
@@ -37,8 +37,8 @@ declare module 'canvas-confetti' {
   }
 
   type Shape =
-    | { type: 'path'; path: string; matrix?: DOMMatrix }
-    | { type: 'bitmap'; bitmap: ImageBitmap; matrix?: DOMMatrix };
+    | { type: 'bitmap'; bitmap: ImageBitmap; matrix?: DOMMatrix }
+    | { type: 'path'; path: string; matrix?: DOMMatrix };
 
   type CreateTypes = (options?: Options) => Promise<null> | null;
 

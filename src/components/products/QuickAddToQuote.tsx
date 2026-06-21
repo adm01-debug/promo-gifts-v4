@@ -22,11 +22,11 @@ interface QuickAddToQuoteProps {
   productPrice?: number;
   minQuantity?: number;
   className?: string;
-  variant?: 'icon' | 'button' | 'badge';
+  variant?: 'badge' | 'button' | 'icon';
   disabled?: boolean;
   labelOverride?: string;
   iconOverride?: 'cart' | 'plus';
-  buttonSize?: 'default' | 'sm' | 'lg' | 'xl' | 'icon';
+  buttonSize?: 'default' | 'icon' | 'lg' | 'sm' | 'xl';
   onSuccess?: (variant: ExternalVariantStock | null) => void;
 }
 

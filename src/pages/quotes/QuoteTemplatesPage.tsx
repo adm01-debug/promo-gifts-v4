@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, Users } from 'lucide-react';
 
-type ViewMode = 'list' | 'create' | 'edit';
+type ViewMode = 'create' | 'edit' | 'list';
 
 export default function QuoteTemplatesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingTemplate, setEditingTemplate] = useState<QuoteTemplate | null>(null);
-  const [activeTab, setActiveTab] = useState<'my-templates' | 'all-templates'>('my-templates');
+  const [activeTab, setActiveTab] = useState<'all-templates' | 'my-templates'>('my-templates');
   const { isAdmin } = useQuoteTemplates();
 
   const handleCreateTemplate = () => {

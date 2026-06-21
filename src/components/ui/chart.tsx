@@ -13,8 +13,8 @@ export type ChartConfig = Record<
     label?: React.ReactNode;
     icon?: React.ComponentType;
   } & (
-    | { color?: string; theme?: never }
     | { color?: never; theme: Record<keyof typeof THEMES, string> }
+    | { color?: string; theme?: never }
   )
 >;
 
@@ -111,11 +111,11 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<'div'> & {
+  React.ComponentProps<'div'> &
+    React.ComponentProps<typeof RechartsPrimitive.Tooltip> & {
       hideLabel?: boolean;
       hideIndicator?: boolean;
-      indicator?: 'line' | 'dot' | 'dashed';
+      indicator?: 'dashed' | 'dot' | 'line';
       nameKey?: string;
       labelKey?: string;
     }
@@ -257,8 +257,8 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<'div'> &
-    Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
+  Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> &
+    React.ComponentProps<'div'> & {
       hideIcon?: boolean;
       nameKey?: string;
     }

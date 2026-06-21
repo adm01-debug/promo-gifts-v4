@@ -9,7 +9,7 @@ import { toErrorMessage } from '@/lib/to-error-message';
 
 interface ScenarioResult {
   table: string;
-  op: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+  op: 'DELETE' | 'INSERT' | 'SELECT' | 'UPDATE';
   scenario: string;
   expected: 'allow' | 'deny';
   actual: 'allow' | 'deny' | 'error';

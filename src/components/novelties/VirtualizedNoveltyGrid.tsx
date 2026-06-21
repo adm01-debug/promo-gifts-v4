@@ -17,7 +17,7 @@ interface VirtualizedNoveltyGridProps {
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
   hasMore?: boolean;
   isLoadingMore?: boolean;

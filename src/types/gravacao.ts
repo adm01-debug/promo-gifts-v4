@@ -26,7 +26,7 @@ export interface TecnicaGravacao {
   cobra_por_area: boolean;
   cobra_por_pontos: boolean;
   requer_setup: boolean;
-  tipo_setup: 'nenhum' | 'fotolito' | 'cliche' | 'matriz' | string | null;
+  tipo_setup: string | 'cliche' | 'fotolito' | 'matriz' | 'nenhum' | null;
   tempo_producao_dias: number;
   ordem_exibicao: number;
   ativo: boolean;
@@ -51,7 +51,7 @@ export interface TecnicaSimples {
 /**
  * Shape (formato) da área de gravação
  */
-export type AreaShape = 'rectangle' | 'circle' | 'oval' | 'triangle' | 'custom';
+export type AreaShape = 'circle' | 'custom' | 'oval' | 'rectangle' | 'triangle';
 
 /**
  * Área de gravação do produto (tabela product_print_areas)

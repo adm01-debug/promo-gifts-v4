@@ -66,7 +66,7 @@ export function CartCompanyPickerDialog({
   onOpenChange,
   onCreated,
 }: CartCompanyPickerDialogProps) {
-  const [tab, setTab] = useState<'recent' | 'favorites' | 'search'>('recent');
+  const [tab, setTab] = useState<'favorites' | 'recent' | 'search'>('recent');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [recents, setRecents] = useState<CompanyItem[]>([]);

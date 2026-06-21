@@ -11,15 +11,15 @@
 import type { SecretError } from '@/hooks/admin';
 
 export type SecretErrorCategory =
-  | 'permission'
-  | 'validation'
-  | 'whitelist'
-  | 'network'
-  | 'timeout'
-  | 'rate_limit'
   | 'conflict'
+  | 'network'
+  | 'permission'
+  | 'rate_limit'
   | 'server'
-  | 'unknown';
+  | 'timeout'
+  | 'unknown'
+  | 'validation'
+  | 'whitelist';
 
 export interface NormalizedSecretError {
   /** Short tag rendered as a chip ("Permissão", "Validação", ...). */
@@ -61,7 +61,7 @@ function lower(s: string | undefined): string {
 export function normalizeSecretError(
   err: SecretError | null | undefined,
   secretName: string,
-  context: { action?: 'save' | 'rotate' | 'delete' | 'refresh' | 'test' } = {},
+  context: { action?: 'delete' | 'refresh' | 'rotate' | 'save' | 'test' } = {},
 ): NormalizedSecretError {
   const code = err?.code ?? 'unexpected';
   const msg = lower(err?.message);
@@ -192,7 +192,7 @@ export function normalizeSecretError(
 export function describeSecretError(
   err: SecretError | null | undefined,
   secretName: string,
-  context?: { action?: 'save' | 'rotate' | 'delete' | 'refresh' | 'test' },
+  context?: { action?: 'delete' | 'refresh' | 'rotate' | 'save' | 'test' },
 ): string {
   const n = normalizeSecretError(err, secretName, context);
   return n.hint ? `${n.description} ${n.hint}` : n.description;

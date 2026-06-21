@@ -149,7 +149,7 @@ export function useNotificationsMetricsPanel(visible: boolean) {
       den += (xs[i] - meanX) ** 2;
     }
     const slopePerSec = den === 0 ? 0 : num / den;
-    const direction: 'rising' | 'flat' | 'falling' =
+    const direction: 'falling' | 'flat' | 'rising' =
       slopePerSec >= 0.01 ? 'rising' : slopePerSec <= -0.01 ? 'falling' : 'flat';
 
     let suggestion: { primary: string; rationale: string };

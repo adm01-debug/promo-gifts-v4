@@ -6,7 +6,7 @@
  * across the PDP, catalog cards, quick view, sticky header and quote builder.
  */
 
-export type PriceFreshnessStatus = 'fresh' | 'aging' | 'stale' | 'unknown';
+export type PriceFreshnessStatus = 'aging' | 'fresh' | 'stale' | 'unknown';
 
 export interface PriceFreshness {
   status: PriceFreshnessStatus;
@@ -57,7 +57,7 @@ function formatRelativeDays(days: number): string {
 }
 
 export function getPriceFreshness(
-  priceUpdatedAt: string | Date | null | undefined,
+  priceUpdatedAt: Date | string | null | undefined,
   thresholdDays: number | null | undefined,
 ): PriceFreshness {
   const threshold =

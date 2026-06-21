@@ -18,7 +18,7 @@ import type { ExternalProduct } from '@/lib/external-db/types';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
-type ActiveFilter = 'all' | 'active' | 'inactive';
+type ActiveFilter = 'active' | 'all' | 'inactive';
 
 const fmtCurrency = (n?: number) =>
   typeof n === 'number'

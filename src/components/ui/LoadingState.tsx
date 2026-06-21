@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 interface LoadingStateProps {
   text?: string;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'spinner' | 'dots' | 'skeleton';
+  size?: 'lg' | 'md' | 'sm';
+  variant?: 'dots' | 'skeleton' | 'spinner';
   className?: string;
 }
 
@@ -62,9 +62,9 @@ export function LoadingState({
  */
 interface LoadingSkeletonProps {
   className?: string;
-  variant?: 'text' | 'circular' | 'rectangular';
-  width?: string | number;
-  height?: string | number;
+  variant?: 'circular' | 'rectangular' | 'text';
+  width?: number | string;
+  height?: number | string;
   lines?: number;
 }
 

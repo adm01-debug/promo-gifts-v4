@@ -4,7 +4,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
-export type EmailEventType = 'quote_sent' | 'quote_approved' | 'quote_rejected' | 'order_created';
+export type EmailEventType = 'order_created' | 'quote_approved' | 'quote_rejected' | 'quote_sent';
 
 interface SendEmailParams {
   event_type: EmailEventType;

@@ -26,7 +26,7 @@ import { useClientVsIndustry } from '@/hooks/bi/useClientVsIndustry';
 import { toast } from 'sonner';
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
 }
 

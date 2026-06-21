@@ -3,8 +3,8 @@ import type { OverviewRow } from '@/hooks/intelligence';
 import type { ConsecutiveFailureInfo } from '@/hooks/common';
 import { CONSECUTIVE_FAILURE_THRESHOLD } from '@/lib/connections-config';
 
-export type OverviewStatusFilter = 'all' | 'ok' | 'fail';
-export type OverviewWindowFilter = 'any' | '5m' | '1h' | '24h' | '7d' | 'never';
+export type OverviewStatusFilter = 'all' | 'fail' | 'ok';
+export type OverviewWindowFilter = '1h' | '5m' | '7d' | '24h' | 'any' | 'never';
 
 export interface OverviewFilters {
   types: string[];

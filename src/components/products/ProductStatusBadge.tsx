@@ -9,15 +9,15 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { noveltyDaysElapsed, noveltyBadgeLabelFromElapsed } from '@/lib/products/novelty-days';
 
 export type ProductStatusBadgeType =
-  | 'novelty'
-  | 'promotion'
   | 'featured'
   | 'kit'
-  | 'urgency'
+  | 'novelty'
   | 'out-of-stock'
-  | 'packaging';
+  | 'packaging'
+  | 'promotion'
+  | 'urgency';
 
-export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
+export type UrgencyType = 'ending-soon' | 'limited-stock' | 'trending';
 
 interface PackagingMetadata {
   packingType?: string | null;
@@ -36,7 +36,7 @@ const PACKAGING_CONTEXT_LABELS: Record<string, string> = {
 interface ProductStatusBadgeProps {
   type: ProductStatusBadgeType;
   urgencyType?: UrgencyType;
-  value?: string | number;
+  value?: number | string;
   daysRemaining?: number;
   /**
    * Idade da novidade em dias (desde a detecção). Quando fornecido, é usado
@@ -46,7 +46,7 @@ interface ProductStatusBadgeProps {
    * pipeline (~60 dias), onde `30 - daysRemaining` produziria valores negativos.
    */
   daysElapsed?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
   showTooltip?: boolean;

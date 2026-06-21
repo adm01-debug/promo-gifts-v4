@@ -53,7 +53,7 @@ interface SellerProfile {
   role: string | null;
 }
 
-type ApprovalFilter = 'all' | 'pending' | 'approved' | 'rejected';
+type ApprovalFilter = 'all' | 'approved' | 'pending' | 'rejected';
 
 export function DiscountManagementPanel() {
   const navigate = useNavigate();

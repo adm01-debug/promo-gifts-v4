@@ -154,7 +154,7 @@ export async function fetchPromobrindProducts(options?: {
       }
 
       const pageSize = offset >= 1000 ? 125 : BASE_PAGE_SIZE;
-      const countMode: 'planned' | 'none' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
+      const countMode: 'none' | 'planned' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
       let page: InvokeResult<PromobrindProduct>;
       try {
         page = await dbInvoke<PromobrindProduct>({
@@ -185,8 +185,9 @@ export async function fetchPromobrindProducts(options?: {
           logger.warn(
             `[external-db] Timeout at offset=${offset}, retrying (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})...`,
           );
+          const retryDelay1 = 1000 * consecutiveErrors;
           await new Promise((r) => {
-            setTimeout(r, 1000 * consecutiveErrors);
+            setTimeout(r, retryDelay1);
           });
           continue;
         }
@@ -213,8 +214,9 @@ export async function fetchPromobrindProducts(options?: {
               );
               break;
             }
+            const retryDelay2 = 1000 * consecutiveErrors;
             await new Promise((r) => {
-              setTimeout(r, 1000 * consecutiveErrors);
+              setTimeout(r, retryDelay2);
             });
             continue;
           }

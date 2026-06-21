@@ -11,7 +11,7 @@ import type { KitTemplateRow } from '@/hooks/kit-builder/useKitTemplates';
 
 const QUERY_KEY = ['admin-kit-templates'] as const;
 
-export type KitTemplateInput = Partial<Omit<KitTemplateRow, 'id' | 'created_at' | 'updated_at'>> & {
+export type KitTemplateInput = Partial<Omit<KitTemplateRow, 'created_at' | 'id' | 'updated_at'>> & {
   name: string;
 };
 

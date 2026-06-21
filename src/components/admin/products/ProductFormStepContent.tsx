@@ -129,7 +129,7 @@ export function ProductFormStepContent({
           />
           <ProductInfoSection
             {...formProps}
-            skuStatus={skuStatus as 'idle' | 'valid' | 'duplicate' | 'checking'}
+            skuStatus={skuStatus as 'checking' | 'duplicate' | 'idle' | 'valid'}
             duplicateName={duplicateName ?? ''}
             skuManuallyEdited={skuManuallyEdited}
             onSkuManualEdit={onSkuManualEdit}

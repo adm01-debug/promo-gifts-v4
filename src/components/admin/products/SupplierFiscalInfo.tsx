@@ -44,7 +44,7 @@ function EditField({
   onChange: (v: string) => void;
   mono?: boolean;
   placeholder?: string;
-  type?: 'text' | 'number';
+  type?: 'number' | 'text';
 }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -102,7 +102,7 @@ function FiscalField({
   mono = false,
 }: {
   label: string;
-  value: string | number | null | undefined;
+  value: number | string | null | undefined;
   mono?: boolean;
 }) {
   if (value === null || value === '') return null;

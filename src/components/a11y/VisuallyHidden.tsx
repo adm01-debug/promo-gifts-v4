@@ -20,7 +20,7 @@ export function VisuallyHidden({ children, as: component = 'span' }: VisuallyHid
  */
 interface LiveRegionProps {
   children: ReactNode;
-  politeness?: 'polite' | 'assertive' | 'off';
+  politeness?: 'assertive' | 'off' | 'polite';
   atomic?: boolean;
 }
 

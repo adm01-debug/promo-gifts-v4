@@ -8,9 +8,9 @@ import type { ProductTechnique, ConfiguredEngraving } from '../types';
 // TIPOS
 // ============================================
 
-export type UpsellType = 'technique_upgrade' | 'add_position' | 'quantity_tier' | 'complementary';
+export type UpsellType = 'add_position' | 'complementary' | 'quantity_tier' | 'technique_upgrade';
 
-export type UpsellPriority = 'high' | 'medium' | 'low';
+export type UpsellPriority = 'high' | 'low' | 'medium';
 
 export interface UpsellSuggestion {
   id: string;

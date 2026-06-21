@@ -161,7 +161,8 @@ export function useCategoriesTree() {
       while (current) {
         path.unshift(current);
         if (current.parent_id) {
-          current = categories.find((cat) => cat.id === current?.parent_id);
+          const parentId = current.parent_id;
+          current = categories.find((cat) => cat.id === parentId);
         } else {
           current = undefined;
         }

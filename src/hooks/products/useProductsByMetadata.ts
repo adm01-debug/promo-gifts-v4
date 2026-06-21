@@ -115,7 +115,7 @@ export function useProductsByMetadata({
       });
 
       if (token !== fetchTokenRef.current) return; // superseded — nova selecao de filtro
-      if (rpcError) throw rpcError instanceof Error ? rpcError : new Error(String(rpcError));
+      if (rpcError) throw new Error(String(rpcError));
 
       const rows = (data as Array<{ product_id: string }> | null) || [];
       setProductIds(new Set(rows.map((r) => r.product_id)));

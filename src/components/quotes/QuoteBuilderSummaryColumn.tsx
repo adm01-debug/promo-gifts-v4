@@ -51,8 +51,8 @@ interface Props {
   activeItemIndex: number | null;
   setActiveItemIndex: (i: number | null) => void;
   removeItem: (i: number) => void;
-  discountType: 'percent' | 'amount';
-  setDiscountType: (v: 'percent' | 'amount') => void;
+  discountType: 'amount' | 'percent';
+  setDiscountType: (v: 'amount' | 'percent') => void;
   discountValue: number;
   setDiscountValue: (v: number) => void;
   discountAmount: number;
@@ -65,7 +65,7 @@ interface Props {
   formatCurrency: (v: number) => string;
   calculateItemPersonalizationTotal: (item: QuoteItem) => number;
   calculateItemTotal: (item: QuoteItem) => number;
-  onSave: (status: 'draft' | 'pending' | 'pending_approval', sellerNotes?: string) => void;
+  onSave: (status: 'draft' | 'pending_approval' | 'pending', sellerNotes?: string) => void;
   maxDiscountPercent?: number | null;
   isDiscountExceeded?: boolean;
   negotiationMarkup?: number;
@@ -121,7 +121,7 @@ export function QuoteBuilderSummaryColumn({
     return round2((realSubtotal || 0) * (1 + (negotiationMarkup || 0) / 100));
   }, [realSubtotal, negotiationMarkup]);
 
-  const handleDiscountTypeChange = (next: 'percent' | 'amount') => {
+  const handleDiscountTypeChange = (next: 'amount' | 'percent') => {
     if (next === discountType) return;
     if (presentedSubtotal > 0 && discountValue > 0) {
       if (next === 'amount') {
@@ -475,7 +475,7 @@ export function QuoteBuilderSummaryColumn({
               <div className="flex items-center gap-2">
                 <Select
                   value={discountType}
-                  onValueChange={(v) => handleDiscountTypeChange(v as 'percent' | 'amount')}
+                  onValueChange={(v) => handleDiscountTypeChange(v as 'amount' | 'percent')}
                 >
                   <SelectTrigger
                     data-testid="quote-discount-type-select"

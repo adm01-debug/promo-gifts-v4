@@ -24,7 +24,7 @@ export interface OrgMember {
   id: string;
   organization_id: string;
   user_id: string;
-  role: 'owner' | 'admin' | 'member';
+  role: 'admin' | 'member' | 'owner';
   joined_at: string;
 }
 

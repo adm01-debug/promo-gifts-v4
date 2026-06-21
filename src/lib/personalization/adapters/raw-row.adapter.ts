@@ -44,7 +44,7 @@ function toBoolOrNull(v: unknown): boolean | null {
  * Mapeamento bidirecional: ao detectar uma das chaves, espelhamos para a outra.
  * `[ptKey, enKey, kind]` — `kind` define a coerção.
  */
-type Kind = 'string' | 'number' | 'bool' | 'raw';
+type Kind = 'bool' | 'number' | 'raw' | 'string';
 const TECNICA_PAIRS: Array<[string, string, Kind]> = [
   ['codigo', 'code', 'string'],
   ['codigo_interno', 'internal_code', 'string'],

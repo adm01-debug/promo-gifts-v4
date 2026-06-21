@@ -61,17 +61,17 @@ export interface InvokeFullScopeOptions<TBody extends Record<string, unknown>> {
 }
 
 export type InvokeFullScopeResult<TData> =
-  /** Sucesso: data é o body parseado da edge function. */
-  | { status: 'ok'; data: TData }
   /** Usuário fechou o modal de step-up sem verificar. */
   | { status: 'cancelled' }
+  /** Erro genérico (rede, validação, 500). Caller decide UI. */
+  | { status: 'error'; error: unknown; data: unknown }
+  /** Sucesso: data é o body parseado da edge function. */
+  | { status: 'ok'; data: TData }
   /**
    * Erro de step-up que não pôde ser auto-resolvido. Toast com CTA já foi
    * exibido pelo helper; caller normalmente apenas faz `return`.
    */
-  | { status: 'step_up_error'; kind: 'step_up_required' | 'step_up_invalid' | 'dev_role_required' }
-  /** Erro genérico (rede, validação, 500). Caller decide UI. */
-  | { status: 'error'; error: unknown; data: unknown };
+  | { status: 'step_up_error'; kind: 'dev_role_required' | 'step_up_invalid' | 'step_up_required' };
 
 const MAX_AUTO_RETRIES = 1;
 
@@ -98,7 +98,7 @@ export async function invokeFullScopeFunction<
     });
 
     // Detecta step-up errors e exibe toast com CTA "Refazer verificação".
-    let stepUpKind: 'step_up_required' | 'step_up_invalid' | 'dev_role_required' | null = null;
+    let stepUpKind: 'dev_role_required' | 'step_up_invalid' | 'step_up_required' | null = null;
     const handled = handleStepUpError(data, error, () => {
       // Quando o usuário clica em "Refazer verificação", refaz o fluxo
       // completo (novo challenge + novo invoke). Resultado descartado —

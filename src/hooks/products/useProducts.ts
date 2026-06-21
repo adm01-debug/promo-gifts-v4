@@ -20,7 +20,7 @@ export { mapPromobrindToProduct } from '@/utils/product-mapper';
  */
 export function useProducts(
   filters?: ProductFilters,
-  options?: Omit<UseQueryOptions<Product[]>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<Product[]>, 'queryFn' | 'queryKey'>,
 ) {
   return useQuery<Product[]>({
     queryKey: ['promobrind-products', filters],

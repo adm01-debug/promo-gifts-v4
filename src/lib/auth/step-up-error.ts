@@ -18,7 +18,7 @@
  */
 import { toast } from 'sonner';
 
-export type StepUpErrorKind = 'step_up_required' | 'step_up_invalid' | 'dev_role_required';
+export type StepUpErrorKind = 'dev_role_required' | 'step_up_invalid' | 'step_up_required';
 
 interface BackendErrorShape {
   error?: string;

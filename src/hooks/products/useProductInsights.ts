@@ -13,7 +13,7 @@ interface ProductInsight {
     count: number;
   }>;
   recentActivity: Array<{
-    type: 'view' | 'quote' | 'order';
+    type: 'order' | 'quote' | 'view';
     date: string;
     details: string;
   }>;

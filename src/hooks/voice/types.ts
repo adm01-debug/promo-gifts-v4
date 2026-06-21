@@ -1,13 +1,13 @@
 export interface VoiceAgentAction {
   action:
-    | 'search'
+    | 'answer'
+    | 'clear'
     | 'filter'
     | 'navigate'
-    | 'sort'
-    | 'clear'
-    | 'answer'
+    | 'open_cart'
     | 'open_oracle'
-    | 'open_cart';
+    | 'search'
+    | 'sort';
   response: string;
   data?: {
     query?: string;
@@ -23,7 +23,7 @@ export interface VoiceAgentAction {
       inStock?: boolean;
       isKit?: boolean;
       // FIX-5: campos adicionais mapeados para FilterState
-      gender?: 'Unissex' | 'Masculino' | 'Feminino' | 'Infantil';
+      gender?: 'Feminino' | 'Infantil' | 'Masculino' | 'Unissex';
       featured?: boolean;
       isNew?: boolean;
       hasPersonalization?: boolean;
@@ -35,7 +35,7 @@ export interface VoiceAgentAction {
   };
 }
 
-export type VoiceAgentPhase = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
+export type VoiceAgentPhase = 'error' | 'idle' | 'listening' | 'processing' | 'speaking';
 
 export interface UseVoiceAgentOptions {
   onAction?: (action: VoiceAgentAction) => void;

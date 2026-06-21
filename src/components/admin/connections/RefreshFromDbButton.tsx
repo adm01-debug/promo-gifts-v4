@@ -8,7 +8,7 @@ interface RefreshFromDbButtonProps {
   /** Optional: invalidate cache for a single secret. Omit for all. */
   secretName?: string;
   /** Called after a successful refresh (e.g. to re-`list()` secrets). */
-  onRefreshed?: () => void | Promise<void>;
+  onRefreshed?: () => Promise<void> | void;
   cooldownMs?: number;
   label?: string;
 }

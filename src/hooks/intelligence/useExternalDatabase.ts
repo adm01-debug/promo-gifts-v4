@@ -42,7 +42,7 @@ import type {
 // TIPOS INTERNOS DO HOOK
 // ============================================
 
-type Operation = 'select' | 'insert' | 'update' | 'delete';
+type Operation = 'delete' | 'insert' | 'select' | 'update';
 
 interface QueryOptions {
   filters?: Record<string, unknown>;
@@ -112,7 +112,7 @@ export function useExternalDatabase<T = Record<string, unknown>>(tableName: Exte
     async (
       operation: Operation,
       options?: QueryOptions & { data?: Partial<T> },
-    ): Promise<T | QueryResult<T> | null> => {
+    ): Promise<QueryResult<T> | T | null> => {
       if (isMountedRef.current) {
         setState((prev) => ({ ...prev, isLoading: true, error: null }));
       }

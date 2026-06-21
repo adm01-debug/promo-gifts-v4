@@ -10,8 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-export type CartTableColumnKey = 'color' | 'quantity' | 'price' | 'total' | 'actions';
-export type CartTableDensity = 'compact' | 'comfortable';
+export type CartTableColumnKey = 'actions' | 'color' | 'price' | 'quantity' | 'total';
+export type CartTableDensity = 'comfortable' | 'compact';
 
 export const ALL_COLUMNS: { key: CartTableColumnKey; label: string; required?: boolean }[] = [
   { key: 'color', label: 'Cor' },

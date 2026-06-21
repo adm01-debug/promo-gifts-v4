@@ -6,7 +6,7 @@ interface TrackViewParams {
   productId?: string;
   productSku?: string;
   productName: string;
-  viewType: 'detail' | 'card' | 'compare' | 'favorite';
+  viewType: 'card' | 'compare' | 'detail' | 'favorite';
 }
 
 interface TrackSearchParams {

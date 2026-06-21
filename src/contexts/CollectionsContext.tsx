@@ -19,7 +19,7 @@ interface CollectionsContextType {
     clientId?: string | null,
     clientName?: string | null,
   ) => Collection;
-  updateCollection: (id: string, updates: Partial<Omit<Collection, 'id' | 'createdAt'>>) => void;
+  updateCollection: (id: string, updates: Partial<Omit<Collection, 'createdAt' | 'id'>>) => void;
   deleteCollection: (id: string) => void;
   addProductToCollection: (
     collectionId: string,

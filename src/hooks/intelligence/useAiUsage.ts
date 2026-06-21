@@ -58,7 +58,7 @@ export function useAiQuotaStatus() {
 export function useAiUsageLogs(options?: {
   userId?: string;
   functionName?: string;
-  period?: 'day' | 'week' | 'month' | 'all';
+  period?: 'all' | 'day' | 'month' | 'week';
   limit?: number;
 }) {
   const { user } = useAuth();
@@ -137,7 +137,7 @@ export function useUpdateQuota() {
 }
 
 // Aggregated stats for admin dashboard
-export function useAiUsageStats(period: 'day' | 'week' | 'month' = 'month') {
+export function useAiUsageStats(period: 'day' | 'month' | 'week' = 'month') {
   return useQuery({
     queryKey: ['ai-usage-stats', period],
     queryFn: async () => {

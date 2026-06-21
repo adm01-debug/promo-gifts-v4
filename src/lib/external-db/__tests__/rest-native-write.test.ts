@@ -20,7 +20,7 @@ import type { InvokeOptions } from '../bridge';
 // ── Mock chainable do supabase ────────────────────────────────────
 interface Capture {
   table: string | null;
-  op: 'insert' | 'update' | 'delete' | 'upsert' | null;
+  op: 'delete' | 'insert' | 'update' | 'upsert' | null;
   payload: unknown;
   upsertOptions?: { onConflict?: string };
   eqCalls: Array<[string, unknown]>;

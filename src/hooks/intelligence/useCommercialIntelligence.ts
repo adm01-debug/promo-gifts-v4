@@ -38,7 +38,7 @@ export interface TrendingProduct {
   totalRevenue: number;
   quoteCount: number;
   conversionRate: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: 'down' | 'stable' | 'up';
 }
 
 export interface SegmentData {
@@ -341,9 +341,9 @@ export function useTrendingProducts(
           ...p,
           conversionRate: p.quoteCount > 0 ? Math.round((p.orderCount / p.quoteCount) * 100) : 100,
           trend: (p.totalRevenue > 1000 ? 'up' : p.totalRevenue > 200 ? 'stable' : 'down') as
-            | 'up'
             | 'down'
-            | 'stable',
+            | 'stable'
+            | 'up',
         }))
         .sort((a, b) => b.totalRevenue - a.totalRevenue)
         .slice(0, limit);

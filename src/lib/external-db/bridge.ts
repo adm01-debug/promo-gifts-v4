@@ -30,7 +30,7 @@ import { toErrorMessage } from '@/lib/to-error-message';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
-export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
+export type Operation = 'batch_insert' | 'delete' | 'insert' | 'select' | 'update' | 'upsert';
 
 const WRITE_OPERATIONS: ReadonlySet<Operation> = new Set<Operation>([
   'insert',
@@ -73,9 +73,7 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   orderBy?: { column: string; ascending?: boolean };
   limit?: number;
   offset?: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
-  /** Conflict target column(s) for `upsert` (e.g. 'sku'). Defaults to the PK when omitted. */
-  onConflict?: string;
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
 }
 
 export interface InvokeResult<T> {

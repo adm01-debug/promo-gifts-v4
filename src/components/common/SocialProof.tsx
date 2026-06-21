@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 interface PopularityBadgeProps {
   views?: number;
   sales?: number;
-  variant?: 'views' | 'sales' | 'trending' | 'bestseller';
+  variant?: 'bestseller' | 'sales' | 'trending' | 'views';
   className?: string;
 }
 
@@ -70,15 +70,15 @@ export function PopularityBadge({
 
 // Trust badges
 type TrustBadgeType =
-  | 'verified'
-  | 'fast'
-  | 'quality'
-  | 'secure'
-  | 'popular'
-  | 'new'
-  | 'sale'
   | 'bestseller'
-  | 'freeShipping';
+  | 'fast'
+  | 'freeShipping'
+  | 'new'
+  | 'popular'
+  | 'quality'
+  | 'sale'
+  | 'secure'
+  | 'verified';
 
 // Highlighted badges get colored backgrounds; others stay text-only
 const HIGHLIGHTED_BADGES = new Set<TrustBadgeType>(['new', 'sale', 'bestseller', 'freeShipping']);
@@ -313,7 +313,7 @@ export function DynamicTrustBadges({ trust, productFlags, className }: DynamicTr
 interface StarRatingProps {
   rating: number; // 0-5
   totalReviews?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   showCount?: boolean;
   className?: string;
 }

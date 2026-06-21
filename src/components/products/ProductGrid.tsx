@@ -34,7 +34,7 @@ export interface ProductGridProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
 }
 
 const ProductCardWrapper = memo(
@@ -48,7 +48,7 @@ const ProductCardWrapper = memo(
     onToggleSelect,
     priority,
     ...restProps
-  }: {
+  }: Omit<React.ComponentProps<typeof ProductCard>, 'priority' | 'product'> & {
     product: Product;
     index: number;
     isVisible: boolean;
@@ -57,7 +57,7 @@ const ProductCardWrapper = memo(
     selectedIds?: Set<string>;
     onToggleSelect?: (id: string) => void;
     priority?: boolean;
-  } & Omit<React.ComponentProps<typeof ProductCard>, 'product' | 'priority'>) => {
+  }) => {
     const reducedMotion = useReducedMotion();
     const [hasAnimated, setHasAnimated] = useState(reducedMotion);
     const ref = useRef<HTMLDivElement>(null);

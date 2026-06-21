@@ -2,7 +2,7 @@ import type { Product } from '@/types/product-catalog';
 
 type KitDetectionProduct = Pick<
   Product,
-  'isKit' | 'name' | 'category' | 'category_name' | 'groups'
+  'category_name' | 'category' | 'groups' | 'isKit' | 'name'
 >;
 
 interface KitDetectionContext {

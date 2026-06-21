@@ -1,11 +1,11 @@
 import { type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type StatVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'orange';
+export type StatVariant = 'danger' | 'default' | 'info' | 'orange' | 'success' | 'warning';
 
 interface StatCardProps {
   title: string;
-  value: string | number;
+  value: number | string;
   subtitle?: string;
   icon: LucideIcon;
   variant?: StatVariant;
@@ -123,7 +123,7 @@ export function StatCard({
 // Mini stat card for compact displays
 interface MiniStatCardProps {
   title: string;
-  value: string | number;
+  value: number | string;
   icon: LucideIcon;
   variant?: StatVariant;
   className?: string;

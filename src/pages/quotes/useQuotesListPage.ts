@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuoteFunnel, useQuotes } from '@/hooks/quotes';
 
-export type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest' | 'expiring';
+export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
 export const sortOptions: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Mais recentes' },

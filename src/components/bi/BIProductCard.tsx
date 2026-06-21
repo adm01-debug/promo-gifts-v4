@@ -14,7 +14,7 @@ interface Props {
   priceFrom?: number;
   priceTo?: number;
   reason?: string;
-  variant?: 'affinity' | 'trend' | 'expert';
+  variant?: 'affinity' | 'expert' | 'trend';
   clientId?: string;
   imageUrl?: string | null;
   productId?: string | null;

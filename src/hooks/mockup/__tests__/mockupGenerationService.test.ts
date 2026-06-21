@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
 let tableResults: Record<
   string,
-  { data: unknown; error: unknown } | { data: unknown; error: unknown }[]
+  { data: unknown; error: unknown }[] | { data: unknown; error: unknown }
 > = {};
 const captured: { insert?: Record<string, unknown> } = {};
 

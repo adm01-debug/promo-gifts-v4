@@ -197,7 +197,7 @@ export interface ThemePreset {
 export interface ThemeConfig {
   presetId: string;
   radius: number;
-  mode: 'light' | 'dark' | 'auto';
+  mode: 'auto' | 'dark' | 'light';
 }
 
 // =====================================================
@@ -1001,7 +1001,7 @@ let _transitionTimer: ReturnType<typeof setTimeout> | null = null;
  * Quando o preset não define radius/font, restaura os defaults para que
  * voltar de uma skin GX para uma clássica desfaça os overrides.
  */
-export function applyThemePreset(presetId: string, mode: 'light' | 'dark' | 'auto' = 'auto'): void {
+export function applyThemePreset(presetId: string, mode: 'auto' | 'dark' | 'light' = 'auto'): void {
   const actualMode =
     mode === 'auto'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches

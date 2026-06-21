@@ -147,7 +147,7 @@ export const ProductCardImage = memo(
         : undefined;
     const reconciledStatus =
       rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0 ? 'out-of-stock' : rawStatus;
-    const stockStatus: 'ok' | 'low' | 'unavailable' =
+    const stockStatus: 'low' | 'ok' | 'unavailable' =
       reconciledStatus === 'out-of-stock'
         ? 'unavailable'
         : reconciledStatus === 'low-stock'

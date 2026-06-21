@@ -73,7 +73,7 @@ interface ProductListItemProps {
   isNovelty?: boolean;
   noveltyDaysRemaining?: number;
   noveltyDaysElapsed?: number;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
   /** Carrega imagem com alta prioridade (LCP) — true para itens above-the-fold */
   priority?: boolean;
 }
@@ -147,7 +147,7 @@ export const ProductListItem = memo(
     const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
     const handleStatusClick = useCallback(
-      (type: string, _value?: string | number) => {
+      (type: string, _value?: number | string) => {
         if (onStatusClick) {
           onStatusClick(type, _value);
           return;

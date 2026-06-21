@@ -28,7 +28,7 @@ interface CloudflareThumbnailOptions {
   time?: string;
   height?: number;
   width?: number;
-  fit?: 'crop' | 'scale-down' | 'contain';
+  fit?: 'contain' | 'crop' | 'scale-down';
 }
 
 function appendThumbnailOptions(url: URL, options: CloudflareThumbnailOptions = {}) {

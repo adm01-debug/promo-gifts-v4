@@ -8,7 +8,7 @@ export interface OnboardingStep {
   title: string;
   description: string;
   targetSelector: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
+  position: 'bottom' | 'left' | 'right' | 'top';
   route?: string;
 }
 

@@ -32,7 +32,7 @@ import { ReplenishmentCardSkeleton } from './ReplenishmentCardSkeleton';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 type ViewMode = 'grid' | 'list' | 'table';
-type SortMode = 'name' | 'price-asc' | 'price-desc' | 'newest' | 'stock';
+type SortMode = 'name' | 'newest' | 'price-asc' | 'price-desc' | 'stock';
 
 function useLoadingProgress(isLoading: boolean): number {
   const [progress, setProgress] = useState(0);

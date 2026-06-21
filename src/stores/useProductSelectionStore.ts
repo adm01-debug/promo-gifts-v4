@@ -12,7 +12,7 @@ interface ProductSelectionActions {
   clearSelections: () => void;
 }
 
-export const useProductSelectionStore = create<ProductSelectionState & ProductSelectionActions>()(
+export const useProductSelectionStore = create<ProductSelectionActions & ProductSelectionState>()(
   persist(
     (set, get) => ({
       selectedColors: {},

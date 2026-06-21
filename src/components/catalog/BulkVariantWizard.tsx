@@ -31,7 +31,7 @@ export interface BulkVariantSelection {
   variant: ExternalVariantStock | null;
 }
 
-export type BulkWizardMode = 'cart' | 'quote' | 'favorite' | 'compare' | 'collection' | 'pdf';
+export type BulkWizardMode = 'cart' | 'collection' | 'compare' | 'favorite' | 'pdf' | 'quote';
 
 interface BulkVariantWizardProps {
   open: boolean;

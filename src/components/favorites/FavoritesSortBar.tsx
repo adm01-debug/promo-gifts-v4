@@ -12,13 +12,13 @@ import { ArrowUpDown, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type FavoritesSort =
-  | 'recent'
+  | 'category'
+  | 'name-asc'
+  | 'name-desc'
   | 'oldest'
   | 'price-asc'
   | 'price-desc'
-  | 'name-asc'
-  | 'name-desc'
-  | 'category';
+  | 'recent';
 
 const LABELS: Record<FavoritesSort, string> = {
   recent: 'Recém-adicionados',

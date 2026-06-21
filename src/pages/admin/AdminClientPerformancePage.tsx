@@ -357,7 +357,7 @@ interface StatCardProps {
   label: string;
   value: string;
   sub: string;
-  status?: 'success' | 'warning' | 'destructive';
+  status?: 'destructive' | 'success' | 'warning';
 }
 
 function StatCard({ icon, label, value, sub, status }: StatCardProps) {

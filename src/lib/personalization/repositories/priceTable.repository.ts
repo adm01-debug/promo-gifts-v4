@@ -26,11 +26,11 @@ export interface PriceTableFilters {
 
 export interface PriceTableOrderBy {
   column:
-    | 'table_code'
-    | 'table_code_option'
-    | 'max_colors'
+    | 'created_at'
     | 'customization_type_name'
-    | 'created_at';
+    | 'max_colors'
+    | 'table_code_option'
+    | 'table_code';
   ascending?: boolean;
 }
 

@@ -6,7 +6,7 @@ export interface BulkAction {
   id: string;
   label: string;
   icon: ReactNode;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost';
+  variant?: 'default' | 'destructive' | 'ghost' | 'outline' | 'secondary';
   onClick: (ids: string[]) => void;
 }
 

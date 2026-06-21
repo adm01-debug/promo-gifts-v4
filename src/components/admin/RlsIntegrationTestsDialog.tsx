@@ -27,12 +27,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { toErrorMessage } from '@/lib/to-error-message';
 
-type Op = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+type Op = 'DELETE' | 'INSERT' | 'SELECT' | 'UPDATE';
 interface CaseResult {
   table: string;
-  actor: 'seller' | 'admin';
+  actor: 'admin' | 'seller';
   op: Op;
-  scope: 'own' | 'other';
+  scope: 'other' | 'own';
   expected: 'allow' | 'deny';
   observed: 'allow' | 'deny';
   pass: boolean;

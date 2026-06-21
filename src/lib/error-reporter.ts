@@ -56,7 +56,7 @@ const TRANSIENT_EDGE_RUNTIME_PATTERNS = [
 
 const TRANSIENT_RE = new RegExp(TRANSIENT_EDGE_RUNTIME_PATTERNS.join('|'), 'i');
 
-export function isTransientEdgeRuntimeError(input: string | Error | null | undefined): boolean {
+export function isTransientEdgeRuntimeError(input: Error | string | null | undefined): boolean {
   if (!input) return false;
   const haystack = typeof input === 'string' ? input : `${input.message} ${input.stack ?? ''}`;
   return isColdStartSignal(haystack) || TRANSIENT_RE.test(haystack);

@@ -499,7 +499,7 @@ function HighlightedNumberRow({
   products: Product[];
   valueFn: (p: Product) => number;
   renderFn: (v: number) => string;
-  mode: 'lower-is-better' | 'higher-is-better';
+  mode: 'higher-is-better' | 'lower-is-better';
   subtitle?: string;
 }) {
   const values = products.map(valueFn);

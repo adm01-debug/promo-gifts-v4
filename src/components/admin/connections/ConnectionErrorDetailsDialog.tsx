@@ -35,7 +35,7 @@ interface Props {
   connectionType: string;
   connectionLabel: string;
   summary: LastTestInfo | null;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   onOpenTimeline?: () => void;
 }
 

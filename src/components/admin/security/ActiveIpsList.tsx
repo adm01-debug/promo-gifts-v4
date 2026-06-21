@@ -42,7 +42,7 @@ interface IpEntry {
   created_by: string | null;
 }
 
-type Filter = 'all' | 'allow' | 'block' | 'active' | 'expired';
+type Filter = 'active' | 'all' | 'allow' | 'block' | 'expired';
 
 export function ActiveIpsList() {
   const [items, setItems] = useState<IpEntry[]>([]);

@@ -36,7 +36,7 @@ export interface QuoteItem {
   color_hex?: string;
   notes?: string;
   sort_order?: number;
-  bitrix_product_id?: string | number | null;
+  bitrix_product_id?: number | string | null;
   kit_group_id?: string | null;
   kit_name?: string | null;
   size_code?: string | null;

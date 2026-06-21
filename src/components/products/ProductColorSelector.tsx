@@ -25,7 +25,7 @@ interface ProductColorSelectorProps {
   selectedColorId?: string | null;
   onColorSelect?: (color: ProductColor) => void;
   maxVisible?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   showLabel?: boolean;
   className?: string;
 }
@@ -250,7 +250,7 @@ export function ProductColorSelector({
 interface CompactColorDotsProps {
   colors: ProductColor[];
   maxVisible?: number;
-  size?: 'xs' | 'sm';
+  size?: 'sm' | 'xs';
 }
 
 export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: CompactColorDotsProps) {

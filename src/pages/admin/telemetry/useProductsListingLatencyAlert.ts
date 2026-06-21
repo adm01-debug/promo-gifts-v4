@@ -23,10 +23,10 @@ const REGRESSION_RATIO = 1.5; // 50% mais lento que o baseline = regressão
 const MIN_SAMPLES_CURRENT = 5; // mínimo para considerar a janela atual significativa
 const MIN_SAMPLES_BASELINE = 10; // mínimo para que o baseline seja confiável
 
-export type LatencyAlertSeverity = 'ok' | 'warning' | 'critical';
+export type LatencyAlertSeverity = 'critical' | 'ok' | 'warning';
 
 export interface LatencyAlertReason {
-  code: 'sla-breach' | 'regression' | 'spike-very-slow' | 'insufficient-data';
+  code: 'insufficient-data' | 'regression' | 'sla-breach' | 'spike-very-slow';
   message: string;
 }
 

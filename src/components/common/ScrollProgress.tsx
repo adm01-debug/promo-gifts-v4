@@ -9,9 +9,9 @@ const SCROLL_COLOR_CLASSES = {
 
 interface ScrollProgressProps {
   className?: string;
-  color?: 'primary' | 'orange' | 'success';
+  color?: 'orange' | 'primary' | 'success';
   height?: number;
-  position?: 'top' | 'bottom';
+  position?: 'bottom' | 'top';
 }
 
 export function ScrollProgressIndicator({

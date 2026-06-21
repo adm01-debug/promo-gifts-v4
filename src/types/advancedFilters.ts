@@ -46,7 +46,7 @@ export interface MaterialOption {
 
 /** Opção de status de estoque para o filtro de disponibilidade no catálogo. */
 export interface StockFilterOption {
-  value: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'future';
+  value: 'all' | 'future' | 'in_stock' | 'low_stock' | 'out_of_stock';
   label: string;
 }
 
@@ -100,15 +100,15 @@ export interface AdvancedFilterState {
   // BUG-SF-09 FIX: era 'price_asc'/'price_desc' (underscore) — SORT_OPTIONS usa hyphen ('price-asc').
   // Adicionados todos os valores reais de SORT_OPTIONS para evitar divergência de tipo.
   sortBy:
+    | string
+    | 'best-seller-promo'
+    | 'best-seller-supplier'
     | 'name'
+    | 'newest'
+    | 'popularity'
     | 'price-asc'
     | 'price-desc'
-    | 'newest'
-    | 'stock'
-    | 'popularity'
-    | 'best-seller-supplier'
-    | 'best-seller-promo'
-    | string;
+    | 'stock';
 }
 
 /** Grupo canônico de cor (ex.: Azul, Vermelho) vindo da tabela `color_groups`. */

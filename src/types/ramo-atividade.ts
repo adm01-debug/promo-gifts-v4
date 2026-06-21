@@ -50,11 +50,11 @@ export interface ProdutoRamoAtividade {
 // Input types para criação/edição
 export type RamoAtividadeInput = Omit<
   RamoAtividade,
-  'id' | 'created_at' | 'updated_at' | 'filhos' | '_count'
+  '_count' | 'created_at' | 'filhos' | 'id' | 'updated_at'
 >;
 export type RamoAtividadeFilhoInput = Omit<
   RamoAtividadeFilho,
-  'id' | 'created_at' | 'updated_at' | 'ramo_atividade'
+  'created_at' | 'id' | 'ramo_atividade' | 'updated_at'
 >;
 
 // Filtros de busca

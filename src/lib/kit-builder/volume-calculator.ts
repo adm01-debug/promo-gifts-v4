@@ -139,7 +139,7 @@ export function formatDimensions(width: number, height: number, depth: number): 
 /**
  * Retorna cor baseada na porcentagem de uso
  */
-export function getVolumeStatusColor(percent: number): 'success' | 'warning' | 'destructive' {
+export function getVolumeStatusColor(percent: number): 'destructive' | 'success' | 'warning' {
   if (percent >= 100) return 'destructive';
   if (percent >= 85) return 'warning';
   return 'success';

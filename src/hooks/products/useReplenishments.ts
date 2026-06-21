@@ -18,7 +18,7 @@ const FETCH_ALL_LIMIT = 2000;
 
 // ─── Types ───────────────────────────────────────────────────────
 
-export type ReplenishmentStatus = 'active' | 'expiring_soon' | 'expired';
+export type ReplenishmentStatus = 'active' | 'expired' | 'expiring_soon';
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock';
 
 export interface ReplenishmentWithDetails {
@@ -230,7 +230,7 @@ export interface UseReplenishmentsOptions {
 export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions = {}) {
   const { limit = FETCH_ALL_LIMIT, onlyHighlighted = false } = options;
 
-  return useQuery<ReplenishmentWithDetails[], Error>({
+  return useQuery<ReplenishmentWithDetails[]>({
     queryKey: ['replenishments-details', limit, onlyHighlighted],
     queryFn: async () => {
       const items = await fetchReposicao(limit);
@@ -248,7 +248,7 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
 // após rerun do types.ts.
 
 export function useReplenishmentStats() {
-  return useQuery<ReplenishmentStatsDisplay, Error>({
+  return useQuery<ReplenishmentStatsDisplay>({
     queryKey: ['replenishment-stats'],
     queryFn: async () => {
       const { data: rawData, error } = await untypedRpc('fn_get_replenishment_stats');
@@ -282,7 +282,7 @@ export function useReplenishmentStats() {
       const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments: Number(d.totalReplenishments ?? d.restockedLast30Days ?? 0),
+        totalReplenishments: Number(d.restockedLast30Days ?? 0),
         activeReplenishments: Number(d.activeReplenishments ?? 0),
         expiringSoon: Number(d.expiringSoon ?? 0),
         totalProducts: Number(d.totalVariants ?? 0),

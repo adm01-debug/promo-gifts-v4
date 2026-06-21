@@ -20,7 +20,7 @@ interface ZoneSectionProps {
   title: string;
   description?: string;
   /** Tom semântico do header — afeta apenas o ícone + barra lateral */
-  tone?: 'primary' | 'info' | 'neutral';
+  tone?: 'info' | 'neutral' | 'primary';
   actions?: React.ReactNode;
   /** Quando true, aplica anel + glow temporário (ex: deep-link de incidente) */
   highlight?: boolean;

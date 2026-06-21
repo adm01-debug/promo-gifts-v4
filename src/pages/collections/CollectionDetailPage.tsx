@@ -52,7 +52,7 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-type SortOption = 'name' | 'sku' | 'added';
+type SortOption = 'added' | 'name' | 'sku';
 type ViewMode = 'grid' | 'list' | 'table';
 
 export default function CollectionDetailPage() {

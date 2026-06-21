@@ -25,7 +25,7 @@ import { inferErrorKind } from '@/lib/error-kind-inference';
 
 interface Props {
   type: ConnectionType;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Bump after a "Testar conexão" succeeds to refetch. */
   refreshKey?: number | string;
@@ -83,8 +83,8 @@ function formatAbsolute(iso: string): string {
   }
 }
 
-type StatusFilter = 'all' | 'ok' | 'fail';
-type SourceFilter = 'all' | 'manual' | 'cron';
+type StatusFilter = 'all' | 'fail' | 'ok';
+type SourceFilter = 'all' | 'cron' | 'manual';
 
 function emptyMessage(status: StatusFilter, source: SourceFilter): string {
   if (source === 'cron' && status === 'fail') return 'Nenhuma falha do cron neste período 🎉';

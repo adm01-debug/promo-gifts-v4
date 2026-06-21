@@ -48,7 +48,7 @@ interface ProductColorSwatchesProps {
    *  Ignorado quando `wrap` é true (exibe todas as cores). */
   max?: number;
   /** Tamanho do dot. Ver tabela na JSDoc do arquivo. */
-  size?: 'xs' | 'sm' | 'md';
+  size?: 'md' | 'sm' | 'xs';
   className?: string;
   /** Esconde quando vazio. Default true. */
   hideWhenEmpty?: boolean;

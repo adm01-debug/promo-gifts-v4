@@ -1,6 +1,6 @@
-export type PaymentGatewayStatus = 'approved' | 'rejected' | 'pending';
+export type PaymentGatewayStatus = 'approved' | 'pending' | 'rejected';
 
-export type OrderFinalStatus = 'confirmed' | 'cancelled' | 'pending';
+export type OrderFinalStatus = 'cancelled' | 'confirmed' | 'pending';
 
 export interface PaymentAttempt {
   attemptId: string;

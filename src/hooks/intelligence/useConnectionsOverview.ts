@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OverviewRow {
   key: string;
   id: string | null;
-  type: 'supabase' | 'bitrix24' | 'n8n' | 'mcp' | 'webhook_outbound' | string;
+  type: string | 'bitrix24' | 'mcp' | 'n8n' | 'supabase' | 'webhook_outbound';
   name: string;
-  env_key: 'promobrind' | 'crm' | null;
+  env_key: 'crm' | 'promobrind' | null;
   status: string;
   last_test_at: string | null;
   last_test_ok: boolean | null;
@@ -46,7 +46,7 @@ export function useConnectionsOverview(pollMs = 30000) {
         id: r.id,
         type: r.type,
         name: r.name,
-        env_key: (r.env_key as 'promobrind' | 'crm' | null) ?? null,
+        env_key: (r.env_key as 'crm' | 'promobrind' | null) ?? null,
         status: r.status,
         last_test_at: r.last_test_at,
         last_test_ok: r.last_test_ok,

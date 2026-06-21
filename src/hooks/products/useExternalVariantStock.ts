@@ -15,7 +15,7 @@ export interface ExternalVariantStock {
   next_entry_quantity: number | null;
   selected_thumbnail: string | null;
   images: string[] | null;
-  bitrix_product_id: string | number | null;
+  bitrix_product_id: number | string | null;
 }
 
 /**
@@ -43,7 +43,7 @@ export function useExternalVariantStock(productId: string | undefined) {
           stock_quantity: number | null;
           selected_thumbnail: string | null;
           images: string[] | null;
-          bitrix_product_id: string | number | null;
+          bitrix_product_id: number | string | null;
         }>({
           table: 'product_variants',
           operation: 'select',

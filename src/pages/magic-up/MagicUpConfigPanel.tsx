@@ -79,7 +79,7 @@ export function MagicUpConfigPanel({ m }: MagicUpConfigPanelProps) {
 
 function BriefingCard({ m }: { m: MagicUpStateReturn }) {
   const fields: Array<{
-    field: keyof Pick<MagicUpBrief, 'objective' | 'channel' | 'audience' | 'tone'>;
+    field: keyof Pick<MagicUpBrief, 'audience' | 'channel' | 'objective' | 'tone'>;
     options: string[];
   }> = [
     { field: 'objective', options: BRIEF_OPTIONS.objective },

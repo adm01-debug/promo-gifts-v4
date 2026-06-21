@@ -11,7 +11,7 @@ import { getCategoryIcon, useCategoryIcons } from '@/hooks/products/useCategoryI
  * espelhando os shapes reais de `Product.category` e `Product.groups`.
  */
 interface CategoryBadgeItem {
-  id: string | number;
+  id: number | string;
   name: string;
   icon?: string;
 }

@@ -18,7 +18,7 @@ export interface ClientComparisonRow {
   ramoAtividade: string | null;
   isLoading: boolean;
   score: number;
-  tier: 'healthy' | 'attention' | 'risk' | 'unknown';
+  tier: 'attention' | 'healthy' | 'risk' | 'unknown';
   ltv: number;
   avgTicket: number;
   ordersCount: number;

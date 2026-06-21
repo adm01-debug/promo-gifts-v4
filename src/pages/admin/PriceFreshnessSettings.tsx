@@ -40,7 +40,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function PriceFreshnessSettings() {
   const { data: overrides, isLoading } = useAllFreshnessOverrides();
   const remove = useDeleteFreshnessOverride();
-  const [filter, setFilter] = useState<'all' | '30' | '60' | '90'>('all');
+  const [filter, setFilter] = useState<'30' | '60' | '90' | 'all'>('all');
 
   const { getSetting, updateSetting, isLoading: isSettingsLoading } = useSystemSettings();
   const globalDefault = getSetting('default_price_freshness_threshold', '60');

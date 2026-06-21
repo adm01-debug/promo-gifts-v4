@@ -65,7 +65,7 @@ export interface ColumnDef {
   id: string;
   label: string;
   width: string;
-  align?: 'left' | 'right' | 'center';
+  align?: 'center' | 'left' | 'right';
   required?: boolean;
 }
 

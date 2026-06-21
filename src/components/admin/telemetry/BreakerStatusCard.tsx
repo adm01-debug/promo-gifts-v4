@@ -19,7 +19,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/
 import { toErrorMessage } from '@/lib/to-error-message';
 import { cn } from '@/lib/utils';
 
-type BreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN' | 'UNKNOWN';
+type BreakerState = 'CLOSED' | 'HALF_OPEN' | 'OPEN' | 'UNKNOWN';
 
 interface BreakerStatusResponse {
   ok: boolean;

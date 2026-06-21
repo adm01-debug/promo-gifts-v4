@@ -6,7 +6,7 @@ export interface VoiceCommandRecord {
   command: string;
   normalizedCommand: string;
   timestamp: Date;
-  type: 'filter' | 'search' | 'navigation' | 'sort' | 'clear' | 'unknown';
+  type: 'clear' | 'filter' | 'navigation' | 'search' | 'sort' | 'unknown';
   successful: boolean;
 }
 

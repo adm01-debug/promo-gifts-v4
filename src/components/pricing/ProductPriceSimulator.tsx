@@ -27,7 +27,7 @@ interface ProductPriceSimulatorProps {
   className?: string;
 }
 
-type SimulatorMode = 'list' | 'adding';
+type SimulatorMode = 'adding' | 'list';
 
 // ── Progress bar conectada (#4) ──
 function StepProgressBar({

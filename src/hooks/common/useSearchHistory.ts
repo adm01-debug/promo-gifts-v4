@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { logger } from '@/lib/logger';
-export type HistoryType = 'product' | 'company' | 'general';
+export type HistoryType = 'company' | 'general' | 'product';
 
 export interface HistoryItem {
   id: string;

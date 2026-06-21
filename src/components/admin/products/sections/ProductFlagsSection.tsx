@@ -59,8 +59,8 @@ function formatRemaining(expiresAt: string | null): string | null {
 }
 
 type ExpiryKey =
-  | 'is_featured_expires_at'
   | 'is_bestseller_expires_at'
+  | 'is_featured_expires_at'
   | 'is_new_expires_at'
   | 'is_on_sale_expires_at';
 

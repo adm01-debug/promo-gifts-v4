@@ -13,7 +13,7 @@ interface TemplatePreviewProps {
   areas: TemplateArea[];
   className?: string;
   showTooltips?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
 }
 
 const sizeConfig = {

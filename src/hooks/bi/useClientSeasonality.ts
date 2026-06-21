@@ -160,7 +160,7 @@ function buildIndustryCells(rows: IndustryRow[]): IndustryMonthCell[] {
 
 function pickTop<T extends { quotesCount?: number; avgQuotesPerCompany?: number }>(
   cells: T[],
-  key: 'quotesCount' | 'avgQuotesPerCompany',
+  key: 'avgQuotesPerCompany' | 'quotesCount',
   n = 3,
 ): T[] {
   return [...cells]

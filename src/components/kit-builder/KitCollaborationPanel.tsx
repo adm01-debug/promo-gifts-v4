@@ -26,7 +26,7 @@ export function KitCollaborationPanel({ kitId }: Props) {
   const { collaborators, invite, remove } = useKitCollaborators(kitId);
   const { comments, postComment, resolveComment } = useKitComments(kitId);
   const [email, setEmail] = useState('');
-  const [permission, setPermission] = useState<'view' | 'edit'>('view');
+  const [permission, setPermission] = useState<'edit' | 'view'>('view');
   const [body, setBody] = useState('');
 
   if (!kitId) {
@@ -74,7 +74,7 @@ export function KitCollaborationPanel({ kitId }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               className="h-9"
             />
-            <Select value={permission} onValueChange={(v) => setPermission(v as 'view' | 'edit')}>
+            <Select value={permission} onValueChange={(v) => setPermission(v as 'edit' | 'view')}>
               <SelectTrigger className="h-9 w-[100px]">
                 <SelectValue />
               </SelectTrigger>

@@ -30,7 +30,7 @@ import { SpaceScene } from '@/pages/auth/AuthBranding';
  *  - `confirmed`: tudo OK, navegando para destino
  *  - `failed`: erro detectado, redirecionando para /login
  */
-type CallbackStatus = 'processing' | 'slow' | 'confirming' | 'confirmed' | 'failed';
+type CallbackStatus = 'confirmed' | 'confirming' | 'failed' | 'processing' | 'slow';
 
 const CONFIRMED_HOLD_MS = 700;
 const SLOW_HINT_MS = 3000;

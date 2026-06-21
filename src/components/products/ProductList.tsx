@@ -42,13 +42,13 @@ function ProductListItemWrapper({
   selectionMode,
   onToggleSelect,
   ...props
-}: {
+}: Omit<React.ComponentProps<typeof ProductListItem>, 'product'> & {
   product: Product;
   index: number;
   isSelected: boolean;
   selectionMode: boolean;
   onToggleSelect: (id: string) => void;
-} & Omit<React.ComponentProps<typeof ProductListItem>, 'product'>) {
+}) {
   const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {

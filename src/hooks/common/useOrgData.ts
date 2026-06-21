@@ -1,16 +1,24 @@
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { untypedFrom } from '@/lib/supabase-untyped';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+type PublicTables = Database['public']['Tables'];
+type TableName = keyof PublicTables;
+type DynamicTableName = TableName | (string & {});
+type TableInsert<T extends TableName> = PublicTables[T]['Insert'];
+type TableUpdate<T extends TableName> = PublicTables[T]['Update'];
+type OrgScopedInsert<T extends TableName> = Omit<TableInsert<T>, 'organization_id'>;
+type OrgScopedUpdate<T extends TableName> = Omit<TableUpdate<T>, 'organization_id'>;
 
 /**
  * Hook to fetch generic data scoped to the current organization.
  * Automatically adds organization_id filter if currentOrg is available.
  */
-export function useOrgData<T>(
-  tableName: string,
+export function useOrgData<T, TTable extends DynamicTableName = DynamicTableName>(
+  tableName: TTable,
   options: {
     enabled?: boolean;
     select?: string;
@@ -24,7 +32,7 @@ export function useOrgData<T>(
     queryFn: async () => {
       if (!currentOrg) return [] as T[];
 
-      let query = untypedFrom<T>(tableName).select(options.select || '*');
+      let query = supabase.from(tableName as never).select(options.select || '*');
 
       // Scope to current organization
       query = query.eq('organization_id', currentOrg.id);
@@ -33,7 +41,7 @@ export function useOrgData<T>(
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            query = query.eq(key, value);
+            query = query.eq(key as never, value);
           }
         });
       }
@@ -55,16 +63,24 @@ export function useOrgData<T>(
  * Hook to create data scoped to the current organization.
  * Automatically adds organization_id to the payload.
  */
-export function useOrgCreate(tableName: string) {
+export function useOrgCreate<TTable extends DynamicTableName>(tableName: TTable) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: Record<string, unknown>) => {
+    mutationFn: async (
+      payload: TTable extends TableName
+        ? OrgScopedInsert<Extract<TTable, TableName>>
+        : Record<string, unknown>,
+    ) => {
       if (!currentOrg) throw new Error('No organization selected');
 
-      const { data, error } = await untypedFrom(tableName)
-        .insert({ ...payload, organization_id: currentOrg.id })
+      const { data, error } = await supabase
+        .from(tableName as never)
+        .insert({
+          ...payload,
+          organization_id: currentOrg.id,
+        } as never)
         .select()
         .single();
 
@@ -86,14 +102,20 @@ export function useOrgCreate(tableName: string) {
 /**
  * Hook to update data. RLS will handle organization check.
  */
-export function useOrgUpdate(tableName: string) {
+export function useOrgUpdate<TTable extends DynamicTableName>(tableName: TTable) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...payload }: { id: string } & Record<string, unknown>) => {
-      const { data, error } = await untypedFrom(tableName)
-        .update(payload)
+    mutationFn: async ({
+      id,
+      ...payload
+    }: (TTable extends TableName
+      ? OrgScopedUpdate<Extract<TTable, TableName>>
+      : Record<string, unknown>) & { id: string }) => {
+      const { data, error } = await supabase
+        .from(tableName as never)
+        .update(payload as never)
         .eq('id', id)
         .select()
         .single();
@@ -116,13 +138,16 @@ export function useOrgUpdate(tableName: string) {
 /**
  * Hook to delete data. RLS will handle organization check.
  */
-export function useOrgDelete(tableName: string) {
+export function useOrgDelete<TTable extends DynamicTableName>(tableName: TTable) {
   const { currentOrg } = useOrganization();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await untypedFrom(tableName).delete().eq('id', id);
+      const { error } = await supabase
+        .from(tableName as never)
+        .delete()
+        .eq('id', id);
 
       if (error) throw error;
       return id;
