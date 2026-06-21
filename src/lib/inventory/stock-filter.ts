@@ -99,6 +99,10 @@ export function selectMatchingVariants(
 ): VariantStock[] {
   if (!ctx.hasVariantFilter) return product.variants;
   return product.variants.filter((v) => {
+    // Rupture-risk pré-filtro: a variante DEVE pertencer ao set sinalizado
+    // pelo motor EMA (cobertura ≤ 30d). Sem isso o card "Risco de Ruptura"
+    // mostraria 1000 e a tabela exibiria variações Em Estoque/Esgotadas.
+    if (ctx.ruptureRiskIds && !ctx.ruptureRiskIds.has(v.variantId)) return false;
     const cn = normalize(v.colorName);
     const cg = normalize(v.colorGroup);
     if (ctx.colorNameN && cn !== ctx.colorNameN) return false;
