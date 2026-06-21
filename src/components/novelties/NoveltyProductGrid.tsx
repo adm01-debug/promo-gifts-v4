@@ -540,6 +540,11 @@ export function NoveltyProductGrid() {
       <div
         ref={gridScrollRef}
         data-testid="novelty-grid-scroll"
+        data-grid-scroll-height={gridScrollHeight ?? ''}
+        data-grid-overscan={5}
+        data-grid-estimate-size={
+          gridColumns <= 2 ? 520 : gridColumns <= 3 ? 480 : gridColumns <= 4 ? 460 : 440
+        }
         className="overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg pr-1 [scrollbar-gutter:stable]"
         style={{ height: gridScrollHeight }}
       >
