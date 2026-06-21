@@ -118,7 +118,7 @@ export function GalleryVideoPlayer({
                   className="h-full w-full"
                   allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
-                  sandbox="allow-scripts allow-presentation allow-forms"
+                  sandbox="allow-scripts allow-presentation allow-popups"
                 />
               </div>
             ) : playerSrc && !useFallback ? (
@@ -144,7 +144,7 @@ export function GalleryVideoPlayer({
                   className="h-full w-full"
                   allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
-                  sandbox="allow-scripts allow-presentation allow-forms"
+                  sandbox="allow-scripts allow-presentation allow-popups"
                 />
               </div>
             ) : (
