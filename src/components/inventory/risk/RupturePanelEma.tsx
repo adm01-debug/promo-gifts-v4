@@ -59,7 +59,12 @@ function OptInEmpty() {
 }
 
 export function RupturePanelEma() {
-  const enabled = isFeatureEnabled('useEmaRupture');
+  // Gate ANTES dos hooks para evitar exigir QueryClientProvider em testes legados.
+  if (!isFeatureEnabled('useEmaRupture')) return <OptInEmpty />;
+  return <RupturePanelEmaInner />;
+}
+
+function RupturePanelEmaInner() {
   const { alerts, isLoading, error } = useRuptureAlerts();
   const { data: kpis, isLoading: kpisLoading } = useRuptureKpiSummary(false);
 
@@ -98,7 +103,7 @@ export function RupturePanelEma() {
     return m;
   }, [kpis]);
 
-  if (!enabled) return <OptInEmpty />;
+  // (gate de flag já aplicado no wrapper RupturePanelEma)
 
   function toggleLevel(lvl: RuptureLevel) {
     setActiveLevels((prev) => {
