@@ -16,7 +16,10 @@ import {
   Truck,
   RotateCcw,
   Loader2,
+  TrendingDown,
 } from 'lucide-react';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
+import { RUPTURE_HORIZON_OPTIONS } from '@/lib/inventory/rupture-risk';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +79,7 @@ export function StockFilterToolbar({
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() ?? '');
   const [openSections, setOpenSections] = useState<string[]>([]);
+  const [ruptureHorizon, setRuptureHorizon] = useRuptureHorizon();
 
   // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
   useFutureStockPreference(
@@ -485,6 +489,85 @@ export function StockFilterToolbar({
             )}
           </PopoverContent>
         </Popover>
+
+        {/* Risco de Ruptura — horizonte de projeção (3/7/15/30 dias).
+            Promovido da tabela para a toolbar logo após "Estoque Futuro",
+            seguindo o mesmo design dos demais botões da barra. */}
+        <Popover>
+          <StockHelpTooltip
+            title="Risco de Ruptura"
+            description="Janela usada para projetar quais SKUs podem zerar. Independente do filtro 'Estoque Futuro'."
+            example="3 dias = só o que esgota agora. 30 dias = visão ampla."
+            emptyHint="Aumente para 30 dias para ver mais SKUs em risco."
+          >
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="default"
+                data-testid="rupture-horizon-control"
+                aria-label={`Risco de Ruptura, janela ${ruptureHorizon} dias`}
+                className="relative gap-2 font-normal text-muted-foreground hover:text-foreground [&[data-state=open]]:border-border/60 [&[data-state=open]]:text-foreground [&[data-state=open]_svg]:text-primary"
+              >
+                <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Risco</span>
+                <span
+                  aria-hidden="true"
+                  className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                >
+                  {ruptureHorizon}d
+                </span>
+              </Button>
+            </PopoverTrigger>
+          </StockHelpTooltip>
+          <PopoverContent className="w-64 p-0" align="start">
+            <div className="space-y-1.5 px-3 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <TrendingDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                <span className="text-xs font-medium text-foreground">Projetar risco em</span>
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Janela usada apenas para o cálculo de Risco de Ruptura.
+                Independente do filtro "Estoque Futuro".
+              </p>
+            </div>
+            <div className="space-y-1.5 border-t border-border/40 px-3 py-2.5">
+              <span
+                id="rupture-horizon-label"
+                className="text-[10px] uppercase tracking-wide text-muted-foreground"
+              >
+                Horizonte
+              </span>
+              <div
+                role="radiogroup"
+                aria-labelledby="rupture-horizon-label"
+                className="grid grid-cols-4 gap-1"
+              >
+                {RUPTURE_HORIZON_OPTIONS.map((d) => {
+                  const active = ruptureHorizon === d;
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      data-testid={`rupture-horizon-${d}`}
+                      onClick={() => setRuptureHorizon(d)}
+                      className={cn(
+                        'h-7 rounded-md border text-xs transition-colors',
+                        active
+                          ? 'border-foreground/30 bg-muted/60 font-medium text-foreground'
+                          : 'border-border/40 text-muted-foreground hover:border-border hover:text-foreground',
+                      )}
+                    >
+                      {d}d
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
 
         {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip

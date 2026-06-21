@@ -22,19 +22,8 @@ import { cn } from '@/lib/utils';
 import { type ProductStockSummary, type VariantStock, type StockStatus } from '@/types/stock';
 import { VariantThumb, RichColorSwatch, StockStatusChip } from './VariantStockVisuals';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
-import {
-  computeRuptureRisk,
-  DEFAULT_RUPTURE_HORIZON,
-  RUPTURE_HORIZON_OPTIONS,
-  type RuptureHorizonDays,
-} from '@/lib/inventory/rupture-risk';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { computeRuptureRisk } from '@/lib/inventory/rupture-risk';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
 import { useRuptureAlerts, type RuptureAlertRow } from '@/hooks/stock/useRuptureAlerts';
 import { RuptureLevelBadge } from './risk/RuptureLevelBadge';
 import { isFeatureEnabled } from '@/lib/feature-flags';
@@ -454,15 +443,10 @@ function VariantStockTableInner({
     writeStored(STATUS_FILTER_STORAGE_KEY, statusFilter);
   }, [statusFilter]);
 
-  // Horizonte de projeção do "Risco de Ruptura" — vendedor escolhe 3/7/15/30 dias.
-  const [ruptureHorizon, setRuptureHorizon] = useState<RuptureHorizonDays>(() => {
-    const raw = readStored(RUPTURE_HORIZON_STORAGE_KEY, String(DEFAULT_RUPTURE_HORIZON));
-    const n = parseInt(raw, 10) as RuptureHorizonDays;
-    return (RUPTURE_HORIZON_OPTIONS as readonly number[]).includes(n) ? n : DEFAULT_RUPTURE_HORIZON;
-  });
-  useEffect(() => {
-    writeStored(RUPTURE_HORIZON_STORAGE_KEY, String(ruptureHorizon));
-  }, [ruptureHorizon]);
+  // Horizonte de projeção do "Risco de Ruptura" — controlado pela toolbar
+  // superior (`StockFilterToolbar`) via hook compartilhado para evitar
+  // prop-drilling. Persistência em localStorage segue na mesma chave.
+  const [ruptureHorizon] = useRuptureHorizon();
 
   // Inline search filtering — runs against deferredSearch so keystrokes never
   // block the React render. The Input value (inlineSearch) updates immediately;
@@ -705,37 +689,9 @@ function VariantStockTableInner({
           )}
         </div>
 
-        {/* Horizonte de projeção do "Risco de Ruptura" — 3/7/15/30 dias.
-            Independente do filtro "Estoque Futuro Nd" da toolbar (que decide
-            se reposições futuras entram no cálculo da régua de quantidade). */}
-        <div
-          className="flex items-center gap-1.5 text-xs text-muted-foreground"
-          data-testid="rupture-horizon-control"
-          title="Janela usada apenas para o cálculo de Risco de Ruptura nesta tabela. Independente do filtro 'Estoque Futuro Nd' da toolbar."
-        >
-          <span className="hidden whitespace-nowrap md:inline">Projetar risco em:</span>
-          <Select
-            value={String(ruptureHorizon)}
-            onValueChange={(v) => setRuptureHorizon(Number(v) as RuptureHorizonDays)}
-          >
-            <SelectTrigger
-              className="h-8 w-[88px] text-xs"
-              aria-label="Horizonte de projeção do risco de ruptura (independente do filtro Estoque Futuro da toolbar)"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {RUPTURE_HORIZON_OPTIONS.map((d) => (
-                <SelectItem key={d} value={String(d)} className="text-xs">
-                  {d} dias
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="hidden text-[10px] text-muted-foreground/70 lg:inline">
-            (independente do Estoque Futuro)
-          </span>
-        </div>
+        {/* Horizonte de projeção do "Risco de Ruptura" foi promovido para a
+            barra superior (`StockFilterToolbar`) — logo após o botão "Em
+            Estoque / Estoque Futuro" — via hook `useRuptureHorizon`. */}
 
         {/* Chips de status removidos — os StatCards do StockDashboard são a
             fonte única de filtro por status (Total / Em Estoque / Risco de
