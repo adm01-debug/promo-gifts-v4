@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useColorSystem } from '@/hooks/products/useColorSystem';
 import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
@@ -144,6 +145,21 @@ export function useFiltersPageState() {
   // é o fallback para compatibilidade com links externos que chegam com ?search= na URL
   // sem nunca passar por setFilters (first render). Com filters inicializados a partir da URL
   // no useState inicial, filters.search já contém o valor — o fallback é apenas garantia.
+  // FIX-GAP1 2026-06-21: nome REAL da cor (com acento/parenteses) para o chip da toolbar.
+  // slugToLabel naive perdia acentos em 18 cores (ex: "Azul Bebe" vs "Azul Bebe",
+  // "Verde Limao" vs "Verde Limao", "Azul Tiffany (Turquesa)").
+  const { data: colorSystemData } = useColorSystem();
+  const colorNameBySlug = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!colorSystemData) return m;
+    for (const g of colorSystemData.groups) {
+      m.set(g.slug, g.name);
+      for (const v of g.variations) m.set(v.slug, v.name);
+    }
+    for (const n of colorSystemData.nuances) m.set(n.slug, n.name);
+    return m;
+  }, [colorSystemData]);
+
   const effectiveSearch = filters.search || searchParams.get('search') || '';
   const serverSearchTerm = useDebounce(effectiveSearch, 400);
 
@@ -564,11 +580,20 @@ export function useFiltersPageState() {
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
   const filteredProductIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
+  // FIX-REGRESSAO 2026-06-21: productMinQuantities reintroduzido (havia sido removido
+  // por engano num push anterior). Sem o MOQ, getCatalogStockStatus nao marca
+  // "estoque zerado" para variantes com stock < min_quantity (532 variantes / 413
+  // produtos exibiam "em estoque" enganosamente).
+  const filteredProductMinQtys = useMemo(
+    () => new Map(filteredProducts.map((p) => [p.id, p.minQuantity])),
+    [filteredProducts],
+  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: filteredProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
     colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
   });
 
   // Merge color enrichment data into products
@@ -648,7 +673,9 @@ export function useFiltersPageState() {
     if (totalCores > 0)
       summary.push({
         label: 'Cor',
-        value: selectedColorSlug ? slugToLabel(selectedColorSlug) : `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
+        value: selectedColorSlug
+          ? (colorNameBySlug.get(selectedColorSlug) ?? slugToLabel(selectedColorSlug))
+          : `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
         key: 'colors',
       });
     if (filters.categories.length > 0)
@@ -772,7 +799,7 @@ export function useFiltersPageState() {
     if (filters.search)
       summary.push({ label: 'Busca', value: `"${filters.search}"`, key: 'search' });
     return summary;
-  }, [filters, techniquesDataAvailable]);
+  }, [filters, techniquesDataAvailable, colorNameBySlug]);
 
   const clearSingleFilter = (key: keyof FilterState) => {
     if (key === 'colors')
