@@ -21,10 +21,6 @@ vi.mock('@/components/products/NoveltyBadge', () => ({ NoveltyBadge: () => null 
 vi.mock('@/components/products/ProductStatusBadge', () => ({ ProductStatusBadge: () => null }));
 vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
-// detected_at 10 days ago so getRecencyVariant() returns 'normal' (not 'hot'),
-// ensuring fresh=false and the expiring badge can render when status='expiring_soon'.
-const TEN_DAYS_AGO = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
     novelty_id: 'nov-1',
@@ -41,7 +37,7 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
     supplier_id: null,
     supplier_name: null,
     supplier_product_code: null,
-    detected_at: TEN_DAYS_AGO,
+    detected_at: new Date().toISOString(),
     expires_at: new Date().toISOString(),
     days_remaining: 30,
     days_as_novelty: 10,
@@ -55,6 +51,14 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
   };
 }
 
+// ISSUE-5 FIX (prod): o card deriva `fresh` AO RENDERIZAR via
+// getRecencyVariant(detected_at) === 'hot' (≤ 2 dias), NÃO de `is_highlighted`.
+// Como o badge de urgência só aparece quando `!fresh`, os cenários abaixo precisam
+// fixar `detected_at` explicitamente: antigo → não-fresh (badge aparece); recente →
+// fresh (badge suprimido pela prioridade "recém-chegado").
+const OLD_DETECTED = new Date(Date.now() - 12 * 86_400_000).toISOString(); // não-fresh
+const FRESH_DETECTED = new Date().toISOString(); // fresh (hot)
+
 const renderCard = (n: NoveltyWithDetails) =>
   render(
     <MemoryRouter>
@@ -67,14 +71,22 @@ const renderCard = (n: NoveltyWithDetails) =>
 describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   it('mostra "Últimos Nd" quando expiring_soon e não fresh', () => {
     const { getByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', days_remaining: 5, is_highlighted: false }),
+      makeNovelty({
+        status: 'expiring_soon',
+        days_remaining: 5,
+        detected_at: OLD_DETECTED, // não-fresh → badge de urgência aparece
+      }),
     );
     expect(getByTestId('novelty-expiring-badge').textContent).toContain('Últimos 5d');
   });
 
   it('mostra "Último dia" quando resta ≤ 1 dia', () => {
     const { getByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', days_remaining: 1, is_highlighted: false }),
+      makeNovelty({
+        status: 'expiring_soon',
+        days_remaining: 1,
+        detected_at: OLD_DETECTED, // não-fresh → badge de urgência aparece
+      }),
     );
     expect(getByTestId('novelty-expiring-badge').textContent).toContain('Último dia');
   });
@@ -85,10 +97,8 @@ describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   });
 
   it('NÃO mostra o badge quando fresh (recém-chegado tem prioridade)', () => {
-    // "fresh" is computed from detected_at (≤2 days ago = 'hot' variant),
-    // NOT from is_highlighted. Override detected_at to NOW to make fresh=true.
     const { queryByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', detected_at: new Date().toISOString() }),
+      makeNovelty({ status: 'expiring_soon', detected_at: FRESH_DETECTED }),
     );
     expect(queryByTestId('novelty-expiring-badge')).toBeNull();
   });

@@ -104,10 +104,11 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // min-h garante consistência visual sem clips: o CSS grid stretch
-          // alinha as alturas por linha. h/max-h fixo + overflow-hidden quebravam
-          // o measureElement do virtualizer (altura sempre 400px, scroll errado).
-          'min-h-[420px]',
+          // Altura FIXA por breakpoint (paridade com BaseProductGridCard). O
+          // VirtualizedNoveltyGrid mede a altura da LINHA (measureElement na div da
+          // row), determinística porque os cards têm altura fixa — o clip interno
+          // do card não afeta a medição/scroll.
+          'h-[400px] max-h-[400px] overflow-hidden sm:h-[430px] sm:max-h-[430px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
