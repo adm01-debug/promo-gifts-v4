@@ -1,6 +1,10 @@
 /**
  * NoveltyGridCard — badge de urgência "Últimos dias".
  * Aparece quando status === 'expiring_soon' e o produto não é fresh.
+ *
+ * "fresh" = is_highlighted (days_as_novelty ≤ NOVELTY_FRESH_DAYS = 5d).
+ * NÃO usa getRecencyVariant(detected_at): esse helper usa janela de 2d ('hot'),
+ * diferente do predicado canônico de "recém-chegado" do módulo de novidades.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -21,9 +25,6 @@ vi.mock('@/components/products/NoveltyBadge', () => ({ NoveltyBadge: () => null 
 vi.mock('@/components/products/ProductStatusBadge', () => ({ ProductStatusBadge: () => null }));
 vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
-// 10 dias atrás → getRecencyVariant retorna 'normal' (não fresh), expiring badge pode aparecer
-const TEN_DAYS_AGO = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
-
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
     novelty_id: 'nov-1',
@@ -40,7 +41,7 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
     supplier_id: null,
     supplier_name: null,
     supplier_product_code: null,
-    detected_at: TEN_DAYS_AGO,
+    detected_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     expires_at: new Date().toISOString(),
     days_remaining: 30,
     days_as_novelty: 10,
@@ -84,11 +85,9 @@ describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   });
 
   it('NÃO mostra o badge quando fresh (recém-chegado tem prioridade)', () => {
+    // fresh = is_highlighted (days_as_novelty ≤ NOVELTY_FRESH_DAYS = 5d)
     const { queryByTestId } = renderCard(
-      makeNovelty({
-        status: 'expiring_soon',
-        detected_at: new Date().toISOString(), // detectado agora → fresh = true → badge oculto
-      }),
+      makeNovelty({ status: 'expiring_soon', is_highlighted: true }),
     );
     expect(queryByTestId('novelty-expiring-badge')).toBeNull();
   });

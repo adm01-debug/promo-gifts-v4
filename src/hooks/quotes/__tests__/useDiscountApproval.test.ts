@@ -71,12 +71,13 @@ vi.mock('@/lib/security/rls-denial-logger', () => ({
 function setupInsertSuccess() {
   mockInsert.mockReturnValue({ error: null });
   mockUpdate.mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) });
-  // requestApproval calls .select() on quotes (context), user_roles, and profiles.
-  // Provide a chain that handles .eq().maybeSingle() and .eq() awaited directly.
+  // requestApproval's dedup guard chains TWO .eq() calls before .maybeSingle():
+  //   .select('id').eq('quote_id', ...).eq('status', 'pending').maybeSingle()
+  // Other selects (quotes ctx, profiles) use a single .eq().maybeSingle() pattern.
   const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
-  mockSelect.mockReturnValue({
-    eq: vi.fn().mockReturnValue({ error: null, maybeSingle: maybeSingleFn }),
-  });
+  const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+  const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn, maybeSingle: maybeSingleFn });
+  mockSelect.mockReturnValue({ eq: outerEqFn });
 }
 
 function setupInsertError(msg = 'RLS denied') {

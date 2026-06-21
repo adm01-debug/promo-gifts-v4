@@ -148,7 +148,7 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     expect(screen.getByTestId("sparkline-stub")).toBeInTheDocument();
   });
 
-  it("ambos os cards aplicam h-[400px] max-h-[400px] (altura fixa compartilhada)", async () => {
+  it("ambos os cards aplicam min-h-[420px] (mesma altura mínima)", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     const { ReplenishmentGridCard } = await import(
       "@/components/replenishments/ReplenishmentCards"
@@ -156,7 +156,8 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
 
     const noveltyProduct = {
       ...SHARED,
-      detected_at: new Date().toISOString(),
+      // detected_at 10 days ago → not fresh → expiring badge can render normally
+      detected_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
       days_remaining: 30,
       days_as_novelty: 5,
       is_highlighted: false,
@@ -172,10 +173,12 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
       <NoveltyGridCard product={noveltyProduct as any} onSelect={vi.fn()} />,
     );
     const noveltyArticle = document.querySelector("article")!;
-    expect(noveltyArticle.className).toMatch(/h-\[400px\]/);
-    expect(noveltyArticle.className).toMatch(/max-h-\[400px\]/);
-    expect(noveltyArticle.className).toMatch(/sm:h-\[430px\]/);
-    expect(noveltyArticle.className).toMatch(/sm:max-h-\[430px\]/);
+    // Canonical height: min-h only — fixed h/max-h + overflow-hidden on article
+    // breaks the virtualizer's measureElement (card always reports fixed height).
+    expect(noveltyArticle.className).toMatch(/min-h-\[420px\]/);
+    expect(noveltyArticle.className).not.toMatch(/(^|\s)h-\[/);
+    expect(noveltyArticle.className).not.toMatch(/(^|\s)max-h-\[/);
+    expect(noveltyArticle.className).not.toMatch(/(^|\s)overflow-hidden/);
     unmount();
 
     renderWithProviders(
@@ -188,10 +191,10 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
       />,
     );
     const replenishmentArticle = document.querySelector("article")!;
-    expect(replenishmentArticle.className).toMatch(/h-\[400px\]/);
-    expect(replenishmentArticle.className).toMatch(/max-h-\[400px\]/);
-    expect(replenishmentArticle.className).toMatch(/sm:h-\[430px\]/);
-    expect(replenishmentArticle.className).toMatch(/sm:max-h-\[430px\]/);
+    expect(replenishmentArticle.className).toMatch(/min-h-\[420px\]/);
+    expect(replenishmentArticle.className).not.toMatch(/(^|\s)h-\[/);
+    expect(replenishmentArticle.className).not.toMatch(/(^|\s)max-h-\[/);
+    expect(replenishmentArticle.className).not.toMatch(/(^|\s)overflow-hidden/);
   });
 
   it("ordem dos campos é idêntica (categoria → cores → estoque)", async () => {

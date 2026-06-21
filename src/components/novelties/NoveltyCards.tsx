@@ -104,7 +104,7 @@ export const NoveltyGridCard = memo(
           // Altura flexível com piso — o virtualizer (measureElement) precisa medir a
           // altura REAL do card. Alturas fixas + overflow-hidden recortam conteúdo (nomes
           // longos + skeleton de preço/estoque) e corrompem a medição/scroll de /novidades.
-          // Guarda coberta por NoveltyGridCard.flexibleHeight.test.tsx.
+          // Guarda coberta por tests/components/product-cards-parity.test.tsx.
           'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
