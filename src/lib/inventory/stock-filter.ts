@@ -218,20 +218,46 @@ export function buildStockIndexes(products: ProductStockSummary[]): StockIndexes
 }
 
 // ---------- predicados auxiliares ----------
+// SSOT: janela do filtro "incoming" (Estoque Futuro). DEVE bater com o card
+// "Estoque Futuro (30d)" em StockDashboard.tsx — assim tabela e card mostram
+// o mesmo número de variações.
+export const INCOMING_WINDOW_DAYS = 30;
+
+function hasIncomingWithinWindow(v: VariantStock, nowMs: number, cutoffMs: number): boolean {
+  // Mesma lógica do card: considera reposições com data em [agora, agora+30d].
+  // Em trânsito sem data NÃO conta — o card também ignora entradas sem expectedDate.
+  if (v.futureSegments && v.futureSegments.length > 0) {
+    for (const seg of v.futureSegments) {
+      const qty = seg?.quantity;
+      if (typeof qty !== 'number' || !Number.isFinite(qty) || qty <= 0) continue;
+      if (!seg.date) continue;
+      const t = Date.parse(seg.date);
+      if (Number.isNaN(t) || t < nowMs || t > cutoffMs) continue;
+      return true;
+    }
+    return false;
+  }
+  if (!v.futureStock || v.futureStock <= 0) return false;
+  const dateStr = v.expectedReplenishDate ?? v.futureStockDate;
+  if (!dateStr) return false;
+  const t = Date.parse(dateStr);
+  if (Number.isNaN(t) || t < nowMs || t > cutoffMs) return false;
+  return true;
+}
+
 function matchStatus(
   product: ProductStockSummary,
   variantsForFilter: VariantStock[],
   status: StockStatus | 'all',
   hasVariantFilter: boolean,
+  incomingNowMs: number,
+  incomingCutoffMs: number,
 ): boolean {
   if (status === 'all') return true;
   if (status === 'incoming') {
-    if (hasVariantFilter) {
-      return variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0);
-    }
-    return (
-      product.totalInTransitStock > 0 ||
-      variantsForFilter.some((v) => v.status === 'incoming' || v.inTransitStock > 0)
+    // Unificado com o card "Estoque Futuro (30d)".
+    return variantsForFilter.some((v) =>
+      hasIncomingWithinWindow(v, incomingNowMs, incomingCutoffMs),
     );
   }
   if (hasVariantFilter) {
