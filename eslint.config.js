@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 220: 5 zero-violation rules (no saved rules — Batch 221 probes fresh)
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'error',
+      '@typescript-eslint/return-await': 'error',
+      '@typescript-eslint/no-misused-new': 'error',
+      '@typescript-eslint/no-namespace': 'error',
       // Batch 219: 5 zero-violation rules (no saved rules — Batch 220 probes fresh)
       '@typescript-eslint/prefer-promise-reject-errors': 'error',
       '@typescript-eslint/no-restricted-types': 'error',
