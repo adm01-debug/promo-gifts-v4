@@ -58,7 +58,7 @@ export function getColorSwatchClasses({
     !hasBg && 'border-dashed border-muted-foreground/40',
     // Esgotado — slash diagonal + grayscale + opacity (SSOT visual)
     isOutOfStock &&
-      'opacity-60 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
+      'opacity-40 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
   );
 }
 
