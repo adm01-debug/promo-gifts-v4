@@ -31,6 +31,12 @@ export type FeatureFlag =
   | 'magic_up'
   | 'mfa'
   | 'presentation_mode'
+  /**
+   * Onda 1 — Painel preditivo de ruptura por fornecedor (EMA α=0.3).
+   * Habilita RupturePanelEma e useRuptureAlerts na página /estoque.
+   * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
+   */
+  | 'useEmaRupture'
   | 'voice_commands';
 
 interface FlagConfig {
@@ -82,6 +88,12 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       'CRM DB Bridge — acesso a empresas/contatos via crm-db-bridge ' +
       '(pgxfvjmuubtbowutlide). Desativar via setFeatureFlag para modo degradado ' +
       'sem CRM externo. Para desligamento de emergência, usar system_kill_switches.',
+  },
+  useEmaRupture: {
+    enabled: true,
+    description:
+      'Painel preditivo de ruptura por fornecedor (EMA α=0.3) — Onda 1. ' +
+      'Habilita RupturePanelEma + useRuptureAlerts na página /estoque.',
   },
 };
 

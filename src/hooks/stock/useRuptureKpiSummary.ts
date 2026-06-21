@@ -1,40 +1,37 @@
 /**
- * useRuptureKpiSummary — RPC `fn_ruptura_kpi_summary(boolean)` retornando
- * KPIs agregados por fornecedor (total/risco/cobertura média/lead time médio).
- * Refresh diário no backend; staleTime 5min seguro.
+ * useRuptureKpiSummary — KPI por nivel_alerta para chips do RupturePanelEma.
+ * Chama fn_ema_kpi_by_level() — agregado por nível EMA, não por fornecedor.
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { isFeatureEnabled } from '@/lib/feature-flags';
+import type { RuptureLevel } from './useRuptureAlerts';
 
-export interface RuptureKpiSummaryRow {
-  supplier_id: string | null;
-  supplier_name: string | null;
-  total_variants: number;
-  ruptura_count: number;
-  critico_count: number;
-  alerta_count: number;
-  cobertura_media_dias: number | null;
-  lead_time_medio: number | null;
+export interface RuptureKpiRow {
+  nivel_alerta: RuptureLevel;
+  prioridade: number;
+  total_variantes: number;
+  avg_cobertura: number | null;
+  min_cobertura: number | null;
 }
 
-export function useRuptureKpiSummary(includeOk = false) {
-  const enabled = isFeatureEnabled('useEmaRupture');
+type AnyRpc = (
+  fn: string,
+  args?: Record<string, unknown>,
+) => Promise<{ data: unknown; error: Error | null }>;
+
+export function useRuptureKpiSummary(preferredOnly = true) {
   return useQuery({
-    queryKey: ['rupture-kpi-summary', includeOk],
-    enabled,
+    queryKey: ['ema-kpi-by-level', preferredOnly] as const,
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     retry: 1,
-    queryFn: async (): Promise<RuptureKpiSummaryRow[]> => {
-      const { data, error } = await (supabase as unknown as {
-        rpc: (
-          n: string,
-          args: Record<string, unknown>,
-        ) => Promise<{ data: RuptureKpiSummaryRow[] | null; error: Error | null }>;
-      }).rpc('fn_ruptura_kpi_summary', { p_include_ok: includeOk });
+    queryFn: async (): Promise<RuptureKpiRow[]> => {
+      const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
+        'fn_ema_kpi_by_level',
+        { p_preferred_only: preferredOnly },
+      );
       if (error) throw error;
-      return data ?? [];
+      return (data as RuptureKpiRow[]) ?? [];
     },
   });
 }

@@ -1,9 +1,15 @@
 /**
  * RupturePanelEma — Painel "Risco por Fornecedor (EMA)".
- * Consome `mv_stock_rupture_alert` + `fn_ruptura_kpi_summary` do canônico.
+ * Consome `mv_stock_rupture_alert` + `fn_ema_kpi_by_level` do canônico.
  * Render condicional pela flag `useEmaRupture`.
+ *
+ * Onda 1:
+ * - Aceita prop `focusedLevel` do StockHeroRiskBanner (filtra nível automaticamente)
+ * - Botão "Pedir Reposição" em cada linha → PurchaseOrderModal
+ * - supplier_sku exibido em vez de variant_id truncado
+ * - stock_total corrigido (era current_stock, coluna não existe na MV)
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
@@ -20,7 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { AlertTriangle, TrendingDown, Activity, Info } from 'lucide-react';
+import { AlertTriangle, TrendingDown, Activity, Info, ShoppingCart } from 'lucide-react';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import {
   useRuptureAlerts,
@@ -29,6 +36,7 @@ import {
 } from '@/hooks/stock/useRuptureAlerts';
 import { useRuptureKpiSummary } from '@/hooks/stock/useRuptureKpiSummary';
 import { RuptureLevelBadge } from './RuptureLevelBadge';
+import { PurchaseOrderModal } from '@/components/inventory/PurchaseOrderModal';
 
 const LEVEL_ORDER: RuptureLevel[] = ['RUPTURA', 'CRÍTICO', 'ALERTA', 'ATENÇÃO', 'OK'];
 
@@ -58,20 +66,42 @@ function OptInEmpty() {
   );
 }
 
-export function RupturePanelEma() {
-  // Gate ANTES dos hooks para evitar exigir QueryClientProvider em testes legados.
-  if (!isFeatureEnabled('useEmaRupture')) return <OptInEmpty />;
-  return <RupturePanelEmaInner />;
+interface Props {
+  /** Nível pré-selecionado vindo do StockHeroRiskBanner. null = sem filtro. */
+  focusedLevel?: string | null;
 }
 
-function RupturePanelEmaInner() {
+export function RupturePanelEma({ focusedLevel }: Props = {}) {
+  // Gate ANTES dos hooks para evitar exigir QueryClientProvider em testes legados.
+  if (!isFeatureEnabled('useEmaRupture')) return <OptInEmpty />;
+  return <RupturePanelEmaInner focusedLevel={focusedLevel} />;
+}
+
+function RupturePanelEmaInner({ focusedLevel }: Props) {
   const { alerts, isLoading, error } = useRuptureAlerts();
-  const { data: kpis, isLoading: kpisLoading } = useRuptureKpiSummary(false);
+  const kpiQuery = useRuptureKpiSummary(false);
+  const kpis = kpiQuery.data;
+  const kpisLoading = kpiQuery.isLoading;
 
   const [supplierFilter, setSupplierFilter] = useState<string>('all');
-  const [activeLevels, setActiveLevels] = useState<Set<RuptureLevel>>(
-    () => new Set(['RUPTURA', 'CRÍTICO', 'ALERTA']),
-  );
+  const [activeLevels, setActiveLevels] = useState<Set<RuptureLevel>>(() => {
+    if (focusedLevel && LEVEL_ORDER.includes(focusedLevel as RuptureLevel)) {
+      return new Set([focusedLevel as RuptureLevel]);
+    }
+    return new Set(['RUPTURA', 'CRÍTICO', 'ALERTA']);
+  });
+
+  const [poRow, setPoRow] = useState<RuptureAlertRow | null>(null);
+
+  // Sincronizar com chip do Hero Banner
+  useEffect(() => {
+    if (focusedLevel && LEVEL_ORDER.includes(focusedLevel as RuptureLevel)) {
+      setActiveLevels(new Set([focusedLevel as RuptureLevel]));
+    } else if (focusedLevel === null) {
+      setActiveLevels(new Set(['RUPTURA', 'CRÍTICO', 'ALERTA']));
+    }
+    // SEM_SINAL e outros não mapeados: manter seleção atual
+  }, [focusedLevel]);
 
   const suppliers = useMemo(() => {
     const map = new Map<string, string>();
@@ -83,6 +113,7 @@ function RupturePanelEmaInner() {
     );
   }, [alerts]);
 
+  // Etapa 3: sort por prioridade ASC (quebra empate por cobertura_dias ASC)
   const filtered: RuptureAlertRow[] = useMemo(() => {
     return alerts
       .filter((a) => activeLevels.has(a.nivel_alerta))
@@ -103,8 +134,6 @@ function RupturePanelEmaInner() {
     return m;
   }, [kpis]);
 
-  // (gate de flag já aplicado no wrapper RupturePanelEma)
-
   function toggleLevel(lvl: RuptureLevel) {
     setActiveLevels((prev) => {
       const next = new Set(prev);
@@ -116,6 +145,7 @@ function RupturePanelEmaInner() {
 
   return (
     <div className="space-y-4">
+      {/* Chips de nível — Etapa 3: sort já aplicado abaixo */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {LEVEL_ORDER.map((lvl) => {
           const count = kpiByLevel.get(lvl) ?? 0;
@@ -153,6 +183,7 @@ function RupturePanelEmaInner() {
               </CardTitle>
               <CardDescription className="mt-1">
                 EMA α=0.3 das vendas diárias × lead time real × fator segurança 1.5.
+                Ordenado por prioridade crescente.
               </CardDescription>
             </div>
             <Select value={supplierFilter} onValueChange={setSupplierFilter}>
@@ -193,11 +224,12 @@ function RupturePanelEmaInner() {
                   <tr>
                     <th className="px-2 py-2">Nível</th>
                     <th className="px-2 py-2">Fornecedor</th>
-                    <th className="px-2 py-2">Variação</th>
+                    <th className="px-2 py-2">SKU</th>
                     <th className="px-2 py-2 text-right">Estoque</th>
                     <th className="px-2 py-2 text-right">EMA/dia</th>
                     <th className="px-2 py-2 text-right">Cobertura</th>
                     <th className="px-2 py-2 text-right">Lead time</th>
+                    <th className="px-2 py-2"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -213,10 +245,10 @@ function RupturePanelEmaInner() {
                         {row.supplier_name ?? '—'}
                       </td>
                       <td className="px-2 py-2 font-mono text-xs text-muted-foreground">
-                        {row.variant_id.slice(0, 8)}…
+                        {row.supplier_sku ?? `${row.variant_id.slice(0, 8)}…`}
                       </td>
                       <td className="px-2 py-2 text-right tabular-nums">
-                        {formatNum(row.current_stock, 0)}
+                        {formatNum(row.stock_total, 0)}
                       </td>
                       <td className="px-2 py-2 text-right tabular-nums">
                         {formatNum(row.ema_diaria, 2)}
@@ -231,16 +263,28 @@ function RupturePanelEmaInner() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="inline-flex cursor-help items-center gap-1 tabular-nums">
-                                {formatNum(row.lead_time_efetivo, 1)}d
+                                {formatNum(row.lead_time_efetivo, 0)}d
                                 <Info className="h-3 w-3 text-muted-foreground" />
                               </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                              Lead time efetivo = lead_time_fornecedor × fator segurança
-                              (1.5).
+                              Lead time efetivo = lead_time_fornecedor × fator segurança (1.5).
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                      </td>
+                      {/* Etapa 5: Botão Pedir Reposição */}
+                      <td className="px-2 py-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 px-2 text-xs"
+                          onClick={() => setPoRow(row)}
+                          aria-label={`Pedir reposição de ${row.supplier_sku ?? row.variant_id.slice(0, 8)}`}
+                        >
+                          <ShoppingCart className="h-3 w-3" />
+                          Pedir
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -255,6 +299,13 @@ function RupturePanelEmaInner() {
           )}
         </CardContent>
       </Card>
+
+      {/* Etapa 5: Modal Pedir Reposição */}
+      <PurchaseOrderModal
+        open={poRow !== null}
+        onOpenChange={(open) => { if (!open) setPoRow(null); }}
+        row={poRow}
+      />
     </div>
   );
 }
