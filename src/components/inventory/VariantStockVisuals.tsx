@@ -130,29 +130,30 @@ export function RichColorSwatch({
       : undefined;
 
   return (
-    <span className="inline-flex items-center gap-2">
-      <span
-        className={cn(
-          'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-opacity',
-          isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
-          !bg && 'border-dashed border-muted-foreground/40',
-          isOutOfStock && 'opacity-50',
-        )}
-        style={bg ? { background: bg } : undefined}
-        aria-hidden="true"
-      />
-
-      <span
-        className={cn(
-          'truncate text-sm',
-          isOutOfStock ? 'text-muted-foreground line-through' : 'text-foreground',
-        )}
-      >
-        {label}
-      </span>
-    </span>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            role="img"
+            aria-label={label}
+            className={cn(
+              // 20px → 23px (+15%) → 25px (+10%)
+              'relative inline-flex h-[25px] w-[25px] shrink-0 cursor-help items-center justify-center rounded-full border transition-opacity',
+              isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
+              !bg && 'border-dashed border-muted-foreground/40',
+              isOutOfStock && 'opacity-50',
+            )}
+            style={bg ? { background: bg } : undefined}
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs font-medium">
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
+
 
 // ============================================
 // StockStatusChip — chip único consolidado
