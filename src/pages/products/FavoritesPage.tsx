@@ -312,7 +312,8 @@ export default function FavoritesPage() {
   const selectedIds = sel.selectedIds;
 
   const stats = useMemo(() => {
-    const source = isRemoteListView ? productsWithVariant : legacyFavoriteProducts;
+    // Use filteredProducts so stats reflect what's visible (respects search + price-drop filter)
+    const source = filteredProducts;
     if (source.length === 0) return null;
     const prices = source.map((p) => p.price ?? 0).filter((v) => v > 0);
     return {
@@ -321,7 +322,7 @@ export default function FavoritesPage() {
       minPrice: prices.length ? Math.min(...prices) : 0,
       maxPrice: prices.length ? Math.max(...prices) : 0,
     };
-  }, [productsWithVariant, legacyFavoriteProducts, isRemoteListView]);
+  }, [filteredProducts]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);

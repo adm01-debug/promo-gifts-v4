@@ -111,6 +111,14 @@ export function useFavoritesPageState() {
     updateItem: _updateItem,
   } = useEnrichedFavoriteItems(selectedListId);
 
+  // Auto-select default list when none is selected and lists are loaded
+  useEffect(() => {
+    if (selectedListId === null && lists.length > 0) {
+      const def = lists.find((l) => l.is_default) ?? lists[0];
+      setSelectedListId(def.id);
+    }
+  }, [lists, selectedListId]);
+
   // Data persistence
   useEffect(() => {
     try {
@@ -192,7 +200,7 @@ export function useFavoritesPageState() {
   const filteredProducts = useMemo(() => {
     let list = [...productsWithVariant];
     if (searchQuery.trim()) {
-      const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
