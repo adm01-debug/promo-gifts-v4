@@ -225,11 +225,25 @@ export function StockDashboard() {
 
   const isFiltered = filters.status !== 'all';
 
-  // Future stock total
-  const futureStockTotal = useMemo(
-    () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity || 0), 0),
-    [futureStock],
-  );
+  // Estoque futuro — janela de 30 dias (regra de negócio).
+  // Contamos variações distintas com pelo menos uma reposição prevista nos
+  // próximos 30 dias; o total de unidades vira contexto secundário (trend).
+  const FUTURE_STOCK_WINDOW_DAYS = 30;
+  const { futureStock30dVariantCount, futureStock30dUnits } = useMemo(() => {
+    const now = Date.now();
+    const horizon = now + FUTURE_STOCK_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const variantSet = new Set<string>();
+    let units = 0;
+    for (const f of futureStock) {
+      const t = f.expectedDate ? Date.parse(f.expectedDate) : NaN;
+      if (!Number.isFinite(t)) continue;
+      if (t < now || t > horizon) continue;
+      variantSet.add(f.variantId);
+      units += f.expectedQuantity || 0;
+    }
+    return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };
+  }, [futureStock]);
+
 
   if (isLoading) {
     const pct = loadingProgress
@@ -433,29 +447,27 @@ export function StockDashboard() {
 
 
         <StatCard
-          title="Estoque Futuro"
-          // SSOT: o valor primário é a contagem de reposições previstas (entidades
-          // contáveis). O total de unidades vinha da soma de next_quantity_{1..3}
-          // por variant_supplier_source — número correto pela schema, mas
-          // visualmente alarmante (dezenas de milhões) e incompatível com a
-          // narrativa "reposições". Unidades viram trend secundário.
-          value={futureStock.length}
+          title="Estoque Futuro (30 dias)"
+          // SSOT: valor primário = variações distintas com reposição prevista
+          // nos próximos 30 dias. Total de unidades vira trend secundário.
+          value={futureStock30dVariantCount}
           icon={<Truck className="h-6 w-6 text-primary" />}
           isActive={filters.status === 'incoming'}
           onClick={() => {
             updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            if (futureStock.length > 0) setFutureStockDialogOpen(true);
+            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
           }}
-          clickHint="Ver previsões de reposição"
+          clickHint="Variações com reposição prevista nos próximos 30 dias"
           trend={
-            futureStockTotal > 0
+            futureStock30dUnits > 0
               ? {
                   value: 1,
-                  label: `${futureStockTotal.toLocaleString('pt-BR')} un. previstas`,
+                  label: `${futureStock30dUnits.toLocaleString('pt-BR')} un. previstas`,
                 }
               : undefined
           }
         />
+
       </div>
 
       {/* Active Filter Badge */}
