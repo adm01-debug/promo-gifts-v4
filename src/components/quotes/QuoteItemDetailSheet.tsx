@@ -113,12 +113,20 @@ function NextTierHint({ currentQty }: { currentQty: number }) {
 }
 export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
   const personalizations = item.personalizations || [];
+  // allInUnit: unit price + per-unit cost of each personalization (rounded for display only)
   const allInUnit =
     item.unit_price +
     personalizations.reduce((sum, p) => {
       const pTotal = p.total_cost || 0;
       return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
     }, 0);
+  // Canonical item total: uses source p.total_cost to avoid double-rounding (BUG-048)
+  const itemTotalCanonical =
+    Math.round(
+      (item.unit_price * item.quantity +
+        personalizations.reduce((sum, p) => sum + (p.total_cost || 0), 0)) *
+        100,
+    ) / 100;
 
   return (
     <Sheet>
@@ -230,9 +238,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
               </div>
               <div className="flex justify-between border-t border-border/50 pt-2 font-semibold">
                 <span className="text-foreground">Total do item</span>
-                <span className="text-foreground">
-                  {fmt(Math.round(allInUnit * item.quantity * 100) / 100)}
-                </span>
+                <span className="text-foreground">{fmt(itemTotalCanonical)}</span>
               </div>
             </div>
           </div>
@@ -253,7 +259,8 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                       item.quantity > 0
                         ? Math.round(((p.total_cost || 0) / item.quantity) * 100) / 100
                         : 0;
-                    const totalRounded = Math.round(unitRounded * item.quantity * 100) / 100;
+                    // BUG-048: use p.total_cost directly to avoid double-rounding (round(round(x/n)*n) ≠ x)
+                    const totalRounded = Math.round((p.total_cost || 0) * 100) / 100;
 
                     return (
                       <div
