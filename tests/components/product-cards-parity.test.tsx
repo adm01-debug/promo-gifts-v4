@@ -148,7 +148,7 @@ describe("Product cards — paridade estrutural Novidades × Reposição", () =>
     expect(screen.getByTestId("sparkline-stub")).toBeInTheDocument();
   });
 
-  it("ambos os cards aplicam min-h-[420px] (mesma altura mínima)", async () => {
+  it("ambos os cards aplicam min-h-[420px] (altura mínima com piso — compatível com virtualizer)", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     const { ReplenishmentGridCard } = await import(
       "@/components/replenishments/ReplenishmentCards"

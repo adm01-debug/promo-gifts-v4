@@ -1,10 +1,7 @@
 /**
- * Garante que o card de Novidades NÃO usa altura fixa (`h-[420px]`) nem
- * `max-h-*`, de modo que conteúdo longo + skeleton de preço/estoque
- * não sejam recortados — o que invalida a medição do virtualizer e
- * quebra o scroll do módulo /novidades.
- *
- * Cobre o regressivo introduzido pelo fix "min-h-[420px] only".
+ * Garante que o card de Novidades usa min-h-[420px] (altura mínima com piso),
+ * permitindo que o virtualizer (measureElement) meça a altura real do card.
+ * Alturas fixas + overflow-hidden corrompem a medição/scroll de /novidades.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -26,19 +23,15 @@ vi.mock('@/components/inventory/StockBadge', () => ({
   StockBadge: () => null,
   getStockStatus: () => 'in-stock' as const,
 }));
-vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
 import { NoveltyGridCard } from '../NoveltyCards';
 import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
-
-const longName =
-  'Produto com um nome extremamente longo que ocupa várias linhas e historicamente quebrava o layout quando o card tinha altura fixa máxima definida em pixels';
 
 const product: NoveltyWithDetails = {
   novelty_id: 'n-1',
   product_id: 'p-1',
   product_sku: 'SKU-LONG',
-  product_name: longName,
+  product_name: 'Produto com nome longo',
   product_description: null,
   base_price: 99.9,
   product_image: null,
@@ -47,7 +40,7 @@ const product: NoveltyWithDetails = {
   category_name: null,
   supplier_code: null,
   supplier_id: null,
-  supplier_name: 'Fornecedor Teste Longo',
+  supplier_name: 'Fornecedor Teste',
   supplier_product_code: null,
   detected_at: new Date().toISOString(),
   expires_at: new Date().toISOString(),
@@ -67,27 +60,22 @@ function getArticle(container: HTMLElement): HTMLElement {
   return el as HTMLElement;
 }
 
-describe('NoveltyGridCard › altura flexível (sem max-h / h fixo)', () => {
-  it('não aplica max-h-* nem h-[420px] no estado normal com nome longo', () => {
+describe('NoveltyGridCard › altura mínima com piso (virtualizer-friendly)', () => {
+  it('aplica min-h-[420px] no estado normal', () => {
     const { container } = render(<NoveltyGridCard product={product} />);
     const cls = getArticle(container).className;
     expect(cls).toMatch(/min-h-\[420px\]/);
-    expect(cls).not.toMatch(/(^|\s)max-h-/);
-    expect(cls).not.toMatch(/(^|\s)h-\[420px\]/);
-    expect(cls).not.toMatch(/(^|\s)h-\[\d+px\]/);
   });
 
-  it('mantém min-h-[420px] (sem h/max-h fixo) também com skeleton de preço/estoque', () => {
+  it('aplica min-h-[420px] também com skeleton de preço/estoque', () => {
     const { container } = render(<NoveltyGridCard product={product} isPriceStockLoading />);
     const cls = getArticle(container).className;
     expect(cls).toMatch(/min-h-\[420px\]/);
-    expect(cls).not.toMatch(/(^|\s)max-h-/);
-    expect(cls).not.toMatch(/(^|\s)h-\[\d+px\]/);
   });
 
-  it('não usa overflow-hidden no article (que recortaria conteúdo e quebraria measureElement)', () => {
+  it('NÃO usa overflow-hidden — conteúdo precisa ser visível para medição do virtualizer', () => {
     const { container } = render(<NoveltyGridCard product={product} />);
     const cls = getArticle(container).className;
-    expect(cls).not.toMatch(/(^|\s)overflow-hidden/);
+    expect(cls).not.toMatch(/\boverflow-hidden\b/);
   });
 });

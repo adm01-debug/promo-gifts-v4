@@ -10,7 +10,7 @@ describe('useFavoritesStore — variant selection', () => {
   beforeEach(() => {
     localStorage.clear();
     // Reset zustand store
-    useFavoritesStore.setState({ favorites: [], favoriteCount: 0, isLoaded: true });
+    useFavoritesStore.setState({ favorites: [], favoriteIds: new Set(), favoriteCount: 0, isLoaded: true });
   });
 
   const variant: FavoriteVariantInfo = {
