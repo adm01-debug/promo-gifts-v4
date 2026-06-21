@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 204: 5 zero-violation rules (saved: no-compare-neg-zero 0v✓, no-dupe-else-if 0v✓, no-import-assign 0v✓ — Batch 205+)
+      'no-setter-return': 'error',
+      'no-sparse-arrays': 'error',
+      'for-direction': 'error',
+      'getter-return': 'error',
+      'no-async-promise-executor': 'error',
       // Batch 203: 5 zero-violation rules (saved: no-setter-return 0v✓, no-sparse-arrays 0v✓ — Batch 204+)
       'no-array-constructor': 'error',
       'no-loss-of-precision': 'error',
