@@ -30,7 +30,11 @@ export function replenishmentToProduct(n: ReplenishmentWithDetails): Product {
     image_url: n.product_image || undefined,
     images: n.product_image ? [n.product_image] : [],
     sku: n.product_sku || '',
-    stock: 0,
+    // Use os valores REAIS de estoque da reposição. Hardcodar `stock: 0` +
+    // `stockStatus: 'in-stock'` fazia a list-view (ProductListItem) exibir
+    // "0 Unid" em verde "Em estoque" e liberava o add-to-cart de itens
+    // esgotados — divergindo da grid/table, que já usam o estoque real.
+    stock: n.stock_quantity,
     created_at: n.created_at,
     colors: [],
     materials: [],
@@ -38,7 +42,7 @@ export function replenishmentToProduct(n: ReplenishmentWithDetails): Product {
     brand: null,
     is_active: n.is_active,
     minQuantity: 1,
-    stockStatus: 'in-stock',
+    stockStatus: n.stock_status,
     featured: n.is_highlighted,
     newArrival: false,
     onSale: false,
