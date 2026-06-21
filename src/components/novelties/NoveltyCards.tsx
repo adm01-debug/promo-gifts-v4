@@ -36,7 +36,7 @@ interface NoveltyCardProps {
   selectionMode?: boolean;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
-  onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
+  onStatusClick?: (type: 'featured' | 'kit' | 'novelty' | 'promotion') => void;
   colors?: readonly ColorDotLike[];
   /**
    * Quando true, renderiza placeholders no lugar do preço e do estoque.
@@ -350,7 +350,7 @@ export function NoveltyTableView({
   /** Aceita Set<string> (preferencial) ou string[] para retro-compatibilidade. */
   selectedIds?: Set<string> | string[];
   onSelect?: (id: string) => void;
-  onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
+  onStatusClick?: (type: 'featured' | 'kit' | 'novelty' | 'promotion') => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
   // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()

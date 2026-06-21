@@ -112,7 +112,7 @@ export interface NoveltyWithDetails {
   days_remaining: number;
   /** Dias decorridos desde a detecção como novidade (idade do badge). */
   days_as_novelty: number;
-  status: 'active' | 'expiring_soon' | 'expired';
+  status: 'active' | 'expired' | 'expiring_soon';
   is_highlighted: boolean;
   is_active: boolean;
   stock_quantity: number;
