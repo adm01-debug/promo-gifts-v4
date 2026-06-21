@@ -355,6 +355,10 @@ export function applyStockFilters(
 ): ProductStockSummary[] {
   const ctx = buildFilterContext(filters);
   const idx = indexes ?? buildStockIndexes(products);
+  // Janela do filtro "incoming" — fixa em INCOMING_WINDOW_DAYS para casar com
+  // o card "Estoque Futuro (30d)". Calculada uma única vez por execução.
+  const incomingNowMs = Date.now();
+  const incomingCutoffMs = incomingNowMs + INCOMING_WINDOW_DAYS * 86_400_000;
   // Construído de forma lazy — só paga o custo de Map<productId> quando o filtro está ativo.
   const alertProductIds = filters.showOnlyWithAlerts
     ? new Set(alerts.map((a) => a.productId))
