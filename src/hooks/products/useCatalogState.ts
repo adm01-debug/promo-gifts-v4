@@ -134,9 +134,13 @@ export function useCatalogState() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { isFavorite, toggleFavorite: baseToggleFavorite, favoriteCount } = useFavoritesStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const baseToggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const favQuickAdd = useFavoriteQuickAdd();
-  const { isInCompare, toggleCompare: baseToggleCompare, canAddMore } = useComparisonStore();
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const baseToggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
 
   const toggleFavorite = useCallback(
     (productId: string) => {

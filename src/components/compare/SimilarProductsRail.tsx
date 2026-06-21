@@ -16,7 +16,9 @@ interface Props {
 }
 
 export function SimilarProductsRail({ products, formatCurrency }: Props) {
-  const { addToCompare, isInCompare, canAddMore } = useComparisonStore();
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
   const primaryCategory = products[0]?.category?.name;
   const { data } = useProducts(primaryCategory ? { category: primaryCategory } : undefined, {
     enabled: !!primaryCategory,

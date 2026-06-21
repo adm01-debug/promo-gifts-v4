@@ -196,22 +196,17 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   // Memoize the products array from cache
   const products = useMemo(() => [...cache.values()], [cache]);
 
+  const ctxValue = useMemo(
+    () => ({ products, isLoading, fetchError, getProductById, getProductsByIds, registerProducts }),
+    [products, isLoading, fetchError, getProductById, getProductsByIds, registerProducts],
+  );
+
   if (initError) {
     return <>{children}</>;
   }
 
   return (
-    <ProductsContext.Provider
-      key={key}
-      value={{
-        products,
-        isLoading,
-        fetchError,
-        getProductById,
-        getProductsByIds,
-        registerProducts,
-      }}
-    >
+    <ProductsContext.Provider key={key} value={ctxValue}>
       {children}
     </ProductsContext.Provider>
   );

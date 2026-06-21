@@ -20,7 +20,7 @@ import {
 } from '@/utils/color-image-resolver';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 // FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
 import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
@@ -30,8 +30,6 @@ import type { Product } from '@/types/product-catalog';
 import { compareNamePtBR } from '@/utils/product-sorting';
 import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
-import { ProductColorSwatches } from './ProductColorSwatches';
-import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 
 type SkeletonRow = { id: string; isSkeleton: true };
 function isSkeletonRow(row: Product | SkeletonRow): row is SkeletonRow {
@@ -208,7 +206,6 @@ export const ProductTableView = memo(
     >(undefined);
     const [quickViewOpen, setQuickViewOpen] = useState(false);
     const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-    const quickViewTriggerRef = useRef<HTMLElement | null>(null);
     const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const [shareProduct, setShareProduct] = useState<Product | null>(null);
     const [shareVariant, setShareVariant] = useState<{
@@ -217,37 +214,8 @@ export const ProductTableView = memo(
       thumbnailUrl?: string | null;
     } | null>(null);
 
-    const favStore = useFavoritesStore();
-    const compStore = useComparisonStore();
-    // SSOT por-produto: mapa de cor selecionada (zustand global), idêntico ao Card/Lista.
-    const selectedColorsMap = useProductSelectionStore((s) => s.selectedColors);
-    const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
-    // Persiste a cor selecionada na URL (mesma estratégia do ProductCard) e atualiza o store.
-    const selectColorWithUrl = useCallback(
-      (productId: string, colorName: string) => {
-        setSelectedColor(productId, colorName);
-        if (typeof window === 'undefined') return;
-        const url = new URL(window.location.href);
-        url.searchParams.set('cor', colorName);
-        url.searchParams.set('pid', productId);
-        window.history.replaceState({}, '', url.toString());
-      },
-      [setSelectedColor],
-    );
-    const clearSelectedColor = useCallback((productId: string) => {
-      useProductSelectionStore.setState((state) => {
-        const next = { ...state.selectedColors };
-        delete next[productId];
-        return { selectedColors: next };
-      });
-      if (typeof window === 'undefined') return;
-      const url = new URL(window.location.href);
-      if (url.searchParams.get('pid') === productId) {
-        url.searchParams.delete('cor');
-        url.searchParams.delete('pid');
-        window.history.replaceState({}, '', url.toString());
-      }
-    }, []);
+    const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+    const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
     // FIX(catalog-table-cores): o fetch lightweight do catalogo NAO traz `colors`
     // (chega `[]`), entao a tabela caia no placeholder "–". Grid/Lista ja hidratam
@@ -357,12 +325,12 @@ export const ProductTableView = memo(
           : undefined;
 
         if (variantPickerMode === 'favorite') {
-          favStore.addFavorite(variantPickerProduct.id, variantInfo);
+          favAddFavorite(variantPickerProduct.id, variantInfo);
           toast.success(
             `"${variantPickerProduct.name}" favoritado${variant?.color_name ? ` — ${variant.color_name}` : ''}`,
           );
         } else if (variantPickerMode === 'compare') {
-          const result = compStore.addToCompare(variantPickerProduct.id, variantInfo);
+          const result = compAddToCompare(variantPickerProduct.id, variantInfo);
           if (!result) showErrorToast({ title: 'Limite de 4 produtos para comparação atingido' });
           else
             toast.success(
@@ -397,7 +365,7 @@ export const ProductTableView = memo(
           setShareDialogOpen(true);
         }
       },
-      [variantPickerMode, variantPickerProduct, favStore, compStore, navigate],
+      [variantPickerMode, variantPickerProduct, favAddFavorite, compAddToCompare, navigate],
     );
 
     return (
@@ -543,33 +511,19 @@ export const ProductTableView = memo(
                 );
               }
 
-              // Cor selecionada manualmente pelo usuário nesta linha (store global, SSOT).
-              const userSelectedColorName = selectedColorsMap[product.id] || null;
-              const userSelectedColor =
-                userSelectedColorName && product.colors?.length
-                  ? product.colors.find(
-                      (c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase(),
-                    ) || null
-                  : null;
               // primary_image_url (é a imagem com is_primary=true, campo canônico) — exibida primeiro
               const colorSpecificImage = resolveColorImage(product, activeColorFilter);
               const rawImg =
-                (userSelectedColor as { image?: string | null } | null)?.image ||
                 colorSpecificImage ||
                 product.primary_image_url ||
                 product.og_image_url ||
                 product.images[0] ||
                 null;
               const thumbUrl = rawImg ? getCdnUrl(rawImg, 'card') : '/placeholder.svg';
-              const colorStock = resolveColorStock(
-                product,
-                activeColorFilter,
-                userSelectedColorName,
-              );
+              const colorStock = resolveColorStock(product, activeColorFilter);
               const displayStock = colorStock?.stock ?? product.stock;
               const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
-              const activeColorName =
-                userSelectedColorName || getActiveColorName(product, activeColorFilter);
+              const activeColorName = getActiveColorName(product, activeColorFilter);
               const isSelected = selectionMode && selectedIds?.has(product.id);
 
               return (
@@ -615,23 +569,10 @@ export const ProductTableView = memo(
                       role="button"
                       tabIndex={0}
                       aria-label={`Visualização rápida de ${product.name}`}
-                      aria-haspopup="dialog"
-                      aria-expanded={quickViewOpen && quickViewProduct?.id === product.id}
                       data-testid="product-table-row-thumb"
-                      data-product-id={product.id}
-                      className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      style={{ touchAction: 'manipulation' }}
+                      className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (
-                          variantPickerOpen ||
-                          collectionModalOpen ||
-                          shareDialogOpen ||
-                          quickViewOpen
-                        ) {
-                          return;
-                        }
-                        quickViewTriggerRef.current = e.currentTarget;
                         setQuickViewProduct(product);
                         setQuickViewOpen(true);
                       }}
@@ -639,15 +580,6 @@ export const ProductTableView = memo(
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
-                          if (
-                            variantPickerOpen ||
-                            collectionModalOpen ||
-                            shareDialogOpen ||
-                            quickViewOpen
-                          ) {
-                            return;
-                          }
-                          quickViewTriggerRef.current = e.currentTarget;
                           setQuickViewProduct(product);
                           setQuickViewOpen(true);
                         }
@@ -683,26 +615,30 @@ export const ProductTableView = memo(
                     {product.sku}
                   </div>
 
-                  <div
-                    className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <div className="hidden w-32 items-center gap-1.5 px-3 sm:flex">
                     {product.colors.length > 0 ? (
-                      <ProductColorSwatches
-                        colors={product.colors.map((c) => ({
-                          name: c.name,
-                          hex: c.hex ?? null,
-                          image: (c as { image?: string | null }).image ?? null,
-                        }))}
-                        max={5}
-                        size="sm"
-                        hideWhenEmpty={false}
-                        selectedName={userSelectedColorName}
-                        onSelect={(c) => selectColorWithUrl(product.id, c.name)}
-                        onClear={() => clearSelectedColor(product.id)}
-                      />
+                      product.colors
+                        .slice(0, 5)
+                        .map((c: NonNullable<typeof product.colors>[number], i: number) => (
+                          <Tooltip key={i}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className="h-3 w-3 rounded-full border border-border/40 shadow-sm"
+                                style={{ backgroundColor: c.hex }}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-[10px] font-bold">
+                              {c.name}
+                            </TooltipContent>
+                          </Tooltip>
+                        ))
                     ) : (
                       <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
+                    )}
+                    {product.colors.length > 5 && (
+                      <span className="text-[9px] font-bold text-muted-foreground/60">
+                        +{product.colors.length - 5}
+                      </span>
                     )}
                   </div>
 
@@ -711,8 +647,6 @@ export const ProductTableView = memo(
                       'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
                       stockColor(displayStatus),
                     )}
-                    data-testid="product-stock-value"
-                    data-stock-qty={displayStock ?? 0}
                   >
                     <div
                       className={cn(
@@ -780,14 +714,7 @@ export const ProductTableView = memo(
           <ProductQuickView
             product={quickViewProduct}
             open={quickViewOpen}
-            onOpenChange={(open) => {
-              setQuickViewOpen(open);
-              if (!open) {
-                requestAnimationFrame(() => {
-                  quickViewTriggerRef.current?.focus({ preventScroll: true });
-                });
-              }
-            }}
+            onOpenChange={setQuickViewOpen}
             isFavorited={isFavorite?.(quickViewProduct.id) || false}
             onToggleFavorite={onToggleFavorite}
             isInCompare={isInCompare?.(quickViewProduct.id) || false}

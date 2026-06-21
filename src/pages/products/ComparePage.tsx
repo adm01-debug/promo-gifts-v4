@@ -61,7 +61,10 @@ export default function ComparePage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [client, setClient] = useState<{ id: string; name: string } | null>(null);
   const [ariaMessage, setAriaMessage] = useState('');
-  const { compareItems, removeByIndex, clearCompare, compareCount } = useComparisonStore();
+  const compareItems = useComparisonStore((s) => s.compareItems);
+  const removeByIndex = useComparisonStore((s) => s.removeByIndex);
+  const clearCompare = useComparisonStore((s) => s.clearCompare);
+  const compareCount = useComparisonStore((s) => s.compareCount);
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
 
   // Track previous count for ARIA-live announcements

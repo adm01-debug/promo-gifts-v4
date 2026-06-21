@@ -66,7 +66,9 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const { trackProductView } = useProductAnalytics();
 
-  const { isFavorite: isFavoriteCheck, toggleFavorite, removeFavorite } = useFavoritesStore();
+  const isFavoriteCheck = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const [favPickerOpen, setFavPickerOpen] = useState(false);
   const [colorAutoSelected, setColorAutoSelected] = useState(false);

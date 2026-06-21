@@ -68,8 +68,11 @@ export default function CollectionDetailPage() {
     restoreFromTrash,
   } = useCollectionsContext();
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

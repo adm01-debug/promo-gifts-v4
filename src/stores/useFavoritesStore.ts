@@ -19,6 +19,7 @@ export interface FavoriteItem {
 
 interface FavoritesState {
   favorites: FavoriteItem[];
+  favoriteIds: Set<string>;
   isLoaded: boolean;
 }
 
@@ -70,41 +71,48 @@ export const useFavoritesStore = create<FavoritesStore>((set, get) => {
   const initial = loadFromStorage();
   return {
     favorites: initial,
+    favoriteIds: new Set(initial.map((f) => f.productId)),
     favoriteCount: initial.length,
     isLoaded: true,
 
     addFavorite: (productId: string, variant?: FavoriteVariantInfo) => {
-      const { favorites } = get();
-      if (favorites.some((f) => f.productId === productId)) return;
+      const { favoriteIds, favorites } = get();
+      if (favoriteIds.has(productId)) return;
       const next = [...favorites, { productId, addedAt: new Date().toISOString(), variant }];
+      const nextIds = new Set(favoriteIds).add(productId);
       saveToStorage(next);
-      set({ favorites: next, favoriteCount: next.length });
+      set({ favorites: next, favoriteIds: nextIds, favoriteCount: next.length });
     },
 
     removeFavorite: (productId: string) => {
       const next = get().favorites.filter((f) => f.productId !== productId);
+      const nextIds = new Set(get().favoriteIds);
+      nextIds.delete(productId);
       saveToStorage(next);
-      set({ favorites: next, favoriteCount: next.length });
+      set({ favorites: next, favoriteIds: nextIds, favoriteCount: next.length });
     },
 
     toggleFavorite: (productId: string, variant?: FavoriteVariantInfo) => {
-      const { favorites } = get();
-      const exists = favorites.some((f) => f.productId === productId);
+      const { favorites, favoriteIds } = get();
+      const exists = favoriteIds.has(productId);
       const next = exists
         ? favorites.filter((f) => f.productId !== productId)
         : [...favorites, { productId, addedAt: new Date().toISOString(), variant }];
+      const nextIds = new Set(favoriteIds);
+      if (exists) nextIds.delete(productId);
+      else nextIds.add(productId);
       saveToStorage(next);
-      set({ favorites: next, favoriteCount: next.length });
+      set({ favorites: next, favoriteIds: nextIds, favoriteCount: next.length });
     },
 
-    isFavorite: (productId: string) => get().favorites.some((f) => f.productId === productId),
+    isFavorite: (productId: string) => get().favoriteIds.has(productId),
 
     getFavoriteVariant: (productId: string) =>
       get().favorites.find((f) => f.productId === productId)?.variant,
 
     clearFavorites: () => {
       saveToStorage([]);
-      set({ favorites: [], favoriteCount: 0 });
+      set({ favorites: [], favoriteIds: new Set(), favoriteCount: 0 });
     },
   };
 });

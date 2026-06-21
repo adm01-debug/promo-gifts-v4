@@ -128,15 +128,14 @@ export function useSellerCarts() {
       if (!data?.length) return [];
 
       return data.map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row as Omit<SellerCart, 'items'> & {
-          seller_cart_items: SellerCartItem[] | null;
-        };
+        const r = row as Record<string, unknown>;
+        const { seller_cart_items: rowItems, ...cartFields } = r;
         return {
-          ...cart,
-          notes: cart.notes ?? null,
-          status: (cart.status ?? 'novo') as CartStatus,
-          items: rowItems ?? [],
-        };
+          ...cartFields,
+          notes: (cartFields.notes as string | null) ?? null,
+          status: ((cartFields.status as string) ?? 'novo') as CartStatus,
+          items: ((rowItems as SellerCartItem[] | null) ?? []) as SellerCartItem[],
+        } as SellerCart;
       });
     },
     enabled: !!userId,

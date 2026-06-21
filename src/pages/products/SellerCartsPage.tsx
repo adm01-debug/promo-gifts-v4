@@ -112,6 +112,7 @@ function SellerCartsContent() {
   const [visibleColumns, setVisibleColumns] =
     useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
   const [density, setDensity] = useState<CartTableDensity>('comfortable');
+  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
 
   // Ordenação + paginação (persistidas, namespaced por user)
   type SortKey = 'name' | 'price' | 'total';
@@ -190,16 +191,6 @@ function SellerCartsContent() {
   useEffect(() => {
     setPage(1);
   }, [s.activeCartId]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-key', sortKey);
-  }, [sortKey]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-sort-dir', sortDir);
-  }, [sortDir]);
-  useEffect(() => {
-    localStorage.setItem('cart-table-page-size', String(pageSize));
-  }, [pageSize]);
-
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {
@@ -364,9 +355,6 @@ function SellerCartsContent() {
     const pageItems = sorted.slice(start, start + pageSize);
     return { sorted, totalPages, safePage, start, pageItems };
   }, [s.activeCart?.items, sortKey, sortDir, page, pageSize]);
-
-  // Padding de célula da tabela conforme densidade (compacto vs confortável).
-  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2';
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
@@ -633,8 +621,6 @@ function SellerCartsContent() {
                 {viewMode === 'table' ? (
                   (() => {
                     const { sorted, start, pageItems, safePage, totalPages } = cartTableData;
-                    // Density-aware cell padding (restored — referenced by every th/td below).
-                    const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
                     const renderSortHdr = (
                       key: SortKey,
                       label: string,
@@ -717,6 +703,7 @@ function SellerCartsContent() {
                                       <button
                                         type="button"
                                         onClick={() => s.navigate(`/produto/${item.product_id}`)}
+                                        aria-label={`Abrir detalhes de ${item.product_name}`}
                                         className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
                                       >
                                         {item.product_name}

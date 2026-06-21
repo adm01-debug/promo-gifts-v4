@@ -52,6 +52,12 @@ export function EnhancedSpotlight() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, isDev, isAdmin]);
 
+  // O(1) lookup map — recomputed only when items list changes, not on every keystroke.
+  const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+
+  // O(1) membership test — recomputed only when recentActions changes.
+  const recentSet = useMemo(() => new Set(recentActions), [recentActions]);
+
   // Fuse.js para busca fuzzy
   const fuse = useMemo(() => {
     return new Fuse(items, {
@@ -73,13 +79,11 @@ export function EnhancedSpotlight() {
     if (!query) {
       // Show recent items first, then quick actions
       const recentItems = recentActions
-        .map((id) => items.find((item) => item.id === id))
+        .map((id) => itemsById.get(id))
         .filter(Boolean) as SpotlightItem[];
 
       const quickActions = items.filter((item) => item.isQuickAction);
-      const others = items.filter(
-        (item) => !item.isQuickAction && !recentActions.includes(item.id),
-      );
+      const others = items.filter((item) => !item.isQuickAction && !recentSet.has(item.id));
 
       return [...recentItems, ...quickActions, ...others];
     }
@@ -87,7 +91,7 @@ export function EnhancedSpotlight() {
     // Use Fuse.js for fuzzy search
     const results = fuse.search(query);
     return results.map((r) => r.item);
-  }, [query, items, recentActions, fuse]);
+  }, [query, items, recentActions, recentSet, itemsById, fuse]);
 
   // Group items by category
   const groupedItems = useMemo(() => {
@@ -96,7 +100,7 @@ export function EnhancedSpotlight() {
     // If showing recent, add that category
     if (!query && recentActions.length > 0) {
       const recentItems = recentActions
-        .map((id) => items.find((item) => item.id === id))
+        .map((id) => itemsById.get(id))
         .filter(Boolean) as SpotlightItem[];
 
       if (recentItems.length > 0) {
@@ -104,9 +108,9 @@ export function EnhancedSpotlight() {
       }
     }
 
+    const recentIdSet = new Set(groups.Recentes?.map((r) => r.id) ?? []);
     filteredItems.forEach((item) => {
-      // Skip if already in recentes
-      if (groups.Recentes?.some((r) => r.id === item.id)) return;
+      if (recentIdSet.has(item.id)) return;
 
       if (!groups[item.category]) {
         groups[item.category] = [];
@@ -115,7 +119,7 @@ export function EnhancedSpotlight() {
     });
 
     return groups;
-  }, [filteredItems, recentActions, items, query]);
+  }, [filteredItems, recentActions, itemsById, query]);
 
   // Flatten for keyboard navigation
   const flatItems = useMemo(() => {
