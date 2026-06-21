@@ -74,6 +74,8 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   limit?: number;
   offset?: number;
   countMode?: 'estimated' | 'exact' | 'none' | 'planned';
+  /** Conflict target column(s) for upsert (PostgREST onConflict). Defaults to the PK. */
+  onConflict?: string;
 }
 
 export interface InvokeResult<T> {
