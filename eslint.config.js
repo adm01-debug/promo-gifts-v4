@@ -51,6 +51,7 @@ export default [
       '*.config.ts',
       '.eslintrc.cjs',
       '.eslintrc.json',
+      'src/integrations/supabase/types.ts',
     ],
   },
 

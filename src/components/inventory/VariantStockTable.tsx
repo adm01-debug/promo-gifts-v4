@@ -34,7 +34,7 @@ import { isFeatureEnabled } from '@/lib/feature-flags';
  */
 const SEARCH_STORAGE_KEY = 'stock.inlineSearch';
 const STATUS_FILTER_STORAGE_KEY = 'stock.statusFilter';
-const RUPTURE_HORIZON_STORAGE_KEY = 'stock.ruptureHorizon';
+const _RUPTURE_HORIZON_STORAGE_KEY = 'stock.ruptureHorizon';
 
 /**
  * Chaves legadas (modo agrupar + paginação) a serem purgadas para evitar

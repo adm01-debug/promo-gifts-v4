@@ -45,8 +45,8 @@ function InlineColorSwatch({
   const tooltipText = isSelected
     ? `${selectedLabel ?? label} · clique para desmarcar`
     : hasSelectedChild
-    ? `${label} · selecionar grupo inteiro`
-    : `Filtrar por ${label}`;
+      ? `${label} · selecionar grupo inteiro`
+      : `Filtrar por ${label}`;
 
   return (
     <div className="relative">
@@ -63,9 +63,9 @@ function InlineColorSwatch({
               isSelected
                 ? 'ring-2 ring-offset-1'
                 : hasSelectedChild
-                // Filho selecionado: borda tracejada sutil no pai
-                ? 'border-dashed border-current opacity-80 hover:opacity-100'
-                : 'border-border hover:border-muted-foreground/50',
+                  ? // Filho selecionado: borda tracejada sutil no pai
+                    'border-dashed border-current opacity-80 hover:opacity-100'
+                  : 'border-border hover:border-muted-foreground/50',
               isTransparent && '',
             )}
             style={{
@@ -79,11 +79,11 @@ function InlineColorSwatch({
                     ['--tw-ring-color' as string]: hexCode || '#ccc',
                   }
                 : hasSelectedChild
-                ? {
-                    borderColor: hexCode || '#ccc',
-                    color: hexCode || '#ccc',
-                  }
-                : {}),
+                  ? {
+                      borderColor: hexCode || '#ccc',
+                      color: hexCode || '#ccc',
+                    }
+                  : {}),
             }}
           >
             {isSelected && (
@@ -201,12 +201,15 @@ export function InlineColorGroupFilter({
         const next = new Set(prev);
         let changed = false;
         for (const gId of groupsToExpand) {
-          if (!next.has(gId)) { next.add(gId); changed = true; }
+          if (!next.has(gId)) {
+            next.add(gId);
+            changed = true;
+          }
         }
         return changed ? next : prev;
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection.variations.join(','), variationToGroupId, colorData]);
 
   // FEAT-COR-UNICA: nome da cor para exibição no badge
@@ -218,8 +221,8 @@ export function InlineColorGroupFilter({
     if (selection.variations.length === 1) {
       const vSlug = selection.variations[0];
       for (const g of colorData.groups) {
-        const v = g.variations.find((v) => v.slug === vSlug);
-        if (v) return v.name;
+        const found = g.variations.find((variation) => variation.slug === vSlug);
+        if (found) return found.name;
       }
     }
     if (selection.nuances.length === 1) {
@@ -229,9 +232,7 @@ export function InlineColorGroupFilter({
   }, [colorData, selection]);
 
   const hasAnySelection =
-    selection.groups.length > 0 ||
-    selection.variations.length > 0 ||
-    selection.nuances.length > 0;
+    selection.groups.length > 0 || selection.variations.length > 0 || selection.nuances.length > 0;
 
   // FEAT-COR-UNICA: toggles exclusivos — seleção única
   const toggleGroup = (slug: string) => {
@@ -389,9 +390,7 @@ export function InlineColorGroupFilter({
                           style={{ backgroundColor: v.hex_code || group.hex_code || '#ccc' }}
                         />
                         {v.name}
-                        {isVariationSelected && (
-                          <Check className="h-3 w-3 flex-shrink-0" />
-                        )}
+                        {isVariationSelected && <Check className="h-3 w-3 flex-shrink-0" />}
                       </button>
                     );
                   })}
@@ -430,9 +429,7 @@ export function InlineColorGroupFilter({
                     )}
                   >
                     {nuance.name}
-                    {isNuanceSelected && (
-                      <Check className="ml-1 inline h-3 w-3" />
-                    )}
+                    {isNuanceSelected && <Check className="ml-1 inline h-3 w-3" />}
                   </button>
                 );
               })}
