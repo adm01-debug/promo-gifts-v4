@@ -7,6 +7,10 @@ import type { Product } from '@/hooks/products';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
+// BUG-HP-05 FIX (2026-06-21): Intl.NumberFormat dentro de formatPrice era recriado a cada render.
+const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatPrice = (price: number) => priceFormatter.format(price);
+
 interface ProductHoverPreviewProps {
   product: Product;
   children: React.ReactNode;
@@ -20,13 +24,6 @@ export function ProductHoverPreview({
   side = 'right',
   align = 'center',
 }: ProductHoverPreviewProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(price);
-  };
-
   return (
     <HoverCard openDelay={300} closeDelay={100}>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
@@ -39,7 +36,7 @@ export function ProductHoverPreview({
         {/* Image */}
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
           <OptimizedImage
-            src={getCdnUrl(product.images[0], 'medium')}
+            src={getCdnUrl(product.images?.[0] ?? '', 'medium')}
             alt={product.name}
             className="object-cover"
             containerClassName="h-full w-full"
@@ -67,7 +64,7 @@ export function ProductHoverPreview({
         <div className="space-y-3 p-4">
           {/* Header */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground">{product.supplier.name}</p>
+            <p className="text-xs font-medium text-muted-foreground">{product.supplier?.name}</p>
             <h4 className="mt-0.5 line-clamp-2 font-semibold text-foreground">{product.name}</h4>
           </div>
 
@@ -77,7 +74,7 @@ export function ProductHoverPreview({
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Package className="h-3.5 w-3.5 text-primary" />
-              <span>{product.stock.toLocaleString('pt-BR')} un.</span>
+              <span>{(product.stock ?? 0).toLocaleString('pt-BR')} un.</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Tag className="h-3.5 w-3.5 text-primary" />
@@ -85,7 +82,7 @@ export function ProductHoverPreview({
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Palette className="h-3.5 w-3.5 text-primary" />
-              <span>{product.colors.length} cores</span>
+              <span>{(product.colors ?? []).length} cores</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Truck className="h-3.5 w-3.5 text-primary" />
@@ -94,9 +91,9 @@ export function ProductHoverPreview({
           </div>
 
           {/* Colors preview */}
-          {product.colors.length > 0 && (
+          {(product.colors ?? []).length > 0 && (
             <div className="flex items-center gap-1.5 pt-1">
-              {product.colors.slice(0, 8).map((color, idx) => (
+              {(product.colors ?? []).slice(0, 8).map((color, idx) => (
                 <Tooltip key={`${color.hex}-${idx}`}>
                   <TooltipTrigger asChild>
                     <div
@@ -107,9 +104,9 @@ export function ProductHoverPreview({
                   <TooltipContent>{color.name}</TooltipContent>
                 </Tooltip>
               ))}
-              {product.colors.length > 8 && (
+              {(product.colors ?? []).length > 8 && (
                 <span className="ml-1 text-xs text-muted-foreground">
-                  +{product.colors.length - 8}
+                  +{(product.colors ?? []).length - 8}
                 </span>
               )}
             </div>
