@@ -15,7 +15,9 @@ export function RealtimeBadge() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('trends-realtime')
+      // BUG-RT-CHANNEL FIX: tópico único por montagem — evita reaproveitar canal já inscrito
+      // (crash "postgres_changes ... after subscribe()") se duas instâncias montarem juntas.
+      .channel(`trends-realtime:${crypto.randomUUID()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'product_views' }, () => {
         setEvents((e) => [...e, Date.now()]);
       })

@@ -186,8 +186,13 @@ export function subscribeToNotifications(
   onInsert: (notification: WorkspaceNotification) => void,
   onUpdate?: (notification: WorkspaceNotification) => void,
 ): () => void {
+  // BUG-RT-CHANNEL FIX: tópico ÚNICO por inscrição (crypto.randomUUID()). Com nome
+  // estático, duas chamadas concorrentes de subscribeToNotifications() reaproveitavam
+  // o MESMO canal já inscrito no supabase-js e o .on('postgres_changes') era aplicado
+  // APÓS subscribe(), lançando "cannot add postgres_changes callbacks ... after
+  // subscribe()" — o mesmo crash do canal de quotes (QuoteViewPage).
   const channel = supabase
-    .channel('workspace_notifications_svc_realtime')
+    .channel(`workspace_notifications_svc_realtime:${crypto.randomUUID()}`)
     .on(
       'postgres_changes',
       {

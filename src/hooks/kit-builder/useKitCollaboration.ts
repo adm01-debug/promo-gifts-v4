@@ -110,7 +110,9 @@ export function useKitComments(kitId: string | undefined) {
   useEffect(() => {
     if (!kitId) return;
     const channel = supabase
-      .channel(`kit-comments-${kitId}`)
+      // BUG-RT-CHANNEL FIX: sufixo único por montagem (kitId sozinho colide se dois painéis
+      // do mesmo kit montarem em paralelo → .on() após subscribe() → crash de render).
+      .channel(`kit-comments-${kitId}-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },

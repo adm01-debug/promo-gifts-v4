@@ -113,7 +113,10 @@ export function usePushNotifications() {
     if (!user || !state.isEnabled) return;
 
     const channel = supabase
-      .channel('security-notifications')
+      // BUG-RT-CHANNEL FIX: tópico único por montagem. O effect re-roda quando isEnabled vira
+      // true (permissão concedida) e o nome estático reaproveitava o canal ainda em teardown,
+      // aplicando .on('postgres_changes') após subscribe() → crash.
+      .channel(`security-notifications:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {

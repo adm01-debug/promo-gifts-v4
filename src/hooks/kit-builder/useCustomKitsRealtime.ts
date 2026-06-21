@@ -17,7 +17,9 @@ export function useCustomKitsRealtime() {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel(`user:${user.id}:custom-kits`)
+      // BUG-RT-CHANNEL FIX: sufixo único por montagem. O nome por-usuário colidia se dois
+      // componentes montassem o hook em paralelo (ou remount antes do removeChannel async).
+      .channel(`user:${user.id}:custom-kits:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {

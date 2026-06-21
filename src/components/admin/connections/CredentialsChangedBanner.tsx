@@ -35,7 +35,9 @@ export function CredentialsChangedBanner({ onRefreshed }: CredentialsChangedBann
 
   useEffect(() => {
     const channel = supabase
-      .channel('admin-conexoes-credentials-changes')
+      // BUG-RT-CHANNEL FIX: tópico único por montagem — evita reaproveitar canal já inscrito
+      // (crash "postgres_changes ... after subscribe()") em remount/StrictMode.
+      .channel(`admin-conexoes-credentials-changes:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'integration_credentials' },
