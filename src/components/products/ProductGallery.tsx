@@ -118,7 +118,7 @@ export function ProductGallery({
     // remain true for up to 400ms after the user switches colour.
     if (animTimerRef.current) {
       clearTimeout(animTimerRef.current);
-      animTimerRef.current = undefined;
+      animTimerRef.current = null;
     }
     setIsAnimating(false);
     setSelectedIndex(0);

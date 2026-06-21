@@ -645,8 +645,15 @@ export function useCatalogState() {
     return deduped.slice(0, displayCount);
   }, [displayFilteredProducts, displayCount]);
 
+  // BUG-NUANCE-ENRICH-01 FIX: incluir colorNuances e colors no guard. Sem isto,
+  // filtrar por matiz (nuance only) mantinha hasColorFilterActive=false e o mapa de
+  // enrichment nunca era aplicado → produtos mostravam imagem padrão em vez da
+  // imagem específica da variante da cor/matiz selecionada.
   const hasColorFilterActive =
-    (filters.colorGroups?.length || 0) > 0 || (filters.colorVariations?.length || 0) > 0;
+    (filters.colorGroups?.length || 0) > 0 ||
+    (filters.colorVariations?.length || 0) > 0 ||
+    (filters.colorNuances?.length || 0) > 0 ||
+    (filters.colors?.length || 0) > 0;
   const paginatedProductIds = useMemo(
     () => rawPaginatedProducts.map((p) => p.id),
     [rawPaginatedProducts],
@@ -655,6 +662,7 @@ export function useCatalogState() {
     productIds: paginatedProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
   });
 
   const paginatedProducts = useMemo(() => {
