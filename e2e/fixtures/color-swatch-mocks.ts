@@ -1,60 +1,69 @@
 /**
- * Fixture de mock determinístico para o cenário "cor esgotada" do
- * color-swatch-sweep.spec.ts.
+ * Fixture determinística para specs de swatches de cor out-of-stock.
  *
- * `installColorStockMock` intercepta as respostas REST de variantes de produto
- * (`/rest/v1/product_variants`) e injeta, para um produto específico, uma
- * variante de cor com estoque ZERO ("Preto Mock"). Assim o teste de bolinha
- * esgotada não depende do seed do banco.
+ * installColorStockMock — Intercepta chamadas REST de variantes para um
+ * produto específico e injeta uma variante "Preto Mock" com stock_quantity=0.
  *
- * O mock é defensivo:
- *  - só injeta quando a resposta é um array que já contém (ou está vazia para)
- *    o produto-alvo, preservando o restante do payload;
- *  - em qualquer divergência de schema, faz passthrough (route.continue) — e o
- *    próprio spec é guardado (só afirma se a bolinha "Preto Mock" aparecer).
+ * Intercepta APENAS requests com `product_id=eq.{productId}` (single-product)
+ * deixando requests em lote `product_id=in.(...)` passarem normalmente.
+ * Isso garante que os swatches do catálogo (useProductsColorsBatch)
+ * mostrem dados reais, enquanto hooks de detalhe (useExternalVariantStock)
+ * recebem o cenário determinístico.
  *
- * Escopo: a interceptação vive na `page` do teste que a instala, sem afetar
- * outros specs.
+ * Uso:
+ *   await installColorStockMock(page, { productId });
+ *   await page.reload();
+ *   // swatch "Preto Mock" aparece apenas em contextos de detalhe (quickview etc.)
  */
-import type { Page } from '@playwright/test';
+import type { Page, Route } from '@playwright/test';
 
-export interface ColorStockMockOptions {
-  /** Produto que receberá a variante esgotada determinística. */
+interface ColorStockMockOptions {
+  /** Product ID real cuja variante será substituída pela "Preto Mock" esgotada. */
   productId: string;
-  /** Nome da cor mockada (deve casar com o seletor do spec). */
-  colorName?: string;
 }
+
+const NOW = new Date().toISOString();
 
 export async function installColorStockMock(
   page: Page,
-  { productId, colorName = 'Preto Mock' }: ColorStockMockOptions,
+  { productId }: ColorStockMockOptions,
 ): Promise<void> {
-  const mockVariant = {
-    id: `mock-variant-${productId}`,
+  const MOCK_ROW = {
+    id: 'mock-preto-variant-001',
     product_id: productId,
-    color_name: colorName,
-    color_hex: '#000000',
-    color_code: 'MOCK-PRETO',
+    sku: 'MOCK-PRETO-001',
+    supplier_sku: null,
+    color_code: 'PRETO',
+    color_name: 'Preto Mock',
+    color_hex: '#1a1a1a',
+    size_code: null,
     stock_quantity: 0,
+    selected_thumbnail: null,
+    images: null,
+    bitrix_product_id: null,
     is_active: true,
+    updated_at: NOW,
   };
 
-  await page.route(/\/rest\/v1\/product_variants/i, async (route) => {
-    try {
-      const response = await route.fetch();
-      const body = (await response.json().catch(() => null)) as unknown;
+  // Only intercept single-product requests (`eq.` filter), not batch (`in.` filter).
+  // Escape all regex-special chars in productId to prevent regex injection.
+  const escapedId = productId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Use (?:&|$) to prevent prefix matches where product_id=eq.123 matches eq.1234.
+  const singleProductRe = new RegExp(
+    `\\/rest\\/v1\\/product_variants.*product_id=eq\\.${escapedId}(?:&|$)`,
+  );
 
-      if (Array.isArray(body)) {
-        const rows = body as Array<Record<string, unknown>>;
-        const alreadyMocked = rows.some((v) => v?.color_name === colorName);
-        const touchesProduct = rows.length === 0 || rows.some((v) => v?.product_id === productId);
-        const next = !alreadyMocked && touchesProduct ? [...rows, mockVariant] : rows;
-        await route.fulfill({ response, json: next });
-        return;
-      }
-    } catch {
-      /* Schema divergente / resposta não-JSON: cai no passthrough abaixo. */
-    }
-    await route.continue();
+  await page.route(singleProductRe, async (route: Route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const rows = [MOCK_ROW];
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: {
+        'content-range': `0-0/1`,
+        'access-control-expose-headers': 'content-range',
+      },
+      body: JSON.stringify(rows),
+    });
   });
 }

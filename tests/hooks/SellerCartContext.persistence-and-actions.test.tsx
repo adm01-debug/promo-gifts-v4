@@ -23,6 +23,7 @@ const carts = [
 ];
 
 vi.mock('@/hooks/products', () => ({
+  noveltyToProduct: vi.fn(),
   useSellerCarts: () => ({
     carts,
     isLoading: false,

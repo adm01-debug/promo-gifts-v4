@@ -31,6 +31,7 @@ vi.mock('@/hooks/products', () => ({
   useSupplierSalesRanking: vi.fn(() => ({ data: new Map() })),
   useColorEnrichment: vi.fn(() => ({ data: new Map() })),
   useProductFuzzySearch: vi.fn(() => ({ results: [], hasSearch: false })),
+  noveltyToProduct: vi.fn(),
 }));
 
 // useCatalogState importa useCatalogFiltering por path direto, não pelo barrel.
