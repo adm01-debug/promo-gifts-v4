@@ -447,29 +447,27 @@ export function StockDashboard() {
 
 
         <StatCard
-          title="Estoque Futuro"
-          // SSOT: o valor primário é a contagem de reposições previstas (entidades
-          // contáveis). O total de unidades vinha da soma de next_quantity_{1..3}
-          // por variant_supplier_source — número correto pela schema, mas
-          // visualmente alarmante (dezenas de milhões) e incompatível com a
-          // narrativa "reposições". Unidades viram trend secundário.
-          value={futureStock.length}
+          title="Estoque Futuro (30 dias)"
+          // SSOT: valor primário = variações distintas com reposição prevista
+          // nos próximos 30 dias. Total de unidades vira trend secundário.
+          value={futureStock30dVariantCount}
           icon={<Truck className="h-6 w-6 text-primary" />}
           isActive={filters.status === 'incoming'}
           onClick={() => {
             updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            if (futureStock.length > 0) setFutureStockDialogOpen(true);
+            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
           }}
-          clickHint="Ver previsões de reposição"
+          clickHint="Variações com reposição prevista nos próximos 30 dias"
           trend={
-            futureStockTotal > 0
+            futureStock30dUnits > 0
               ? {
                   value: 1,
-                  label: `${futureStockTotal.toLocaleString('pt-BR')} un. previstas`,
+                  label: `${futureStock30dUnits.toLocaleString('pt-BR')} un. previstas`,
                 }
               : undefined
           }
         />
+
       </div>
 
       {/* Active Filter Badge */}
