@@ -64,6 +64,14 @@ interface RpcRow {
 
 const EMPTY: VariantsSummaryByProduct = new Map();
 
+function isRpcRow(obj: unknown): obj is RpcRow {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const row = obj as Record<string, unknown>;
+  if (typeof row.product_id !== 'string') return false;
+  if (!(row.variants_summary === null || Array.isArray(row.variants_summary))) return false;
+  return true;
+}
+
 /**
  * Busca o sumário de variantes para um conjunto de productIds.
  * Retorna Map vazio quando productIds for vazio (não dispara a RPC).
@@ -87,14 +95,17 @@ export function useReposicaoVariantsSummary(productIds: readonly string[]) {
           log.warn('rpc_failed', { error: error.message, ids: sortedIds.length });
           return EMPTY;
         }
-        const rows = (data ?? []) as RpcRow[];
+        const rows = ((data ?? []) as unknown[]).filter(isRpcRow);
         const out = new Map<string, Map<string, VariantSummaryEntry>>();
         for (const row of rows) {
           const inner = new Map<string, VariantSummaryEntry>();
           for (const v of row.variants_summary ?? []) {
             const k = normalizeColorKey(v.nome);
             if (!k) {
-              log.warn('variant_sem_nome_de_cor', { variant_id: v.variant_id, product_id: row.product_id });
+              log.warn('variant_sem_nome_de_cor', {
+                variant_id: v.variant_id,
+                product_id: row.product_id,
+              });
               continue;
             }
             inner.set(k, {

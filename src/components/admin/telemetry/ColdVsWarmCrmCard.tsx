@@ -10,7 +10,7 @@
  *
  * Snapshot reseta sempre que o runtime descarta o isolate por ociosidade.
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,7 @@ export function ColdVsWarmCrmCard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchDiag = useCallback(async () => {
     if (!FN_URL || !ANON_KEY) {
@@ -80,21 +81,30 @@ export function ColdVsWarmCrmCard() {
       return;
     }
 
+    // Abort any in-flight request before starting a new one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(FN_URL, {
         method: 'GET',
         headers: { apikey: ANON_KEY },
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as DiagSnapshot;
       setSnap(json);
       setLastFetched(Date.now());
     } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
       setError(toErrorMessage(e));
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -106,7 +116,10 @@ export function ColdVsWarmCrmCard() {
 
     fetchDiag();
     const id = setInterval(fetchDiag, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      abortRef.current?.abort();
+    };
   }, [fetchDiag]);
 
   const warmBadge = snap?.warm ? (

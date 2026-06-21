@@ -11,13 +11,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Supabase client mock (chainable, thenable query builder) ────────────────
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
-let tableResults: Record<string, { data: unknown; error: unknown } | { data: unknown; error: unknown }[]> = {};
+let tableResults: Record<
+  string,
+  { data: unknown; error: unknown } | { data: unknown; error: unknown }[]
+> = {};
 const captured: { insert?: Record<string, unknown> } = {};
 
 vi.mock('@/integrations/supabase/client', () => {
   const makeBuilder = (table: string) => {
-    // result(): se tableResults[table] for um array, consome em fila (1ª chamada => [0],
-    // 2ª => [1], ...) — permite simular retry-on-FK. Objeto único = comportamento legado.
+    // result(): if tableResults[table] is an array, consume in queue order (1st call → [0],
+    // 2nd → [1], ...) — lets tests simulate retry-on-FK. A single object = legacy behaviour.
     const result = () => {
       const r = tableResults[table];
       if (Array.isArray(r)) {
@@ -186,9 +189,8 @@ describe('saveMockupToDb', () => {
   });
 
   it('uploads data: logos and nulls product_id when the product is unknown', async () => {
-    // Nova estratégia (BUG-PRODUCT-EXTRA-SELECT): sem SELECT prévio em products.
-    // O 1º insert com product_id:'ghost' (UUID inexistente) recebe FK violation 23503,
-    // e o código faz retry com product_id:null. Simulamos a fila: erro depois sucesso.
+    // No pre-SELECT on products — the insert is attempted with product_id:'ghost' first.
+    // A 23503 FK violation triggers a retry with product_id:null. Simulate the queue.
     tableResults.products = { data: null, error: null };
     tableResults.generated_mockups = [
       { data: null, error: { code: '23503', message: 'FK violation on product_id' } },
@@ -478,8 +480,8 @@ describe('buildTechniqueList', () => {
   it('filters out items without id or name', () => {
     const raw = [
       { id: '1', name: 'Silk', code: 'silk' },
-      { id: '2' },           // no name
-      { name: 'Laser' },     // no id
+      { id: '2' }, // no name
+      { name: 'Laser' }, // no id
       null,
       undefined,
       42,
