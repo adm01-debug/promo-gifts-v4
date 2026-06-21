@@ -81,9 +81,12 @@ export function CartHealthChecklist({
       <div className="relative z-10 flex items-center justify-between">
         <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           {pct === 100 ? (
-            <ShieldCheck className="h-3.5 w-3.5 animate-pulse text-primary" />
+            <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 animate-pulse text-primary" />
           ) : (
-            <Sparkles className="h-3.5 w-3.5 text-primary/60 transition-colors group-hover/checklist:text-primary" />
+            <Sparkles
+              aria-hidden="true"
+              className="h-3.5 w-3.5 text-primary/60 transition-colors group-hover/checklist:text-primary"
+            />
           )}
           Saúde do Carrinho
         </h4>
@@ -153,9 +156,9 @@ export function CartHealthChecklist({
             >
               <div className="flex-shrink-0">
                 {c.ok ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                  <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
                 ) : (
-                  <AlertCircle className="h-3.5 w-3.5 text-warning transition-transform group-hover/item:scale-110" />
+                  <AlertCircle aria-hidden="true" className="h-3.5 w-3.5 text-warning transition-transform group-hover/item:scale-110" />
                 )}
               </div>
               <span
@@ -169,7 +172,7 @@ export function CartHealthChecklist({
                 {c.label}
               </span>
               {!c.ok && c.onFix && (
-                <ArrowRight className="h-3 w-3 text-primary opacity-0 transition-opacity group-hover/item:opacity-100" />
+                <ArrowRight aria-hidden="true" className="h-3 w-3 text-primary opacity-0 transition-opacity group-hover/item:opacity-100" />
               )}
             </button>
           </motion.li>

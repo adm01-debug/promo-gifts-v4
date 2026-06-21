@@ -159,7 +159,7 @@ export const SortableCartItem = memo(
               className="absolute left-2.5 top-2.5 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground opacity-0 shadow-sm backdrop-blur-md transition-all duration-300 hover:text-primary active:cursor-grabbing group-hover:opacity-100"
               aria-label="Arrastar"
             >
-              <GripVertical className="h-4 w-4" />
+              <GripVertical aria-hidden="true" className="h-4 w-4" />
             </button>
 
             <button
@@ -171,7 +171,10 @@ export const SortableCartItem = memo(
             >
               {!item.product_image_url && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Package className="h-14 w-14 animate-pulse text-muted-foreground/20" />
+                  <Package
+                    aria-hidden="true"
+                    className="h-14 w-14 animate-pulse text-muted-foreground/20"
+                  />
                 </div>
               )}
               <motion.img
@@ -216,7 +219,7 @@ export const SortableCartItem = memo(
                     className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/50 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:text-primary"
                     aria-label={`Mais opções para ${item.product_name}`}
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
@@ -225,14 +228,15 @@ export const SortableCartItem = memo(
                     className="rounded-lg py-2"
                     onClick={() => onNavigate(`/produto/${item.product_id}`)}
                   >
-                    <Eye className="mr-2.5 h-4 w-4 opacity-70" /> Ver Produto
+                    <Eye aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" /> Ver Produto
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     data-testid="cart-item-action-simulate"
                     className="rounded-lg py-2"
                     onClick={() => onNavigate(`/simulador?product=${item.product_id}`)}
                   >
-                    <Calculator className="mr-2.5 h-4 w-4 opacity-70" /> Simular Personalização
+                    <Calculator aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" /> Simular
+                    Personalização
                   </DropdownMenuItem>
                   {otherCarts.length > 0 && (
                     <>
@@ -242,7 +246,8 @@ export const SortableCartItem = memo(
                           data-testid="cart-item-action-move"
                           className="rounded-lg py-2"
                         >
-                          <MoveRight className="mr-2.5 h-4 w-4 opacity-70" /> Mover para...
+                          <MoveRight aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" />{' '}
+                          Mover para...
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="min-w-[180px] rounded-xl p-1.5">
                           {otherCarts.map((c) => (
@@ -263,7 +268,8 @@ export const SortableCartItem = memo(
                           data-testid="cart-item-action-duplicate"
                           className="rounded-lg py-2"
                         >
-                          <CopyPlus className="mr-2.5 h-4 w-4 opacity-70" /> Duplicar para...
+                          <CopyPlus aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" />{' '}
+                          Duplicar para...
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent className="min-w-[180px] rounded-xl p-1.5">
                           {otherCarts.map((c) => (
@@ -287,7 +293,7 @@ export const SortableCartItem = memo(
                     className="rounded-lg py-2 text-destructive focus:bg-destructive/5 focus:text-destructive"
                     onClick={() => onRemove(item.id, item.product_name)}
                   >
-                    <Trash2 className="mr-2.5 h-4 w-4 opacity-70" /> Remover Item
+                    <Trash2 aria-hidden="true" className="mr-2.5 h-4 w-4 opacity-70" /> Remover Item
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -306,7 +312,7 @@ export const SortableCartItem = memo(
                     : 'border-warning/20 bg-warning/90 text-warning-foreground',
                 )}
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
                 {isOutOfStock ? 'SEM ESTOQUE' : `ESTOQUE: ${stock}`}
               </motion.div>
             )}
@@ -403,11 +409,16 @@ export const SortableCartItem = memo(
                 >
                   {item.quantity <= 1 ? (
                     <Trash2
+                      aria-hidden="true"
                       data-testid="cart-qty-remove-icon"
                       className="h-4 w-4 text-destructive"
                     />
                   ) : (
-                    <Minus data-testid="cart-qty-decrement-icon" className="h-4 w-4" />
+                    <Minus
+                      aria-hidden="true"
+                      data-testid="cart-qty-decrement-icon"
+                      className="h-4 w-4"
+                    />
                   )}
                 </button>
                 <input
@@ -436,7 +447,7 @@ export const SortableCartItem = memo(
                     onUpdateQuantity(item.id, item.quantity + 1);
                   }}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus aria-hidden="true" className="h-4 w-4" />
                 </button>
               </div>
               <div className="flex flex-col items-end">
@@ -467,10 +478,11 @@ export const SortableCartItem = memo(
                       : `Adicionar observação a ${item.product_name}`
                   }
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <MessageSquare aria-hidden="true" className="h-3.5 w-3.5" />
                   {item.notes ? 'Ver Observações' : 'Adicionar Observação'}
                   <div className="flex-1" />
                   <ChevronDown
+                    aria-hidden="true"
                     className={cn(
                       'h-3.5 w-3.5 transition-transform duration-300',
                       notesOpen && 'rotate-180',

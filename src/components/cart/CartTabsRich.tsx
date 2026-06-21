@@ -126,7 +126,7 @@ export function CartTabsRich({
                       : 'bg-muted text-muted-foreground group-hover:bg-muted/80',
                   )}
                 >
-                  <Building2 className="h-4 w-4" />
+                  <Building2 aria-hidden="true" className="h-4 w-4" />
                 </div>
               )}
               <div className="flex flex-col items-start gap-0.5 leading-none">
@@ -168,7 +168,7 @@ export function CartTabsRich({
                   className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
                   title={`Follow-up sugerido — criado há ${ageDays} dias`}
                 >
-                  <Clock className="h-3 w-3" />
+                  <Clock aria-hidden="true" className="h-3 w-3" />
                 </motion.span>
               )}
             </button>
@@ -198,6 +198,7 @@ export function CartTabsRich({
             )}
           >
             <Plus
+              aria-hidden="true"
               className={cn(
                 'h-4 w-4 transition-transform duration-300',
                 canCreateCart && 'group-hover/new:rotate-90',

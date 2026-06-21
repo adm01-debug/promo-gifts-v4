@@ -182,7 +182,7 @@ export function FollowUpTimer({ createdAt, status }: { createdAt: string; status
             : 'border-border/30 bg-muted/50 text-muted-foreground',
       )}
     >
-      <Timer className="h-3.5 w-3.5" />
+      <Timer aria-hidden="true" className="h-3.5 w-3.5" />
       <span>
         {isUrgent
           ? `${days} dias — Hora do follow-up!`
@@ -290,7 +290,7 @@ export function SmartSuggestions({
             className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2.5 text-[10px] leading-relaxed text-muted-foreground transition-colors hover:bg-primary/10"
           >
             <div className="mt-0.5 flex-shrink-0 rounded-full bg-background/80 p-1 shadow-sm">
-              <Icon className="h-3 w-3 text-primary" />
+              <Icon aria-hidden="true" className="h-3 w-3 text-primary" />
             </div>
             <span>{s.text}</span>
           </div>
@@ -324,9 +324,9 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
           type="button"
           className="flex w-full items-center gap-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          <History className="h-3.5 w-3.5" />
+          <History aria-hidden="true" className="h-3.5 w-3.5" />
           Histórico de ações ({history.length})
-          <ChevronDown className="ml-auto h-3 w-3" />
+          <ChevronDown aria-hidden="true" className="ml-auto h-3 w-3" />
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-2">
@@ -338,7 +338,7 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
                 key={`${action.type}-${action.time.getTime()}-${i}`}
                 className="flex items-center gap-2 py-1 text-[10px] text-muted-foreground"
               >
-                <Icon className="h-3 w-3 flex-shrink-0" />
+                <Icon aria-hidden="true" className="h-3 w-3 flex-shrink-0" />
                 <span className="flex-1 truncate">
                   {action.type === 'add' && `Adicionou ${action.itemName}`}
                   {action.type === 'remove' && `Removeu ${action.itemName}`}
