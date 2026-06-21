@@ -1,0 +1,3202 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+        "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+      },
+      "gitCommit": {
+        "shortHash": "340024b",
+        "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+        "subject": "Fixou baseline de snapshots",
+        "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+        "author": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1782051186000
+        },
+        "committer": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1782051186000
+        },
+        "branch": "main"
+      },
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "commitHash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/27907022199"
+          },
+          "gitCommit": {
+            "shortHash": "340024b",
+            "hash": "340024b66ec79f640f4bdb5f6a56c8c39ef92497",
+            "subject": "Fixou baseline de snapshots",
+            "body": "Fixou baseline de snapshots\n\nX-Lovable-Edit-ID: edt-3edde4c1-4f8b-43ea-81ef-37a6603677d1\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1782051186000
+            },
+            "branch": "main"
+          },
+          "actualWorkers": 1
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "flows/03b-thumb-quickview.smoke.spec.ts",
+      "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke 03b • pré-checagem de ambiente",
+          "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "preview responde e login funciona",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 1027,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:51.306Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-834e3903648ef792c696",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "rota /produtos responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 234,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:53.447Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-31529424fe577623d964",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            },
+            {
+              "title": "rota /novidades responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 232,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:53.698Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-76b985e151bf4ad41081",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            },
+            {
+              "title": "rota /reposicao responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 224,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:53.944Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-fb60bd3142d80b57d4a9",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            },
+            {
+              "title": "rota /estoque responde sem 5xx",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                        "line": 89,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 181,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:54.181Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Credenciais E2E_USER_EMAIL/PASSWORD ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/helpers/auth.ts",
+                            "line": 89,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "41a548718abf451def93-a3c4bc7624d1ea8694d8",
+              "file": "flows/03b-thumb-quickview.smoke.spec.ts",
+              "line": 24,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/20-all-features-smoke.spec.ts",
+      "file": "flows/20-all-features-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Funcionalidades principais (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 187,
+          "column": 6,
+          "specs": [
+            {
+              "title": "00 · Sessão autenticada carregada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 192,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:54.396Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-8c9fb14f2e83317f491b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 191,
+              "column": 3
+            },
+            {
+              "title": "01 · Dashboard inicial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:54.602Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f801d6ecc787a925aeb6",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "02 · Dashboard customizável",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 177,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:54.807Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-1aa5e3ad483ce45b1c6c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "03 · Catálogo de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 228,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:55.002Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-253ae362bd5626789659",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "04 · Filtros avançados",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:55.246Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-110dc0fa032becab6640",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "05 · Novidades",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 199,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:55.453Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e4a6d737d328021a651e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "06 · Tendências",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 189,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:55.670Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-3ae39b2c3b877a418e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "07 · Favoritos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 185,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:55.877Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2268b4d3c0df46d58d59",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "08 · Coleções",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 239,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:56.079Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-829cb350ddf82e3baf1c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "09 · Comparador de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 192,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:56.333Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-6b1e8a70fa62e09c373b",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "10 · Carrinhos do vendedor",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 175,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:56.538Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-f7bd8da36df3637213d8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "11 · Lista de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 214,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:56.728Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0f5dcc37061bad34985f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "12 · Dashboard de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 193,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:56.960Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-53ac0053bfd2f95b6d91",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "13 · Funil (Kanban) de orçamentos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 208,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:57.170Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7649c21e1516aceb28db",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "14 · Templates de orçamento",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 214,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:57.397Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4731c12b152112bd3b3e",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "15 · Criar novo orçamento (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 194,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:57.624Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c88b4c904ba629ff2573",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "16 · Simulador (wizard)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 181,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:57.830Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-c0e6d498102b3493ec79",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "17 · Simulador de preços",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:58.025Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-037ec93935b1f9277e8d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "18 · Busca avançada de preço",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 196,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:58.231Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-2305ee06071100aeefc3",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "19 · Estoque",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 199,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:58.446Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ce9bf6a79e01ecc158e2",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "20 · Reposição",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 200,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:58.664Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-974a4e17211e71aacc48",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "21 · Kit Builder",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 179,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:58.876Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-e0aeef09f232cccff716",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "22 · Meus Kits",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 178,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:59.069Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-271a34e5be2dd1a0e443",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "23 · Gerador de Mockup",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:59.262Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-574111961ec59afa7b2f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "24 · Histórico de Mockups",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 173,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:59.460Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-641280ed64c247121f5d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "25 · Magic Up (publicidade IA)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:59.648Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-0456e8e3b51a0bdd9c81",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "26 · Inteligência comercial",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 201,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:14:59.868Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-ae86d5b42aba66c9a0b8",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "27 · Business Intelligence",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 188,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:00.084Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d015393694fb525997c",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "28 · BI — Comparador de clientes",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 188,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:00.284Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-a261e495e711a6b68ef7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "29 · Match de produtos",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 181,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:00.487Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-4f2e19b9d60114026065",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "30 · Dropbox browser",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 191,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:00.684Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d7243934391105bc8dde",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 213,
+              "column": 5
+            },
+            {
+              "title": "99 · Cobertura smoke ↔ catálogo está sincronizada",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                        "line": 168,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 211,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:00.890Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_USER_EMAIL/PASSWORD não configurados",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/fixtures/test-base.ts",
+                            "line": 168,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-d4c42fcdd8509d36ce89",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 225,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke Rotas públicas (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 249,
+          "column": 6,
+          "specs": [
+            {
+              "title": "90 · Tela de login renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1909,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:01.118Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-7a93262fd723f9d058b7",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 253,
+              "column": 3
+            },
+            {
+              "title": "91 · Reset de senha renderiza",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1522,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:03.042Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-48906e3ad28c0353437f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 260,
+              "column": 3
+            },
+            {
+              "title": "92 · 404 (rota inexistente)",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1192,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:04.580Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b9916301819a96e1e50f",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 271,
+              "column": 3
+            },
+            {
+              "title": "93 · Login com credenciais inválidas permanece em /login",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 312,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:05.783Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 312,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-407ad34c5a77e84f494d",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 312,
+              "column": 8
+            },
+            {
+              "title": "95 · /reset-password sem token não habilita reset",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1728,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:05.784Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-5d508e0a40eec76592d9",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 355,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "@smoke RLS guard (gate de CI)",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "line": 381,
+          "column": 6,
+          "specs": [
+            {
+              "title": "94 · RLS bloqueia leitura de tabelas sensíveis para o usuário comum",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "VITE_SUPABASE_* ou E2E credentials ausentes",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                        "line": 389,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 210,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:07.528Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "VITE_SUPABASE_* ou E2E credentials ausentes",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/20-all-features-smoke.spec.ts",
+                            "line": 389,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "5ca7770af675330c8fdd-b4bf3c4a225eb5b5ad18",
+              "file": "flows/20-all-features-smoke.spec.ts",
+              "line": 386,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/22-google-oauth-smoke.spec.ts",
+      "file": "flows/22-google-oauth-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "@smoke Google OAuth — wiring até /auth/callback",
+          "file": "flows/22-google-oauth-smoke.spec.ts",
+          "line": 85,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clique em 'Continuar com Google' dispara authorize com provider=google",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 88,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:07.750Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 88,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-06371fe6855e2b192a1d",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 88,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com code válido troca por sessão e autentica usuário",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "fixme",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                        "line": 118,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:07.750Z",
+                      "annotations": [
+                        {
+                          "type": "fixme",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/flows/22-google-oauth-smoke.spec.ts",
+                            "line": 118,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-970819a4f207fc57f2cc",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 118,
+              "column": 8
+            },
+            {
+              "title": "/auth/callback com ?error= mostra hint detalhado e código do erro",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2029,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:07.760Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e79192c6737f15acf2d5-3a52cd50c12072728a6c",
+              "file": "flows/22-google-oauth-smoke.spec.ts",
+              "line": 175,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "flows/25-password-reset-smoke.spec.ts",
+      "file": "flows/25-password-reset-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Fluxo: Password Reset UI",
+          "file": "flows/25-password-reset-smoke.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "mostra erro para link inválido (sem token)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2735,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:09.814Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-279ebe32f4b48ce5696b",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 7,
+              "column": 3
+            },
+            {
+              "title": "renderiza formulário quando há token no hash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2608,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:12.565Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-0fd2f43979b2c88c09c3",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 15,
+              "column": 3
+            },
+            {
+              "title": "valida força da senha e critérios em tempo real",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2501,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:15.190Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a82de97fda95989b8f36-2afc28e8ca65b7b9eed8",
+              "file": "flows/25-password-reset-smoke.spec.ts",
+              "line": 30,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "smoke.spec.ts",
+      "file": "smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Auth Critical Flow @smoke",
+          "file": "smoke.spec.ts",
+          "line": 16,
+          "column": 6,
+          "specs": [
+            {
+              "title": "deve realizar login com sucesso e redirecionar para a home",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais",
+                      "location": {
+                        "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+                        "line": 25,
+                        "column": 12
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 301,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:17.722Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "E2E_ADMIN_EMAIL/PASSWORD ou E2E_USER_EMAIL/PASSWORD não configurados — smoke login pulado em CI sem credenciais",
+                          "location": {
+                            "file": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e/smoke.spec.ts",
+                            "line": 25,
+                            "column": 12
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-bc831c3493139bc3e2ca",
+              "file": "smoke.spec.ts",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "deve bloquear acesso a rotas protegidas quando deslogado",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3646,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Smoke] Testando bloqueio de rota protegida\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:18.039Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-04516ebae480da85096c",
+              "file": "smoke.spec.ts",
+              "line": 45,
+              "column": 3
+            },
+            {
+              "title": "deve exibir formulário de esqueci minha senha",
+              "ok": true,
+              "tags": [
+                "smoke"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-smoke",
+                  "projectName": "chromium-smoke",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3220,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-21T14:15:21.699Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4219922fea2e2bd3c691-a71d0c7d51ae8cc11e21",
+              "file": "smoke.spec.ts",
+              "line": 60,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-21T14:14:47.641Z",
+    "duration": 37361.972,
+    "expected": 10,
+    "skipped": 42,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
