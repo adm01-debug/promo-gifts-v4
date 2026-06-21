@@ -267,9 +267,54 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return true;
 }
 
+// FTS_TABLES already defined above handles _search. _name_prefix is a distinct
+// meta-filter: prefix ILIKE across name/sku/supplier_reference (no FTS needed).
+// Columns are native EN names as they appear in v_products_public.
+const NAME_PREFIX_COLUMNS: Record<string, string[]> = {
+  v_products_public: ['name', 'sku', 'supplier_reference'],
+  products: ['name', 'sku', 'supplier_reference'],
+};
+
 // ── WRITE support ─────────────────────────────────────────────────────────────
 // Writes target the REAL base table, never the Gold read-views (which expose no
 // DML grant). Only BRIDGE_ALIASES apply — mirrors dbInvokeDelete's resolution.
+
+// Whitelist of tables (resolved post-alias) that may be written via dbInvoke.
+// Tables NOT listed here (e.g. frontend_telemetry, which uses supabase.from()
+// directly) will throw loudly instead of silently falling back to a SELECT.
+const POSTGREST_WRITE_TABLES = new Set<string>([
+  'products',
+  'suppliers',
+  'categories',
+  'print_area_techniques',
+  'personalization_techniques',
+  'product_variants',
+  'product_tags',
+  'product_category_assignments',
+  'variant_supplier_sources',
+  'supplier_branches',
+  'collections',
+  'collection_products',
+  'product_groups',
+  'product_group_members',
+  'product_relationships',
+  'product_images',
+  'product_videos',
+  'product_materials',
+  'product_kit_components',
+  'component_media',
+  'kit_component_print_areas',
+  'tabela_preco_gravacao_oficial',
+  'tabela_preco_gravacao_oficial_faixa',
+  'tecnicas_gravacao',
+  'tags',
+  // Bridge-alias inputs (resolved to the above via BRIDGE_ALIASES)
+  'tecnica_gravacao',
+  'tecnica_gravacao_variante',
+  'customization_price_tiers',
+  'customization_price_tables',
+]);
+
 type WriteResult = { data: unknown; error: { message?: string } | null };
 type WriteBuilder = PromiseLike<WriteResult> & {
   insert(values: unknown): WriteBuilder;
@@ -308,6 +353,15 @@ function remapWriteData(resolvedTable: string, data: unknown): unknown {
 async function dbInvokeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
   const table = BRIDGE_ALIASES[options.table] ?? options.table;
   const op = options.operation;
+
+  // Write-eligibility guard: only tables in POSTGREST_WRITE_TABLES may be
+  // mutated via dbInvoke. Tables that use supabase.from() directly (e.g.
+  // frontend_telemetry) must NOT silently fall through to a no-op SELECT.
+  if (!POSTGREST_WRITE_TABLES.has(table) && !POSTGREST_WRITE_TABLES.has(options.table)) {
+    throw new Error(
+      `[postgrest] ${op} on '${options.table}' is not supported — add it to POSTGREST_WRITE_TABLES if intentional.`,
+    );
+  }
 
   // Mass-mutation guard: update/delete MUST be scoped by id or filters.
   const hasScope = !!options.id || (!!options.filters && Object.keys(options.filters).length > 0);
@@ -383,13 +437,22 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
 
   const table = TABLE_ALIASES[options.table] ?? options.table;
 
-  // Extract _search before remapping (it's a meta-filter, not a column name)
+  // Extract meta-filters before remapping (they are not real column names)
   const rawFilters = options.filters ? { ...options.filters } : undefined;
   let searchTerm: string | undefined;
+  let namePrefixTerm: string | undefined;
   if (rawFilters && '_search' in rawFilters) {
     const raw = rawFilters._search;
     if (typeof raw === 'string' && raw.trim() !== '') searchTerm = raw.trim();
     delete rawFilters._search;
+  }
+  if (rawFilters && '_name_prefix' in rawFilters) {
+    const raw = rawFilters._name_prefix;
+    // Prefix ILIKE across name/sku/supplier_reference — never an .eq() on the key.
+    // Without this extraction, PostgREST rejects the query (column _name_prefix
+    // does not exist → 42703) and returns "0 produtos" silently.
+    if (typeof raw === 'string' && raw.trim() !== '') namePrefixTerm = raw.trim();
+    delete rawFilters._name_prefix;
   }
 
   const remappedFilters = rawFilters ? remapFilters(table, rawFilters) : undefined;
@@ -476,6 +539,16 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     }
   }
 
+  if (namePrefixTerm) {
+    const prefixCols = NAME_PREFIX_COLUMNS[table] ?? NAME_PREFIX_COLUMNS[options.table];
+    if (prefixCols && prefixCols.length > 0) {
+      const orExpr = prefixCols.map((c) => `${c}.ilike.${namePrefixTerm}*`).join(',');
+      query = query.or(orExpr);
+    } else {
+      logger.warn(`[postgrest] _name_prefix ignored on '${table}': no prefix columns configured`);
+    }
+  }
+
   if (remappedFilters) {
     for (const [key, value] of Object.entries(remappedFilters)) {
       if (Array.isArray(value)) {
@@ -522,11 +595,15 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     query = query.range(from, from + options.limit - 1);
   }
 
-  const { data, error, count: dbCount } = await (
-    options.signal
-      ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(options.signal)
-      : query
-  );
+  const {
+    data,
+    error,
+    count: dbCount,
+  } = await (options.signal
+    ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(
+        options.signal,
+      )
+    : query);
 
   if (error) {
     if (error.message?.includes('410') || error.message?.includes('Gone')) {

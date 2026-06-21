@@ -9,8 +9,8 @@ const STORAGE_KEY = 'product-favorites';
 describe('useFavoritesStore — variant selection', () => {
   beforeEach(() => {
     localStorage.clear();
-    // Reset zustand store
-    useFavoritesStore.setState({ favorites: [], favoriteCount: 0, isLoaded: true });
+    // Reset zustand store — must include favoriteIds or addFavorite skips due to stale Set
+    useFavoritesStore.setState({ favorites: [], favoriteIds: new Set(), favoriteCount: 0, isLoaded: true });
   });
 
   const variant: FavoriteVariantInfo = {
