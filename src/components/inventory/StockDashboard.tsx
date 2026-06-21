@@ -361,21 +361,7 @@ export function StockDashboard() {
       {/* Header with Health Score */}
 
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2">
-          {warningAlerts.length > 0 && (
-            <Badge
-              variant="outline"
-              data-testid="warning-alerts-badge"
-              className="cursor-pointer gap-1 border-amber-500/40 bg-amber-500/10 text-amber-700 text-xs hover:bg-amber-500/15 dark:text-amber-400"
-              onClick={() => setLowStockDialogOpen(true)}
-              title="Previsão preditiva — produtos que tendem a esgotar em breve"
-            >
-              <Clock className="h-3 w-3" />
-              Previsão: {warningAlerts.length} podem esgotar
-            </Badge>
-          )}
-
-        </div>
+        <div className="flex flex-col gap-2" />
 
         <HeaderSlotPortal>
           <div
