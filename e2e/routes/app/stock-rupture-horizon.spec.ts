@@ -28,9 +28,18 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
       test.skip(true, 'sem dados seedados para validar horizonte de ruptura');
     }
 
-    // 1. Controle visível com default 3 dias (badge "3d" no botão).
+    // 1. Controle visível (badge "3d" só aparece quando o Switch está ON).
     const horizonControl = page.getByTestId('rupture-horizon-control');
     await expect(horizonControl).toBeVisible();
+
+    // Liga o filtro de Risco de Ruptura via Switch (espelho do Estoque Futuro).
+    await horizonControl.click();
+    const sw = page.getByTestId('rupture-risk-switch');
+    await expect(sw).toBeVisible();
+    if ((await sw.getAttribute('aria-checked')) !== 'true') {
+      await sw.click();
+    }
+    await expect(sw).toHaveAttribute('aria-checked', 'true');
     await expect(horizonControl).toContainText('3d');
 
     // Aplica filtro de quantidade-alvo para ativar a fórmula preditiva.
@@ -43,7 +52,6 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
     const count3d = Number((await lowChip.innerText()).match(/\d+/)?.[0] ?? '0');
 
     // 2. Troca para 30d — janela maior ⇒ mais SKUs em risco (monotonia ≥).
-    await horizonControl.click();
     await page.getByTestId('rupture-horizon-30').click();
     await page.waitForTimeout(400);
     await expect(horizonControl).toContainText('30d');
@@ -57,7 +65,7 @@ test.describe('@regression /estoque — horizonte de Risco de Ruptura', () => {
     );
     expect(stored).toBe('30');
 
-    // 4. Reload preserva a seleção.
+    // 4. Reload preserva a seleção (horizonte + ativação).
     await page.reload();
     await expect(page.getByTestId('rupture-horizon-control')).toContainText('30d');
   });
