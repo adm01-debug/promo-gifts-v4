@@ -563,7 +563,7 @@ export function StockFilterToolbar({
               data-testid="min-qty-strict-hint"
               role="status"
               className="inline-flex items-center gap-1 rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-[11px] text-warning"
-              title="A régua de quantidade está usando apenas estoque atual. Ative o sub-toggle dentro de Filtros → Estoque para incluir reposições."
+              title="Estamos olhando só o estoque atual. Para contar o que está chegando, abra Filtros → Estoque."
             >
               <AlertTriangle className="h-3 w-3" aria-hidden="true" />
               Régua estrita: ignora Estoque Futuro
