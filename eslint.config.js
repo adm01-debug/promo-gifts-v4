@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 156: 5 zero-violation rules (excluded: jsx-a11y/mouse-events-have-key-events 0v✓ — saved Batch 157)
+      'jsx-a11y/scope': 'error',
+      'jsx-a11y/tabindex-no-positive': 'error',
+      'jsx-a11y/aria-activedescendant-has-tabindex': 'error',
+      'jsx-a11y/aria-unsupported-elements': 'error',
+      'jsx-a11y/no-distracting-elements': 'error',
       // Batch 155: 5 zero-violation rules (excluded: jsx-a11y/scope 0v✓, jsx-a11y/tabindex-no-positive 0v✓ — saved Batch 156; no-abstract-roles invalid rule)
       'jsx-a11y/heading-has-content': 'error',
       'jsx-a11y/html-has-lang': 'error',
