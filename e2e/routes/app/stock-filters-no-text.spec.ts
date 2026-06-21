@@ -187,16 +187,15 @@ test.describe('@regression /estoque — filtros sem texto', () => {
     await expect(qty).toHaveValue('1');
   });
 
-  test('Estoque Futuro 30d ON + minQty: régua estrita ignora futuro e exibe hint', async ({
-    page,
-  }) => {
+  test('Estoque Futuro ON sincroniza régua: hint estrita não aparece', async ({ page }) => {
     await loginAs(page, 'admin');
     await gotoAndSettle(page, '/estoque');
 
     const initialRows = await page.locator('tbody tr').count();
     if (initialRows === 0) test.skip(true, 'sem dados seedados');
 
-    // 1. Liga Estoque Futuro pelo atalho Shift+F (memória do projeto).
+    // 1. Liga Estoque Futuro pelo atalho Shift+F — agora o toggle do toolbar
+    //    também ativa minQtyIncludesFutureStock (seção "Estoque" do popover removida).
     await page.keyboard.press('Shift+F');
     await page.waitForTimeout(300);
 
@@ -205,27 +204,11 @@ test.describe('@regression /estoque — filtros sem texto', () => {
     await qty.fill('500');
     await page.waitForTimeout(600);
 
-    // 3. Hint "régua estrita" deve aparecer (Estoque Futuro ON + sub-toggle OFF).
+    // 3. Hint "régua estrita" NÃO deve aparecer (sincronização automática).
     const strictHint = page.getByTestId('min-qty-strict-hint');
-    await expect(strictHint).toBeVisible();
-    await expect(strictHint).toContainText(/estrita/i);
-
-    const rowsStrict = await page.locator('tbody tr').count();
-
-    // 4. Liga o sub-toggle "Incluir Estoque Futuro no cálculo" no popover.
-    await page.getByRole('button', { name: /^Filtros/i }).first().click();
-    await page.getByRole('button', { name: /^Estoque/i }).first().click();
-    const subToggle = page.getByTestId('min-qty-include-future-switch');
-    await expect(subToggle).toBeEnabled();
-    await subToggle.click();
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(400);
-
-    // 5. Hint deve sumir; resultado pode aumentar (futuro entra no pool).
-    await expect(strictHint).not.toBeVisible();
-    const rowsWithFuture = await page.locator('tbody tr').count();
-    expect(rowsWithFuture).toBeGreaterThanOrEqual(rowsStrict);
+    await expect(strictHint).toHaveCount(0);
   });
+
 
   // Nota: /estoque é uma rota protegida (plataforma fechada). Não existe modo
   // anônimo — usuários sem sessão são redirecionados para /auth. Por isso o
