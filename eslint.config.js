@@ -417,6 +417,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 227: 5 zero-violation rules (saved: typedef, no-useless-constructor, prefer-optional-chain 0v✓ — Batch 228+)
+      '@typescript-eslint/prefer-for-of': 'error',
+      '@typescript-eslint/no-for-in-array': 'error',
+      '@typescript-eslint/no-extraneous-class': 'error',
+      '@typescript-eslint/no-invalid-void-type': 'error',
+      '@typescript-eslint/no-restricted-imports': 'error',
       // Batch 226: 5 zero-violation rules (saved: @typescript-eslint/no-empty-object-type 0v✓ — Batch 227+)
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/related-getter-setter-pairs': 'error',
