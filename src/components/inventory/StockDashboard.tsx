@@ -429,8 +429,14 @@ export function StockDashboard() {
             'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
           };
 
-          const isActive =
-            card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter;
+          // "Risco de Ruptura" usa o filtro dimensional ruptureRiskVariantIds
+          // (set EMA ≤ 30d) ao invés de filters.status='critical' — assim a
+          // tabela mostra EXATAMENTE as variações sinalizadas, sem mistura.
+          const isRuptureCard = card.slug === 'risco-de-ruptura';
+          const isActive = isRuptureCard
+            ? isRuptureRiskActive
+            : !isRuptureRiskActive &&
+              (card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter);
           return (
             <StatCard
               key={card.slug}
@@ -442,6 +448,21 @@ export function StockDashboard() {
               tooltip={card.tooltip}
               isActive={isActive}
               onClick={() => {
+                if (isRuptureCard) {
+                  // toggle do filtro dimensional + zera status pra não competir
+                  if (isRuptureRiskActive) {
+                    updateFilter('ruptureRiskVariantIds', undefined);
+                  } else if (ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+                    updateFilter('status', 'all');
+                    updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+                  } else {
+                    // Sem dados EMA (flag off ou sem alertas) → fallback antigo
+                    updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
+                  }
+                  updateFilter('sortBy', 'name');
+                  updateFilter('sortDirection', 'asc');
+                  return;
+                }
                 if (!card.filter) return;
                 const next =
                   card.filter === 'all'
@@ -449,8 +470,9 @@ export function StockDashboard() {
                     : filters.status === card.filter
                       ? 'all'
                       : card.filter;
+                // Qualquer outro card sai do modo "risco de ruptura"
+                if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
                 updateFilter('status', next);
-                // Ordenação alfabética (A→Z) ao clicar em qualquer card.
                 updateFilter('sortBy', 'name');
                 updateFilter('sortDirection', 'asc');
               }}
