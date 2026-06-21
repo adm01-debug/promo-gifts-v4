@@ -418,6 +418,12 @@ export default [
       'no-octal-escape': 'error',
       'no-with': 'error',
       'no-setter-return': 'error',
+      // Batch 181: 5 zero-violation rules (saved: no-require-imports 0v✓, prefer-namespace-keyword 0v✓, triple-slash-reference 0v✓, no-this-alias 0v✓, consistent-generic-constructors 0v✓ — Batch 182+)
+      '@typescript-eslint/no-array-delete': 'error',
+      '@typescript-eslint/no-confusing-non-null-assertion': 'error',
+      '@typescript-eslint/no-extraneous-class': 'error',
+      '@typescript-eslint/no-invalid-this': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
       // Batch 180: 5 zero-violation rules (excluded: no-unnecessary-type-arguments 15v, no-unnecessary-type-assertion 385v)
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
       '@typescript-eslint/unified-signatures': 'error',
