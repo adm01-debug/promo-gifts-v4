@@ -25,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
+import { StockRiskHero } from './risk/StockRiskHero';
+import { RupturePanelEma } from './risk/RupturePanelEma';
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
   import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
