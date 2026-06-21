@@ -436,9 +436,9 @@ export function StockDashboard() {
                       ? 'all'
                       : card.filter;
                 updateFilter('status', next);
-                if (card.filter === 'out_of_stock' && criticalAlerts.length > 0) {
-                  setOutOfStockDialogOpen(true);
-                }
+                // Ordenação alfabética (A→Z) ao clicar em qualquer card.
+                updateFilter('sortBy', 'name');
+                updateFilter('sortDirection', 'asc');
               }}
             />
           );
@@ -454,7 +454,8 @@ export function StockDashboard() {
           isActive={filters.status === 'incoming'}
           onClick={() => {
             updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
+            updateFilter('sortBy', 'name');
+            updateFilter('sortDirection', 'asc');
           }}
           tooltip="Variações com reposição prevista nos próximos 30 dias."
           trend={
