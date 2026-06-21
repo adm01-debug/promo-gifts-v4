@@ -293,7 +293,7 @@ export function CartCompanyPickerDialog({
         />
       ) : (
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <Building2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
         </div>
       )}
       <div className="min-w-0 flex-1">
@@ -313,7 +313,10 @@ export function CartCompanyPickerDialog({
         )}
         aria-label={isFavorite(company.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       >
-        <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
+        <Star
+          aria-hidden="true"
+          className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')}
+        />
       </button>
     </div>
   );
@@ -332,15 +335,15 @@ export function CartCompanyPickerDialog({
           <div className="px-5">
             <TabsList className="grid h-9 w-full grid-cols-3">
               <TabsTrigger value="recent" className="gap-1.5 text-xs">
-                <Clock className="h-3.5 w-3.5" />
+                <Clock aria-hidden="true" className="h-3.5 w-3.5" />
                 Recentes
               </TabsTrigger>
               <TabsTrigger value="favorites" className="gap-1.5 text-xs">
-                <Star className="h-3.5 w-3.5" />
+                <Star aria-hidden="true" className="h-3.5 w-3.5" />
                 Favoritas
               </TabsTrigger>
               <TabsTrigger value="search" className="gap-1.5 text-xs">
-                <Globe className="h-3.5 w-3.5" />
+                <Globe aria-hidden="true" className="h-3.5 w-3.5" />
                 Todas
               </TabsTrigger>
             </TabsList>
@@ -396,7 +399,10 @@ export function CartCompanyPickerDialog({
 
           <TabsContent value="search" className="m-0 space-y-3 px-3 pb-4 pt-3">
             <div className="relative px-2">
-              <Search className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                aria-hidden="true"
+                className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+              />
               <Input
                 ref={inputRef}
                 value={searchTerm}
@@ -405,7 +411,10 @@ export function CartCompanyPickerDialog({
                 className="h-9 border-border/40 bg-muted/20 pl-8 text-sm transition-colors focus:bg-background"
               />
               {isLoading && (
-                <Loader2 className="absolute right-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground opacity-50" />
+                <Loader2
+                  aria-hidden="true"
+                  className="absolute right-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground opacity-50"
+                />
               )}
             </div>
             <ScrollArea className="h-[290px] pr-2">

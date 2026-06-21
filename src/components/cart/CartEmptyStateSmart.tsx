@@ -90,7 +90,10 @@ export function CartEmptyStateSmart({
                 onClick={() => onApplyTemplate(topTemplates[0].items)}
               >
                 Aplicar "{topTemplates[0].name}"{' '}
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                />
               </Button>
             </>
           ) : (
@@ -141,7 +144,10 @@ export function CartEmptyStateSmart({
                 onClick={() => onDuplicateLast(lastCartSameCompany)}
               >
                 Copiar itens{' '}
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                />
               </Button>
             </>
           ) : (

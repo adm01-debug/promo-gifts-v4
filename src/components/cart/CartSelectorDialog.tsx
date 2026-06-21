@@ -39,7 +39,7 @@ export function CartSelectorDialog({
       <DialogContent className="sm:max-w-[420px]" data-testid="cart-selector-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
+            <ShoppingCart aria-hidden="true" className="h-5 w-5 text-primary" />
             Escolher Carrinho
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -71,7 +71,7 @@ export function CartSelectorDialog({
                   />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary">
-                    <Building2 className="h-5 w-5" />
+                    <Building2 aria-hidden="true" className="h-5 w-5" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">

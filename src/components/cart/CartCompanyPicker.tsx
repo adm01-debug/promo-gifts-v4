@@ -211,7 +211,10 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
       </div>
 
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          aria-hidden="true"
+          className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           ref={inputRef}
           aria-label="Buscar empresa"
@@ -221,7 +224,10 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
           className="h-8 pl-8 text-sm"
         />
         {isLoading && (
-          <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <Loader2
+            aria-hidden="true"
+            className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground"
+          />
         )}
       </div>
 
@@ -231,7 +237,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
             <div className="mb-2 border-b border-border/50 pb-2">
               <div className="mb-1 flex items-center justify-between px-2">
                 <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                  <Clock aria-hidden="true" className="h-3 w-3" />
                   Visitados Recentemente
                 </span>
                 <Button
@@ -252,7 +258,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                     onClick={() => handleSelect({ id: item.id, name: item.label })}
                     disabled={!canCreateCart || creating}
                   >
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Building2 aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="flex-1 truncate">{item.label}</span>
                   </button>
                   <Button
@@ -265,7 +271,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                       removeFromHistory(item.id);
                     }}
                   >
-                    <X className="h-3 w-3" />
+                    <X aria-hidden="true" className="h-3 w-3" />
                   </Button>
                 </div>
               ))}
@@ -292,7 +298,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
                 />
               ) : (
                 <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                  <Building2 className="h-3 w-3 text-muted-foreground" />
+                  <Building2 aria-hidden="true" className="h-3 w-3 text-muted-foreground" />
                 </div>
               )}
               <div className="min-w-0 flex-1">

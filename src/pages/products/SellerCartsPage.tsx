@@ -364,7 +364,7 @@ function SellerCartsContent() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <ShoppingCart className="h-4.5 w-4.5 text-primary" />
+            <ShoppingCart aria-hidden="true" className="h-4.5 w-4.5 text-primary" />
           </div>
           <div className="min-w-0">
             <h1
@@ -407,7 +407,7 @@ function SellerCartsContent() {
                 : undefined
             }
           >
-            <Plus className="h-3.5 w-3.5" /> Novo Carrinho
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" /> Novo Carrinho
           </Button>
         </div>
       </header>
@@ -479,7 +479,7 @@ function SellerCartsContent() {
                     />
                   ) : (
                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
-                      <Building2 className="h-5 w-5 text-primary" />
+                      <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
                     </div>
                   )}
                   <div
@@ -496,12 +496,12 @@ function SellerCartsContent() {
                   <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
                     {s.activeCart.company_location && (
                       <span className="flex items-center gap-1.5 truncate">
-                        <MapPin className="h-3 w-3 opacity-60" />
+                        <MapPin aria-hidden="true" className="h-3 w-3 opacity-60" />
                         {s.activeCart.company_location}
                       </span>
                     )}
                     <span className="flex items-center gap-1.5 whitespace-nowrap">
-                      <Clock className="h-3 w-3 opacity-60" />
+                      <Clock aria-hidden="true" className="h-3 w-3 opacity-60" />
                       Atualizado{' '}
                       {formatDistanceToNow(new Date(s.activeCart.updated_at), {
                         addSuffix: true,
@@ -554,7 +554,7 @@ function SellerCartsContent() {
                   className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-destructive transition-all hover:bg-destructive/5 hover:text-destructive"
                   onClick={() => s.setConfirmDeleteCart(true)}
                 >
-                  <Trash2 className="h-4 w-4" /> Excluir
+                  <Trash2 aria-hidden="true" className="h-4 w-4" /> Excluir
                 </Button>
               </div>
             </Card>
@@ -567,7 +567,7 @@ function SellerCartsContent() {
                 htmlFor="cart-notes"
                 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground opacity-70 transition-opacity group-hover/notes:opacity-100"
               >
-                <FileText className="h-3 w-3 text-primary" /> Notas da negociação
+                <FileText aria-hidden="true" className="h-3 w-3 text-primary" /> Notas da negociação
               </label>
               <Textarea
                 id="cart-notes"
@@ -807,7 +807,7 @@ function SellerCartsContent() {
                                       aria-label="Remover item"
                                       data-testid={`cart-remove-${item.id}`}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                                     </Button>
                                   </td>
                                 </tr>

@@ -28,7 +28,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-          <Columns className="h-3.5 w-3.5" />
+          <Columns aria-hidden="true" className="h-3.5 w-3.5" />
           Comparar
         </Button>
       </DialogTrigger>
@@ -57,7 +57,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <Building2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
@@ -96,7 +96,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
                           />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                            <Package className="h-3 w-3 text-muted-foreground" />
+                            <Package aria-hidden="true" className="h-3 w-3 text-muted-foreground" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -133,7 +133,7 @@ export function SaveTemplateDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-          <Save className="h-3.5 w-3.5" />
+          <Save aria-hidden="true" className="h-3.5 w-3.5" />
           Salvar como Template
         </Button>
       </DialogTrigger>
@@ -212,7 +212,7 @@ export function LoadTemplateDialog({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-          <BookTemplate className="h-3.5 w-3.5" />
+          <BookTemplate aria-hidden="true" className="h-3.5 w-3.5" />
           Usar Template ({templates.length})
         </Button>
       </DialogTrigger>
@@ -248,7 +248,7 @@ export function LoadTemplateDialog({
                       className="h-7 text-xs text-destructive"
                       onClick={() => onDelete(t.id)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 aria-hidden="true" className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>

@@ -247,7 +247,7 @@ export function CartHeaderButton() {
             ) : carts.length === 0 ? (
               <div className="px-4 pb-5 pt-6 text-center">
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/30">
-                  <Package className="h-7 w-7 text-muted-foreground/50" />
+                  <Package aria-hidden="true" className="h-7 w-7 text-muted-foreground/50" />
                 </div>
                 <p className="mb-1 text-sm font-medium">Nenhum carrinho</p>
                 <p className="mx-auto mb-4 max-w-[220px] text-xs text-muted-foreground">
@@ -306,7 +306,7 @@ export function CartHeaderButton() {
                                       : 'bg-muted text-muted-foreground',
                                   )}
                                 >
-                                  <Building2 className="h-4 w-4" />
+                                  <Building2 aria-hidden="true" className="h-4 w-4" />
                                 </div>
                               )}
 
@@ -450,7 +450,10 @@ export function CartHeaderButton() {
                                       />
                                     ) : (
                                       <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-muted/40">
-                                        <Package className="h-3.5 w-3.5 text-muted-foreground/50" />
+                                        <Package
+                                          aria-hidden="true"
+                                          className="h-3.5 w-3.5 text-muted-foreground/50"
+                                        />
                                       </div>
                                     )}
                                     <button

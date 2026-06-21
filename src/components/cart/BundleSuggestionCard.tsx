@@ -48,7 +48,7 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <div className="rounded-md bg-primary/10 p-1">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Sparkles aria-hidden="true" className="h-4 w-4 text-primary" />
           </div>
           Frequentemente orçado em conjunto
         </CardTitle>
@@ -103,7 +103,7 @@ export function BundleSuggestionCard({ productId, onAdd, className }: BundleSugg
                   onClick={() => onAdd(item)}
                   aria-label={`Adicionar ${item.product_name}`}
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus aria-hidden="true" className="h-3 w-3" />
                 </Button>
               )}
             </motion.div>
