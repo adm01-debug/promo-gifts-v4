@@ -5,7 +5,18 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package, Clock, Tag, Layers, Sparkles, FileText, Eye, Gift, BookOpen } from 'lucide-react';
+import {
+  Heart,
+  Package,
+  Clock,
+  Tag,
+  Layers,
+  Sparkles,
+  FileText,
+  Eye,
+  Gift,
+  BookOpen,
+} from 'lucide-react';
 import { ProductGallery } from '@/components/products/ProductGallery';
 import { KitComposition } from '@/components/products/KitComposition';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
@@ -228,14 +239,16 @@ export function ProductDetailHero({
           <h1
             data-testid="page-title-detalhe-produto"
             data-product-name={product.name}
-            className={cn("font-display text-lg font-bold leading-tight tracking-tight sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl", isAIActive ? "text-violet-700 dark:text-violet-300" : "text-foreground")}
+            className={cn(
+              'font-display text-lg font-bold leading-tight tracking-tight sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl',
+              isAIActive ? 'text-violet-700 dark:text-violet-300' : 'text-foreground',
+            )}
           >
             {displayName}
           </h1>
 
           {/* Word Magic — botão integrado no cabeçalho do produto */}
-          <div className="flex items-center gap-2 flex-wrap">
-            
+          <div className="flex flex-wrap items-center gap-2">
             {isAIActive && (
               <span className="flex items-center gap-1 rounded-full border border-violet-300/60 bg-violet-50 px-2.5 py-0.5 text-[11px] font-medium text-violet-700 dark:bg-violet-900/20 dark:text-violet-300">
                 <BookOpen className="h-3 w-3" />
@@ -246,8 +259,8 @@ export function ProductDetailHero({
 
           <ProductInfoBar
             sku={selectedVariation?.sku || product.sku}
-            supplierName={product.supplier.name}
-            supplierId={product.supplier.id}
+            supplierName={product.supplier?.name}
+            supplierId={product.supplier?.id}
             onOpenFutureStock={onOpenFutureStock}
             onOpenSupplierComparison={onOpenSupplierComparison}
           />
@@ -299,7 +312,7 @@ export function ProductDetailHero({
                     {sortVariationsByColor(product.variations).map(
                       (variation: ProductVariation) => {
                         const isSelected = selectedVariation?.id === variation.id;
-                        const stock = Math.max(0, variation.stock);
+                        const stock = Math.max(0, variation.stock ?? 0);
                         return (
                           <Tooltip key={variation.id}>
                             <TooltipTrigger asChild>
@@ -370,7 +383,7 @@ export function ProductDetailHero({
                   )}
                 >
                   <Package className="h-3.5 w-3.5" />
-                  {Math.max(0, product.stock).toLocaleString('pt-BR')} un.
+                  {Math.max(0, product.stock ?? 0).toLocaleString('pt-BR')} un.
                 </span>
               )}
 

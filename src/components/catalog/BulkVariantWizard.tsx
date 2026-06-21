@@ -314,6 +314,7 @@ export function BulkVariantWizard({
   const handleSelect = useCallback(
     (variant: ExternalVariantStock | null) => {
       const product = products[currentIndex];
+      if (!product) return;
       const newSelections = [...selections, { product, variant }];
 
       if (currentIndex + 1 >= products.length) {
