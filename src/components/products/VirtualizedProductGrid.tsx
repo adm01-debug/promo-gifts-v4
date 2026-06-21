@@ -111,7 +111,15 @@ function VirtualizedProductGridInner({
       if (!batch || batch.length === 0) return p;
       return {
         ...p,
-        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+        // FIX-COLOR-SEL-01 (2026-06-21): image/stock do batch eram descartados — clique na bolinha
+        // nao trocava foto nem estoque. userSelectedColor?.image e resolveColorStock dependem desses campos.
+        colors: batch.map((c) => ({
+          name: c.name,
+          hex: c.hex || '',
+          group: '',
+          image: c.image || undefined,
+          stock: c.stockQty,
+        })),
       };
     });
   }, [products, colorsByProduct]);
