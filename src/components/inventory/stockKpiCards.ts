@@ -40,23 +40,24 @@ const pct = (n: number, total: number): string =>
  * Todos os valores primários são em granularidade de VARIAÇÃO (cor/tamanho)
  * — o número que importa para o vendedor decidir vender ou não.
  *
- * @param ruptureRisk15dCount variações com cobertura ≤ 15 dias (vindo de
+ * @param ruptureRisk30dCount variações com cobertura ≤ 30 dias (vindo de
  *   `mv_stock_rupture_alert`). Quando omitido (flag EMA off), o card "Risco
  *   de Ruptura" cai no fallback `variantsCritical` (estado atual) para não
  *   ficar vazio.
  */
 export function buildStockKpiCards(
   summary: StockDashboardSummary,
-  ruptureRisk15dCount?: number | null,
+  ruptureRisk30dCount?: number | null,
 ): StockKpiCardData[] {
   const { totalVariants, totalProducts, variantsInStock, variantsCritical, variantsOutOfStock } =
     summary;
 
   const ruptureValue =
-    typeof ruptureRisk15dCount === 'number' && Number.isFinite(ruptureRisk15dCount)
-      ? ruptureRisk15dCount
+    typeof ruptureRisk30dCount === 'number' && Number.isFinite(ruptureRisk30dCount)
+      ? ruptureRisk30dCount
       : variantsCritical;
-  const ruptureFromEma = typeof ruptureRisk15dCount === 'number';
+  const ruptureFromEma = typeof ruptureRisk30dCount === 'number';
+
 
   return [
     {
