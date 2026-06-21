@@ -1,15 +1,12 @@
 /**
- * E2E — Sticky do header e do widget lateral em /novidades.
+ * E2E — Sticky de header/widget em /novidades sob scroll interno.
  *
- * Após a migração para `useWindowVirtualizer`, o scroll é da JANELA. Este teste
- * varre as larguras críticas (1366×768 e 1920×1080) e valida que, ao rolar a
- * janela em ~2 viewports:
- *  - O header sticky permanece em viewport (toBeInViewport).
- *  - Em ≥ xl (≥1280px), o widget lateral `ExpiringNoveltiesWidget` também fica.
- *  - O top do header não fica abaixo do topo do documento por mais que o offset
- *    do header global (sem layout-shift / sobreposição).
- *  - Screenshots são salvos como artefato (apenas após scroll) para inspeção
- *    visual no relatório do Playwright/CI.
+ * O scroll acontece no container interno do grid. Em 1366×768 e 1920×1080:
+ *  - Header permanece em viewport (não some) após o scroll interno.
+ *  - O top do header não muda entre antes/depois (sticky real, sem shift).
+ *  - Em ≥ xl (≥1280px), o widget lateral `ExpiringNoveltiesWidget` permanece.
+ *  - Janela NÃO rola (window.scrollY ≈ 0).
+ *  - Screenshots de evidência salvas no relatório.
  */
 import { test, expect, requireAuth } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
@@ -23,7 +20,7 @@ for (const vp of VIEWPORTS) {
   test.describe(`Novidades — sticky em ${vp.name}`, () => {
     test.beforeEach(() => requireAuth());
 
-    test(`header + widget permanecem sticky e sem shift após scroll (${vp.name})`, async ({
+    test(`header + widget permanecem sticky após scroll interno (${vp.name})`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
@@ -33,8 +30,8 @@ for (const vp of VIEWPORTS) {
       await expect(header).toBeVisible();
       await expect(header).toBeInViewport();
 
-      const list = page.locator('div[role="list"][aria-label="Grade de novidades"]');
-      await expect(list).toBeVisible({ timeout: 15_000 });
+      const scroller = page.getByTestId('novelty-grid-scroll');
+      await expect(scroller).toBeVisible({ timeout: 15_000 });
 
       const items = await page.locator('div[role="listitem"]').count();
       if (items === 0) {
@@ -42,38 +39,32 @@ for (const vp of VIEWPORTS) {
         return;
       }
 
-      // Captura "âncoras" antes do scroll (top em relação ao viewport).
-      const headerTopBefore = await header.evaluate(
-        (el) => el.getBoundingClientRect().top,
-      );
+      const headerTopBefore = await header.evaluate((el) => el.getBoundingClientRect().top);
 
-      // Rola a janela em ~2 viewports.
-      await page.evaluate(() => window.scrollTo(0, window.innerHeight * 2));
+      // Rola o container interno ~2 alturas visíveis.
+      await scroller.evaluate((el) => el.scrollTo({ top: el.clientHeight * 2 }));
       await page.waitForTimeout(400);
 
-      // Header sticky deve continuar visível.
+      // Janela NÃO rolou.
+      const windowY = await page.evaluate(() => window.scrollY);
+      expect(windowY).toBeLessThan(5);
+
+      // Header continua em viewport, sem shift (sticky real).
       await expect(header).toBeInViewport();
-      const headerTopAfter = await header.evaluate(
-        (el) => el.getBoundingClientRect().top,
-      );
+      const headerTopAfter = await header.evaluate((el) => el.getBoundingClientRect().top);
+      expect(Math.abs(headerTopAfter - headerTopBefore)).toBeLessThanOrEqual(4);
 
-      // Sem shift: o header sticky deve estar ancorado no topo do layout
-      // (variação <= 8px entre antes/depois, tolerando arredondamentos).
-      expect(Math.abs(headerTopAfter - headerTopBefore)).toBeLessThanOrEqual(64);
-
-      // Em telas >= xl (1280px), o widget lateral é sticky (`xl:sticky xl:top-4`).
+      // Widget lateral em ≥ xl.
       if (vp.width >= 1280) {
         const widget = page
           .locator('[class*="xl:sticky"]')
           .filter({ has: page.locator('text=/Recentes|Por Fornecedor/i') })
           .first();
-        // O widget pode não estar presente em datasets vazios — usa count().
         if ((await widget.count()) > 0) {
           await expect(widget).toBeInViewport();
         }
       }
 
-      // Screenshot de evidência (anexa no relatório do Playwright).
       await page.screenshot({
         path: `playwright-report/novidades-sticky-${vp.name}-scrolled.png`,
         fullPage: false,

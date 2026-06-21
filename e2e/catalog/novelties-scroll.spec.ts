@@ -1,70 +1,68 @@
 /**
- * E2E — Scroll do módulo Novidades (modelo WINDOW SCROLL).
+ * E2E — Scroll do módulo Novidades (modelo SCROLL INTERNO).
  *
- * Após a migração para `useWindowVirtualizer`, o scroll de Novidades é o da
- * própria janela (igual ao Catálogo). O wrapper interno NÃO é mais o container
- * de scroll. Este teste valida:
- *  1. A janela rola verticalmente (document.scrollingElement.scrollTop avança).
- *  2. O virtualizer renderiza novos itens conforme a janela rola.
- *  3. O header sticky + sidebar do widget permanecem visíveis durante a rolagem.
+ * O grid de Novidades rola num container interno
+ * `[data-testid="novelty-grid-scroll"]` (overflow-y: auto) — a janela do
+ * navegador fica travada em `overflow: hidden`. Este teste valida:
+ *  1. O container interno é o scroller (overflowY != visible, scrollTop avança).
+ *  2. A janela NÃO rola (window.scrollY permanece ~0).
+ *  3. O virtualizer continua renderizando itens conforme o scroll interno avança.
+ *  4. O header sticky permanece visível.
  */
 import { test, expect, requireAuth } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
 
-test.describe('Novidades — window scroll + virtualizer', () => {
+test.describe('Novidades — scroll interno do grid', () => {
   test.beforeEach(() => requireAuth());
 
-  test('a página /novidades rola pela janela e o virtualizer responde ao scroll', async ({
-    page,
-  }) => {
+  test('o grid rola internamente e a janela não rola', async ({ page }) => {
     await gotoAndSettle(page, '/novidades');
 
     await expect(page.getByTestId('page-title-novidades')).toBeVisible();
 
-    const list = page.locator('div[role="list"][aria-label="Grade de novidades"]');
-    await expect(list).toBeVisible({ timeout: 15_000 });
+    const scroller = page.getByTestId('novelty-grid-scroll');
+    await expect(scroller).toBeVisible({ timeout: 15_000 });
 
-    const initialItems = await page.locator('div[role="listitem"]').count();
-    if (initialItems === 0) {
-      test.skip(true, 'Nenhuma novidade no dataset atual — scroll não aplicável.');
+    const items = await page.locator('div[role="listitem"]').count();
+    if (items === 0) {
+      test.skip(true, 'Nenhuma novidade no dataset — scroll não aplicável.');
       return;
     }
 
-    // 1) O container de scroll é a JANELA. O wrapper interno NÃO deve ter overflow.
-    const wrapperOverflow = await list.evaluate(
-      (el) => window.getComputedStyle(el).overflowY,
-    );
-    expect(['visible', '']).toContain(wrapperOverflow);
+    // 1) O container é scrollável.
+    const overflowY = await scroller.evaluate((el) => getComputedStyle(el).overflowY);
+    expect(['auto', 'scroll']).toContain(overflowY);
 
-    // O documento deve ter altura suficiente para scroll.
-    const docMetrics = await page.evaluate(() => ({
-      scrollHeight: document.documentElement.scrollHeight,
-      innerHeight: window.innerHeight,
+    const metrics = await scroller.evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
     }));
-    expect(docMetrics.scrollHeight).toBeGreaterThan(docMetrics.innerHeight);
+    expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
 
-    // 2) Header sticky deve estar visível antes de rolar.
+    // 2) Header sticky visível antes de rolar.
     const header = page.getByTestId('page-title-novidades');
     await expect(header).toBeInViewport();
 
-    // 3) Rola a janela ~2 viewports.
-    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 2));
+    // 3) Rola o container ~2 alturas internas.
+    await scroller.evaluate((el) => el.scrollTo({ top: el.clientHeight * 2 }));
     await page.waitForTimeout(400);
 
-    const scrollY = await page.evaluate(() => window.scrollY);
-    expect(scrollY).toBeGreaterThan(200);
+    const innerScroll = await scroller.evaluate((el) => el.scrollTop);
+    expect(innerScroll).toBeGreaterThan(200);
 
-    // 4) Virtualizer continua renderizando linhas após o scroll.
+    // 4) Janela NÃO rolou.
+    const windowY = await page.evaluate(() => window.scrollY);
+    expect(windowY).toBeLessThan(5);
+
+    // 5) Virtualizer continua renderizando.
     expect(await page.locator('div[role="listitem"]').count()).toBeGreaterThan(0);
 
-    // 5) Header sticky continua visível (não some ao rolar).
+    // 6) Header sticky permanece visível.
     await expect(header).toBeInViewport();
 
-    // 6) Volta ao topo via window.scrollTo.
-    await page.evaluate(() => window.scrollTo(0, 0));
+    // 7) Volta ao topo via container.
+    await scroller.evaluate((el) => el.scrollTo({ top: 0 }));
     await page.waitForTimeout(300);
-    const topY = await page.evaluate(() => window.scrollY);
-    expect(topY).toBeLessThan(50);
-    expect(await page.locator('div[role="listitem"]').count()).toBeGreaterThan(0);
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBeLessThan(50);
   });
 });
