@@ -210,9 +210,11 @@ export function ProductRow({ item }: { item: ProposalItem }) {
       const pTotal = p.total_cost || 0;
       return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
     }, 0) || 0;
-  const allInUnitPrice = item.unitPrice + persUnitCost;
+  const allInUnitPrice = item.unitPrice + persUnitCost; // display only (rounded per-unit)
   const itemDiscount = item.discount || 0;
-  const total = item.quantity * allInUnitPrice - itemDiscount * item.quantity;
+  // BUG-048c: use p.total_cost directly for line total to avoid double-rounding
+  const persTotal = item.personalizations?.reduce((s, p) => s + (p.total_cost || 0), 0) || 0;
+  const total = item.quantity * item.unitPrice + persTotal - itemDiscount * item.quantity;
 
   const gravacao = item.personalizations
     ?.map((p) => {
