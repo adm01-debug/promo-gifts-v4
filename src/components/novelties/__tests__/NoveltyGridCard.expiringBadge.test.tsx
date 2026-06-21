@@ -21,6 +21,10 @@ vi.mock('@/components/products/NoveltyBadge', () => ({ NoveltyBadge: () => null 
 vi.mock('@/components/products/ProductStatusBadge', () => ({ ProductStatusBadge: () => null }));
 vi.mock('@/components/products/QuickViewThumb', () => ({ QuickViewThumb: () => null }));
 
+// detected_at 10 days ago so getRecencyVariant() returns 'normal' (not 'hot'),
+// ensuring fresh=false and the expiring badge can render when status='expiring_soon'.
+const TEN_DAYS_AGO = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
 function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDetails {
   return {
     novelty_id: 'nov-1',
@@ -37,9 +41,7 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
     supplier_id: null,
     supplier_name: null,
     supplier_product_code: null,
-    // Use a date old enough that getRecencyVariant returns 'normal' (not 'hot')
-    // so fresh = false by default, allowing the expiring badge to render.
-    detected_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    detected_at: TEN_DAYS_AGO,
     expires_at: new Date().toISOString(),
     days_remaining: 30,
     days_as_novelty: 10,
@@ -83,7 +85,8 @@ describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   });
 
   it('NÃO mostra o badge quando fresh (recém-chegado tem prioridade)', () => {
-    // detected_at = now → getRecencyVariant returns 'hot' → fresh = true → badge hidden
+    // "fresh" is computed from detected_at (≤2 days ago = 'hot' variant),
+    // NOT from is_highlighted. Override detected_at to NOW to make fresh=true.
     const { queryByTestId } = renderCard(
       makeNovelty({ status: 'expiring_soon', detected_at: new Date().toISOString() }),
     );

@@ -3,7 +3,6 @@
  */
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
-import type { QuoteStatus } from '@/types/quote';
 
 /**
  * Hard limit on negotiation markup (%). Attempting to exceed this is a user
@@ -80,12 +79,9 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
-  // SSOT (logic/quotes/calculations.ts:calculateRealDiscountPercent): clamp com
-  // Math.max(0, …). Um "desconto real" negativo significa que o markup absorveu o
-  // desconto (cliente paga acima do real) — não há desconto a validar na alçada,
-  // e exibir -X% confundiria o vendedor (NegotiationMarkupCard mostra este valor).
-  // Sem o clamp, a UI (que usa calculateRealDiscountPercent, clamped) divergiria do
-  // valor persistido por calculateQuoteTotals.
+  // Clamped to 0: a negative value means markup > apparent discount (seller
+  // has margin, no real concession to buyer). Showing -4.5% would confuse
+  // users; 0 correctly conveys "no real discount was given".
   const realDiscountPercent =
     realSubtotal > 0
       ? Math.max(0, round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100))
@@ -118,7 +114,6 @@ export function buildInsertPayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     client_cnpj: quote.client_cnpj || null,
-    contact_id: quote.contact_id || null,
     seller_id: userId,
     organization_id: orgId,
     status: quote.status || 'draft',
@@ -151,7 +146,6 @@ export function buildUpdatePayload(
     client_phone: quote.client_phone || null,
     client_company: quote.client_company || null,
     client_cnpj: quote.client_cnpj || null,
-    contact_id: quote.contact_id || null,
     status: quote.status,
     subtotal: round2(totals.subtotal),
     discount_percent: round2(quote.discount_percent || 0),
@@ -205,30 +199,23 @@ export function buildPersonalizationsInsertPayload(
   personalizations: NonNullable<QuoteItem['personalizations']>,
   quoteItemId: string,
 ): TablesInsert<'quote_item_personalizations'>[] {
-  return personalizations.map((p) => {
-    if ((p.setup_cost ?? 0) < 0 || (p.unit_cost ?? 0) < 0 || (p.total_cost ?? 0) < 0) {
-      throw new Error(
-        `Custos de personalização não podem ser negativos (técnica: ${p.technique_name || p.technique_id || 'desconhecida'})`,
-      );
-    }
-    return {
-      quote_item_id: quoteItemId,
-      technique_id: p.technique_id || null,
-      technique_name: p.technique_name || null,
-      location_code: p.location_code || null,
-      location_name: p.location_name || null,
-      personalized_quantity: p.personalized_quantity || null,
-      colors_count: p.colors_count || 1,
-      positions_count: p.positions_count || 1,
-      area_cm2: p.area_cm2,
-      width_cm: p.width_cm,
-      height_cm: p.height_cm,
-      setup_cost: round2(p.setup_cost || 0),
-      unit_cost: round2(p.unit_cost || 0),
-      total_cost: round2(p.total_cost || 0),
-      notes: p.notes,
-    };
-  });
+  return personalizations.map((p) => ({
+    quote_item_id: quoteItemId,
+    technique_id: p.technique_id || null,
+    technique_name: p.technique_name || null,
+    location_code: p.location_code || null,
+    location_name: p.location_name || null,
+    personalized_quantity: p.personalized_quantity || null,
+    colors_count: p.colors_count || 1,
+    positions_count: p.positions_count || 1,
+    area_cm2: p.area_cm2,
+    width_cm: p.width_cm,
+    height_cm: p.height_cm,
+    setup_cost: round2(p.setup_cost || 0),
+    unit_cost: round2(p.unit_cost || 0),
+    total_cost: round2(p.total_cost || 0),
+    notes: p.notes,
+  }));
 }
 
 /**
@@ -240,7 +227,7 @@ export function buildPersonalizationsInsertPayload(
  * FIX: versão anterior omitia pending_approval, viewed, converted e cancelled,
  * fazendo a UI exibir o valor cru do banco para esses status.
  */
-export const STATUS_LABELS: Record<QuoteStatus, string> = {
+export const STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
   pending: 'Pendente',
   pending_approval: 'Aguardando Aprovação',

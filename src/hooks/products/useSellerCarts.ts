@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -13,6 +14,11 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 // ============================================
 // TYPES
 // ============================================
+
+// Row type for the nested PostgREST query `seller_carts.select('*, seller_cart_items(*)')`.
+type SellerCartRowWithItems = Database['public']['Tables']['seller_carts']['Row'] & {
+  seller_cart_items: Database['public']['Tables']['seller_cart_items']['Row'][];
+};
 
 export interface SellerCart {
   id: string;
@@ -127,19 +133,13 @@ export function useSellerCarts() {
       if (error) throw error;
       if (!data?.length) return [];
 
-      // PostgREST nested-join row shape (the generated types.ts does not model the
-      // `seller_cart_items(*)` embed). Typed precisely so the destructure + spread
-      // below stay checked, instead of `as any`.
-      type SellerCartRow = Omit<SellerCart, 'items'> & {
-        seller_cart_items: SellerCartItem[] | null;
-      };
-      return (data as unknown as SellerCartRow[]).map((row) => {
+      return (data as unknown as SellerCartRowWithItems[]).map((row) => {
         const { seller_cart_items: rowItems, ...cart } = row;
         return {
           ...cart,
-          notes: cart.notes ?? null,
-          status: (cart.status ?? 'novo') as CartStatus,
-          items: rowItems ?? [],
+          notes: (cart.notes as string | null) ?? null,
+          status: ((cart.status as string) ?? 'novo') as CartStatus,
+          items: (rowItems ?? []) as SellerCartItem[],
         };
       });
     },

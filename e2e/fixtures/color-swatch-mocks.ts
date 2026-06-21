@@ -1,89 +1,100 @@
 /**
- * Fixture de mock de estoque por cor para `color-swatch-sweep.spec.ts`.
+ * Fixture determinística para specs de bolinha-de-cor (color swatch).
  *
- * `installColorStockMock` injeta, de forma determinística, uma variante de cor
- * ESGOTADA ("Preto Mock", quantidade 0) para um produto específico, aumentando a
- * resposta REST real de `/rest/v1/product_variants` (não substitui — preserva o
- * catálogo real e apenas prepende a variante mockada com `product_id` = alvo).
+ * Intercepta os endpoints consumidos por `useExternalVariantStock`:
+ *   - GET /rest/v1/product_variants?product_id=eq.{productId}&...
+ *   - GET /rest/v1/product_images?product_id=eq.{productId}&...
  *
- * Objetivo do teste: garantir que um swatch de cor esgotada mantém layout estável
- * (boundingBox > 0) e continua clicável (`aria-checked`). É best-effort: se a rota
- * de novidades/reposição servir cores por outro endpoint, o swatch simplesmente
- * não aparece e o guard de visibilidade do spec pula as asserções.
+ * Injeta um catálogo mínimo para um único produto:
+ *   - "Azul Mock"  → stock 50   (in-stock)
+ *   - "Preto Mock" → stock 0    (out-of-stock) ← usado pelo spec para validar data-stock-state="out"
+ *
+ * Desta forma os testes de out-of-stock são determinísticos e não dependem
+ * do seed real do banco de dados.
  */
 import type { Page, Route } from '@playwright/test';
 
-export const MOCK_OUT_OF_STOCK_COLOR_NAME = 'Preto Mock';
-
-export interface InstallColorStockMockOptions {
-  /** Produto que receberá a variante de cor esgotada mockada. */
-  productId: string;
-}
-
-/** Shape mínimo de `product_variants` consumido pelo catálogo (cor + estoque). */
 interface MockVariantRow {
   id: string;
   product_id: string;
   sku: string;
-  name: string;
-  color_id: string | null;
-  color_name: string;
-  color_hex: string;
+  supplier_sku: string | null;
   color_code: string | null;
-  stock_quantity: number;
+  color_name: string | null;
+  color_hex: string | null;
+  size_code: string | null;
+  stock_quantity: number | null;
+  selected_thumbnail: string | null;
+  images: string[] | null;
+  bitrix_product_id: string | number | null;
   is_active: boolean;
-  updated_at: string;
 }
 
-export async function installColorStockMock(
-  page: Page,
-  { productId }: InstallColorStockMockOptions,
-): Promise<void> {
-  const mockVariant: MockVariantRow = {
-    id: `mock-${productId}-preto`,
-    product_id: productId,
-    sku: `MOCK-${productId}-PRETO`,
-    name: MOCK_OUT_OF_STOCK_COLOR_NAME,
-    color_id: null,
-    color_name: MOCK_OUT_OF_STOCK_COLOR_NAME,
-    color_hex: '#000000',
-    color_code: null,
-    stock_quantity: 0, // esgotada → data-stock-state="out"
-    is_active: true,
-    updated_at: new Date().toISOString(),
-  };
+interface InstallOptions {
+  productId: string;
+}
+
+function makeVariants(productId: string): MockVariantRow[] {
+  return [
+    {
+      id: `mock-v-blue-${productId}`,
+      product_id: productId,
+      sku: `MOCK-BLUE-${productId}`,
+      supplier_sku: null,
+      color_code: null,
+      color_name: 'Azul Mock',
+      color_hex: '#3b82f6',
+      size_code: null,
+      stock_quantity: 50,
+      selected_thumbnail: null,
+      images: null,
+      bitrix_product_id: null,
+      is_active: true,
+    },
+    {
+      id: `mock-v-black-${productId}`,
+      product_id: productId,
+      sku: `MOCK-BLACK-${productId}`,
+      supplier_sku: null,
+      color_code: null,
+      color_name: 'Preto Mock',
+      color_hex: '#111111',
+      size_code: null,
+      stock_quantity: 0,
+      selected_thumbnail: null,
+      images: null,
+      bitrix_product_id: null,
+      is_active: true,
+    },
+  ];
+}
+
+function fulfill(route: Route, rows: unknown[]): Promise<void> {
+  return route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: {
+      'content-range': `0-${Math.max(0, rows.length - 1)}/${rows.length}`,
+      'access-control-expose-headers': 'content-range',
+    },
+    body: JSON.stringify(rows),
+  });
+}
+
+export async function installColorStockMock(page: Page, { productId }: InstallOptions): Promise<void> {
+  const variants = makeVariants(productId);
 
   await page.route(/\/rest\/v1\/product_variants(\?|$)/, async (route: Route) => {
-    // Só aumenta leituras; deixa mutações seguirem o fluxo normal.
     if (route.request().method() !== 'GET') return route.fallback();
+    const url = route.request().url();
+    if (!url.includes(`product_id=eq.${productId}`)) return route.fallback();
+    await fulfill(route, variants);
+  });
 
-    // Não contamina buscas explícitas de OUTROS produtos: injeta apenas em buscas
-    // em massa (sem filtro product_id — o componente filtra por product_id mesmo)
-    // ou quando o request mira o produto-alvo. PostgREST usa `eq.<id>` / `in.(...)`.
-    const productFilter = new URL(route.request().url()).searchParams.get('product_id');
-    const targetsOurProduct = !productFilter || productFilter.includes(productId);
-    if (!targetsOurProduct) return route.fallback();
-
-    let realRows: unknown[];
-    try {
-      const upstream = await route.fetch();
-      const parsed = (await upstream.json()) as unknown;
-      realRows = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      // Não mascara falha real de rede/auth/API com um 200 fabricado: deixa o
-      // request original seguir (e falhar de verdade) para o teste enxergar.
-      return route.fallback();
-    }
-
-    const rows = [mockVariant, ...realRows];
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: {
-        'content-range': `0-${Math.max(0, rows.length - 1)}/${rows.length}`,
-        'access-control-expose-headers': 'content-range',
-      },
-      body: JSON.stringify(rows),
-    });
+  await page.route(/\/rest\/v1\/product_images(\?|$)/, async (route: Route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    const url = route.request().url();
+    if (!url.includes(`product_id=eq.${productId}`)) return route.fallback();
+    await fulfill(route, []);
   });
 }

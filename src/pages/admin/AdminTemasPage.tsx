@@ -50,17 +50,25 @@ export default function AdminTemasPage() {
 
   const updateConfig = (partial: Partial<ThemeConfig>) => {
     let next = { ...config, ...partial };
-    // Quando o usuário troca de preset, se o novo skin tem borderRadius
-    // próprio (ex.: GX = 4px), sincroniza o slider para refletir o efeito.
+    // Quando o usuário troca de preset, sincroniza o slider de raio de borda:
+    // · GX preset (borderRadius definido) → snap para o valor angular do preset
+    // · Saindo de GX para classic → restaura o raio padrão (não deixa 4px angular
+    //   travado num skin clássico que não exige bordas retas)  [BUG-THEME-13]
     if (partial.presetId && partial.presetId !== config.presetId) {
       const nextPreset = THEME_PRESETS.find((p) => p.id === partial.presetId);
+      const prevPreset = THEME_PRESETS.find((p) => p.id === config.presetId);
       if (nextPreset?.borderRadius !== undefined) {
         next = { ...next, radius: nextPreset.borderRadius };
+      } else if (prevPreset?.borderRadius !== undefined) {
+        next = { ...next, radius: getDefaultConfig().radius };
       }
     }
     setConfig(next);
-    // Auto-save on every change for instant feedback
+    // Auto-save on every change for instant feedback.
+    // Also sync savedConfig so hasUnsavedChanges stays false after auto-save
+    // (BUG-THEME-04: pulsating red dot was shown even when data was already saved).
     saveThemeConfig(next);
+    setSavedConfig(next);
   };
 
   const handleSave = () => {
@@ -79,14 +87,6 @@ export default function AdminTemasPage() {
     saveThemeConfig(def);
     // setAppTheme removed as theme is fixed
     toast.success('Tema restaurado ao padrão');
-  };
-
-  // Reservado para uso futuro pelo botão de importação de tema
-  const _handleImport = (imported: ThemeConfig) => {
-    setConfig(imported);
-    saveThemeConfig(imported);
-    setSavedConfig(imported);
-    // setAppTheme removed as theme is fixed
   };
 
   return (
