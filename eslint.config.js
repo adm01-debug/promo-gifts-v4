@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 159: 5 zero-violation rules (excluded: jsx-a11y/aria-props 0v✓, @typescript-eslint/no-duplicate-enum-values 0v✓, @typescript-eslint/no-useless-constructor 0v✓ — saved Batch 160)
+      'no-lone-blocks': 'error',
+      'react/no-namespace': 'error',
+      'react/no-is-mounted': 'error',
+      'react/no-unused-class-component-methods': 'error',
+      'jsx-a11y/iframe-has-title': 'error',
       // Batch 158: 5 zero-violation rules (excluded: no-lone-blocks 0v✓, react/no-namespace 0v✓, react/no-is-mounted 0v✓, react/no-unused-class-component-methods 0v✓, jsx-a11y/iframe-has-title 0v✓ — saved Batch 159)
       'no-multi-str': 'error',
       'no-extend-native': 'error',
