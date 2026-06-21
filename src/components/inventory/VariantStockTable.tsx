@@ -636,7 +636,7 @@ export function VariantStockTable({
     },
   }));
 
-  const colSpan = selection.enabled ? 7 : 6;
+  const colSpan = (selection.enabled ? 7 : 6) + (emaEnabled ? 1 : 0);
   const virtualItems = rowVirtualizer.getVirtualItems();
   // Spacers mantêm o scrollbar calibrado sem renderizar todas as linhas.
   const virtualTopPad = virtualItems.length > 0 ? (virtualItems[0]?.start ?? 0) : 0;
