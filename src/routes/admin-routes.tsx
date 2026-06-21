@@ -20,6 +20,8 @@ import {
   AdminSegurancaChavesPage,
   AdminSegurancaPage,
   AdminTelemetriaPage,
+  EmaHealthPage,
+
   AdminUsuariosPage,
   AdminVideoVariantsPage,
   AdminWorkflowsPage,
@@ -116,6 +118,8 @@ export const adminRoutes = (
       <Route path="/admin/validade-precos" element={<PriceFreshnessSettingsPage />} />
       <Route path="/admin/badges-inteligencia" element={<IntelligenceBadgeSettingsPage />} />
       <Route path="/admin/telemetria" element={<AdminTelemetriaPage />} />
+      <Route path="/admin/ema-health" element={<EmaHealthPage />} />
+
       <Route path="/admin/design-tokens" element={<AdminDesignTokensPage />} />
       <Route path="/admin/client-performance" element={<AdminClientPerformancePage />} />
       <Route path="/admin/rate-limit" element={<RateLimitDashboard />} />
