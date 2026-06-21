@@ -565,6 +565,7 @@ export function StockDashboard() {
             products={productStocks}
             isLoading={isFetching}
             targetQuantity={filters.minQuantityNeeded}
+            ruptureFilterActive={isRuptureRiskActive}
           />
         </CardContent>
       </Card>
