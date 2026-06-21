@@ -46,12 +46,12 @@ describe('buildStockKpiCards', () => {
     expect(bySlug['sem-estoque'].value).not.toBe(baseSummary.productsOutOfStock);
   });
 
-  it('Risco de Ruptura uses EMA count (≤ 15 dias) when provided', () => {
+  it('Risco de Ruptura uses EMA count (≤ 30 dias) when provided', () => {
     const cards = buildStockKpiCards(baseSummary, 987);
     const rupture = cards.find((c) => c.slug === 'risco-de-ruptura')!;
     expect(rupture.title).toBe('Risco de Ruptura');
     expect(rupture.value).toBe(987);
-    expect(rupture.subtitle).toMatch(/15 dias/);
+    expect(rupture.subtitle).toMatch(/30 dias/);
     expect(rupture.tooltip).toMatch(/EMA/);
   });
 
