@@ -39,6 +39,7 @@ export function BorderRadiusControl({ value, onChange }: BorderRadiusControlProp
           {QUICK_PRESETS.map((preset) => (
             <button
               key={preset.value}
+              type="button"
               onClick={() => onChange(preset.value)}
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-medium transition-all',

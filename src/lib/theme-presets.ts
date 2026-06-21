@@ -961,8 +961,12 @@ export function loadThemeConfig(): ThemeConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
-      // Support both light/dark if ever expanded, but default to dark for now
-      parsed.mode ||= 'auto';
+      // Guard against corrupted/invalid mode values (e.g. mode:"hack" from
+      // manual localStorage edits). ||= only catches falsy; use includes() to
+      // also catch truthy-but-invalid strings.
+      if (!(['light', 'dark', 'auto'] as string[]).includes(parsed.mode)) {
+        parsed.mode = 'auto';
+      }
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
       }
