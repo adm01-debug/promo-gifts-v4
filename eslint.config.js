@@ -430,6 +430,12 @@ export default [
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
       // Batch 182: 5 zero-violation rules (saved: prefer-return-this-type 0v✓, prefer-as-const 0v✓, class-literal-property-style 0v✓, ban-tslint-comment 0v✓, no-shadow 0v✓ — Batch 183+)
+      // Batch 186: 5 zero-violation rules (saved: typedef 0v✓, prefer-for-of 0v✓ — Batch 187+; excluded: sort-type-constituents 746v, switch-exhaustiveness-check 34v)
+      '@typescript-eslint/parameter-properties': 'error',
+      '@typescript-eslint/consistent-type-exports': 'error',
+      '@typescript-eslint/no-duplicate-type-constituents': 'error',
+      '@typescript-eslint/no-loss-of-precision': 'error',
+      '@typescript-eslint/default-param-last': 'error',
       // Batch 185: 5 zero-violation rules (saved: parameter-properties 0v✓, consistent-type-exports 0v✓ — Batch 186+; excluded: no-loop-func 7v)
       '@typescript-eslint/no-var-requires': 'error',
       '@typescript-eslint/no-dupe-class-members': 'error',
