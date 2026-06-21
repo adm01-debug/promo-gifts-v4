@@ -51,8 +51,16 @@ export function useQuotes() {
   useEffect(() => {
     if (!userId) return;
 
+    // BUG-NEW-03 FIX: tópico ÚNICO por inscrição. O supabase-js reaproveita canais que
+    // compartilham o mesmo tópico; com o nome estático 'quotes-realtime', duas instâncias
+    // deste hook montadas em paralelo (ou um remount antes de removeChannel — assíncrono —
+    // concluir) recebiam o MESMO canal já inscrito, e o segundo .on('postgres_changes') era
+    // aplicado APÓS o subscribe(), lançando "cannot add postgres_changes callbacks ... after
+    // subscribe()" de forma síncrona dentro do useEffect e derrubando o render
+    // (GlobalErrorBoundary / ProtectedRoute). Um tópico único garante sempre um canal novo.
+    const channelTopic = `quotes-realtime-${userId}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
     const channel = supabase
-      .channel('quotes-realtime')
+      .channel(channelTopic)
       .on(
         'postgres_changes',
         {
