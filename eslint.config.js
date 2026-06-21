@@ -425,6 +425,12 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 141: 5 rules (3 zero-violation + 2 with manual fixes — removed: no-redundant-type-constituents 53v, no-base-to-string 58v)
+      '@typescript-eslint/unified-signatures': 'error',
+      '@typescript-eslint/parameter-properties': 'error',
+      'no-new-wrappers': 'error',
+      'no-proto': 'error',
+      'no-iterator': 'error',
       // Batch 140: 7 rules (all zero-violation)
       'no-lone-blocks': 'error',
       'no-useless-concat': 'error',
