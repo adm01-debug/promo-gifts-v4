@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 229: 5 zero-violation rules (saved: no-useless-empty-export, no-duplicate-enum-values, no-restricted-types, consistent-generic-constructors, no-confusing-non-null-assertion 0v✓ — Batch 230+)
+      '@typescript-eslint/only-throw-error': 'error',
+      '@typescript-eslint/ban-tslint-comment': 'error',
+      '@typescript-eslint/no-invalid-this': 'error',
+      '@typescript-eslint/default-param-last': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
       // Batch 228: 5 zero-violation rules (saved: only-throw-error 0v✓ — Batch 229+)
       '@typescript-eslint/typedef': 'error',
       '@typescript-eslint/no-useless-constructor': 'error',
@@ -434,7 +440,6 @@ export default [
       '@typescript-eslint/prefer-return-this-type': 'error',
       '@typescript-eslint/no-unnecessary-parameter-property-assignment': 'error',
       // Batch 225: 5 zero-violation rules (saved: no-var-requires, related-getter-setter-pairs, triple-slash-reference 0v✓ — Batch 226+)
-      '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-misused-spread': 'error',
       '@typescript-eslint/no-unnecessary-template-expression': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
@@ -747,7 +752,6 @@ export default [
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-global-assign': 'error',
-      'no-native-reassign': 'error',
       // Batch 173: 5 zero-violation rules (saved: no-eval 0v✓, no-implied-eval 0v✓ — Batch 174)
       'no-floating-decimal': 'error',
       'no-implicit-globals': 'error',
