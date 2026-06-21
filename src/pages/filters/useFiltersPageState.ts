@@ -564,16 +564,11 @@ export function useFiltersPageState() {
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
   const filteredProductIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
-  const filteredProductMinQtys = useMemo(
-    () => new Map(filteredProducts.map((p) => [p.id, p.minQuantity])),
-    [filteredProducts],
-  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: filteredProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
     colorNuances: filters.colorNuances || [],
-    productMinQuantities: filteredProductMinQtys,
   });
 
   // Merge color enrichment data into products
@@ -634,15 +629,26 @@ export function useFiltersPageState() {
   // Chips removíveis no cabeçalho não apareciam para esses filtros.
   const activeFiltersSummary = useMemo(() => {
     const summary: { label: string; value: string; key: keyof FilterState }[] = [];
+    // FEAT-COR-UNICA 2026-06-21: seleção exclusiva (max 1 cor).
+    // Chip mostra o nome da cor selecionada em vez de contagem.
+    // slugToLabel: "azul-royal" → "Azul Royal" sem precisar de lookup async.
+    const slugToLabel = (slug: string) =>
+      slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const totalCores =
       (filters.colorGroups?.length || 0) +
       (filters.colorVariations?.length || 0) +
       (filters.colorNuances?.length || 0) +
       filters.colors.length;
+    const selectedColorSlug =
+      filters.colorGroups?.[0] ??
+      filters.colorVariations?.[0] ??
+      filters.colorNuances?.[0] ??
+      filters.colors?.[0] ??
+      null;
     if (totalCores > 0)
       summary.push({
-        label: 'Cores',
-        value: `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
+        label: 'Cor',
+        value: selectedColorSlug ? slugToLabel(selectedColorSlug) : `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
         key: 'colors',
       });
     if (filters.categories.length > 0)
