@@ -79,11 +79,24 @@ export function StockFilterToolbar({
   colorGroups: _colorGroups,
   totalProducts,
   filteredCount,
+  ruptureRiskVariantIds = null,
+  isRuptureRiskActive = false,
 }: StockFilterToolbarProps) {
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() ?? '');
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [ruptureHorizon, setRuptureHorizon] = useRuptureHorizon();
+
+  const toggleRuptureFilter = useCallback(
+    (v: boolean) => {
+      if (v && ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+        onUpdateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+      } else {
+        onUpdateFilter('ruptureRiskVariantIds', undefined);
+      }
+    },
+    [ruptureRiskVariantIds, onUpdateFilter],
+  );
 
   // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
   useFutureStockPreference(
