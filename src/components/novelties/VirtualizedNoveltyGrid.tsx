@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import type { NoveltyWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 import {
@@ -22,15 +22,15 @@ interface VirtualizedNoveltyGridProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
-  /** Increment this counter to imperatively scroll the inner container back to the top.
-   *  Typically incremented whenever the active filter set changes. */
+  /** Incrementa p/ rolar a janela ao topo (troca de filtros). */
   scrollToTopToken?: number;
 }
 
 /**
- * Grade virtualizada de Novidades — espelha a implementação de Reposição
- * para garantir colunas responsivas, espaçamento vertical uniforme (pb-8)
- * e alinhamento interno consistente em todas as resoluções.
+ * Grade virtualizada de Novidades — agora ancorada ao SCROLL DA JANELA
+ * (useWindowVirtualizer), espelhando o comportamento do Catálogo:
+ * sidebar/header sticky, página rola naturalmente, infinite scroll
+ * dispara conforme o usuário se aproxima do fim do documento.
  */
 export function VirtualizedNoveltyGrid({
   products,
@@ -47,58 +47,67 @@ export function VirtualizedNoveltyGrid({
   scrollToTopToken = 0,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
 
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
-  // ISSUE-18 FIX: estimateSize adaptado ao nro de colunas — cards mais estreitos
-  // (mais colunas) são mais baixos porque o texto ocupa mais linhas quando a
-  // largura da coluna é menor. Valor fixo (480px) causava saltos de scroll ao
-  // trocar de layout porque o estimado divergia muito do medido.
   const estimatedRowHeight = numCols <= 2 ? 460 : numCols <= 3 ? 440 : 420;
 
-  const virtualizer = useVirtualizer({
+  // Mede o offset do container em relação ao topo do documento — necessário
+  // para o useWindowVirtualizer alinhar suas posições absolutas.
+  useLayoutEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    const update = () => {
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setScrollMargin(top);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(document.documentElement);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  const virtualizer = useWindowVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
     estimateSize: () => estimatedRowHeight,
     overscan: 3,
+    scrollMargin,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
-  // Scroll the inner container back to the top whenever the active filter set
-  // changes. Skip the very first render (token = 0 on mount) to avoid an
-  // unnecessary instant-scroll on initial page load.
+  // Reset de scroll ao topo quando os filtros mudam (skip 1º render).
   const isFirstScrollRef = useRef(true);
   useEffect(() => {
     if (isFirstScrollRef.current) {
       isFirstScrollRef.current = false;
       return;
     }
-    parentRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [scrollToTopToken]);
 
+  // Infinite scroll baseado no scroll da JANELA. Dispara onLoadMore quando o
+  // fim do documento se aproxima (>= 1 viewport de antecedência).
   useEffect(() => {
-    const el = parentRef.current;
-    if (!el || !onLoadMore) return;
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const handleScroll = () => {
+    if (!onLoadMore) return;
+    const onScroll = () => {
       if (!hasMore || isLoadingMore) return;
-      // ISSUE-33 FIX: threshold responsivo — pelo menos 1 viewport de antecedência.
-      // Threshold fixo (640px) era quase a tela inteira em mobile (375px) causando
-      // pre-loads prematuros, e muito pouco em monitores grandes (>1080px).
-      const threshold = Math.max(640, el.clientHeight);
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
-        onLoadMore();
-      }
+      const doc = document.documentElement;
+      const remaining = doc.scrollHeight - window.scrollY - window.innerHeight;
+      const threshold = Math.max(640, window.innerHeight);
+      if (remaining < threshold) onLoadMore();
     };
-
-    el.addEventListener('scroll', handleScroll, { passive: true });
-    timeoutId = setTimeout(handleScroll, 180);
-
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Dispara uma vez após montagem para o caso de já estarmos no fim.
+    const t = setTimeout(onScroll, 180);
     return () => {
-      el.removeEventListener('scroll', handleScroll);
-      if (timeoutId) clearTimeout(timeoutId);
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(t);
     };
   }, [products.length, hasMore, isLoadingMore, onLoadMore]);
 
@@ -106,11 +115,6 @@ export function VirtualizedNoveltyGrid({
     <div
       ref={parentRef}
       data-testid="novelty-list-wrapper"
-      className="scrollbar-products overflow-y-auto pr-2"
-      style={{
-        height:
-          'max(420px, calc(100vh - var(--header-h,56px) - var(--breadcrumb-h,0px) - var(--novelty-sticky-h,160px) - 112px))',
-      }}
       role="list"
       aria-label="Grade de novidades"
     >
@@ -135,7 +139,7 @@ export function VirtualizedNoveltyGrid({
                 top: 0,
                 left: 0,
                 width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
+                transform: `translateY(${virtualRow.start - scrollMargin}px)`,
               }}
               className={`grid ${getGridColsClass(gridColumns)} ${getGridGapClass(gridColumns)} pb-8`}
             >
