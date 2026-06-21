@@ -128,7 +128,7 @@ function StockRiskHeroInner({ onLevelFilter, className }: StockRiskHeroProps) {
   }, [health]);
   const freshness = formatRelative(lastRun);
 
-  if (!enabled) return null;
+  // (gate de flag já aplicado no wrapper StockRiskHero)
 
   const pulseColor =
     pulseTone === 'ok'
