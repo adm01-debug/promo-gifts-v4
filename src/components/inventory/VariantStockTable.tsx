@@ -379,6 +379,12 @@ interface VariantStockTableProps {
    * ao comportamento estático (≤ mínimo do produto).
    */
   targetQuantity?: number;
+  /**
+   * Sinaliza que o filtro dimensional "Risco de Ruptura" (set EMA ≤30d) está
+   * ativo. Usado APENAS para customizar o texto do estado vazio — a filtragem
+   * em si acontece upstream em `applyStockFilters`.
+   */
+  ruptureFilterActive?: boolean;
 }
 
 /**
