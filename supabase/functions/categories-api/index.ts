@@ -194,17 +194,33 @@ Deno.serve(async (req) => {
           categoryCount: targetCategoryIds.length,
         });
 
-        // Coletar IDs de todas as estratégias em paralelo
+        // BUG-CAT-EDGE-01 FIX: execute as 3 estratégias em paralelo (antes eram sequenciais,
+        // triplicando a latência de cada request de filtro por categoria).
+        const [
+          { data: directProducts, error: directError },
+          { data: assignments, error: assignError },
+          { data: fallbackData, error: fallbackError },
+        ] = await Promise.all([
+          externalClient
+            .from('products')
+            .select('id')
+            .in('category_id', targetCategoryIds)
+            .eq('is_active', true),
+          externalClient
+            .from('product_category_assignments')
+            .select('product_id')
+            .in('category_id', targetCategoryIds),
+          externalClient
+            .from('product_categories')
+            .select('product_id')
+            .in('category_id', targetCategoryIds),
+        ]);
+
+        // Coletar IDs de todas as estratégias
         const allProductIds = new Set<string>();
         let primarySource = 'none';
 
         // ESTRATÉGIA 1: Usar products.category_id diretamente
-        const { data: directProducts, error: directError } = await externalClient
-          .from('products')
-          .select('id')
-          .in('category_id', targetCategoryIds)
-          .eq('is_active', true);
-
         if (!directError && directProducts && directProducts.length > 0) {
           directProducts.forEach((p: any) => allProductIds.add(p.id));
           primarySource = 'products.category_id';
@@ -220,11 +236,6 @@ Deno.serve(async (req) => {
         }
 
         // ESTRATÉGIA 2: product_category_assignments (tabela N:N)
-        const { data: assignments, error: assignError } = await externalClient
-          .from('product_category_assignments')
-          .select('product_id')
-          .in('category_id', targetCategoryIds);
-
         if (!assignError && assignments && assignments.length > 0) {
           assignments.forEach((a: any) => allProductIds.add(a.product_id));
           if (primarySource === 'none') primarySource = 'product_category_assignments';
@@ -241,11 +252,6 @@ Deno.serve(async (req) => {
         }
 
         // ESTRATÉGIA 3: product_categories (fallback legacy)
-        const { data: fallbackData, error: fallbackError } = await externalClient
-          .from('product_categories')
-          .select('product_id')
-          .in('category_id', targetCategoryIds);
-
         if (!fallbackError && fallbackData && fallbackData.length > 0) {
           fallbackData.forEach((a: any) => allProductIds.add(a.product_id));
           if (primarySource === 'none') primarySource = 'product_categories';
