@@ -142,6 +142,15 @@ export interface Product {
   aiVersion?: number | null;
   /** Timestamp da última geração IA (ISO 8601). */
   aiGeneratedAt?: string | null;
+
+  /**
+   * FAN-OUT DE COR: quando o filtro de cor está ativo, um produto pode aparecer
+   * como múltiplos cards (1 por cor selecionada que possui). Este campo carrega
+   * o color_id daquele card específico, usado para compor a key única
+   * `${id}|${_cardColorId}` no grid e para deep-link na PDP (?cor=).
+   * undefined = card normal (1 por produto, sem fan-out).
+   */
+  _cardColorId?: string;
 }
 
 /** Componente individual de um kit de brindes (kit nativo do fornecedor ou kit montado). */
