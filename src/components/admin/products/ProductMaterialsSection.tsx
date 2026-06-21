@@ -17,6 +17,7 @@ import { X, Search, Gem, Save, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MaterialGroupTree } from './MaterialGroupTree';
+import { ORGANIZATION_ID } from './new-supplier/types';
 
 interface ProductMaterialsSectionProps {
   productId: string;
@@ -161,6 +162,9 @@ export function ProductMaterialsSection({ productId }: ProductMaterialsSectionPr
           const { error } = await untypedFrom('product_materials').insert({
             product_id: productId,
             material_id: materialId,
+            // organization_id is NOT NULL on product_materials and is gated by the
+            // is_org_owner_or_admin(organization_id) RLS INSERT policy.
+            organization_id: ORGANIZATION_ID,
           });
           if (error) throw new Error(error.message);
           toast.success('Material adicionado');

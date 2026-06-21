@@ -153,6 +153,9 @@ export interface PromobrindProduct {
   ipi_rate?: number | null;
   country_of_origin?: string | null;
   origin_country?: string | null;
+  // Edit-form round-trip fields (present in v_products_public; previously untyped).
+  supplier_product_url?: string | null;
+  box_inner_quantity?: number | null;
   cfop?: string | null;
   csosn?: string | null;
   icms_rate?: number | null;
