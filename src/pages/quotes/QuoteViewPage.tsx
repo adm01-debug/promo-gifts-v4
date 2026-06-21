@@ -205,7 +205,7 @@ export default function QuoteViewPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {(quote.status === 'sent' || isSyncing) && (
+                {quote.status === 'sent' && (
                   <DropdownMenuItem
                     onClick={async () => {
                       try {
@@ -218,7 +218,7 @@ export default function QuoteViewPage() {
                           quote.id ?? '',
                           'status_change',
                           'Status revertido para Pendente',
-                          { oldValue: 'sent', newValue: 'pending' },
+                          { oldValue: quote.status, newValue: 'pending' },
                         );
                         setQuote((prev) => (prev ? { ...prev, status: 'pending' } : prev));
                         toast.success('Sincronização cancelada');
