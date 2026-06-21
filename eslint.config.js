@@ -415,6 +415,8 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 238: 1 zero-violation rule (238A-G probed all 134 @typescript-eslint rules — only consistent-type-imports was 0v)
+      '@typescript-eslint/consistent-type-imports': 'error',
       // Batch 237: 5 zero-violation rules (probe 237A: all 0v✓)
       '@typescript-eslint/no-implied-eval': 'error',
       '@typescript-eslint/prefer-for-of': 'error',
