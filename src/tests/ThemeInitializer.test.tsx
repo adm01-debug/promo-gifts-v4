@@ -10,6 +10,7 @@ vi.mock('../lib/theme-presets', () => ({
   loadThemeConfig: vi.fn(),
   applyThemePreset: vi.fn(),
   applyRadius: vi.fn(),
+  STORAGE_KEY: 'gifts-store-theme-config',
 }));
 
 describe('ThemeInitializer', () => {
