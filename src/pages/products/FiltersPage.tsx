@@ -576,10 +576,14 @@ export default function FiltersPage() {
                            filtro de cor ativo). Sem filtro, === filteredProducts. */
                         products={state.displayCards}
                         isLoading={state.isLoadingProducts}
-                        onProductClick={(productId) =>
+                        onProductClick={(productId, colorName) =>
                           state.selectionMode
                             ? sel.toggleSelect(productId)
-                            : navigate(`/produto/${productId}`)
+                            : navigate(
+                                colorName
+                                  ? `/produto/${productId}?cor=${encodeURIComponent(colorName)}&pid=${productId}`
+                                  : `/produto/${productId}`,
+                              )
                         }
                         isFavorited={isFavorite}
                         onToggleFavorite={toggleFavorite}
