@@ -37,6 +37,12 @@ export type FeatureFlag =
    * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
    */
   | 'useEmaRupture'
+  /**
+   * Aba "Confiabilidade de Fornecedores" em /estoque. Lê
+   * variant_supplier_sources (next_date_N) e stock_snapshots (chegadas reais)
+   * e calcula índice de confiança previsão × realidade por fornecedor.
+   */
+  | 'supplierReliability'
   | 'voice_commands';
 
 interface FlagConfig {
@@ -94,6 +100,14 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
     description:
       'Painel preditivo de ruptura por fornecedor (EMA α=0.3) — Onda 1. ' +
       'Habilita RupturePanelEma + useRuptureAlerts na página /estoque.',
+  },
+  supplierReliability: {
+    enabled: true,
+    description:
+      'Aba "Confiabilidade de Fornecedores" em /estoque: índice de ' +
+      'confiança previsão × chegada real (variant_supplier_sources.next_date_N ' +
+      'vs stock_snapshots delta positivo), histórico paginado e próximas ' +
+      'reposições por fornecedor.',
   },
 };
 
