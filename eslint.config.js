@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 192: 5 zero-violation rules (saved: no-new-func 0v✓, no-return-assign 0v✓ — Batch 193+)
+      'prefer-promise-reject-errors': 'error',
+      'no-implicit-globals': 'error',
+      'no-labels': 'error',
+      'no-lone-blocks': 'error',
+      'no-new': 'error',
       // Batch 191: 5 zero-violation rules (saved: prefer-promise-reject-errors 0v✓ — Batch 192+)
       'no-throw-literal': 'error',
       'no-useless-call': 'error',
