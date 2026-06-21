@@ -5,7 +5,7 @@ import { VariantPickerDialog } from '@/components/products/VariantPickerDialog';
 import { type ExternalVariantStock, type Product } from '@/hooks/products';
 
 import { PageSEO } from '@/components/seo/PageSEO';
-import { FilterPanel, type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
+import { FilterPanel } from '@/components/filters/FilterPanel';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { PresetsBar } from '@/components/filters/PresetsBar';
 import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
@@ -45,10 +45,6 @@ import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopov
 import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import type { VoiceAgentAction } from '@/hooks/voice/types';
-import { applyVoiceFilters } from './applyVoiceFilters';
-import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
-import { toast } from 'sonner';
 import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
 import { useFiltersSelectionMode } from '@/pages/filters/useFiltersSelectionMode';
 import { cn } from '@/lib/utils';
@@ -57,18 +53,6 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 // DEFAULT_SORT_VALUE derivado do SSOT (SORT_OPTIONS) — evita hardcodar 'name'.
 // Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
-
-// BUG-VOZ FIX: mapeamento canônico de sortBy da voz para valores aceitos pelo pipeline.
-const VOICE_SORT_MAP: Record<string, string> = {
-  'price-asc': 'price-asc',
-  'price-desc': 'price-desc',
-  name: 'name',
-  stock: 'stock',
-  newest: 'newest',
-  popularity: 'popularity',
-  'best-seller-supplier': 'best-seller-supplier',
-  'best-seller-promo': 'best-seller-promo',
-} as const;
 
 // GAP-1 FIX (PR #689 review): labels para valores internos de sortBy que são
 // válidos no pipeline (VALID_SORT_VALUES do useFiltersPageState) mas não
@@ -105,8 +89,6 @@ export default function FiltersPage() {
     selectionMode: state.selectionMode,
     filteredProducts: state.filteredProducts,
   });
-  const openOracle = useOracleVoiceBridge((s) => s.openOracle);
-
   // ========== SEARCH HISTORY ==========
   const [historyOpen, setHistoryOpen] = useState(false);
   const { history: rawSearchHistory, clearHistory } = useSearchHistory('general');
@@ -119,46 +101,6 @@ export default function FiltersPage() {
     undefined,
   );
   const variantSelectedRef = useRef(false);
-
-  // ========== VOICE ==========
-  const handleVoiceAction = useCallback(
-    (action: VoiceAgentAction) => {
-      if (action.action === 'open_oracle') {
-        openOracle(action.data?.oracleMessage || undefined);
-        toast.success(action.response);
-        return;
-      }
-      if (action.action === 'open_cart') {
-        // Trigger cart sidebar via keyboard shortcut event
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', altKey: true }));
-        toast.success(action.response);
-        return;
-      }
-
-      if (!action.data) return;
-
-      if (action.action === 'filter' && action.data.filters) {
-        const f = action.data.filters;
-        state.setFilters((prev: FilterState) => applyVoiceFilters(prev, f));
-        toast.success(action.response);
-      } else if (action.action === 'search' && action.data.query) {
-        const query = action.data.query;
-        state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
-        toast.success(action.response);
-      } else if (action.action === 'sort' && action.data.sortBy) {
-        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || DEFAULT_SORT_VALUE;
-        state.setSortBy(sortValue);
-        toast.success(action.response);
-      } else if (action.action === 'clear') {
-        state.setFilters(defaultFilters);
-        toast.success(action.response);
-      } else if (action.action === 'navigate' && action.data.route) {
-        navigate(action.data.route);
-        toast.success(action.response);
-      }
-    },
-    [state, navigate, openOracle],
-  );
 
   const toggleSelectionMode = useCallback(() => {
     state.setSelectionMode((prev: boolean) => !prev);
@@ -694,7 +636,7 @@ export default function FiltersPage() {
                                   groups: state.filters.colorGroups,
                                   variations: state.filters.colorVariations,
                                 }
-                            : null
+                              : null
                           }
                           selectionMode={state.selectionMode}
                           externalSelectedIds={sel.selectedIds}
@@ -724,7 +666,7 @@ export default function FiltersPage() {
                                   groups: state.filters.colorGroups,
                                   variations: state.filters.colorVariations,
                                 }
-                            : null
+                              : null
                           }
                           selectionMode={state.selectionMode}
                           selectedIds={sel.selectedIds}

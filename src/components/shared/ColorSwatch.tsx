@@ -76,17 +76,34 @@ export interface ColorSwatchProps extends HTMLAttributes<HTMLSpanElement> {
  * precisa de um botão. Consumidores interativos (Catálogo) devem usar
  * `getColorSwatchClasses(...)` em um `<button>` próprio.
  */
-export const ColorSwatch = forwardRef<HTMLSpanElement, ColorSwatchProps>(function ColorSwatch(
-  { hex, name, isActive, isOutOfStock, sizeClassName = 'h-[25px] w-[25px]', className, style, ...rest },
-  ref,
-) {
-  const { background, hasBg } = resolveSwatchBackground(hex, name);
-  return (
-    <span
-      ref={ref}
-      className={cn(getColorSwatchClasses({ isActive, isOutOfStock, hasBg }), 'shrink-0', sizeClassName, className)}
-      style={background ? { ...style, backgroundColor: background } : style}
-      {...rest}
-    />
-  );
-});
+export const ColorSwatch = forwardRef<HTMLSpanElement, ColorSwatchProps>(
+  (
+    {
+      hex,
+      name,
+      isActive,
+      isOutOfStock,
+      sizeClassName = 'h-[25px] w-[25px]',
+      className,
+      style,
+      ...rest
+    },
+    ref,
+  ) => {
+    const { background, hasBg } = resolveSwatchBackground(hex, name);
+    return (
+      <span
+        ref={ref}
+        className={cn(
+          getColorSwatchClasses({ isActive, isOutOfStock, hasBg }),
+          'shrink-0',
+          sizeClassName,
+          className,
+        )}
+        style={background ? { ...style, backgroundColor: background } : style}
+        {...rest}
+      />
+    );
+  },
+);
+ColorSwatch.displayName = 'ColorSwatch';
