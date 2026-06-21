@@ -47,8 +47,8 @@ class DefaultAccessPolicy implements AccessPolicy {
 export class DevInfraGate {
   private readonly providers: GateFlagProvider[];
   private readonly accessPolicy: AccessPolicy;
-  private readonly cache: Map<string, boolean> = new Map();
-  private readonly listeners: Set<() => void> = new Set();
+  private readonly cache = new Map<string, boolean>();
+  private readonly listeners = new Set<() => void>();
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private envFlagCache: GateValue | null = null;

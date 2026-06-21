@@ -425,6 +425,11 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 126: 3 zero-violation rules + 1 rule with 5 auto-fixes (removed: no-unnecessary-type-arguments 16v, no-deprecated 134v, no-import-type-side-effects 102v)
+      '@typescript-eslint/consistent-generic-constructors': 'error',
+      'no-useless-computed-key': 'error',
+      'no-useless-rename': 'error',
+      'prefer-object-spread': 'error',
       // Batch 125: 3 rules with 1 fix each (removed: no-unnecessary-type-assertion 388v, no-confusing-void-expression 2935v, require-await 119v, no-dynamic-delete 15v)
       '@typescript-eslint/prefer-function-type': 'error',
       '@typescript-eslint/no-unsafe-enum-comparison': 'error',
