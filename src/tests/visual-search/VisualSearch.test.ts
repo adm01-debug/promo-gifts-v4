@@ -18,6 +18,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 vi.mock('@/hooks/products', () => ({
   useExternalCategoriesQuery: vi.fn(() => ({ data: [] })),
   useColorSystem: vi.fn(() => ({ data: { groups: [] } })),
+  noveltyToProduct: vi.fn(),
 }));
 
 // Mock do router e sonner

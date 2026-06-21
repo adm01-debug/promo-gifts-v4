@@ -37,7 +37,9 @@ function makeNovelty(overrides: Partial<NoveltyWithDetails> = {}): NoveltyWithDe
     supplier_id: null,
     supplier_name: null,
     supplier_product_code: null,
-    detected_at: new Date().toISOString(),
+    // Use a date old enough that getRecencyVariant returns 'normal' (not 'hot')
+    // so fresh = false by default, allowing the expiring badge to render.
+    detected_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     expires_at: new Date().toISOString(),
     days_remaining: 30,
     days_as_novelty: 10,
@@ -81,8 +83,9 @@ describe('NoveltyGridCard › badge "Últimos dias" (urgência)', () => {
   });
 
   it('NÃO mostra o badge quando fresh (recém-chegado tem prioridade)', () => {
+    // detected_at = now → getRecencyVariant returns 'hot' → fresh = true → badge hidden
     const { queryByTestId } = renderCard(
-      makeNovelty({ status: 'expiring_soon', is_highlighted: true }),
+      makeNovelty({ status: 'expiring_soon', detected_at: new Date().toISOString() }),
     );
     expect(queryByTestId('novelty-expiring-badge')).toBeNull();
   });
