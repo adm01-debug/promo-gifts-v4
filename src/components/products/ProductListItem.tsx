@@ -25,11 +25,12 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
-import type { ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 import { GenderBadge } from './GenderBadge';
 import { getSupplierColors } from '@/lib/supplier-colors';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import {
   resolveColorImage,
   resolveColorStock,
@@ -134,6 +135,13 @@ export const ProductListItem = memo(
     const setSelectedColor = useProductSelectionStore((st) => st.setSelectedColor);
     const userSelectedColorName =
       useProductSelectionStore((st) => st.selectedColors[product.id]) ?? null;
+
+    // FIX-COLOR-SEL-02 (2026-06-21): busca dados reais da variante ao selecionar cor.
+    // Dispara SOMENTE quando o usuário clicou numa bolinha (userSelectedColorName != null).
+    // Cache 15min compartilhado com ProductCard — serve do cache se o grid já carregou.
+    const { data: liveVariants } = useExternalVariantStock(
+      userSelectedColorName ? product.id : undefined,
+    );
 
     // Reset variant index when color filter changes
     const listFilterKey = activeColorFilter
@@ -331,7 +339,19 @@ export const ProductListItem = memo(
     const userSelectedImage =
       userSelectedColor?.images?.[0] || userSelectedColor?.image || undefined;
 
-    const variantImage = userSelectedImage || currentVariant?.image;
+    // FIX-COLOR-SEL-02: enriquece com dados reais do BD quando o catálogo lightweight
+    // não trouxe image/stock na cor selecionada (liveVariants só carrega após 1ª seleção).
+    const liveMatchForColor =
+      userSelectedColorName && liveVariants?.length
+        ? liveVariants.find(
+            (v) => (v.color_name || '').toLowerCase() === userSelectedColorName.toLowerCase(),
+          )
+        : undefined;
+    const liveImage = liveMatchForColor?.selected_thumbnail || undefined;
+    const liveStockQty: number | null = liveMatchForColor?.stock_quantity ?? null;
+
+    // Foto: colors[].image (FIX-1 batch) > live thumbnail > carousel > filtro > primária
+    const variantImage = userSelectedImage || liveImage || currentVariant?.image;
     const colorSpecificImage = variantImage || resolveColorImage(product, activeColorFilter);
     // primary_image_url (is_primary=true) é a imagem capa canônica — deve ser a primeira exibida
     const rawImageUrl =
@@ -343,9 +363,14 @@ export const ProductListItem = memo(
     const thumbUrl = rawImageUrl ? getCdnUrl(rawImageUrl, 'card') : '/placeholder.svg';
 
     const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
-    // Estoque por cor resolvido pela fonte única (resolveColorStock já considera a cor selecionada pelo usuário via userSelectedColorName).
-    const displayStock = colorStock?.stock ?? product.stock;
-    const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
+    // FIX-COLOR-SEL-02: liveStockQty supera resolveColorStock quando disponível —
+    // dado real do BD vs cache que pode estar sem stock por falta de hydration anterior.
+    const displayStock =
+      liveStockQty !== null ? liveStockQty : (colorStock?.stock ?? product.stock);
+    const displayStatus =
+      liveStockQty !== null
+        ? getCatalogStockStatus(liveStockQty, undefined, product.minQuantity)
+        : (colorStock?.stockStatus ?? product.stockStatus);
 
     const activeColorName =
       userSelectedColor?.name ||
