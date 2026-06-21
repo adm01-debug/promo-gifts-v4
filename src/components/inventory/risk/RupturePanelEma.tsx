@@ -1,14 +1,11 @@
 /**
  * RupturePanelEma — Painel "Risco por Fornecedor (EMA)".
- *
- * Consome a mat.view `mv_stock_rupture_alert` e a RPC
- * `fn_ruptura_kpi_summary` do banco canônico. Renderiza apenas com a
- * feature flag `useEmaRupture` ligada — caso contrário exibe CTA de opt-in.
+ * Consome `mv_stock_rupture_alert` + `fn_ruptura_kpi_summary` do canônico.
+ * Render condicional pela flag `useEmaRupture`.
  */
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -53,8 +50,7 @@ function OptInEmpty() {
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
             O painel preditivo de ruptura por fornecedor (EMA α=0.3) está disponível mas
             desligado por padrão. Ative a feature flag <code>useEmaRupture</code> para
-            visualizar cobertura em dias, lead time efetivo e nível de alerta vindos do
-            banco canônico.
+            visualizar cobertura em dias, lead time efetivo e nível de alerta.
           </p>
         </div>
       </CardContent>
@@ -115,7 +111,6 @@ export function RupturePanelEma() {
 
   return (
     <div className="space-y-4">
-      {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {LEVEL_ORDER.map((lvl) => {
           const count = kpiByLevel.get(lvl) ?? 0;
@@ -152,25 +147,22 @@ export function RupturePanelEma() {
                 </Badge>
               </CardTitle>
               <CardDescription className="mt-1">
-                Projeção baseada em EMA α=0.3 das vendas diárias × lead time real do
-                fornecedor × fator de segurança 1.5.
+                EMA α=0.3 das vendas diárias × lead time real × fator segurança 1.5.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-                <SelectTrigger className="h-9 w-[220px]">
-                  <SelectValue placeholder="Filtrar fornecedor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os fornecedores</SelectItem>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+              <SelectTrigger className="h-9 w-[220px]">
+                <SelectValue placeholder="Filtrar fornecedor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os fornecedores</SelectItem>
+                {suppliers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -183,8 +175,7 @@ export function RupturePanelEma() {
           ) : error ? (
             <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4" />
-              Não foi possível carregar alertas EMA. Verifique se a mat.view
-              <code className="mx-1">mv_stock_rupture_alert</code> está acessível.
+              Não foi possível carregar alertas EMA.
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-10 text-center text-sm text-muted-foreground">

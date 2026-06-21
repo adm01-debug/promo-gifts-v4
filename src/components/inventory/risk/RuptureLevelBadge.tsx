@@ -1,6 +1,3 @@
-/**
- * RuptureLevelBadge — chip semântico para os 5 níveis da mv_stock_rupture_alert.
- */
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { RuptureLevel } from '@/hooks/stock/useRuptureAlerts';

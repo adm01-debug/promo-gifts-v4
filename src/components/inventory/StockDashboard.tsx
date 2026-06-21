@@ -29,11 +29,6 @@ import { VariantStockTable } from './VariantStockTable';
 const SupplierRiskPanel = lazyWithRetry(() =>
   import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
 );
-const RupturePanelEma = lazyWithRetry(() =>
-  import('./risk/RupturePanelEma').then((m) => ({ default: m.RupturePanelEma })),
-);
-import { isFeatureEnabled } from '@/lib/feature-flags';
-
 import { StatCard } from './StockStatCard';
 import { AlertCard } from './StockAlertCard';
 import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
@@ -569,18 +564,10 @@ export function StockDashboard() {
           Painel de Risco do Fornecedor
         </button>
         {riskPanelOpen && (
-          <div className="space-y-4">
-            {isFeatureEnabled('useEmaRupture') && (
-              <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-                <RupturePanelEma />
-              </Suspense>
-            )}
-            <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-              <SupplierRiskPanel products={allProductStocks} />
-            </Suspense>
-          </div>
+          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            <SupplierRiskPanel products={allProductStocks} />
+          </Suspense>
         )}
-
       </div>
 
       {/* Info Alerts */}

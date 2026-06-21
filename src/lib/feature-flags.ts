@@ -31,9 +31,7 @@ export type FeatureFlag =
   | 'magic_up'
   | 'mfa'
   | 'presentation_mode'
-  | 'useEmaRupture'
   | 'voice_commands';
-
 
 interface FlagConfig {
   /** Default enabled state */
@@ -85,15 +83,7 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       '(pgxfvjmuubtbowutlide). Desativar via setFeatureFlag para modo degradado ' +
       'sem CRM externo. Para desligamento de emergência, usar system_kill_switches.',
   },
-  useEmaRupture: {
-    enabled: false,
-    description:
-      'Motor preditivo EMA — consome mv_stock_rupture_alert e RPCs ' +
-      'fn_ruptura_kpi_summary/fn_ema_pipeline_health do banco canônico ' +
-      '(doufsxqlfjyuvxuezpln). Coexiste com computeRuptureRisk (fallback).',
-  },
 };
-
 
 // Runtime overrides (can be set via Supabase or localStorage in dev)
 const runtimeOverrides = new Map<FeatureFlag, boolean>();
