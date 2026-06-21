@@ -572,7 +572,9 @@ export default function FiltersPage() {
                     {state.viewMode === 'grid' ? (
                       <VirtualizedProductGrid
                         scrollResetKey={scrollResetKey}
-                        products={state.filteredProducts}
+                        /* FAN-OUT: grid renderiza displayCards (1 card por cor quando
+                           filtro de cor ativo). Sem filtro, === filteredProducts. */
+                        products={state.displayCards}
                         isLoading={state.isLoadingProducts}
                         onProductClick={(productId) =>
                           state.selectionMode
