@@ -1,10 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { 
-  useSupplierComparison, 
+import {
+  useSupplierComparison,
   getSupplierProductsInCategory,
   normalizeMaterials,
-  normalizeColorNames
+  normalizeColorNames,
+  computeScore,
+  jaccard,
+  intersect,
+  nameSimilarity,
+  tokenize,
+  stripAccents
 } from '@/hooks/products/useSupplierComparison';
 import { Product } from '@/types/product-catalog';
 
@@ -224,6 +230,83 @@ describe('useSupplierComparison', () => {
 
     it('normalizeColorNames should handle non-array', () => {
       expect(normalizeColorNames(null as any)).toEqual([]);
+    });
+  });
+
+  // Cobertura determinística dos branches dos helpers puros exportados.
+  describe('pure helpers — branch coverage', () => {
+    it('stripAccents removes diacritics and is a no-op for ASCII', () => {
+      expect(stripAccents('Caneca Ré-Açaí ÔÜ')).toBe('Caneca Re-Acai OU');
+      expect(stripAccents('plain')).toBe('plain');
+    });
+
+    it('tokenize handles null/undefined/empty and punctuation', () => {
+      expect(tokenize(null).size).toBe(0);
+      expect(tokenize(undefined).size).toBe(0);
+      expect(tokenize('   ').size).toBe(0);
+      const t = tokenize('Caneca de Cerâmica, 350ml!');
+      expect(t.has('caneca')).toBe(true);
+      expect(t.has('ceramica')).toBe(true);
+    });
+
+    it('jaccard returns 0 when either set is empty (both || sides)', () => {
+      expect(jaccard([], ['a'])).toBe(0); // setA vazio (1º lado do ||)
+      expect(jaccard(['a'], [])).toBe(0); // setB vazio (2º lado do ||)
+      expect(jaccard(new Set(['a', 'b']), new Set(['b', 'c']))).toBeCloseTo(1 / 3, 5);
+      expect(jaccard(['x'], ['y'])).toBe(0); // sem interseção
+    });
+
+    it('nameSimilarity delegates to jaccard over token sets', () => {
+      expect(nameSimilarity(new Set(['a']), new Set(['a']))).toBe(1);
+      expect(nameSimilarity(new Set(['a']), new Set())).toBe(0);
+    });
+
+    it('intersect keeps only common items, in order of the first array', () => {
+      expect(intersect(['a', 'b', 'c'], ['c', 'a'])).toEqual(['a', 'c']);
+      expect(intersect(['a'], ['z'])).toEqual([]);
+      expect(intersect([], ['a'])).toEqual([]);
+    });
+
+    it('computeScore covers every weighted branch (stock/colors/lead/verified)', () => {
+      // Caminho "tudo presente": highestStock>0, maxCommonColors>0, lead numérico+maxLead>0, verificado
+      const full = computeScore({
+        priceDiffPercent: -50,
+        stock: 100,
+        highestStock: 100,
+        leadTimeDays: 0,
+        maxLead: 10,
+        commonColors: 3,
+        maxCommonColors: 3,
+        isVerified: true,
+      });
+      expect(full).toBe(100);
+
+      // Caminho "tudo ausente/zero": highestStock=0, maxCommonColors=0, lead null, não verificado
+      const empty = computeScore({
+        priceDiffPercent: 50,
+        stock: 0,
+        highestStock: 0,
+        leadTimeDays: null,
+        maxLead: 0,
+        commonColors: 0,
+        maxCommonColors: 0,
+        isVerified: false,
+      });
+      // preço=0, estoque=0, cores=0, lead=neutro(0.5*10=5), verificado=0 → 5
+      expect(empty).toBe(5);
+
+      // leadTimeDays numérico mas maxLead=0 → cai no neutro 0.5
+      const neutralLead = computeScore({
+        priceDiffPercent: 0,
+        stock: 50,
+        highestStock: 100,
+        leadTimeDays: 5,
+        maxLead: 0,
+        commonColors: 1,
+        maxCommonColors: 2,
+        isVerified: true,
+      });
+      expect(Number.isFinite(neutralLead)).toBe(true);
     });
   });
 });
