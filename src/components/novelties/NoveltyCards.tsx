@@ -3,7 +3,7 @@
  * Follows the same info pattern as ProductCard (catalog).
  */
 
-import { memo, useState, useMemo, useEffect } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -26,7 +26,6 @@ import { ProductQuickActionsFAB } from '@/components/products/ProductQuickAction
 import { HoverSetImage } from '@/components/products/HoverSetImage';
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { getSupplierColors } from '@/lib/supplier-colors';
-import { getRecencyVariant } from '@/lib/novelty-dates';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
 
@@ -37,7 +36,7 @@ interface NoveltyCardProps {
   selectionMode?: boolean;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
-  onStatusClick?: (type: 'featured' | 'kit' | 'novelty' | 'promotion') => void;
+  onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
   colors?: readonly ColorDotLike[];
   /**
    * Quando true, renderiza placeholders no lugar do preço e do estoque.
@@ -76,18 +75,16 @@ export const NoveltyGridCard = memo(
     isPriceStockLoading = false,
     priority = false,
   }: NoveltyCardProps) => {
-    // ISSUE-5 FIX: computar freshness ao renderizar (não do cache) — evita badge
-    // "recém-chegado" exibido com dado stale por até 2 min após cruzar 5 dias.
-    const fresh = getRecencyVariant(product.detected_at) === 'hot';
+    // "recém-chegado" = is_highlighted (days_as_novelty ≤ NOVELTY_FRESH_DAYS = 5), a fonte
+    // de verdade da pipeline e mutuamente exclusivo com o badge de "expirando". Derivar
+    // `fresh` de getRecencyVariant estreitava a janela para ≤2 dias ('hot'), divergindo do
+    // predicado/comentário e quebrando o teste-guarda NoveltyGridCard.expiringBadge (que
+    // modela fresh ⇔ is_highlighted).
+    const fresh = product.is_highlighted;
 
     // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
     // num swatch troca a foto principal pela imagem da variante selecionada.
     const [activeColorName, setActiveColorName] = useState<string | null>(null);
-    // Reset swatch selection when a different product is rendered into the same
-    // component slot (can happen in non-virtualised list views after filter change).
-    useEffect(() => {
-      setActiveColorName(null);
-    }, [product.product_id]);
     const activeImage = useMemo(() => {
       if (!activeColorName || !colors?.length) return product.product_image;
       const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
@@ -104,10 +101,11 @@ export const NoveltyGridCard = memo(
         className={cn(
           'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
-          // Altura FIXA por breakpoint — alinha com BaseProductGridCard/Reposição
-          // (400px mobile / 430px ≥sm). Garante uniformidade entre Novidades e
-          // Reposição em todos os viewports.
-          'h-[400px] max-h-[400px] overflow-hidden sm:h-[430px] sm:max-h-[430px]',
+          // Altura flexível com piso — o virtualizer (measureElement) precisa medir a
+          // altura REAL do card. Alturas fixas + overflow-hidden recortam conteúdo (nomes
+          // longos + skeleton de preço/estoque) e corrompem a medição/scroll de /novidades.
+          // Guarda coberta por tests/components/product-cards-parity.test.tsx.
+          'min-h-[420px]',
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
@@ -352,7 +350,7 @@ export function NoveltyTableView({
   /** Aceita Set<string> (preferencial) ou string[] para retro-compatibilidade. */
   selectedIds?: Set<string> | string[];
   onSelect?: (id: string) => void;
-  onStatusClick?: (type: 'featured' | 'kit' | 'novelty' | 'promotion') => void;
+  onStatusClick?: (type: 'novelty' | 'promotion' | 'featured' | 'kit') => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
   // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()

@@ -61,33 +61,23 @@ vi.mock('@/lib/security/rls-denial-logger', () => ({
 
 /**
  * Sets up supabase.from to handle ALL tables called by requestApproval:
- * 1. discount_approval_requests.select.eq.eq.maybeSingle (BUG-040 dedup guard)
- * 2. discount_approval_requests.insert
- * 3. quotes.update.eq (set pending_approval)
- * 4. quotes.select.eq.maybeSingle (fetch markup context)
- * 5. quote_history.insert
- * 6. user_roles.select.eq (notify admins — returns [])
- * 7. profiles.select.eq.maybeSingle (seller name)
+ * 1. discount_approval_requests.insert
+ * 2. quotes.update.eq (set pending_approval)
+ * 3. quotes.select.eq.maybeSingle (fetch markup context)
+ * 4. quote_history.insert
+ * 5. user_roles.select.eq (notify admins — returns [])
+ * 6. profiles.select.eq.maybeSingle (seller name)
  */
 function setupInsertSuccess() {
   mockInsert.mockReturnValue({ error: null });
   mockUpdate.mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) });
-  // requestApproval chains .select() in multiple ways:
-  //   - dedup guard:   .select().eq(quote_id).eq(status).maybeSingle() → null (no pending row)
-  //   - context fetch: .select().eq(id).maybeSingle()                  → null
-  //   - user_roles:    .select().eq(role) awaited directly              → { data: undefined }
-  //   - profiles:      .select().eq(user_id).maybeSingle()             → null
+  // requestApproval's dedup guard chains TWO .eq() calls before .maybeSingle():
+  //   .select('id').eq('quote_id', ...).eq('status', 'pending').maybeSingle()
+  // Other selects (quotes ctx, profiles) use a single .eq().maybeSingle() pattern.
   const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
-  // innerEq handles the second .eq() in the dedup guard (.eq(quote_id).eq(status).maybeSingle)
-  const innerEq = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn, error: null });
-  // outerEq handles the first .eq(); exposes both .maybeSingle (single-eq) and .eq (double-eq)
-  const outerEq = vi.fn().mockReturnValue({
-    maybeSingle: maybeSingleFn,
-    eq: innerEq,
-    error: null,
-    data: undefined,
-  });
-  mockSelect.mockReturnValue({ eq: outerEq });
+  const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+  const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn, maybeSingle: maybeSingleFn });
+  mockSelect.mockReturnValue({ eq: outerEqFn });
 }
 
 function setupInsertError(msg = 'RLS denied') {

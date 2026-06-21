@@ -60,10 +60,11 @@ describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)'
     expect(totals.total).toBe(2318.9);
 
     // realDiscountPercent: ((2075.50 - 2168.90) / 2075.50) * 100 = -4.50.
-    // Valor negativo é válido — indica que o markup absorveu o desconto aparente
-    // (cliente paga acima do custo real). Não há clamping a 0: o módulo preserva
-    // o valor bruto para que a UI possa exibir a informação corretamente.
-    expect(totals.realDiscountPercent).toBe(-4.5);
+    // calculateQuoteTotals clamps to Math.max(0, value): a negative result means the
+    // markup absorbed the apparent discount — the seller keeps extra margin, no real
+    // concession to the buyer. Showing -4.5% would confuse users; 0 correctly conveys
+    // "no real discount was given" and still satisfies realDiscountPercent <= limit.
+    expect(totals.realDiscountPercent).toBe(0);
   });
 
   it('deve lidar corretamente com arredondamentos de precisão crítica (Floating point)', () => {
