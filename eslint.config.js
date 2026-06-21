@@ -429,6 +429,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 177: 5 zero-violation rules (excluded: no-confusing-void-expression 2937v, no-import-type-side-effects 102v)
+      '@typescript-eslint/no-mixed-enums': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
+      '@typescript-eslint/no-meaningless-void-operator': 'error',
+      '@typescript-eslint/prefer-literal-enum-member': 'error',
+      '@typescript-eslint/no-unsafe-unary-minus': 'error',
       // Batch 176: 5 zero-violation rules (saved: @typescript-eslint/no-mixed-enums 0v✓, @typescript-eslint/no-useless-empty-export 0v✓ — Batch 177)
       'no-promise-executor-return': 'error',
       'no-unreachable-loop': 'error',
