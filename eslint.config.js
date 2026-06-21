@@ -427,6 +427,12 @@ export default [
       'react/jsx-fragments': ['error', 'syntax'],
       // Batch 147: 5 zero-violation rules (excluded: no-iterator 0v✓, no-proto 0v✓, no-sequences 0v✓, prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, prefer-object-has-own 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches; also: restrict-template-expressions 8v, no-loop-func 7v)
       // Batch 148: 5 zero-violation rules (excluded: prefer-numeric-literals 0v✓, symbol-description 0v✓, @typescript-eslint/no-extraneous-class 0v✓, logical-assignment-operators 0v✓, no-useless-call 0v✓ — saved for next batches)
+      // Batch 152: 5 zero-violation rules (excluded: no-set-state 12v, jsx-sort-props 17658v, jsx-max-depth 9467v, consistent-type-definitions 98v)
+      'react/sort-comp': 'error',
+      'react/no-direct-mutation-state': 'error',
+      'react/no-did-mount-set-state': 'error',
+      'react/no-did-update-set-state': 'error',
+      'react/no-will-update-set-state': 'error',
       // Batch 151: 5 zero-violation rules (excluded: react/sort-comp 0v✓ — saved Batch 152; also: no-unstable-nested-components 29v)
       'react/jsx-fragments': 'error',
       'react/no-access-state-in-setstate': 'error',
