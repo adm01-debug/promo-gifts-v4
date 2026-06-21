@@ -326,6 +326,13 @@ export interface StockFilters {
   // Flags
   showOnlyWithVariants: boolean;
   showOnlyWithAlerts: boolean;
+
+  // Filtro dimensional opcional: restringe a tabela ao conjunto de variações
+  // (variantId) sinalizadas como "Risco de Ruptura" pelo motor EMA.
+  // Quando definido, atua como pré-filtro de variante — apenas produtos
+  // com ≥1 variação no set passam, e o produto é projetado para mostrar
+  // somente essas variações (espelhando 1:1 a contagem do card).
+  ruptureRiskVariantIds?: ReadonlySet<string>;
 }
 
 /** Critérios de ordenação disponíveis no dashboard de estoque. */
