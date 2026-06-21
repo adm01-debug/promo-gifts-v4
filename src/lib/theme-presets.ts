@@ -1048,9 +1048,10 @@ export function applyThemePreset(presetId: string, mode: 'auto' | 'dark' | 'ligh
     root.style.setProperty('--font-display', DEFAULT_FONT_DISPLAY);
   }
 
-  // Per-preset radius override (Opera GX skins → 4px angular).
-  // Quando definido, vence sobre o slider global do usuário enquanto a
-  // skin estiver ativa.
+  // Per-preset radius override (Opera GX skins → 10px, menos angular que classic).
+  // Aplica o valor do preset quando applyThemePreset é chamado; o slider de raio em
+  // AdminTemasPage sincroniza config.radius com este valor ao trocar de skin, mas
+  // o usuário pode ajustar livremente depois (snap na troca, não lock permanente).
   if (preset.borderRadius !== undefined) {
     root.style.setProperty('--radius', `${preset.borderRadius / 16}rem`);
   }
