@@ -35,6 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useRuptureAlerts, type RuptureAlertRow } from '@/hooks/stock/useRuptureAlerts';
+import { RuptureLevelBadge } from './risk/RuptureLevelBadge';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 
 /**
  * Modo de negócio: SEMPRE variação-first (1 linha = 1 SKU).
