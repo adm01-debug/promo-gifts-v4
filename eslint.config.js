@@ -415,6 +415,12 @@ export default [
       'use-isnan': 'error',
       'no-proto': 'error',
       'no-octal': 'error',
+      // Batch 195: 5 zero-violation rules (saved: no-promise-executor-return 0v✓, no-template-curly-in-string 0v✓, no-unmodified-loop-condition 0v✓ — Batch 196+)
+      'prefer-template': 'error',
+      'symbol-description': 'error',
+      'yoda': 'error',
+      'no-alert': 'error',
+      'no-constructor-return': 'error',
       // Batch 194: 5 zero-violation rules (saved: prefer-template 0v✓, symbol-description 0v✓, yoda 0v✓ — Batch 195+)
       'object-shorthand': 'error',
       'prefer-numeric-literals': 'error',
