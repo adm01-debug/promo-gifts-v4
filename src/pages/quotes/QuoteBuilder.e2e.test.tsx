@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useQuoteBuilderState } from '@/hooks/quotes/useQuoteBuilderState';

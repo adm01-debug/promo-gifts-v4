@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 
-export type RuptureLevel = 'RUPTURA' | 'CRÍTICO' | 'ALERTA' | 'ATENÇÃO' | 'OK';
+export type RuptureLevel = 'ALERTA' | 'ATENÇÃO' | 'CRÍTICO' | 'OK' | 'RUPTURA';
 
 export interface RuptureAlertRow {
   vss_id: string | null;
@@ -65,7 +65,10 @@ export function useRuptureAlerts(): UseRuptureAlertsResult {
       const client = supabase as unknown as {
         from: (n: string) => {
           select: (c: string) => {
-            eq: (k: string, v: boolean) => {
+            eq: (
+              k: string,
+              v: boolean,
+            ) => {
               order: (
                 k: string,
                 o?: { ascending?: boolean; nullsFirst?: boolean },

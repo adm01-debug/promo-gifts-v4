@@ -17,9 +17,9 @@ import {
   type ColorDotLike,
   ProductColorSwatches,
 } from '@/components/products/ProductColorSwatches';
-import { getStockStatus } from '@/components/inventory/StockBadge';
+import { getStockStatus, type StockStatus } from '@/components/inventory/StockBadge';
 import { cn } from '@/lib/utils';
-import type { ReplenishmentWithDetails, StockStatus } from '@/hooks/products';
+import type { ReplenishmentWithDetails } from '@/hooks/products';
 
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { BaseProductGridCard } from '@/components/products/BaseProductGridCard';
@@ -35,6 +35,8 @@ const STOCK_CONFIG: Record<StockStatus, { className: string; label: string; mobi
     'in-stock': { className: 'in-stock', label: 'Em estoque', mobileIcon: '✓' },
     'low-stock': { className: 'low-stock', label: 'Estoque baixo', mobileIcon: '!' },
     'out-of-stock': { className: 'out-of-stock', label: 'Estoque zerado', mobileIcon: '✗' },
+    incoming: { className: 'incoming', label: 'Chegando', mobileIcon: '↓' },
+    'pre-order': { className: 'pre-order', label: 'Pré-venda', mobileIcon: '⏳' },
   };
 
 // ─── Grid Card ───────────────────────────────────────────────────
@@ -200,9 +202,7 @@ export function ReplenishmentTableView({
               ? getStockStatus(activeColor?.stockQty ?? 0, 10)
               : product.stock_status;
             const stockConfig = STOCK_CONFIG[rowStatus];
-            const stockQty = hasColorStock
-              ? (activeColor?.stockQty ?? 0)
-              : product.stock_quantity;
+            const stockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : product.stock_quantity;
 
             return (
               <TableRow

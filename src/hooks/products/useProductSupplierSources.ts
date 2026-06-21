@@ -165,21 +165,25 @@ export function useProductSupplierSources(productId?: string) {
   // Manual per-product writes are intentionally disabled — see the file header. The table is
   // per-variant and sync-managed; surfacing a clear message beats silently failing or, worse,
   // writing malformed rows.
+  // eslint-disable-next-line @typescript-eslint/require-await
   const addSource = useCallback(async (_input: SupplierSourceInput) => {
     toast.error(MANUAL_WRITE_MESSAGE);
     return false;
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   const updateSource = useCallback(async (_id: string, _updates: Partial<SupplierSourceInput>) => {
     toast.error(MANUAL_WRITE_MESSAGE);
     return false;
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   const removeSource = useCallback(async (_id: string) => {
     toast.error(MANUAL_WRITE_MESSAGE);
     return false;
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   const setPreferred = useCallback(async (_id: string) => {
     toast.error(MANUAL_WRITE_MESSAGE);
     return false;

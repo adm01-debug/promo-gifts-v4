@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { notificationsMetrics } from '../notifications-metrics';
 

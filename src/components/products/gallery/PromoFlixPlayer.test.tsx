@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import {

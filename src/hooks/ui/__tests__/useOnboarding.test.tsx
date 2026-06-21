@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante o controle do estado do tour de onboarding:
  * - Nenhuma API pública além de `restartTour` permite reabrir o tour
@@ -17,7 +18,6 @@ const stableUser = { id: 'user-1' };
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: stableUser }),
 }));
-
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -77,7 +77,6 @@ describe('useOnboarding — controle de estado do tour', () => {
     });
     expect(updateEq).toHaveBeenCalledWith('id', 'onb-1');
   });
-
 
   it('expõe apenas restartTour como gatilho público de reabertura', () => {
     const { result } = renderHook(() => useOnboarding());

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SidebarReorganized } from '../components/layout/SidebarReorganized';

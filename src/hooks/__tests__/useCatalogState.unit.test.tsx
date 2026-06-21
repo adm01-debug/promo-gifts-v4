@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 // Importa direto do arquivo para evitar carregar o barrel @/hooks/products

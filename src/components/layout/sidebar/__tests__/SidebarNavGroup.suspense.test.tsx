@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante que o destaque do "Novo Orçamento" e a expansão do grupo
  * "Orçamentos" NÃO piscam durante carregamento assíncrono — seja quando a

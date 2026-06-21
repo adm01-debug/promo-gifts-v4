@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * LocationPanel — Avançado: Validação de Preço, Clamp e Persistência
  */

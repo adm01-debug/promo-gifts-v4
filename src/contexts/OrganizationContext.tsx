@@ -60,6 +60,7 @@ const FIXED_VALUE: OrganizationContextType = {
   currentRole: 'owner',
   isLoading: false,
   switchOrganization: noop,
+  // eslint-disable-next-line @typescript-eslint/require-await
   createOrganization: async () => FIXED_ORG,
   refetch: noopAsync,
 };

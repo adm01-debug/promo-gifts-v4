@@ -86,7 +86,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
   );
 
   const handleFileSelect = useCallback(
-    async (file: File) => {
+    (file: File) => {
       if (!file.type.startsWith('image/')) {
         toast({
           title: 'Arquivo inválido',

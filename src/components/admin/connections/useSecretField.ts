@@ -298,7 +298,7 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
   const storedLooksSuspicious =
     !editing && !!status?.has_value && !!minLen && (status.length ?? 0) < minLen;
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!canSave) return;
     if (mode === 'rotate') {
       setRotateConfirmError(null);

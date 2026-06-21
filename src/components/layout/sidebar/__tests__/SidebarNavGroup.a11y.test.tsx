@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Testes de acessibilidade do grupo de navegação que contém "Novo Orçamento".
  *

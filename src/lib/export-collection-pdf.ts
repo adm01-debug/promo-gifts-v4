@@ -12,6 +12,7 @@ interface ExportOptions {
   variantMap?: Map<string, { color_name?: string | null; color_hex?: string | null }>;
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function exportCollectionPDF({
   collectionName,
   collectionDescription,

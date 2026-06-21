@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 

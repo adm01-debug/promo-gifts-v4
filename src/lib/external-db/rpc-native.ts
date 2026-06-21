@@ -194,6 +194,7 @@ export async function getCategoryDescendants(categoryId: string): Promise<string
 // Audit confirmed these functions do not exist in doufsxqlfjyuvxuezpln yet.
 // Stubs return safe empty values and log a clear NOT_IN_DB warning.
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getProductPrintAreas(productId: string): Promise<unknown[]> {
   logger.warn(
     `[rpc-native] fn_get_product_print_areas NOT_IN_DB for product ${productId}. Use print_area_techniques table directly.`,
@@ -201,11 +202,13 @@ export async function getProductPrintAreas(productId: string): Promise<unknown[]
   return [];
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getProductPrintAreasV2(productId: string): Promise<unknown[]> {
   logger.warn(`[rpc-native] fn_get_product_print_areas_v2 NOT_IN_DB for product ${productId}.`);
   return [];
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function linkProductPrintAreas(
   productId: string,
   _areas: unknown[],
@@ -214,6 +217,7 @@ export async function linkProductPrintAreas(
   return { success: false, affected: 0 };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function backfillProductPrintAreas(
   _productIds: string[],
 ): Promise<{ success: boolean; processed: number; errors: number }> {
@@ -221,6 +225,7 @@ export async function backfillProductPrintAreas(
   return { success: false, processed: 0, errors: 0 };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function findFornecedorPriceTable(_params: { technique_id: string }): Promise<null> {
   logger.warn('[rpc-native] fn_find_fornecedor_price_table NOT_IN_DB.');
   return null;
@@ -237,28 +242,34 @@ const RPC_DISPATCH: Record<string, DispatchFn> = {
     getProductCustomizationOptions(p.p_product_id as string),
   get_category_descendants: (p) => getCategoryDescendants(p.p_category_id as string),
   // ➠ Not in DB yet — safe returns (FASE 2: was throw, now returns safe empty)
+  // eslint-disable-next-line @typescript-eslint/require-await
   fn_get_customization_price_v2: async () => {
     logger.warn(
       '[rpc-native] fn_get_customization_price_v2 NOT_IN_DB — returning safe empty. Use fn_get_customization_price instead.',
     );
     return { success: false, preco_total: 0, preco_unitario: 0 };
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   fn_get_product_print_areas: async () => {
     logger.warn('[rpc-native] fn_get_product_print_areas NOT_IN_DB — returning [].');
     return [];
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   fn_get_product_print_areas_v2: async () => {
     logger.warn('[rpc-native] fn_get_product_print_areas_v2 NOT_IN_DB — returning [].');
     return [];
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   fn_link_product_print_areas: async () => {
     logger.warn('[rpc-native] fn_link_product_print_areas NOT_IN_DB — returning safe empty.');
     return { success: false, affected: 0 };
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   fn_backfill_product_print_areas: async () => {
     logger.warn('[rpc-native] fn_backfill_product_print_areas NOT_IN_DB — returning safe empty.');
     return { success: false, processed: 0, errors: 0 };
   },
+  // eslint-disable-next-line @typescript-eslint/require-await
   fn_find_fornecedor_price_table: async () => {
     logger.warn('[rpc-native] fn_find_fornecedor_price_table NOT_IN_DB — returning null.');
     return null;

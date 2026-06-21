@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { toast } from 'sonner';
