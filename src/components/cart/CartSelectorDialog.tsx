@@ -55,6 +55,7 @@ export function CartSelectorDialog({
             {carts.map((cart) => (
               <button
                 key={cart.id}
+                type="button"
                 onClick={() => onSelect(cart.id)}
                 data-testid={`cart-selector-item-${cart.id}`}
                 className={cn(
@@ -81,7 +82,10 @@ export function CartSelectorDialog({
                     {cart.items.length} {cart.items.length === 1 ? 'item' : 'itens'} no momento
                   </p>
                 </div>
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                <div
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 transition-opacity group-hover:opacity-100"
+                >
                   <Plus className="h-4 w-4" />
                 </div>
               </button>
@@ -97,7 +101,7 @@ export function CartSelectorDialog({
               onClick={onCreateNew}
               data-testid="cart-selector-create-new"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" aria-hidden="true" />
               Criar novo carrinho para outra empresa
             </Button>
           )}

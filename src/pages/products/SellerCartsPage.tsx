@@ -313,19 +313,26 @@ function SellerCartsContent() {
   const aggregateTotal = useMemo(
     () =>
       s.carts.reduce(
-        (sum, c) => sum + c.items.reduce((a, i) => a + i.product_price * i.quantity, 0),
+        (sum, c) =>
+          sum +
+          c.items.reduce(
+            (a, i) => a + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
+            0,
+          ),
         0,
       ),
     [s.carts],
   );
 
-  // Stable rotating placeholder per cart — deps reduzida ao ID para evitar
-  // recálculo quando outros campos do activeCart mudam (ex: notes, status).
+  // Stable rotating placeholder per cart — XOR hash over full UUID for even
+  // distribution (charCodeAt(0) alone gives only 16 values for hex UUIDs,
+  // skewing to a few buckets). Deps reduzida ao ID para evitar recálculo quando
+  // outros campos do activeCart mudam (ex: notes, status).
   const activeCartId = s.activeCart?.id;
   const notesPlaceholder = useMemo(() => {
     if (!activeCartId) return NOTES_PLACEHOLDERS[0];
-    const seed = activeCartId.charCodeAt(0) % NOTES_PLACEHOLDERS.length;
-    return NOTES_PLACEHOLDERS[seed];
+    const hash = activeCartId.split('').reduce((acc, ch) => (acc ^ ch.charCodeAt(0)) & 0xff, 0);
+    return NOTES_PLACEHOLDERS[hash % NOTES_PLACEHOLDERS.length];
   }, [activeCartId]);
 
   const handleDuplicateLast = useCallback(
@@ -349,14 +356,24 @@ function SellerCartsContent() {
     [s],
   );
 
+  const { canCreateCart, duplicateCart } = s;
+  const handleDuplicateCart = useCallback(
+    (id: string) => {
+      if (canCreateCart) duplicateCart(id);
+      else toast.error('Limite de 3 carrinhos atingido');
+    },
+    [canCreateCart, duplicateCart],
+  );
+
   const cartTableData = useMemo(() => {
     const items = s.activeCart?.items ?? [];
     const sorted = [...items].sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
       if (sortKey === 'name') return a.product_name.localeCompare(b.product_name, 'pt-BR') * dir;
-      if (sortKey === 'price') return (a.product_price - b.product_price) * dir;
-      const ta = a.product_price * a.quantity;
-      const tb = b.product_price * b.quantity;
+      if (sortKey === 'price')
+        return ((Number(a.product_price) || 0) - (Number(b.product_price) || 0)) * dir;
+      const ta = (Number(a.product_price) || 0) * (Number(a.quantity) || 0);
+      const tb = (Number(b.product_price) || 0) * (Number(b.quantity) || 0);
       return (ta - tb) * dir;
     });
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -371,7 +388,10 @@ function SellerCartsContent() {
       {/* Header compactado */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <div
+            aria-hidden="true"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10"
+          >
             <ShoppingCart className="h-4.5 w-4.5 text-primary" />
           </div>
           <div className="min-w-0">
@@ -415,7 +435,7 @@ function SellerCartsContent() {
                 : undefined
             }
           >
-            <Plus className="h-3.5 w-3.5" /> Novo Carrinho
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" /> Novo Carrinho
           </Button>
         </div>
       </header>
@@ -486,14 +506,17 @@ function SellerCartsContent() {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
+                    <div
+                      aria-hidden="true"
+                      className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20"
+                    >
                       <Building2 className="h-5 w-5 text-primary" />
                     </div>
                   )}
                   <div
                     className={cn(
                       'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background',
-                      getStatusCfg(s.activeCart.status).color.split(' ')[0],
+                      getStatusCfg(s.activeCart.status).bg,
                     )}
                   />
                 </div>
@@ -504,12 +527,12 @@ function SellerCartsContent() {
                   <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
                     {s.activeCart.company_location && (
                       <span className="flex items-center gap-1.5 truncate">
-                        <MapPin className="h-3 w-3 opacity-60" />
+                        <MapPin aria-hidden="true" className="h-3 w-3 opacity-60" />
                         {s.activeCart.company_location}
                       </span>
                     )}
                     <span className="flex items-center gap-1.5 whitespace-nowrap">
-                      <Clock className="h-3 w-3 opacity-60" />
+                      <Clock aria-hidden="true" className="h-3 w-3 opacity-60" />
                       Atualizado{' '}
                       {formatDistanceToNow(new Date(s.activeCart.updated_at), {
                         addSuffix: true,
@@ -530,7 +553,7 @@ function SellerCartsContent() {
                     <span
                       className={cn(
                         'inline-block h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                        getStatusCfg(s.activeCart.status).color.split(' ')[0],
+                        getStatusCfg(s.activeCart.status).bg,
                       )}
                     />
                     <SelectValue />
@@ -544,12 +567,7 @@ function SellerCartsContent() {
                     ).map(([key, cfg]) => (
                       <SelectItem key={key} value={key} className="rounded-lg py-2">
                         <span className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              'h-2 w-2 rounded-full shadow-sm',
-                              cfg.color.split(' ')[0],
-                            )}
-                          />
+                          <span className={cn('h-2 w-2 rounded-full shadow-sm', cfg.bg)} />
                           <span className="font-medium">{cfg.label}</span>
                         </span>
                       </SelectItem>
@@ -562,7 +580,7 @@ function SellerCartsContent() {
                   className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-destructive transition-all hover:bg-destructive/5 hover:text-destructive"
                   onClick={() => s.setConfirmDeleteCart(true)}
                 >
-                  <Trash2 className="h-4 w-4" /> Excluir
+                  <Trash2 aria-hidden="true" className="h-4 w-4" /> Excluir
                 </Button>
               </div>
             </Card>
@@ -575,7 +593,7 @@ function SellerCartsContent() {
                 htmlFor="cart-notes"
                 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground opacity-70 transition-opacity group-hover/notes:opacity-100"
               >
-                <FileText className="h-3 w-3 text-primary" /> Notas da negociação
+                <FileText aria-hidden="true" className="h-3 w-3 text-primary" /> Notas da negociação
               </label>
               <Textarea
                 id="cart-notes"
@@ -712,6 +730,7 @@ function SellerCartsContent() {
                                       />
                                       <button
                                         type="button"
+                                        aria-label={`Ver página de ${item.product_name}`}
                                         onClick={() => s.navigate(`/produto/${item.product_id}`)}
                                         className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
                                       >
@@ -787,7 +806,7 @@ function SellerCartsContent() {
                                         'text-right tabular-nums text-muted-foreground',
                                       )}
                                     >
-                                      {formatCurrency(item.product_price)}
+                                      {formatCurrency(Number(item.product_price) || 0)}
                                     </td>
                                   )}
                                   {visibleColumns.total && (
@@ -798,7 +817,10 @@ function SellerCartsContent() {
                                       )}
                                       data-testid={`cart-row-total-${item.id}`}
                                     >
-                                      {formatCurrency(item.product_price * item.quantity)}
+                                      {formatCurrency(
+                                        (Number(item.product_price) || 0) *
+                                          (Number(item.quantity) || 0),
+                                      )}
                                     </td>
                                   )}
                                   <td className={cn(rowPad, 'text-right')}>
@@ -812,10 +834,10 @@ function SellerCartsContent() {
                                           name: item.product_name,
                                         })
                                       }
-                                      aria-label="Remover item"
+                                      aria-label={`Remover ${item.product_name}`}
                                       data-testid={`cart-remove-${item.id}`}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                                     </Button>
                                   </td>
                                 </tr>
@@ -934,10 +956,7 @@ function SellerCartsContent() {
               canCreateCart={s.canCreateCart}
               onGenerateQuote={s.handleGenerateQuote}
               onShareCart={s.shareCartLink}
-              onDuplicateCart={(id) => {
-                if (s.canCreateCart) s.duplicateCart(id);
-                else toast.error('Limite de 3 carrinhos atingido');
-              }}
+              onDuplicateCart={handleDuplicateCart}
               onExportCSV={s.exportCartToCSV}
               onExportPDF={s.exportCartToPDF}
               onSaveTemplate={s.handleSaveTemplate}

@@ -50,6 +50,8 @@ export function CartTabsRich({
     [onSelect],
   );
 
+  const now = new Date();
+
   if (isLoading) {
     return (
       <div className="flex animate-pulse gap-2 overflow-x-auto pb-1">
@@ -83,12 +85,13 @@ export function CartTabsRich({
         {carts.map((cart) => {
           const isActive = cart.id === activeCartId;
           const statusCfg = getStatusCfg(cart.status);
-          const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
+          const ageDays = differenceInDays(now, new Date(cart.created_at));
           const needsFollowUp =
             ageDays >= 3 && cart.items.length > 0 && cart.status !== 'pronto_orcamento';
           const hasItems = cart.items.length > 0;
           return (
             <button
+              type="button"
               key={cart.id}
               onClick={() => onSelect(cart.id)}
               data-testid="cart-tab"
@@ -97,6 +100,7 @@ export function CartTabsRich({
               role="tab"
               aria-selected={isActive}
               tabIndex={isActive ? 0 : -1}
+              aria-label={`${cart.company_name} — ${statusCfg.label} — ${cart.items.length} ${cart.items.length === 1 ? 'item' : 'itens'}${needsFollowUp ? ', aguardando follow-up' : ''}`}
               className={cn(
                 'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
                 isActive
@@ -137,7 +141,7 @@ export function CartTabsRich({
                   <span
                     className={cn(
                       'h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                      statusCfg.color.split(' ')[0],
+                      statusCfg.bg,
                     )}
                     aria-hidden
                   />
@@ -149,6 +153,7 @@ export function CartTabsRich({
               <span
                 data-testid="cart-tab-count"
                 data-count={cart.items.length}
+                aria-hidden="true"
                 className={cn(
                   'ml-1 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums transition-all duration-500',
                   hasItems
@@ -165,8 +170,8 @@ export function CartTabsRich({
                   data-testid="cart-tab-followup"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
+                  aria-hidden="true"
                   className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
-                  title={`Sem movimento há ${ageDays} dias`}
                 >
                   <Clock className="h-3 w-3" />
                 </motion.span>
@@ -178,6 +183,7 @@ export function CartTabsRich({
 
       <div className="flex-shrink-0 pb-2 pr-1">
         <button
+          type="button"
           data-testid="cart-tab-new"
           onClick={canCreateCart ? onNew : undefined}
           disabled={!canCreateCart}
@@ -191,11 +197,18 @@ export function CartTabsRich({
           )}
           aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 3 carrinhos atingido'}
         >
-          <div className={cn(
-            'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
-            canCreateCart && 'group-hover/new:bg-primary/20',
-          )}>
-            <Plus className={cn('h-4 w-4 transition-transform duration-300', canCreateCart && 'group-hover/new:rotate-90')} />
+          <div
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
+              canCreateCart && 'group-hover/new:bg-primary/20',
+            )}
+          >
+            <Plus
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                canCreateCart && 'group-hover/new:rotate-90',
+              )}
+            />
           </div>
           <span>Novo</span>
         </button>

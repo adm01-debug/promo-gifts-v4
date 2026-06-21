@@ -91,7 +91,6 @@ export function CartSidebar({
   const [loadOpen, setLoadOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
@@ -211,6 +210,7 @@ export function CartSidebar({
           {otherCarts.map((c) => (
             <button
               key={c.id}
+              type="button"
               onClick={() => onSetActiveCartId(c.id)}
               className="flex w-full items-center gap-2.5 rounded-lg border border-border/30 p-2.5 text-left transition-all hover:border-border/60 hover:bg-muted/20"
             >
@@ -249,7 +249,6 @@ export function CartSidebar({
           if (!open) {
             setTplName('');
             setTplDesc('');
-            setIsSavingTemplate(false);
           }
         }}
       >
@@ -258,17 +257,29 @@ export function CartSidebar({
             <DialogTitle>Salvar Template de Carrinho</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <Input
-              placeholder='Ex: "Kit Onboarding"'
-              value={tplName}
-              onChange={(e) => setTplName(e.target.value)}
-            />
-            <Textarea
-              placeholder="Descrição opcional..."
-              value={tplDesc}
-              onChange={(e) => setTplDesc(e.target.value)}
-              rows={2}
-            />
+            <div className="space-y-1.5">
+              <label htmlFor="tpl-name" className="text-sm font-medium">
+                Nome do template
+              </label>
+              <Input
+                id="tpl-name"
+                placeholder='Ex: "Kit Onboarding"'
+                value={tplName}
+                onChange={(e) => setTplName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="tpl-desc" className="text-sm font-medium text-muted-foreground">
+                Descrição <span className="font-normal">(opcional)</span>
+              </label>
+              <Textarea
+                id="tpl-desc"
+                placeholder="Descreva o propósito deste template..."
+                value={tplDesc}
+                onChange={(e) => setTplDesc(e.target.value)}
+                rows={2}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               {cart.items.length} itens serão salvos no template
             </p>
@@ -278,14 +289,12 @@ export function CartSidebar({
               Cancelar
             </Button>
             <Button
-              disabled={!tplName.trim() || isSavingTemplate}
+              disabled={!tplName.trim()}
               onClick={() => {
-                setIsSavingTemplate(true);
                 onSaveTemplate(tplName.trim(), tplDesc.trim());
                 setSaveOpen(false);
                 setTplName('');
                 setTplDesc('');
-                setIsSavingTemplate(false);
               }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
