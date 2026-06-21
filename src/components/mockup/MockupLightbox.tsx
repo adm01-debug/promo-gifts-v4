@@ -91,7 +91,7 @@ export function MockupLightbox({
                   className="h-8 gap-1.5 border-border bg-muted text-xs text-foreground hover:bg-muted"
                   onClick={() => onLoadFromHistory(mockup)}
                 >
-                  <RotateCcw className="h-3.5 w-3.5" /> Regenerar
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Regenerar
                 </Button>
                 <ShareMenu
                   mockupUrl={mockup.mockup_url}
@@ -104,7 +104,7 @@ export function MockupLightbox({
                   className="h-8 gap-1.5 border-border bg-muted text-xs text-foreground hover:bg-muted"
                   onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
                 >
-                  <Download className="h-3.5 w-3.5" /> Baixar PDF
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" /> Baixar PDF
                 </Button>
                 <Button
                   size="icon"
@@ -113,7 +113,7 @@ export function MockupLightbox({
                   onClick={handleClose}
                   aria-label="Fechar lightbox"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             </div>
@@ -147,7 +147,7 @@ export function MockupLightbox({
                   onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))}
                   disabled={zoom <= 0.25}
                 >
-                  <ZoomOut className="h-3.5 w-3.5" />
+                  <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
                 <span className="w-12 text-center text-xs font-medium text-muted-foreground">
                   {Math.round(zoom * 100)}%
@@ -159,7 +159,7 @@ export function MockupLightbox({
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom((z) => Math.min(z + 0.25, 5))}
                 >
-                  <ZoomIn className="h-3.5 w-3.5" />
+                  <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
                 <Button
                   size="icon"
@@ -168,7 +168,7 @@ export function MockupLightbox({
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom(1)}
                 >
-                  <RotateCcw className="h-3 w-3" />
+                  <RotateCcw className="h-3 w-3" aria-hidden="true" />
                 </Button>
               </div>
             </div>

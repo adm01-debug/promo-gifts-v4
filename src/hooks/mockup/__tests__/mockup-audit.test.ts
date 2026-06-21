@@ -188,7 +188,7 @@ describe('Analise estatica — mockupGenerationService.ts', () => {
       expect(assertPos).toBeLessThan(invokePos);
     });
     it('detecta data URL SVG', () => {
-      expect(src).toContain("area.logoPreview.startsWith('data:image/svg')");
+      expect(src).toMatch(/area\.logoPreview\??\.\s*startsWith\('data:image\/svg'\)/);
     });
     it('mensagem de erro SVG em PT-BR', () => {
       expect(src).toContain('SVG não são suportados');
@@ -1623,5 +1623,62 @@ describe('Analise estatica — ArtFileUpload.tsx (aria-hidden em icones decorati
   });
   it('icone Trash2 no botao de remover tem aria-hidden', () => {
     expect(src).toContain('<Trash2 className="h-4 w-4" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MockupHistoryPanel.tsx (checkbox keyboard support)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupHistoryPanel.tsx');
+  });
+
+  it('checkbox de selecao tem role="checkbox"', () => {
+    expect(src).toContain('role="checkbox"');
+  });
+  it('checkbox de selecao tem aria-checked', () => {
+    expect(src).toContain('aria-checked={isCompareSelected}');
+  });
+  it('checkbox de selecao tem tabIndex={0}', () => {
+    expect(src).toContain('tabIndex={0}');
+  });
+  it('checkbox de selecao responde a Enter e Space', () => {
+    expect(src).toContain("e.key === 'Enter' || e.key === ' '");
+  });
+  it('checkmark visual tem aria-hidden', () => {
+    expect(src).toMatch(/<span[^>]+aria-hidden="true">✓<\/span>/);
+  });
+});
+
+describe('Analise estatica — MockupLightbox.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupLightbox.tsx');
+  });
+
+  it('icone RotateCcw no botao Regenerar tem aria-hidden', () => {
+    expect(src).toContain('<RotateCcw className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+  it('icone Download no botao Baixar PDF tem aria-hidden', () => {
+    expect(src).toContain('<Download className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+  it('icone ZoomOut no botao de zoom tem aria-hidden', () => {
+    expect(src).toContain('<ZoomOut className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+  it('icone ZoomIn no botao de zoom tem aria-hidden', () => {
+    expect(src).toContain('<ZoomIn className="h-3.5 w-3.5" aria-hidden="true"');
+  });
+});
+
+describe('Analise estatica — MockupCompareDialog.tsx (aria-hidden em icones decorativos)', () => {
+  let src: string;
+  beforeEach(() => {
+    src = readSrc('src/components/mockup/MockupCompareDialog.tsx');
+  });
+
+  it('icone X no botao fechar tem aria-hidden', () => {
+    expect(src).toContain('<X className="h-4 w-4" aria-hidden="true"');
+  });
+  it('icone Download no botao Baixar tem aria-hidden', () => {
+    expect(src).toContain('<Download className="mr-1 h-3.5 w-3.5" aria-hidden="true"');
   });
 });

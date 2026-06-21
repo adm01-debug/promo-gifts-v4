@@ -57,7 +57,7 @@ export function MockupCompareDialog({
               aria-label="Fechar comparação de mockups"
               onClick={() => onOpenChange(false)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
@@ -96,7 +96,7 @@ export function MockupCompareDialog({
                     className="mt-1 w-full"
                     onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
                   >
-                    <Download className="mr-1 h-3.5 w-3.5" /> Baixar
+                    <Download className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Baixar
                   </Button>
                 </div>
               </div>
