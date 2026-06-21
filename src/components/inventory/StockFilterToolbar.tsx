@@ -79,6 +79,7 @@ export function StockFilterToolbar({
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() ?? '');
   const [openSections, setOpenSections] = useState<string[]>([]);
+  const [ruptureHorizon, setRuptureHorizon] = useRuptureHorizon();
 
   // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
   useFutureStockPreference(
