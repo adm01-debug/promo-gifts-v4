@@ -74,6 +74,8 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   limit?: number;
   offset?: number;
   countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  /** For upsert: column(s) that define the conflict target (e.g. 'sku'). */
+  onConflict?: string;
 }
 
 export interface InvokeResult<T> {

@@ -147,6 +147,16 @@ export function useQuoteBuilderState() {
   // logo após o submit, então sem isto o replay do overwrite enviaria sellerNotes
   // = undefined e o admin perderia o motivo informado.
   const pendingSellerNotesRef = useRef<string | undefined>(undefined);
+  // BUG-044: completedSteps useMemo checks `new Date(validUntil) > new Date()` but
+  // `validUntil` is a string that doesn't change as real time passes. Without a time
+  // tick the "Conditions" step stays ✓ even after the validity date expires, letting
+  // the seller think the quote is ready while save would fail with a validation error.
+  const [_nowMinute, setNowMinute] = useState(() => Math.floor(Date.now() / 60_000));
+  useEffect(() => {
+    const id = setInterval(() => setNowMinute(Math.floor(Date.now() / 60_000)), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
@@ -237,7 +247,15 @@ export function useQuoteBuilderState() {
     if (clientId && contactId) steps.push('client');
     if (paymentMethod && paymentTerms && deliveryTime && shippingType) {
       if (shippingType !== 'fob_pre' || shippingCost > 0) {
-        steps.push('conditions');
+        // BUG-005: validUntil was missing from the conditions check, causing the
+        // stepper to show the "Conditions" step as ✓ even when the validity date
+        // is in the past. Save would then fail with a toast error — contradiction.
+        // We mark it incomplete when the date is missing or expired so the seller
+        // sees a clear signal before attempting to send the quote.
+        // Use _nowMinute (updates every 60 s) so this check re-evaluates when the
+        // clock crosses the deadline without relying on non-deterministic new Date().
+        const validityOk = validUntil && new Date(validUntil) > new Date(_nowMinute * 60_000);
+        if (validityOk) steps.push('conditions');
       }
     }
     if (items.length > 0) steps.push('items');
@@ -254,6 +272,8 @@ export function useQuoteBuilderState() {
     deliveryTime,
     shippingType,
     shippingCost,
+    validUntil,
+    _nowMinute,
   ]);
 
   const announce = useCallback((message: string) => {
