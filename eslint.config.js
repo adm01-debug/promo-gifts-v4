@@ -425,6 +425,16 @@ export default [
       'react/iframe-missing-sandbox': 'error',
       'no-warning-comments': ['error', { terms: ['FIXME', 'HACK', 'XXX'] }],
       'react/jsx-fragments': ['error', 'syntax'],
+      // Batch 128: 9 rules (1 zero-violation + 8 with ≤2 fixes each — removed: consistent-indexed-object-style 6v, no-useless-default-assignment 9v, jsx-no-constructed-context-values 14v, no-unnecessary-type-parameters 16v, no-unstable-nested-components 29v, non-nullable-type-assertion-style 38v, method-signature-style 50v, no-unnecessary-type-conversion 182v)
+      '@typescript-eslint/no-implied-eval': 'error',
+      '@typescript-eslint/no-duplicate-type-constituents': 'error',
+      '@typescript-eslint/no-useless-constructor': 'error',
+      'react/no-unknown-property': ['error', { ignore: ['cmdk-input-wrapper'] }],
+      'jsx-a11y/no-redundant-roles': 'error',
+      'jsx-a11y/iframe-has-title': 'error',
+      'jsx-a11y/alt-text': 'error',
+      'jsx-a11y/anchor-has-content': 'error',
+      'jsx-a11y/heading-has-content': 'error',
       // Batch 127: 4 zero-violation rules + 1 rule with 1 fix (removed: no-implicit-coercion 443v, no-negated-condition 289v, jsx-a11y/no-autofocus 36v)
       'react/void-dom-elements-no-children': 'error',
       '@typescript-eslint/no-duplicate-enum-values': 'error',
