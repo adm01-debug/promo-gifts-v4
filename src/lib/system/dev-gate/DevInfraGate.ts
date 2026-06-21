@@ -12,7 +12,7 @@ export const DEFAULT_ALLOWED_ROLES: AppRole[] = ['dev', 'supervisor', 'admin'];
  * SRP: Define apenas o contrato de verificação de permissão.
  */
 export interface AccessPolicy {
-  hasAccess(roles: AppRole[]): boolean;
+  hasAccess: (roles: AppRole[]) => boolean;
 }
 
 /**

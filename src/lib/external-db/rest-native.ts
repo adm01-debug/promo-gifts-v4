@@ -414,23 +414,23 @@ type RestQueryResult = {
   count: number | null;
 };
 type RestQuery = PromiseLike<RestQueryResult> & {
-  eq(column: string, value: unknown): RestQuery;
-  in(column: string, values: readonly unknown[]): RestQuery;
-  is(column: string, value: null): RestQuery;
-  gte(column: string, value: unknown): RestQuery;
-  lte(column: string, value: unknown): RestQuery;
-  gt(column: string, value: unknown): RestQuery;
-  lt(column: string, value: unknown): RestQuery;
-  like(column: string, value: unknown): RestQuery;
-  ilike(column: string, value: unknown): RestQuery;
-  neq(column: string, value: unknown): RestQuery;
-  not(column: string, operator: string, value: unknown): RestQuery;
-  order(column: string, options: { ascending: boolean }): RestQuery;
-  range(from: number, to: number): RestQuery;
+  eq: (column: string, value: unknown) => RestQuery;
+  in: (column: string, values: readonly unknown[]) => RestQuery;
+  is: (column: string, value: null) => RestQuery;
+  gte: (column: string, value: unknown) => RestQuery;
+  lte: (column: string, value: unknown) => RestQuery;
+  gt: (column: string, value: unknown) => RestQuery;
+  lt: (column: string, value: unknown) => RestQuery;
+  like: (column: string, value: unknown) => RestQuery;
+  ilike: (column: string, value: unknown) => RestQuery;
+  neq: (column: string, value: unknown) => RestQuery;
+  not: (column: string, operator: string, value: unknown) => RestQuery;
+  order: (column: string, options: { ascending: boolean }) => RestQuery;
+  range: (from: number, to: number) => RestQuery;
 };
 type RestNativeClient = {
-  from(table: string): {
-    select(columns: string, options?: { count?: RestCountMode; head?: boolean }): RestQuery;
+  from: (table: string) => {
+    select: (columns: string, options?: { count?: RestCountMode; head?: boolean }) => RestQuery;
   };
 };
 
@@ -698,17 +698,17 @@ function remapData(table: string, data: Record<string, unknown>): Record<string,
   return out;
 }
 type RestWriteBuilder = PromiseLike<RestQueryResult> & {
-  eq(column: string, value: unknown): RestWriteBuilder;
-  in(column: string, values: readonly unknown[]): RestWriteBuilder;
-  is(column: string, value: null): RestWriteBuilder;
-  select(columns?: string): RestWriteBuilder;
+  eq: (column: string, value: unknown) => RestWriteBuilder;
+  in: (column: string, values: readonly unknown[]) => RestWriteBuilder;
+  is: (column: string, value: null) => RestWriteBuilder;
+  select: (columns?: string) => RestWriteBuilder;
 };
 type RestWriteClient = {
-  from(table: string): {
-    insert(values: unknown): RestWriteBuilder;
-    update(values: unknown): RestWriteBuilder;
-    delete(): RestWriteBuilder;
-    upsert(values: unknown): RestWriteBuilder;
+  from: (table: string) => {
+    insert: (values: unknown) => RestWriteBuilder;
+    update: (values: unknown) => RestWriteBuilder;
+    delete: () => RestWriteBuilder;
+    upsert: (values: unknown) => RestWriteBuilder;
   };
 };
 export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
