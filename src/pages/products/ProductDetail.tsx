@@ -108,7 +108,10 @@ export default function ProductDetail() {
         .select('view_count')
         .eq('id', id ?? '')
         .maybeSingle();
-      return row?.view_count ?? 0;
+      // TS2339: view_count exists in the DB (migration 20250103080000, maintained by
+      // fn_sync_product_view_count trigger) but types.ts is stale and lacks the column.
+      // Type assertion bridges the gap until types are regenerated.
+      return (row as { view_count: number | null } | null)?.view_count ?? 0;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
