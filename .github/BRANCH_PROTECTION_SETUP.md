@@ -39,7 +39,10 @@ Vá em: <https://github.com/adm01-debug/promo-gifts-v4/settings/branches>
 | ✅ **Require status checks to pass** | ON | Garante que CI roda antes do merge |
 | └─ Adicione: `Verify push to main matches accepted patterns` | | (nome do job do sentinel) |
 | └─ Adicione: `Verify Branch Protection is enabled on main` | | (job paralelo do sentinel) |
+| └─ Adicione: `Verify required checks SSOT matches workflows (+ Branch Protection)` | | (valida SSOT `.github/required-checks.json`) |
+| └─ Adicione: `Risco de Ruptura — fuzz (800 sims, 10 invariantes)` | | (fuzz do filtro de Risco de Ruptura — bloqueia merge se invariante quebrar) |
 | └─ Adicione: `Schema Drift Gate` *(se existir)* | | Drift do plano de redeploy |
+
 | ⚪ Require signed commits | OFF (opcional) | Só se você assina com GPG/SSH |
 | ⚪ Require linear history | ON (opcional) | Força squash/rebase, proíbe merge commit |
 
