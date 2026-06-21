@@ -118,7 +118,8 @@ describe('<ColorSwatch />', () => {
     // Gradiente vai em `background` (não em `backgroundColor`, que só aceita <color>).
     const bg = span.style.background || span.getAttribute('style') || '';
     expect(bg).toContain('conic-gradient');
-    expect(span.style.backgroundColor).toBe('');
+    // backgroundColor pode ser '' ou 'transparent' (efeito do shorthand no jsdom)
+    expect(['', 'transparent']).toContain(span.style.backgroundColor);
   });
 
   it('propaga sizeClassName e className extras', () => {
