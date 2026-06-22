@@ -260,7 +260,10 @@ export const BaseProductGridCard = memo(
               size="sm"
               hideWhenEmpty={false}
               selectedName={activeColorName}
-              onSelect={(c) => setActiveColorName(c.name)}
+              onSelect={(c) => {
+                setActiveColorName(c.name);
+                quickViewRef.current?.open(c.name);
+              }}
               onClear={() => setActiveColorName(null)}
             />
           </div>
