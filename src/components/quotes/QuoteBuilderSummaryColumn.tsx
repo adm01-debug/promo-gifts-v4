@@ -175,9 +175,9 @@ export function QuoteBuilderSummaryColumn({
   };
 
   return (
-    <div className="lg:col-span-4">
-      <div>
-        <div className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl">
+    <div className="min-w-0 lg:col-span-4">
+      <div className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)]">
+        <div className="flex max-h-full flex-col rounded-2xl border border-border/50 bg-card shadow-xl lg:overflow-y-auto">
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
             <div className="rounded-lg bg-primary/10 p-2">
@@ -576,7 +576,7 @@ export function QuoteBuilderSummaryColumn({
           )}
 
           {/* Footer */}
-          <div className="mt-3 shrink-0 space-y-2 border-t border-border/50 px-4 pb-4 pt-3">
+          <div className="mt-3 shrink-0 space-y-2 border-t border-border/50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
             <div className="flex items-center justify-between text-[11px] uppercase tracking-tight text-muted-foreground">
               <span>Subtotal</span>
               <span className="font-medium tabular-nums">{formatCurrency(presentedSubtotal)}</span>
