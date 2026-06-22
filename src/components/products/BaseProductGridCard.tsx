@@ -176,10 +176,12 @@ export const BaseProductGridCard = memo(
         {/* Image */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
           <QuickViewThumb
+            ref={quickViewRef}
             productId={productId}
             productName={productName}
             testId={thumbTestId}
             className="h-full w-full"
+            initialColorName={activeColorName}
           >
             <HoverSetImage
               key={activeImage ?? productImage ?? 'placeholder'}
