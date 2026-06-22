@@ -18,7 +18,11 @@ import { Building2, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCdnUrl, getSrcSet } from '@/utils/image-utils';
 import { cn } from '@/lib/utils';
-import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
+import {
+  getCatalogStockStatus,
+  getCatalogStockStatusColor,
+  getCatalogStockStatusLabel,
+} from '@/lib/catalog-stock-status';
 import { useProductBounds } from '@/hooks/products/useProductBounds';
 import { usePrefetchProduct } from '@/hooks/products/usePrefetchProduct';
 import {
@@ -81,20 +85,6 @@ import { WordMagicBadge } from '@/components/word-magic/WordMagicBadge';
 
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const formatPrice = (price: number) => priceFormatter.format(price);
-
-const STOCK_STATUS_COLOR: Record<string, string> = {
-  'in-stock': 'in-stock',
-  'low-stock': 'low-stock',
-  'out-of-stock': 'out-of-stock',
-};
-const getStockStatusColor = (status: string) => STOCK_STATUS_COLOR[status] ?? 'in-stock';
-
-const STOCK_STATUS_LABEL: Record<string, string> = {
-  'in-stock': 'Em estoque',
-  'low-stock': 'Estoque baixo',
-  'out-of-stock': 'Estoque zerado',
-};
-const getStockStatusLabel = (status: string) => STOCK_STATUS_LABEL[status] ?? 'Em estoque';
 
 export interface ProductCardProps {
   product: Product;
@@ -870,12 +860,12 @@ export const ProductCard = memo(
                           ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/20'
                           : displayStatus === 'low-stock'
                             ? 'bg-warning text-warning-foreground'
-                            : getStockStatusColor(displayStatus),
+                            : getCatalogStockStatusColor(displayStatus),
                       )}
                     >
                       <Package className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" />
                       <span className="whitespace-nowrap">
-                        {getStockStatusLabel(displayStatus)}
+                        {getCatalogStockStatusLabel(displayStatus)}
                       </span>
                     </span>
 
