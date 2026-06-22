@@ -176,8 +176,8 @@ export function QuoteBuilderSummaryColumn({
 
   return (
     <div className="lg:col-span-4">
-      <div className="sticky top-24">
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-xl">
+      <div>
+        <div className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl">
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
             <div className="rounded-lg bg-primary/10 p-2">
@@ -226,7 +226,7 @@ export function QuoteBuilderSummaryColumn({
           )}
 
           {/* Product Cards */}
-          <div className="max-h-[50vh] min-h-0 flex-1 overflow-y-auto px-4">
+          <div className="px-4">
             <div className="space-y-3 pr-1">
               {items.length === 0 ? (
                 <div className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/5 p-8 transition-all duration-300 hover:border-primary/30">
