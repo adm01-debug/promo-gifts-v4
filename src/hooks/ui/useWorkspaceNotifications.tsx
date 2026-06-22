@@ -66,7 +66,12 @@ function debugLog(event: string, payload: Record<string, unknown>) {
 }
 
 export function useWorkspaceNotifications() {
-  const { user } = useAuth();
+  // BUG-NOTIF-403 FIX: importar rolesLoaded para evitar race condition.
+  // Sem rolesLoaded, o hook disparava HEAD requests em workspace_notifications
+  // antes do JWT estar validado, causando "Falha ao carregar Buscar: HEAD ...".
+  // rolesLoaded=true garante que fetchUserData() completou e o JWT está válido.
+  // Espelha o fix de BUG-DAR-401 em DiscountApprovalHeaderBadge (2026-06-18).
+  const { user, rolesLoaded } = useAuth();
   const [notifications, setNotifications] = useState<WorkspaceNotification[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -91,6 +96,14 @@ export function useWorkspaceNotifications() {
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);
+
+  // BUG-NOTIF-403 FIX: ref para acessar rolesLoaded dentro de fetchNotifications
+  // sem adicioná-lo ao useCallback dep array (evita recriar fetchNotifications
+  // e re-introduzir BUG-08). O ref é mantido sincronizado via useEffect abaixo.
+  const rolesLoadedRef = useRef(rolesLoaded);
+  useEffect(() => {
+    rolesLoadedRef.current = rolesLoaded;
+  }, [rolesLoaded]);
 
   /**
    * BUG-08 FIX: remover notifications.length das deps de fetchNotifications.
@@ -149,6 +162,7 @@ export function useWorkspaceNotifications() {
   }, [user]);
 
   // BUG-08 FIX: deps agora so [user] - sem notifications.length
+  // BUG-NOTIF-403: rolesLoadedRef.current guardeia o fetch interno
   const fetchNotifications = useCallback(
     async (
       opts: {
@@ -162,7 +176,9 @@ export function useWorkspaceNotifications() {
         endDate?: string;
       } = {},
     ) => {
-      if (!user) return;
+      // BUG-NOTIF-403 FIX: usar ref para acessar rolesLoaded sem adicioná-lo
+      // ao dep array (preserva fix BUG-08 que removeu notifications.length).
+      if (!user || !rolesLoadedRef.current) return;
 
       const targetPage = opts.page ?? page;
       const targetSearch = opts.search ?? search;
@@ -267,32 +283,38 @@ export function useWorkspaceNotifications() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user], // FIX: removido notifications.length - agora usa notificationsLengthRef
+    [user], // FIX BUG-08: removido notifications.length — usa notificationsLengthRef
+            // FIX BUG-NOTIF-403: rolesLoaded acessado via rolesLoadedRef — não nas deps
   );
 
   // Fetch notifications when filters or page changes
+  // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
+  // Sem rolesLoaded, o effect disparava com JWT inválido antes de
+  // onAuthStateChange(INITIAL_SESSION) ser validado por getUser().
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;
 
     // Use a small delay for search to avoid too many requests if not handled by caller
     // but the Drawer already has a 400ms debounce.
     const source: FetchSource = didInitialFetchRef.current ? 'filter-change' : 'initial';
     didInitialFetchRef.current = true;
     fetchNotifications({ source });
-  }, [user, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
+  }, [user, rolesLoaded, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
 
   // Polling every 30s - agora estavel: fetchNotifications nao recria com notifications.length
+  // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;
     const interval = setInterval(() => {
       fetchNotifications({ silent: true, source: 'polling' });
     }, 30_000);
     return () => clearInterval(interval);
-  }, [user, fetchNotifications]);
+  }, [user, rolesLoaded, fetchNotifications]);
 
   // Real-time synchronization
+  // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;
 
     const channel = supabase
       // BUG-RT-CHANNEL FIX: topico unico por montagem. O sino monta em TODA pagina (Header)
@@ -327,7 +349,7 @@ export function useWorkspaceNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications]);
+  }, [user, rolesLoaded, fetchNotifications]);
 
   // Final summary on unmount
   useEffect(() => {
