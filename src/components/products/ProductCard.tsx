@@ -795,6 +795,9 @@ export const ProductCard = memo(
                   currentUrl.searchParams.set('cor', c.name);
                   currentUrl.searchParams.set('pid', product.id);
                   window.history.replaceState({}, '', currentUrl.toString());
+
+                  // Abre o QuickView já posicionado na cor escolhida.
+                  setQuickViewOpen(true);
                 }
               }}
               onClear={() => {
