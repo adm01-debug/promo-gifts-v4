@@ -497,10 +497,12 @@ export default function FiltersPage() {
                           size="sm"
                           className={cn(
                             'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                             state.selectionMode
                               ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                               : 'hover:border-primary/50',
                           )}
+
                           onClick={toggleSelectionMode}
                           aria-label={
                             state.selectionMode
