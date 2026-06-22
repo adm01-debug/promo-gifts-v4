@@ -194,6 +194,10 @@ export interface PromobrindProduct {
   ai_summary?: string | null;
   ai_version?: number | null;
   ai_generated_at?: string | null;
+  // Color swatches V2 — JSONB populado por trigger no BD externo (fn_rebuild_color_swatches).
+  // Cada item: { variant_id, sku, color_id, color_name, color_hex, stock_quantity, image_url, is_in_stock }.
+  color_swatches?: unknown[] | null;
+  has_colors?: boolean | null;
 }
 
 export function getProductImageUrl(product: PromobrindProduct): string | null {
