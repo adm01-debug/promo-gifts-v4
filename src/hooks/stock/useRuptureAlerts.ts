@@ -6,6 +6,7 @@
  * Root cause: 3.700 RUPTURA (score=100) bloqueavam todos os CRÍTICO/ALERTA/ATENÇÃO
  * quando o LIMIT era 2000. Com neq OK + limit 5000, cobrimos os 4.773 itens não-OK.
  */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { isFeatureEnabled } from '@/lib/feature-flags';
@@ -44,6 +45,7 @@ interface UseRuptureAlertsResult {
 /** Total itens não-OK ≈ 4.773 (RUPTURA+CRÍTICO+ALERTA+ATENÇÃO).
  *  5000 cobre com margem sem carregar os ~13k OK invisíveis no painel. */
 const MAX_ROWS = 5000;
+const EMPTY: RuptureAlertRow[] = [];
 
 function pickWorse(a: RuptureAlertRow, b: RuptureAlertRow): RuptureAlertRow {
   const pa = a.prioridade ?? 9999;
@@ -67,11 +69,25 @@ export function useRuptureAlerts(): UseRuptureAlertsResult {
       const client = supabase as unknown as {
         from: (n: string) => {
           select: (c: string) => {
-            eq: (k: string, v: boolean) => {
-              neq: (k: string, v: string) => {
-                order: (k: string, o?: { ascending?: boolean }) => {
-                  order: (k: string, o?: { ascending?: boolean }) => {
-                    limit: (n: number) => Promise<{ data: RuptureAlertRow[] | null; error: Error | null }>;
+            eq: (
+              k: string,
+              v: boolean,
+            ) => {
+              neq: (
+                k: string,
+                v: string,
+              ) => {
+                order: (
+                  k: string,
+                  o?: { ascending?: boolean },
+                ) => {
+                  order: (
+                    k: string,
+                    o?: { ascending?: boolean },
+                  ) => {
+                    limit: (
+                      n: number,
+                    ) => Promise<{ data: RuptureAlertRow[] | null; error: Error | null }>;
                   };
                 };
               };
@@ -97,12 +113,15 @@ export function useRuptureAlerts(): UseRuptureAlertsResult {
     },
   });
 
-  const alerts = query.data ?? [];
-  const byVariantId = new Map<string, RuptureAlertRow>();
-  for (const a of alerts) {
-    const existing = byVariantId.get(a.variant_id);
-    byVariantId.set(a.variant_id, existing ? pickWorse(existing, a) : a);
-  }
+  const alerts = query.data ?? EMPTY;
+  const byVariantId = useMemo(() => {
+    const map = new Map<string, RuptureAlertRow>();
+    for (const a of alerts) {
+      const existing = map.get(a.variant_id);
+      map.set(a.variant_id, existing ? pickWorse(existing, a) : a);
+    }
+    return map;
+  }, [alerts]);
 
   return {
     alerts,
