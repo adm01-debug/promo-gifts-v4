@@ -70,6 +70,12 @@ interface ProductQuickViewProps {
   onShare?: (product: Product) => void;
   onAddToQuote?: (product: Product) => void;
   onAddToCollection?: (product: Product) => void;
+  /**
+   * Quando definido, o QuickView abre já com esta cor pré-selecionada
+   * (match case-insensitive por `name`). O usuário pode trocar livremente
+   * ou clicar em "Todas as cores" para limpar a seleção.
+   */
+  initialColorName?: string | null;
 }
 
 export const ProductQuickView = React.memo(
