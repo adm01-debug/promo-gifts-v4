@@ -127,7 +127,7 @@ export function useQuoteBuilderState() {
 
   const { user } = useAuth();
   const { createQuote, updateQuote, fetchQuote, isLoading: quotesLoading } = useQuotes();
-  const { templates } = useQuoteTemplates();
+  const { templates, loading: templatesLoading } = useQuoteTemplates();
   const { myLimit: maxDiscountPercent } = useSellerDiscountLimits();
   const { requestApproval } = useDiscountApproval();
 
@@ -227,7 +227,7 @@ export function useQuoteBuilderState() {
   const [productSearch, setProductSearch] = useState('');
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
   const [templateApplied, setTemplateApplied] = useState<string | null>(null);
-  const [loadingQuote, setLoadingQuote] = useState(isEditMode);
+  const [loadingQuote, setLoadingQuote] = useState(isEditMode || templatesLoading);
   // Removido estado duplicado de items e activeItemIndex (gerenciados pelo useQuoteItems)
 
   const debouncedProductSearch = useDebounce(productSearch, 400);
@@ -1176,13 +1176,14 @@ export function useQuoteBuilderState() {
   );
 
   const defaultTemplate = useMemo(() => templates.find((t) => t.is_default), [templates]);
+  const isBuilderBootstrapping = loadingQuote || templatesLoading;
 
   return {
     // Navigation
     navigate,
     quoteId,
     isEditMode,
-    loadingQuote,
+    loadingQuote: isBuilderBootstrapping,
     currentStep,
     setCurrentStep,
     // Auth
