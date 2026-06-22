@@ -28,7 +28,16 @@ export interface PromisedReplenishment {
 
 /** Chegada real de estoque, derivada de stock_snapshots com delta positivo. */
 export interface ActualArrival {
-  id: string;
+  /**
+   * stock_snapshots.id (bigint / int8) — PostgREST serializa bigint como JavaScript
+   * number, não string. O tipo `string | number` reflete o comportamento real em runtime;
+   * o tipo `string` anterior era um force-cast que ocultava o gap.
+   *
+   * toStr() em matching.ts garante segurança nas operações de .localeCompare().
+   * Template literals em JSX (ex.: key={`${promise.id}__${arrival.id}`}) convertem
+   * automaticamente para string.
+   */
+  id: string | number;
   sourceId: string;
   supplierId: string;
   variantId: string;
