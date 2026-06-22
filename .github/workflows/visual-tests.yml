@@ -142,3 +142,39 @@ jobs:
           **/*.spec.ts-snapshots/**/*.png
         if-no-files-found: ignore
         retention-days: 30
+
+    - name: Comment PR with visual diffs on failure
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          const root = 'test-results';
+          if (!fs.existsSync(root)) return;
+          const diffs = [];
+          const walk = (d) => {
+            for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+              const p = path.join(d, e.name);
+              if (e.isDirectory()) walk(p);
+              else if (/-diff\.png$/.test(e.name)) diffs.push(p);
+            }
+          };
+          walk(root);
+          if (!diffs.length) return;
+          const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          const list = diffs.slice(0, 20).map((p) => `- \`${p}\``).join('\n');
+          const body = [
+            `### 🖼️ Visual regression — shard ${{ matrix.shardIndex }}`,
+            ``,
+            `${diffs.length} diff(s) detectado(s). Baixe o artefato **playwright-visual-diffs-${{ matrix.shardIndex }}** no [run](${runUrl}) para inspecionar \`*-actual.png\` / \`*-expected.png\` / \`*-diff.png\`.`,
+            ``,
+            list,
+          ].join('\n');
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            body,
+          });
+
