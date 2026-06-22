@@ -67,12 +67,11 @@ async function fetchRawReliability(): Promise<RawData> {
       SNAPSHOT_COLS,
       1000,
       200_000,
-    )
-      .then((rows) => rows.filter((r) => (r.captured_at ?? '') >= cutoff))
-      .catch((err) => {
-        logger.warn('[Reliability] snapshots fetch failed', err);
-        return [] as Array<SnapshotRow & { id: string }>;
-      }),
+      { 'captured_at:gte': cutoff },
+    ).catch((err) => {
+      logger.warn('[Reliability] snapshots fetch failed', err);
+      return [] as Array<SnapshotRow & { id: string }>;
+    }),
     fetchPaginatedFromBridge<{ id: string; name: string }>(
       'suppliers',
       SUPPLIER_COLS,

@@ -132,6 +132,7 @@ export const ALLOWED_FILTER_KEYS: Readonly<Record<string, ReadonlySet<string>>> 
   products: new Set(['active', 'is_active', 'supplier_id', 'category_id', 'brand']),
   product_variants: new Set(['is_active', 'product_id', 'color_id', 'supplier_id']),
   variant_supplier_sources: new Set(['is_active', 'variant_id', 'supplier_id']),
+  stock_snapshots: new Set(['captured_at:gte']),
 };
 
 /** Busca paginada por keyset (`id`) via PostgREST direto (ponte descontinuada), com deduplicação. */
@@ -176,7 +177,18 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
           );
           continue;
         }
-        if (val === null) query = query.is(col, null);
+        const colonIdx = col.indexOf(':');
+        if (colonIdx !== -1) {
+          const bareCol = col.slice(0, colonIdx);
+          const op = col.slice(colonIdx + 1);
+          if (op === 'gte') query = query.gte(bareCol, val as string);
+          else if (op === 'lte') query = query.lte(bareCol, val as string);
+          else {
+            logger.warn(
+              `[Stock] fetchPaginatedFromBridge: operador desconhecido "${op}" em "${col}" — ignorado`,
+            );
+          }
+        } else if (val === null) query = query.is(col, null);
         else if (Array.isArray(val)) query = query.in(col, val);
         else query = query.eq(col, val);
       }
