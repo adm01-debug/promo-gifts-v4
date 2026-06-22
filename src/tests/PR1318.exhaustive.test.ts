@@ -11,7 +11,7 @@ function s(id: string, price: number | null | undefined): Product {
   return { id, name: 'P-' + id, price } as unknown as Product;
 }
 
-// ── A1. stockStatus canônicos ─────────────────────────────────────────────────
+// ── A1. stockStatus canonicos ─────────────────────────────────────────────────
 describe('A1 — stockStatus canonicos (hifem)', () => {
   it('in-stock → true', () => { expect(isProductInStock(p({ stockStatus: 'in-stock', stock: 50 }))).toBe(true); });
   it('low-stock → true', () => { expect(isProductInStock(p({ stockStatus: 'low-stock', stock: 5 }))).toBe(true); });
@@ -46,7 +46,6 @@ describe('A2 — GAP-STOCK-CASE-01 CORRIGIDO: case-insensitive', () => {
   it('LOW-STOCK maiusculo → true', () => {
     expect(isProductInStock(p({ stockStatus: 'LOW-STOCK', stock: 3 }))).toBe(true);
   });
-  // DOMINIO SEPARADO: underscore é inventário, não catálogo (by design)
   it('out_of_stock underscore → true (dominio inventario, by design)', () => {
     expect(isProductInStock(p({ stockStatus: 'out_of_stock', stock: 5 }))).toBe(true);
   });
@@ -67,29 +66,57 @@ describe('A3 — fallback por stock (sem stockStatus)', () => {
   it('stock=1000000 → true', () => { expect(isProductInStock(p({ stock: 1000000 }))).toBe(true); });
 });
 
-// ── A4. variações ─────────────────────────────────────────────────────────────
-describe('A4 — produtos COM variacoes', () => {
-  it('1 variacao stock=1 → true', () => { expect(isProductInStock(p({ variations: [{ stock: 1 }] }))).toBe(true); });
-  it('todas variacoes stock=0 → false', () => { expect(isProductInStock(p({ variations: [{ stock: 0 }, { stock: 0 }] }))).toBe(false); });
-  it('todas variacoes stock=null → false', () => { expect(isProductInStock(p({ variations: [{ stock: null }] }))).toBe(false); });
-  it('todas variacoes stock=undefined → false', () => { expect(isProductInStock(p({ variations: [{ stock: undefined }] }))).toBe(false); });
-  it('variacoes mistas [-1, 3] → true', () => { expect(isProductInStock(p({ variations: [{ stock: -1 }, { stock: 3 }] }))).toBe(true); });
-  it('variacao stock=-5 unica → false', () => { expect(isProductInStock(p({ variations: [{ stock: -5 }] }))).toBe(false); });
-  it('ignora stockStatus quando variacoes presentes', () => {
+// ── A4. GAP-VAR-MINQTY-01 CORRIGIDO ──────────────────────────────────────────
+describe('A4 — variacoes (GAP-VAR-MINQTY-01 CORRIGIDO)', () => {
+  // Sem stockStatus: fallback (v.stock ?? 0) > 0
+  it('var stock=1 sem stockStatus → true (fallback)', () => { expect(isProductInStock(p({ variations: [{ stock: 1 }] }))).toBe(true); });
+  it('todas vars stock=0 sem stockStatus → false', () => { expect(isProductInStock(p({ variations: [{ stock: 0 }, { stock: 0 }] }))).toBe(false); });
+  it('todas vars stock=null → false', () => { expect(isProductInStock(p({ variations: [{ stock: null }] }))).toBe(false); });
+  it('todas vars stock=undefined → false', () => { expect(isProductInStock(p({ variations: [{ stock: undefined }] }))).toBe(false); });
+  it('vars mistas [-1, 3] → true (uma positiva)', () => { expect(isProductInStock(p({ variations: [{ stock: -1 }, { stock: 3 }] }))).toBe(true); });
+  // COM stockStatus: usa status pre-computado (inclui minQuantity!)
+  it('GAP-VAR-MINQTY-01 CORRIGIDO: var stock=3 out-of-stock → false', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 3, stockStatus: 'out-of-stock' }] }))).toBe(false);
+  });
+  it('var stock=10 in-stock → true', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 10, stockStatus: 'in-stock' }] }))).toBe(true);
+  });
+  it('var low-stock → true (disponivel)', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 5, stockStatus: 'low-stock' }] }))).toBe(true);
+  });
+  it('var1=out-of-stock, var2=in-stock → true (uma pedivel)', () => {
+    expect(isProductInStock(p({ variations: [
+      { stock: 3, stockStatus: 'out-of-stock' },
+      { stock: 15, stockStatus: 'in-stock' },
+    ] }))).toBe(true);
+  });
+  it('todas vars out-of-stock → false', () => {
+    expect(isProductInStock(p({ variations: [
+      { stock: 3, stockStatus: 'out-of-stock' },
+      { stock: 2, stockStatus: 'out-of-stock' },
+    ] }))).toBe(false);
+  });
+  it('var OUT-OF-STOCK maiusculo → false (case-insensitive)', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 5, stockStatus: 'OUT-OF-STOCK' }] }))).toBe(false);
+  });
+  it('var stockStatus=null com stock=3 → true (fallback para stock)', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 3, stockStatus: null }] }))).toBe(true);
+  });
+  it('produto.stockStatus ignorado quando variacoes presentes', () => {
     expect(isProductInStock(p({ variations: [{ stock: 10 }], stockStatus: 'out-of-stock' }))).toBe(true);
   });
-  it('GAP: variacao stock=3 sem minQty → true mesmo se minQty=5', () => {
-    expect(isProductInStock(p({ variations: [{ stock: 3 }] }))).toBe(true);
+  it('produto.stockStatus=out-of-stock + var in-stock → true', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 5, stockStatus: 'in-stock' }], stockStatus: 'out-of-stock' }))).toBe(true);
   });
-  it('variations=[] vazio → cai para stockStatus out-of-stock → false', () => {
+  it('variations=[] vazio → cai para produto.stockStatus out-of-stock', () => {
     expect(isProductInStock(p({ variations: [], stockStatus: 'out-of-stock' }))).toBe(false);
   });
-  it('variations=[] vazio → cai para stock → true', () => {
+  it('variations=[] vazio → cai para stock', () => {
     expect(isProductInStock(p({ variations: [], stockStatus: null, stock: 5 }))).toBe(true);
   });
   it('variations=null → cai para stockStatus', () => { expect(isProductInStock(p({ variations: null, stockStatus: 'in-stock' }))).toBe(true); });
-  it('objeto variacao vazio {} → false', () => { expect(isProductInStock(p({ variations: [{}] }))).toBe(false); });
-  it('variacoes com stock=0.5 → true', () => { expect(isProductInStock(p({ variations: [{ stock: 0.5 }] }))).toBe(true); });
+  it('objeto variacao {} → false (stock=undefined, sem stockStatus)', () => { expect(isProductInStock(p({ variations: [{}] }))).toBe(false); });
+  it('var stock=0.5 sem stockStatus → true', () => { expect(isProductInStock(p({ variations: [{ stock: 0.5 }] }))).toBe(true); });
 });
 
 // ── A5. 413 produtos BUG-CF-INSTOCK-01 ───────────────────────────────────────
@@ -107,11 +134,10 @@ describe('A5 — 413 produtos BUG-CF-INSTOCK-01', () => {
   it('stock=100 minQty=100 → true', () => { expect(isProductInStock(mkBug(100, 100))).toBe(true); });
   it('stock=9 minQty=10 → false (exclusivo)', () => { expect(isProductInStock(mkBug(9, 10))).toBe(false); });
   it('stock=10 minQty=10 → true (inclusivo)', () => { expect(isProductInStock(mkBug(10, 10))).toBe(true); });
-  it('413 produtos: todos out-of-stock, todos excluidos, logica bugada inclui todos', () => {
+  it('413 produtos: todos out-of-stock, todos excluidos', () => {
     const catalog = Array.from({ length: 413 }, (_, i) => {
       const stock = (i % 50) + 1;
-      const minQty = stock + 1 + (i % 10);
-      return mkBug(stock, minQty);
+      return mkBug(stock, stock + 1 + (i % 10));
     });
     expect(catalog.every(x => x.stockStatus === 'out-of-stock')).toBe(true);
     expect(catalog.filter(isProductInStock)).toHaveLength(0);
@@ -149,7 +175,7 @@ describe('B2 — getCatalogStockStatus: minOrderQuantity', () => {
   it('minQty=NaN → nao aplica', () => { expect(getCatalogStockStatus(5, 10, NaN)).toBe('low-stock'); });
   it('minQty=Infinity → nao aplica', () => { expect(getCatalogStockStatus(5, 10, Infinity)).toBe('low-stock'); });
   it('stock=0.5 minQty=1 → out-of-stock', () => { expect(getCatalogStockStatus(0.5, 10, 1)).toBe('out-of-stock'); });
-  it('stock=1 minQty=1 → low-stock (satisfaz min, abaixo threshold)', () => { expect(getCatalogStockStatus(1, 10, 1)).toBe('low-stock'); });
+  it('stock=1 minQty=1 → low-stock', () => { expect(getCatalogStockStatus(1, 10, 1)).toBe('low-stock'); });
   it('stock=10 minQty=1 threshold=5 → in-stock', () => { expect(getCatalogStockStatus(10, 5, 1)).toBe('in-stock'); });
 });
 
@@ -278,9 +304,10 @@ describe('D — Simulacao producao: 200 produtos', () => {
     }),
     ...Array.from({ length: 50 }, (_, i) => p({ stock: i, stockStatus: null })),
     ...Array.from({ length: 50 }, (_, i) => p({
-      variations: [{ stock: i % 3 === 0 ? 0 : i }, { stock: i % 7 === 0 ? 5 : 0 }],
+      variations: [{ stock: i % 3 === 0 ? 0 : i, stockStatus: i % 4 === 0 ? 'out-of-stock' : undefined },
+                   { stock: i % 7 === 0 ? 5 : 0 }],
     })),
-    ...((([
+    ...(([
       p({ stock: null, stockStatus: null }),
       p({ stock: 0, stockStatus: null }),
       p({ stock: 1, stockStatus: 'in-stock' }),
@@ -291,17 +318,18 @@ describe('D — Simulacao producao: 200 produtos', () => {
       p({ stock: -1, stockStatus: null }),
       p({ stock: 0.5, stockStatus: null }),
       p({ stock: 999, stockStatus: 'low-stock' }),
-    ]) as InStockProduct[]).flatMap(x => Array.from({ length: 5 }, () => x))),
+    ] as InStockProduct[]).flatMap(x => Array.from({ length: 5 }, () => x))),
   ];
 
   it('200 produtos no catalogo', () => { expect(catalog).toHaveLength(200); });
-  it('nenhum retornado tem out-of-stock sem variacoes', () => {
+  it('nenhum retornado tem produto.out-of-stock sem variacoes', () => {
     const bad = catalog.filter(isProductInStock).filter(x => !x.variations?.length && x.stockStatus === 'out-of-stock');
     expect(bad).toHaveLength(0);
   });
-  it('nenhum retornado tem stock<=0 sem stockStatus e sem variacoes', () => {
+  it('nenhum retornado tem variation out-of-stock TODAS as variacoes', () => {
     const bad = catalog.filter(isProductInStock).filter(x =>
-      !x.variations?.length && !x.stockStatus && (x.stock == null || (x.stock || 0) <= 0)
+      x.variations?.length &&
+      x.variations.every(v => v.stockStatus ? v.stockStatus.toLowerCase() === 'out-of-stock' : (v.stock ?? 0) <= 0)
     );
     expect(bad).toHaveLength(0);
   });
@@ -316,7 +344,9 @@ describe('D — Simulacao producao: 200 produtos', () => {
     });
   });
   it('corrigida exclui >= produtos que a bugada (nunca mais permissiva)', () => {
-    const bug = catalog.filter(x => x.variations?.length ? x.variations.some(v => (v.stock ?? 0) > 0) : (x.stock || 0) > 0).length;
+    const bug = catalog.filter(x =>
+      x.variations?.length ? x.variations.some(v => (v.stock ?? 0) > 0) : (x.stock || 0) > 0
+    ).length;
     const fix = catalog.filter(isProductInStock).length;
     expect(fix).toBeLessThanOrEqual(bug);
   });

@@ -217,6 +217,12 @@ export interface ProductVariation {
     hex: string;
   };
   stock: number;
+  /**
+   * Status de estoque pré-computado da variação (opcional).
+   * Quando presente, tem prioridade sobre o raw stock na decisão de pedibilidade.
+   * Mesmo tipo que Product.stockStatus (catálogo com hífen).
+   */
+  stockStatus?: 'in-stock' | 'low-stock' | 'out-of-stock' | null;
   image?: string | null;
   images?: string[];
   videos?: Array<{
