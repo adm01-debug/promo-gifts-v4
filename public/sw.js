@@ -1,6 +1,20 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.1.0
+// Versão: 3.2.0
+//
+// CHANGELOG v3.2.0 (2026-06-22 — fix/sw-stale-chunk-recovery):
+//   CRÍTICO FIX: Navigation handler mudado de Cache First → Network First.
+//   ROOT CAUSE: Com Cache First, após cada deploy do Vercel o SW servia o
+//   /index.html antigo (com hashes de chunks velhos). Os chunks novos têm
+//   hashes diferentes → browser pedia chunks inexistentes → HTTP 404 em
+//   console (ex: MockupGenerator-YQ8BivwR.js, estoque-*.js).
+//   SOLUÇÃO: Network First para navigation garante que cada navegação carrega
+//   o /index.html mais recente do CDN. Cache continua sendo usado como fallback
+//   offline. Performance: /index.html é <5KB, Vercel CDN < 50ms → impacto mínimo.
+//   STALE CHUNK RECOVERY: se um chunk com hash retorna 404 (chunk removido
+//   num novo deploy), o SW invalida o cache HTML e avisa os tabs abertos via
+//   postMessage({type:'SW_STALE_CHUNK'}) para recarregar.
+//   CHORE: CACHE_VERSION v9 → v10 (limpa todos os caches antigos na ativação).
 //
 // CHANGELOG v3.1.0 (2026-06-21 — bugfix/csp-clone):
 //   FIX: Imagens cross-origin de fornecedor (xbz, spot, worker, etc.) deixam de
@@ -22,14 +36,14 @@
 //   FIX: Nunca cachear requests com Authorization header.
 //
 // Estratégias por tipo de request:
-//   Navigation (SPA)        → Cache First + background update
-//   /assets/* (hashed)      → Cache First (imutável)
+//   Navigation (SPA)        → Network First + cache fallback offline  ← v3.2.0
+//   /assets/* (hashed)      → Cache First (imutável) + 404 recovery   ← v3.2.0
 //   Imagens (mesma origem / CDN próprio) → Cache First + LRU (max 500, 90d TTL)
 //   Google Fonts             → Stale-While-Revalidate
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate
 
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -145,6 +159,29 @@ function isImageExpired(response) {
   return Date.now() - new Date(date).getTime() > IMAGE_CACHE_TTL;
 }
 
+/**
+ * Stale chunk recovery: invalida o cache HTML e avisa todos os tabs abertos.
+ * Chamado quando um chunk hashed retorna 404 (deploy novo substituiu os chunks).
+ * O frontend deve escutar `navigator.serviceWorker.addEventListener('message', ...)`
+ * e chamar `window.location.reload()` quando receber `SW_STALE_CHUNK`.
+ */
+function handleStaleChunk(chunkUrl) {
+  // 1. Invalidar cache do HTML para que a próxima navegação busque da rede.
+  caches.open(CACHE_NAME).then((c) => {
+    c.delete('/index.html');
+    c.delete('/');
+  });
+
+  // 2. Notificar todos os tabs para recarregar.
+  self.clients
+    .matchAll({ includeUncontrolled: true, type: 'window' })
+    .then((clients) =>
+      clients.forEach((client) =>
+        client.postMessage({ type: 'SW_STALE_CHUNK', url: chunkUrl }),
+      ),
+    );
+}
+
 // ─── Install ─────────────────────────────────────────────────────────────────
 
 self.addEventListener('install', (event) => {
@@ -201,45 +238,79 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── B) Navigation (SPA) → Cache First + background update ──────────────────
+  // ── B) Navigation (SPA) → Network First + cache fallback offline ────────────
+  //
+  // v3.2.0 FIX: mudado de Cache First → Network First.
+  //
+  // Motivo: com Cache First, novos deploys do Vercel mudavam os hashes dos chunks
+  // JS mas o SW continuava servindo o /index.html antigo (com referências a chunks
+  // obsoletos). O browser tentava carregar chunks que já não existiam no CDN →
+  // HTTP 404 no console (ex: MockupGenerator-YQ8BivwR.js 404).
+  //
+  // Com Network First:
+  //   - Cada navegação busca /index.html da rede (< 50ms via Vercel CDN, < 5KB)
+  //   - HTML atualizado é guardado no cache para fallback offline
+  //   - Se a rede falhar (offline), o cache é servido como fallback
+  //   - Impacto de performance: mínimo (HTML é tiny, CDN é rápido)
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/index.html').then((cached) => {
-        const networkUpdate = fetch('/index.html', { cache: 'no-cache' })
-          .then((res) => {
-            if (res && res.ok) {
-              // Clonar AMBAS as cópias de forma síncrona, ANTES de `return res`
-              // entregar o corpo ao browser. Clonar dentro do .then()
-              // assíncrono falha com "Response body is already used".
-              const indexClone = res.clone();
-              const rootClone = res.clone();
-              caches.open(CACHE_NAME).then((c) => {
-                c.put('/index.html', indexClone);
-                c.put('/', rootClone);
-              });
-            }
-            return res;
-          })
-          .catch(() => null);
-
-        if (cached) return cached;
-        return networkUpdate.then((res) => res || offlineFallback());
-      }),
+      fetch('/index.html', { cache: 'no-cache' })
+        .then((res) => {
+          if (res && res.ok) {
+            // Atualizar cache de forma síncrona antes do return (evita "body already used").
+            const indexClone = res.clone();
+            const rootClone = res.clone();
+            caches.open(CACHE_NAME).then((c) => {
+              c.put('/index.html', indexClone);
+              c.put('/', rootClone);
+            });
+          }
+          return res;
+        })
+        .catch(() =>
+          // Rede falhou (offline) → fallback para cache; se não houver cache → página offline.
+          caches
+            .match('/index.html')
+            .then((cached) => cached || offlineFallback()),
+        ),
     );
     return;
   }
 
-  // ── C) Assets com hash → Cache First (imutáveis) ───────────────────────────
+  // ── C) Assets com hash → Cache First (imutáveis) + 404 recovery ────────────
+  //
+  // Chunks com hash são imutáveis: se o conteúdo muda, o hash muda.
+  // Cache First é a estratégia correta aqui para máxima performance.
+  //
+  // v3.2.0 ADIÇÃO: se um chunk hashed retorna 404 (deploy novo removeu esse chunk),
+  // o SW invalida o /index.html do cache e avisa os tabs abertos via postMessage
+  // para recarregar. Ao recarregar, o Network First da navegação busca o novo HTML
+  // (com os novos hashes) e os chunks carregam normalmente.
   if (isHashedAsset(url.pathname)) {
     event.respondWith(
       caches.match(request).then((cached) => {
+        // Cache hit: chunk imutável → responder imediatamente.
         if (cached) return cached;
+
+        // Cache miss: buscar da rede.
         return fetch(request).then((res) => {
           if (res && res.ok) {
+            // Chunk encontrado → cachear para próximas requisições.
             const clone = res.clone();
             caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+          } else if (res && res.status === 404) {
+            // Chunk não existe mais no CDN: deploy novo mudou os hashes.
+            // Iniciar recovery: invalidar HTML e notificar tabs.
+            handleStaleChunk(request.url);
           }
           return res;
+        }).catch((err) => {
+          // Erro de rede (offline ou timeout) → retornar erro para o browser.
+          // O React.lazy() vai mostrar o ErrorBoundary configurado.
+          return new Response(
+            JSON.stringify({ error: 'Network error fetching chunk', url: request.url }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } },
+          );
         });
       }),
     );
