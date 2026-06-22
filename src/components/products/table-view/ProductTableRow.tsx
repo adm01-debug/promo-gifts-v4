@@ -270,7 +270,25 @@ export const ProductTableRow = memo(({
         className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
         onClick={(e) => e.stopPropagation()}
       >
-        {product.colors.length > 0 ? (
+        {useSwatchesV2 ? (
+          <ColorSwatchPicker
+            swatches={swatchV2.swatches}
+            activeVariantId={swatchV2.activeVariantId}
+            size="sm"
+            maxVisible={4}
+            onSelect={(variantId) => {
+              const sw = swatchV2.swatches.find((s) => s.variant_id === variantId);
+              swatchV2.selectVariant(variantId);
+              if (sw) selectColorWithUrl(product.id, sw.color_name);
+              if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
+              if (sw) onOpenQuickView(product, null, sw.color_name);
+            }}
+            onReset={() => {
+              swatchV2.resetActive();
+              clearSelectedColor(product.id);
+            }}
+          />
+        ) : product.colors.length > 0 ? (
           <ProductColorSwatches
             colors={product.colors.map((c) => ({
               name: c.name,
