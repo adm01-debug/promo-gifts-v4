@@ -45,7 +45,7 @@ export function QuoteBuilderSkeleton() {
         </div>
 
         {/* COL 3 — Resumo */}
-        <div className="min-w-0 self-start lg:col-span-4">
+        <div className="min-w-0 lg:col-span-4">
           <div className="space-y-3 lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:self-start">
             <Skeleton className="h-[320px] w-full rounded-2xl" />
             <div className="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-10 space-y-3 rounded-2xl border border-border/50 bg-card/95 p-4 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85">
