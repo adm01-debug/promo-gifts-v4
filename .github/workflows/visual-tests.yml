@@ -163,13 +163,28 @@ jobs:
           walk(root);
           if (!diffs.length) return;
           const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-          const list = diffs.slice(0, 20).map((p) => `- \`${p}\``).join('\n');
+          const artifactName = `playwright-visual-diffs-${{ matrix.shardIndex }}`;
+          // Agrupa por "tela" — usa o nome do diretório que o Playwright cria
+          // por teste (ex.: "...quote-builder-mobile-chromium").
+          const byScreen = new Map();
+          for (const p of diffs) {
+            const screen = path.basename(path.dirname(p));
+            if (!byScreen.has(screen)) byScreen.set(screen, []);
+            byScreen.get(screen).push(p);
+          }
+          const screens = [...byScreen.keys()].sort();
+          const sections = screens.map((screen) => {
+            const items = byScreen.get(screen).slice(0, 6).map((p) => `- \`${p}\``).join('\n');
+            return `<details open><summary><strong>📱 ${screen}</strong> — ${byScreen.get(screen).length} diff(s)</summary>\n\n${items}\n\n</details>`;
+          }).join('\n\n');
           const body = [
             `### 🖼️ Visual regression — shard ${{ matrix.shardIndex }}`,
             ``,
-            `${diffs.length} diff(s) detectado(s). Baixe o artefato **playwright-visual-diffs-${{ matrix.shardIndex }}** no [run](${runUrl}) para inspecionar \`*-actual.png\` / \`*-expected.png\` / \`*-diff.png\`.`,
+            `**${diffs.length} diff(s)** em **${screens.length} tela(s)**: ${screens.map((s) => `\`${s}\``).join(', ')}.`,
             ``,
-            list,
+            `📎 Baixe o artefato [\`${artifactName}\`](${runUrl}) para visualizar as thumbnails \`*-actual.png\` / \`*-expected.png\` / \`*-diff.png\` lado a lado.`,
+            ``,
+            sections,
           ].join('\n');
           await github.rest.issues.createComment({
             owner: context.repo.owner,
@@ -177,4 +192,5 @@ jobs:
             issue_number: context.payload.pull_request.number,
             body,
           });
+
 

@@ -26,7 +26,7 @@ import {
   FileText,
   Plus,
   Package,
-  Loader2,
+  
   BookTemplate,
   AlertTriangle,
   Calendar as CalendarIcon,
@@ -45,6 +45,8 @@ import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert
 import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
+import { QuoteBuilderSkeleton } from '@/components/quotes/QuoteBuilderSkeleton';
+
 
 import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProductSearch';
 import { useQuoteBuilderState } from '@/hooks/quotes';
@@ -60,12 +62,9 @@ export default function QuoteBuilderPage() {
   });
 
   if (s.loadingQuote) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <QuoteBuilderSkeleton />;
   }
+
 
   return (
     <>
