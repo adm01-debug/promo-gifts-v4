@@ -69,6 +69,12 @@ import { ProductCardImage } from './ProductCardImage';
 import { ProductCardActions } from './ProductCardActions';
 import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { ProductColorSwatches } from './ProductColorSwatches';
+import { ColorSwatchPicker } from '@/components/ui/ColorSwatchPicker';
+import {
+  useProductColorSwatch,
+  type ColorSwatch as ProductColorSwatchData,
+} from '@/hooks/useProductColorSwatch';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 import { isProductKit } from '@/lib/products/kit-detection';
 import { useProductIntelligenceBadges } from '@/hooks/products/useProductIntelligenceBadges';
 import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
