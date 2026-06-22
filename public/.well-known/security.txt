@@ -1,0 +1,29 @@
+# security.txt — Promo Gifts (promogifts.com.br)
+# Format: https://securitytxt.org/ (RFC 9116)
+
+# Canal de contato para reporte de vulnerabilidades
+Contact: mailto:ti@promobrindes.com.br
+Contact: mailto:adm01@promobrindes.com.br
+Contact: https://github.com/adm01-debug/promo-gifts-v4/security/advisories/new
+
+# Idiomas suportados para reportes
+Preferred-Languages: pt, en
+
+# Política de segurança completa
+Policy: https://www.promogifts.com.br/privacidade
+Policy: https://github.com/adm01-debug/promo-gifts-v4/blob/main/SECURITY.md
+
+# Validade (renovar anualmente)
+Expires: 2027-06-22T00:00:00.000Z
+
+# Escopo (plataforma SaaS B2B)
+# A plataforma Promo Gifts é um sistema interno B2B.
+# Qualquer vulnerabilidade que afete dados de usuários,
+# integridade de orçamentos ou acesso não autorizado
+# é considerada de alta prioridade.
+
+# Criptografia (PGP disponível mediante solicitação)
+# Encryption: mailto:ti@promobrindes.com.br
+
+# Divulgação responsável (90 dias antes de publicação)
+# Canary: https://github.com/adm01-debug/promo-gifts-v4/blob/main/SECURITY.md
