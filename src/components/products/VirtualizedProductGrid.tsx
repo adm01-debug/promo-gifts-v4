@@ -82,7 +82,7 @@ function VirtualizedProductGridInner({
   scrollResetKey,
 }: VirtualizedProductGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // In list mode, always 1 column; in grid mode use columns prop
@@ -153,15 +153,16 @@ function VirtualizedProductGridInner({
     // Show scroll-to-top button after scrolling 300px
     setShowScrollTop(scrollTop > 300);
 
-    // Load more when 500px from bottom
-    if (!hasMore || loadingMore || isLoading) return;
+    // Load more when 500px from bottom. Use ref (not state) to prevent double-trigger
+    // between consecutive scroll events before React flushes the state update.
+    if (!hasMore || loadingMoreRef.current || isLoading) return;
     const scrollThreshold = 500;
 
     if (scrollHeight - scrollTop - clientHeight < scrollThreshold) {
-      setLoadingMore(true);
+      loadingMoreRef.current = true;
       onLoadMore?.();
     }
-  }, [hasMore, loadingMore, isLoading, onLoadMore]);
+  }, [hasMore, isLoading, onLoadMore]);
 
   useEffect(() => {
     const element = parentRef.current;
@@ -185,7 +186,7 @@ function VirtualizedProductGridInner({
   // Modo legado (scrollResetKey=undefined): FiltersPage e similares que não passam
   // a prop continuam com o comportamento anterior (scroll reset no products change).
   useEffect(() => {
-    setLoadingMore(false);
+    loadingMoreRef.current = false;
   }, [products]);
 
   useEffect(() => {

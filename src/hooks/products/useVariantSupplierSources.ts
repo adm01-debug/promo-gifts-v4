@@ -57,8 +57,8 @@ export function useProductVariantsWithStock(productId: string | undefined) {
         .from('product_variants')
         .select(
           `
-          id, product_id, sku, color_code, color_name, color_hex, stock_quantity, selected_thumbnail, 
-          variant_supplier_sources(next_date_1, next_quantity_1, next_date_2, next_quantity_2, next_date_3, next_quantity_3)
+          id, product_id, sku, color_code, color_name, color_hex, stock_quantity, selected_thumbnail,
+          variant_supplier_sources(next_date_1, next_quantity_1, next_date_2, next_quantity_2, next_date_3, next_quantity_3, is_active)
         `,
         )
         .eq('product_id', productId)
@@ -88,12 +88,16 @@ export function useProductVariantsWithStock(productId: string | undefined) {
           next_quantity_2?: number | null;
           next_date_3?: string | null;
           next_quantity_3?: number | null;
+          is_active?: boolean | null;
         }>;
       };
       const records = (data as unknown as VariantRow[]) || [];
 
       return records.map((v): VariantWithStock => {
-        const source = v.variant_supplier_sources?.[0];
+        // Prefer the first active source; fall back to [0] if none are marked active.
+        const source =
+          v.variant_supplier_sources?.find((s) => s.is_active === true) ??
+          v.variant_supplier_sources?.[0];
         return {
           ...v,
           next_entry_date: source?.next_date_1 || null,
