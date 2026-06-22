@@ -74,11 +74,25 @@ export function sortProducts(
 
     case 'price-asc':
       // NULLS LAST: null prices sort after all real prices (consistent with server-side nullsFirst:false).
-      arr.sort(withIdTiebreak((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity)));
+      // Guard: Infinity - Infinity = NaN → withIdTiebreak never reaches id tiebreak; return 0 instead.
+      arr.sort(
+        withIdTiebreak((a, b) => {
+          const aPrice = a.price ?? Infinity;
+          const bPrice = b.price ?? Infinity;
+          return aPrice === bPrice ? 0 : aPrice - bPrice;
+        }),
+      );
       break;
     case 'price-desc':
       // NULLS LAST: null prices sort after all real prices in descending order.
-      arr.sort(withIdTiebreak((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity)));
+      // Guard: -Infinity - -Infinity = NaN → same fix as price-asc.
+      arr.sort(
+        withIdTiebreak((a, b) => {
+          const aPrice = a.price ?? -Infinity;
+          const bPrice = b.price ?? -Infinity;
+          return aPrice === bPrice ? 0 : bPrice - aPrice;
+        }),
+      );
       break;
     case 'stock':
       arr.sort(withIdTiebreak((a, b) => (b.stock ?? 0) - (a.stock ?? 0)));
