@@ -15,7 +15,7 @@
  *   6. Preço + StockBadge (ou skeletons quando isPriceStockLoading)
  *   7. Slot opcional renderFooterExtras (ex: sparkline)
  */
-import { memo, useMemo, useState, type ReactNode } from 'react';
+import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
