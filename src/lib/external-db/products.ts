@@ -457,7 +457,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
   >();
 
   variantsRecords.forEach((variant) => {
-    if (!variant.color_name || !productIds.includes(variant.product_id)) return;
+    if (!variant.color_name || !productIdSet.has(variant.product_id)) return;
     const colors = colorsByProduct.get(variant.product_id) ?? [];
     colorsByProduct.set(variant.product_id, colors);
     if (colors.some((c) => c.name === variant.color_name)) return;
