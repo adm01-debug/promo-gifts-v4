@@ -479,11 +479,17 @@ export default function FiltersPage() {
                     </Tooltip>
                   </div>
                   {/* Selection toggle & Layout — ancorados na borda direita,
-                      separados visualmente do grupo de filtros/ordenação. */}
+                      separados visualmente do grupo de filtros/ordenação.
+                      ⚠️ NUNCA aplicar `flex-1` em grupos intermediários da toolbar:
+                      isso neutraliza o `ml-auto` deste bloco de ações e gruda os
+                      botões "Selecionar" e "Layout" no conteúdo à esquerda. */}
                   <div
                     data-testid="superfiltro-toolbar-actions"
-                    className="order-last ml-auto flex shrink-0 items-center gap-2 sm:pl-3 sm:border-l sm:border-border/60"
+                    role="group"
+                    aria-label="Ações da listagem: seleção em massa e layout"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2 pl-2 border-l border-border/60 sm:pl-3"
                   >
+
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -491,10 +497,12 @@ export default function FiltersPage() {
                           size="sm"
                           className={cn(
                             'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                             state.selectionMode
                               ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                               : 'hover:border-primary/50',
                           )}
+
                           onClick={toggleSelectionMode}
                           aria-label={
                             state.selectionMode
