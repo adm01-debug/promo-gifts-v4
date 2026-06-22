@@ -8,6 +8,7 @@ import type { FilterState } from '@/components/filters/FilterPanel';
 import type { SortOption } from '@/hooks/products/useCatalogState';
 import { sortProducts } from '@/utils/product-sorting';
 import { isProductKit } from '@/lib/products/kit-detection';
+import { isProductInStock } from '@/lib/products/stock-status';
 
 interface CatalogFilteringOptions {
   realProducts: Product[];
@@ -164,15 +165,9 @@ export function useCatalogFiltering({
       });
     }
 
-    // FIX-INSTOCK-VARIATIONS: considera variações além do estoque agregado,
-    // alinhando com applyProductFilters.ts (FIX-03) e com o bloco minStock abaixo.
-    if (filters.inStock) {
-      result = result.filter((p) => {
-        if (p.variations && p.variations.length > 0)
-          return p.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
-        return (p.stock || 0) > 0;
-      });
-    }
+    // FIX-INSTOCK-VARIATIONS / BUG-CF-INSTOCK-01: regra centralizada em isProductInStock
+    // (src/lib/products/stock-status.ts) — paridade garantida com applyProductFilters.ts.
+    if (filters.inStock) result = result.filter(isProductInStock);
 
     if (filters.hasCommercialPackaging) {
       result = result.filter((p) => p.hasCommercialPackaging === true);
