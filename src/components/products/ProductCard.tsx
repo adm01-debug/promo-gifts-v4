@@ -895,15 +895,14 @@ export const ProductCard = memo(
                   : undefined;
               const liveStock = liveMatch?.stock_quantity ?? null;
               const colorStock = resolveColorStock(product, activeColorFilter, activeColorName);
-              const displayStock =
+              const baseStock =
                 liveStock !== null ? liveStock : (colorStock?.stock ?? product.stock);
-              // FIX BUG-CARD-01 (2026-06-21): displayStatus calculado inline ignorava
-              // minQuantity — produto com minQty=50, liveStock=30 mostrava 'low-stock'
-              // em vez de 'out-of-stock'. Delegado para getCatalogStockStatus (SSOT).
+              const displayStock = useSwatchesV2 ? swatchV2.displayStock : baseStock;
               const displayStatus =
                 liveStock !== null
                   ? getCatalogStockStatus(liveStock, undefined, product.minQuantity)
                   : (colorStock?.stockStatus ?? product.stockStatus);
+              const stockLabelV2 = useSwatchesV2 ? swatchV2.stockLabel : null;
 
               return (
                 <div
