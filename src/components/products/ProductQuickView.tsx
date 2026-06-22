@@ -108,16 +108,25 @@ export const ProductQuickView = React.memo(
     const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
 
     // Reset state quando produto muda ou modal abre.
-    // initialColorName é resolvido para id após productColors serem montados (efeito abaixo).
+    // Seed `selectedColorId` a partir de `initialColorName` (case-insensitive),
+    // permitindo abrir o QuickView já posicionado na cor clicada pelo usuário.
     useEffect(() => {
       if (open) {
         setCurrentImageIndex(0);
         setQuantity(1);
-        setSelectedColorId(null);
-        // reset states
         setImageError(false);
+        if (initialColorName && product?.colors?.length) {
+          const target = initialColorName.toLowerCase();
+          const idx = product.colors.findIndex((c) => (c.name ?? '').toLowerCase() === target);
+          if (idx >= 0) {
+            const c = product.colors[idx];
+            setSelectedColorId(c.code || `${product.id}-color-${idx}`);
+            return;
+          }
+        }
+        setSelectedColorId(null);
       }
-    }, [open, product?.id]);
+    }, [open, product?.id, initialColorName, product?.colors]);
 
     // Converter ProductImage[] para ProductImageMeta[] para usar com image-utils
     const imageMetas: ProductImageMeta[] = useMemo(() => {
