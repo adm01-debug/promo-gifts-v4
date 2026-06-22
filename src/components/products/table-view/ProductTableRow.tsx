@@ -167,7 +167,7 @@ export const ProductTableRow = memo(({
   const handleOpenQV = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
-    onOpenQuickView(product, e.currentTarget as HTMLElement);
+    onOpenQuickView(product, e.currentTarget as HTMLElement, activeColorName ?? null);
   };
 
   return (
