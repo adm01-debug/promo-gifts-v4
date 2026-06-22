@@ -43,6 +43,15 @@ export type FeatureFlag =
    * e calcula índice de confiança previsão × realidade por fornecedor.
    */
   | 'supplierReliability'
+  /**
+   * Onda 2 — Substitui ProductColorSwatches por ColorSwatchPicker (novo)
+   * usando o hook useProductColorSwatch (lê products.color_swatches JSONB +
+   * RPC fn_get_color_swatches_batch). OFF por padrão — o pipeline atual
+   * (useExternalVariantStock + resolveColorImage + useProductSelectionStore)
+   * continua sendo o caminho-padrão até a coluna color_swatches existir no
+   * BD externo Gestão de Produtos.
+   */
+  | 'useColorSwatchesV2'
   | 'voice_commands';
 
 interface FlagConfig {
