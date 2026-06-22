@@ -1,6 +1,22 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.5.0
+// Versão: 3.6.0
+//
+// CHANGELOG v3.6.0 (2026-06-22 — fix/sw-precache-resilient):
+//   BUG-AUDIT-6 FIX [MÉDIO]: cache.addAll() é atômico — se qualquer URL do
+//     PRECACHE_URLS retornar erro (ex: ícone sem hash ainda não propagado no CDN
+//     durante warmup de deploy), o install event inteiro falha e o SW não instala.
+//     Isso anula as proteções do SW v3.4.0 (retry + MIME fix) exatamente no
+//     momento em que são mais necessárias (imediatamente após um deploy).
+//     Fix: separar o precache em dois grupos:
+//       - PRECACHE_CRITICAL: URLs sem as quais o app não funciona offline
+//         (/index.html, /manifest.json, /favicon.ico, /sw.js, /placeholder.svg)
+//         → cache.addAll() atômico (falha = install abortado, correto)
+//       - PRECACHE_OPTIONAL: URLs desejáveis mas não críticas para o boot
+//         (/icons/icon-192.png, /icons/icon-512.png, /og-image.png, etc.)
+//         → Promise.allSettled() individual, falhas ignoradas silenciosamente
+//     Resultado: install nunca falha por causa de um ícone PWA ainda propagando.
+//   CHORE: CACHE_VERSION v12 → v13 (limpa entradas da instalação anterior).
 //
 // CHANGELOG v3.4.0 (2026-06-22 — fix/sw-cdn-race-retry-mime-fix):
 //   BUG-SW-5 FIX [CRÍTICO]: Race condition CDN do Vercel durante deploy.
@@ -65,7 +81,7 @@
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate + fallback offline        ← v3.3.0
 
-const CACHE_VERSION = 'v12'; // v3.5.0 — unchanged
+const CACHE_VERSION = 'v13'; // v3.6.0 — precache resiliente
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -75,20 +91,6 @@ const IMAGE_CACHE_MAX = 500;
 // TTL de imagens em cache (90 dias em ms)
 const IMAGE_CACHE_TTL = 90 * 24 * 60 * 60 * 1000;
 
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico',
-  '/favicon.svg',
-  '/placeholder.svg',
-  // v3.5.0: ícones PWA PNG agora existem (gerados 2026-06-22)
-  // Cacheados offline para: homescreen install icon + notificação badge
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/og-image.png',
-  '/icons/icon-maskable-512.png', // needed for Android squircle homescreen
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -246,12 +248,43 @@ function handleStaleChunk(chunkUrl) {
 
 // ─── Install ─────────────────────────────────────────────────────────────────
 
+// ─── Precache: URLs críticas (falha bloqueia install) ─────────────────────────
+const PRECACHE_CRITICAL = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.ico',
+  '/favicon.svg',
+  '/placeholder.svg',
+];
+
+// ─── Precache: URLs opcionais (falha ignorada — CDN pode estar aquecendo) ──────
+// Estes arquivos não têm hash no nome (não são imutáveis) e podem dar 404 durante
+// os primeiros 10-30s após um deploy, enquanto o CDN propaga os novos assets.
+// Usar Promise.allSettled() garante que o install não falha por causa deles.
+const PRECACHE_OPTIONAL = [
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/og-image.png',
+  '/icons/icon-maskable-512.png',
+];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting()),
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // URLs críticas: falha aqui aborta o install (correto — app não funcionaria sem elas)
+      await cache.addAll(PRECACHE_CRITICAL);
+
+      // URLs opcionais: cada uma individualmente, falhas ignoradas silenciosamente.
+      // Usamos Promise.allSettled + cache.add (não addAll) para granularidade.
+      await Promise.allSettled(
+        PRECACHE_OPTIONAL.map((url) =>
+          cache.add(url).catch(() => {
+            /* ignorar falhas de URLs opcionais (ex: ícone ainda propagando no CDN) */
+          }),
+        ),
+      );
+    }).then(() => self.skipWaiting()),
   );
 });
 
