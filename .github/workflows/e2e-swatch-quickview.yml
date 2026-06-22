@@ -38,9 +38,11 @@ jobs:
       - run: npm ci
       - name: Install Playwright + deps (${{ matrix.browser }})
         run: npx playwright install --with-deps ${{ matrix.browser }}
-      - name: Run swatch→QuickView suite
+      - name: Run swatch→QuickView suite (V1 fallback + V2)
         run: |
-          npx playwright test e2e/catalog/swatch-quickview-list-table.spec.ts \
+          npx playwright test \
+            e2e/catalog/swatch-quickview-list-table.spec.ts \
+            e2e/catalog/swatch-quickview-v2-list-table.spec.ts \
             --project=${{ matrix.browser }}-authed \
             --reporter=line,html
       - name: Upload report + traces + videos (${{ matrix.browser }})
