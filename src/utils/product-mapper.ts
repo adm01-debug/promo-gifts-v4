@@ -271,5 +271,10 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     aiSummary: p.ai_summary ?? null,
     aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
     aiGeneratedAt: p.ai_generated_at ?? null,
+    // V2 — passthrough do JSONB populado por fn_rebuild_color_swatches (trigger no BD externo).
+    color_swatches: (Array.isArray(p.color_swatches)
+      ? (p.color_swatches as Product['color_swatches'])
+      : null),
+    has_colors: typeof p.has_colors === 'boolean' ? p.has_colors : null,
   };
 }
