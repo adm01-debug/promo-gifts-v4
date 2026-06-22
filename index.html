@@ -2,6 +2,76 @@
 <html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- ─────────────────────────────────────────────────────────────────────
+         Boot asset recovery guard  (fix/boot-asset-recovery-guard)
+         Recupera de 404 transitório dos assets do BUILD (entry-point, vendor
+         chunks via modulepreload, e CSS principal) durante a janela de
+         propagação de um deploy do Vercel (version skew).
+
+         POR QUE INLINE E NO TOPO DO <head>: toda a recuperação de chunk do app
+         (vite:preloadError em main.tsx, SW_STALE_CHUNK, chunk-recovery.ts) vive
+         DENTRO do bundle. Se o próprio entry-point (ou um vendor chunk de
+         dependência estática) falha ao carregar, main.tsx nunca executa e
+         nenhum desses handlers é instalado → tela branca permanente até reload
+         manual. Este guard é a ÚNICA camada capaz de resgatar esse caso, e
+         precisa estar ativo ANTES de o entry <script type="module"> (injetado
+         logo abaixo pelo Vite) começar a carregar.
+
+         DETALHE TÉCNICO: erros de carregamento de RECURSO (script/link) não
+         borbulham — só são capturáveis na fase de captura. Por isso
+         addEventListener('error', ..., true). Um <script type="module"> dispara
+         'error' se ELE ou QUALQUER dependência estática (modulepreload) falhar,
+         então um único handler cobre entry + todos os vendor chunks + CSS.
+
+         À PROVA DE LOOP: no máximo 2 hard-reloads numa janela de 20s. Se a falha
+         for permanente (build realmente quebrado, não propagação), o guard para
+         após 2 tentativas e deixa a tela como está — nunca entra em loop.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <script>
+      (function () {
+        var KEY = '__boot_asset_reload__';
+        var MAX = 2;          /* máximo de hard-reloads por janela */
+        var WINDOW = 20000;   /* janela em ms; após isso o contador reseta sozinho */
+        var BACKOFF = 800;    /* espera antes do reload p/ dar tempo de propagação do edge */
+
+        function isCriticalBuildAsset(t) {
+          if (!t || !t.tagName) return false; /* ignora erros de runtime JS (target=window) */
+          if (t.tagName === 'SCRIPT') {
+            return !!t.src && t.src.indexOf('/assets/') !== -1;
+          }
+          if (t.tagName === 'LINK') {
+            if (!t.href || t.href.indexOf('/assets/') === -1) return false;
+            var rel = t.rel || '';
+            return rel === 'stylesheet' || rel === 'modulepreload' || rel === 'preload';
+          }
+          return false;
+        }
+
+        window.addEventListener('error', function (e) {
+          if (!isCriticalBuildAsset(e && e.target)) return;
+
+          var st = null;
+          try { st = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (_) { st = null; }
+          var now = Date.now();
+          if (!st || (now - st.firstAt) > WINDOW) st = { n: 0, firstAt: now };
+          if (st.n >= MAX) return; /* esgotou tentativas → não recarrega (evita loop) */
+
+          st.n += 1;
+          try { sessionStorage.setItem(KEY, JSON.stringify(st)); } catch (_) {}
+
+          setTimeout(function () {
+            try {
+              var u = new URL(window.location.href);
+              u.searchParams.set('_cb', String(now));
+              window.location.replace(u.toString());
+            } catch (_) {
+              window.location.reload();
+            }
+          }, BACKOFF);
+        }, true); /* capture=true: erros de recurso não borbulham */
+      })();
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Priority hints: melhoram LCP instruindo o browser a priorizar imagens críticas -->
     <meta name="color-scheme" content="dark light" />
@@ -56,6 +126,11 @@
     <link rel="preconnect" href="https://imagedelivery.net" crossorigin />
     <!-- Preconnect para o CDN de imagens do Cloudflare Stream -->
     <link rel="dns-prefetch" href="https://customer-jxe2o7frs8e8iu04.cloudflarestream.com" />
+    <!-- CF Stream embed player domain (iframe src) -->
+    <link rel="dns-prefetch" href="https://iframe.cloudflarestream.com" />
+    <link rel="preconnect" href="https://iframe.cloudflarestream.com" crossorigin />
+    <!-- CF Stream video delivery CDN -->
+    <link rel="dns-prefetch" href="https://videodelivery.net" />
     
     <!-- Load Google Fonts — non-render-blocking via media swap -->
     <!-- Apenas Outfit (display) e Plus Jakarta Sans (sans).o. Inter foi removido
