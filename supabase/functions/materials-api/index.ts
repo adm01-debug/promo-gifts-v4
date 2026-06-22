@@ -185,7 +185,10 @@ Deno.serve(async (req) => {
           }
         }
         if (targetMaterialIds.length === 0) { result = { productIds: [], count: 0 }; break; }
-        const { data: productMaterials, error: pmError } = await externalSupabase.from('product_materials').select('product_id').in('material_id', targetMaterialIds).eq('is_active', true);
+        // BUG-MATERIALS-NOLIMIT FIX: sem limit() o PostgREST usa o default do projeto
+        // (geralmente 1000), truncando silenciosamente filtros de materiais comuns
+        // como "Plástico" (> 2000 produtos). 50000 > catálogo atual (~7156 ativos).
+        const { data: productMaterials, error: pmError } = await externalSupabase.from('product_materials').select('product_id').in('material_id', targetMaterialIds).eq('is_active', true).limit(50000);
         if (pmError) throw pmError;
         const uniqueProductIds = [...new Set((productMaterials || []).map((pm: any) => pm.product_id))];
         result = { productIds: uniqueProductIds, count: uniqueProductIds.length, materialTypeIds: targetMaterialIds };
