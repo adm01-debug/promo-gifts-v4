@@ -34,8 +34,8 @@ function isHiddenCategory(name: string): boolean {
 
 export function useCatalogRealStats() {
   return useQuery<CatalogRealStats>({
-    // v5: bump para invalidar cache antigo (números corrigidos pós-auditoria).
-    queryKey: ['catalog-real-stats', 'v5'],
+    // v6: corrige contagem de categorias (active→is_active, -65 categorias inativas).
+    queryKey: ['catalog-real-stats', 'v6'],
     queryFn: async () => {
       const [statsResult, categoriesResult] = await Promise.all([
         // Variações + fornecedores VISÍVEIS, contados no servidor pela view dedicada.
@@ -51,7 +51,7 @@ export function useCatalogRealStats() {
           table: 'categories',
           operation: 'select',
           select: 'id,name',
-          filters: { active: true },
+          filters: { is_active: true },
           // Sem teto artificial de 1000 (truncava silenciosamente se as categorias
           // crescessem além disso). 5000 cobre folgadamente o catálogo atual (~477)
           // e o filtro de padrões ocultos continua client-side (fonte única).
