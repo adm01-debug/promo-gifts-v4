@@ -35,10 +35,6 @@ const VIEWS = [
   },
 ];
 
-async function switchView(page: Awaited<ReturnType<typeof test.info>['attachments']> extends never ? never : never, _tid: string) {
-  // placeholder — função real abaixo (apenas para satisfazer tipos do TS).
-  return _tid;
-}
 
 test.describe('Swatch → QuickView (Lista e Tabela)', () => {
   test.beforeEach(() => requireAuth());
