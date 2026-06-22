@@ -87,6 +87,7 @@ const PRECACHE_URLS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/og-image.png',
+  '/icons/icon-maskable-512.png', // needed for Android squircle homescreen
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
