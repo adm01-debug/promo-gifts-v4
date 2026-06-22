@@ -24,6 +24,9 @@ import {
 import { useExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
+import { ColorSwatchPicker } from '@/components/ui/ColorSwatchPicker';
+import { useProductColorSwatch, type ColorSwatch as ProductColorSwatchData } from '@/hooks/useProductColorSwatch';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { TableRowActions } from './TableRowActions';
@@ -117,6 +120,21 @@ export const ProductTableRow = memo(({
     userSelectedColorName ? product.id : undefined,
   );
 
+  // V2 — color_swatches via ColorSwatchPicker (flag useColorSwatchesV2).
+  const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
+  const productSwatchesData = ((product as unknown as {
+    color_swatches?: ProductColorSwatchData[] | null;
+  }).color_swatches) ?? null;
+  const swatchV2 = useProductColorSwatch({
+    id: product.id,
+    name: product.name,
+    primary_image_url: product.primary_image_url ?? null,
+    stock_quantity: product.stock ?? 0,
+    color_swatches: productSwatchesData ?? undefined,
+    has_colors: !!productSwatchesData?.length,
+  });
+  const useSwatchesV2 = swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
+
   const liveMatchForColor =
     userSelectedColorName && liveVariants?.length
       ? liveVariants.find(
@@ -142,14 +160,17 @@ export const ProductTableRow = memo(({
     product.og_image_url ||
     product.images[0] ||
     null;
-  const thumbUrl = rawImg ? getCdnUrl(rawImg, 'card') : '/placeholder.svg';
+  const baseRaw = useSwatchesV2 ? (swatchV2.displayImage ?? rawImg) : rawImg;
+  const thumbUrl = baseRaw ? getCdnUrl(baseRaw, 'card') : '/placeholder.svg';
 
   // Estoque: liveStockQty (BD real) > batch (colors[].stock) > total
   const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
-  const displayStock =
-    liveStockQty !== null ? liveStockQty : (colorStock?.stock ?? product.stock);
-  const displayStatus =
-    liveStockQty !== null
+  const displayStock = useSwatchesV2
+    ? swatchV2.displayStock
+    : liveStockQty !== null ? liveStockQty : (colorStock?.stock ?? product.stock);
+  const displayStatus = useSwatchesV2
+    ? getCatalogStockStatus(swatchV2.displayStock, undefined, product.minQuantity)
+    : liveStockQty !== null
       ? getCatalogStockStatus(liveStockQty, undefined, product.minQuantity)
       : (colorStock?.stockStatus ?? product.stockStatus);
 
@@ -252,7 +273,25 @@ export const ProductTableRow = memo(({
         className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
         onClick={(e) => e.stopPropagation()}
       >
-        {product.colors.length > 0 ? (
+        {useSwatchesV2 ? (
+          <ColorSwatchPicker
+            swatches={swatchV2.swatches}
+            activeVariantId={swatchV2.activeVariantId}
+            size="sm"
+            maxVisible={4}
+            onSelect={(variantId) => {
+              const sw = swatchV2.swatches.find((s) => s.variant_id === variantId);
+              swatchV2.selectVariant(variantId);
+              if (sw) selectColorWithUrl(product.id, sw.color_name);
+              if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
+              if (sw) onOpenQuickView(product, null, sw.color_name);
+            }}
+            onReset={() => {
+              swatchV2.resetActive();
+              clearSelectedColor(product.id);
+            }}
+          />
+        ) : product.colors.length > 0 ? (
           <ProductColorSwatches
             colors={product.colors.map((c) => ({
               name: c.name,
