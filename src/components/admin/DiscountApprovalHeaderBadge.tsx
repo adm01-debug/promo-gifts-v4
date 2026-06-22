@@ -23,12 +23,18 @@ export function DiscountApprovalHeaderBadge() {
 
   const { data: count = 0 } = useQuery({
     queryKey: QUERY_KEY,
-    queryFn: async () => {
+    // FIX 2026-06-22 (BUG-DAR-ABORT): React Query cancela in-flight requests via
+    // AbortController ao desmontar o componente. Sem .abortSignal(signal), o Supabase
+    // ignora o cancelamento e o browser loga 'Falha ao carregar Buscar: HEAD'
+    // mesmo que o comportamento seja correto (componente desmontado).
+    // Passando o signal, o Supabase recebe o abort e cancela cleanly sem console error.
+    queryFn: async ({ signal }) => {
       const { count: rawCount } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .abortSignal(signal);
       return rawCount || 0;
     },
     enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto
