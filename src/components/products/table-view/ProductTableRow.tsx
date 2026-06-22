@@ -24,6 +24,9 @@ import {
 import { useExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
+import { ColorSwatchPicker } from '@/components/ui/ColorSwatchPicker';
+import { useProductColorSwatch, type ColorSwatch as ProductColorSwatchData } from '@/hooks/useProductColorSwatch';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { TableRowActions } from './TableRowActions';
