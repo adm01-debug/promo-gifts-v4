@@ -227,7 +227,7 @@ export function useQuoteBuilderState() {
   const [productSearch, setProductSearch] = useState('');
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
   const [templateApplied, setTemplateApplied] = useState<string | null>(null);
-  const [loadingQuote, setLoadingQuote] = useState(isEditMode || templatesLoading);
+  const [loadingQuote, setLoadingQuote] = useState(isEditMode);
   // Removido estado duplicado de items e activeItemIndex (gerenciados pelo useQuoteItems)
 
   const debouncedProductSearch = useDebounce(productSearch, 400);
