@@ -1,11 +1,10 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  // ✍️ Escrita / Papelaria
   Award,
   Backpack,
   Battery,
   Beer,
-  Beef,
+  // Beef removido: adicionado em lucide-react v0.357.0, projeto usa ^0.309.0
   BookOpen,
   Briefcase,
   Calendar,
@@ -93,19 +92,22 @@ import { cn } from '@/lib/utils';
  * ícone Lucide (ex: `"Coffee"`). Este componente faz a resolução:
  *
  * ```
- * DB: "Coffee"  →  ICON_MAP["Coffee"]  →  <Coffee size={14} />  (SVG)
+ * DB: "Coffee"   →  ICON_MAP["Coffee"]   →  <Coffee size={14} />   (SVG)
  * DB: "Notebook" →  ICON_MAP["Notebook"] →  <Notebook size={14} /> (SVG)
- * DB: "☕"       →  ICON_MAP["☕"] = null  →  <span>☕</span>          (emoji legado)
+ * DB: "☕"        →  ICON_MAP["☕"] = null  →  <span>☕</span>       (emoji legado)
  * ```
  *
  * ## Adicionando um novo ícone
  *
  * 1. Verifique se o ícone existe em lucide.dev com o nome exato
- * 2. Adicione o import na lista acima
- * 3. Adicione a entrada no ICON_MAP abaixo
- * 4. Atualize category_icons no banco: `UPDATE category_icons SET icon = 'NomeDoIcone' WHERE ...`
- * 5. Atualize KEYWORD_ICONS em useCategoryIcons.ts se necessário
- * 6. Documente em docs/CATEGORY_ICONS_GUIDE.md
+ * 2. VERIFIQUE A VERSÃO: confirme que existe em lucide-react ^0.309.0
+ *    - Pesquise o changelog: github.com/lucide-icons/lucide/releases
+ *    - Ícones adicionados após v0.309 NÃO podem ser importados aqui
+ * 3. Adicione o import na lista acima
+ * 4. Adicione a entrada no ICON_MAP abaixo
+ * 5. Atualize category_icons no banco: `UPDATE category_icons SET icon = 'NomeDoIcone' WHERE ...`
+ * 6. Atualize KEYWORD_ICONS em useCategoryIcons.ts se necessário
+ * 7. Documente em docs/CATEGORY_ICONS_GUIDE.md
  *
  * ## Bibliotecas
  * - lucide-react ^0.309.0 (promo-gifts-v4)
@@ -114,6 +116,10 @@ import { cn } from '@/lib/utils';
 
 /**
  * Mapa completo: nome Lucide (armazenado no DB) → componente React.
+ *
+ * ### AVISO DE VERSÃO
+ * Todos os ícones importados devem existir em lucide-react ^0.309.0.
+ * Não importe ícones adicionados em versões posteriores.
  *
  * ### Categorias cobertas
  * - Bar / Bebidas / Gourmet
@@ -143,7 +149,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   GlassWater,      // copos, drinks, cantil
   ChefHat,         // fondue, queijo, gourmet
   Utensils,        // talheres, bowl, petisqueira
-  Beef,            // churrasco (proteína)
   Flame,           // churrasco, velas aromáticas
 
   // ── TECNOLOGIA / ELETRÔNICOS ─────────────────────────────
@@ -243,6 +248,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   CreditCard,      // crachás, identificação, cordão
 
   // ── ALIASES — compatibilidade com nomes alternativos no DB ──
+  // Nota: os values DEVEM ser ícones já importados acima
   UtensilsCrossed: Utensils,
   BeerMug:         Beer,
   GlassWine:       Wine,
@@ -268,7 +274,7 @@ interface CategoryIconProps {
    * <CategoryIcon value="Luggage" size={14} />   // → <Luggage size={14} />
    *
    * // Emoji legado (compat, pré-migração):
-   * <CategoryIcon value="\u2615" size={14} />        // → <span style={{fontSize:14}}>☕</span>
+   * <CategoryIcon value="☕" size={14} />         // → <span style={{fontSize:14}}>☕</span>
    *
    * // null/undefined → ícone padrão:
    * <CategoryIcon value={null} />               // → <Package size={14} />
