@@ -44,12 +44,19 @@ export type FeatureFlag =
    */
   | 'supplierReliability'
   /**
-   * Onda 2 — Substitui ProductColorSwatches por ColorSwatchPicker (novo)
+   * Onda 2 — ColorSwatchPicker com dados reais do banco.
+   *
+   * Substitui ProductColorSwatches por ColorSwatchPicker (novo)
    * usando o hook useProductColorSwatch (lê products.color_swatches JSONB +
-   * RPC fn_get_color_swatches_batch). OFF por padrão — o pipeline atual
-   * (useExternalVariantStock + resolveColorImage + useProductSelectionStore)
-   * continua sendo o caminho-padrão até a coluna color_swatches existir no
-   * BD externo Gestão de Produtos.
+   * RPC fn_get_color_swatches_batch).
+   *
+   * ✅ HABILITADO — products.color_swatches populado em produção:
+   * - 7.153 produtos com color_swatches preenchidos (100% de cobertura)
+   * - fn_rebuild_color_swatches: trigger automático em product_variants e product_images
+   * - fn_get_color_swatches_batch: RPC para lazy-load
+   * - Hierarquia de imagem: P1(CF CDN/variant_id) → P2(CF CDN/color_id) → P3(supplier CDN) → P4(primary)
+   * - 16.631 swatches, 97,4% com CF CDN (imagedelivery.net)
+   * - Aplicado: 2026-06-22
    */
   | 'useColorSwatchesV2'
   | 'voice_commands';
@@ -119,11 +126,15 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       'reposições por fornecedor.',
   },
   useColorSwatchesV2: {
-    enabled: false,
+    // ✅ HABILITADO — products.color_swatches existe e está populado (2026-06-22)
+    // 7.153 produtos / 16.631 swatches / 97,4% CF CDN / triggers ativos
+    // Para rollback: setFeatureFlag('useColorSwatchesV2', false) no console
+    enabled: true,
     description:
-      'Substitui ProductColorSwatches por ColorSwatchPicker + ' +
-      'useProductColorSwatch (lê products.color_swatches JSONB). ' +
-      'Requer schema externo populado — manter OFF até backend pronto.',
+      'ColorSwatchPicker com products.color_swatches JSONB — ' +
+      'imagem e estoque por cor ao clicar na bolinha. ' +
+      'Backend: fn_rebuild_color_swatches (P1→P4) + fn_get_color_swatches_batch. ' +
+      'ATIVO desde 2026-06-22.',
   },
 };
 
