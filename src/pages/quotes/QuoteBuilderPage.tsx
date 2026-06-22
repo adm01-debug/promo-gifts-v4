@@ -594,8 +594,8 @@ export default function QuoteBuilderPage() {
 
           {/* COL 2 — Item ativo + Personalização */}
           <div className="lg:col-span-5">
-            <div className="sticky top-24 flex max-h-[calc(100vh-7rem)] flex-col">
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
+            <div className="flex flex-col">
+              <div className="flex flex-col rounded-2xl border border-border/50 bg-card">
                 <div className="flex shrink-0 items-center justify-between p-4 pb-3">
                   <div>
                     <h3 className="font-display text-sm font-semibold">Itens do Orçamento</h3>
@@ -612,7 +612,7 @@ export default function QuoteBuilderPage() {
                     Produto
                   </Button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                <div className="px-4 pb-4">
                   {s.items.length === 0 ? (
                     <div className="py-12 text-center text-muted-foreground">
                       <Package className="mx-auto mb-3 h-10 w-10 opacity-30" />
