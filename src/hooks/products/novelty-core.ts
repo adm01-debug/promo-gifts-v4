@@ -254,7 +254,12 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
   const daysAsNovelty = calcDaysAsNovelty(detectedAt);
   const stock = p.stock_quantity ?? 0;
   const minQty = p.min_quantity ?? 10;
-  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(stock, minQty);
+  // BUG-NOVELTIES-STOCK-01 FIX: minQty é minOrderQuantity (3º arg), não lowStockThreshold (2º arg).
+  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(
+    stock,
+    undefined,
+    minQty,
+  );
 
   return {
     novelty_id: p.id,

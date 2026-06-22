@@ -245,7 +245,15 @@ export function toNovelty(p: RawProduct): NoveltyWithDetails {
   const daysAsNovelty = calcDaysAsNovelty(detectedAt);
   const stock = p.stock_quantity ?? 0;
   const minQty = p.min_quantity ?? 10;
-  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(stock, minQty);
+  // BUG-NOVELTIES-STOCK-01 FIX: minQty é minOrderQuantity (3º arg), não lowStockThreshold (2º arg).
+  // getCatalogStockStatus(stock, minQty) passava minQty como limiar de low-stock, perdendo a
+  // regra de out-of-stock por min_quantity. Ex: stock=5, min_quantity=100 → era 'low-stock',
+  // agora 'out-of-stock' (produto tem estoque mas abaixo do mínimo pedível).
+  const stockStatus: NoveltyWithDetails['stock_status'] = getCatalogStockStatus(
+    stock,
+    undefined,
+    minQty,
+  );
 
   return {
     novelty_id: p.id,
