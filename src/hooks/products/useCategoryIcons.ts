@@ -198,8 +198,8 @@ const KEYWORD_ICONS: Record<string, string> = {
   piscina:        'Droplets',
   guarda:         'Umbrella',
   chuva:          'Umbrella',
-  guarda-chuva:   'Umbrella',
-  guarda-sol:     'Umbrella',
+  'guarda-chuva':   'Umbrella',
+  'guarda-sol':     'Umbrella',
 
   // ── SAÚDE / BELEZA ─────────────────────────────────
   espelho:        'Sparkles',
@@ -234,7 +234,6 @@ const KEYWORD_ICONS: Record<string, string> = {
   // ── CASA / DECORAÇÃO ──────────────────────────────
   vela:           'Flame',
   'porta-retrato': 'Image',
-  porta-retrato:  'Image',
   retrato:        'Image',
   relógio:        'Clock',
   almofada:       'Layers',
