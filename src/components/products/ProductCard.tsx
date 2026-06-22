@@ -534,7 +534,10 @@ export const ProductCard = memo(
       ]);
 
       // Caso de fallback para quando a imagem da cor não existe
-      const effectiveImageUrl = currentImageUrl || '/placeholder.svg';
+      const effectiveImageUrl =
+        (useSwatchesV2 ? swatchV2.displayImage : currentImageUrl) ||
+        currentImageUrl ||
+        '/placeholder.svg';
 
       const cardImageUrl =
         effectiveImageUrl !== '/placeholder.svg'
