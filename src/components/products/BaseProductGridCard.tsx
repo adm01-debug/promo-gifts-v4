@@ -28,7 +28,7 @@ import {
 import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
 import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
 import { HoverSetImage } from '@/components/products/HoverSetImage';
-import { QuickViewThumb } from '@/components/products/QuickViewThumb';
+import { QuickViewThumb, type QuickViewThumbHandle } from '@/components/products/QuickViewThumb';
 import { getSupplierColors } from '@/lib/supplier-colors';
 
 export interface BaseProductGridCardProps {
