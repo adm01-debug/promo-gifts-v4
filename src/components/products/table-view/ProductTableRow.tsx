@@ -75,7 +75,7 @@ export interface ProductTableRowProps {
   onToggleFavorite?: (id: string) => void;
   onToggleCompare?: (id: string) => { added: boolean; isFull: boolean };
   onOpenVariantPicker: (product: Product, mode: VariantActionMode) => void;
-  onOpenQuickView: (product: Product, triggerEl?: HTMLElement | null) => void;
+  onOpenQuickView: (product: Product, triggerEl?: HTMLElement | null, initialColorName?: string | null) => void;
   quickViewOpen: boolean;
   variantPickerOpen: boolean;
   collectionModalOpen: boolean;
