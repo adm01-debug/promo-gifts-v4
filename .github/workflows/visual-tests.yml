@@ -99,3 +99,26 @@ jobs:
         name: playwright-report-${{ matrix.shardIndex }}
         path: playwright-report/
         retention-days: 30
+
+    - name: Upload visual diffs (actual / expected / diff)
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: playwright-visual-diffs-${{ matrix.shardIndex }}
+        path: |
+          test-results/**/*-actual.png
+          test-results/**/*-expected.png
+          test-results/**/*-diff.png
+        if-no-files-found: ignore
+        retention-days: 30
+
+    - name: Upload generated baseline PNGs
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: playwright-baselines-${{ matrix.shardIndex }}
+        path: |
+          e2e/**/*.png
+          **/*.spec.ts-snapshots/**/*.png
+        if-no-files-found: ignore
+        retention-days: 30
