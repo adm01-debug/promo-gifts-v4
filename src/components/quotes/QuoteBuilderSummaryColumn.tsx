@@ -176,8 +176,8 @@ export function QuoteBuilderSummaryColumn({
 
   return (
     <div className="lg:col-span-4">
-      <div className="sticky top-24">
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-xl">
+      <div>
+        <div className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl">
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
             <div className="rounded-lg bg-primary/10 p-2">
