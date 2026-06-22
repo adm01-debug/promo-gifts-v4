@@ -10,8 +10,20 @@
 import { test, expect } from '../fixtures/test-base';
 import { requireAuth } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
+import type { Page } from '@playwright/test';
 
 const ROUTE = '/orcamentos/novo';
+const MIN_CTA_BOTTOM_GAP = 16;
+
+async function waitForVisualStability(page: Page) {
+  await page.evaluate(async () => {
+    if (document.fonts?.ready) await document.fonts.ready;
+    const images = Array.from(document.images).filter((img) => !img.complete);
+    await Promise.all(images.map((img) => img.decode().catch(() => undefined)));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
+}
 
 test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
   test.beforeEach(() => requireAuth());
@@ -36,39 +48,42 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         // viewport pode caber tudo em desktop alto — não bloqueia
       });
 
-      // 2) Último CTA acessível via scroll, com folga até a borda inferior
+      // 2) Último CTA acessível via scroll, com folga até a borda inferior.
       const cta = page.getByRole('button', { name: /Salvar Rascunho/i }).first();
       await cta.scrollIntoViewIfNeeded();
+      await waitForVisualStability(page);
       await expect(cta).toBeVisible();
       const box = await cta.boundingBox();
       expect(box).toBeTruthy();
       if (box) {
         const gap = vp.height - (box.y + box.height);
-        expect(gap).toBeGreaterThan(8);
+        expect(gap).toBeGreaterThanOrEqual(MIN_CTA_BOTTOM_GAP);
       }
 
       // 2.1) Estabilidade do CTA — Y não muda após 600ms (sem CLS pós-hidratação).
       const y1 = (await cta.boundingBox())?.y ?? -1;
-      await page.waitForTimeout(600);
+      await waitForVisualStability(page);
       const y2 = (await cta.boundingBox())?.y ?? -1;
       expect(Math.abs(y2 - y1)).toBeLessThanOrEqual(1);
 
-
-      // 3) Sidebar (desktop) ou trigger (mobile) permanecem acessíveis após scroll
+      // 3) Sidebar (desktop) ou layout mobile sem sobreposição abaixo de lg.
       if (vp.name === 'desktop') {
         const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
         await expect(nav).toBeVisible();
         const navBox = await nav.boundingBox();
         expect(navBox?.y ?? 999).toBeLessThanOrEqual(8);
+        expect(navBox?.height ?? 0).toBeGreaterThan(vp.height * 0.9);
+      } else {
+        const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
+        await expect(nav).not.toBeInViewport();
+        const titleBox = await page.getByTestId('page-title-orcamento-novo').boundingBox();
+        expect(titleBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+      }
 
       // 4) Snapshot visual determinístico — volta ao topo, aguarda fontes,
-      //    network idle e 1 frame estável para evitar flakiness (FOUT/CLS).
+      //    assets e 2 frames estáveis para evitar flakiness (FOUT/CLS).
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForLoadState('networkidle').catch(() => {});
-      await page.evaluate(async () => {
-        if (document.fonts?.ready) await document.fonts.ready;
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      });
+      await waitForVisualStability(page);
       await expect(page).toHaveScreenshot(`quote-builder-${vp.name}.png`, {
         fullPage: false,
         animations: 'disabled',
@@ -78,5 +93,4 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
     });
   }
 });
-
 
