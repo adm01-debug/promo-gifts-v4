@@ -1,18 +1,14 @@
 /**
  * useSupplierReliability — Hook orquestrador da aba "Confiabilidade de Fornecedores".
  *
- * Lê 3 fontes do BD Ouro canônico (doufsxqlfjyuvxuezpln):
- *   1. variant_supplier_sources → promessas (next_date_N / next_quantity_N)
- *   2. stock_snapshots          → chegadas reais (delta positivo)
- *   3. v_suppliers_public       → metadata dos fornecedores
+ * Feature flag: localStorage 'supplierReliabilityServerSide' (default: 'true')
+ *   - true  → lê de mv_supplier_reliability (server-side, Gold MV, eficiente)
+ *   - false → fallback client-side (200k+ rows, legado, manter por 1 release)
  *
- * Roda a agregação pura (lib/inventory/supplier-reliability) e devolve dados
- * prontos para a UI. Janelas de leitura:
- *   - Promessas: TODAS as ativas (passadas + futuras), para parear histórico
- *   - Chegadas: últimos 180 dias (cobre 6× a janela de retenção típica)
+ * Implementação server-side: src/hooks/inventory/useSupplierReliabilityServer.ts
  *
- * Cache: staleTime 5min — dados de fornecedor mudam por hora, não por segundo.
- * Tolerante a falha: cada query individual cai para [] se falhar, sem derrubar a tela.
+ * A flag pode ser alterada em runtime via console:
+ *   localStorage.setItem('supplierReliabilityServerSide', 'false') + reload
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -27,6 +23,31 @@ import {
 } from '@/lib/inventory/supplier-reliability';
 import { fetchPaginatedFromBridge } from '@/hooks/stock/stockFetcher';
 import { logger } from '@/lib/logger';
+import {
+  useSupplierReliabilityServer,
+} from './useSupplierReliabilityServer';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature flag
+// ─────────────────────────────────────────────────────────────────────────────
+
+function isServerSideEnabled(): boolean {
+  try {
+    const flag = typeof window !== 'undefined'
+      ? window.localStorage.getItem('supplierReliabilityServerSide')
+      : null;
+    // Default: true. Desativar explicitamente com 'false'.
+    return flag !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+const USE_SERVER_SIDE = isServerSideEnabled();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Path legado (client-side)
+// ─────────────────────────────────────────────────────────────────────────────
 
 const SOURCE_COLS =
   'id,variant_id,supplier_id,updated_at,' +
@@ -86,7 +107,7 @@ async function fetchRawReliability(): Promise<RawData> {
   return { sources, snapshots, suppliers };
 }
 
-export function useSupplierReliability() {
+function useSupplierReliabilityClientSide() {
   const query = useQuery({
     queryKey: ['supplier-reliability', 'v1'],
     queryFn: fetchRawReliability,
@@ -121,7 +142,33 @@ export function useSupplierReliability() {
           suppliers: query.data.suppliers.length,
         }
       : null,
+    dataSource: 'client' as const,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hook público: roteia entre server-side e client-side via feature flag
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Wrapper que seleciona o path server-side (padrão) ou client-side (fallback).
+ * Ambos retornam a mesma forma de dados (SupplierReliability[]).
+ *
+ * Para forçar path legado em dev:
+ *   localStorage.setItem('supplierReliabilityServerSide', 'false'); location.reload();
+ * Para voltar ao server-side:
+ *   localStorage.removeItem('supplierReliabilityServerSide'); location.reload();
+ */
+export function useSupplierReliability() {
+  const serverHook = useSupplierReliabilityServer();
+  const clientHook = useSupplierReliabilityClientSide();
+
+  // React Rules of Hooks: ambos os hooks são sempre chamados.
+  // A seleção acontece no retorno, não condicionalmente antes do call.
+  if (USE_SERVER_SIDE) {
+    return serverHook;
+  }
+  return clientHook;
 }
 
 export type UseSupplierReliabilityResult = ReturnType<typeof useSupplierReliability>;
