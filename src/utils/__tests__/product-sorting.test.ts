@@ -2,8 +2,32 @@ import { describe, it, expect } from 'vitest';
 import { sortProducts } from '../product-sorting';
 import type { Product } from '@/types/product-catalog';
 
-function p(id: string, price: number | null | undefined): Product {
-  return { id, name: `Produto ${id}`, price } as unknown as Product;
+function p(
+  id: string,
+  price: number | null | undefined,
+  overrides: Partial<Product> = {},
+): Product {
+  return {
+    id,
+    name: `Produto ${id}`,
+    shortDescription: '',
+    price: price!,
+    images: [],
+    sku: id,
+    stock: 0,
+    colors: [],
+    materials: [],
+    minQuantity: 1,
+    stockStatus: 'in-stock',
+    featured: false,
+    newArrival: false,
+    onSale: false,
+    isKit: false,
+    category: { id: 0, name: '' },
+    supplier: { id: '', name: '' },
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+    ...overrides,
+  } as Product;
 }
 
 describe('sortProducts — price-asc', () => {
@@ -48,20 +72,13 @@ describe('sortProducts — price-desc', () => {
 
 describe('sortProducts — name-asc / name-desc', () => {
   it('name-asc: "Caneta 2" < "Caneta 10" (numeric collation)', () => {
-    const products = [p('a', 1), p('b', 1)].map((x, i) => ({
-      ...x,
-      name: i === 0 ? 'Caneta 10' : 'Caneta 2',
-      id: i === 0 ? 'a' : 'b',
-    })) as unknown as Product[];
+    const products = [p('a', 1, { name: 'Caneta 10' }), p('b', 1, { name: 'Caneta 2' })];
     const result = sortProducts(products, 'name-asc');
     expect(result[0].name).toBe('Caneta 2');
   });
 
   it('name-desc reverses the name-asc order', () => {
-    const items = [
-      { ...p('a', 0), name: 'Água' },
-      { ...p('b', 0), name: 'Zebra' },
-    ] as unknown as Product[];
+    const items = [p('a', 0, { name: 'Água' }), p('b', 0, { name: 'Zebra' })];
     const asc = sortProducts(items, 'name-asc').map((x) => x.name);
     const desc = sortProducts(items, 'name-desc').map((x) => x.name);
     expect(desc).toEqual([...asc].reverse());
