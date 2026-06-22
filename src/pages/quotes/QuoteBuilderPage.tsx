@@ -45,6 +45,8 @@ import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert
 import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
+import { QuoteBuilderSkeleton } from '@/components/quotes/QuoteBuilderSkeleton';
+
 
 import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProductSearch';
 import { useQuoteBuilderState } from '@/hooks/quotes';
