@@ -46,6 +46,7 @@ import { sortVariationsByColor } from '@/utils/colorSorting';
 import type { ProductVariation } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
 import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
+import { getCatalogStockStatusLabel } from '@/lib/catalog-stock-status';
 
 interface ProductDetailHeroProps {
   product: Product;
@@ -65,21 +66,16 @@ interface ProductDetailHeroProps {
   hasErrorNiches?: boolean;
 }
 
-const getStockStatusInfo = (status: string) => {
-  switch (status) {
-    case 'in-stock':
-      return { label: 'Em estoque', class: 'bg-success/10 text-success border-success/20' };
-    case 'low-stock':
-      return { label: 'Estoque baixo', class: 'bg-warning/10 text-warning border-warning/20' };
-    case 'out-of-stock':
-      return {
-        label: 'Estoque zerado',
-        class: 'bg-destructive/10 text-destructive border-destructive/20',
-      };
-    default:
-      return { label: 'Consultar', class: 'bg-muted text-muted-foreground' };
-  }
+const STOCK_STATUS_CLASS: Record<string, string> = {
+  'in-stock': 'bg-success/10 text-success border-success/20',
+  'low-stock': 'bg-warning/10 text-warning border-warning/20',
+  'out-of-stock': 'bg-destructive/10 text-destructive border-destructive/20',
 };
+
+const getStockStatusInfo = (status: string) => ({
+  label: getCatalogStockStatusLabel(status),
+  class: STOCK_STATUS_CLASS[status] ?? 'bg-muted text-muted-foreground',
+});
 
 export function ProductDetailHero({
   product,
