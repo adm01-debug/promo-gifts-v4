@@ -79,12 +79,21 @@ jobs:
           done <<< "$STAGED_LIST"
           git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
           if ! git diff --staged --quiet; then
+            # PRs de forks: GITHUB_TOKEN é read-only → push retorna 403. Detectamos
+            # cedo e pulamos com mensagem clara (artefato `playwright-baselines-*`
+            # ainda fica disponível para download manual).
+            if [ "${GITHUB_EVENT_NAME}" = "pull_request" ] && [ "${GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME}" != "${GITHUB_REPOSITORY}" ]; then
+              echo "::warning::PR de fork detectado — push de baselines pulado. Baixe o artefato 'playwright-baselines-${{ matrix.shardIndex }}' e commite manualmente."
+              exit 0
+            fi
             git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
             # Retry loop handles the parallel-shard race: both shards add different
             # PNG files to the same branch, so the loser does a clean rebase and retries.
+            PUSHED=0
             for attempt in 1 2 3 4 5; do
               if git push origin "HEAD:${TARGET_BRANCH}"; then
                 echo "Baselines pushed (attempt ${attempt})."
+                PUSHED=1
                 break
               fi
               echo "Push rejected (attempt ${attempt}) — fetch + rebase and retry."
@@ -92,6 +101,10 @@ jobs:
               git rebase "origin/${TARGET_BRANCH}" || { git rebase --abort; exit 1; }
               sleep $(( (RANDOM % 4) + 1 ))
             done
+            if [ "${PUSHED}" -ne 1 ]; then
+              echo "::error::Falha ao publicar baselines após 5 tentativas. Verifique branch protection / permissões do GITHUB_TOKEN."
+              exit 1
+            fi
           fi
         fi
 
