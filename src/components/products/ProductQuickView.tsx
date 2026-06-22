@@ -513,12 +513,25 @@ export const ProductQuickView = React.memo(
               {/* Colors */}
               {productColors.length > 0 && (
                 <div>
-                  <p className="mb-2 text-sm font-medium">
-                    Cor
-                    {selectedColorId
-                      ? `: ${productColors.find((c) => c.id === selectedColorId)?.name ?? ''}`
-                      : ''}
-                  </p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">
+                      Cor
+                      {selectedColorId
+                        ? `: ${productColors.find((c) => c.id === selectedColorId)?.name ?? ''}`
+                        : ''}
+                    </p>
+                    {selectedColorId && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedColorId(null)}
+                        className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                        data-testid="quickview-clear-color"
+                        aria-label="Ver todas as cores"
+                      >
+                        Todas as cores
+                      </button>
+                    )}
+                  </div>
                   <ProductColorSelector
                     colors={productColors}
                     selectedColorId={selectedColorId}
