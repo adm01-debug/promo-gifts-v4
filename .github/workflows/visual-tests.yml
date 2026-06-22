@@ -31,6 +31,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Validate visual specs exist (fail-fast antes do Playwright)
+      run: node scripts/check-visual-tests-specs.mjs
+
     - name: Clear Cache & Artifacts
       run: |
         rm -rf e2e-artifacts/
