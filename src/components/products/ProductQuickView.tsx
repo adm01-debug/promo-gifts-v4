@@ -94,6 +94,7 @@ export const ProductQuickView = React.memo(
     onShare,
     onAddToQuote,
     onAddToCollection,
+    initialColorName = null,
   }: ProductQuickViewProps) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -106,7 +107,8 @@ export const ProductQuickView = React.memo(
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
     const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
 
-    // Reset state quando produto muda ou modal abre
+    // Reset state quando produto muda ou modal abre.
+    // initialColorName é resolvido para id após productColors serem montados (efeito abaixo).
     useEffect(() => {
       if (open) {
         setCurrentImageIndex(0);
