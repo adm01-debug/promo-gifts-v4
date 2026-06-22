@@ -801,53 +801,87 @@ export const ProductCard = memo(
               {displayName}
             </h3>
 
-            <ProductColorSwatches
-              colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
-              max={6}
-              size="sm"
-              wrap
-              hideWhenEmpty={false}
-              selectedName={activeColorName ?? null}
-              onSelect={(c) => {
-                const idx = allMatchingVariants.findIndex(
-                  (v) => v.name?.toLowerCase() === c.name.toLowerCase(),
-                );
-                if (idx >= 0) {
-                  // Efeito visual de destaque ao clicar
+            {useSwatchesV2 ? (
+              <ColorSwatchPicker
+                swatches={swatchV2.swatches}
+                activeVariantId={swatchV2.activeVariantId}
+                onSelect={(variantId) => {
                   feedback.light();
-                  setActiveVariantIdx(idx);
-                  setSelectedColor(product.id, c.name);
+                  swatchV2.selectVariant(variantId);
+                  const sw = swatchV2.swatches.find((s) => s.variant_id === variantId);
+                  if (sw?.color_name) {
+                    setSelectedColor(product.id, sw.color_name);
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('cor', sw.color_name);
+                    currentUrl.searchParams.set('pid', product.id);
+                    window.history.replaceState({}, '', currentUrl.toString());
+                  }
                   setImageLoaded(false);
-
-                  // Persiste a cor na URL sem forçar navegação completa
-                  const currentUrl = new URL(window.location.href);
-                  currentUrl.searchParams.set('cor', c.name);
-                  currentUrl.searchParams.set('pid', product.id);
-                  window.history.replaceState({}, '', currentUrl.toString());
-
-                  // Abre o QuickView já posicionado na cor escolhida.
                   setQuickViewOpen(true);
-                }
-              }}
-              onClear={() => {
-                feedback.light();
-                setActiveVariantIdx(0);
-                // Limpa a cor desse produto no store (reset por produto)
-                useProductSelectionStore.setState((state) => {
-                  const next = { ...state.selectedColors };
-                  delete next[product.id];
-                  return { selectedColors: next };
-                });
-                setImageLoaded(false);
-                const currentUrl = new URL(window.location.href);
-                // Só limpa parâmetros se eles pertencem a este produto
-                if (currentUrl.searchParams.get('pid') === product.id) {
-                  currentUrl.searchParams.delete('cor');
-                  currentUrl.searchParams.delete('pid');
-                  window.history.replaceState({}, '', currentUrl.toString());
-                }
-              }}
-            />
+                }}
+                onReset={() => {
+                  feedback.light();
+                  swatchV2.resetActive();
+                  useProductSelectionStore.setState((state) => {
+                    const next = { ...state.selectedColors };
+                    delete next[product.id];
+                    return { selectedColors: next };
+                  });
+                  setImageLoaded(false);
+                  const currentUrl = new URL(window.location.href);
+                  if (currentUrl.searchParams.get('pid') === product.id) {
+                    currentUrl.searchParams.delete('cor');
+                    currentUrl.searchParams.delete('pid');
+                    window.history.replaceState({}, '', currentUrl.toString());
+                  }
+                }}
+                size="sm"
+                maxVisible={8}
+              />
+            ) : (
+              <ProductColorSwatches
+                colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
+                max={6}
+                size="sm"
+                wrap
+                hideWhenEmpty={false}
+                selectedName={activeColorName ?? null}
+                onSelect={(c) => {
+                  const idx = allMatchingVariants.findIndex(
+                    (v) => v.name?.toLowerCase() === c.name.toLowerCase(),
+                  );
+                  if (idx >= 0) {
+                    feedback.light();
+                    setActiveVariantIdx(idx);
+                    setSelectedColor(product.id, c.name);
+                    setImageLoaded(false);
+
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('cor', c.name);
+                    currentUrl.searchParams.set('pid', product.id);
+                    window.history.replaceState({}, '', currentUrl.toString());
+
+                    setQuickViewOpen(true);
+                  }
+                }}
+                onClear={() => {
+                  feedback.light();
+                  setActiveVariantIdx(0);
+                  useProductSelectionStore.setState((state) => {
+                    const next = { ...state.selectedColors };
+                    delete next[product.id];
+                    return { selectedColors: next };
+                  });
+                  setImageLoaded(false);
+                  const currentUrl = new URL(window.location.href);
+                  if (currentUrl.searchParams.get('pid') === product.id) {
+                    currentUrl.searchParams.delete('cor');
+                    currentUrl.searchParams.delete('pid');
+                    window.history.replaceState({}, '', currentUrl.toString());
+                  }
+                }}
+              />
+            )}
 
             <div className="flex-1" />
 
