@@ -244,6 +244,14 @@ export const Sel = {
     futureStockSwitch: TID("future-stock-switch"),
     /** Pílulas de janela (7/15/30 dias). */
     futureStockWindow: (d: 7 | 15 | 30) => TID(`future-stock-window-${d}`),
+    /** Botão da toolbar "Risco de Ruptura" (PopoverTrigger). */
+    ruptureRiskToggleButton: TID("rupture-horizon-control"),
+    /** Switch on/off do filtro de Risco de Ruptura no popover. */
+    ruptureRiskSwitch: TID("rupture-risk-switch"),
+    /** Badge "Nd" no botão — visível só quando o filtro está ON. */
+    ruptureRiskHorizonBadge: TID("rupture-risk-horizon-badge"),
+    /** Pílulas de horizonte (3/7/15/30 dias). */
+    ruptureRiskHorizon: (d: 3 | 7 | 15 | 30) => TID(`rupture-horizon-${d}`),
     /** Grid de cards de estatística do dashboard de estoque. */
     statCard: TID("stock-stat-card"),
     statCardBySlug: (slug: string) => `[data-testid="stock-stat-card"][data-stat-slug="${slug}"]`,

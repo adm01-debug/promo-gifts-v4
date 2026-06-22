@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 interface TrackViewParams {
   productId?: string;
@@ -31,7 +32,7 @@ export function useProductAnalytics() {
 
       try {
         // Using type assertion since table was just created
-        // Silently insert - all errors are ignored for analytics to not affect UX
+        // Best-effort insert - must NOT affect UX, but failures are logged for observability
         await supabase.from('product_views').insert({
           product_id: productId,
           product_sku: productSku,
@@ -39,10 +40,9 @@ export function useProductAnalytics() {
           seller_id: user.id,
           view_type: viewType,
         });
-        // Note: We intentionally ignore ALL errors (including 409/23505 conflicts and RLS errors)
-        // Analytics should never block or affect user experience
-      } catch {
-        // Silently ignore all tracking errors
+      } catch (error) {
+        // Best-effort analytics: never block UX, but surface the failure (was silently swallowed).
+        logger.warn('[analytics] trackProductView insert failed', error);
       }
     },
     [user?.id],
@@ -53,15 +53,15 @@ export function useProductAnalytics() {
       if (!user?.id || !searchTerm.trim()) return;
 
       try {
-        // Silently insert - all errors are ignored for analytics to not affect UX
+        // Best-effort insert - must NOT affect UX, but failures are logged for observability
         await supabase.from('search_analytics').insert({
           search_term: searchTerm.toLowerCase().trim(),
           results_count: resultsCount,
           user_id: user.id,
         });
-        // Note: We intentionally ignore ALL errors for analytics
-      } catch {
-        // Silently ignore all tracking errors
+      } catch (error) {
+        // Best-effort analytics: never block UX, but surface the failure (was silently swallowed).
+        logger.warn('[analytics] trackSearch insert failed', error);
       }
     },
     [user?.id],
@@ -86,8 +86,9 @@ export function useProductAnalytics() {
             url: window.location.href,
           },
         });
-      } catch {
-        // Silently ignore all tracking errors
+      } catch (error) {
+        // Best-effort analytics: never block UX, but surface the failure (was silently swallowed).
+        logger.warn('[analytics] trackSort insert failed', error);
       }
     },
     [user?.id],

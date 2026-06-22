@@ -17,6 +17,7 @@ export * from '@/hooks/products/useCategories';
 export * from '@/hooks/products/useCategoriesTree';
 export * from '@/hooks/products/useCategoryIcons';
 export * from '@/hooks/products/useColorEnrichment';
+export * from '@/hooks/products/useColorFanout';
 export * from '@/hooks/products/useColorSystem';
 export * from '@/hooks/products/useExternalCategoriesQuery';
 export * from '@/hooks/products/useExternalVariantStock';

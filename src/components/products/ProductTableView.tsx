@@ -12,10 +12,8 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TableRowActions } from './table-view/TableRowActions';
+import { ProductTableRow } from './table-view/ProductTableRow';
 import {
-  resolveColorImage,
-  resolveColorStock,
-  getActiveColorName,
   type ActiveColorFilter,
 } from '@/utils/color-image-resolver';
 import { useNavigate } from 'react-router-dom';
@@ -28,7 +26,6 @@ import type { Product } from '@/types/product-catalog';
 // Collator pt-BR compartilhado: mesma ordenação natural/acento-insensível do grid/lista
 // (apenas type-imports em runtime → sem ciclo). Evita localeCompare sem locale e null-throw.
 import { compareNamePtBR } from '@/utils/product-sorting';
-import { getCdnUrl } from '@/utils/image-utils';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { ProductColorSwatches } from './ProductColorSwatches';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
@@ -79,36 +76,6 @@ interface ProductTableViewProps {
 
 type SortCol = 'name' | 'price' | 'sku' | 'stock' | 'supplier';
 type SortDir = 'asc' | 'desc';
-
-// BUG-TVW-01 FIX (2026-06-21): Intl.NumberFormat era recriado em cada chamada de formatPrice
-// (potencialmente centenas de vezes por render em tabelas virtualizadas). Mover para módulo.
-const tablePriceFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const formatPrice = (price: number) => {
-  const formatted = tablePriceFormatter.format(price);
-
-  const parts = formatted.split(/\s/);
-  if (parts.length >= 2) {
-    return (
-      <span className="flex items-baseline justify-end gap-1">
-        <span className="text-[9px] font-medium text-muted-foreground/50">R$</span>
-        <span>{parts[parts.length - 1]}</span>
-      </span>
-    );
-  }
-  return formatted;
-};
-
-const stockColor = (status: string) => {
-  if (status === 'in-stock') return 'text-success';
-  if (status === 'low-stock') return 'text-warning';
-  return 'text-destructive';
-};
 
 const CONTAINER_CLASS =
   'h-[calc(100vh-200px)] min-h-[550px] overflow-y-auto rounded-xl border border-border/40 bg-background scrollbar-products shadow-sm';
@@ -223,8 +190,6 @@ export const ProductTableView = memo(
 
     const favStore = useFavoritesStore();
     const compStore = useComparisonStore();
-    // SSOT por-produto: mapa de cor selecionada (zustand global), idêntico ao Card/Lista.
-    const selectedColorsMap = useProductSelectionStore((s) => s.selectedColors);
     const setSelectedColor = useProductSelectionStore((s) => s.setSelectedColor);
     // Persiste a cor selecionada na URL (mesma estratégia do ProductCard) e atualiza o store.
     const selectColorWithUrl = useCallback(
@@ -271,7 +236,14 @@ export const ProductTableView = memo(
         if (!batch || batch.length === 0) return p;
         return {
           ...p,
-          colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+          // FIX-COLOR-SEL-01 (tabela): idem VirtualizedProductGrid — image e stock incluídos.
+          colors: batch.map((c) => ({
+            name: c.name,
+            hex: c.hex || '',
+            group: '',
+            image: c.image || undefined,
+            stock: c.stockQty,
+          })),
         };
       });
     }, [products, colorsByProduct]);
@@ -341,7 +313,16 @@ export const ProductTableView = memo(
       return () => el.removeEventListener('scroll', handleScroll);
     }, [hasMore, isLoadingMore, onLoadMore]);
 
-    const openVariantPicker = useCallback((product: Product, mode: VariantActionMode) => {
+    // FIX-COLOR-SEL-03: encapsula navigate/onProductClick para passar como prop ao ProductTableRow
+    const handleProductClickRow = useCallback(
+      (id: string) => {
+        if (onProductClick) onProductClick(id);
+        else navigate(`/produto/${id}`);
+      },
+      [onProductClick, navigate],
+    );
+
+        const openVariantPicker = useCallback((product: Product, mode: VariantActionMode) => {
       setVariantPickerProduct(product);
       setVariantPickerMode(mode);
       setVariantPickerOpen(true);
@@ -547,214 +528,36 @@ export const ProductTableView = memo(
                 );
               }
 
-              // Cor selecionada manualmente pelo usuário nesta linha (store global, SSOT).
-              const userSelectedColorName = selectedColorsMap[product.id] || null;
-              const userSelectedColor =
-                userSelectedColorName && product.colors?.length
-                  ? product.colors.find(
-                      (c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase(),
-                    ) || null
-                  : null;
-              // primary_image_url (é a imagem com is_primary=true, campo canônico) — exibida primeiro
-              const colorSpecificImage = resolveColorImage(product, activeColorFilter);
-              const rawImg =
-                (userSelectedColor as { image?: string | null } | null)?.image ||
-                colorSpecificImage ||
-                product.primary_image_url ||
-                product.og_image_url ||
-                product.images[0] ||
-                null;
-              const thumbUrl = rawImg ? getCdnUrl(rawImg, 'card') : '/placeholder.svg';
-              const colorStock = resolveColorStock(
-                product,
-                activeColorFilter,
-                userSelectedColorName,
-              );
-              const displayStock = colorStock?.stock ?? product.stock;
-              const displayStatus = colorStock?.stockStatus ?? product.stockStatus;
-              const activeColorName =
-                userSelectedColorName || getActiveColorName(product, activeColorFilter);
-              const isSelected = selectionMode && selectedIds?.has(product.id);
-
               return (
-                <div
+                <ProductTableRow
                   key={vr.key}
-                  data-index={vr.index}
-                  ref={virtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${vr.start}px)`,
+                  product={product}
+                  virtualStart={vr.start}
+                  measureRef={virtualizer.measureElement}
+                  dataIndex={vr.index}
+                  selectionMode={selectionMode}
+                  isSelected={!!(selectionMode && selectedIds?.has(product.id))}
+                  activeColorFilter={activeColorFilter ?? null}
+                  onProductClick={handleProductClickRow}
+                  onToggleSelect={onToggleSelect}
+                  selectColorWithUrl={selectColorWithUrl}
+                  clearSelectedColor={clearSelectedColor}
+                  canAddToCompare={canAddToCompare}
+                  isFavorite={isFavorite}
+                  isInCompare={isInCompare}
+                  onToggleFavorite={onToggleFavorite}
+                  onToggleCompare={onToggleCompare}
+                  onOpenVariantPicker={openVariantPicker}
+                  onOpenQuickView={(prod, triggerEl) => {
+                    if (triggerEl) quickViewTriggerRef.current = triggerEl;
+                    setQuickViewProduct(prod);
+                    setQuickViewOpen(true);
                   }}
-                  className={cn(
-                    'group flex h-14 cursor-pointer items-center border-b border-border/30 px-4 transition-colors hover:bg-accent/30',
-                    isSelected && 'bg-primary/5',
-                  )}
-                  onClick={() =>
-                    selectionMode
-                      ? onToggleSelect?.(product.id)
-                      : onProductClick
-                        ? onProductClick(product.id)
-                        : navigate(`/produto/${product.id}`)
-                  }
-                >
-                  {selectionMode && (
-                    <div className="flex w-10 justify-center px-2">
-                      <SelectionCheckbox
-                        checked={!!isSelected}
-                        onChange={() => onToggleSelect?.(product.id)}
-                        size="sm"
-                      />
-                    </div>
-                  )}
-
-                  <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
-                    {product.supplier?.name}
-                  </div>
-
-                  <div className="w-12 px-2">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Visualização rápida de ${product.name}`}
-                      aria-haspopup="dialog"
-                      aria-expanded={quickViewOpen && quickViewProduct?.id === product.id}
-                      data-testid="product-table-row-thumb"
-                      data-product-id={product.id}
-                      className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      style={{ touchAction: 'manipulation' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (
-                          variantPickerOpen ||
-                          collectionModalOpen ||
-                          shareDialogOpen ||
-                          quickViewOpen
-                        ) {
-                          return;
-                        }
-                        quickViewTriggerRef.current = e.currentTarget;
-                        setQuickViewProduct(product);
-                        setQuickViewOpen(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (
-                            variantPickerOpen ||
-                            collectionModalOpen ||
-                            shareDialogOpen ||
-                            quickViewOpen
-                          ) {
-                            return;
-                          }
-                          quickViewTriggerRef.current = e.currentTarget;
-                          setQuickViewProduct(product);
-                          setQuickViewOpen(true);
-                        }
-                      }}
-                    >
-                      <img
-                        src={thumbUrl}
-                        alt=""
-                        className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="min-w-0 flex-1 px-3">
-                    <p className="truncate text-[13px] font-medium text-foreground transition-colors group-hover:text-primary">
-                      {product.name}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-[10px] text-muted-foreground md:hidden">{product.sku}</p>
-                      {activeColorName && (
-                        <Badge
-                          variant="outline"
-                          className="h-4 border-primary/30 px-1.5 py-0 text-[9px] text-primary/80"
-                        >
-                          {activeColorName}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="hidden w-32 truncate px-3 font-mono text-xs text-muted-foreground md:block">
-                    {product.sku}
-                  </div>
-
-                  <div
-                    className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {product.colors.length > 0 ? (
-                      <ProductColorSwatches
-                        colors={product.colors.map((c) => ({
-                          name: c.name,
-                          hex: c.hex ?? null,
-                          image: (c as { image?: string | null }).image ?? null,
-                        }))}
-                        max={5}
-                        size="sm"
-                        hideWhenEmpty={false}
-                        selectedName={userSelectedColorName}
-                        onSelect={(c) => selectColorWithUrl(product.id, c.name)}
-                        onClear={() => clearSelectedColor(product.id)}
-                      />
-                    ) : (
-                      <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
-                    )}
-                  </div>
-
-                  <div
-                    className={cn(
-                      'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
-                      stockColor(displayStatus),
-                    )}
-                    data-testid="product-stock-value"
-                    data-stock-qty={displayStock ?? 0}
-                  >
-                    <div
-                      className={cn(
-                        'h-1.5 w-1.5 rounded-full',
-                        displayStatus === 'in-stock'
-                          ? 'animate-pulse bg-success'
-                          : displayStatus === 'low-stock'
-                            ? 'bg-warning'
-                            : 'bg-destructive',
-                      )}
-                    />
-                    {(displayStock || 0).toLocaleString('pt-BR')}
-                  </div>
-
-                  <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
-                    {formatPrice(product.price)}
-                    <PriceFreshnessBadge
-                      priceUpdatedAt={product.priceUpdatedAt}
-                      variant="icon-only"
-                    />
-                  </div>
-
-                  <div className="w-48 shrink-0 px-1">
-                    <TableRowActions
-                      product={product}
-                      isFavorite={isFavorite?.(product.id) || false}
-                      isInCompare={isInCompare?.(product.id) || false}
-                      canAddToCompare={canAddToCompare}
-                      onToggleFavorite={onToggleFavorite}
-                      onToggleCompare={onToggleCompare}
-                      onOpenVariantPicker={openVariantPicker}
-                      onOpenQuickView={(p) => {
-                        setQuickViewProduct(p);
-                        setQuickViewOpen(true);
-                      }}
-                    />
-                  </div>
-                </div>
+                  quickViewOpen={quickViewOpen}
+                  variantPickerOpen={variantPickerOpen}
+                  collectionModalOpen={collectionModalOpen}
+                  shareDialogOpen={shareDialogOpen}
+                />
               );
             })}
           </div>

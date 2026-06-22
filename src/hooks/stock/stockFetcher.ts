@@ -141,6 +141,7 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   pageSize = 1000,
   maxRecords = 100000,
   filters?: Record<string, unknown>,
+  keysetColumn = 'id',
 ): Promise<T[]> {
   // PostgREST nativo (Caminho B). A `external-db-bridge` foi descontinuada (410 Gone).
   //
@@ -181,9 +182,12 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
       }
     }
 
-    // Cursor estável: ordena por id e busca a próxima página após o último id visto.
-    query = query.order('id', { ascending: true }).limit(pageSize);
-    if (lastId !== null) query = query.gt('id', lastId);
+    // Cursor estável: ordena pela coluna de keyset (PK físico) e busca a próxima
+    // página após o último cursor visto. Views Ouro sem coluna `id` física (ex.:
+    // mv_stock_velocity, cujo PK é variant_supplier_source_id) passam o nome real
+    // via `keysetColumn`; o `select` continua expondo o valor como `id` na saída.
+    query = query.order(keysetColumn, { ascending: true }).limit(pageSize);
+    if (lastId !== null) query = query.gt(keysetColumn, lastId);
 
     const { data, error, count } = await query;
     if (error) {
@@ -408,6 +412,9 @@ export async function fetchAndProcessStockData(): Promise<{
       'id:variant_supplier_source_id,variant_id,avg_daily_depletion_7d,avg_daily_depletion_30d',
       1000,
       100000,
+      undefined,
+      // BUGFIX: a view não tem coluna física `id`; o keyset precisa ordenar pelo PK real.
+      'variant_supplier_source_id',
     ).catch(() => [] as ExternalStockVelocity[]),
   ]);
 

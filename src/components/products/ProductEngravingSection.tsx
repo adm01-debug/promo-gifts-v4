@@ -10,6 +10,15 @@
  * gravação ativas — evita divisória/skeleton órfão em produtos sem
  * personalização. O botão "Simular preço" abre o Simulador já com o produto
  * pré-selecionado (mesmo contrato de `preSelectedProduct`).
+ *
+ * ROBUSTEZ (validado contra o catálogo em 2026-06-21, 3.146 produtos):
+ * a RPC pode emitir locais com `location_name`/`location_order` nulos (744
+ * linhas / 178 produtos) e o MESMO `location_code` repetido com (name,order)
+ * divergentes (64 produtos) — sendo que as `options` são idênticas por código.
+ * Por isso aqui deduplicamos por location_code (nome preenchido vence a versão
+ * em branco), aplicamos fallback de rótulo, ordenamos com nulos por último e
+ * formatamos dimensões de forma defensiva (esconde a linha se vier inválida,
+ * nunca chama .toFixed em valor não-numérico).
  */
 import { memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +26,7 @@ import { Palette, Ruler, Layers, Calculator, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useProductEngravingOptions } from '@/hooks/products/useProductEngravingOptions';
+import type { GravacaoLocation } from '@/types/customization';
 
 interface ProductEngravingSectionProps {
   productId: string;
@@ -28,13 +38,22 @@ interface ProductEngravingSectionProps {
   className?: string;
 }
 
-const formatDimensions = (width: number, height: number): string => {
-  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','));
-  return `${fmt(width)} × ${fmt(height)} cm`;
+const formatDimensions = (
+  width: number | null | undefined,
+  height: number | null | undefined,
+): string | null => {
+  const fmt = (n: number | null | undefined): string | null => {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return null;
+    return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+  };
+  const w = fmt(width);
+  const h = fmt(height);
+  if (w === null || h === null) return null;
+  return `${w} × ${h} cm`;
 };
 
-const formatColors = (maxColors: number): string =>
-  maxColors <= 1 ? '1 cor' : `até ${maxColors} cores`;
+const formatColors = (maxColors: number | null | undefined): string =>
+  typeof maxColors === 'number' && maxColors > 1 ? `até ${maxColors} cores` : '1 cor';
 
 export const ProductEngravingSection = memo(
   ({
@@ -49,13 +68,24 @@ export const ProductEngravingSection = memo(
     const navigate = useNavigate();
     const { data: locations = [], isLoading } = useProductEngravingOptions(productId);
 
-    const visibleLocations = useMemo(
-      () =>
-        [...locations]
-          .filter((loc) => loc.options.length > 0)
-          .sort((a, b) => a.location_order - b.location_order),
-      [locations],
-    );
+    // Deduplica por location_code: a RPC calcula as options apenas por código,
+    // então códigos repetidos têm options idênticas. A versão com nome
+    // preenchido vence a versão em branco. Ordena com location_order nulo por
+    // último (Number.isFinite cobre o caso de null vindo da RPC apesar do tipo).
+    const visibleLocations = useMemo(() => {
+      const ord = (n: number) => (Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER);
+      const byCode = new Map<string, GravacaoLocation>();
+      for (const loc of locations) {
+        if (loc.options.length === 0) continue;
+        const existing = byCode.get(loc.location_code);
+        if (!existing) {
+          byCode.set(loc.location_code, loc);
+        } else if (!(existing.location_name || '').trim() && (loc.location_name || '').trim()) {
+          byCode.set(loc.location_code, loc);
+        }
+      }
+      return [...byCode.values()].sort((a, b) => ord(a.location_order) - ord(b.location_order));
+    }, [locations]);
 
     if (isLoading || visibleLocations.length === 0) return null;
 
@@ -108,38 +138,49 @@ export const ProductEngravingSection = memo(
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleLocations.map((loc) => (
-              <div
-                key={loc.location_code}
-                className="rounded-xl border border-border/50 bg-background/50 p-4"
-              >
-                <div className="mb-3 flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-semibold">{loc.location_name}</span>
-                </div>
+            {visibleLocations.map((loc) => {
+              const locationLabel =
+                (loc.location_name || '').trim() || loc.location_code || 'Área de gravação';
+              return (
+                <div
+                  key={loc.location_code}
+                  className="rounded-xl border border-border/50 bg-background/50 p-4"
+                >
+                  <div className="mb-3 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm font-semibold">{locationLabel}</span>
+                  </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {loc.options.map((opt) => (
-                    <div
-                      key={opt.technique_id}
-                      className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5"
-                    >
-                      <span className="text-xs font-medium leading-tight">{opt.tecnica_nome}</span>
-                      <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span className="inline-flex items-center gap-0.5">
-                          <Ruler className="h-2.5 w-2.5" />
-                          {formatDimensions(opt.efetiva_largura_max, opt.efetiva_altura_max)}
-                        </span>
-                        <span className="inline-flex items-center gap-0.5">
-                          <Layers className="h-2.5 w-2.5" />
-                          {formatColors(opt.max_cores)}
-                        </span>
-                      </span>
-                    </div>
-                  ))}
+                  <div className="flex flex-wrap gap-2">
+                    {loc.options.map((opt) => {
+                      const dims = formatDimensions(opt.efetiva_largura_max, opt.efetiva_altura_max);
+                      return (
+                        <div
+                          key={opt.technique_id}
+                          className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5"
+                        >
+                          <span className="text-xs font-medium leading-tight">
+                            {opt.tecnica_nome}
+                          </span>
+                          <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                            {dims && (
+                              <span className="inline-flex items-center gap-0.5">
+                                <Ruler className="h-2.5 w-2.5" />
+                                {dims}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-0.5">
+                              <Layers className="h-2.5 w-2.5" />
+                              {formatColors(opt.max_cores)}
+                            </span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

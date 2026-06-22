@@ -27,6 +27,15 @@ import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
 import { buildStockKpiCards } from './stockKpiCards';
 import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+import { ShieldCheck } from 'lucide-react';
+
+const SupplierReliabilityTab = lazyWithRetry(() =>
+  import('./supplier-reliability/SupplierReliabilityTab').then((m) => ({
+    default: m.SupplierReliabilityTab,
+  })),
+);
 
 
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
@@ -44,6 +53,8 @@ const StockHealthBreakdownDrawer = lazyWithRetry(() =>
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 
 const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
+const ACTIVE_TAB_STORAGE_KEY = 'stock-dashboard:active-tab:v1';
+type StockTabValue = 'overview' | 'reliability';
 
 /** Lê do localStorage se o painel de risco estava aberto na última sessão. */
 function readRiskPanelPref(): boolean {
@@ -54,6 +65,17 @@ function readRiskPanelPref(): boolean {
     return raw === '1';
   } catch {
     return true;
+  }
+}
+
+/** Lê do localStorage a aba ativa do dashboard. Default: 'overview'. */
+function readActiveTabPref(): StockTabValue {
+  if (typeof window === 'undefined') return 'overview';
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+    return raw === 'reliability' ? 'reliability' : 'overview';
+  } catch {
+    return 'overview';
   }
 }
 
@@ -102,6 +124,18 @@ export function StockDashboard() {
   const [healthDrawerOpen, setHealthDrawerOpen] = useState(false);
   // #14 — persiste preferência do painel de risco entre sessões.
   const [riskPanelOpen, setRiskPanelOpen] = useState<boolean>(readRiskPanelPref);
+  const reliabilityFlag = isFeatureEnabled('supplierReliability');
+  const [activeTab, setActiveTab] = useState<StockTabValue>(() =>
+    reliabilityFlag ? readActiveTabPref() : 'overview',
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTab);
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [activeTab]);
   const { toast } = useToast();
   const prevCriticalCountRef = useRef<number | null>(null);
   // #11/#19 — lastRefresh como estado força re-render quando o tempo relativo
@@ -216,6 +250,47 @@ export function StockDashboard() {
   const ruptureRisk30dCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : null;
   const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
   void ruptureAlerts; // mantido para upstream subscribers (cache warm)
+
+  // Toggle on/off do filtro de Risco de Ruptura — espelha o padrão do
+  // Estoque Futuro (Switch no popover do botão da toolbar). Persiste o
+  // estado em localStorage e reaplica quando o conjunto fica disponível
+  // após reload (re-hidratação assíncrona dos alertas EMA).
+  const RUPTURE_PREF_KEY = 'stock-filter:rupture-risk-active:v1';
+  const toggleRuptureRisk = useCallback(
+    (active: boolean) => {
+      if (active && ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+        updateFilter('status', 'all');
+        updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+      } else {
+        updateFilter('ruptureRiskVariantIds', undefined);
+      }
+      try {
+        window.localStorage.setItem(RUPTURE_PREF_KEY, active ? '1' : '0');
+      } catch {
+        /* quota/private mode */
+      }
+    },
+    [ruptureRiskVariantIds, updateFilter],
+  );
+
+  // Re-hidratação: quando os alertas EMA chegam após mount, se a pref
+  // estava ON, aplica o filtro automaticamente (uma única vez por sessão).
+  const ruptureHydratedRef = useRef(false);
+  useEffect(() => {
+    if (ruptureHydratedRef.current) return;
+    if (!ruptureRiskVariantIds || ruptureRiskVariantIds.size === 0) return;
+    let pref = '0';
+    try {
+      pref = window.localStorage.getItem(RUPTURE_PREF_KEY) ?? '0';
+    } catch {
+      /* ignore */
+    }
+    if (pref === '1' && !isRuptureRiskActive) {
+      updateFilter('status', 'all');
+      updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+    }
+    ruptureHydratedRef.current = true;
+  }, [ruptureRiskVariantIds, isRuptureRiskActive, updateFilter]);
 
   const activeFilterLabel = useMemo(() => {
     if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
@@ -380,13 +455,46 @@ export function StockDashboard() {
                 colorGroups={availableColorGroups}
                 totalProducts={allProductStocks.length}
                 filteredCount={productStocks.length}
+                isRuptureRiskActive={isRuptureRiskActive}
+                ruptureRiskCount={ruptureRisk30dCount ?? 0}
+                onToggleRuptureRisk={toggleRuptureRisk}
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Header with Health Score */}
+      <Tabs
+        value={reliabilityFlag ? activeTab : 'overview'}
+        onValueChange={(v) => setActiveTab(v as StockTabValue)}
+        className="space-y-5"
+      >
+        {reliabilityFlag && (
+          <TabsList data-testid="stock-tabs">
+            <TabsTrigger value="overview" data-testid="stock-tab-overview">
+              Painel
+            </TabsTrigger>
+            <TabsTrigger
+              value="reliability"
+              data-testid="stock-tab-reliability"
+              className="gap-1.5"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Confiabilidade de Fornecedores
+            </TabsTrigger>
+          </TabsList>
+        )}
+
+        {reliabilityFlag && (
+          <TabsContent value="reliability" className="space-y-5">
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              <SupplierReliabilityTab />
+            </Suspense>
+          </TabsContent>
+        )}
+
+        <TabsContent value="overview" className="space-y-5">
+          {/* Header with Health Score */}
 
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex flex-col gap-2" />
@@ -633,6 +741,8 @@ export function StockDashboard() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

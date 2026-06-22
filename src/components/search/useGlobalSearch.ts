@@ -126,7 +126,19 @@ export function useGlobalSearch() {
   const { suggestions: contextualSuggestions, routeContext } = useContextualSuggestions({
     searchQuery: query,
   });
-  const { commands } = useSlashCommands(() => setOpen(false));
+  // FIX (invocation storm): stabilize the onClose callback so useSlashCommands
+  // does not produce a new `commands` array identity on every render.
+  const closeSearch = useCallback(() => setOpen(false), [setOpen]);
+  const { commands } = useSlashCommands(closeSearch);
+
+  // Keep latest commands in a ref so the semantic-search trigger effect reads
+  // them WITHOUT depending on `commands` identity (root cause of the request
+  // storm: the effect re-fired on every render and started a new, uncancellable
+  // semantic-search invoke before the previous one resolved).
+  const commandsRef = useRef(commands);
+  useEffect(() => {
+    commandsRef.current = commands;
+  }, [commands]);
 
   // ── Voice Agent (ElevenLabs + AI) ──
   const handleVoiceAction = useCallback(
@@ -259,6 +271,9 @@ export function useGlobalSearch() {
 
   // ── Semantic search ──
   const abortRef = useRef<AbortController | null>(null);
+  // De-dupe guard: tracks the query currently in-flight so re-renders cannot
+  // start a second identical semantic-search request before the first resolves.
+  const inFlightQueryRef = useRef<string | null>(null);
   const performSemanticSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.length < 3) {
       setResults([]);
@@ -276,6 +291,10 @@ export function useGlobalSearch() {
       setIsAIProcessing(false);
       return;
     }
+
+    // De-dupe identical in-flight query: prevents the semantic-search storm.
+    if (inFlightQueryRef.current === searchQuery) return;
+    inFlightQueryRef.current = searchQuery;
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -662,7 +681,7 @@ export function useGlobalSearch() {
       // Include matching slash commands in general results if they match keywords
       if (searchQuery.length >= 3) {
         const lowerQuery = searchQuery.toLowerCase();
-        const matchedCmds = commands
+        const matchedCmds = commandsRef.current
           .filter(
             (c) =>
               c.command.toLowerCase().includes(lowerQuery) ||
@@ -737,6 +756,9 @@ export function useGlobalSearch() {
       setIsAIProcessing(false);
       if (!abortRef.current?.signal.aborted) setSearchError(true);
     } finally {
+      // Release the in-flight lock only if this call still owns it (a newer
+      // query may have replaced it).
+      if (inFlightQueryRef.current === searchQuery) inFlightQueryRef.current = null;
       if (!controller.signal.aborted) setIsSearching(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -745,7 +767,7 @@ export function useGlobalSearch() {
   useEffect(() => {
     if (debouncedQuery.startsWith('/')) {
       const lowerQuery = debouncedQuery.toLowerCase();
-      const matchedCommands = commands
+      const matchedCommands = commandsRef.current
         .filter(
           (c) =>
             c.command.toLowerCase().includes(lowerQuery) ||
@@ -766,7 +788,10 @@ export function useGlobalSearch() {
       return;
     }
     performSemanticSearch(debouncedQuery);
-  }, [commands, debouncedQuery, performSemanticSearch]);
+    // NOTE: commands intentionally NOT a dependency here. It changed identity
+    // every render and re-fired this effect, causing the semantic-search request
+    // storm. Slash-command matches read the latest commands via commandsRef.
+  }, [debouncedQuery, performSemanticSearch]);
 
   const handleSelect = useCallback(
     (href: string, saveToHistory = true) => {
