@@ -69,13 +69,13 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
       const y2 = (await cta.boundingBox())?.y ?? -1;
       expect(Math.abs(y2 - y1)).toBeLessThanOrEqual(1);
 
-      // 2.2) O CTA final deve estar em um footer sticky do resumo, mas a página
-      //      continua sendo o único eixo de rolagem; scroll interno no card
-      //      ressuscita o bug visual de contexto "saltando".
+      // 2.2) O CTA final deve estar em um footer sticky do resumo. No desktop,
+      //      o resumo tem altura computada + scroll interno controlado; no
+      //      mobile, permanece no fluxo natural da página.
       const summaryScrollOverflow = await page
         .getByTestId('quote-builder-summary-scroll')
         .evaluate((el) => getComputedStyle(el as HTMLElement).overflowY);
-      expect(summaryScrollOverflow).toBe('visible');
+      expect(summaryScrollOverflow).toBe(vp.name === 'desktop' ? 'auto' : 'visible');
 
       const summaryFooterPosition = await page
         .getByTestId('quote-builder-summary-footer')
@@ -95,6 +95,20 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
           .getByTestId('quote-builder-summary-sticky')
           .evaluate((el) => getComputedStyle(el as HTMLElement).position);
         expect(stickyPos).toBe('sticky');
+
+        const stickyMetrics = await page
+          .getByTestId('quote-builder-summary-sticky')
+          .evaluate((el) => {
+            const node = el as HTMLElement;
+            const style = getComputedStyle(node);
+            return {
+              height: node.getBoundingClientRect().height,
+              overflowY: style.overflowY,
+            };
+          });
+        expect(stickyMetrics.height).toBeGreaterThan(0);
+        expect(stickyMetrics.height).toBeLessThan(vp.height);
+        expect(stickyMetrics.overflowY).toBe('hidden');
 
         const stickyParentOverflow = await page
           .getByTestId('quote-builder-summary-column')
