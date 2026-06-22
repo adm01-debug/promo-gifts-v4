@@ -73,23 +73,24 @@ export function sortProducts(
       break;
 
     case 'price-asc':
-      // NULLS LAST: null prices sort after all real prices (consistent with server-side nullsFirst:false).
-      // Guard: Infinity - Infinity = NaN → withIdTiebreak never reaches id tiebreak; return 0 instead.
+      // NULLS LAST: null/undefined/NaN prices sort after all real prices.
+      // Fix-NaN: ?? only catches null/undefined. Use Number.isFinite to also catch NaN.
+      // Guard: Infinity - Infinity = NaN → aPrice === bPrice → return 0 (id tiebreak).
       arr.sort(
         withIdTiebreak((a, b) => {
-          const aPrice = a.price ?? Infinity;
-          const bPrice = b.price ?? Infinity;
+          const aPrice = Number.isFinite(a.price) ? (a.price as number) : Infinity;
+          const bPrice = Number.isFinite(b.price) ? (b.price as number) : Infinity;
           return aPrice === bPrice ? 0 : aPrice - bPrice;
         }),
       );
       break;
     case 'price-desc':
-      // NULLS LAST: null prices sort after all real prices in descending order.
-      // Guard: -Infinity - -Infinity = NaN → same fix as price-asc.
+      // NULLS LAST: null/undefined/NaN prices sort after all real prices in descending order.
+      // Fix-NaN: same NaN guard as price-asc.
       arr.sort(
         withIdTiebreak((a, b) => {
-          const aPrice = a.price ?? -Infinity;
-          const bPrice = b.price ?? -Infinity;
+          const aPrice = Number.isFinite(a.price) ? (a.price as number) : -Infinity;
+          const bPrice = Number.isFinite(b.price) ? (b.price as number) : -Infinity;
           return aPrice === bPrice ? 0 : bPrice - aPrice;
         }),
       );
