@@ -1033,6 +1033,7 @@ export const ProductCard = memo(
                 isInCompare={isInCompare}
                 onToggleCompare={onToggleCompare}
                 onShare={onShare}
+                initialColorName={activeColorName ?? selectedColorFromStore ?? null}
                 onAddToQuote={() => {
                   setVariantPickerMode('quote');
                   setVariantPickerOpen(true);
