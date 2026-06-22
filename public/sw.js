@@ -1,6 +1,6 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.4.0
+// Versão: 3.5.0
 //
 // CHANGELOG v3.4.0 (2026-06-22 — fix/sw-cdn-race-retry-mime-fix):
 //   BUG-SW-5 FIX [CRÍTICO]: Race condition CDN do Vercel durante deploy.
@@ -65,7 +65,7 @@
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate + fallback offline        ← v3.3.0
 
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v12'; // v3.5.0 — unchanged
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -82,6 +82,11 @@ const PRECACHE_URLS = [
   '/favicon.ico',
   '/favicon.svg',
   '/placeholder.svg',
+  // v3.5.0: ícones PWA PNG agora existem (gerados 2026-06-22)
+  // Cacheados offline para: homescreen install icon + notificação badge
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/og-image.png',
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -469,8 +474,10 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/favicon.svg',
-      badge: '/favicon.svg',
+      // v3.5.0: PNG icon (maior suporte no Android/iOS vs SVG para notificações)
+      icon: '/icons/icon-192.png',
+      // badge: PNG pequeno (96x96 ideal) — usando icon-192 como fallback
+      badge: '/icons/icon-192.png',
     }),
   );
 });
