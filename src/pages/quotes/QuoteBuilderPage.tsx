@@ -220,7 +220,7 @@ export default function QuoteBuilderPage() {
         <div className="grid gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
           <div className="lg:col-span-3">
-            <div className="sticky top-24 max-h-[calc(100vh-7rem)] space-y-3 overflow-y-auto pr-1">
+            <div className="space-y-3 pr-1">
               {/* Empresa + Contato */}
               <div
                 className={cn(
