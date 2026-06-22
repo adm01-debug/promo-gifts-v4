@@ -76,7 +76,35 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         const navBox = await nav.boundingBox();
         expect(navBox?.y ?? 999).toBeLessThanOrEqual(8);
         expect(navBox?.height ?? 0).toBeGreaterThan(vp.height * 0.9);
+
+        // 3.1) Coluna de resumo sticky após hidratação: position computado === 'sticky'
+        const stickyPos = await page
+          .getByTestId('quote-builder-summary-sticky')
+          .evaluate((el) => getComputedStyle(el as HTMLElement).position);
+        expect(stickyPos).toBe('sticky');
+
+        // 3.2) Após rolar a página, a coluna de resumo permanece ancorada no topo
+        await page.evaluate(() => window.scrollBy(0, 400));
+        await waitForVisualStability(page);
+        const sumBox = await page.getByTestId('quote-builder-summary-sticky').boundingBox();
+        expect(sumBox?.y ?? 999).toBeLessThanOrEqual(
+          // header (56) + breadcrumb (40) + 1rem (16) + tolerância
+          56 + 40 + 16 + 8,
+        );
       } else {
+        const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
+        await expect(nav).not.toBeInViewport();
+        const titleBox = await page.getByTestId('page-title-orcamento-novo').boundingBox();
+        expect(titleBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+
+        // 3.3) Mobile: a coluna de resumo NÃO é sticky (empilhada) — evita
+        //      sobreposição de conteúdo abaixo do lg.
+        const stickyPos = await page
+          .getByTestId('quote-builder-summary-sticky')
+          .evaluate((el) => getComputedStyle(el as HTMLElement).position);
+        expect(stickyPos).not.toBe('sticky');
+      }
+
         const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
         await expect(nav).not.toBeInViewport();
         const titleBox = await page.getByTestId('page-title-orcamento-novo').boundingBox();
