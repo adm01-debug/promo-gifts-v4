@@ -13,6 +13,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import type { IncidentSeverity } from './useRecentIncidents';
 
 export interface TimelineEvent {
@@ -130,10 +131,17 @@ async function fetchTimeline72h(): Promise<{
 }
 
 export function useIncidentTimeline72h() {
+  // BUG-INCIDENT-403 FIX (2026-06-22): adicionado rolesLoaded + isAdmin guard.
+  // Espelha fix de useRecentIncidents. Timeline é dado de admin — sem isAdmin
+  // a query retornaria [] e desperdiçaria bandwidth durante o boot.
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
     queryKey: ['connections-incident-timeline-72h'],
     queryFn: fetchTimeline72h,
+    enabled: rolesLoaded && isAdmin,  // garante JWT pronto + permissão admin
     refetchInterval: 60_000,
     staleTime: 30_000,
+    retry: 0,
+    retryOnMount: false,
   });
 }
