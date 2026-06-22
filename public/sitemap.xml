@@ -1,58 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  IMPORTANT: This sitemap only lists PUBLIC routes (no authentication required).
+  Protected routes (/produtos, /novidades, /orcamentos, /simulador, etc.) are
+  excluded — they redirect to /auth when accessed without a session, which would
+  cause Googlebot to index the login page instead of the actual content.
+  
+  Public routes (ProtectedRoute is NOT in the ancestry):
+    /auth, /login, /reset-password, /forgot-password-confirmation,
+    /unauthorized, /termos, /privacidade
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Root — SPA shell, redirects authenticated users to /produtos -->
   <url>
     <loc>https://www.promogifts.com.br/</loc>
-    <changefreq>daily</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
+  <!-- Login / acesso — principal CTA de conversão -->
   <url>
     <loc>https://www.promogifts.com.br/auth</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
+  <!-- Recuperação de senha -->
   <url>
     <loc>https://www.promogifts.com.br/reset-password</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
+  <!-- Termos de uso -->
   <url>
-    <loc>https://www.promogifts.com.br/produtos</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://www.promogifts.com.br/termos</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
   </url>
+  <!-- Política de privacidade -->
   <url>
-    <loc>https://www.promogifts.com.br/novidades</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.promogifts.com.br/simulador-precos</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.promogifts.com.br/simulador</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.promogifts.com.br/comparar</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://www.promogifts.com.br/orcamentos</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.promogifts.com.br/mockup-generator</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.promogifts.com.br/magic-up</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://www.promogifts.com.br/privacidade</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
   </url>
 </urlset>
