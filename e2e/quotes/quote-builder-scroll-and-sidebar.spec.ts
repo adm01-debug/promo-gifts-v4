@@ -54,9 +54,14 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         const navBox = await nav.boundingBox();
         expect(navBox?.y ?? 999).toBeLessThanOrEqual(8);
 
-      // 4) Snapshot visual determinístico (regression) — volta ao topo,
-      //    desabilita animações e caret para evitar flakiness.
+      // 4) Snapshot visual determinístico — volta ao topo, aguarda fontes,
+      //    network idle e 1 frame estável para evitar flakiness (FOUT/CLS).
       await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForLoadState('networkidle').catch(() => {});
+      await page.evaluate(async () => {
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      });
       await expect(page).toHaveScreenshot(`quote-builder-${vp.name}.png`, {
         fullPage: false,
         animations: 'disabled',
@@ -66,4 +71,5 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
     });
   }
 });
+
 
