@@ -7,7 +7,11 @@ import { logger } from '@/lib/logger';
 import { type InvokeResult } from './bridge';
 
 const PRODUCT_SELECT_LIGHTWEIGHT =
-  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at';
+  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, ' +
+  // 2026-06-22: Color Swatches V2 — pré-computados por fn_rebuild_color_swatches (P1→P4).
+  // 7.153 produtos / 16.631 swatches / 97,4% CF CDN. Consumido por ColorSwatchPicker.
+  // v_products_public atualizada para expor estes campos (migration 20260622).
+  'color_swatches, has_colors';
 const LIGHTWEIGHT_PAGE_SIZE = 500;
 const LIGHTWEIGHT_MAX_CONCURRENCY = 3;
 const LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE = 125;
@@ -66,6 +70,14 @@ export interface LightweightProduct {
   ai_summary?: string | null;
   ai_version?: number | null;
   ai_generated_at?: string | null;
+  /**
+   * Color Swatches V2 (2026-06-22) — JSONB pré-computado por fn_rebuild_color_swatches.
+   * Hierarquia de imagem P1(CF CDN/variant_id)→P2(CF CDN/color_id)→P3(supplier)→P4(primary).
+   * stock_quantity = SUM por color_id (correto para produtos multi-tamanho).
+   * Consumido por useProductColorSwatch + ColorSwatchPicker quando useColorSwatchesV2=true.
+   */
+  color_swatches?: unknown[] | null;
+  has_colors?: boolean | null;
 }
 
 function isTimeoutError(error: unknown): boolean {
