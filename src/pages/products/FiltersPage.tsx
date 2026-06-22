@@ -410,7 +410,7 @@ export default function FiltersPage() {
                       </div>
                     </SheetContent>
                   </Sheet>
-                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -478,10 +478,11 @@ export default function FiltersPage() {
                       <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
                     </Tooltip>
                   </div>
-                  {/* Selection toggle & Layout — pinned right (full toolbar) */}
+                  {/* Selection toggle & Layout — ancorados na borda direita,
+                      separados visualmente do grupo de filtros/ordenação. */}
                   <div
                     data-testid="superfiltro-toolbar-actions"
-                    className="order-last ml-auto flex shrink-0 items-center gap-2"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2 sm:pl-3 sm:border-l sm:border-border/60"
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
