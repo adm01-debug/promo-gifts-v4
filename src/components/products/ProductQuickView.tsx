@@ -502,6 +502,9 @@ export const ProductQuickView = React.memo(
                   stockInfo.bg,
                   stockInfo.color,
                 )}
+                data-testid="quickview-stock"
+                data-stock-qty={stockQty ?? ''}
+                data-color-id={selectedColorId ?? ''}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {stockInfo.label}
