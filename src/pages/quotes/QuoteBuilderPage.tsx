@@ -60,12 +60,9 @@ export default function QuoteBuilderPage() {
   });
 
   if (s.loadingQuote) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <QuoteBuilderSkeleton />;
   }
+
 
   return (
     <>
