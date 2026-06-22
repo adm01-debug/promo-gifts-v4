@@ -53,7 +53,17 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         await expect(nav).toBeVisible();
         const navBox = await nav.boundingBox();
         expect(navBox?.y ?? 999).toBeLessThanOrEqual(8);
-      }
+
+      // 4) Snapshot visual determinístico (regression) — volta ao topo,
+      //    desabilita animações e caret para evitar flakiness.
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect(page).toHaveScreenshot(`quote-builder-${vp.name}.png`, {
+        fullPage: false,
+        animations: 'disabled',
+        caret: 'hide',
+        maxDiffPixelRatio: 0.02,
+      });
     });
   }
 });
+
