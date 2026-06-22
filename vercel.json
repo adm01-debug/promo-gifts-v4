@@ -81,6 +81,15 @@
       ]
     },
     {
+      "source": "/icons/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=2592000"
+        }
+      ]
+    },
+    {
       "source": "/(.*)\\.(js|mjs|css|woff2|woff|ttf|otf|eot|png|jpg|jpeg|gif|webp|avif|svg|ico)",
       "headers": [
         {
