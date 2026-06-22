@@ -549,9 +549,10 @@ export const ProductTableView = memo(
                   onToggleFavorite={onToggleFavorite}
                   onToggleCompare={onToggleCompare}
                   onOpenVariantPicker={openVariantPicker}
-                  onOpenQuickView={(prod, triggerEl) => {
+                  onOpenQuickView={(prod, triggerEl, initialColorName) => {
                     if (triggerEl) quickViewTriggerRef.current = triggerEl;
                     setQuickViewProduct(prod);
+                    setQuickViewInitialColor(initialColorName ?? null);
                     setQuickViewOpen(true);
                   }}
                   quickViewOpen={quickViewOpen}
