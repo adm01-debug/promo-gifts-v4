@@ -216,7 +216,7 @@ export default function QuoteBuilderPage() {
         )}
 
         {/* 3-column layout */}
-        <div data-testid="quote-builder-grid" className="grid min-w-0 items-start gap-4 lg:grid-cols-12">
+        <div data-testid="quote-builder-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
           <div className="min-w-0 lg:col-span-3">
             <div className="space-y-3 pr-1">

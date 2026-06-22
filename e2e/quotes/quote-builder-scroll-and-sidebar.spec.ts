@@ -69,6 +69,19 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
       const y2 = (await cta.boundingBox())?.y ?? -1;
       expect(Math.abs(y2 - y1)).toBeLessThanOrEqual(1);
 
+      // 2.2) O CTA final deve estar em um footer sticky do resumo, mas a página
+      //      continua sendo o único eixo de rolagem; scroll interno no card
+      //      ressuscita o bug visual de contexto "saltando".
+      const summaryScrollOverflow = await page
+        .getByTestId('quote-builder-summary-scroll')
+        .evaluate((el) => getComputedStyle(el as HTMLElement).overflowY);
+      expect(summaryScrollOverflow).toBe('visible');
+
+      const summaryFooterPosition = await page
+        .getByTestId('quote-builder-summary-footer')
+        .evaluate((el) => getComputedStyle(el as HTMLElement).position);
+      expect(summaryFooterPosition).toBe('sticky');
+
       // 3) Sidebar (desktop) ou layout mobile sem sobreposição abaixo de lg.
       if (vp.name === 'desktop') {
         const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
@@ -82,6 +95,11 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
           .getByTestId('quote-builder-summary-sticky')
           .evaluate((el) => getComputedStyle(el as HTMLElement).position);
         expect(stickyPos).toBe('sticky');
+
+        const stickyParentOverflow = await page
+          .getByTestId('quote-builder-summary-column')
+          .evaluate((el) => getComputedStyle(el as HTMLElement).overflowY);
+        expect(stickyParentOverflow).toBe('visible');
 
         // 3.2) Após rolar a página, a coluna de resumo permanece ancorada no topo
         await page.evaluate(() => window.scrollBy(0, 400));

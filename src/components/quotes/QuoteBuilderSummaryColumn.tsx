@@ -175,9 +175,15 @@ export function QuoteBuilderSummaryColumn({
   };
 
   return (
-    <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-4">
-      <div data-testid="quote-builder-summary-sticky" className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)]">
-        <div data-testid="quote-builder-summary-scroll" className="flex max-h-full flex-col rounded-2xl border border-border/50 bg-card shadow-xl lg:overflow-y-auto">
+    <div data-testid="quote-builder-summary-column" className="min-w-0 self-start lg:col-span-4">
+      <div
+        data-testid="quote-builder-summary-sticky"
+        className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:self-start"
+      >
+        <div
+          data-testid="quote-builder-summary-scroll"
+          className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl"
+        >
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
             <div className="rounded-lg bg-primary/10 p-2">
@@ -576,7 +582,10 @@ export function QuoteBuilderSummaryColumn({
           )}
 
           {/* Footer */}
-          <div className="mt-3 shrink-0 space-y-2 border-t border-border/50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
+          <div
+            data-testid="quote-builder-summary-footer"
+            className="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-10 mt-3 shrink-0 space-y-2 border-t border-border/50 bg-card/95 px-4 pb-3 pt-3 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85"
+          >
             <div className="flex items-center justify-between text-[11px] uppercase tracking-tight text-muted-foreground">
               <span>Subtotal</span>
               <span className="font-medium tabular-nums">{formatCurrency(presentedSubtotal)}</span>

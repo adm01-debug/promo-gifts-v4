@@ -31,7 +31,7 @@ export function QuoteBuilderSkeleton() {
       <Skeleton className="h-16 w-full rounded-xl" />
 
       {/* 3-column layout (mesma proporção do estado carregado) */}
-      <div data-testid="quote-builder-skeleton-grid" className="grid min-w-0 items-start gap-4 lg:grid-cols-12">
+      <div data-testid="quote-builder-skeleton-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
         {/* COL 1 — Cliente + Condições */}
         <div className="space-y-3 lg:col-span-3">
           <Skeleton className="h-48 w-full rounded-2xl" />
@@ -45,15 +45,19 @@ export function QuoteBuilderSkeleton() {
         </div>
 
         {/* COL 3 — Resumo */}
-        <div className="min-w-0 space-y-3 lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:col-span-4 lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)] lg:overflow-hidden">
-          <Skeleton className="h-[320px] w-full rounded-2xl" />
-          <Skeleton className="h-16 w-full rounded-2xl" />
-          {/* CTA final — mesma altura/posição do botão "Criar/Salvar Rascunho" */}
-          <Skeleton
-            data-testid="quote-builder-skeleton-cta"
-            className="h-11 w-full rounded-md"
-          />
-          <Skeleton className="h-11 w-full rounded-md" />
+        <div className="min-w-0 self-start lg:col-span-4">
+          <div className="space-y-3 lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:self-start">
+            <Skeleton className="h-[320px] w-full rounded-2xl" />
+            <div className="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-10 space-y-3 rounded-2xl border border-border/50 bg-card/95 p-4 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85">
+              <Skeleton className="h-16 w-full rounded-2xl" />
+              {/* CTA final — mesma altura/posição do botão "Criar/Salvar Rascunho" */}
+              <Skeleton
+                data-testid="quote-builder-skeleton-cta"
+                className="h-11 w-full rounded-md"
+              />
+              <Skeleton className="h-11 w-full rounded-md" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
