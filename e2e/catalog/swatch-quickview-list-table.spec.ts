@@ -176,6 +176,69 @@ test.describe('Swatch → QuickView (Lista e Tabela)', () => {
         }, 'color-swatch-');
         expect(focusOk).toBe(true);
       }
+
+      // ── 7) Tab percorre os swatches em ordem ──────────────────────────────
+      if (rowSwatches >= 2) {
+        await firstSwatch.focus();
+        await page.keyboard.press('Tab');
+        const nextIsSwatch = await page.evaluate(() => {
+          const a = document.activeElement as HTMLElement | null;
+          return !!a?.getAttribute('data-testid')?.startsWith('color-swatch-');
+        });
+        expect(nextIsSwatch, 'Tab deve mover para o próximo swatch').toBe(true);
+      }
+
+      // ── 8) Estoque muda ao alternar cor e ao limpar via "Todas as cores" ─
+      const allSwatches = row.locator(swatchSel);
+      const n = await allSwatches.count();
+      if (n >= 2) {
+        await allSwatches.nth(0).click();
+        await expect(dialog).toBeVisible({ timeout: 8_000 });
+        const stockBadge = dialog.getByTestId('quickview-stock');
+        await expect(stockBadge).toBeVisible();
+        const colorId0 = await stockBadge.getAttribute('data-color-id');
+        expect(colorId0, 'estoque deve refletir cor selecionada').toBeTruthy();
+
+        const dialogSwatches = dialog.locator(swatchSel);
+        if ((await dialogSwatches.count()) >= 2) {
+          await dialogSwatches.nth(1).click();
+          await expect
+            .poll(async () => stockBadge.getAttribute('data-color-id'))
+            .not.toBe(colorId0);
+        }
+
+        // "Todas as cores" reseta color-id para vazio (estoque total).
+        const clear = dialog.getByTestId('quickview-clear-color');
+        if (await clear.count()) {
+          await clear.click();
+          await expect
+            .poll(async () => stockBadge.getAttribute('data-color-id'))
+            .toBe('');
+        }
+
+        // ── 9) Fecha QV pelo backdrop e foco restaura para o swatch ────────
+        await firstSwatch.evaluate((el) =>
+          el.setAttribute('data-focus-marker', '1'),
+        );
+        await page.mouse.click(5, 5);
+        await expect(dialog).toBeHidden({ timeout: 5_000 });
+        await page.evaluate(
+          () =>
+            new Promise<void>((r) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => r())),
+            ),
+        );
+        const restored = await page.evaluate(() => {
+          const a = document.activeElement as HTMLElement | null;
+          if (!a) return false;
+          return (
+            a.getAttribute('data-focus-marker') === '1' ||
+            !!a.closest('[data-focus-marker="1"]') ||
+            !!a.getAttribute('data-testid')?.startsWith('color-swatch-')
+          );
+        });
+        expect(restored, 'foco deve restaurar para um swatch').toBe(true);
+      }
     });
   }
 });
