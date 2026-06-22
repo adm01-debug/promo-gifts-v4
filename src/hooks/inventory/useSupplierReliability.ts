@@ -27,9 +27,9 @@ import {
   useSupplierReliabilityServer,
 } from './useSupplierReliabilityServer';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 // Feature flag
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 
 function isServerSideEnabled(): boolean {
   try {
@@ -45,9 +45,9 @@ function isServerSideEnabled(): boolean {
 
 const USE_SERVER_SIDE = isServerSideEnabled();
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 // Path legado (client-side)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 
 const SOURCE_COLS =
   'id,variant_id,supplier_id,updated_at,' +
@@ -73,7 +73,8 @@ interface RawData {
 async function fetchRawReliability(): Promise<RawData> {
   const cutoff = new Date(Date.now() - SNAPSHOT_WINDOW_DAYS * 86_400_000).toISOString();
   const [sources, snapshots, suppliers] = await Promise.all([
-    fetchPaginatedFromBridge<SourceRow & { id: string }>(
+    // SourceRow.id é string (UUID de variant_supplier_sources) — satisfaz T extends {id: string|number}
+    fetchPaginatedFromBridge<SourceRow>(
       'variant_supplier_sources',
       SOURCE_COLS,
       1000,
@@ -81,9 +82,10 @@ async function fetchRawReliability(): Promise<RawData> {
       { is_active: true },
     ).catch((err) => {
       logger.warn('[Reliability] sources fetch failed', err);
-      return [] as Array<SourceRow & { id: string }>;
+      return [] as Array<SourceRow>;
     }),
-    fetchPaginatedFromBridge<SnapshotRow & { id: string }>(
+    // SnapshotRow.id é string|number (bigint de stock_snapshots) — o & {id:string} era um force-cast enganoso
+    fetchPaginatedFromBridge<SnapshotRow>(
       'stock_snapshots',
       SNAPSHOT_COLS,
       1000,
@@ -92,7 +94,7 @@ async function fetchRawReliability(): Promise<RawData> {
       .then((rows) => rows.filter((r) => (r.captured_at ?? '') >= cutoff))
       .catch((err) => {
         logger.warn('[Reliability] snapshots fetch failed', err);
-        return [] as Array<SnapshotRow & { id: string }>;
+        return [] as Array<SnapshotRow>;
       }),
     fetchPaginatedFromBridge<{ id: string; name: string }>(
       'suppliers',
@@ -152,9 +154,9 @@ function useSupplierReliabilityClientSide() {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 // Hook público: roteia entre server-side e client-side via feature flag
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 
 /**
  * Wrapper que seleciona o path server-side (padrão) ou client-side (fallback).
