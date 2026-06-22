@@ -179,6 +179,7 @@ export const ProductTableView = memo(
     >(undefined);
     const [quickViewOpen, setQuickViewOpen] = useState(false);
     const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+    const [quickViewInitialColor, setQuickViewInitialColor] = useState<string | null>(null);
     const quickViewTriggerRef = useRef<HTMLElement | null>(null);
     const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const [shareProduct, setShareProduct] = useState<Product | null>(null);
