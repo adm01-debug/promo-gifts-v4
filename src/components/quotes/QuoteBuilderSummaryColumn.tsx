@@ -178,11 +178,11 @@ export function QuoteBuilderSummaryColumn({
     <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-4">
       <div
         data-testid="quote-builder-summary-sticky"
-        className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:self-start"
+        className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)] lg:self-start lg:overflow-hidden"
       >
         <div
           data-testid="quote-builder-summary-scroll"
-          className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl"
+          className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl lg:h-full lg:overflow-y-auto"
         >
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">

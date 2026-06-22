@@ -76,9 +76,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    // overflow-x-hidden previne bleed horizontal de elementos internos
-    // sem quebrar posicionamentos fixed/sticky que usam transform proprio
-    <div className="min-h-screen overflow-x-hidden bg-background print:min-h-0" role="document">
+    // overflow-x-clip previne bleed horizontal sem criar scroll container
+    // ancestral, preservando o comportamento de elementos sticky filhos.
+    <div className="min-h-screen overflow-x-clip bg-background print:min-h-0" role="document">
       <div className="fixed inset-0 z-[-1]">
         <Suspense fallback={null}>
           <StarBackground />
