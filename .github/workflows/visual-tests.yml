@@ -79,7 +79,7 @@ jobs:
           done <<< "$STAGED_LIST"
           git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
           if ! git diff --staged --quiet; then
-            git commit -m "chore(e2e): auto-generate missing visual baselines"
+            git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
             # Retry loop handles the parallel-shard race: both shards add different
             # PNG files to the same branch, so the loser does a clean rebase and retries.
             for attempt in 1 2 3 4 5; do
