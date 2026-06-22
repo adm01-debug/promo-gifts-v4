@@ -2,98 +2,142 @@
  * Shared inStock predicate — single source of truth for both applyProductFilters
  * (Super Filtro) and useCatalogFiltering (Index catalog).
  *
- * Rule: prefer stockStatus (pre-computed, respects min_quantity) over raw stock.
+ * THREE-WAY STATUS EVALUATION (the definitive approach):
+ *   1. Known AVAILABLE statuses: 'in-stock' | 'low-stock'  → true
+ *   2. Known UNAVAILABLE status: 'out-of-stock'            → false
+ *   3. Unknown / other-domain:   anything else             → fall through to stock check
  *
- * stockStatus convention: lowercase with hyphens ('in-stock' | 'low-stock' | 'out-of-stock').
- * Comparison is case-insensitive to tolerate upstream casing inconsistencies.
+ * This means:
+ *   - 'in-stock', 'low-stock'           → true  (catalog available)
+ *   - 'out-of-stock', 'OUT-OF-STOCK'    → false (catalog unavailable, case-insensitive)
+ *   - 'in_stock', 'critical', 'pending' → fallthrough → isPositiveFiniteStock(stock)
+ *     Inventory-domain underscores and unknown statuses defer to raw stock count.
  *
- * Fallback (no stockStatus): Number.isFinite(stock) && stock > 0.
- * This correctly handles null, undefined, NaN, Infinity, -Infinity, negative values.
- * Aligns with getCatalogStockStatus (which also uses Number.isFinite internally).
- *
- * ⚠️ Domain boundary: the inventory domain uses underscore notation
- * ('in_stock' | 'out_of_stock' | 'critical') — deliberately NOT handled here.
+ * Comparison is case-insensitive (GAP-STOCK-CASE-01).
+ * Fallback uses Number.isFinite (GAP-STOCK-FRAC-01 / BUG-STOCK-INF-01).
  */
 export interface InStockProduct {
   variations?: Array<{
     stock?: number | null;
-    /** Pre-computed status (catalog domain, hyphen). Takes priority over stock when set. */
+    /** Pre-computed status (catalog domain, hyphen). Takes priority when recognized. */
     stockStatus?: string | null;
   }> | null;
   stockStatus?: string | null;
   stock?: number | null;
 }
 
-/** Canonical out-of-stock token (catalog domain, hyphen convention). */
-const OUT_OF_STOCK = 'out-of-stock';
+/** All valid catalog-domain stock statuses (lowercase with hyphens). */
+export const CATALOG_STOCK_STATUSES = ['in-stock', 'low-stock', 'out-of-stock'] as const;
+export type CatalogStockStatusValue = (typeof CATALOG_STOCK_STATUSES)[number];
+
+/** Canonical out-of-stock token (exported for consumers). */
+export const OUT_OF_STOCK: CatalogStockStatusValue = 'out-of-stock';
+
+/** Statuses that explicitly indicate availability (catalog domain). */
+const AVAILABLE_STATUSES = new Set<string>(['in-stock', 'low-stock']);
+
+/** The normalized out-of-stock string (lowercase). */
+const OUT_OF_STOCK_NORMALIZED = 'out-of-stock';
+
+/**
+ * Type guard: returns true if value is a recognized catalog stock status.
+ * Useful at API/data boundaries to validate incoming status values.
+ *
+ * @example
+ * const raw = apiResponse.stockStatus;
+ * const status = isCatalogStockStatus(raw) ? raw : getCatalogStockStatus(product.stock);
+ */
+export function isCatalogStockStatus(value: unknown): value is CatalogStockStatusValue {
+  return (
+    typeof value === 'string' &&
+    (CATALOG_STOCK_STATUSES as readonly string[]).includes(value)
+  );
+}
 
 /**
  * Returns true if stock is a finite positive number.
- * Handles null, undefined, NaN, Infinity, -Infinity and negative values consistently
- * with getCatalogStockStatus.
+ * Handles null, undefined, NaN, Infinity, -Infinity and negatives consistently
+ * with getCatalogStockStatus (which also uses Number.isFinite internally).
  */
 function isPositiveFiniteStock(stock: number | null | undefined): boolean {
   return Number.isFinite(stock) && (stock as number) > 0;
 }
 
 /**
+ * THREE-WAY evaluation of a single stockStatus string:
+ *   true  → explicitly available (in-stock | low-stock)
+ *   false → explicitly unavailable (out-of-stock)
+ *   null  → unknown / other-domain → caller should fall through to stock check
+ *
+ * Case-insensitive: 'OUT-OF-STOCK', 'Low-Stock', etc. are handled.
+ */
+function evaluateStatus(status: string): boolean | null {
+  const normalized = status.toLowerCase();
+  if (AVAILABLE_STATUSES.has(normalized)) return true;
+  if (normalized === OUT_OF_STOCK_NORMALIZED) return false;
+  return null; // unknown (e.g. 'in_stock', 'critical', 'pending') → fallthrough
+}
+
+/**
  * Returns true if the product can be ordered.
  *
- * Priority for each variation / product:
- *  1. stockStatus set → case-insensitive !== 'out-of-stock'
- *  2. No stockStatus → isPositiveFiniteStock(stock) — handles NaN/Infinity/null/neg
+ * For each item (variation or product-level):
+ *  1. stockStatus recognized → three-way result (true | false).
+ *  2. stockStatus unknown (null result) → isPositiveFiniteStock(stock).
+ *  3. No stockStatus → isPositiveFiniteStock(stock).
  *
- * For variation-bearing products: ANY orderable variation makes the product available.
+ * For variation-bearing products: ANY orderable variation makes it available.
  */
 export function isProductInStock(product: InStockProduct): boolean {
-  if (product.variations && product.variations.length > 0)
-    return product.variations.some((v) =>
-      v.stockStatus
-        ? v.stockStatus.toLowerCase() !== OUT_OF_STOCK
-        : isPositiveFiniteStock(v.stock),
-    );
-  if (product.stockStatus)
-    return product.stockStatus.toLowerCase() !== OUT_OF_STOCK;
+  if (product.variations && product.variations.length > 0) {
+    return product.variations.some((v) => {
+      if (v.stockStatus) {
+        const r = evaluateStatus(v.stockStatus);
+        if (r !== null) return r;
+      }
+      return isPositiveFiniteStock(v.stock);
+    });
+  }
+  if (product.stockStatus) {
+    const r = evaluateStatus(product.stockStatus);
+    if (r !== null) return r;
+  }
   return isPositiveFiniteStock(product.stock);
 }
 
-/** The literal token used for out-of-stock (exported for consumers). */
-export { OUT_OF_STOCK };
-
 // ─────────────────────────────────────────────────────────────────────────────
-// HELPERS DE PIPELINE — populam stockStatus nas variações
+// PIPELINE HELPER
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Computes stockStatus for a single variation using the product-level minQuantity.
- * Delegates to getCatalogStockStatus so the same rule applies everywhere.
+ * Computes stockStatus for a single variation given the product-level minQuantity.
+ * Mirrors getCatalogStockStatus logic to guarantee zero divergence.
  *
- * Usage in data pipeline (e.g., product mapper, stockFetcher):
+ * Usage in data pipeline (product mapper, stockFetcher):
  * ```ts
  * variation.stockStatus = getVariationStockStatus(
  *   variation.stock,
  *   product.minQuantity,
  * );
  * ```
- *
- * Once stockStatus is populated on each variation, isProductInStock will
- * automatically use it (Improvement 2 / GAP-VAR-MINQTY-01).
  */
 export function getVariationStockStatus(
   variationStock: number | null | undefined,
   productMinQuantity: number | null | undefined,
   lowStockThreshold = 10,
-): 'in-stock' | 'low-stock' | 'out-of-stock' {
-  // Lazy import avoids circular deps: catalog-stock-status → stock-status
-  const qty = typeof variationStock === 'number' && Number.isFinite(variationStock) ? variationStock : 0;
-  if (qty <= 0) return 'out-of-stock';
+): CatalogStockStatusValue {
+  const qty =
+    typeof variationStock === 'number' && Number.isFinite(variationStock)
+      ? variationStock
+      : 0;
+  if (qty <= 0) return OUT_OF_STOCK;
   if (
     typeof productMinQuantity === 'number' &&
     Number.isFinite(productMinQuantity) &&
     productMinQuantity >= 1 &&
     qty < productMinQuantity
   ) {
-    return 'out-of-stock';
+    return OUT_OF_STOCK;
   }
   if (qty < lowStockThreshold) return 'low-stock';
   return 'in-stock';

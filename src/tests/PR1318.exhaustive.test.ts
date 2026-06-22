@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isProductInStock, getVariationStockStatus, OUT_OF_STOCK, type InStockProduct } from '@/lib/products/stock-status';
+import { isProductInStock, getVariationStockStatus, isCatalogStockStatus, OUT_OF_STOCK, CATALOG_STOCK_STATUSES, type InStockProduct } from '@/lib/products/stock-status';
 import { getCatalogStockStatus, CATALOG_LOW_STOCK_THRESHOLD } from '@/lib/catalog-stock-status';
 import { sortProducts } from '@/utils/product-sorting';
 import type { Product } from '@/types/product-catalog';
@@ -46,10 +46,19 @@ describe('A2 — GAP-STOCK-CASE-01 CORRIGIDO: case-insensitive', () => {
   it('LOW-STOCK maiusculo → true', () => {
     expect(isProductInStock(p({ stockStatus: 'LOW-STOCK', stock: 3 }))).toBe(true);
   });
-  it('out_of_stock underscore → true (dominio inventario, by design)', () => {
+  // THREE-WAY: 'out_of_stock' (underscore) é desconhecido → fallthrough para stock
+  it('out_of_stock underscore + stock=5 → true (fallthrough para stock>0)', () => {
     expect(isProductInStock(p({ stockStatus: 'out_of_stock', stock: 5 }))).toBe(true);
   });
-  it('critical tipo inventario com stock>0 → true', () => { expect(isProductInStock(p({ stockStatus: 'critical', stock: 2 }))).toBe(true); });
+  it('out_of_stock underscore + stock=0 → false (fallthrough: stock=0 nao disponivel)', () => {
+    expect(isProductInStock(p({ stockStatus: 'out_of_stock', stock: 0 }))).toBe(false);
+  });
+  it('critical (inventario) + stock>0 → true (fallthrough para stock)', () => {
+    expect(isProductInStock(p({ stockStatus: 'critical', stock: 2 }))).toBe(true);
+  });
+  it('critical (inventario) + stock=0 → false (fallthrough: sem stock)', () => {
+    expect(isProductInStock(p({ stockStatus: 'critical', stock: 0 }))).toBe(false);
+  });
   it('string vazia falsy → fallback stock>0 true', () => { expect(isProductInStock(p({ stockStatus: '', stock: 5 }))).toBe(true); });
   it('string vazia falsy → fallback stock=0 false', () => { expect(isProductInStock(p({ stockStatus: '', stock: 0 }))).toBe(false); });
 });
@@ -410,5 +419,66 @@ describe('E — getVariationStockStatus: helper pipeline para variacoes', () => 
       if (isProductInStock({ variations: [{ stock, stockStatus: status }] }) !== expected) fail++;
     }
     expect(fail).toBe(0);
+  });
+});
+
+// ── F. isCatalogStockStatus type guard + CATALOG_STOCK_STATUSES ───────────────
+describe('F — MELHORIA-6: isCatalogStockStatus type guard e three-way logic', () => {
+  it('isCatalogStockStatus: valores validos', () => {
+    expect(isCatalogStockStatus('in-stock')).toBe(true);
+    expect(isCatalogStockStatus('low-stock')).toBe(true);
+    expect(isCatalogStockStatus('out-of-stock')).toBe(true);
+  });
+  it('isCatalogStockStatus: valores invalidos', () => {
+    expect(isCatalogStockStatus('in_stock')).toBe(false);
+    expect(isCatalogStockStatus('OUT-OF-STOCK')).toBe(false); // type guard e case-sensitive
+    expect(isCatalogStockStatus('critical')).toBe(false);
+    expect(isCatalogStockStatus('pending')).toBe(false);
+    expect(isCatalogStockStatus('')).toBe(false);
+    expect(isCatalogStockStatus(null)).toBe(false);
+    expect(isCatalogStockStatus(undefined)).toBe(false);
+    expect(isCatalogStockStatus(42)).toBe(false);
+  });
+  it('CATALOG_STOCK_STATUSES tem 3 valores', () => {
+    expect(CATALOG_STOCK_STATUSES).toHaveLength(3);
+    expect(CATALOG_STOCK_STATUSES).toContain('in-stock');
+    expect(CATALOG_STOCK_STATUSES).toContain('low-stock');
+    expect(CATALOG_STOCK_STATUSES).toContain('out-of-stock');
+  });
+  // Three-way: known available
+  it('THREE-WAY: in-stock → true independente do stock', () => {
+    expect(isProductInStock(p({ stockStatus: 'in-stock', stock: 0 }))).toBe(true);
+  });
+  it('THREE-WAY: low-stock → true', () => {
+    expect(isProductInStock(p({ stockStatus: 'low-stock', stock: 3 }))).toBe(true);
+  });
+  it('THREE-WAY: IN-STOCK maiusculo → true (case-insensitive)', () => {
+    expect(isProductInStock(p({ stockStatus: 'IN-STOCK', stock: 0 }))).toBe(true);
+  });
+  // Three-way: known unavailable
+  it('THREE-WAY: out-of-stock → false independente do stock', () => {
+    expect(isProductInStock(p({ stockStatus: 'out-of-stock', stock: 999 }))).toBe(false);
+  });
+  it('THREE-WAY: OUT-OF-STOCK maiusculo → false', () => {
+    expect(isProductInStock(p({ stockStatus: 'OUT-OF-STOCK', stock: 999 }))).toBe(false);
+  });
+  // Three-way: unknown → fallthrough to stock
+  it('THREE-WAY: pending + stock=5 → true (fallthrough)', () => {
+    expect(isProductInStock(p({ stockStatus: 'pending', stock: 5 }))).toBe(true);
+  });
+  it('THREE-WAY: pending + stock=0 → false (fallthrough)', () => {
+    expect(isProductInStock(p({ stockStatus: 'pending', stock: 0 }))).toBe(false);
+  });
+  it('THREE-WAY: reserved + stock=3 → true (fallthrough)', () => {
+    expect(isProductInStock(p({ stockStatus: 'reserved', stock: 3 }))).toBe(true);
+  });
+  it('THREE-WAY: in_stock (underscore) + stock=5 → true (fallthrough)', () => {
+    expect(isProductInStock(p({ stockStatus: 'in_stock', stock: 5 }))).toBe(true);
+  });
+  it('THREE-WAY: in_stock (underscore) + stock=0 → false (fallthrough)', () => {
+    expect(isProductInStock(p({ stockStatus: 'in_stock', stock: 0 }))).toBe(false);
+  });
+  it('THREE-WAY: critical + stock=2 → true (fallthrough)', () => {
+    expect(isProductInStock(p({ stockStatus: 'critical', stock: 2 }))).toBe(true);
   });
 });
