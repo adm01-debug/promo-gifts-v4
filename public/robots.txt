@@ -1,16 +1,92 @@
-User-agent: Googlebot
-Allow: /
+# robots.txt — Promo Gifts (promogifts.com.br)
+# Gerado em: 2026-06-22
+#
+# Esta é uma plataforma B2B SaaS com autenticação obrigatória.
+# Apenas as rotas públicas (login, termos, privacidade) devem ser indexadas.
+# Rotas protegidas (catálogo, orçamentos, admin, etc.) redirecionam para /auth
+# quando acessadas sem sessão — indexar essas URLs seria inútil.
 
+# ── Googlebot ──────────────────────────────────────────────────────────────────
+User-agent: Googlebot
+Allow: /$
+Allow: /auth
+Allow: /login
+Allow: /reset-password
+Allow: /forgot-password-confirmation
+Allow: /termos
+Allow: /privacidade
+Allow: /favicon.ico
+Allow: /favicon.svg
+Allow: /og-image.png
+Allow: /manifest.json
+# Bloquear tudo mais (rotas protegidas + admin + dev)
+Disallow: /admin
+Disallow: /produtos
+Disallow: /filtros
+Disallow: /novidades
+Disallow: /reposicao
+Disallow: /favoritos
+Disallow: /carrinhos
+Disallow: /comparar
+Disallow: /colecoes
+Disallow: /orcamentos
+Disallow: /simulador
+Disallow: /simulador-precos
+Disallow: /mockup-generator
+Disallow: /magic-up
+Disallow: /montar-kit
+Disallow: /meus-kits
+Disallow: /clientes
+Disallow: /tendencias
+Disallow: /busca-preco
+Disallow: /inteligencia-comercial
+Disallow: /estoque
+Disallow: /dashboard
+Disallow: /debug
+Disallow: /__test
+Disallow: /produto/
+
+# ── Outros crawlers ────────────────────────────────────────────────────────────
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /debug
+Disallow: /__test
 
+# Social media scrapers (apenas og:image e meta tags)
 User-agent: Twitterbot
 Allow: /
+Disallow: /admin
+Disallow: /debug
 
 User-agent: facebookexternalhit
 Allow: /
+Disallow: /admin
+Disallow: /debug
 
+# Bloquear crawlers agressivos/SEO scrapers conhecidos
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# ── Fallback: demais crawlers ──────────────────────────────────────────────────
 User-agent: *
-Allow: /
+Allow: /$
+Allow: /auth
+Allow: /login
+Allow: /termos
+Allow: /privacidade
+Disallow: /admin
+Disallow: /debug
+Disallow: /__test
 
+# ── Sitemap ────────────────────────────────────────────────────────────────────
 Sitemap: https://www.promogifts.com.br/sitemap.xml
