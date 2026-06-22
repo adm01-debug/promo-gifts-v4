@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Package, Palette, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon, useCategoryIcons } from '@/hooks/products/useCategoryIcons';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 /**
  * Categoria/grupo exibido como badge. Aceita id string (UUID) ou numérico,
@@ -38,9 +39,12 @@ interface ProductCategoryBadgesProps {
 }
 
 /**
- * Exibe badges com ícones/emojis das categorias/grupos do produto
- * Combina a categoria principal com grupos adicionais
- * Inclui link opcional para o simulador de personalização
+ * Exibe badges com ícones Lucide (ou emojis legados) das categorias/grupos do produto.
+ * Combina a categoria principal com grupos adicionais.
+ * Inclui links opcionais para Personalização, Mockup e Kit Builder.
+ *
+ * ## Resolução do ícone
+ * getCategoryIcon() → string (nome Lucide ou emoji) → <CategoryIcon /> → SVG ou emoji
  */
 export const ProductCategoryBadges = memo(
   ({
@@ -77,12 +81,15 @@ export const ProductCategoryBadges = memo(
 
     if (allCategories.length === 0) return null;
 
-    // Função para obter ícone da categoria do Supabase ou usar o local
-    const getIcon = (cat: CategoryBadgeItem) => {
-      // Primeiro tenta buscar do Supabase
+    /**
+     * Resolve o ícone da categoria:
+     * 1. Busca em category_icons via getCategoryIcon (4-pass fuzzy match)
+     * 2. Fallback para cat.icon local se o DB retornar o default '📦'
+     * Retorna sempre uma string (nome Lucide ou emoji).
+     */
+    const getIconValue = (cat: CategoryBadgeItem): string => {
       const supabaseIcon = getCategoryIcon(cat.name, categoryIcons);
       if (supabaseIcon !== '📦') return supabaseIcon;
-      // Fallback para ícone local
       return cat.icon || '📦';
     };
 
@@ -90,7 +97,6 @@ export const ProductCategoryBadges = memo(
     const handlePersonalizationClick = () => {
       if (!productId) return;
 
-      // Criar objeto com dados do produto para passar via state
       const productData = {
         id: productId,
         name: productName || '',
@@ -100,7 +106,6 @@ export const ProductCategoryBadges = memo(
         categoryName: category?.name,
       };
 
-      // Navegar passando o produto via state
       navigate('/simulador', {
         state: {
           preSelectedProduct: productData,
@@ -134,7 +139,12 @@ export const ProductCategoryBadges = memo(
                     'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent hover:before:animate-[shimmer_2s_infinite]',
                   )}
                 >
-                  <span className="mr-1.5">{getIcon(cat)}</span>
+                  {/* Ícone: SVG Lucide para nomes conhecidos, emoji/texto para legados */}
+                  <CategoryIcon
+                    value={getIconValue(cat)}
+                    size={14}
+                    className="mr-1.5"
+                  />
                   <span className="text-xs">{cat.name}</span>
                 </Badge>
               </TooltipTrigger>
