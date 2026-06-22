@@ -256,20 +256,6 @@ export const ProductQuickView = React.memo(
       );
     }
 
-    // Mapear cores do produto para o formato do seletor com ordenação padronizada
-    const sortedColors = sortByColorGroup(
-      product.colors || [],
-      (color) => color.name || '',
-      (color) => color.hex,
-    );
-    const productColors: ProductColor[] = sortedColors.map((color, idx) => ({
-      id: color.code || `${product.id}-color-${idx}`,
-      name: color.name,
-      hex: color.hex,
-      variationName: color.name,
-      groupName: color.group,
-    }));
-
     const getStockStatusInfo = (status: string) => {
       switch (status) {
         case 'in-stock':
@@ -283,11 +269,34 @@ export const ProductQuickView = React.memo(
       }
     };
 
-    const stockInfo = getStockStatusInfo(product.stockStatus);
+    // Cor selecionada (resolvida) e seu estoque específico, quando disponível.
+    // Quando o usuário escolhe uma cor, o badge passa a refletir o estoque
+    // DAQUELA variação (campo `stock` em `ProductColor`); ao limpar, volta ao
+    // total agregado do produto. Threshold: <=0 esgotado, <10 baixo, >=10 ok.
+    const selectedColor =
+      selectedColorId != null
+        ? (product.colors || []).find(
+            (c) => (productColors.find((pc) => pc.id === selectedColorId)?.name ?? '').toLowerCase() ===
+              (c.name ?? '').toLowerCase(),
+          )
+        : undefined;
+    const hasColorStock = typeof selectedColor?.stock === 'number';
+    const effectiveStockQty: number | null = hasColorStock
+      ? (selectedColor?.stock ?? 0)
+      : (typeof product.stock === 'number' ? product.stock : null);
+    const effectiveStockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' = hasColorStock
+      ? (selectedColor!.stock! <= 0
+          ? 'out-of-stock'
+          : selectedColor!.stock! < 10
+            ? 'low-stock'
+            : 'in-stock')
+      : product.stockStatus;
 
-    // O badge de unidades usa product.stock (number no tipo de catálogo). Guarda
-    // leve apenas para o caso de o runtime trazer um valor não-numérico do mapper.
-    const stockQty: number | null = typeof product.stock === 'number' ? product.stock : null;
+    const stockInfo = getStockStatusInfo(effectiveStockStatus);
+
+    // Mantém compat com o restante do componente que ainda lê `stockQty`.
+    const stockQty: number | null = effectiveStockQty;
+
 
     // Obter URL atual da imagem com variante CDN
     const currentImage = displayImages[currentImageIndex] || displayImages[0];
