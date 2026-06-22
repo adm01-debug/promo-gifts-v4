@@ -326,6 +326,10 @@ Responda APENAS com JSON válido no formato especificado.`;
       functionName: "semantic-search",
       model,
       apiKey: LOVABLE_API_KEY,
+      // legacyTimeoutMs < AI_TIMEOUT_MS (12s): garante que o AbortController do
+      // legacy fetch dispara ANTES do withTimeout, permitindo que updateAiLog
+      // atualize a row de 'pending' para 'error' ainda dentro do ciclo da request.
+      legacyTimeoutMs: 9_000,
       requestBody: {
         messages: [
           { role: "system", content: systemPrompt },
