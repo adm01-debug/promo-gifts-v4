@@ -97,6 +97,13 @@ export function useWorkspaceNotifications() {
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);
 
+  // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): coalesce rapid Realtime events into a
+  // single fetch. n8n bulk-imports (e.g., 50 notifications in < 1s) fire 50 Realtime
+  // callbacks which previously triggered 50 simultaneous HEAD requests visible in
+  // the browser console as "Falha ao carregar Buscar: HEAD ..." flood.
+  // A 500ms debounce window collapses all events into 1 fetch without perceptible delay.
+  const realtimeDebouncerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // BUG-NOTIF-403 FIX: ref para acessar rolesLoaded dentro de fetchNotifications
   // sem adicioná-lo ao useCallback dep array (evita recriar fetchNotifications
   // e re-introduzir BUG-08). O ref é mantido sincronizado via useEffect abaixo.
@@ -230,13 +237,23 @@ export function useWorkspaceNotifications() {
         setNotifications(items);
         setTotalCount(count ?? 0);
 
-        // Also fetch unread count separately to keep badge sync
-        const { count: unread } = await untypedFrom('workspace_notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_read', false);
+        // Also fetch unread count separately to keep badge sync.
+        // BUG-HEAD-FALLBACK FIX (2026-06-22): wrapped in separate try/catch.
+        // If the HEAD request fails (503 during Vercel deploy window, network error),
+        // we fall back to deriving count from the already-fetched items instead of
+        // leaving the unread badge stale at its previous value.
+        try {
+          const { count: unread, error: unreadErr } = await untypedFrom('workspace_notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('is_read', false);
+          setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
+        } catch {
+          // Network error for HEAD request — derive count from fetched items as fallback.
+          // Uses idx_workspace_notifications_user_unread (user_id, is_read, created_at DESC).
+          setUnreadCount(items.filter((n) => !n.is_read).length);
+        }
 
-        setUnreadCount(unread ?? 0);
         lastFetchAtRef.current = Date.now();
         writeCache(user.id, items);
         if (badgeSourceRef.current !== 'cache') {
@@ -301,18 +318,25 @@ export function useWorkspaceNotifications() {
     fetchNotifications({ source });
   }, [user, rolesLoaded, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
 
-  // Polling every 30s - agora estavel: fetchNotifications nao recria com notifications.length
+  // Polling every 60s - estavel: fetchNotifications nao recria com notifications.length.
   // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
+  // POLL-INTERVAL FIX (2026-06-22): aumentado de 30s → 60s.
+  // Justificativa: Realtime subscription já cobre atualizações em tempo real.
+  // O polling é fallback apenas para quando o canal Realtime cai (CHANNEL_ERROR /
+  // TIMED_OUT). 60s é suficiente para o fallback sem dobrar a carga no DB.
+  // Beneício: com 2 instâncias do hook (Header + Drawer), reduz de 4 para 2
+  // requisições HEAD por minuto por sessão autenticada.
   useEffect(() => {
     if (!user || !rolesLoaded) return;
     const interval = setInterval(() => {
       fetchNotifications({ silent: true, source: 'polling' });
-    }, 30_000);
+    }, 60_000);
     return () => clearInterval(interval);
   }, [user, rolesLoaded, fetchNotifications]);
 
   // Real-time synchronization
   // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
+  // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): adicionado debounce de 500ms ao callback.
   useEffect(() => {
     if (!user || !rolesLoaded) return;
 
@@ -334,9 +358,18 @@ export function useWorkspaceNotifications() {
         (payload) => {
           debugLog('realtime-event', { event: payload.eventType, payload });
 
-          // Re-fetch everything to ensure consistent state (including badge)
-          // Use silent fetch to avoid UI flicker
-          fetchNotifications({ silent: true, source: 'mutation' });
+          // BUG-REALTIME-DEBOUNCE FIX: debounce 500ms to coalesce rapid burst events.
+          // n8n bulk-imports (e.g., 50 notifications in < 1s) previously triggered 50
+          // simultaneous HEAD requests, flooding the console. With debounce, all events
+          // within the 500ms window collapse into a single fetch. The 500ms delay is
+          // imperceptible to the user but eliminates the request flood completely.
+          if (realtimeDebouncerRef.current) {
+            clearTimeout(realtimeDebouncerRef.current);
+          }
+          realtimeDebouncerRef.current = setTimeout(() => {
+            fetchNotifications({ silent: true, source: 'mutation' });
+            realtimeDebouncerRef.current = null;
+          }, 500);
         },
       )
       .subscribe((status, err) => {
@@ -347,6 +380,12 @@ export function useWorkspaceNotifications() {
       });
 
     return () => {
+      // Cancel any pending debounced fetch to avoid state update after unmount
+      // (would trigger "Can't perform a React state update on an unmounted component").
+      if (realtimeDebouncerRef.current) {
+        clearTimeout(realtimeDebouncerRef.current);
+        realtimeDebouncerRef.current = null;
+      }
       supabase.removeChannel(channel);
     };
   }, [user, rolesLoaded, fetchNotifications]);
