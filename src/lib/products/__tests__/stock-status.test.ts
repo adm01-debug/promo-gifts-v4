@@ -156,3 +156,54 @@ describe('CATALOG_STOCK_STATUSES', () => {
     });
   });
 });
+
+// ── compareStockStatus + stockStatusRank ──────────────────────────────────────
+import { compareStockStatus, stockStatusRank } from '../stock-status';
+
+describe('stockStatusRank', () => {
+  it('in-stock = 0 (mais disponível)', () => { expect(stockStatusRank('in-stock')).toBe(0); });
+  it('low-stock = 1', () => { expect(stockStatusRank('low-stock')).toBe(1); });
+  it('desconhecido = 2', () => {
+    expect(stockStatusRank('critical')).toBe(2);
+    expect(stockStatusRank('in_stock')).toBe(2);
+    expect(stockStatusRank('')).toBe(2);
+  });
+  it('out-of-stock = 3 (menos disponível)', () => { expect(stockStatusRank('out-of-stock')).toBe(3); });
+  it('null/undefined = 2 (unknown)', () => {
+    expect(stockStatusRank(null)).toBe(2);
+    expect(stockStatusRank(undefined)).toBe(2);
+  });
+  it('case-insensitive: OUT-OF-STOCK = 3', () => { expect(stockStatusRank('OUT-OF-STOCK')).toBe(3); });
+  it('case-insensitive: IN-STOCK = 0', () => { expect(stockStatusRank('IN-STOCK')).toBe(0); });
+});
+
+describe('compareStockStatus', () => {
+  it('in-stock antes de low-stock', () => { expect(compareStockStatus('in-stock', 'low-stock')).toBeLessThan(0); });
+  it('low-stock antes de out-of-stock', () => { expect(compareStockStatus('low-stock', 'out-of-stock')).toBeLessThan(0); });
+  it('in-stock antes de out-of-stock', () => { expect(compareStockStatus('in-stock', 'out-of-stock')).toBeLessThan(0); });
+  it('unknown antes de out-of-stock', () => { expect(compareStockStatus(null, 'out-of-stock')).toBeLessThan(0); });
+  it('in-stock antes de unknown', () => { expect(compareStockStatus('in-stock', null)).toBeLessThan(0); });
+  it('iguais retornam 0', () => { expect(compareStockStatus('in-stock', 'in-stock')).toBe(0); });
+  it('ordena array corretamente: in-stock, low-stock, unknown, out-of-stock', () => {
+    const arr: (string | null)[] = ['out-of-stock', null, 'low-stock', 'in-stock', 'critical'];
+    arr.sort(compareStockStatus);
+    expect(arr[0]).toBe('in-stock');
+    expect(arr[1]).toBe('low-stock');
+    expect(arr[arr.length - 1]).toBe('out-of-stock');
+  });
+  it('case-insensitive: OUT-OF-STOCK vs in-stock', () => {
+    expect(compareStockStatus('in-stock', 'OUT-OF-STOCK')).toBeLessThan(0);
+  });
+  it('200 produtos: sort estável — nenhum out-of-stock antes de in-stock', () => {
+    const statuses = Array.from({ length: 200 }, (_, i) => {
+      const s = i % 4;
+      return s === 0 ? 'in-stock' : s === 1 ? 'low-stock' : s === 2 ? 'out-of-stock' : null;
+    });
+    statuses.sort(compareStockStatus);
+    let hitOutOfStock = false;
+    for (const s of statuses) {
+      if (s === 'out-of-stock') hitOutOfStock = true;
+      if (hitOutOfStock) expect(s).not.toBe('in-stock');
+    }
+  });
+});

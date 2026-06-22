@@ -142,3 +142,39 @@ export function getVariationStockStatus(
   if (qty < lowStockThreshold) return 'low-stock';
   return 'in-stock';
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SORTING UTILITY
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Comparator for sorting products by stock availability.
+ *
+ * Order: in-stock (0) → low-stock (1) → unknown/other (2) → out-of-stock (3)
+ *
+ * Case-insensitive. Null/undefined status treated as unknown (rank 2).
+ *
+ * Usage:
+ * ```ts
+ * products.sort((a, b) =>
+ *   compareStockStatus(a.stockStatus, b.stockStatus)
+ * );
+ * ```
+ */
+export function compareStockStatus(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): number {
+  return stockStatusRank(a) - stockStatusRank(b);
+}
+
+/** Returns numeric rank for a stock status (lower = more available). */
+export function stockStatusRank(status: string | null | undefined): number {
+  if (typeof status !== 'string') return 2; // null/undefined → unknown
+  switch (status.toLowerCase()) {
+    case 'in-stock':    return 0;
+    case 'low-stock':   return 1;
+    case 'out-of-stock': return 3;
+    default:            return 2; // unknown / other-domain
+  }
+}
