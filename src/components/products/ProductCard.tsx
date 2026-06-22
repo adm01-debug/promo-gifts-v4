@@ -226,6 +226,26 @@ export const ProductCard = memo(
         isHovered || selectedColorFromStore ? product.id : undefined,
       );
 
+      // ── V2 (flag useColorSwatchesV2) ──────────────────────────────────────
+      // Hook chamado SEMPRE para preservar ordem. Render condicional abaixo.
+      // Quando a flag estiver ON e o produto tiver color_swatches populado
+      // (vindo do BD externo), o pipeline V2 assume image/stock/swatches.
+      const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
+      const productSwatchesData = (product as unknown as {
+        color_swatches?: ProductColorSwatchData[];
+        has_colors?: boolean;
+      }).color_swatches;
+      const swatchV2 = useProductColorSwatch({
+        id: product.id,
+        name: product.name,
+        primary_image_url: product.primary_image_url ?? null,
+        stock_quantity: product.stock ?? 0,
+        color_swatches: productSwatchesData,
+        has_colors: !!productSwatchesData?.length,
+      });
+      const useSwatchesV2 =
+        swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
+
       // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
       // do useEffect abaixo que o referencia no array de deps — isso quebrava em
       // runtime com "Cannot access 'allMatchingVariants' before initialization"
