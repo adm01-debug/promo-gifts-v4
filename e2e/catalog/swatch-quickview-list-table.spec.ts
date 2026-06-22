@@ -180,5 +180,3 @@ test.describe('Swatch → QuickView (Lista e Tabela)', () => {
   }
 });
 
-// Silencia o "unused" do helper-placeholder.
-void switchView;
