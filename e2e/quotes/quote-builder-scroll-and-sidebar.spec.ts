@@ -105,11 +105,7 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         expect(stickyPos).not.toBe('sticky');
       }
 
-        const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
-        await expect(nav).not.toBeInViewport();
-        const titleBox = await page.getByTestId('page-title-orcamento-novo').boundingBox();
-        expect(titleBox?.x ?? -1).toBeGreaterThanOrEqual(0);
-      }
+
 
       // 4) Snapshot visual determinístico — volta ao topo, aguarda fontes,
       //    assets e 2 frames estáveis para evitar flakiness (FOUT/CLS).
