@@ -53,6 +53,8 @@ jobs:
 
     - name: Commit new baselines if generated
       if: always()
+      env:
+        GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
