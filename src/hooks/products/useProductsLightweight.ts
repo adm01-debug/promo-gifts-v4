@@ -13,6 +13,7 @@ import {
   type LightweightProduct,
 } from '@/lib/external-db/products-lightweight';
 import { fetchPromobrindCategories } from '@/lib/external-db/products-detail';
+import type { ColorSwatch } from '@/types/colorSwatch';
 
 // Re-export type for consumers
 export type { ProductLightweight } from '@/types/product-catalog';
@@ -118,6 +119,11 @@ export function mapLightweightToProduct(
     aiSummary: p.ai_summary ?? null,
     aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
     aiGeneratedAt: p.ai_generated_at ?? null,
+    // Color Swatches V2 (2026-06-22) — JSONB pré-computado via fn_rebuild_color_swatches.
+    // Hierarquia P1→P4, 7.153 produtos, 16.631 swatches, 97,4% CF CDN.
+    // Habilita ColorSwatchPicker quando useColorSwatchesV2=true e o array não estiver vazio.
+    color_swatches: (p.color_swatches as ColorSwatch[] | undefined | null) ?? undefined,
+    has_colors: p.has_colors ?? null,
   };
 }
 
@@ -129,9 +135,13 @@ export const CATALOG_BATCH_PAGES = 4;
 /**
  * SELECT do catálogo.
  *
- * ALTERAÇÃO (2026-06-02): adicionado set_image_url para suporte ao efeito de
+ * ALTERÂÇÃO (2026-06-02): adicionado set_image_url para suporte ao efeito de
  * hover na imagem do card (mostra foto com todas as cores ao passar o mouse).
  * Custo: +1 campo text por linha — impacto negligenciável (~8 bytes/produto).
+ *
+ * ALTERAÇÃO (2026-06-22): adicionado color_swatches + has_colors para ColorSwatchPicker V2.
+ * Custo: ~511 bytes/produto (JSONB com ~2.3 swatches média). ~250 KB/página de 500 produtos.
+ * Viabilizado por: v_products_public atualizada + fn_rebuild_color_swatches (7.153 produtos).
  */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, short_description, ' +
@@ -150,7 +160,10 @@ export const PRODUCT_SELECT_LIGHTWEIGHT =
   'ai_title, ai_description, ai_summary, ai_version, ai_generated_at, ' +
   // FIX BUG-D (2026-06-18): leaf_category_id/name pré-computados em v_products_public
   // via mv_product_leaf_category. Elimina o round-trip de useProductLeafCategories.
-  'leaf_category_id, leaf_category_name, leaf_category_level';
+  'leaf_category_id, leaf_category_name, leaf_category_level, ' +
+  // COLOR SWATCHES V2 (2026-06-22): JSONB pré-computado para ColorSwatchPicker.
+  // v_products_public atualizada para incluir estes campos. 7.153 produtos.
+  'color_swatches, has_colors';
 // FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
 // Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e
 // description='' em TODO produto da grade, neutralizando o re-rank/substring client-side por
