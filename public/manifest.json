@@ -1,5 +1,4 @@
 {
-  "crossorigin": "use-credentials",
   "name": "Promo Gifts",
   "short_name": "Promo Gifts",
   "description": "Plataforma de gestão de brindes corporativos personalizados — catálogo inteligente, orçamentos e mockups com IA.",
@@ -22,24 +21,6 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "screenshots": [
@@ -63,25 +44,13 @@
       "name": "Catálogo",
       "short_name": "Catálogo",
       "description": "Ver catálogo de produtos",
-      "url": "/produtos",
-      "icons": [
-        {
-          "src": "/icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "url": "/produtos"
     },
     {
       "name": "Orçamentos",
       "short_name": "Orçamentos",
       "description": "Gerenciar orçamentos",
-      "url": "/orcamentos",
-      "icons": [
-        {
-          "src": "/icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "url": "/orcamentos"
     }
   ]
 }

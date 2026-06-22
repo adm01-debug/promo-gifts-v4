@@ -1,6 +1,25 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.2.0
+// Versão: 3.3.0
+//
+// CHANGELOG v3.3.0 (2026-06-22 — fix/sw-5xx-fallback-offline-status):
+//   BUG-SW-1 FIX [CRÍTICO]: Seção B (navigate) não fazia fallback para o cache
+//     quando o servidor retornava 5xx (ex: Vercel CDN hiccup). Antes, o SW
+//     propagava o 503 direto ao browser → página aparecia quebrada. Agora,
+//     se res.ok=false após Network First, tenta o cache; só retorna o erro
+//     se não houver cache disponível.
+//   BUG-SW-2 FIX [CRÍTICO]: offlineFallback() retornava status:503, fazendo
+//     a página offline parecer um erro de servidor ao browser/Lighthouse/SW.
+//     Mudado para status:200. Previne também loops de reload em clientes que
+//     re-tentam automaticamente em respostas 503.
+//   BUG-SW-3 FIX [MÉDIO]: Seção E (Stale-While-Revalidate) propagava respostas
+//     5xx ao browser quando não havia cache. Era a fonte do erro:
+//     "sw.js:354 Falha ao carregar Buscar: GET /novidades" — o browser valida
+//     URLs do sitemap/manifest via fetch não-navigate, que caía na seção E.
+//     Agora usa offlineFallback() quando network retorna não-ok e sem cache.
+//   BUG-SW-4 FIX [BAIXO]: Seção A (Google Fonts) retornava Response vazio
+//     com status:503 em fallback de último recurso. Mudado para status:200.
+//   CHORE: CACHE_VERSION v10 → v11 (força re-instalação limpa).
 //
 // CHANGELOG v3.2.0 (2026-06-22 — fix/sw-stale-chunk-recovery):
 //   CRÍTICO FIX: Navigation handler mudado de Cache First → Network First.
@@ -17,33 +36,20 @@
 //   CHORE: CACHE_VERSION v9 → v10 (limpa todos os caches antigos na ativação).
 //
 // CHANGELOG v3.1.0 (2026-06-21 — bugfix/csp-clone):
-//   FIX: Imagens cross-origin de fornecedor (xbz, spot, worker, etc.) deixam de
-//        ser interceptadas. O SW só intercepta mesma-origem + CDN próprio
-//        (imagedelivery.net / cloudflarestream), que estão no connect-src.
-//        Antes, o fetch() do SW sobre imagens de fornecedor convertia um
-//        img-src (permitido) em connect-src (bloqueado) → violação de CSP.
+//   FIX: Imagens cross-origin de fornecedor deixam de ser interceptadas.
 //   FIX: Navigation handler clonava a Response uma 2ª vez DENTRO do .then()
-//        assíncrono, após `return res` já ter entregue o corpo ao browser →
-//        "Response body is already used". Agora clona ambas as cópias de forma
-//        síncrona, antes do return.
-//   CHORE: CACHE_VERSION v8 → v9 (limpa caches antigos / respostas opacas).
-//
-// CHANGELOG v3.0.0 (2026-06-15 — perf/deep-optimization-2026):
-//   PERF: Cache de imagens com limite LRU (max 500 imagens, 90 dias TTL).
-//   PERF: Prefetch automático de chunks críticos logo após activate.
-//   PERF: Stale-While-Revalidate para Google Fonts (non-blocking update).
-//   PERF: Supabase API responses → Network only (não cachear dados dinâmicos).
-//   FIX: Nunca cachear requests com Authorization header.
+//        assíncrono → "Response body is already used". Agora clona de forma síncrona.
+//   CHORE: CACHE_VERSION v8 → v9.
 //
 // Estratégias por tipo de request:
-//   Navigation (SPA)        → Network First + cache fallback offline  ← v3.2.0
-//   /assets/* (hashed)      → Cache First (imutável) + 404 recovery   ← v3.2.0
+//   Navigation (SPA)        → Network First + cache fallback (5xx e offline)  ← v3.3.0
+//   /assets/* (hashed)      → Cache First (imutável) + 404 recovery           ← v3.2.0
 //   Imagens (mesma origem / CDN próprio) → Cache First + LRU (max 500, 90d TTL)
 //   Google Fonts             → Stale-While-Revalidate
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
-//   Resto                   → Stale-While-Revalidate
+//   Resto                   → Stale-While-Revalidate + fallback offline        ← v3.3.0
 
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v11';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -78,7 +84,11 @@ function offlineFallback() {
     '<body><div><h1>Você está offline</h1>' +
     '<p>Verifique sua conexão e tente novamente.</p>' +
     '<button onclick="window.location.reload()">Tentar novamente</button></div></body></html>',
-    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+    // v3.3.0 FIX: status:200 (era 503). A página offline é uma resposta válida,
+    // não um erro de servidor. Status 503 causava re-tentativas automáticas do
+    // browser e impedia que Lighthouse/crawlers identificassem o comportamento
+    // correto de PWA offline.
+    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   );
 }
 
@@ -231,27 +241,25 @@ self.addEventListener('fetch', (event) => {
               return res;
             })
             .catch(() => null);
-          return cached || networkFetch.then((res) => res || new Response('', { status: 503 }));
+          // v3.3.0 FIX: era new Response('', { status: 503 }) → 200
+          return cached || networkFetch.then((res) => res || new Response('', { status: 200 }));
         }),
       ),
     );
     return;
   }
 
-  // ── B) Navigation (SPA) → Network First + cache fallback offline ────────────
+  // ── B) Navigation (SPA) → Network First + cache fallback (5xx e offline) ───
   //
-  // v3.2.0 FIX: mudado de Cache First → Network First.
+  // v3.2.0: mudado de Cache First → Network First.
+  // v3.3.0 FIX [BUG-SW-1]: adicionado fallback de cache para respostas 5xx.
   //
-  // Motivo: com Cache First, novos deploys do Vercel mudavam os hashes dos chunks
-  // JS mas o SW continuava servindo o /index.html antigo (com referências a chunks
-  // obsoletos). O browser tentava carregar chunks que já não existiam no CDN →
-  // HTTP 404 no console (ex: MockupGenerator-YQ8BivwR.js 404).
-  //
-  // Com Network First:
-  //   - Cada navegação busca /index.html da rede (< 50ms via Vercel CDN, < 5KB)
-  //   - HTML atualizado é guardado no cache para fallback offline
-  //   - Se a rede falhar (offline), o cache é servido como fallback
-  //   - Impacto de performance: mínimo (HTML é tiny, CDN é rápido)
+  // Antes: se Vercel retornasse 503, o SW propagava diretamente ao browser.
+  // Agora:
+  //   - res.ok (2xx/3xx): atualiza cache e retorna response. ✓
+  //   - res não-ok (5xx): tenta servir do cache. Se não houver cache, retorna
+  //     o erro original (não há como fazer melhor sem cache).
+  //   - network error (offline): fallback para cache → offlineFallback().
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch('/index.html', { cache: 'no-cache' })
@@ -264,8 +272,12 @@ self.addEventListener('fetch', (event) => {
               c.put('/index.html', indexClone);
               c.put('/', rootClone);
             });
+            return res;
           }
-          return res;
+          // v3.3.0 FIX: Erro do servidor (5xx) ou redirect não-ok.
+          // Tenta o cache como fallback. Se não houver cache, devolve o erro
+          // original (melhor que uma página offline genérica nesse caso).
+          return caches.match('/index.html').then((cached) => cached || res);
         })
         .catch(() =>
           // Rede falhou (offline) → fallback para cache; se não houver cache → página offline.
@@ -348,6 +360,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ── E) Resto (manifest.json, noise.svg, etc.) → Stale-While-Revalidate ─────
+  //
+  // v3.3.0 FIX [BUG-SW-3]: O browser faz requests não-navigate para URLs do
+  // sitemap/manifest (ex: /novidades, /produtos) ao validar PWA shortcuts e
+  // ao pré-carregar recursos. Quando o servidor retornava 5xx e não havia cache,
+  // o SW propagava o 5xx → "sw.js:354 Falha ao carregar Buscar: GET /novidades".
+  // Agora usa offlineFallback() se network retorna não-ok e não há cache.
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -361,7 +379,9 @@ self.addEventListener('fetch', (event) => {
           })
           .catch(() => null);
 
-        return cached || networkFetch.then((res) => res || offlineFallback());
+        // v3.3.0 FIX: se não há cache e network retorna não-ok (5xx ou null),
+        // usa offlineFallback() ao invés de propagar o erro.
+        return cached || networkFetch.then((res) => (res && res.ok ? res : null) || offlineFallback());
       }),
     );
   }
