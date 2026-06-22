@@ -689,41 +689,79 @@ export const ProductListItem = memo(
                   'calc(var(--swatch-size-sm) * var(--swatch-rows, 2) + var(--swatch-gap-y) * (var(--swatch-rows, 2) - 1) + var(--swatch-container-py) * 2 + 6px)',
               }}
             >
-              <ProductColorSwatches
-                colors={product.colors}
-                max={product.colors?.length || 0}
-                size="sm"
-                wrap
-                hideWhenEmpty
-                className="justify-start"
-                selectedName={userSelectedColorName}
-                onSelect={(c) => {
-                  setSelectedColor(product.id, c.name);
-                  if (typeof window !== 'undefined') {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('cor', c.name);
-                    url.searchParams.set('pid', product.id);
-                    window.history.replaceState({}, '', url.toString());
-                  }
-                  // Abre QuickView posicionado nesta cor (paridade com grid).
-                  setQuickViewOpen(true);
-                }}
-                onClear={() => {
-                  useProductSelectionStore.setState((state) => {
-                    const next = { ...state.selectedColors };
-                    delete next[product.id];
-                    return { selectedColors: next };
-                  });
-                  if (typeof window !== 'undefined') {
-                    const url = new URL(window.location.href);
-                    if (url.searchParams.get('pid') === product.id) {
-                      url.searchParams.delete('cor');
-                      url.searchParams.delete('pid');
+              {useSwatchesV2 ? (
+                <ColorSwatchPicker
+                  swatches={swatchV2.swatches}
+                  activeVariantId={swatchV2.activeVariantId}
+                  size="sm"
+                  maxVisible={4}
+                  onSelect={(variantId) => {
+                    swatchV2.selectVariant(variantId);
+                    const sw = swatchV2.swatches.find((s) => s.variant_id === variantId);
+                    if (sw) {
+                      setSelectedColor(product.id, sw.color_name);
+                      if (typeof window !== 'undefined') {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('cor', sw.color_name);
+                        url.searchParams.set('pid', product.id);
+                        window.history.replaceState({}, '', url.toString());
+                      }
+                    }
+                    setQuickViewOpen(true);
+                  }}
+                  onReset={() => {
+                    swatchV2.resetActive();
+                    useProductSelectionStore.setState((state) => {
+                      const next = { ...state.selectedColors };
+                      delete next[product.id];
+                      return { selectedColors: next };
+                    });
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      if (url.searchParams.get('pid') === product.id) {
+                        url.searchParams.delete('cor');
+                        url.searchParams.delete('pid');
+                        window.history.replaceState({}, '', url.toString());
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <ProductColorSwatches
+                  colors={product.colors}
+                  max={product.colors?.length || 0}
+                  size="sm"
+                  wrap
+                  hideWhenEmpty
+                  className="justify-start"
+                  selectedName={userSelectedColorName}
+                  onSelect={(c) => {
+                    setSelectedColor(product.id, c.name);
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('cor', c.name);
+                      url.searchParams.set('pid', product.id);
                       window.history.replaceState({}, '', url.toString());
                     }
-                  }
-                }}
-              />
+                    setQuickViewOpen(true);
+                  }}
+                  onClear={() => {
+                    useProductSelectionStore.setState((state) => {
+                      const next = { ...state.selectedColors };
+                      delete next[product.id];
+                      return { selectedColors: next };
+                    });
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      if (url.searchParams.get('pid') === product.id) {
+                        url.searchParams.delete('cor');
+                        url.searchParams.delete('pid');
+                        window.history.replaceState({}, '', url.toString());
+                      }
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
 
