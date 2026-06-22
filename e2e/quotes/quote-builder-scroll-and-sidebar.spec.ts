@@ -47,6 +47,13 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         expect(gap).toBeGreaterThan(8);
       }
 
+      // 2.1) Estabilidade do CTA — Y não muda após 600ms (sem CLS pós-hidratação).
+      const y1 = (await cta.boundingBox())?.y ?? -1;
+      await page.waitForTimeout(600);
+      const y2 = (await cta.boundingBox())?.y ?? -1;
+      expect(Math.abs(y2 - y1)).toBeLessThanOrEqual(1);
+
+
       // 3) Sidebar (desktop) ou trigger (mobile) permanecem acessíveis após scroll
       if (vp.name === 'desktop') {
         const nav = page.getByRole('navigation', { name: /menu principal/i }).first();
