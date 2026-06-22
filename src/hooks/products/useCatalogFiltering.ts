@@ -225,10 +225,14 @@ export function useCatalogFiltering({
     // estoque agregado do produto — some(v.stock >= threshold) OR product.stock >= threshold.
     if (filters.minStock > 0) {
       const threshold = filters.minStock;
+      // BUG-MINSTOCK-INF FIX: (stock||0)>=threshold era true para stock=Infinity.
+      // Number.isFinite garante que apenas stocks fisicamente validos passam.
       result = result.filter((p) => {
         if (p.variations && p.variations.length > 0)
-          return p.variations.some((v: ProductVariation) => (v.stock ?? 0) >= threshold);
-        return (p.stock || 0) >= threshold;
+          return p.variations.some((v: ProductVariation) =>
+            Number.isFinite(v.stock) && (v.stock as number) >= threshold,
+          );
+        return Number.isFinite(p.stock) && (p.stock as number) >= threshold;
       });
     }
 

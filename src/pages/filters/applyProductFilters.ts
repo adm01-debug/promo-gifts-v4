@@ -235,11 +235,15 @@ export function applyProductFilters(
       if (priceMax < 9999 && product.price > priceMax) return false;
       return true;
     });
+  // BUG-MINSTOCK-INF FIX: (stock||0)>=threshold era true para stock=Infinity.
+  // Number.isFinite garante apenas stocks fisicamente validos.
   if (filters.minStock > 0)
     result = result.filter((product) => {
       if (product.variations && product.variations.length > 0)
-        return product.variations.some((v: ProductVariation) => (v.stock ?? 0) >= filters.minStock);
-      return (product.stock || 0) >= filters.minStock;
+        return product.variations.some((v: ProductVariation) =>
+          Number.isFinite(v.stock) && (v.stock as number) >= filters.minStock,
+        );
+      return Number.isFinite(product.stock) && (product.stock as number) >= filters.minStock;
     });
   // Vendas Fornecedor (90d): usa a coluna REAL total_depleted_90d da MV (BUG-DB-06; ratio 90d/30d~1.0, x3 era chute).
   if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
