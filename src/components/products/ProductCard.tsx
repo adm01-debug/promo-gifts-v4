@@ -948,6 +948,8 @@ export const ProductCard = memo(
                       className="text-[10px] font-medium text-muted-foreground sm:text-xs"
                       data-testid="product-stock-value"
                       data-stock-qty={displayStock ?? 0}
+                      data-stock-label={stockLabelV2 ?? undefined}
+                      title={stockLabelV2 ?? undefined}
                     >
                       {(displayStock ?? 0).toLocaleString('pt-BR')} un.
                     </span>
