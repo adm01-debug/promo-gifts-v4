@@ -12,6 +12,7 @@ import type { PromisedReplenishment, ActualArrival } from './types';
 
 /** Forma mínima esperada de uma linha de variant_supplier_sources. */
 export interface SourceRow {
+  /** variant_supplier_sources.id é UUID — PostgREST retorna como string. */
   id: string;
   variant_id: string | null;
   supplier_id: string | null;
@@ -32,7 +33,15 @@ export interface SourceRow {
 
 /** Forma mínima esperada de uma linha de stock_snapshots. */
 export interface SnapshotRow {
-  id: string;
+  /**
+   * stock_snapshots.id é bigint (int8). PostgREST serializa bigint como JavaScript
+   * number em vez de string — este tipo `string | number` reflete a realidade em runtime.
+   *
+   * O tipo `string` anterior era um force-cast enganoso: TypeScript acreditava
+   * que era string, mas em runtime era number, causando TypeError em .localeCompare().
+   * toStr() em matching.ts garante segurança nas comparações.
+   */
+  id: string | number;
   variant_supplier_source_id: string | null;
   supplier_id: string | null;
   variant_id: string | null;
@@ -99,7 +108,7 @@ export function extractArrivalFromSnapshot(row: SnapshotRow): ActualArrival | nu
   const delta = newTotal - oldTotal;
   if (!Number.isFinite(delta) || delta <= 0) return null;
   return {
-    id: row.id,
+    id: row.id,          // string | number: herda o tipo honesto do SnapshotRow
     sourceId: row.variant_supplier_source_id,
     supplierId: row.supplier_id,
     variantId: row.variant_id,
