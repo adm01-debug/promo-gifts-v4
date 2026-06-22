@@ -47,6 +47,14 @@ export interface Product {
   created_at: string;
   updated_at: string;
   synced_at: string;
+  /**
+   * Color Swatches V2 (2026-06-22) — JSONB pré-computado pela tabela Gold.
+   * Populado por fn_rebuild_color_swatches (hierarquia P1→P4 de imagem).
+   * 7.153 produtos, 16.631 swatches, 97,4% CF CDN.
+   * Consumido por useProductColorSwatch + ColorSwatchPicker quando useColorSwatchesV2=true.
+   */
+  color_swatches?: unknown[] | null;
+  has_colors?: boolean | null;
 }
 
 export interface ProductCategoryRef {
