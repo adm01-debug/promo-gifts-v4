@@ -9,9 +9,23 @@
  *   - stream=true (router ainda não suporta streaming nativamente)
  *   - feature flag AI_ROUTER_DISABLE=true
  *
- * Assinatura inalterada — todas as edges existentes continuam funcionando.
+ * v3 (fix): AbortController no legacy fetch path. Antes, se o gateway
+ * ficasse sem resposta, o isolate pendurava ~150s e updateAiLog nunca
+ * corria — rows ficavam 'pending' e consumiam quota indevidamente.
+ * Agora: timeout de 45s (configurável via legacyTimeoutMs) + catch que
+ * garante updateAiLog antes do re-throw.
+ *
+ * Assinatura compatível — legacyTimeoutMs é opcional, todas as edges
+ * existentes continuam funcionando sem alteração.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
+// Default timeout for the Lovable legacy gateway fetch (ms).
+// Prevents Edge Functions from hanging ~150s when the gateway is unresponsive,
+// ensuring updateAiLog runs within the request lifecycle so 'pending' rows
+// are updated to 'error' and don't count against the user's monthly quota.
+// Set per-caller via legacyTimeoutMs option for tighter budgets.
+const LEGACY_FETCH_TIMEOUT_MS = 45_000;
 
 // Cost per 1M tokens (USD) — kept for legacy path fallback
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
@@ -175,7 +189,11 @@ export function extractTokensFromResponse(responseBody: any): { input: number; o
  *  3) Else: fall back to legacy Lovable gateway path (apiKey arg + hardcoded URL).
  *  4) Update reserved log with actual tokens/cost/duration.
  *
- * Caller signature is unchanged — drop-in replacement.
+ * v3 (fix): Legacy fetch now has AbortController timeout guard (default 45s,
+ * overridable via legacyTimeoutMs). On timeout or network error, updateAiLog
+ * is called before re-throwing so 'pending' rows become 'error'.
+ *
+ * Caller signature unchanged — legacyTimeoutMs is optional.
  */
 export async function callAiWithTracking(options: {
   userId: string;
@@ -184,8 +202,17 @@ export async function callAiWithTracking(options: {
   requestBody: Record<string, unknown>;
   apiKey: string;
   stream?: boolean;
+  /**
+   * Timeout for the legacy Lovable gateway fetch (ms). Default: 45_000.
+   * Callers that wrap callAiWithTracking with a tighter outer timeout
+   * (e.g. semantic-search's withTimeout at 12s) should pass a value
+   * smaller than their outer budget so updateAiLog runs BEFORE the outer
+   * timeout fires and the isolate is killed.
+   * Example: semantic-search passes legacyTimeoutMs: 9_000.
+   */
+  legacyTimeoutMs?: number;
 }): Promise<Response> {
-  const { userId, functionName, model, requestBody, apiKey, stream = false } = options;
+  const { userId, functionName, model, requestBody, apiKey, stream = false, legacyTimeoutMs = LEGACY_FETCH_TIMEOUT_MS } = options;
 
   // 1. Atomically check quota AND reserve slot
   const quota = await acquireAiQuota(userId, functionName, model);
@@ -261,16 +288,51 @@ export async function callAiWithTracking(options: {
     }
   }
 
-  // 3. Legacy path — direct call to Lovable gateway (unchanged from v1)
+  // 3. Legacy path — direct call to Lovable gateway with AbortController timeout guard.
+  //
+  // Before this fix, if the gateway was unresponsive the fetch would hang for ~150s until
+  // the Supabase Edge platform killed the isolate. updateAiLog never ran, so 'pending' rows
+  // accumulated in ai_usage_logs and incorrectly counted against the user's monthly quota
+  // (check_ai_quota counts WHERE status != 'error').
+  //
+  // Now: AbortController fires at `legacyTimeoutMs` ms, catch calls updateAiLog(→'error'),
+  // then re-throws. Callers with an outer withTimeout (e.g. semantic-search at 12s) should
+  // pass legacyTimeoutMs < their outer budget (e.g. 9_000) so the log is updated before
+  // the outer timeout fires and the isolate is killed.
   const startMs = Date.now();
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ model, stream, ...requestBody }),
-  });
+  const legacyCtrl = new AbortController();
+  const legacyTimer = setTimeout(() => legacyCtrl.abort(), legacyTimeoutMs);
+
+  let response!: Response;
+  try {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ model, stream, ...requestBody }),
+      signal: legacyCtrl.signal,
+    });
+  } catch (fetchErr) {
+    // Fetch failed: AbortError (our timeout) or network error.
+    // updateAiLog ensures the 'pending' row becomes 'error' so quota is correctly reset.
+    const durationMs = Date.now() - startMs;
+    const isAbort = fetchErr instanceof Error && fetchErr.name === "AbortError";
+    const errMsg = isAbort
+      ? `legacy_gateway_timeout_${legacyTimeoutMs}ms`
+      : `legacy_fetch_error: ${(fetchErr as Error).message?.slice(0, 200) ?? "unknown"}`;
+    console.warn(`[ai-usage] Legacy fetch failed (${errMsg}). Updating log before re-throw.`);
+    await updateAiLog(logId, {
+      durationMs,
+      status: "error",
+      errorMessage: errMsg,
+      metadata: { via: "legacy", timed_out: isAbort },
+    });
+    throw fetchErr; // Re-throw: callers handle (semantic-search catch → degraded=true)
+  } finally {
+    clearTimeout(legacyTimer);
+  }
 
   const durationMs = Date.now() - startMs;
 
