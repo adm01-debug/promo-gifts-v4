@@ -42,12 +42,15 @@ const V2_RESET  = 'button[aria-label="Ver todas as cores"]';
 async function setFlag(page: import('@playwright/test').Page, value: boolean) {
   await page.evaluate((v) => {
     try {
+      // Chave canônica usada por isFeatureEnabled() em modo DEV:
+      //   src/lib/feature-flags.ts → localStorage.getItem(`ff_${flag}`)
+      window.localStorage.setItem('ff_useColorSwatchesV2', v ? 'true' : 'false');
+      // Compat: builds antigos liam de 'feature-flags' (JSON) e de window.__FEATURE_FLAGS__.
       const ls = window.localStorage;
       const raw = ls.getItem('feature-flags');
       const obj = raw ? JSON.parse(raw) : {};
       obj.useColorSwatchesV2 = v;
       ls.setItem('feature-flags', JSON.stringify(obj));
-      // Cobre store alternativo (setFeatureFlag escreve em janela global em alguns builds).
       const win = window as unknown as { __FEATURE_FLAGS__?: Record<string, boolean> };
       if (win.__FEATURE_FLAGS__) win.__FEATURE_FLAGS__.useColorSwatchesV2 = v;
     } catch {/* ignore */}
