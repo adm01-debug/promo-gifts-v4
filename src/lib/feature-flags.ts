@@ -118,6 +118,13 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       'vs stock_snapshots delta positivo), histórico paginado e próximas ' +
       'reposições por fornecedor.',
   },
+  useColorSwatchesV2: {
+    enabled: false,
+    description:
+      'Substitui ProductColorSwatches por ColorSwatchPicker + ' +
+      'useProductColorSwatch (lê products.color_swatches JSONB). ' +
+      'Requer schema externo populado — manter OFF até backend pronto.',
+  },
 };
 
 // Runtime overrides (can be set via Supabase or localStorage in dev)
