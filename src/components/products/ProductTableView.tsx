@@ -588,6 +588,7 @@ export const ProductTableView = memo(
         {quickViewProduct && (
           <ProductQuickView
             product={quickViewProduct}
+            initialColorName={quickViewInitialColor}
             open={quickViewOpen}
             onOpenChange={(open) => {
               setQuickViewOpen(open);
