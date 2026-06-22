@@ -175,9 +175,9 @@ export function QuoteBuilderSummaryColumn({
   };
 
   return (
-    <div className="min-w-0 lg:col-span-4">
-      <div className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)]">
-        <div className="flex max-h-full flex-col rounded-2xl border border-border/50 bg-card shadow-xl lg:overflow-y-auto">
+    <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-4">
+      <div data-testid="quote-builder-summary-sticky" className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)]">
+        <div data-testid="quote-builder-summary-scroll" className="flex max-h-full flex-col rounded-2xl border border-border/50 bg-card shadow-xl lg:overflow-y-auto">
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
             <div className="rounded-lg bg-primary/10 p-2">
