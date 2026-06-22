@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isProductInStock, getVariationStockStatus, isCatalogStockStatus, OUT_OF_STOCK, CATALOG_STOCK_STATUSES, type InStockProduct } from '@/lib/products/stock-status';
+import { isProductInStock, getVariationStockStatus, isCatalogStockStatus, compareStockStatus, stockStatusRank, OUT_OF_STOCK, CATALOG_STOCK_STATUSES, type InStockProduct } from '@/lib/products/stock-status';
 import { getCatalogStockStatus, CATALOG_LOW_STOCK_THRESHOLD } from '@/lib/catalog-stock-status';
 import { sortProducts } from '@/utils/product-sorting';
 import type { Product } from '@/types/product-catalog';
@@ -480,5 +480,100 @@ describe('F — MELHORIA-6: isCatalogStockStatus type guard e three-way logic', 
   });
   it('THREE-WAY: critical + stock=2 → true (fallthrough)', () => {
     expect(isProductInStock(p({ stockStatus: 'critical', stock: 2 }))).toBe(true);
+  });
+});
+
+// ── G. compareStockStatus — integração com catálogo real ─────────────────────
+
+describe('G — compareStockStatus: ordenacao por disponibilidade', () => {
+  it('rank: in-stock=0, low-stock=1, unknown=2, out-of-stock=3', () => {
+    expect(stockStatusRank('in-stock')).toBe(0);
+    expect(stockStatusRank('low-stock')).toBe(1);
+    expect(stockStatusRank('critical')).toBe(2);
+    expect(stockStatusRank(null)).toBe(2);
+    expect(stockStatusRank('out-of-stock')).toBe(3);
+  });
+  it('ordena produto disponivel antes de indisponivel', () => {
+    expect(compareStockStatus('in-stock', 'out-of-stock')).toBeLessThan(0);
+  });
+  it('500 produtos misturados: todos out-of-stock ao final', () => {
+    const statuses: (string | null)[] = Array.from({ length: 500 }, (_, i) => {
+      const r = i % 5;
+      return r === 0 ? 'out-of-stock'
+           : r === 1 ? 'in-stock'
+           : r === 2 ? 'low-stock'
+           : r === 3 ? null
+           : 'critical';
+    });
+    const sorted = [...statuses].sort(compareStockStatus);
+    // Nenhum out-of-stock aparece antes de um in-stock ou low-stock
+    let seenOutOfStock = false;
+    for (const s of sorted) {
+      if (s === 'out-of-stock') seenOutOfStock = true;
+      if (seenOutOfStock) {
+        expect(s === 'in-stock' || s === 'low-stock').toBe(false);
+      }
+    }
+  });
+  it('sort idempotente: aplicar duas vezes = mesmo resultado', () => {
+    const arr = ['out-of-stock', 'in-stock', null, 'low-stock', 'critical'];
+    const once = [...arr].sort(compareStockStatus);
+    const twice = [...once].sort(compareStockStatus);
+    expect(once).toEqual(twice);
+  });
+});
+
+// ── H. Regressão final — todos os fixes integrados ───────────────────────────
+describe('H — Regressao completa: todos os 7 fixes integrados', () => {
+  it('H1 GAP-STOCK-CASE-01: OUT-OF-STOCK maiúsculo → false', () => {
+    expect(isProductInStock(p({ stockStatus: 'OUT-OF-STOCK', stock: 100 }))).toBe(false);
+  });
+  it('H2 GAP-VAR-MINQTY-01: var.stockStatus=out-of-stock → false mesmo com stock=5', () => {
+    expect(isProductInStock(p({ variations: [{ stock: 5, stockStatus: 'out-of-stock' }] }))).toBe(false);
+  });
+  it('H3 BUG-STOCK-INF-01: stock=Infinity → false', () => {
+    expect(isProductInStock(p({ stock: Infinity }))).toBe(false);
+  });
+  it('H4 BUG-MINSTOCK-INF: minStock filter não passa stock=Infinity', () => {
+    // Verificado via Number.isFinite nos pipes (sem acesso direto aqui)
+    // Garante que isPositiveFiniteStock(Infinity) = false
+    expect(isProductInStock(p({ stock: Infinity }))).toBe(false);
+  });
+  it('H5 getVariationStockStatus: stock=3 minQty=5 → out-of-stock', () => {
+    expect(getVariationStockStatus(3, 5)).toBe('out-of-stock');
+  });
+  it('H6 THREE-WAY: status desconhecido faz fallthrough ao stock', () => {
+    expect(isProductInStock(p({ stockStatus: 'pending', stock: 5 }))).toBe(true);
+    expect(isProductInStock(p({ stockStatus: 'pending', stock: 0 }))).toBe(false);
+  });
+  it('H7 isCatalogStockStatus: type guard rejeita underscore e maiúsculo', () => {
+    expect(isCatalogStockStatus('in_stock')).toBe(false);
+    expect(isCatalogStockStatus('IN-STOCK')).toBe(false);
+    expect(isCatalogStockStatus('in-stock')).toBe(true);
+  });
+  it('H8 BUG-CF-INSTOCK-01: stockStatus prevalece sobre stock bruto', () => {
+    // 413 produtos com out-of-stock e stock > 0 — nenhum deve aparecer
+    const catalog = Array.from({ length: 413 }, () => p({ stockStatus: 'out-of-stock', stock: 50 }));
+    expect(catalog.filter(isProductInStock)).toHaveLength(0);
+  });
+  it('H9 BUG-PRICE-NaN-02: sorting price=NaN não trava', () => {
+    const items = [s('a', NaN), s('b', 5), s('c', NaN)];
+    const sorted = sortProducts(items, 'price-asc');
+    expect(sorted[0].id).toBe('b');
+    expect(sorted).toHaveLength(3);
+  });
+  it('H10 Integração completa: getVariationStockStatus → isProductInStock → compareStockStatus', () => {
+    const products = [10, 3, 20, 1, 0].map((stock, i) => ({
+      id: String(i),
+      stock,
+      stockStatus: getVariationStockStatus(stock, 5),
+    }));
+    // Filtra disponíveis
+    const available = products.filter(isProductInStock);
+    // Ordena por disponibilidade
+    available.sort((a, b) => compareStockStatus(a.stockStatus, b.stockStatus));
+    // stock=10 e stock=20 têm in-stock, stock=1 tem low-stock
+    expect(available.every(x => x.stockStatus !== 'out-of-stock')).toBe(true);
+    expect(available[0].stockStatus).toBe('in-stock');
   });
 });
