@@ -263,7 +263,11 @@ export const ProductTableRow = memo(({
             size="sm"
             hideWhenEmpty={false}
             selectedName={userSelectedColorName}
-            onSelect={(c) => selectColorWithUrl(product.id, c.name)}
+            onSelect={(c) => {
+              selectColorWithUrl(product.id, c.name);
+              if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
+              onOpenQuickView(product, null, c.name);
+            }}
             onClear={() => clearSelectedColor(product.id)}
           />
         ) : (
