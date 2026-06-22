@@ -26,7 +26,7 @@ import {
   FileText,
   Plus,
   Package,
-  Loader2,
+  
   BookTemplate,
   AlertTriangle,
   Calendar as CalendarIcon,
