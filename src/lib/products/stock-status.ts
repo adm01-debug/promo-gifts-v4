@@ -59,3 +59,42 @@ export function isProductInStock(product: InStockProduct): boolean {
 
 /** The literal token used for out-of-stock (exported for consumers). */
 export { OUT_OF_STOCK };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS DE PIPELINE — populam stockStatus nas variações
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Computes stockStatus for a single variation using the product-level minQuantity.
+ * Delegates to getCatalogStockStatus so the same rule applies everywhere.
+ *
+ * Usage in data pipeline (e.g., product mapper, stockFetcher):
+ * ```ts
+ * variation.stockStatus = getVariationStockStatus(
+ *   variation.stock,
+ *   product.minQuantity,
+ * );
+ * ```
+ *
+ * Once stockStatus is populated on each variation, isProductInStock will
+ * automatically use it (Improvement 2 / GAP-VAR-MINQTY-01).
+ */
+export function getVariationStockStatus(
+  variationStock: number | null | undefined,
+  productMinQuantity: number | null | undefined,
+  lowStockThreshold = 10,
+): 'in-stock' | 'low-stock' | 'out-of-stock' {
+  // Lazy import avoids circular deps: catalog-stock-status → stock-status
+  const qty = typeof variationStock === 'number' && Number.isFinite(variationStock) ? variationStock : 0;
+  if (qty <= 0) return 'out-of-stock';
+  if (
+    typeof productMinQuantity === 'number' &&
+    Number.isFinite(productMinQuantity) &&
+    productMinQuantity >= 1 &&
+    qty < productMinQuantity
+  ) {
+    return 'out-of-stock';
+  }
+  if (qty < lowStockThreshold) return 'low-stock';
+  return 'in-stock';
+}

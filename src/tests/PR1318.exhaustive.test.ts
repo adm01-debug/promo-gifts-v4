@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isProductInStock, OUT_OF_STOCK, type InStockProduct } from '@/lib/products/stock-status';
+import { isProductInStock, getVariationStockStatus, OUT_OF_STOCK, type InStockProduct } from '@/lib/products/stock-status';
 import { getCatalogStockStatus, CATALOG_LOW_STOCK_THRESHOLD } from '@/lib/catalog-stock-status';
 import { sortProducts } from '@/utils/product-sorting';
 import type { Product } from '@/types/product-catalog';
@@ -358,5 +358,57 @@ describe('D — Simulacao producao: 200 produtos', () => {
     ).length;
     const fix = catalog.filter(isProductInStock).length;
     expect(fix).toBeLessThanOrEqual(bug);
+  });
+});
+
+// ── E. getVariationStockStatus — helper de pipeline ───────────────────────────
+describe('E — getVariationStockStatus: helper pipeline para variacoes', () => {
+  it('stock=0 → out-of-stock', () => { expect(getVariationStockStatus(0)).toBe('out-of-stock'); });
+  it('stock=null → out-of-stock', () => { expect(getVariationStockStatus(null)).toBe('out-of-stock'); });
+  it('stock=Infinity → out-of-stock', () => { expect(getVariationStockStatus(Infinity)).toBe('out-of-stock'); });
+  it('stock=1 sem minQty → low-stock', () => { expect(getVariationStockStatus(1)).toBe('low-stock'); });
+  it('stock=10 sem minQty → in-stock', () => { expect(getVariationStockStatus(10)).toBe('in-stock'); });
+  it('stock=3 minQty=5 → out-of-stock', () => { expect(getVariationStockStatus(3, 5)).toBe('out-of-stock'); });
+  it('stock=5 minQty=5 → low-stock (>=min, <threshold)', () => { expect(getVariationStockStatus(5, 5)).toBe('low-stock'); });
+  it('stock=10 minQty=5 → in-stock', () => { expect(getVariationStockStatus(10, 5)).toBe('in-stock'); });
+  it('minQty=0 → nao aplica', () => { expect(getVariationStockStatus(5, 0)).toBe('low-stock'); });
+  it('minQty=null → nao aplica', () => { expect(getVariationStockStatus(5, null)).toBe('low-stock'); });
+  it('minQty=NaN → nao aplica', () => { expect(getVariationStockStatus(5, NaN)).toBe('low-stock'); });
+  it('threshold custom: stock=3 minQty=1 threshold=3 → in-stock', () => {
+    expect(getVariationStockStatus(3, 1, 3)).toBe('in-stock');
+  });
+  it('pipeline: var stock=3 minQty=5 → out-of-stock → produto indisponivel', () => {
+    const variation = { stock: 3, stockStatus: getVariationStockStatus(3, 5) };
+    expect(variation.stockStatus).toBe('out-of-stock');
+    expect(isProductInStock({ variations: [variation] })).toBe(false);
+  });
+  it('pipeline: 3 vars minQty=5 — var stock=20 salva o produto', () => {
+    const minQty = 5;
+    const variations = [
+      { stock: 3, stockStatus: getVariationStockStatus(3, minQty) },
+      { stock: 5, stockStatus: getVariationStockStatus(5, minQty) },
+      { stock: 20, stockStatus: getVariationStockStatus(20, minQty) },
+    ];
+    expect(variations[0].stockStatus).toBe('out-of-stock');
+    expect(variations[1].stockStatus).toBe('low-stock');
+    expect(variations[2].stockStatus).toBe('in-stock');
+    expect(isProductInStock({ variations })).toBe(true);
+  });
+  it('pipeline: todas vars out-of-stock → produto indisponivel', () => {
+    const minQty = 100;
+    const vars = [3, 5, 20].map(stock => ({ stock, stockStatus: getVariationStockStatus(stock, minQty) }));
+    expect(vars.every(v => v.stockStatus === 'out-of-stock')).toBe(true);
+    expect(isProductInStock({ variations: vars })).toBe(false);
+  });
+  it('413 variacoes: zero divergencias com isProductInStock', () => {
+    let fail = 0;
+    for (let i = 0; i < 413; i++) {
+      const stock = (i % 50) + 1;
+      const minQty = (i % 15);
+      const status = getVariationStockStatus(stock, minQty);
+      const expected = status !== 'out-of-stock';
+      if (isProductInStock({ variations: [{ stock, stockStatus: status }] }) !== expected) fail++;
+    }
+    expect(fail).toBe(0);
   });
 });
