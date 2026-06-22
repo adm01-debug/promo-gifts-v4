@@ -144,6 +144,15 @@ export interface Product {
   aiGeneratedAt?: string | null;
 
   /**
+   * Color Swatches V2 — JSONB do BD externo (products.color_swatches), populado por trigger.
+   * Cada item já agrega image_url (P1→P4 fallback) + stock_quantity (SUM por color_id).
+   * Consumido por useProductColorSwatch + ColorSwatchPicker quando a flag
+   * useColorSwatchesV2 estiver habilitada. null = produto sem variações de cor.
+   */
+  color_swatches?: import('./colorSwatch').ColorSwatch[] | null;
+  has_colors?: boolean | null;
+
+  /**
    * FAN-OUT DE COR: quando o filtro de cor está ativo, um produto pode aparecer
    * como múltiplos cards (1 por cor selecionada que possui). Este campo carrega
    * o color_id daquele card específico, usado para compor a key única
