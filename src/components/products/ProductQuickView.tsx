@@ -107,6 +107,25 @@ export const ProductQuickView = React.memo(
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
     const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
 
+    // Mapear cores do produto para o formato do seletor com ordenação padronizada.
+    // Memoizado e elevado acima do early-return para que possa alimentar
+    // o seeding de `selectedColorId` a partir de `initialColorName`.
+    const productColors: ProductColor[] = useMemo(() => {
+      if (!product) return [];
+      const sorted = sortByColorGroup(
+        product.colors || [],
+        (color) => color.name || '',
+        (color) => color.hex,
+      );
+      return sorted.map((color, idx) => ({
+        id: color.code || `${product.id}-color-${idx}`,
+        name: color.name,
+        hex: color.hex,
+        variationName: color.name,
+        groupName: color.group,
+      }));
+    }, [product]);
+
     // Reset state quando produto muda ou modal abre.
     // Seed `selectedColorId` a partir de `initialColorName` (case-insensitive),
     // permitindo abrir o QuickView já posicionado na cor clicada pelo usuário.
@@ -115,18 +134,17 @@ export const ProductQuickView = React.memo(
         setCurrentImageIndex(0);
         setQuantity(1);
         setImageError(false);
-        if (initialColorName && product?.colors?.length) {
+        if (initialColorName) {
           const target = initialColorName.toLowerCase();
-          const idx = product.colors.findIndex((c) => (c.name ?? '').toLowerCase() === target);
-          if (idx >= 0) {
-            const c = product.colors[idx];
-            setSelectedColorId(c.code || `${product.id}-color-${idx}`);
+          const match = productColors.find((c) => c.name.toLowerCase() === target);
+          if (match) {
+            setSelectedColorId(match.id ?? null);
             return;
           }
         }
         setSelectedColorId(null);
       }
-    }, [open, product?.id, initialColorName, product?.colors]);
+    }, [open, product?.id, initialColorName, productColors]);
 
     // Converter ProductImage[] para ProductImageMeta[] para usar com image-utils
     const imageMetas: ProductImageMeta[] = useMemo(() => {
