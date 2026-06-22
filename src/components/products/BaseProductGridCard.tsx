@@ -110,7 +110,9 @@ export const BaseProductGridCard = memo(
     renderFooterExtras,
   }: BaseProductGridCardProps) => {
     // Mini-carrossel de variantes — clicar num swatch troca a foto principal
+    // E abre o QuickView na cor escolhida (handle imperativo no QuickViewThumb).
     const [activeColorName, setActiveColorName] = useState<string | null>(null);
+    const quickViewRef = useRef<QuickViewThumbHandle>(null);
     const activeImage = useMemo(() => {
       if (!activeColorName || !colors?.length) return productImage;
       const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
