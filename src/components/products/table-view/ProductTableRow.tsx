@@ -120,6 +120,21 @@ export const ProductTableRow = memo(({
     userSelectedColorName ? product.id : undefined,
   );
 
+  // V2 — color_swatches via ColorSwatchPicker (flag useColorSwatchesV2).
+  const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
+  const productSwatchesData = ((product as unknown as {
+    color_swatches?: ProductColorSwatchData[] | null;
+  }).color_swatches) ?? null;
+  const swatchV2 = useProductColorSwatch({
+    id: product.id,
+    name: product.name,
+    primary_image_url: product.primary_image_url ?? null,
+    stock_quantity: product.stock ?? 0,
+    color_swatches: productSwatchesData ?? undefined,
+    has_colors: !!productSwatchesData?.length,
+  });
+  const useSwatchesV2 = swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
+
   const liveMatchForColor =
     userSelectedColorName && liveVariants?.length
       ? liveVariants.find(
