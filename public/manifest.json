@@ -13,10 +13,14 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#020617",
-  "theme_color": "#1e40af",
+  "theme_color": "#0a0a0a",
   "prefer_related_applications": false,
   "icons": [
     {
