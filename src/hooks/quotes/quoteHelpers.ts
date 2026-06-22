@@ -108,6 +108,14 @@ export function buildInsertPayload(
   // contact_id: real column in `quotes` absent from the stale generated types.
   // The intersection keeps the payload typed without TS2353.
   validateDiscount(quote, totals);
+
+  // QBP-03 FIX (2026-06-22): Manter SSOT de desconto — apenas um dos dois campos
+  // pode ser não-zero ao mesmo tempo. Antes, discount_amount calculado (subtotal *
+  // discount_percent / 100) era gravado mesmo quando discount_percent estava ativo,
+  // fazendo ambos os campos ficarem não-zero e disparando BUG-003 warning em TODOS
+  // os carregamentos — tornando o warning inútil como detector de corrupção real.
+  const usingPercent = (quote.discount_percent ?? 0) > 0;
+
   return {
     quote_number: quote.quote_number ?? '',
     client_id: quote.client_id || null,
@@ -121,8 +129,8 @@ export function buildInsertPayload(
     organization_id: orgId,
     status: quote.status || 'draft',
     subtotal: round2(totals.subtotal),
-    discount_percent: round2(quote.discount_percent || 0),
-    discount_amount: round2(totals.discountAmount),
+    discount_percent: usingPercent ? round2(quote.discount_percent || 0) : 0,
+    discount_amount: usingPercent ? 0 : round2(totals.discountAmount),
     total: round2(totals.total),
     negotiation_markup_percent: clampMarkup(quote.negotiation_markup_percent),
     payment_method: quote.payment_method || null,
@@ -143,6 +151,10 @@ export function buildUpdatePayload(
   // contact_id must always be present in the patch so update_quote_transactional
   // (which checks `_quote_patch ? 'contact_id'`) can clear the field when needed.
   validateDiscount(quote, totals);
+
+  // QBP-03 FIX: ver buildInsertPayload — manter SSOT de desconto.
+  const usingPercent = (quote.discount_percent ?? 0) > 0;
+
   return {
     client_id: quote.client_id || null,
     client_name: quote.client_name || '',
@@ -153,8 +165,8 @@ export function buildUpdatePayload(
     contact_id: quote.contact_id ?? null,
     status: quote.status,
     subtotal: round2(totals.subtotal),
-    discount_percent: round2(quote.discount_percent || 0),
-    discount_amount: round2(totals.discountAmount),
+    discount_percent: usingPercent ? round2(quote.discount_percent || 0) : 0,
+    discount_amount: usingPercent ? 0 : round2(totals.discountAmount),
     total: round2(totals.total),
     negotiation_markup_percent: clampMarkup(quote.negotiation_markup_percent),
     payment_method: quote.payment_method || null,
