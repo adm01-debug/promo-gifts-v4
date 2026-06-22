@@ -116,7 +116,7 @@ export default function QuoteBuilderPage() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-16 pt-3 sm:space-y-4 sm:px-4 sm:pb-20 sm:pt-4 lg:px-6 lg:pb-24 xl:px-8">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 sm:space-y-4 sm:px-4 sm:pb-24 sm:pt-4 lg:px-6 lg:pb-28 xl:px-8">
         <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer" />
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -216,9 +216,9 @@ export default function QuoteBuilderPage() {
         )}
 
         {/* 3-column layout */}
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div data-testid="quote-builder-grid" className="grid min-w-0 items-start gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
-          <div className="lg:col-span-3">
+          <div className="min-w-0 lg:col-span-3">
             <div className="space-y-3 pr-1">
               {/* Empresa + Contato */}
               <div
@@ -592,7 +592,7 @@ export default function QuoteBuilderPage() {
           </div>
 
           {/* COL 2 — Item ativo + Personalização */}
-          <div className="lg:col-span-5">
+          <div className="min-w-0 lg:col-span-5">
             <div className="flex flex-col">
               <div className="flex flex-col rounded-2xl border border-border/50 bg-card">
                 <div className="flex shrink-0 items-center justify-between p-4 pb-3">
