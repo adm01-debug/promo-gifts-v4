@@ -18,8 +18,9 @@ const ROOT = process.cwd();
 
 const yaml = readFileSync(resolve(ROOT, WORKFLOW), 'utf8');
 
-// Coleta TODOS os tokens *.spec.ts referenciados em qualquer `run:` do YAML.
-const specs = Array.from(yaml.matchAll(/(\S+\.spec\.ts)/g)).map((m) => m[1]);
+// Coleta caminhos *.spec.ts passados como args (começam com letra/dígito,
+// excluindo globs como '**/*.spec.ts-snapshots/**').
+const specs = Array.from(yaml.matchAll(/([a-zA-Z0-9][\w./-]*\.spec\.ts)\b/g)).map((m) => m[1]);
 const unique = [...new Set(specs)];
 
 if (unique.length === 0) {
