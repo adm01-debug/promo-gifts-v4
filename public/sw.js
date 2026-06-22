@@ -1,6 +1,22 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.3.0
+// Versão: 3.4.0
+//
+// CHANGELOG v3.4.0 (2026-06-22 — fix/sw-cdn-race-retry-mime-fix):
+//   BUG-SW-5 FIX [CRÍTICO]: Race condition CDN do Vercel durante deploy.
+//     Sintoma: após deploy do Lovable, o novo index.html é servido imediatamente
+//     pelo CDN, mas os chunks JS/CSS ainda não propagaram para todos os edge nodes.
+//     Browser recebia 404 no console + reload imediato (via SW_STALE_CHUNK).
+//     Fix: seção C faz 1 retry após 1 000ms antes de declarar chunk como stale.
+//     CDN do Vercel propaga em < 30s; 1s de espera elimina os falsos 404.
+//     Se retry ainda 404 (chunk genuinamente removido): handleStaleChunk() normal.
+//   BUG-SW-6 FIX [MÉDIO]: Edge nodes do Vercel CDN eventualmente servem assets com
+//     Content-Type: text/plain em vez de text/css ou application/javascript.
+//     Com X-Content-Type-Options: nosniff, o browser recusava aplicar o stylesheet
+//     ("Refused to apply style...") ou executar o módulo. Fix: withCorrectMimeType()
+//     reconstrói a Response com o Content-Type correto pela extensão do arquivo.
+//     Aplicado na seção C (assets com hash). Cache armazena versão já corrigida.
+//   CHORE: CACHE_VERSION v11 → v12 (descarta entradas com MIME type incorreto).
 //
 // CHANGELOG v3.3.0 (2026-06-22 — fix/sw-5xx-fallback-offline-status):
 //   BUG-SW-1 FIX [CRÍTICO]: Seção B (navigate) não fazia fallback para o cache
@@ -43,13 +59,13 @@
 //
 // Estratégias por tipo de request:
 //   Navigation (SPA)        → Network First + cache fallback (5xx e offline)  ← v3.3.0
-//   /assets/* (hashed)      → Cache First (imutável) + 404 recovery           ← v3.2.0
+//   /assets/* (hashed)      → Cache First + retry 1s + MIME fix                ← v3.4.0
 //   Imagens (mesma origem / CDN próprio) → Cache First + LRU (max 500, 90d TTL)
 //   Google Fonts             → Stale-While-Revalidate
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate + fallback offline        ← v3.3.0
 
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v12';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -90,6 +106,36 @@ function offlineFallback() {
     // correto de PWA offline.
     { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   );
+}
+
+/**
+ * v3.4.0: Corrige o Content-Type de uma Response quando o servidor (ex: edge node
+ * do Vercel CDN) retorna text/plain para assets estáticos tipados (.js, .css, etc.).
+ * Com X-Content-Type-Options: nosniff, o browser recusa aplicar CSS ou executar JS
+ * servido com Content-Type errado. Esta função reconstrói a Response com o tipo
+ * correto baseado na extensão do arquivo.
+ *
+ * Nota: não altera responses já corretas (verificação rápida de indexOf).
+ */
+function withCorrectMimeType(res, pathname) {
+  const ct = res.headers.get('content-type') || '';
+  const ext = pathname.split('.').pop()?.toLowerCase();
+  const mimeMap = {
+    js:    'application/javascript; charset=utf-8',
+    mjs:   'application/javascript; charset=utf-8',
+    css:   'text/css; charset=utf-8',
+    woff2: 'font/woff2',
+    woff:  'font/woff',
+    ttf:   'font/ttf',
+    otf:   'font/otf',
+  };
+  const expected = mimeMap[ext];
+  if (!expected) return res;              // extensão desconhecida: não tocar
+  if (ct && ct.indexOf(expected.split(';')[0]) !== -1) return res; // já correto
+  // Reconstruir com Content-Type correto
+  const headers = new Headers(res.headers);
+  headers.set('Content-Type', expected);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
 /** Verifica se a URL é um asset com hash (imutável após build) */
@@ -305,25 +351,52 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
 
         // Cache miss: buscar da rede.
-        return fetch(request).then((res) => {
-          if (res && res.ok) {
-            // Chunk encontrado → cachear para próximas requisições.
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-          } else if (res && res.status === 404) {
-            // Chunk não existe mais no CDN: deploy novo mudou os hashes.
-            // Iniciar recovery: invalidar HTML e notificar tabs.
-            handleStaleChunk(request.url);
+        // v3.4.0: fetch async com retry (BUG-SW-5) + MIME fix (BUG-SW-6).
+        return (async () => {
+          try {
+            let res = await fetch(request);
+
+            // ── MIME fix (BUG-SW-6) ───────────────────────────────────────────
+            // Edge nodes do Vercel CDN podem servir CSS/JS com Content-Type:
+            // text/plain. Corrigir antes de cachear e retornar ao browser.
+            if (res && res.ok) {
+              res = withCorrectMimeType(res, url.pathname);
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+              return res;
+            }
+
+            // ── CDN race retry (BUG-SW-5) ────────────────────────────────────
+            // Se o chunk retornou 404, pode ser race condition de CDN: o novo
+            // index.html já está disponível mas os chunks ainda estão propagando.
+            // Aguardar 1 000ms e tentar novamente antes de declarar stale.
+            if (res && res.status === 404) {
+              await new Promise((r) => setTimeout(r, 1000));
+              let retryRes = await fetch(request).catch(() => null);
+
+              if (retryRes && retryRes.ok) {
+                // CDN já propagou: cachear e retornar sem nenhum erro no console.
+                retryRes = withCorrectMimeType(retryRes, url.pathname);
+                const clone = retryRes.clone();
+                caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+                return retryRes;
+              }
+
+              // Ainda 404 após retry: chunk genuinamente removido no novo deploy.
+              handleStaleChunk(request.url);
+              return retryRes || res; // propagar 404 (tab vai recarregar em 300ms)
+            }
+
+            return res;
+          } catch (_err) {
+            // Erro de rede (offline ou timeout) → retornar erro para o browser.
+            // O React.lazy() vai mostrar o ErrorBoundary configurado.
+            return new Response(
+              JSON.stringify({ error: 'Network error fetching chunk', url: request.url }),
+              { status: 503, headers: { 'Content-Type': 'application/json' } },
+            );
           }
-          return res;
-        }).catch((err) => {
-          // Erro de rede (offline ou timeout) → retornar erro para o browser.
-          // O React.lazy() vai mostrar o ErrorBoundary configurado.
-          return new Response(
-            JSON.stringify({ error: 'Network error fetching chunk', url: request.url }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } },
-          );
-        });
+        })();
       }),
     );
     return;
