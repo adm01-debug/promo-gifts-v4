@@ -160,14 +160,17 @@ export const ProductTableRow = memo(({
     product.og_image_url ||
     product.images[0] ||
     null;
-  const thumbUrl = rawImg ? getCdnUrl(rawImg, 'card') : '/placeholder.svg';
+  const baseRaw = useSwatchesV2 ? (swatchV2.displayImage ?? rawImg) : rawImg;
+  const thumbUrl = baseRaw ? getCdnUrl(baseRaw, 'card') : '/placeholder.svg';
 
   // Estoque: liveStockQty (BD real) > batch (colors[].stock) > total
   const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
-  const displayStock =
-    liveStockQty !== null ? liveStockQty : (colorStock?.stock ?? product.stock);
-  const displayStatus =
-    liveStockQty !== null
+  const displayStock = useSwatchesV2
+    ? swatchV2.displayStock
+    : liveStockQty !== null ? liveStockQty : (colorStock?.stock ?? product.stock);
+  const displayStatus = useSwatchesV2
+    ? getCatalogStockStatus(swatchV2.displayStock, undefined, product.minQuantity)
+    : liveStockQty !== null
       ? getCatalogStockStatus(liveStockQty, undefined, product.minQuantity)
       : (colorStock?.stockStatus ?? product.stockStatus);
 
