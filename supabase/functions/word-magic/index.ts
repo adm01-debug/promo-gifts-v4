@@ -7,20 +7,23 @@ import { resolveCredential } from '../_shared/credentials.ts';
 import { createStructuredLogger } from '../_shared/structured-logger.ts';
 import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
+// ─── Constantes ─────────────────────────────────────────────────────────────────────────────
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
-const DEEPSEEK_MODEL   = 'deepseek-v4-flash'; // MIGRADO: deepseek-chat depreca 24/jul/2026
-const MAX_TOKENS       = 2048; // FIX: era 700 no processador batch → textos truncados
+const DEEPSEEK_API_URL    = 'https://api.deepseek.com/v1/chat/completions';
+const DEEPSEEK_MODEL      = 'deepseek-v4-flash'; // MIGRADO: deepseek-chat depreca 24/jul/2026
+const MAX_TOKENS          = 2048; // FIX: era 700 no processador batch → textos truncados
+// Timeout do fetch DeepSeek: previne isolate pendurado ~150s se a API não responder.
+// 60s é suficiente para gerações complexas e menor que o limite da plataforma.
+const DEEPSEEK_TIMEOUT_MS = 60_000;
 
-// ─── Schema de entrada ────────────────────────────────────────────────────────
+// ─── Schema de entrada ─────────────────────────────────────────────────────────────────────────────
 
 const RequestSchema = z.object({
   product_id:        z.string().uuid('product_id deve ser um UUID válido'),
   force_regenerate:  z.boolean().optional().default(false),
 });
 
-// ─── Sistema de copywriting B2B ───────────────────────────────────────────────
+// ─── Sistema de copywriting B2B ─────────────────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Você é um especialista em copywriting B2B para brindes corporativos no Brasil.
 Escreva textos em português (pt-BR) que combinam clareza técnica com apelo comercial.
@@ -68,7 +71,7 @@ IMPORTANTE: ai_description deve ter entre 500 e 900 caracteres, NUNCA ser cortad
 }`;
 }
 
-// ─── Handler principal ────────────────────────────────────────────────────────
+// ─── Handler principal ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   const __reqId = getOrCreateRequestId(req);
@@ -221,28 +224,63 @@ Deno.serve(async (req) => {
     }
 
     // 10. Chamar DeepSeek V4-Flash — max_tokens=2048 (FIX do truncamento)
+    //
+    // AbortController com DEEPSEEK_TIMEOUT_MS (60s) previne que o isolate fique
+    // pendurado indefinidamente se a API DeepSeek não responder. Sem este guard,
+    // o n8n workflow esperaria até o timeout do HTTP node (~60s) enquanto o isolate
+    // Edge continuaria pendurado até o platform kill (~150s) — sem atualizar a fila.
     const aiStart = Date.now();
     const prompt  = buildPrompt(productCtx as Record<string, unknown>, copywritingConfig);
 
-    const dsResponse = await fetch(DEEPSEEK_API_URL, {
-      method:  'POST',
-      headers: {
-        'Authorization': `Bearer ${deepseekKey}`,
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({
-        model:           DEEPSEEK_MODEL,
-        max_tokens:      MAX_TOKENS,
-        temperature:     0.7,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user',   content: prompt },
-        ],
-      }),
-    });
+    const dsCtrl  = new AbortController();
+    const dsTimer = setTimeout(() => dsCtrl.abort(), DEEPSEEK_TIMEOUT_MS);
 
-    const generationMs = Date.now() - aiStart;
+    let dsResponse!: Response;
+    let generationMs = 0;
+    try {
+      dsResponse = await fetch(DEEPSEEK_API_URL, {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${deepseekKey}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({
+          model:           DEEPSEEK_MODEL,
+          max_tokens:      MAX_TOKENS,
+          temperature:     0.7,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user',   content: prompt },
+          ],
+        }),
+        signal: dsCtrl.signal,
+      });
+      generationMs = Date.now() - aiStart;
+    } catch (fetchErr) {
+      // fetch falhou: AbortError (nosso timeout) ou erro de rede
+      generationMs = Date.now() - aiStart;
+      const isAbort = fetchErr instanceof Error && fetchErr.name === 'AbortError';
+      const errMsg = isAbort
+        ? `DeepSeek timeout após ${DEEPSEEK_TIMEOUT_MS}ms`
+        : `DeepSeek fetch error: ${(fetchErr as Error).message?.slice(0, 200) ?? 'unknown'}`;
+      console.error(`[word-magic] deepseek_fetch_failed: ${errMsg}`);
+      // Atualizar fila para não deixar item preso em 'processing'
+      await supabase.rpc('fn_save_ai_enrichment_results', {
+        p_queue_id:      queueId,
+        p_product_id:    product_id,
+        p_ai_model:      DEEPSEEK_MODEL,
+        p_success:       false,
+        p_error:         errMsg,
+        p_generation_ms: generationMs,
+      });
+      return new Response(
+        JSON.stringify({ error: isAbort ? 'Timeout da IA. Tente novamente.' : 'Erro de conexão com a IA.' }),
+        { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Request-Id': __reqId } }
+      );
+    } finally {
+      clearTimeout(dsTimer);
+    }
 
     if (!dsResponse.ok) {
       const errText = await dsResponse.text().catch(() => '');
