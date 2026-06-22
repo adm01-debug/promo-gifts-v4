@@ -26,6 +26,9 @@ async function waitForVisualStability(page: Page) {
 }
 
 test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
+  test.skip(({ }, testInfo) => testInfo.project.name !== 'chromium-authed',
+    'Visual regression do Novo Orçamento roda só no Chromium autenticado; a spec já alterna desktop/mobile via viewport.',
+  );
   test.beforeEach(() => requireAuth());
 
   for (const vp of [
