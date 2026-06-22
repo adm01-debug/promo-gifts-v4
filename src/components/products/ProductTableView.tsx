@@ -11,13 +11,9 @@ import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { TableRowActions } from './table-view/TableRowActions';
 import { ProductTableRow } from './table-view/ProductTableRow';
-import {
-  type ActiveColorFilter,
-} from '@/utils/color-image-resolver';
+import { type ActiveColorFilter } from '@/utils/color-image-resolver';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 
 import { cn } from '@/lib/utils';
 // FIX: import direto em vez do barrel @/hooks/products — evita dependência circular (TDZ)
@@ -26,8 +22,6 @@ import type { Product } from '@/types/product-catalog';
 // Collator pt-BR compartilhado: mesma ordenação natural/acento-insensível do grid/lista
 // (apenas type-imports em runtime → sem ciclo). Evita localeCompare sem locale e null-throw.
 import { compareNamePtBR } from '@/utils/product-sorting';
-import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
-import { ProductColorSwatches } from './ProductColorSwatches';
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 
 type SkeletonRow = { id: string; isSkeleton: true };
@@ -40,7 +34,6 @@ import { ProductQuickView } from './ProductQuickView';
 import { SharePreviewDialog } from './share/SharePreviewDialog';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { toast } from 'sonner';
 import { showErrorToast } from '@/utils/undoToast';
 // FIX(catalog-table-cores): hidratacao de cores client-side — mesmo SSOT do grid/lista.
@@ -322,7 +315,7 @@ export const ProductTableView = memo(
       [onProductClick, navigate],
     );
 
-        const openVariantPicker = useCallback((product: Product, mode: VariantActionMode) => {
+    const openVariantPicker = useCallback((product: Product, mode: VariantActionMode) => {
       setVariantPickerProduct(product);
       setVariantPickerMode(mode);
       setVariantPickerOpen(true);

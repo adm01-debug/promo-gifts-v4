@@ -13,7 +13,7 @@ interface SupplierReliabilityTableProps {
   selectedId?: string | null;
 }
 
-type SortKey = 'score' | 'name' | 'matches' | 'delay' | 'next';
+type SortKey = 'delay' | 'matches' | 'name' | 'next' | 'score';
 
 function formatPct(v: number | null): string {
   if (v === null) return '—';
@@ -28,7 +28,7 @@ function formatDelay(v: number | null): string {
 function formatNext(p: SupplierReliability['nextPromise']): string {
   if (!p) return '—';
   try {
-    return format(parseISO(p.promisedDate), "dd MMM", { locale: ptBR });
+    return format(parseISO(p.promisedDate), 'dd MMM', { locale: ptBR });
   } catch {
     return p.promisedDate;
   }
@@ -85,23 +85,31 @@ export function SupplierReliabilityTable({
     }
   }
 
-  const Header = ({ k, label, align = 'left' }: { k: SortKey; label: string; align?: 'left' | 'right' }) => (
+  const Header = ({
+    k,
+    label,
+    align = 'left',
+  }: {
+    k: SortKey;
+    label: string;
+    align?: 'left' | 'right';
+  }) => (
     <th
       scope="col"
       className={cn(
         'sticky top-0 z-10 bg-card px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground',
         align === 'right' && 'text-right',
       )}
+      aria-sort={sortKey === k ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
       <button
         type="button"
         className="inline-flex items-center gap-1 hover:text-foreground"
         onClick={() => toggleSort(k)}
-        aria-sort={sortKey === k ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
       >
         {label}
         <ArrowUpDown
-          className={cn('h-3 w-3 opacity-50', sortKey === k && 'opacity-100 text-primary')}
+          className={cn('h-3 w-3 opacity-50', sortKey === k && 'text-primary opacity-100')}
         />
       </button>
     </th>
@@ -186,7 +194,7 @@ export function SupplierReliabilityTable({
                     {s.nextPromise ? (
                       <div>
                         <div className="text-sm">{formatNext(s.nextPromise)}</div>
-                        <div className="text-xs text-muted-foreground tabular-nums">
+                        <div className="text-xs tabular-nums text-muted-foreground">
                           {s.nextPromise.promisedQuantity.toLocaleString('pt-BR')} un.
                         </div>
                       </div>

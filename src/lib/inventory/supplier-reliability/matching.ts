@@ -15,16 +15,16 @@
  * próxima"). Coberto por 200+ cenários no fuzz.
  */
 
-import type {
-  ActualArrival,
-  MatchingResult,
-  OrphanArrival,
-  PromisedReplenishment,
-  ReliabilityConfig,
-  ReplenishmentMatch,
-  UnmatchedPromise,
+import {
+  DEFAULT_RELIABILITY_CONFIG,
+  type ActualArrival,
+  type MatchingResult,
+  type OrphanArrival,
+  type PromisedReplenishment,
+  type ReliabilityConfig,
+  type ReplenishmentMatch,
+  type UnmatchedPromise,
 } from './types';
-import { DEFAULT_RELIABILITY_CONFIG } from './types';
 
 const MS_PER_DAY = 86_400_000;
 

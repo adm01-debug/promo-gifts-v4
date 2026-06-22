@@ -72,7 +72,7 @@ export function extractPromisesFromSource(row: SourceRow): PromisedReplenishment
   ];
   const promises: PromisedReplenishment[] = [];
   for (const { slot, q, d } of slots) {
-    if (q == null || !Number.isFinite(q) || q <= 0) continue;
+    if (q === null || q === undefined || !Number.isFinite(q) || q <= 0) continue;
     if (!isValidDate(d)) continue;
     promises.push({
       id: `${row.id}:${slot}`,

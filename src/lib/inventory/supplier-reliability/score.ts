@@ -17,13 +17,13 @@
  *   - promised=0 → fulfillment=0 (defensivo; extract já filtra)
  */
 
-import type {
-  ConfidenceBand,
-  ReliabilityConfig,
-  ReliabilityWindow,
-  ReplenishmentMatch,
+import {
+  DEFAULT_RELIABILITY_CONFIG,
+  type ConfidenceBand,
+  type ReliabilityConfig,
+  type ReliabilityWindow,
+  type ReplenishmentMatch,
 } from './types';
-import { DEFAULT_RELIABILITY_CONFIG } from './types';
 
 export function computeWindow(
   matches: readonly ReplenishmentMatch[],

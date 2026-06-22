@@ -191,32 +191,33 @@ async function fetchBestSellerCatalogPage(offset: number, sortBy: string): Promi
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
   const span = CATALOG_PAGE_SIZE * pagesToFetch;
 
-  const { data, error } = await untypedRpc('get_catalog_bestseller_page', {
-    p_sort: sortBy,
-    p_limit: span,
-    p_offset: offset,
-  });
+  // PERF: fire categories + count in parallel with the RPC call instead of sequentially.
+  // Prior pattern: RPC → await categories → await count = 3 sequential round-trips on first load.
+  const countQueryPromise = isFirstLoad
+    ? dbInvoke<LightweightProduct>({
+        table: 'products',
+        operation: 'select',
+        select: 'id',
+        filters: { active: true },
+        limit: 1,
+        offset: 0,
+        countMode: 'exact',
+      })
+    : Promise.resolve({ records: [] as LightweightProduct[], count: null as number | null });
+
+  const [{ data, error }, categoriesById, { count: totalEstimate }] = await Promise.all([
+    untypedRpc('get_catalog_bestseller_page', {
+      p_sort: sortBy,
+      p_limit: span,
+      p_offset: offset,
+    }),
+    loadCategoriesMap(),
+    countQueryPromise,
+  ]);
   if (error) throw error;
 
   const rows = (data as unknown as LightweightProduct[] | null) ?? [];
-  const categoriesById = await loadCategoriesMap();
   const products = rows.map((r) => mapLightweightToProduct(r, categoriesById));
-
-  // Total exato apenas no primeiro load (o front mantém o número estável depois).
-  let totalEstimate: number | null = null;
-  if (isFirstLoad) {
-    const { count } = await dbInvoke<LightweightProduct>({
-      table: 'products',
-      operation: 'select',
-      select: 'id',
-      filters: { active: true },
-      limit: 1,
-      offset: 0,
-      countMode: 'exact',
-    });
-    totalEstimate = count;
-  }
-
   const nextOffset = rows.length === span ? offset + rows.length : null;
   return { products, nextOffset, totalEstimate };
 }

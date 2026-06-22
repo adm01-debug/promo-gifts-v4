@@ -32,17 +32,17 @@ export type FeatureFlag =
   | 'mfa'
   | 'presentation_mode'
   /**
-   * Onda 1 — Painel preditivo de ruptura por fornecedor (EMA α=0.3).
-   * Habilita RupturePanelEma e useRuptureAlerts na página /estoque.
-   * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
-   */
-  | 'useEmaRupture'
-  /**
    * Aba "Confiabilidade de Fornecedores" em /estoque. Lê
    * variant_supplier_sources (next_date_N) e stock_snapshots (chegadas reais)
    * e calcula índice de confiança previsão × realidade por fornecedor.
    */
   | 'supplierReliability'
+  /**
+   * Onda 1 — Painel preditivo de ruptura por fornecedor (EMA α=0.3).
+   * Habilita RupturePanelEma e useRuptureAlerts na página /estoque.
+   * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
+   */
+  | 'useEmaRupture'
   | 'voice_commands';
 
 interface FlagConfig {

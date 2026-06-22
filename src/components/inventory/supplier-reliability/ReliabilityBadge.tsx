@@ -4,7 +4,7 @@ import type { ConfidenceBand } from '@/lib/inventory/supplier-reliability';
 interface ReliabilityBadgeProps {
   band: ConfidenceBand;
   score: number | null;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
   className?: string;
 }
 

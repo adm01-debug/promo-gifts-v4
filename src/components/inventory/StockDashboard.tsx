@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Clock,
   BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,14 +30,12 @@ import { buildStockKpiCards } from './stockKpiCards';
 import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isFeatureEnabled } from '@/lib/feature-flags';
-import { ShieldCheck } from 'lucide-react';
 
 const SupplierReliabilityTab = lazyWithRetry(() =>
   import('./supplier-reliability/SupplierReliabilityTab').then((m) => ({
     default: m.SupplierReliabilityTab,
   })),
 );
-
 
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
@@ -102,8 +101,7 @@ function HeaderSlotPortal({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const resolve = () =>
-      document.getElementById('stock-toolbar-slot') ??
-      document.getElementById('stock-header-slot');
+      document.getElementById('stock-toolbar-slot') ?? document.getElementById('stock-header-slot');
     setSlot(resolve());
     const mo = new MutationObserver(() => {
       const next = resolve();
@@ -333,7 +331,6 @@ export function StockDashboard() {
     return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };
   }, [futureStock]);
 
-
   if (isLoading) {
     const pct = loadingProgress
       ? Math.round((loadingProgress.current / loadingProgress.total) * 100)
@@ -433,7 +430,6 @@ export function StockDashboard() {
         </Suspense>
       )}
 
-
       {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
       <Card>
         <CardContent className="p-4">
@@ -496,251 +492,250 @@ export function StockDashboard() {
         <TabsContent value="overview" className="space-y-5">
           {/* Header with Health Score */}
 
-      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2" />
+          <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2" />
 
-        <HeaderSlotPortal>
-          <div
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-            title={lastRefresh.toLocaleString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })}
-            aria-live="polite"
-            data-testid="stock-last-refresh"
-          >
-            <Clock className="h-3.5 w-3.5" />
-            <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
-            <span className="text-muted-foreground/60">
-              ·{' '}
-              {lastRefresh.toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-            {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+            <HeaderSlotPortal>
+              <div
+                className="flex items-center gap-2 text-xs text-muted-foreground"
+                title={lastRefresh.toLocaleString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}
+                aria-live="polite"
+                data-testid="stock-last-refresh"
+              >
+                <Clock className="h-3.5 w-3.5" />
+                <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
+                <span className="text-muted-foreground/60">
+                  ·{' '}
+                  {lastRefresh.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+              </div>
+            </HeaderSlotPortal>
           </div>
-        </HeaderSlotPortal>
-      </div>
 
-      {/* Summary Cards — clickable filters */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-        {buildStockKpiCards(summary, ruptureRisk30dCount).map((card) => {
-          const ICONS: Record<typeof card.slug, React.ReactNode> = {
-            'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
-            'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
-            'risco-de-ruptura': <TrendingDown className="h-6 w-6 text-warning" />,
-            'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
-          };
+          {/* Summary Cards — clickable filters */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+            {buildStockKpiCards(summary, ruptureRisk30dCount).map((card) => {
+              const ICONS: Record<typeof card.slug, React.ReactNode> = {
+                'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
+                'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
+                'risco-de-ruptura': <TrendingDown className="h-6 w-6 text-warning" />,
+                'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
+              };
 
-          // "Risco de Ruptura" usa o filtro dimensional ruptureRiskVariantIds
-          // (set EMA ≤ 30d) ao invés de filters.status='critical' — assim a
-          // tabela mostra EXATAMENTE as variações sinalizadas, sem mistura.
-          const isRuptureCard = card.slug === 'risco-de-ruptura';
-          const isActive = isRuptureCard
-            ? isRuptureRiskActive
-            : !isRuptureRiskActive &&
-              (card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter);
-          return (
+              // "Risco de Ruptura" usa o filtro dimensional ruptureRiskVariantIds
+              // (set EMA ≤ 30d) ao invés de filters.status='critical' — assim a
+              // tabela mostra EXATAMENTE as variações sinalizadas, sem mistura.
+              const isRuptureCard = card.slug === 'risco-de-ruptura';
+              const isActive = isRuptureCard
+                ? isRuptureRiskActive
+                : !isRuptureRiskActive &&
+                  (card.filter === 'all'
+                    ? filters.status === 'all'
+                    : filters.status === card.filter);
+              return (
+                <StatCard
+                  key={card.slug}
+                  title={card.title}
+                  value={card.value.toLocaleString('pt-BR')}
+                  icon={ICONS[card.slug]}
+                  variant={card.variant}
+                  subtitle={card.subtitle}
+                  tooltip={card.tooltip}
+                  isActive={isActive}
+                  onClick={() => {
+                    if (isRuptureCard) {
+                      // toggle do filtro dimensional + zera status pra não competir
+                      if (isRuptureRiskActive) {
+                        updateFilter('ruptureRiskVariantIds', undefined);
+                      } else if (ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+                        updateFilter('status', 'all');
+                        updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+                      } else {
+                        // Sem dados EMA (flag off ou sem alertas) → fallback antigo
+                        updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
+                      }
+                      updateFilter('sortBy', 'name');
+                      updateFilter('sortDirection', 'asc');
+                      return;
+                    }
+                    if (!card.filter) return;
+                    const next =
+                      card.filter === 'all'
+                        ? 'all'
+                        : filters.status === card.filter
+                          ? 'all'
+                          : card.filter;
+                    // Qualquer outro card sai do modo "risco de ruptura"
+                    if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
+                    updateFilter('status', next);
+                    updateFilter('sortBy', 'name');
+                    updateFilter('sortDirection', 'asc');
+                  }}
+                />
+              );
+            })}
+
             <StatCard
-              key={card.slug}
-              title={card.title}
-              value={card.value.toLocaleString('pt-BR')}
-              icon={ICONS[card.slug]}
-              variant={card.variant}
-              subtitle={card.subtitle}
-              tooltip={card.tooltip}
-              isActive={isActive}
+              title="Estoque Futuro (30 dias)"
+              // SSOT: valor primário = variações distintas com reposição prevista
+              // nos próximos 30 dias. Total de unidades vira trend secundário.
+              value={futureStock30dVariantCount}
+              icon={<Truck className="h-6 w-6 text-primary" />}
+              isActive={filters.status === 'incoming'}
               onClick={() => {
-                if (isRuptureCard) {
-                  // toggle do filtro dimensional + zera status pra não competir
-                  if (isRuptureRiskActive) {
-                    updateFilter('ruptureRiskVariantIds', undefined);
-                  } else if (ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
-                    updateFilter('status', 'all');
-                    updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
-                  } else {
-                    // Sem dados EMA (flag off ou sem alertas) → fallback antigo
-                    updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
-                  }
-                  updateFilter('sortBy', 'name');
-                  updateFilter('sortDirection', 'asc');
-                  return;
-                }
-                if (!card.filter) return;
-                const next =
-                  card.filter === 'all'
-                    ? 'all'
-                    : filters.status === card.filter
-                      ? 'all'
-                      : card.filter;
-                // Qualquer outro card sai do modo "risco de ruptura"
-                if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
-                updateFilter('status', next);
+                updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
                 updateFilter('sortBy', 'name');
                 updateFilter('sortDirection', 'asc');
               }}
+              tooltip="Variações com reposição prevista nos próximos 30 dias."
+              trend={
+                futureStock30dUnits > 0
+                  ? {
+                      value: 1,
+                      label: `${futureStock30dUnits.toLocaleString('pt-BR')} un. previstas`,
+                    }
+                  : undefined
+              }
             />
-          );
-        })}
+          </div>
 
+          {/* Active Filter Badge */}
+          {isFiltered && (
+            <div className="flex animate-fade-in items-center gap-2">
+              <span className="text-sm text-muted-foreground">Filtro ativo:</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                {activeFilterLabel}
+                <button
+                  type="button"
+                  onClick={() => updateFilter('status', 'all')}
+                  className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-primary/20"
+                  aria-label="Remover filtro"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                ({productStocks.length} de {allProductStocks.length} produtos)
+              </span>
+            </div>
+          )}
 
-        <StatCard
-          title="Estoque Futuro (30 dias)"
-          // SSOT: valor primário = variações distintas com reposição prevista
-          // nos próximos 30 dias. Total de unidades vira trend secundário.
-          value={futureStock30dVariantCount}
-          icon={<Truck className="h-6 w-6 text-primary" />}
-          isActive={filters.status === 'incoming'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            updateFilter('sortBy', 'name');
-            updateFilter('sortDirection', 'asc');
-          }}
-          tooltip="Variações com reposição prevista nos próximos 30 dias."
-          trend={
-            futureStock30dUnits > 0
-              ? {
-                  value: 1,
-                  label: `${futureStock30dUnits.toLocaleString('pt-BR')} un. previstas`,
-                }
-              : undefined
-          }
-        />
+          {/* Stock Table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Palette className="h-5 w-5" />
+                    Estoque por Cor/Variação
+                    <Badge variant="secondary" className="ml-1 text-xs font-normal">
+                      {isFiltered
+                        ? `${productStocks.length} de ${allProductStocks.length}`
+                        : `${productStocks.length} produtos`}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Visualização detalhada do estoque segmentado por cores e variações
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {productStocks.length === 0 && allProductStocks.length > 0 && (
+                <div className="mb-4">
+                  <StockEmptyFiltersHint
+                    filters={filters}
+                    totalProducts={allProductStocks.length}
+                    onResetFilters={resetFilters}
+                    onUpdateFilter={updateFilter}
+                  />
+                </div>
+              )}
+              {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
+              do toolbar (busca + paginação) e do <thead>. */}
+              <VariantStockTable
+                products={productStocks}
+                isLoading={isFetching}
+                targetQuantity={filters.minQuantityNeeded}
+                ruptureFilterActive={isRuptureRiskActive}
+              />
+            </CardContent>
+          </Card>
 
-      </div>
-
-      {/* Active Filter Badge */}
-      {isFiltered && (
-        <div className="flex animate-fade-in items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filtro ativo:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-            {activeFilterLabel}
+          {/* Collapsible Risk Panel */}
+          <div className="space-y-0">
             <button
               type="button"
-              onClick={() => updateFilter('status', 'all')}
-              className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-primary/20"
-              aria-label="Remover filtro"
+              onClick={() => setRiskPanelOpen((prev) => !prev)}
+              className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              <X className="h-3.5 w-3.5" />
+              {riskPanelOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              <BarChart3 className="h-4 w-4" />
+              Painel de Risco do Fornecedor
             </button>
-          </span>
-          <span className="text-xs text-muted-foreground">
-            ({productStocks.length} de {allProductStocks.length} produtos)
-          </span>
-        </div>
-      )}
-
-
-      {/* Stock Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Palette className="h-5 w-5" />
-                Estoque por Cor/Variação
-                <Badge variant="secondary" className="ml-1 text-xs font-normal">
-                  {isFiltered
-                    ? `${productStocks.length} de ${allProductStocks.length}`
-                    : `${productStocks.length} produtos`}
-                </Badge>
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Visualização detalhada do estoque segmentado por cores e variações
-              </CardDescription>
-            </div>
+            {riskPanelOpen && (
+              <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+                <SupplierRiskPanel products={allProductStocks} />
+              </Suspense>
+            )}
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {productStocks.length === 0 && allProductStocks.length > 0 && (
-            <div className="mb-4">
-              <StockEmptyFiltersHint
-                filters={filters}
-                totalProducts={allProductStocks.length}
-                onResetFilters={resetFilters}
-                onUpdateFilter={updateFilter}
-              />
-            </div>
+
+          {/* Info Alerts */}
+          {infoAlerts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <AlertCircle className="h-5 w-5" />
+                    Outros Alertas
+                    <Badge variant="secondary" className="ml-1 text-xs font-normal">
+                      {infoAlerts.length > 10
+                        ? `exibindo 10 de ${infoAlerts.length.toLocaleString('pt-BR')}`
+                        : `${infoAlerts.length}`}
+                    </Badge>
+                  </CardTitle>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => dismissAlertsBySeverity('info')}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Limpar Todos
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="max-h-60">
+                  <div className="space-y-2">
+                    {infoAlerts.slice(0, 10).map((alert) => (
+                      <AlertCard
+                        key={alert.id}
+                        alert={alert}
+                        onDismiss={() => dismissAlert(alert.id)}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           )}
-          {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
-              do toolbar (busca + paginação) e do <thead>. */}
-          <VariantStockTable
-            products={productStocks}
-            isLoading={isFetching}
-            targetQuantity={filters.minQuantityNeeded}
-            ruptureFilterActive={isRuptureRiskActive}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Collapsible Risk Panel */}
-      <div className="space-y-0">
-        <button
-          type="button"
-          onClick={() => setRiskPanelOpen((prev) => !prev)}
-          className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {riskPanelOpen ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-          <BarChart3 className="h-4 w-4" />
-          Painel de Risco do Fornecedor
-        </button>
-        {riskPanelOpen && (
-          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-            <SupplierRiskPanel products={allProductStocks} />
-          </Suspense>
-        )}
-      </div>
-
-      {/* Info Alerts */}
-      {infoAlerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <AlertCircle className="h-5 w-5" />
-                Outros Alertas
-                <Badge variant="secondary" className="ml-1 text-xs font-normal">
-                  {infoAlerts.length > 10
-                    ? `exibindo 10 de ${infoAlerts.length.toLocaleString('pt-BR')}`
-                    : `${infoAlerts.length}`}
-                </Badge>
-              </CardTitle>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => dismissAlertsBySeverity('info')}
-              >
-                <XCircle className="h-3.5 w-3.5" />
-                Limpar Todos
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="max-h-60">
-              <div className="space-y-2">
-                {infoAlerts.slice(0, 10).map((alert) => (
-                  <AlertCard
-                    key={alert.id}
-                    alert={alert}
-                    onDismiss={() => dismissAlert(alert.id)}
-                  />
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
         </TabsContent>
       </Tabs>
     </div>

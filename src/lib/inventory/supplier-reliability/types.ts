@@ -51,8 +51,8 @@ export interface ReplenishmentMatch {
 /** Promessa que nunca casou (chegada não aconteceu na janela). */
 export interface UnmatchedPromise {
   promise: PromisedReplenishment;
-  /** 'pending' = ainda no futuro; 'expired' = passou a janela sem chegada. */
-  reason: 'pending' | 'expired';
+  /** 'expired' = passou a janela sem chegada; 'pending' = ainda no futuro. */
+  reason: 'expired' | 'pending';
 }
 
 /** Chegada sem promessa associada (entrada não anunciada). */
@@ -66,7 +66,7 @@ export interface MatchingResult {
   orphanArrivals: OrphanArrival[];
 }
 
-export type ConfidenceBand = 'high' | 'medium' | 'low' | 'unknown';
+export type ConfidenceBand = 'high' | 'low' | 'medium' | 'unknown';
 
 export interface ReliabilityWindow {
   /** Score 0..100, ou null se sem dados na janela. */
