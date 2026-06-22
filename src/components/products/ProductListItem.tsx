@@ -687,6 +687,8 @@ export const ProductListItem = memo(
                     url.searchParams.set('pid', product.id);
                     window.history.replaceState({}, '', url.toString());
                   }
+                  // Abre QuickView posicionado nesta cor (paridade com grid).
+                  setQuickViewOpen(true);
                 }}
                 onClear={() => {
                   useProductSelectionStore.setState((state) => {
