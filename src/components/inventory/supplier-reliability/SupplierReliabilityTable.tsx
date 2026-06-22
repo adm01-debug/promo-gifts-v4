@@ -46,14 +46,15 @@ export function SupplierReliabilityTable({
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = q
-      ? suppliers.filter((s) => s.supplierName.toLowerCase().includes(q))
+      ? suppliers.filter((s) => (s.supplierName ?? '').toLowerCase().includes(q))
       : [...suppliers];
     const dir = sortDir === 'asc' ? 1 : -1;
     filtered.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
         case 'name':
-          cmp = a.supplierName.localeCompare(b.supplierName, 'pt-BR');
+          // Guard: supplierName pode ser null/undefined em dados sujos
+          cmp = (a.supplierName ?? '').localeCompare(b.supplierName ?? '', 'pt-BR');
           break;
         case 'matches':
           cmp = a.matchedCount - b.matchedCount;

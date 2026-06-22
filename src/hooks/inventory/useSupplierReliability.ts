@@ -114,6 +114,12 @@ function useSupplierReliabilityClientSide() {
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
+    // FIX: Não busca 200k+ rows quando o path server-side está ativo (default).
+    // Ambos os hooks são sempre chamados (React Rules of Hooks), mas apenas
+    // o hook do path ativo deve disparar fetches.
+    // Sem este guard, o useMemo rodava aggregateReliability() → matchReplenishments()
+    // → sort crash (d.id.localeCompare is not a function) mesmo com serverSide=true.
+    enabled: !USE_SERVER_SIDE,
   });
 
   const aggregated = useMemo(() => {

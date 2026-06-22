@@ -36,6 +36,18 @@ function diffDays(aIso: string, bIso: string): number {
   return Math.round((a - b) / MS_PER_DAY);
 }
 
+/**
+ * Converte qualquer valor para string de forma segura para uso em localeCompare.
+ *
+ * Necessário porque colunas de banco (ex: bigint PKs, serial) podem chegar como
+ * JavaScript numbers em vez de strings dependendo do driver/versão do PostgREST,
+ * causando TypeError: d.id.localeCompare is not a function em runtime.
+ */
+function toStr(v: unknown): string {
+  if (v == null) return '';
+  return typeof v === 'string' ? v : String(v);
+}
+
 export function matchReplenishments(
   promises: readonly PromisedReplenishment[],
   arrivals: readonly ActualArrival[],
@@ -53,10 +65,11 @@ export function matchReplenishments(
   }
   const consumed = new Set<string>();
 
-  // Ordena chegadas por receivedAt ASC (determinismo + ordem natural)
+  // Ordena chegadas por receivedAt ASC (determinismo + ordem natural).
+  // toStr() garante segurança mesmo que id venha como number do banco.
   const sortedArrivals = [...arrivals].sort((a, b) => {
-    const cmp = a.receivedAt.localeCompare(b.receivedAt);
-    return cmp !== 0 ? cmp : a.id.localeCompare(b.id);
+    const cmp = toStr(a.receivedAt).localeCompare(toStr(b.receivedAt));
+    return cmp !== 0 ? cmp : toStr(a.id).localeCompare(toStr(b.id));
   });
 
   const matches: ReplenishmentMatch[] = [];
@@ -66,8 +79,8 @@ export function matchReplenishments(
     const candidates = bySource.get(arrival.sourceId) ?? [];
     let best: { p: PromisedReplenishment; absDelay: number; qtyDiff: number } | null = null;
     for (const p of candidates) {
-      if (consumed.has(p.id)) continue;
-      const delay = diffDays(arrival.receivedAt, p.promisedDate);
+      if (consumed.has(toStr(p.id))) continue;
+      const delay = diffDays(toStr(arrival.receivedAt), p.promisedDate);
       const absDelay = Math.abs(delay);
       if (absDelay > window) continue;
       const qtyDiff = Math.abs(arrival.receivedQuantity - p.promisedQuantity);
@@ -75,7 +88,7 @@ export function matchReplenishments(
         best === null ||
         absDelay < best.absDelay ||
         (absDelay === best.absDelay && qtyDiff < best.qtyDiff) ||
-        (absDelay === best.absDelay && qtyDiff === best.qtyDiff && p.id < best.p.id)
+        (absDelay === best.absDelay && qtyDiff === best.qtyDiff && toStr(p.id) < toStr(best.p.id))
       ) {
         best = { p, absDelay, qtyDiff };
       }
@@ -84,8 +97,8 @@ export function matchReplenishments(
       orphanArrivals.push({ arrival });
       continue;
     }
-    consumed.add(best.p.id);
-    const delayDays = diffDays(arrival.receivedAt, best.p.promisedDate);
+    consumed.add(toStr(best.p.id));
+    const delayDays = diffDays(toStr(arrival.receivedAt), best.p.promisedDate);
     const fulfillmentRatio =
       best.p.promisedQuantity > 0
         ? Math.min(1, arrival.receivedQuantity / best.p.promisedQuantity)
@@ -97,15 +110,21 @@ export function matchReplenishments(
   const todayIso = new Date().toISOString().slice(0, 10);
   const unmatchedPromises: UnmatchedPromise[] = [];
   for (const p of promises) {
-    if (consumed.has(p.id)) continue;
+    if (consumed.has(toStr(p.id))) continue;
     const overdue = diffDays(todayIso, p.promisedDate) > window;
     unmatchedPromises.push({ promise: p, reason: overdue ? 'expired' : 'pending' });
   }
 
   // Ordenação determinística da saída
-  matches.sort((a, b) => a.arrival.receivedAt.localeCompare(b.arrival.receivedAt));
-  unmatchedPromises.sort((a, b) => a.promise.promisedDate.localeCompare(b.promise.promisedDate));
-  orphanArrivals.sort((a, b) => a.arrival.receivedAt.localeCompare(b.arrival.receivedAt));
+  matches.sort((a, b) =>
+    toStr(a.arrival.receivedAt).localeCompare(toStr(b.arrival.receivedAt)),
+  );
+  unmatchedPromises.sort((a, b) =>
+    toStr(a.promise.promisedDate).localeCompare(toStr(b.promise.promisedDate)),
+  );
+  orphanArrivals.sort((a, b) =>
+    toStr(a.arrival.receivedAt).localeCompare(toStr(b.arrival.receivedAt)),
+  );
 
   return { matches, unmatchedPromises, orphanArrivals };
 }

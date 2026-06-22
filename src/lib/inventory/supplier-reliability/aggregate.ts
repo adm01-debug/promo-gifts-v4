@@ -89,7 +89,8 @@ export function aggregateReliability(input: AggregateInput): AggregateResult {
     const consumed = new Set(supplierMatches.map((m) => m.promise.id));
     const future = supplierPromises
       .filter((p) => !consumed.has(p.id) && p.promisedDate >= todayIso)
-      .sort((a, b) => a.promisedDate.localeCompare(b.promisedDate));
+      // Guard: promisedDate pode ser undefined/null em dados sujos
+      .sort((a, b) => (a.promisedDate ?? '').localeCompare(b.promisedDate ?? ''));
     const nextPromise = future[0] ?? null;
 
     const overall = computeWindow(supplierMatches, config);
@@ -117,7 +118,8 @@ export function aggregateReliability(input: AggregateInput): AggregateResult {
     const sa = a.overall.score ?? -1;
     const sb = b.overall.score ?? -1;
     if (sb !== sa) return sb - sa;
-    return a.supplierName.localeCompare(b.supplierName, 'pt-BR');
+    // Guard: supplierName pode ser vazio em dados sem match na tabela suppliers
+    return (a.supplierName ?? '').localeCompare(b.supplierName ?? '', 'pt-BR');
   });
 
   return { bySupplier, matching };
