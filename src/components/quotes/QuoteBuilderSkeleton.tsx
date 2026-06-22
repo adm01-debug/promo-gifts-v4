@@ -13,7 +13,7 @@ export function QuoteBuilderSkeleton() {
       data-testid="quote-builder-skeleton"
       aria-busy="true"
       aria-label="Carregando Novo Orçamento"
-      className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-16 pt-3 sm:space-y-4 sm:px-4 sm:pb-20 sm:pt-4 lg:px-6 lg:pb-24 xl:px-8"
+      className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 sm:space-y-4 sm:px-4 sm:pb-24 sm:pt-4 lg:px-6 lg:pb-28 xl:px-8"
     >
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -31,7 +31,7 @@ export function QuoteBuilderSkeleton() {
       <Skeleton className="h-16 w-full rounded-xl" />
 
       {/* 3-column layout (mesma proporção do estado carregado) */}
-      <div className="grid gap-4 lg:grid-cols-12">
+      <div data-testid="quote-builder-skeleton-grid" className="grid min-w-0 items-start gap-4 lg:grid-cols-12">
         {/* COL 1 — Cliente + Condições */}
         <div className="space-y-3 lg:col-span-3">
           <Skeleton className="h-48 w-full rounded-2xl" />
@@ -45,9 +45,9 @@ export function QuoteBuilderSkeleton() {
         </div>
 
         {/* COL 3 — Resumo */}
-        <div className="space-y-3 lg:col-span-4">
-          <Skeleton className="h-[360px] w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
+        <div className="min-w-0 space-y-3 lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:col-span-4 lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)] lg:overflow-hidden">
+          <Skeleton className="h-[320px] w-full rounded-2xl" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
           {/* CTA final — mesma altura/posição do botão "Criar/Salvar Rascunho" */}
           <Skeleton
             data-testid="quote-builder-skeleton-cta"
