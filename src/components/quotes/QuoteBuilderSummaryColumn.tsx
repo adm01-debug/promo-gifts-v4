@@ -175,7 +175,7 @@ export function QuoteBuilderSummaryColumn({
   };
 
   return (
-    <div data-testid="quote-builder-summary-column" className="min-w-0 self-start lg:col-span-4">
+    <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-4">
       <div
         data-testid="quote-builder-summary-sticky"
         className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:self-start"
