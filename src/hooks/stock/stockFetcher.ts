@@ -134,8 +134,16 @@ export const ALLOWED_FILTER_KEYS: Readonly<Record<string, ReadonlySet<string>>> 
   variant_supplier_sources: new Set(['is_active', 'variant_id', 'supplier_id']),
 };
 
-/** Busca paginada por keyset (`id`) via PostgREST direto (ponte descontinuada), com deduplicação. */
-export async function fetchPaginatedFromBridge<T extends { id: string }>(
+/**
+ * Busca paginada por keyset (`id`) via PostgREST direto (ponte descontinuada), com deduplicação.
+ *
+ * A constraint `T extends { id: string | number }` reflete o fato de que:
+ *  - Tabelas com UUID PK (products, product_variants, variant_supplier_sources…) → id: string
+ *  - Tabelas com bigint PK (stock_snapshots.id = int8) → PostgREST retorna como JS number
+ * Ambos os tipos são aceitos. Callers com { id: string } satisfazem a constraint
+ * porque string é subtipo de string | number (TypeScript structural typing).
+ */
+export async function fetchPaginatedFromBridge<T extends { id: string | number }>(
   table: string,
   select: string,
   pageSize = 1000,
@@ -154,8 +162,13 @@ export async function fetchPaginatedFromBridge<T extends { id: string }>(
   // é imune a reordenação de linhas existentes e a inserts concorrentes; o
   // Set `seen` é cinto-e-suspensório contra qualquer duplicata residual.
   const all: T[] = [];
-  const seen = new Set<string>();
-  let lastId: string | null = null;
+  // Set<string | number>: aceita UUIDs (string, tabelas Ouro com UUID PK)
+  // e bigint PKs (number, ex: stock_snapshots.id=int8 retornado como JS number).
+  // SameValueZero garante deduplicação correta para ambos sem mistura de tipos.
+  const seen = new Set<string | number>();
+  // string | number | null: PostgREST retorna bigint PKs como JS number (não string).
+  // Cursor evolution: null → T.id (string|number) → gt() na próxima página.
+  let lastId: string | number | null = null;
   let totalCount: number | null = null;
 
   // Aliases centralizados: tabelas Ouro expostas via views públicas (Medallion).
