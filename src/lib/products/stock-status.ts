@@ -3,20 +3,21 @@
  * (Super Filtro) and useCatalogFiltering (Index catalog).
  *
  * Rule: prefer stockStatus (pre-computed, respects min_quantity) over raw stock.
- * Variation-level check: uses variation.stockStatus when present (IMPROVEMENT 2),
- * fallback to (v.stock ?? 0) > 0 for legacy data without pre-computed status.
  *
  * stockStatus convention: lowercase with hyphens ('in-stock' | 'low-stock' | 'out-of-stock').
- * The comparison is case-insensitive to tolerate upstream casing inconsistencies.
+ * Comparison is case-insensitive to tolerate upstream casing inconsistencies.
+ *
+ * Fallback (no stockStatus): Number.isFinite(stock) && stock > 0.
+ * This correctly handles null, undefined, NaN, Infinity, -Infinity, negative values.
+ * Aligns with getCatalogStockStatus (which also uses Number.isFinite internally).
  *
  * ⚠️ Domain boundary: the inventory domain uses underscore notation
- * ('in_stock' | 'out_of_stock' | 'critical'). Those values are NOT treated
- * as 'out-of-stock' here — the two domains are deliberately separate.
+ * ('in_stock' | 'out_of_stock' | 'critical') — deliberately NOT handled here.
  */
 export interface InStockProduct {
   variations?: Array<{
     stock?: number | null;
-    /** Pre-computed status (catalog domain, hyphen). When set, takes priority over stock. */
+    /** Pre-computed status (catalog domain, hyphen). Takes priority over stock when set. */
     stockStatus?: string | null;
   }> | null;
   stockStatus?: string | null;
@@ -27,25 +28,33 @@ export interface InStockProduct {
 const OUT_OF_STOCK = 'out-of-stock';
 
 /**
+ * Returns true if stock is a finite positive number.
+ * Handles null, undefined, NaN, Infinity, -Infinity and negative values consistently
+ * with getCatalogStockStatus.
+ */
+function isPositiveFiniteStock(stock: number | null | undefined): boolean {
+  return Number.isFinite(stock) && (stock as number) > 0;
+}
+
+/**
  * Returns true if the product can be ordered.
  *
- * Priority:
- *  1. Variations: if stockStatus is set on variation → case-insensitive check.
- *     If no variation.stockStatus → fallback to (v.stock ?? 0) > 0.
- *     ANY variation that passes makes the product available.
- *  2. Product-level stockStatus → case-insensitive comparison.
- *  3. Fallback → raw stock > 0 (legacy data without pre-computed status).
+ * Priority for each variation / product:
+ *  1. stockStatus set → case-insensitive !== 'out-of-stock'
+ *  2. No stockStatus → isPositiveFiniteStock(stock) — handles NaN/Infinity/null/neg
+ *
+ * For variation-bearing products: ANY orderable variation makes the product available.
  */
 export function isProductInStock(product: InStockProduct): boolean {
   if (product.variations && product.variations.length > 0)
     return product.variations.some((v) =>
       v.stockStatus
         ? v.stockStatus.toLowerCase() !== OUT_OF_STOCK
-        : (v.stock ?? 0) > 0,
+        : isPositiveFiniteStock(v.stock),
     );
   if (product.stockStatus)
     return product.stockStatus.toLowerCase() !== OUT_OF_STOCK;
-  return (product.stock || 0) > 0;
+  return isPositiveFiniteStock(product.stock);
 }
 
 /** The literal token used for out-of-stock (exported for consumers). */

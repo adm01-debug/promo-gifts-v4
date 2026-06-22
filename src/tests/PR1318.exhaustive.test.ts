@@ -64,6 +64,15 @@ describe('A3 — fallback por stock (sem stockStatus)', () => {
   it('stock=0.5 fracional → true (sem minQty)', () => { expect(isProductInStock(p({ stock: 0.5 }))).toBe(true); });
   it('stock=NaN → false', () => { expect(isProductInStock(p({ stock: NaN }))).toBe(false); });
   it('stock=1000000 → true', () => { expect(isProductInStock(p({ stock: 1000000 }))).toBe(true); });
+  it('BUG-STOCK-INF-01 CORRIGIDO: stock=Infinity → false', () => {
+    expect(isProductInStock(p({ stock: Infinity }))).toBe(false);
+  });
+  it('stock=-Infinity → false', () => { expect(isProductInStock(p({ stock: -Infinity }))).toBe(false); });
+  it('fallback alinhado: [null,undefined,NaN,Inf,-Inf,-1,0] todos false', () => {
+    [null, undefined, NaN, Infinity, -Infinity, -1, 0].forEach(stock => {
+      expect(isProductInStock(p({ stock: stock as number }))).toBe(false);
+    });
+  });
 });
 
 // ── A4. GAP-VAR-MINQTY-01 CORRIGIDO ──────────────────────────────────────────
