@@ -10,7 +10,11 @@ export interface CategoryIcon {
 
 /**
  * Hook para buscar ícones das categorias do Supabase.
- * Retorna a tabela category_icons completa para uso no getCategoryIcon().
+ *
+ * Retorna a tabela `category_icons` completa para uso no `getCategoryIcon()`.
+ * Resultados ficam em cache por 30 min (dados muito estáveis).
+ *
+ * @see docs/CATEGORY_ICONS_GUIDE.md
  */
 export function useCategoryIcons() {
   return useQuery<CategoryIcon[]>({
@@ -22,193 +26,297 @@ export function useCategoryIcons() {
         .eq('is_active', true);
 
       if (error) throw new Error(`Failed to fetch category icons: ${error.message}`);
-
       return data || [];
     },
-    staleTime: 30 * 60 * 1000, // 30 min (dados estáveis)
+    staleTime: 30 * 60 * 1000,
   });
 }
 
 /**
- * Mapeamento palavra-chave → nome do ícone Lucide (fallback inteligente).
+ * Mapeamento palavra-chave → nome do ícone Lucide.
  *
- * Valores agora retornam nomes Lucide ("Coffee") em vez de emojis ("☕").
- * O componente CategoryIcon renderiza SVG para nomes conhecidos e
- * emoji/texto como fallback para dados legados no DB.
+ * Usado como fallback no pass 3 de `getCategoryIcon()`, quando o nome
+ * da categoria não encontra match no banco de dados.
  *
- * Para adicionar uma nova categoria: incluir as palavras-chave relevantes
- * e o nome do ícone Lucide correspondente.
+ * ### Regras
+ * - Valores SEMPRE em PascalCase: nomes válidos do ICON_MAP em CategoryIcon.tsx
+ * - Palavras-chave em português (minúsculas, sem acentos is OK)
+ * - Ordenar por tipo de produto para facilitar manutenção
+ *
+ * @see src/components/ui/CategoryIcon.tsx — ICON_MAP com todos os ícones disponíveis
+ * @see docs/CATEGORY_ICONS_GUIDE.md — guia completo
  */
 const KEYWORD_ICONS: Record<string, string> = {
-  // ─── Bar / Cozinha / Gourmet ───────────────────────────────
-  copo: 'GlassWater',
-  taça: 'Wine',
-  caneca: 'Coffee',
-  garrafa: 'Wine',
-  squeeze: 'Droplets',
-  térmica: 'Droplets',
-  térm: 'Droplets',
-  kit: 'Gift',
-  vinho: 'Wine',
-  cerveja: 'Beer',
-  café: 'Coffee',
-  churrasco: 'Beef',
-  gourmet: 'ChefHat',
-  caipirinha: 'Wine',
 
-  // ─── Utensílios de Cozinha ─────────────────────────────────
-  tábua: 'Utensils',
-  faca: 'Scissors',
-  talher: 'Utensils',
-  pegador: 'Utensils',
-  abridor: 'Wine',
-  saca: 'Wine',
-  colher: 'Utensils',
-  garfo: 'Utensils',
-  espátula: 'Utensils',
+  // ── BAR / COZINHA / GOURMET ─────────────────────────────────
+  copo:           'GlassWater',
+  taça:           'Wine',
+  caneca:         'Coffee',
+  xícara:         'Coffee',
+  garrafa:        'Wine',
+  squeeze:        'Droplets',
+  térmica:        'Thermometer',
+  térm:           'Thermometer',
+  cooler:         'Thermometer',
+  iso:            'Thermometer',
+  kit:            'Gift',
+  vinho:          'Wine',
+  cerveja:        'Beer',
+  café:           'Coffee',
+  chá:            'Coffee',
+  xícaras:        'Coffee',
+  chimarrão:      'Coffee',
+  cuia:           'Coffee',
+  tereré:         'Coffee',
+  mateira:        'Coffee',
+  erva:           'Coffee',
+  churrasco:      'Flame',
+  gourmet:        'ChefHat',
+  caipirinha:     'Wine',
+  fondue:         'ChefHat',
+  queijo:         'ChefHat',
+  drink:          'Wine',
+  bar:            'Wine',
+  coquetel:       'Wine',
+  shakeira:       'Wine',
 
-  // ─── Sulista / Chimarrão ──────────────────────────────────
-  cuia: 'Coffee',
-  chimarrão: 'Coffee',
-  tereré: 'Coffee',
-  bomba: 'Coffee',
-  mateira: 'Coffee',
+  // ── UTENSÍLIOS DE COZINHA ───────────────────────────────
+  tábua:          'Utensils',
+  faca:           'Scissors',
+  cutelaria:      'Scissors',
+  canivete:       'Scissors',
+  talher:         'Utensils',
+  pegador:        'Utensils',
+  abridor:        'Wine',
+  colher:         'Utensils',
+  garfo:          'Utensils',
+  espátula:       'Utensils',
+  bowl:           'Utensils',
+  petisqueira:    'Utensils',
+  pizza:          'Utensils',
+  alimentos:      'Utensils',
+  comida:         'Utensils',
 
-  // ─── Bolsas / Acessórios ──────────────────────────────────
-  bolsa: 'ShoppingBag',
-  mochila: 'Backpack',
-  necessaire: 'ShoppingBag',
-  carteira: 'Wallet',
-  pochete: 'ShoppingBag',
-  sacola: 'ShoppingBag',
-  pasta: 'Briefcase',
-  maleta: 'Briefcase',
+  // ── BOLSAS / ACESSÓRIOS ────────────────────────────────
+  bolsa:          'ShoppingBag',
+  mochila:        'Backpack',
+  sacochila:      'Backpack',
+  necessaire:     'ShoppingBag',
+  frasqueira:     'ShoppingBag',
+  carteira:       'Wallet',
+  pochete:        'ShoppingBag',
+  sacola:         'Recycle',
+  pasta:          'Briefcase',
+  maleta:         'Briefcase',
+  mala:           'Luggage',
+  viagem:         'Luggage',
+  'kit viagem':   'Luggage',
+  'bolsa viagem': 'Luggage',
 
-  // ─── Vestuário ────────────────────────────────────────────
-  camisa: 'Shirt',
-  camiseta: 'Shirt',
-  boné: 'Tag',
-  chapéu: 'Tag',
-  calça: 'Shirt',
-  jaqueta: 'Shirt',
-  avental: 'ChefHat',
-  toalha: 'Layers',
-  lenço: 'Tag',
+  // ── VESTUÁRIO / CALÇADOS ───────────────────────────────
+  camisa:         'Shirt',
+  camiseta:       'Shirt',
+  boné:           'Tag',
+  chapéu:         'Sun',
+  calça:          'Shirt',
+  jaqueta:        'Shirt',
+  colete:         'Shirt',
+  moletão:        'Shirt',
+  avental:        'ChefHat',
+  toalha:         'Layers',
+  manta:          'Layers',
+  cobertor:       'Layers',
+  lenço:          'Tag',
+  óculos:         'Glasses',
+  viseira:        'Sun',
+  chinelo:        'Dumbbell',
+  calçado:        'Dumbbell',
+  botína:         'Dumbbell',
+  sandália:       'Dumbbell',
 
-  // ─── Escritório / Papelaria ───────────────────────────────
-  caneta: 'PenLine',
-  lápis: 'Pencil',
-  caderno: 'Notebook',
-  agenda: 'Calendar',
-  bloco: 'Notebook',
-  calculadora: 'ClipboardList',
-  porta: 'Pencil',
-  clips: 'Paperclip',
+  // ── ESCRITÓRIO / PAPELARIA ────────────────────────────
+  caneta:         'PenLine',
+  lápis:          'Pencil',
+  lapiseira:      'Pencil',
+  caderno:        'Notebook',
+  caderneta:      'Notebook',
+  bloco:          'Notebook',
+  agenda:         'Calendar',
+  calendário:     'Calendar',
+  calculadora:    'Calculator',
+  clips:          'Paperclip',
+  papelaria:      'Notebook',
 
-  // ─── Tecnologia ──────────────────────────────────────────
-  cabo: 'Plug',
-  carregador: 'Battery',
-  fone: 'Headphones',
-  mouse: 'Mouse',
-  teclado: 'Keyboard',
-  pendrive: 'HardDrive',
+  // ── TECNOLOGIA ───────────────────────────────────────
+  cabo:           'Plug',
+  carregador:     'Battery',
+  powerbank:      'Battery',
+  'power bank':   'Battery',
+  fone:           'Headphones',
+  mouse:          'Mouse',
+  teclado:        'Keyboard',
+  pendrive:       'HardDrive',
+  'pen drive':    'HardDrive',
   'caixa de som': 'Speaker',
-  'power bank': 'Battery',
-  celular: 'Smartphone',
-  suporte: 'Smartphone',
-  ring: 'Smartphone',
+  celular:        'Smartphone',
+  smartphone:     'Smartphone',
+  notebook:       'Laptop',
+  laptop:         'Laptop',
+  tecnologia:     'Cpu',
 
-  // ─── Ferramentas ─────────────────────────────────────────
-  ferramenta: 'Wrench',
-  chave: 'Key',
-  lanterna: 'Flashlight',
-  trena: 'Ruler',
-  alicate: 'Wrench',
-  martelo: 'Hammer',
-  fita: 'Ruler',
+  // ── FERRAMENTAS ──────────────────────────────────────
+  ferramenta:     'Wrench',
+  chave:          'Key',
+  chaveiro:       'Key',
+  mosquetão:      'Key',
+  lanterna:       'Flashlight',
+  luminária:      'Lamp',
+  lâmpada:        'Lamp',
+  trena:          'Ruler',
+  alicate:        'Wrench',
+  martelo:        'Hammer',
+  fita:           'Ruler',
+  'anti furto':   'Lock',
+  cadeado:        'Lock',
+  trava:          'Lock',
+  pin:            'Pin',
+  botton:         'Pin',
+  broche:         'Pin',
 
-  // ─── Esportes / Lazer ────────────────────────────────────
-  bola: 'Circle',
-  raquete: 'Zap',
-  yoga: 'Heart',
-  fitness: 'Dumbbell',
-  esporte: 'Dumbbell',
-  praia: 'Sun',
-  piscina: 'Droplets',
+  // ── ESPORTES / LAZER ────────────────────────────────
+  bola:           'CircleDot',
+  futebol:        'CircleDot',
+  vôlei:          'CircleDot',
+  basquete:       'CircleDot',
+  raquete:        'Dumbbell',
+  yoga:           'Heart',
+  fitness:        'Dumbbell',
+  academia:       'Dumbbell',
+  esporte:        'Dumbbell',
+  corrida:        'Dumbbell',
+  praia:          'Sun',
+  piscina:        'Droplets',
+  guarda:         'Umbrella',
+  chuva:          'Umbrella',
+  guarda-chuva:   'Umbrella',
+  guarda-sol:     'Umbrella',
 
-  // ─── Jogos ───────────────────────────────────────────────
-  jogo: 'Gamepad2',
-  dominó: 'Dices',
-  baralho: 'Dices',
-  xadrez: 'Dices',
-  brinquedo: 'Star',
-  quebra: 'Layers',
+  // ── SAÚDE / BELEZA ─────────────────────────────────
+  espelho:        'Sparkles',
+  escova:         'Scissors',
+  pente:          'Scissors',
+  manicure:       'Scissors',
+  massageador:    'Heart',
+  massagem:       'Heart',
+  'kit higiene':  'Droplets',
+  álcool:         'Droplets',
+  máscara:        'Heart',
+  sabonete:       'Droplets',
+  perfume:        'Sparkles',
+  beleza:         'Sparkles',
+  maquiagem:      'Sparkles',
+  comprimido:     'Pill',
+  remédio:        'Pill',
+  farmácia:       'Pill',
+  medicamento:    'Pill',
+  spa:            'Droplets',
+  banho:          'Droplets',
+  roupa:          'Droplets',
 
-  // ─── Casa / Decoração ────────────────────────────────────
-  vela: 'Flame',
-  'porta-retrato': 'Home',
-  relógio: 'Watch',
-  almofada: 'Home',
-  organizador: 'Package',
-  vaso: 'Flower2',
-  decoração: 'Home',
+  // ── JOGOS ─────────────────────────────────────────
+  jogo:           'Gamepad2',
+  dominó:         'Dices',
+  baralho:        'Dices',
+  xadrez:         'Dices',
+  brinquedo:      'Star',
+  quebra:         'Layers',
 
-  // ─── Saúde / Beleza / Higiene ─────────────────────────────
-  espelho: 'Sparkles',
-  escova: 'Sparkles',
-  massageador: 'Heart',
-  'kit higiene': 'Droplets',
-  álcool: 'Droplets',
-  máscara: 'Heart',
-  sabonete: 'Droplets',
-  perfume: 'Sparkles',
+  // ── CASA / DECORAÇÃO ──────────────────────────────
+  vela:           'Flame',
+  'porta-retrato': 'Image',
+  porta-retrato:  'Image',
+  retrato:        'Image',
+  relógio:        'Clock',
+  almofada:       'Layers',
+  organizador:    'Package',
+  vaso:           'Flower2',
+  planta:         'Leaf',
+  decoração:     'Home',
+  despertador:    'AlarmClock',
 
-  // ─── Pet ─────────────────────────────────────────────────
-  pet: 'PawPrint',
-  cachorro: 'PawPrint',
-  gato: 'PawPrint',
-  coleira: 'PawPrint',
-  comedouro: 'PawPrint',
-  'brinquedo pet': 'PawPrint',
+  // ── PET ────────────────────────────────────────────
+  pet:            'PawPrint',
+  cachorro:       'PawPrint',
+  gato:           'PawPrint',
+  coleira:        'PawPrint',
+  comedouro:      'PawPrint',
+  bebedouro:      'PawPrint',
+  'brinquedo pet':'PawPrint',
+  ração:          'PawPrint',
+  cama:           'PawPrint',
+  casinha:        'PawPrint',
 
-  // ─── Embalagens / Caixas ─────────────────────────────────
-  embalagem: 'Package',
-  caixa: 'Package',
-  papel: 'Paperclip',
+  // ── EMBALAGENS / CAIXAS ─────────────────────────────
+  embalagem:      'Package',
+  caixa:          'Package',
+  estojo:         'Package',
+  'berço':         'Package',
+  papel:          'Paperclip',
+  marmita:        'Package',
+  lancheira:      'Package',
 
-  // ─── Chaveiros ───────────────────────────────────────────
-  chaveiro: 'Key',
-  mosquetão: 'Key',
+  // ── INFANTIL ───────────────────────────────────────
+  infantil:       'Star',
+  criança:        'Star',
+  bebê:           'Heart',
 
-  // ─── Infantil ────────────────────────────────────────────
-  infantil: 'Star',
-  criança: 'Star',
-  bebê: 'Heart',
+  // ── PREMIUM / PREMIAÇÕES ────────────────────────────
+  troféu:         'Trophy',
+  medalha:        'Medal',
+  placa:          'Award',
+  certificado:    'Award',
+  premiação:      'Award',
+  motivação:      'Award',
+  premium:        'Crown',
+  vip:            'Crown',
+  executivo:      'Crown',
+  festas:         'Sparkles',
+  evento:         'Sparkles',
 
-  // ─── Premium / Corporativo / Premiações ──────────────────
-  troféu: 'Trophy',
-  medalha: 'Medal',
-  placa: 'Award',
-  pin: 'Tag',
-  botton: 'Circle',
+  // ── ALIMENTOS / DOCES ─────────────────────────────
+  doce:           'Gift',
+  chocolate:      'Heart',
+  bombom:         'Gift',
+  biscoito:       'Gift',
+  alimento:       'Utensils',
+  castanha:       'Leaf',
 
-  // ─── Alimentos / Doces ───────────────────────────────────
-  doce: 'Gift',
-  chocolate: 'Heart',
-  bombom: 'Gift',
-  biscoito: 'Gift',
-  comida: 'Utensils',
-  alimento: 'Utensils',
-  castanha: 'Leaf',
+  // ── ECO / SUSTENTÁVEL / AGRO ────────────────────────
+  eco:            'Leaf',
+  ecológico:      'Leaf',
+  reciclado:      'Recycle',
+  bambu:          'TreePine',
+  sustentável:    'Leaf',
+  madeira:        'TreePine',
+  cortiça:        'TreePine',
+  flor:           'Flower2',
+  agro:           'Sprout',
+  cultivo:        'Sprout',
+  semente:        'Sprout',
+  broto:          'Sprout',
+  muda:           'Sprout',
 
-  // ─── Eco / Sustentável / Natureza ────────────────────────
-  eco: 'Leaf',
-  reciclado: 'Recycle',
-  bambu: 'TreePine',
-  sustentável: 'Leaf',
-  madeira: 'TreePine',
-  planta: 'Leaf',
-  flor: 'Flower2',
+  // ── IDENTIFICAÇÃO / CACHÉ ───────────────────────────
+  crachá:         'CreditCard',
+  credencial:     'CreditCard',
+  identificação: 'CreditCard',
+  cordão:         'CreditCard',
+
+  // ── VEÍCULOS / AUTOMOTIVO ───────────────────────────
+  veículo:        'Car',
+  carro:          'Car',
+  automotivo:     'Car',
+  moto:           'Car',
 };
 
 /**
@@ -216,15 +324,26 @@ const KEYWORD_ICONS: Record<string, string> = {
  *
  * ## Pipeline de resolução (4 passes)
  *
- * 1. **Busca exata** em category_icons por nome da categoria
- * 2. **Busca parcial** (contém) em category_icons
- * 3. **Keyword map** estático: ~140 palavras-chave → nome Lucide
- * 4. **Primeira palavra** significativa em category_icons
- * 5. Fallback final: '📦' (renderizado como emoji pelo CategoryIcon)
+ * | Pass | Fonte                        | Exemplo                          |
+ * |------|------------------------------|----------------------------------|
+ * | 1    | Busca exata em category_icons  | "Canecas" → "Coffee"            |
+ * | 2    | Busca parcial (contém)         | "Canecas | Vidro" → "Coffee"    |
+ * | 3    | KEYWORD_ICONS (mapa estático)  | "caneca" → "Coffee"             |
+ * | 4    | Primeira palavra no banco      | "Kit" → busca no banco          |
+ * | -    | Fallback                       | '📦' (Package como emoji)          |
  *
- * Os valores retornados por esse função são consumidos pelo componente
- * CategoryIcon, que converte automaticamente nomes Lucide em SVG
- * e trata emojis/texto como fallback legado.
+ * ## Valores retornados
+ *
+ * - Nome Lucide: `"Coffee"`, `"Luggage"`, `"CircleDot"` → CategoryIcon renderiza SVG
+ * - Emoji legado: `"☕"` (se ainda no DB) → CategoryIcon renderiza como `<span>`
+ * - Fallback: `"📦"` → CategoryIcon renderiza como `<span>` com Package emoji
+ *
+ * @param categoryName Nome da categoria (ex: "Canecas | Porcelana")
+ * @param icons Lista de ícones do banco (via useCategoryIcons)
+ * @returns String com nome Lucide ou emoji/fallback
+ *
+ * @see src/components/ui/CategoryIcon.tsx — renderizador final
+ * @see docs/CATEGORY_ICONS_GUIDE.md — guia completo
  */
 export function getCategoryIcon(
   categoryName: string | null | undefined,
@@ -261,5 +380,5 @@ export function getCategoryIcon(
     if (firstWordMatch) return firstWordMatch.icon;
   }
 
-  return '📦'; // Padrão (CategoryIcon renderiza como emoji)
+  return '📦'; // Fallback final — CategoryIcon renderiza como emoji Package
 }
