@@ -336,22 +336,18 @@ export function useSellerCarts() {
   });
 
   // Update item sort order
+  // BUG-6 FIX: substituído de N requests paralelos (Promise.all) para 1 RPC batch.
+  // Com carrinhos grandes (50-200 itens), Promise.all gerava N conexões DB e risco
+  // de rate limit no PostgREST. fn_batch_update_cart_item_sort_order é O(1) roundtrip.
   const updateItemSortOrder = useMutation({
     mutationFn: async (items: { id: string; sort_order: number }[]) => {
-      // Promise.all envia todos os UPDATEs em paralelo e rejeita com o primeiro
-      // erro — O(max_latency) vs O(N×latency) do loop serial. Em caso de falha
-      // parcial, onError já invalida a query para restaurar a ordem do servidor.
-      await Promise.all(
-        items.map(({ id, sort_order: sortOrder }) =>
-          supabase
-            .from('seller_cart_items')
-            .update({ sort_order: sortOrder })
-            .eq('id', id)
-            .then(({ error }) => {
-              if (error) throw error;
-            }),
-        ),
+      if (items.length === 0) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.rpc as any)(
+        'fn_batch_update_cart_item_sort_order',
+        { p_updates: items },
       );
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });

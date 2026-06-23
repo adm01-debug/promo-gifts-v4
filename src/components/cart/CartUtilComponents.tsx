@@ -349,9 +349,7 @@ export function ActionHistoryPanel({ cartId }: { cartId: string }) {
 // ============================================
 
 export { exportCartToCSV, exportCartToPDF, shareCartLink } from './cart-utils/CartExport';
-export {
-  CompareCartsDialog,
-  SaveTemplateDialog,
-  LoadTemplateDialog,
-} from './cart-utils/CartDialogs';
+// SaveTemplateDialog e LoadTemplateDialog removidos: dead code — nunca importados.
+// O fluxo de templates é gerenciado inline em CartSidebar.tsx com Dialog próprio.
+export { CompareCartsDialog } from './cart-utils/CartDialogs';
 export { MobileSummarySheet } from './cart-utils/CartMobileSheet';

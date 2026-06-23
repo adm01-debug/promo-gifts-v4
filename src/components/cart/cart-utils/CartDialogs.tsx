@@ -24,21 +24,25 @@ import { formatCurrency, getStatusCfg } from '../CartUtilComponents';
 export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
   if (carts.length < 2) return null;
 
+  // BUG-11 FIX: cap a 3 carrinhos — grid não suporta mais de 3 colunas legíveis.
+  // Com o novo limite de 10 carrinhos, exibir todos quebrava o layout horizontal.
+  const displayCarts = carts.slice(0, 3);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs">
           <Columns aria-hidden="true" className="h-3.5 w-3.5" />
-          Comparar
+          Comparar{carts.length > 3 ? ` (3/${carts.length})` : ''}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[80vh] max-w-5xl">
         <DialogHeader>
-          <DialogTitle>Comparar Carrinhos</DialogTitle>
+          <DialogTitle>Comparar Carrinhos{carts.length > 3 ? ` — exibindo 3 de ${carts.length}` : ''}</DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[65vh]">
-          <div className={cn('grid gap-4', carts.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
-            {carts.map((cart) => {
+          <div className={cn('grid gap-4', displayCarts.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+            {displayCarts.map((cart) => {
               const subtotal = cart.items.reduce(
                 (s, i) => s + (Number(i.product_price) || 0) * (Number(i.quantity) || 0),
                 0,
