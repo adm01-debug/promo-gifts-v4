@@ -51,24 +51,6 @@ export function CartHeaderButton() {
   // o contexto faz fallback automático para carts[0] quando activeCartId === null,
   // o que impediria o usuário de recolher o primeiro carrinho da lista.
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
-  const toggleCollapse = (id: string, currentlyActive: boolean) => {
-    setPendingDeleteId(null);
-    if (currentlyActive) {
-      setCollapsedIds((prev) => {
-        const next = new Set(prev);
-        next.add(id);
-        return next;
-      });
-    } else {
-      setCollapsedIds((prev) => {
-        if (!prev.has(id)) return prev;
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      setActiveCartId(id);
-    }
-  };
 
   // Listen for FAB "open cart" event
   useEffect(() => {
