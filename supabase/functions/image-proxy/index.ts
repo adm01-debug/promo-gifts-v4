@@ -11,6 +11,7 @@ const ALLOWED_DOMAINS = [
   'spotgifts.com.br',
   'api.minhaxbz.com.br',         // XBZ API images
   'minhaxbz.com.br',
+  'cdndeprodutos.azureedge.net', // XBZ Azure CDN — 4.5% product_images
   'asiaimport.com.br',           // Asia Import
   'www.asiaimport.com.br',
   'somarcas.com.br',             // Só Marcas

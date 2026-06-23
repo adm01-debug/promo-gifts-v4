@@ -1,21 +1,50 @@
 /**
  * Proxy de imagens externas para evitar CORS
  * Reescreve URLs de domínios bloqueados para passar pelo edge function proxy
+ *
+ * BUG-CORS-SUPPLIERS FIX (2026-06-23):
+ * PROXIED_DOMAINS estava limitado a spotgifts.com.br (12.7% das imagens).
+ * product_images.url_original contém URLs de 5 fornecedores distintos:
+ *   - XBZ/minhaxbz: 56.6% (40.710 imagens) ← maior supplier, sem proxy!
+ *   - SPOT: 12.7% (9.167 imagens) ← único proxiado antes deste fix
+ *   - Asia Import: 7.5% (5.370 imagens) ← sem proxy
+ *   - Azure CDN XBZ: 4.5% (3.225 imagens) ← sem proxy
+ *   - Só Marcas: 2.0% (1.428 imagens) ← sem proxy
+ * Sem proxy, quando a imagem Cloudflare CDN falha, o browser tenta carregar
+ * a url_original diretamente → CORS error para 87.3% das imagens.
+ * Fix: adicionar todos os domínios de fornecedores ao PROXIED_DOMAINS.
+ * A edge function image-proxy já suporta estes domínios em ALLOWED_DOMAINS.
  */
 
-const PROXIED_DOMAINS = ['www.spotgifts.com.br', 'spotgifts.com.br'];
+const PROXIED_DOMAINS = new Set([
+  // SPOT (Stricker) — 12.7% das imagens
+  'www.spotgifts.com.br',
+  'spotgifts.com.br',
+  // XBZ Brindes — 56.6% das imagens (maior supplier)
+  'api.minhaxbz.com.br',
+  'minhaxbz.com.br',
+  // Azure CDN usado pelo XBZ (cdndeprodutos = CDN de produtos em PT)
+  'cdndeprodutos.azureedge.net',
+  // Asia Import — 7.5% das imagens
+  'asiaimport.com.br',
+  'www.asiaimport.com.br',
+  // Só Marcas — 2.0% das imagens
+  'somarcas.com.br',
+  'www.somarcas.com.br',
+]);
 
 const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
 /**
- * Retorna a URL proxiada se o domínio requer proxy, senão retorna a original
+ * Retorna a URL proxiada se o domínio requer proxy, senão retorna a original.
+ * Usa Set.has() para O(1) lookup vs Array.includes() O(n).
  */
 export function getProxiedImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
 
   try {
     const parsed = new URL(url);
-    if (PROXIED_DOMAINS.includes(parsed.hostname)) {
+    if (PROXIED_DOMAINS.has(parsed.hostname)) {
       return `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
     }
   } catch {
@@ -32,7 +61,7 @@ export function needsProxy(url: string | null | undefined): boolean {
   if (!url) return false;
   try {
     const parsed = new URL(url);
-    return PROXIED_DOMAINS.includes(parsed.hostname);
+    return PROXIED_DOMAINS.has(parsed.hostname);
   } catch {
     return false;
   }
