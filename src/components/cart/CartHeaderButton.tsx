@@ -24,6 +24,8 @@ import {
   Eraser,
   Minus,
   Eye,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -282,12 +284,17 @@ export function CartHeaderButton() {
                           <div className="flex items-center gap-2.5 px-3 py-2.5">
                             <button
                               type="button"
-                              aria-label={`Selecionar carrinho de ${cart.company_name}`}
+                              aria-label={
+                                isActive
+                                  ? `Recolher carrinho de ${cart.company_name}`
+                                  : `Expandir carrinho de ${cart.company_name}`
+                              }
                               aria-pressed={isActive}
+                              aria-expanded={isActive}
                               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                               onClick={() => {
                                 setPendingDeleteId(null);
-                                setActiveCartId(cart.id);
+                                setActiveCartId(isActive ? null : cart.id);
                               }}
                             >
                               {cart.company_logo_url ? (
@@ -429,6 +436,36 @@ export function CartHeaderButton() {
                                   <TooltipContent side="top">Excluir carrinho</TooltipContent>
                                 </Tooltip>
                               )}
+                              {/* Recolher/expandir carrinho — chevron explícito */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={
+                                      isActive
+                                        ? `Recolher carrinho de ${cart.company_name}`
+                                        : `Expandir carrinho de ${cart.company_name}`
+                                    }
+                                    aria-expanded={isActive}
+                                    data-testid={`cart-toggle-${cart.id}`}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPendingDeleteId(null);
+                                      setActiveCartId(isActive ? null : cart.id);
+                                    }}
+                                  >
+                                    {isActive ? (
+                                      <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  {isActive ? 'Recolher' : 'Expandir'}
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                           </div>
 
