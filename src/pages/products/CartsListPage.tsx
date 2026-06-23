@@ -35,7 +35,7 @@ import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDial
 import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
 import type { SellerCart, CartStatus } from '@/hooks/products';
-import { SELLER_CART_LIMIT_REACHED_MESSAGE } from '@/hooks/products/useSellerCarts';
+
 
 type StatusFilter = CartStatus | 'all';
 type SortKey = 'items-desc' | 'recent' | 'value-desc';
@@ -75,7 +75,7 @@ export default function CartsListPage() {
 
 function CartsListContent() {
   const navigate = useNavigate();
-  const { carts, isLoading, canCreateCart } = useSellerCartContext();
+  const { carts, isLoading } = useSellerCartContext();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
