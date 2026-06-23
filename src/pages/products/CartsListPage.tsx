@@ -140,15 +140,9 @@ function CartsListContent() {
         </div>
         <Button
           onClick={() => setPickerOpen(true)}
-          disabled={!canCreateCart}
           data-testid="carts-list-new"
-          aria-label={canCreateCart ? 'Criar novo carrinho' : SELLER_CART_LIMIT_REACHED_MESSAGE}
+          aria-label="Criar novo carrinho"
           className="gap-2"
-          title={
-            !canCreateCart
-              ? SELLER_CART_LIMIT_REACHED_MESSAGE
-              : undefined
-          }
         >
           <Plus aria-hidden="true" className="h-4 w-4" />
           Novo carrinho
@@ -241,16 +235,7 @@ function CartsListContent() {
           title="Nenhum carrinho aberto"
           description="Crie um carrinho para começar a montar uma proposta para um cliente."
         >
-          <Button
-            onClick={() => setPickerOpen(true)}
-            disabled={!canCreateCart}
-            className="gap-2"
-            title={
-              !canCreateCart
-                ? SELLER_CART_LIMIT_REACHED_MESSAGE
-                : undefined
-            }
-          >
+          <Button onClick={() => setPickerOpen(true)} className="gap-2">
             <Plus aria-hidden="true" className="h-4 w-4" /> Novo carrinho
           </Button>
         </EmptyState>

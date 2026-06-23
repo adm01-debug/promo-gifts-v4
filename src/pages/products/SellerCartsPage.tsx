@@ -402,16 +402,10 @@ function SellerCartsContent() {
           {s.carts.length >= 2 && <CompareCartsDialog carts={s.carts} />}
           <Button
             onClick={() => s.setShowNewCart(true)}
-            disabled={!s.canCreateCart}
             size="sm"
             data-testid="seller-carts-new"
-            aria-label={s.canCreateCart ? 'Criar novo carrinho' : SELLER_CART_LIMIT_REACHED_MESSAGE}
-            className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
-            title={
-              !s.canCreateCart
-                ? SELLER_CART_LIMIT_REACHED_MESSAGE
-                : undefined
-            }
+            aria-label="Criar novo carrinho"
+            className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus aria-hidden="true" className="h-3.5 w-3.5" /> Novo Carrinho
           </Button>
