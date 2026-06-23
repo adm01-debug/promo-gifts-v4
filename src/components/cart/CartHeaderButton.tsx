@@ -121,6 +121,44 @@ export function CartHeaderButton() {
     restoreItems,
   } = cartContext;
 
+  // Sanitiza collapsedIds: remove ids que não existem mais na lista (cart deletado/renomeado).
+  // Persiste em localStorage para sobreviver a refresh.
+  useEffect(() => {
+    const validIds = new Set(carts.map((c) => c.id));
+    setCollapsedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [carts]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        COLLAPSED_STORAGE_KEY,
+        JSON.stringify(Array.from(collapsedIds)),
+      );
+    } catch {
+      /* quota/safari private mode — ignora silenciosamente */
+    }
+  }, [collapsedIds]);
+
+  // Debug em dev: rastreia activeCartId, fallback e collapsedIds.
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('[CartHeaderButton]', {
+      activeCartId,
+      collapsedIds: Array.from(collapsedIds),
+      fallbackTo: !activeCartId && carts.length > 0 ? carts[0].id : null,
+    });
+  }
+
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
