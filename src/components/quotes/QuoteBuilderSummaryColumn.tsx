@@ -44,8 +44,8 @@ import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
-
-const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+// BUG-C FIX: import SSOT round2 instead of duplicating it locally
+import { round2 } from '@/hooks/quotes/quoteHelpers';
 
 interface Props {
   items: QuoteItem[];
@@ -118,8 +118,10 @@ export function QuoteBuilderSummaryColumn({
   const [showOnlyStale, setShowOnlyStale] = useState(false);
 
   // ── Base apresentada (subtotal + markup) — referência para converter desconto %/R$ ──
+  // BUG-D FIX: clamp markup to [0,50] so this mirrors calculateQuoteTotals exactly
   const presentedSubtotal = useMemo(() => {
-    return round2((realSubtotal || 0) * (1 + (negotiationMarkup || 0) / 100));
+    const clampedMarkup = Math.max(0, Math.min(50, negotiationMarkup || 0));
+    return round2((realSubtotal || 0) * (1 + clampedMarkup / 100));
   }, [realSubtotal, negotiationMarkup]);
 
   const handleDiscountTypeChange = (next: 'amount' | 'percent') => {
@@ -671,15 +673,11 @@ export function QuoteBuilderSummaryColumn({
             <div className="flex items-baseline justify-between gap-2 border-t border-border/30 pt-1.5">
               <div>
                 <span className="text-base font-bold">Total</span>
-                {items.length > 0 && (
+                {/* BUG-R FIX: only show per-unit price for single-product quotes;
+                    dividing total by all units across different products is meaningless */}
+                {items.length === 1 && items[0].quantity > 0 && (
                   <p className="text-[10px] text-muted-foreground">
-                    ≈
-                    {formatCurrency(
-                      items.reduce((s, i) => s + i.quantity, 0) > 0
-                        ? total / items.reduce((s, i) => s + i.quantity, 0)
-                        : 0,
-                    )}
-                    /un.
+                    ≈{formatCurrency(total / items[0].quantity)}/un.
                   </p>
                 )}
               </div>

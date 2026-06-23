@@ -1014,15 +1014,22 @@ export function useQuoteBuilderState() {
           return;
         }
 
+        // BUG-Q FIX: require validUntil for non-draft saves (empty was silently ignored)
         // BUG-015 FIX: Block sending with past validity date
         // FIX-C04: usar T23:59:59 (hora local) para não bloquear no mesmo dia da validade.
         // new Date('yyyy-MM-dd') = midnight UTC = 21h BRT do dia anterior — causava
         // bloqueio indevido quando o usuário tentava enviar no próprio dia da validade.
-        if (status !== 'draft' && validUntil && new Date(validUntil + 'T23:59:59') < new Date()) {
-          toast.error(
-            'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
-          );
-          return;
+        if (status !== 'draft') {
+          if (!validUntil) {
+            toast.error('Informe a data de validade da proposta antes de finalizar.');
+            return;
+          }
+          if (new Date(validUntil + 'T23:59:59') < new Date()) {
+            toast.error(
+              'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
+            );
+            return;
+          }
         }
 
         // BUG-008 FIX: Validate status transition before hitting DB

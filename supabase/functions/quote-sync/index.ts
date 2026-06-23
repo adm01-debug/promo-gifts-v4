@@ -67,6 +67,8 @@ interface QuoteData {
   seller_id?: string;
   seller_name?: string;
   status: string;
+  // BUG-O FIX: payment_method was missing — external systems never received this field
+  payment_method?: string;
   subtotal: number;
   discount_percent: number;
   discount_amount: number;
@@ -75,6 +77,7 @@ interface QuoteData {
   valid_until?: string;
   payment_terms?: string;
   delivery_time?: string;
+  delivery_time_formatted?: string;
   shipping_type?: string;
   shipping_cost?: number;
   items: QuoteItemData[];
@@ -283,10 +286,15 @@ async function fetchQuoteFromCRM(quoteId: string): Promise<QuoteData | null> {
     client_email: quote.client_email, client_phone: quote.client_phone,
     client_company: quote.client_company, seller_id: quote.seller_id,
     seller_name: sellerName, status: quote.status,
+    // BUG-O FIX: include payment_method in payload
+    payment_method: quote.payment_method,
     subtotal: Number(quote.subtotal || 0), discount_percent: Number(quote.discount_percent || 0),
     discount_amount: Number(quote.discount_amount || 0), total: Number(quote.total || 0),
     notes: quote.notes, valid_until: quote.valid_until,
-    payment_terms: quote.payment_terms, delivery_time: quote.delivery_time,
+    payment_terms: quote.payment_terms,
+    delivery_time: quote.delivery_time,
+    // BUG-P FIX: human-readable delivery time for external systems
+    delivery_time_formatted: formatDeliveryTime(quote.delivery_time),
     shipping_type: quote.shipping_type, shipping_cost: Number(quote.shipping_cost || 0),
     items: formattedItems, created_at: quote.created_at,
     internal_real_subtotal: quote.real_subtotal != null ? Number(quote.real_subtotal) : undefined,
@@ -305,6 +313,27 @@ async function updateCRMSyncStatus(quoteId: string, n8nResponse: Record<string, 
     bitrix_quote_id: (n8nResponse?.bitrix_quote_id as string) || null,
   }).eq("id", quoteId);
   if (error) console.error("Error updating CRM sync status:", error);
+}
+
+// BUG-P FIX: convert raw DB delivery_time values to human-readable strings for external systems.
+// Raw format examples: "7_dias", "14_dias", "date:2026-07-01"
+function formatDeliveryTime(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  if (raw.startsWith("date:")) {
+    const iso = raw.slice(5);
+    try {
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch { return iso; }
+  }
+  const map: Record<string, string> = {
+    "7_dias": "7 dias após aprovação",
+    "14_dias": "14 dias após aprovação",
+    "21_dias": "21 dias após aprovação",
+    "28_dias": "28 dias após aprovação",
+    "45_dias": "45 dias após aprovação",
+  };
+  return map[raw] ?? raw;
 }
 
 // BUG-043 FIX: strip internal_* fields before sending to any external webhook.
