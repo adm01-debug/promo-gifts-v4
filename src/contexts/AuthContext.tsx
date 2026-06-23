@@ -108,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     setIsLoading,
     rolesLoaded,
+    setRolesLoaded, // BUG-WATCHDOG-ROLES FIX (2026-06-23)
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,
@@ -312,12 +313,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const log = createClientLogger('auth.watchdog');
       log.warn('isLoading_stalled_forcing_false', { duration: '8s' });
       setIsLoading(false);
+      // BUG-WATCHDOG-ROLES FIX (2026-06-23): forçar rolesLoaded=true para desbloquear
+      // queries guardadas por `enabled: rolesLoaded && ...`. Sem isso, após stall de 8s
+      // a UI permanece congelada mesmo com sessão ativa — hooks ficam eternamente
+      // desabilitados. Roles ficam [] (menor privilégio): isAdmin/isDev=false → seguro;
+      // RLS bloqueia qualquer acesso indevido no servidor.
+      setRolesLoaded(true);
       toast.error(
         'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
       );
     }, 8000);
     return () => window.clearTimeout(timer);
-  }, [isLoading, setIsLoading]);
+  }, [isLoading, setIsLoading, setRolesLoaded]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const log = createClientLogger('auth.signIn', { base: { email_domain: email.split('@')[1] } });
