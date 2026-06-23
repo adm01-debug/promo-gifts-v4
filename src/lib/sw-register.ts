@@ -101,12 +101,31 @@ export async function unregisterServiceWorker(): Promise<void> {
 }
 
 /**
- * Verifica se app está instalado como PWA
+ * Verifica se app está instalado como PWA.
+ *
+ * BUG-SW-REG-1 FIX: window.navigator.standalone é uma propriedade não-standard
+ * exclusiva do iOS Safari — TypeScript (TS2339) e Chrome DevTools a flagam como
+ * inexistente no tipo Navigator. Fix: acesso via type assertion seguro.
+ *
+ * Cobre todos os modos PWA registrados no manifest.json:
+ *  - standalone + minimal-ui (Android Chrome, Edge, Samsung Internet)
+ *  - fullscreen          (algumas versões do Chrome)
+ *  - window-controls-overlay  (Chrome desktop)
+ *  - navigator.standalone     (iOS Safari — não-standard, acessado com cast)
  */
 export function isPWA(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
-  );
+  const standaloneQuery =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: window-controls-overlay)').matches;
+
+  // iOS Safari: navigator.standalone é boolean quando instalado como PWA.
+  // Cast necessário: propriedade não-standard ausente do tipo Navigator TS.
+  const iosStandalone =
+    Boolean((window.navigator as unknown as Record<string, unknown>)['standalone']) === true;
+
+  return standaloneQuery || iosStandalone;
 }
 
 /**
