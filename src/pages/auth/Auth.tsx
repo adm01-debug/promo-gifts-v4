@@ -574,7 +574,7 @@ export default function Auth() {
                     >
                       Entre com suas credenciais para Brilhar, Você nasceu para isso!
                     </div>
-                    <p className="text-[13px] text-white/50">Inicie sua jornada rumo ao sucesso</p>
+                    <p className="text-[13px] text-white/50">Continue sua jornada rumo ao sucesso.</p>
                   </div>
                 </CardHeader>
 
