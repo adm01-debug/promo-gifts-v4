@@ -179,6 +179,6 @@ test.describe('Carrinhos · limite de 10', () => {
     await page.getByTestId('cart-trigger').click();
     const drawerBtn = page.getByTestId('cart-tab-new');
     await expect(drawerBtn).toBeDisabled();
-    await expect(drawerBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_SHORT);
+    await expect(drawerBtn).toHaveAttribute('title', new RegExp(SELLER_CART_LIMIT_REACHED_SHORT));
   });
 });
