@@ -333,13 +333,19 @@ export function CompareTableView({
                 label="Cores disponíveis"
                 products={products}
                 render={(p) => (
-                  <div className="flex flex-wrap justify-center gap-1">
+                  <div
+                    className="flex flex-wrap justify-center gap-1"
+                    aria-label={`${p.colors?.length ?? 0} cores`}
+                    data-testid="compare-colors-cell"
+                    data-colors-count={p.colors?.length ?? 0}
+                  >
                     {p.colors?.map((c: { name: string; hex?: string }, i: number) => (
                       <div
                         key={i}
                         className="h-5 w-5 rounded-full border border-border"
                         style={{ backgroundColor: c.hex }}
                         title={c.name}
+                        data-testid="compare-color-dot"
                       />
                     ))}
                   </div>
