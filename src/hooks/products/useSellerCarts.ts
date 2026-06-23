@@ -576,7 +576,7 @@ export function useSellerCarts() {
     return {
       carts: c,
       totalItems: c.reduce((sum, cart) => sum + cart.items.length, 0),
-      canCreateCart: c.length < 3,
+      canCreateCart: c.length < MAX_SELLER_CARTS,
     };
   }, [cartsQuery.data]);
 
