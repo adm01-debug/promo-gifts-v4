@@ -75,7 +75,7 @@ export function isChunkLoadError(error: unknown): boolean {
 
   // Response de fetch direto (raro neste path mas suportado)
   if (typeof Response !== 'undefined' && error instanceof Response) {
-    return error.status === 502 || error.status === 503 || error.status === 504;
+    return error.status === 404 || error.status === 502 || error.status === 503 || error.status === 504; // 404: chunk removed in new deploy
   }
 
   const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
@@ -89,7 +89,7 @@ export function isChunkLoadError(error: unknown): boolean {
     message.includes('ChunkLoadError') ||
     message.includes('Importing a module script failed') ||
     message.includes('Unable to preload CSS') ||
-    /\b(502|503|504)\b/.test(message)
+    /\b(404|502|503|504)\b/.test(message) // 404: Chrome may include status in error.message
   );
 }
 
