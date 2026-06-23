@@ -1,63 +1,44 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.7.0
+// Versão: 3.7.1
+//
+// CHANGELOG v3.7.1 (2026-06-23 — fix/sw-isspapath-api-edge-case):
+//   BUG-SW-8 FIX [BAIXO]: isSpaPath('/api') (sem trailing slash) retornava
+//     true porque !'/api'.startsWith('/api/') === true.
+//     Na prática inócuo (sem Vercel Functions em /api), mas defensivamente
+//     incorreto — se funções forem adicionadas em /api no futuro quebraria.
+//     Fix: checar pathname === '/api' explicitamente além de startsWith('/api/').
+//     Refatorado como early-returns para maior legibilidade.
 //
 // CHANGELOG v3.7.0 (2026-06-22 — fix/sw-spa-routes-non-navigate):
-//   BUG-SW-7 FIX [MÉDIO]: Seção E (Stale-While-Revalidate) fazia network fetch
-//     para rotas SPA (ex: /filtros, /produtos, /novidades) em requests NÃO-navigate.
-//     O browser faz requests não-navigate para essas URLs ao validar PWA shortcuts
-//     e prefetch de links de manifesto. Vercel só serve index.html para requests
-//     navigate (browser navigation), retornando 404 para fetch não-navigate.
-//     Resultado: "sw.js:451 Falha ao carregar Buscar: GET /filtros" no console.
-//     Fix: detectar SPA paths (pathname sem extensão de arquivo) e retornar
-//     index.html do cache diretamente, sem fazer network request que causaria 404.
-//   CHORE: CACHE_VERSION v13 → v14 (garante re-instalação limpa).
+//   BUG-SW-7 FIX [MÉDIO]: Seção E fazia network fetch para rotas SPA
+//     não-navigate (ex: /filtros). Vercel só serve index.html para navigate.
+//     Fix: isSpaPath detecta rotas sem extensão e serve index.html do cache.
 //
-// CHANGELOG v3.6.0 (2026-06-22 — fix/sw-precache-resilient):
-//   BUG-AUDIT-6 FIX [MÉDIO]: cache.addAll() é atômico — se qualquer URL do
-//     PRECACHE_URLS retornar erro (ex: ícone sem hash ainda não propagado no CDN
-//     durante warmup de deploy), o install event inteiro falha e o SW não instala.
-//     Fix: separar o precache em dois grupos:
-//       - PRECACHE_CRITICAL: URLs sem as quais o app não funciona offline
-//       - PRECACHE_OPTIONAL: URLs desejáveis mas não críticas para o boot
-//     Resultado: install nunca falha por causa de um ícone PWA ainda propagando.
-//   CHORE: CACHE_VERSION v12 → v13.
-//
-// CHANGELOG v3.4.0 (2026-06-22 — fix/sw-cdn-race-retry-mime-fix):
-//   BUG-SW-5 FIX [CRÍTICO]: Race condition CDN do Vercel durante deploy.
-//   BUG-SW-6 FIX [MÉDIO]: Edge nodes do Vercel CDN servem assets com Content-Type errado.
-//
-// CHANGELOG v3.3.0 (2026-06-22 — fix/sw-5xx-fallback-offline-status):
-//   BUG-SW-1 FIX [CRÍTICO]: navigate → fallback 5xx para cache.
-//   BUG-SW-2 FIX [CRÍTICO]: offlineFallback() status 503 → 200.
-//   BUG-SW-3 FIX [MÉDIO]: Seção E propagava 5xx ao browser.
-//   BUG-SW-4 FIX [BAIXO]: Google Fonts fallback status 503 → 200.
-//
-// CHANGELOG v3.2.0 (2026-06-22 — fix/sw-stale-chunk-recovery):
-//   CRÍTICO FIX: Navigation handler mudado de Cache First → Network First.
-//   STALE CHUNK RECOVERY via postMessage({type:'SW_STALE_CHUNK'}).
+// CHANGELOG v3.6.0 — PRECACHE_CRITICAL / PRECACHE_OPTIONAL split.
+// CHANGELOG v3.4.0 — CDN race retry + MIME fix.
+// CHANGELOG v3.3.0 — navigate Network First + offlineFallback status 200.
+// CHANGELOG v3.2.0 — Stale chunk recovery postMessage.
 //
 // Estratégias por tipo de request:
-//   Navigation (SPA)                   → Network First + cache fallback (5xx e offline)  ← v3.3.0
-//   /assets/* (hashed)                 → Cache First + retry 1s + MIME fix                ← v3.4.0
-//   SPA routes não-navigate            → Cache index.html (sem network fetch)             ← v3.7.0 NEW
-//   Imagens (mesma origem / CDN próprio) → Cache First + LRU (max 500, 90d TTL)
-//   Google Fonts                        → Stale-While-Revalidate
-//   Supabase API (.supabase.co)         → Network Only (dados dinâmicos)
-//   Resto                              → Stale-While-Revalidate + fallback offline        ← v3.3.0
+//   Navigation (SPA)                   → Network First + cache fallback        ← v3.3.0
+//   /assets/* (hashed)                 → Cache First + retry 1s + MIME fix     ← v3.4.0
+//   SPA routes não-navigate            → Cache index.html (sem network fetch)  ← v3.7.0
+//   Imagens (mesma origem / CDN)       → Cache First + LRU (max 500, 90d TTL)
+//   Google Fonts                       → Stale-While-Revalidate
+//   Supabase API (.supabase.co)        → Network Only (dados dinâmicos)
+//   Resto                              → Stale-While-Revalidate + fallback     ← v3.3.0
 
-const CACHE_VERSION = 'v14'; // v3.7.0 — SPA routes non-navigate fix
+const CACHE_VERSION = 'v14'; // v3.7.x — SPA routes fix
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
 
-// Limite de imagens em cache (LRU eviction quando exceder)
 const IMAGE_CACHE_MAX = 500;
-// TTL de imagens em cache (90 dias em ms)
 const IMAGE_CACHE_TTL = 90 * 24 * 60 * 60 * 1000;
 
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function offlineFallback() {
   return new Response(
@@ -77,10 +58,6 @@ function offlineFallback() {
   );
 }
 
-/**
- * v3.4.0: Corrige o Content-Type de uma Response quando o servidor (ex: edge node
- * do Vercel CDN) retorna text/plain para assets estáticos tipados (.js, .css, etc.).
- */
 function withCorrectMimeType(res, pathname) {
   const ct = res.headers.get('content-type') || '';
   const ext = pathname.split('.').pop()?.toLowerCase();
@@ -101,25 +78,29 @@ function withCorrectMimeType(res, pathname) {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
-/** Verifica se a URL é um asset com hash (imutável após build) */
 function isHashedAsset(pathname) {
   return pathname.startsWith('/assets/') && /[-.][a-zA-Z0-9]{8,}\.\w+$/.test(pathname);
 }
 
 /**
- * v3.7.0 NEW: Verifica se o pathname é uma rota SPA (sem extensão de arquivo).
- * Rotas SPA não existem como arquivos estáticos no servidor; o Vercel só as serve
- * em modo navigate (redireciona para index.html). Em requests não-navigate
- * (prefetch, manifest validation, PWA shortcuts), o servidor retorna 404.
- * Solução: servir do cache (index.html) sem fazer network request.
+ * v3.7.1: Corrigido edge case de /api sem trailing slash.
+ *
+ * Retorna true se o pathname é uma rota SPA que deve ser servida
+ * a partir do cache de index.html em requests não-navigate.
+ * Critérios:
+ *   1. Sem extensão de arquivo (sem ponto) — arquivos têm extensão
+ *   2. Não é /api, /api/ ou /api/... — podem ser Vercel Functions
+ *
+ * @param {string} pathname - ex: '/filtros', '/produtos/canecas'
+ * @returns {boolean}
  */
 function isSpaPath(pathname) {
-  // Pathname sem ponto = sem extensão de arquivo = rota SPA
-  // Exceto: raiz '/' que já é precacheada, e paths de API
-  return !pathname.includes('.') && !pathname.startsWith('/api/');
+  if (pathname.includes('.')) return false;                      // tem extensão → não é SPA
+  if (pathname === '/api') return false;                         // /api exato    → pode ser endpoint
+  if (pathname.startsWith('/api/')) return false;               // /api/...       → endpoints
+  return true;
 }
 
-/** Verifica se a request não deve ser cacheada (auth, API dinâmica, etc.) */
 function shouldSkipCache(request) {
   const url = new URL(request.url);
   if (url.hostname.includes('.supabase.co')) return true;
@@ -128,10 +109,6 @@ function shouldSkipCache(request) {
   return false;
 }
 
-/**
- * Verifica se a imagem PODE ser interceptada/cacheada com segurança pelo SW.
- * Regra: apenas mesma-origem OU CDN próprio (imagedelivery.net / cloudflarestream).
- */
 function isCacheableImage(url) {
   const sameOrigin = url.origin === self.location.origin;
   const ownCdn =
@@ -141,14 +118,10 @@ function isCacheableImage(url) {
   return ownCdn || (sameOrigin && looksLikeImage);
 }
 
-/** Verifica se a URL é de Google Fonts */
 function isGoogleFont(url) {
   return url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
 }
 
-/**
- * LRU Eviction: remove entradas mais antigas quando o cache excede IMAGE_CACHE_MAX.
- */
 async function evictOldImages(cache) {
   const keys = await cache.keys();
   if (keys.length <= IMAGE_CACHE_MAX) return;
@@ -164,18 +137,12 @@ async function evictOldImages(cache) {
   await Promise.all(toRemove.map(({ req }) => cache.delete(req)));
 }
 
-/**
- * Verifica se uma response de imagem cacheada expirou (TTL de 90 dias).
- */
 function isImageExpired(response) {
   const date = response?.headers.get('date');
   if (!date) return false;
   return Date.now() - new Date(date).getTime() > IMAGE_CACHE_TTL;
 }
 
-/**
- * Stale chunk recovery: invalida o cache HTML e avisa todos os tabs abertos.
- */
 function handleStaleChunk(chunkUrl) {
   caches.open(CACHE_NAME).then((c) => {
     c.delete('/index.html');
@@ -190,7 +157,7 @@ function handleStaleChunk(chunkUrl) {
     );
 }
 
-// ─── Install ─────────────────────────────────────────────────────────────────
+// ─── Install ──────────────────────────────────────────────────────────────────
 
 const PRECACHE_CRITICAL = [
   '/',
@@ -223,7 +190,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// ─── Activate ────────────────────────────────────────────────────────────────
+// ─── Activate ─────────────────────────────────────────────────────────────────
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -240,17 +207,16 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ─── Fetch ───────────────────────────────────────────────────────────────────
+// ─── Fetch ────────────────────────────────────────────────────────────────────
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip: non-GET, cross-origin non-CDN, auth requests, Supabase API
   if (request.method !== 'GET') return;
   if (shouldSkipCache(request)) return;
 
-  // ── A) Google Fonts → Stale-While-Revalidate (mantém fontes offline) ───────
+  // ── A) Google Fonts → Stale-While-Revalidate ──────────────────────────────
   if (isGoogleFont(url)) {
     event.respondWith(
       caches.open(FONT_CACHE_NAME).then((cache) =>
@@ -268,7 +234,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── B) Navigation (SPA) → Network First + cache fallback (5xx e offline) ───
+  // ── B) Navigation (SPA) → Network First + cache fallback ──────────────────
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch('/index.html', { cache: 'no-cache' })
@@ -293,7 +259,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── C) Assets com hash → Cache First (imutáveis) + 404 recovery ────────────
+  // ── C) Assets com hash → Cache First (imutáveis) + 404 recovery ───────────
   if (isHashedAsset(url.pathname)) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -332,7 +298,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── D) Imagens cacheáveis (mesma origem + CDN próprio) → Cache First + LRU ──
+  // ── D) Imagens cacheáveis (mesma origem + CDN próprio) → Cache First + LRU ─
   if (isCacheableImage(url)) {
     event.respondWith(
       caches.open(IMAGE_CACHE_NAME).then((cache) =>
@@ -357,13 +323,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── E) Resto → Stale-While-Revalidate ───────────────────────────────────────
+  // ── E) Resto → Stale-While-Revalidate ─────────────────────────────────────
   if (url.origin === self.location.origin) {
-    // v3.7.0 FIX [BUG-SW-7]: Rotas SPA em requests não-navigate (prefetch,
-    // manifest/PWA shortcuts validation) retornam 404 do Vercel porque o servidor
-    // só serve index.html para requests navigate. Evitar network fetch aqui;
-    // retornar index.html do cache diretamente → sem console error.
-    // Exemplos: /filtros, /produtos, /novidades (validação de PWA shortcuts).
+    // v3.7.0 FIX [BUG-SW-7]: Rotas SPA em requests não-navigate
+    // (prefetch, manifest/PWA shortcuts validation) retornam 404 do Vercel
+    // porque o servidor só serve index.html para requests navigate.
+    // Evitar network fetch aqui; retornar index.html do cache diretamente.
+    // v3.7.1 FIX [BUG-SW-8]: Adicionado check pathname === '/api'
+    // para cobrir /api sem trailing slash (antes escapava o filtro).
     if (isSpaPath(url.pathname) && request.mode !== 'navigate') {
       event.respondWith(
         caches.match('/index.html').then((cached) => cached || offlineFallback()),
@@ -388,7 +355,7 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// ─── Push & Notificações ─────────────────────────────────────────────────────
+// ─── Push & Notificações ──────────────────────────────────────────────────────
 
 self.addEventListener('push', (event) => {
   const data = event.data
