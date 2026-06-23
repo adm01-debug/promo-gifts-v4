@@ -262,7 +262,8 @@ export const BaseProductGridCard = memo(
               selectedName={activeColorName}
               onSelect={(c) => {
                 setActiveColorName(c.name);
-                quickViewRef.current?.open(c.name);
+                // FIX-SWATCH-INLINE: seleção de cor inline — imagem e estoque mudam no card
+                // sem abrir QuickView. Usuário clica na foto para abrir QuickView na cor correta.
               }}
               onClear={() => setActiveColorName(null)}
             />
