@@ -12,7 +12,10 @@ import { test, expect } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
 import { mockSellerCartsAPI, makeMockCart } from '../helpers/cart-mock';
-import { SELLER_CART_LIMIT_REACHED_SHORT, MAX_SELLER_CARTS } from '../../src/hooks/products/useSellerCarts';
+// Constantes espelham o SSOT em src/hooks/products/useSellerCarts.ts.
+// Inline para evitar alias `@/` no contexto de execução do Playwright.
+const MAX_SELLER_CARTS = 10;
+const SELLER_CART_LIMIT_REACHED_SHORT = `Limite de ${MAX_SELLER_CARTS} carrinhos atingido`;
 
 test.describe('Carrinhos · limite de 10 @smoke', () => {
   test('com 10 carrinhos, o botão "novo" fica bloqueado com tooltip de limite', async ({ page }) => {

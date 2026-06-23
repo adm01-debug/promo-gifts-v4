@@ -121,7 +121,9 @@
     "test:replenishment:dashboard": "node scripts/replenishment-ci/metrics-dashboard.mjs",
     "test:auth:stability": "npx playwright test e2e/auth-stability.spec.ts",
     "build:verify": "npm run typecheck && npm run lint:baseline && npm run build",
-    "test:e2e:novelties:snapshots": "playwright test e2e/catalog/novelties-visual-snapshot.spec.ts --project=chromium --update-snapshots"
+    "test:e2e:novelties:snapshots": "playwright test e2e/catalog/novelties-visual-snapshot.spec.ts --project=chromium --update-snapshots",
+    "test:e2e:carrinhos": "npx playwright test e2e/carrinhos --project=chromium-authed",
+    "test:e2e:carrinhos:update": "npx playwright test e2e/carrinhos --project=chromium-authed --update-snapshots"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
