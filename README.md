@@ -435,6 +435,47 @@ O deploy é gerenciado automaticamente pelo **Lovable Cloud**:
 
 ---
 
+## 🛒 E2E dos Carrinhos (Playwright)
+
+Os specs do popover do carrinho ativo ficam em `e2e/carrinhos/` e rodam no
+projeto `chromium-smoke`.
+
+### Comandos npm
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run test:e2e:carrinhos` | Roda toda a suíte `e2e/carrinhos/*.spec.ts` localmente. |
+| `npm run test:e2e:carrinhos:update` | Atualiza os baselines visuais (`--update-snapshots`). Commitar os PNGs gerados em `e2e/carrinhos/**-snapshots/`. |
+| `npx playwright show-report` | Abre o relatório HTML da última execução local. |
+
+Fluxo recomendado ao mexer no popover do carrinho:
+
+1. Ajuste o componente.
+2. Rode `npm run test:e2e:carrinhos`.
+3. Se diffs visuais forem intencionais, rode `npm run test:e2e:carrinhos:update`
+   e versione os snapshots no commit (`git add e2e/carrinhos/**-snapshots/`).
+
+### Interpretando artefatos do CI
+
+O workflow `.github/workflows/playwright.yml` publica dois artefatos:
+
+- **`playwright-report`** (sempre): relatório HTML completo. Baixe, extraia e
+  abra `index.html` (ou rode `npx playwright show-report <pasta>`).
+- **`playwright-failure-bundle`** (só em falha): inclui o report HTML +
+  `trace.zip`, screenshots `only-on-failure` e vídeos `retain-on-failure`.
+
+Para diagnosticar uma falha:
+
+1. Baixe `playwright-failure-bundle` na aba **Actions → Run → Artifacts**.
+2. Inspecione o `trace.zip` com `npx playwright show-trace path/para/trace.zip`
+   — mostra DOM, console, network e screenshot por step.
+3. Cruze com o `*.png` (estado final) e o `*.webm` (gravação da execução).
+
+CI usa `--retries=2 --workers=2`: testes que passam após retry aparecem como
+"flaky" no report; falhas em todas as tentativas continuam vermelhas.
+
+---
+
 ## 📜 Licença
 
 Projeto proprietário — todos os direitos reservados.
@@ -442,3 +483,4 @@ Projeto proprietário — todos os direitos reservados.
 ---
 
 **Desenvolvido por Pink e Cerébro × Promo Brindes** 🚀
+
