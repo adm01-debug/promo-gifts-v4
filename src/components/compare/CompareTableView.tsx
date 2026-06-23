@@ -334,7 +334,7 @@ export function CompareTableView({
                 products={products}
                 render={(p) => (
                   <div className="flex flex-wrap justify-center gap-1">
-                    {p.colors?.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
+                    {p.colors?.map((c: { name: string; hex?: string }, i: number) => (
                       <div
                         key={i}
                         className="h-5 w-5 rounded-full border border-border"
@@ -342,9 +342,6 @@ export function CompareTableView({
                         title={c.name}
                       />
                     ))}
-                    {(p.colors?.length ?? 0) > 6 && (
-                      <span className="text-xs text-muted-foreground">+{p.colors.length - 6}</span>
-                    )}
                   </div>
                 )}
               />
