@@ -1,8 +1,8 @@
 /**
  * useEngravingWizard — Business logic for the engraving wizard
  *
- * Fixes applied (audit 26/05/2026):
- *   BUG-02: table name corrected to 'tecnicas_gravacao' (was 'tecnica_gravacao' singular)
+ * Fixes applied:
+ *   FIX-2026-06-23: catálogo de técnicas corrigido para tabela_preco_gravacao_oficial (FK real)
  *   BUG-05: handleDeleteArea uses state instead of confirm() — exposes deleteAreaConfirm/confirmDeleteArea/cancelDeleteArea
  *   BUG-03 NOTE: localAreas are not persisted when creating a new product. This is a known
  *     limitation — fix requires AdminProductFormPage to call flushLocalAreas(productId) after
@@ -50,13 +50,16 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   const localAreasRef = useRef(localAreas);
   localAreasRef.current = localAreas;
 
-  // BUG-02 FIX: correct table name is 'tecnicas_gravacao' (plural with 's')
+  // FIX-2026-06-23: usar tabela_preco_gravacao_oficial (FK real) em vez de tecnicas_gravacao
+  // print_area_techniques.tabela_preco_id → tabela_preco_gravacao_oficial.id (UUID)
+  // tecnicas_gravacao tem PK=codigo varchar, sem UUID compatível com a FK
   const { data: techniques = [], isLoading: loadingTechs } = useQuery({
     queryKey: ['external-techniques-catalog'],
     queryFn: async (): Promise<ExternalTechnique[]> => {
       const result = await dbInvoke<ExternalTechnique>({
-        table: 'tecnicas_gravacao',
+        table: 'tabela_preco_gravacao_oficial',
         operation: 'select',
+        filters: { ativo: true },
         orderBy: { column: 'nome', ascending: true },
         limit: 200,
       });
@@ -151,15 +154,21 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     setWizardStep('component');
   }, [resetWizard]);
 
-  const handleSelectComponent = useCallback((comp: { code: string; name: string }) => {
-    setSelectedComponent(comp);
-    setWizardStep('location');
-  }, []);
+  const handleSelectComponent = useCallback(
+    (component: { code: string; name: string }) => {
+      setSelectedComponent(component);
+      setWizardStep('location');
+    },
+    [],
+  );
 
-  const handleSelectLocation = useCallback((loc: { code: string; name: string }) => {
-    setSelectedLocation(loc);
-    setWizardStep('technique');
-  }, []);
+  const handleSelectLocation = useCallback(
+    (location: { code: string; name: string }) => {
+      setSelectedLocation(location);
+      setWizardStep('technique');
+    },
+    [],
+  );
 
   const handleSelectTechnique = useCallback((tech: ExternalTechnique) => {
     setSelectedTechnique(tech);
@@ -188,8 +197,6 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     if (isEdit && productId) {
       createMutation.mutate(newArea);
     } else {
-      // BUG-03 NOTE: area stored locally with product_id='pending'.
-      // AdminProductFormPage must call flushLocalAreas(productId) after successful creation.
       setLocalAreas((prev) => [
         ...prev,
         {
@@ -230,71 +237,60 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     }
   }, [deleteAreaConfirm, isEdit, deleteMutation]);
 
-  const cancelDeleteArea = useCallback(() => setDeleteAreaConfirm(null), []);
+  const cancelDeleteArea = useCallback(() => {
+    setDeleteAreaConfirm(null);
+  }, []);
 
   const handleToggleActive = useCallback(
     (area: EnrichedArea) => {
-      if (isEdit && area.id && !area.id.startsWith('local-')) {
-        updateMutation.mutate({ id: area.id, is_active: !area.is_active });
-      } else {
-        setLocalAreas((prev) =>
-          prev.map((a) => (a.id === area.id ? { ...a, is_active: !a.is_active } : a)),
-        );
-      }
+      if (!isEdit || !area.id || area.id.startsWith('local-')) return;
+      updateMutation.mutate({ id: area.id, is_active: !area.is_active });
     },
     [isEdit, updateMutation],
   );
 
-  // Filtered techniques
+  const flushLocalAreas = useCallback(
+    async (newProductId: string) => {
+      const areas = localAreasRef.current;
+      if (!areas.length) return;
+      for (const area of areas) {
+        const { error } = await untypedFrom('print_area_techniques').insert({
+          ...area,
+          id: undefined,
+          product_id: newProductId,
+        });
+        if (error) console.error('flushLocalAreas error:', error);
+      }
+      setLocalAreas([]);
+      queryClient.invalidateQueries({ queryKey: ['print-area-techniques', newProductId] });
+    },
+    [queryClient],
+  );
+
   const filteredTechniques = useMemo(() => {
-    if (!techSearch) return techniques.filter((t) => t.ativo !== false);
-    const s = techSearch.toLowerCase();
+    if (!techSearch.trim()) return techniques;
+    const q = techSearch.toLowerCase();
     return techniques.filter(
       (t) =>
-        t.ativo !== false &&
-        (t.nome.toLowerCase().includes(s) ||
-          (t.codigo_curto || '').toLowerCase().includes(s) ||
-          t.nome_grupo?.toLowerCase().includes(s) ||
-          t.grupo_tecnica?.toLowerCase().includes(s)),
+        (t.nome || t.name || '').toLowerCase().includes(q) ||
+        (t.grupo_tecnica || t.group || '').toLowerCase().includes(q) ||
+        (t.codigo_curto || t.codigo || '').toLowerCase().includes(q),
     );
   }, [techniques, techSearch]);
 
   const groupedTechniques = useMemo(() => {
     const groups: Record<string, ExternalTechnique[]> = {};
     for (const t of filteredTechniques) {
-      const group = t.nome_grupo || t.grupo_tecnica || 'Outras';
-      if (!groups[group]) groups[group] = [];
-      groups[group].push(t);
+      const g = t.grupo_tecnica || t.group || 'Outros';
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(t);
     }
     return groups;
   }, [filteredTechniques]);
 
-  const wizardStepIndex = WIZARD_STEPS_IDS.indexOf(wizardStep);
-  const isBusy = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
-  const isLoading = loadingTechs || (isEdit && loadingAreas);
-
-  // BUG-03 FIX: flush locally-stored areas to the DB after a product is created
-  const flushLocalAreas = useCallback(async (realProductId: string): Promise<void> => {
-    const pending = localAreasRef.current;
-    if (!pending.length) return;
-    for (const area of pending) {
-      const {
-        id: _id,
-        _techData: _td,
-        ...areaData
-      } = area as typeof area & { _techData?: ExternalTechnique };
-      const { error } = await untypedFrom('print_area_techniques').insert({
-        ...areaData,
-        product_id: realProductId,
-      });
-      if (error) throw new Error(error.message || 'Erro ao salvar área de personalização');
-    }
-    setLocalAreas([]);
-  }, []);
-
   return {
+    // State
     wizardStep,
-    setWizardStep,
     expandedId,
     setExpandedId,
     selectedComponent,
@@ -308,25 +304,27 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     setTechSearch,
     detailForm,
     setDetailForm,
-    localAreas,
-    localAreasRef,
-    displayAreas,
+    deleteAreaConfirm,
+    // Data
+    techniques,
     filteredTechniques,
     groupedTechniques,
-    wizardStepIndex,
-    isBusy,
-    isLoading,
+    savedAreas,
+    displayAreas,
     loadingTechs,
+    loadingAreas,
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
     // Actions
-    resetWizard,
     startWizard,
+    resetWizard,
     handleSelectComponent,
     handleSelectLocation,
     handleSelectTechnique,
     handleSaveArea,
     handleDeleteArea,
-    // BUG-05: new delete confirmation actions
-    deleteAreaConfirm,
+    deleteAreaConfirm: deleteAreaConfirm,
     confirmDeleteArea,
     cancelDeleteArea,
     handleToggleActive,
@@ -344,9 +342,9 @@ function enrichArea(
   const tech = override || techById.get(area.tabela_preco_id);
   return {
     ...area,
-    technique_name: tech?.nome || '—',
-    technique_code: tech?.codigo_curto || '—',
-    technique_group: tech?.grupo_tecnica ?? '',
+    technique_name: tech?.nome || tech?.name || '—',
+    technique_code: tech?.codigo_curto || tech?.codigo || '—',
+    technique_group: tech?.grupo_tecnica ?? tech?.group ?? '',
     max_colors:
       tech?.max_cores !== null && tech?.max_cores !== undefined
         ? typeof tech.max_cores === 'string'
