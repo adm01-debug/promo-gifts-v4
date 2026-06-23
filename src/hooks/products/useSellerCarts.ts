@@ -414,7 +414,7 @@ export function useSellerCarts() {
         .select()
         .single();
       if (cartErr) {
-        if (cartErr.code === '23514' || /Limite de \d+ carrinhos?/i.test(cartErr.message ?? '')) {
+        if (isCartLimitError(cartErr)) {
           throw new Error(
             `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de duplicar.`,
           );
