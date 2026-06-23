@@ -1,34 +1,38 @@
 /**
  * Proxy de imagens externas para evitar CORS
- * Reescreve URLs de domínios bloqueados para passar pelo edge function proxy
+ * Reescreve URLs de domínios de fornecedores para passar pelo edge function proxy
  *
- * BUG-CORS-SUPPLIERS FIX (2026-06-23):
- * PROXIED_DOMAINS estava limitado a spotgifts.com.br (12.7% das imagens).
- * product_images.url_original contém URLs de 5 fornecedores distintos:
- *   - XBZ/minhaxbz: 56.6% (40.710 imagens) ← maior supplier, sem proxy!
- *   - SPOT: 12.7% (9.167 imagens) ← único proxiado antes deste fix
- *   - Asia Import: 7.5% (5.370 imagens) ← sem proxy
- *   - Azure CDN XBZ: 4.5% (3.225 imagens) ← sem proxy
- *   - Só Marcas: 2.0% (1.428 imagens) ← sem proxy
- * Sem proxy, quando a imagem Cloudflare CDN falha, o browser tenta carregar
- * a url_original diretamente → CORS error para 87.3% das imagens.
- * Fix: adicionar todos os domínios de fornecedores ao PROXIED_DOMAINS.
- * A edge function image-proxy já suporta estes domínios em ALLOWED_DOMAINS.
+ * BUG-CORS-SUPPLIERS FIX v2 (2026-06-23):
+ * Domínios corrigidos após auditoria de product_images.url_original (72.330 imgs com URL):
+ *
+ *   cdn.xbzbrindes.com.br      67.96% (40.708 imgs) ← XBZ imagem CDN (CORRIGIDO)
+ *   www.spotgifts.com.br       15.30%  (9.167 imgs) ← SPOT
+ *   media.asiaimport.com.br     8.96%  (5.370 imgs) ← Asia Import media (CORRIGIDO)
+ *   cdndeprodutos.azureedge.net 5.38%  (3.225 imgs) ← Azure CDN genérico
+ *   somarcascdn.azureedge.net   2.38%  (1.428 imgs) ← Só Marcas Azure CDN (CORRIGIDO)
+ *   ─────────────────────────────────────────────────
+ *   Cobertura total: 99.98% das imagens com url_original
+ *
+ * Fix anterior (v1) usava domínios de API (api.minhaxbz.com.br) e subdomínios errados
+ * (asiaimport.com.br, somarcas.com.br) ao invés dos CDNs reais.
+ * Fonte: SELECT hostname, COUNT(*) FROM product_images GROUP BY 1 ORDER BY 2 DESC
  */
 
 const PROXIED_DOMAINS = new Set([
-  // SPOT (Stricker) — 12.7% das imagens
+  // XBZ Brindes — 67.96% (maior supplier) — CDN de imagens
+  'cdn.xbzbrindes.com.br',
+  'www.xbzbrindes.com.br',
+  // SPOT (Stricker) — 15.30%
   'www.spotgifts.com.br',
   'spotgifts.com.br',
-  // XBZ Brindes — 56.6% das imagens (maior supplier)
-  'api.minhaxbz.com.br',
-  'minhaxbz.com.br',
-  // Azure CDN usado pelo XBZ (cdndeprodutos = CDN de produtos em PT)
-  'cdndeprodutos.azureedge.net',
-  // Asia Import — 7.5% das imagens
+  // Asia Import — 8.96% — subdomínio media (não apex)
+  'media.asiaimport.com.br',
   'asiaimport.com.br',
   'www.asiaimport.com.br',
-  // Só Marcas — 2.0% das imagens
+  // Azure CDN genérico (mixed suppliers) — 5.38%
+  'cdndeprodutos.azureedge.net',
+  // Só Marcas — 2.38% — Azure CDN próprio
+  'somarcascdn.azureedge.net',
   'somarcas.com.br',
   'www.somarcas.com.br',
 ]);
@@ -37,7 +41,7 @@ const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
 /**
  * Retorna a URL proxiada se o domínio requer proxy, senão retorna a original.
- * Usa Set.has() para O(1) lookup vs Array.includes() O(n).
+ * Set.has() é O(1) vs Array.includes() O(n) — crítico para render de 80+ cards.
  */
 export function getProxiedImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -71,16 +75,12 @@ export function needsProxy(url: string | null | undefined): boolean {
 //
 // SPOT: `spot-{ref}_{color}` → spotgifts.com.br/fotos/produtos/{ref}_{color}.jpg
 // Outros fornecedores: padrão opaco → não derivável sem lookup no banco.
-//
-// Fallback de baixo custo quando url_original não está no objeto Product
-// (que carrega apenas CF URLs em images[]). Usado pelo OptimizedImage quando
-// a imagem do Cloudflare falha, ANTES de mostrar o ícone de erro.
 
 const SPOT_ORIGIN_BASE = 'https://www.spotgifts.com.br/fotos/produtos/';
 
 /**
  * Tenta derivar a url_original do fornecedor a partir da URL CDN do Cloudflare.
- * Retorna null quando o padrão não é reconhecido (sem fallback → mostra ícone).
+ * Retorna null quando o padrão não é reconhecido.
  */
 export function deriveOriginalUrl(cfUrl: string | null | undefined): string | null {
   if (!cfUrl) return null;

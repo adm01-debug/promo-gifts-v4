@@ -9,11 +9,15 @@ const ALLOWED_DOMAINS = [
   // Promo Brindes suppliers
   'www.spotgifts.com.br',
   'spotgifts.com.br',
-  'api.minhaxbz.com.br',         // XBZ API images
+  'cdn.xbzbrindes.com.br',        // XBZ CDN de imagens — 67.96% product_images
+  'www.xbzbrindes.com.br',
+  'api.minhaxbz.com.br',          // XBZ API (manter por compatibilidade)
   'minhaxbz.com.br',
   'cdndeprodutos.azureedge.net', // XBZ Azure CDN — 4.5% product_images
+  'media.asiaimport.com.br',     // Asia Import CDN — 8.96% product_images
   'asiaimport.com.br',           // Asia Import
   'www.asiaimport.com.br',
+  'somarcascdn.azureedge.net',   // Só Marcas Azure CDN — 2.38% product_images
   'somarcas.com.br',             // Só Marcas
   'www.somarcas.com.br',
   // Cloudflare Images (imagedelivery.net is the CDN domain)
