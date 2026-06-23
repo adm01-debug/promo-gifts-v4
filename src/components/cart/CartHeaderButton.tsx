@@ -187,7 +187,7 @@ export function CartHeaderButton() {
                   </h3>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
-                      {carts.length}/3
+                      {carts.length}/{MAX_SELLER_CARTS}
                     </span>
                     <span className="text-[10px] text-muted-foreground opacity-30">|</span>
                     <button
