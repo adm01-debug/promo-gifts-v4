@@ -96,10 +96,14 @@ export function useWorkspaceNotifications() {
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);
-  // BUG-NOTIF-HEAD-ABORT FIX (2026-06-23): AbortController dedicado para a HEAD
-  // request de unread count. Garante que chamadas concorrentes de fetchNotifications
-  // cancelem corretamente a HEAD anterior antes de disparar uma nova.
-  const headAbortRef = useRef<AbortController | null>(null);
+
+  // BUG-NOTIF-HEAD-GENERATION FIX (2026-06-23 v2): Substituído AbortController por
+  // contador de geração. AbortController.abort() causava "Falha ao carregar Buscar: HEAD"
+  // no console mesmo quando o cancelamento era intencional — idêntico ao BUG-DAR-ABORT
+  // corrigido em DiscountApprovalHeaderBadge. Com contador de geração, a HEAD completa
+  // silenciosamente; resultados de chamadas concorrentes anteriores são descartados
+  // sem nenhum console error.
+  const headGenerationRef = useRef(0);
 
   // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): coalesce rapid Realtime events into a
   // single fetch. n8n bulk-imports (e.g., 50 notifications in < 1s) fire 50 Realtime
@@ -241,36 +245,28 @@ export function useWorkspaceNotifications() {
         setNotifications(items);
         setTotalCount(count ?? 0);
 
-        // BUG-NOTIF-HEAD-ABORT FIX (2026-06-23): HEAD request para unread count agora usa
-        // AbortController dedicado. Cancela HEAD anterior se fetchNotifications for chamada
-        // novamente antes da HEAD completar (evita "Falha ao carregar Buscar: HEAD").
-        // O AbortController é reiniciado a cada chamada via headAbortRef.
-        if (headAbortRef.current) {
-          headAbortRef.current.abort();
-        }
-        headAbortRef.current = new AbortController();
-        const headSignal = headAbortRef.current.signal;
+        // BUG-NOTIF-HEAD-GENERATION FIX (2026-06-23 v2): Usa contador de geração
+        // em vez de AbortController. AbortController.abort() disparava console error
+        // "Falha ao carregar Buscar: HEAD" mesmo quando intencional — mesmo padrão
+        // anti-pattern corrigido em DiscountApprovalHeaderBadge (BUG-DAR-ABORT).
+        // Com geração, resultados de HEAD concorrentes anteriores são descartados
+        // silenciosamente, sem nenhum erro no console.
+        const thisGen = ++headGenerationRef.current;
 
         try {
           const { count: unread, error: unreadErr } = await untypedFrom('workspace_notifications')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .eq('is_read', false)
-            .abortSignal(headSignal);
-          if (!headSignal.aborted) {
+            .eq('is_read', false);
+          // Descarta resultado se uma chamada mais nova já iniciou
+          if (headGenerationRef.current === thisGen) {
             setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
           }
-        } catch (headErr) {
-          // AbortError = cancelamento intencional por nova chamada concorrente.
-          // NetworkError = fallback: derivar contagem dos itens ja carregados.
-          const isAbort = headErr instanceof Error && headErr.name === 'AbortError';
-          if (!isAbort) {
+        } catch {
+          // Qualquer erro na HEAD: fallback para contagem local dos items carregados.
+          // Geração previne que um catch obsoleto sobrescreva um resultado mais recente.
+          if (headGenerationRef.current === thisGen) {
             setUnreadCount(items.filter((n) => !n.is_read).length);
-          }
-        } finally {
-          // Limpar ref se ainda aponta para este controller (não foi substituído)
-          if (headAbortRef.current?.signal === headSignal) {
-            headAbortRef.current = null;
           }
         }
 
@@ -344,7 +340,7 @@ export function useWorkspaceNotifications() {
   // Justificativa: Realtime subscription já cobre atualizações em tempo real.
   // O polling é fallback apenas para quando o canal Realtime cai (CHANNEL_ERROR /
   // TIMED_OUT). 60s é suficiente para o fallback sem dobrar a carga no DB.
-  // Beneício: com 2 instâncias do hook (Header + Drawer), reduz de 4 para 2
+  // Benefício: com 2 instâncias do hook (Header + Drawer), reduz de 4 para 2
   // requisições HEAD por minuto por sessão autenticada.
   useEffect(() => {
     if (!user || !rolesLoaded) return;
@@ -410,14 +406,14 @@ export function useWorkspaceNotifications() {
     };
   }, [user, rolesLoaded, fetchNotifications]);
 
-  // Cleanup on unmount: cancelar HEAD em flight + emitir metricas
+  // Cleanup on unmount: emitir métricas + incrementar geração para descartar
+  // silenciosamente qualquer HEAD em voo.
+  // BUG-NOTIF-HEAD-GENERATION FIX: sem AbortController → sem console error.
+  // headGenerationRef++ descarta o resultado da HEAD em voo caso ela complete
+  // após o unmount, sem throw e sem log de erro no console.
   useEffect(() => {
     return () => {
-      // BUG-NOTIF-HEAD-ABORT FIX: cancelar HEAD em voo ao desmontar o hook
-      if (headAbortRef.current) {
-        headAbortRef.current.abort();
-        headAbortRef.current = null;
-      }
+      headGenerationRef.current++;
       notificationsMetrics.logBadgeBudgetSummary('hook-unmount');
     };
   }, []);
