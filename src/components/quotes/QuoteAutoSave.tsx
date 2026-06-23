@@ -28,6 +28,8 @@ interface QuoteAutoSaveProps {
   onChange?: (hasUnsavedChanges: boolean) => void;
   debounceMs?: number;
   className?: string;
+  /** FIX-E04: Pass a new value whenever a server save succeeds to reset the baseline. */
+  serverSavedAt?: number | string;
 }
 
 const STORAGE_KEY_PREFIX = 'quote_draft_';
@@ -39,6 +41,7 @@ export function QuoteAutoSave({
   onChange,
   debounceMs = 2000,
   className,
+  serverSavedAt,
 }: QuoteAutoSaveProps) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -98,6 +101,22 @@ export function QuoteAutoSave({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   });
+
+  // FIX-E04: when the parent signals a successful server save, reset the baseline so
+  // the component no longer shows "Alterações não salvas" for already-persisted data.
+  useEffect(() => {
+    if (!serverSavedAt) return;
+    initialDataRef.current = JSON.stringify(dataRef.current);
+    setHasUnsavedChanges(false);
+    onChange?.(false);
+    setLastSaved(new Date());
+    setStatus('saved');
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setStatus('idle');
+    }, 2000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverSavedAt]);
 
   // Detectar mudanças
   useEffect(() => {
