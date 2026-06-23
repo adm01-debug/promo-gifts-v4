@@ -152,6 +152,67 @@ describe('requestApproval', () => {
     expect(outcome).toBe(false);
   });
 
+  // BUG-NOTIFY-ADMIN-SILENT-FAIL regression:
+  // Previously { error } was not destructured from the user_roles query in Promise.all.
+  // If the query failed, adminRoles was null, the guard `if (adminRoles && ...)` silently
+  // skipped notification, and nothing was logged — admins never knew a discount approval
+  // had been requested. Fixed to warn and continue (non-fatal secondary op).
+  it('BUG-NOTIFY-ADMIN-SILENT-FAIL: loga warn mas retorna true quando user_roles query falha', async () => {
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'discount_approval_requests') {
+        const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
+        const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+        const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn, maybeSingle: maybeSingleFn });
+        return {
+          select: vi.fn().mockReturnValue({ eq: outerEqFn }),
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        } as never;
+      }
+      if (table === 'quotes') {
+        return {
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+        } as never;
+      }
+      if (table === 'user_roles') {
+        // Simulate RLS denial on admin roles lookup
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } }),
+          }),
+        } as never;
+      }
+      // quote_history, admin_audit_log, profiles, workspace_notifications
+      return {
+        insert: vi.fn().mockResolvedValue({ error: null }),
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let outcome: boolean | undefined;
+    await act(async () => {
+      outcome = await result.current.requestApproval('q-admin-notify-fail', 15, 10);
+    });
+
+    // Non-fatal: the approval request was committed, still returns true
+    expect(outcome).toBe(true);
+    // Warn must be logged so ops can detect missing admin notification
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'Failed to fetch admin roles for discount notification:',
+      expect.anything(),
+    );
+  });
+
   // BUG-APPROVAL-DEDUP-SILENT-FAIL regression:
   // Previously { error } was not destructured from the dedup check — a network failure
   // caused `existing` to stay null and we always INSERTed, flooding the approval queue.

@@ -162,10 +162,15 @@ export function useDiscountApproval() {
         }
 
         // Notify all admins — both queries are independent, run in parallel
-        const [{ data: adminRoles }, { data: profile }] = await Promise.all([
+        // BUG-NOTIFY-ADMIN-SILENT-FAIL FIX: previously { error } was not destructured from
+        // the user_roles query. If the query failed (RLS denial, network error), adminRoles
+        // was null, the `if (adminRoles && ...)` guard silently skipped notification, and
+        // nothing was logged — admins never knew a discount approval had been requested.
+        const [{ data: adminRoles, error: rolesErr }, { data: profile }] = await Promise.all([
           supabase.from('user_roles').select('user_id').eq('role', 'admin'),
           supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
         ]);
+        if (rolesErr) logger.warn('Failed to fetch admin roles for discount notification:', rolesErr);
         if (adminRoles && adminRoles.length > 0) {
           const sellerName = profile?.full_name || 'Vendedor';
           const msg =
