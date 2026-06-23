@@ -4,6 +4,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Filter, Search, Eye, FileText, ShoppingBag, ArrowDown } from 'lucide-react';
@@ -48,6 +49,8 @@ const STAGE_STYLES = {
 } as const;
 
 export function ConversionFunnel({ days }: ConversionFunnelProps) {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 4 HEAD requests sem JWT validado.
+  const { rolesLoaded } = useAuth();
   const since = subDays(new Date(), days).toISOString();
 
   const { data, isLoading } = useQuery({
@@ -89,7 +92,9 @@ export function ConversionFunnel({ days }: ConversionFunnelProps) {
         orders: orders.count ?? 0,
       };
     },
+    enabled: rolesLoaded,
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
   const stages: FunnelStage[] = [

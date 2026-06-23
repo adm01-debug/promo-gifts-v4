@@ -1,18 +1,17 @@
--- BUG-16 FIX: seller_carts e cart_templates nao tinham FK para auth.users(id).
+-- BUG-16 FIX: seller_carts e cart_templates não tinham FK para auth.users(id).
 --
 -- CAUSA RAIZ: A tabela seller_carts foi criada pela migration 20260214152115 sem FK.
--- A migration 20260304014416 tentou recriar com FK usando CREATE TABLE IF NOT EXISTS
--- que e um no-op quando a tabela ja existe. A FK nunca foi aplicada.
--- Mesmo problema em cart_templates.
+-- A migration 20260304014416 tentou recriar com FK usando "CREATE TABLE IF NOT EXISTS"
+-- — que é um no-op quando a tabela já existe. A FK nunca foi aplicada.
 --
 -- IMPACTO:
---   1. deleteUser() em auth.admin NAO cascateava para seller_carts (dados orfaos)
---   2. seller_id e user_id podiam referenciar usuarios inexistentes
---   3. Funcoes de teste (test-cart-limit, test-cart-concurrency, test-cart-rls) que
---      usam auth.admin.deleteUser() como cleanup deixavam registros orfaos no banco
+--   1. deleteUser() em auth.admin NÃO cascateava para seller_carts (dados órfãos)
+--   2. seller_id e user_id podiam referenciar usuários inexistentes (sem integridade referencial)
+--   3. Funções de teste (test-cart-limit, test-cart-concurrency, test-cart-rls) que
+--      usam auth.admin.deleteUser() como cleanup deixavam registros órfãos no banco
 --
--- VERIFICADO: 0 seller_carts/cart_templates com seller_id/user_id invalidos antes
--- de aplicar as constraints -- seguro adicionar sem violacao de integridade.
+-- VERIFICADO: 0 seller_carts/cart_templates com seller_id/user_id inválidos antes
+-- de aplicar as constraints — seguro adicionar sem violação de integridade.
 
 ALTER TABLE public.seller_carts
   ADD CONSTRAINT IF NOT EXISTS seller_carts_seller_id_fkey

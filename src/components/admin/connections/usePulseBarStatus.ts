@@ -14,6 +14,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type PulseSeverity = 'P0' | 'P1' | 'P2';
 
@@ -152,10 +153,16 @@ async function fetchStatus(): Promise<PulseBarStatus> {
 }
 
 export function usePulseBarStatus() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 4 HEAD requests sem JWT validado.
+  // enabled: rolesLoaded && isAdmin bloqueia até JWT pronto.
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
     queryKey: ['connections-pulse-bar'],
     queryFn: fetchStatus,
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 60_000,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

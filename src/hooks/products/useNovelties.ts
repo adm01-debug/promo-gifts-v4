@@ -1,6 +1,7 @@
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { resolveTable, handleQueryError } from '@/lib/supabase-direct';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { compareNamePtBR } from '@/utils/product-sorting';
@@ -481,6 +482,8 @@ export function useExpiringNovelties(maxDays = 7) {
 export function useNoveltyStats() {
   // Reusa o dataset enriquecido já carregado (cache key ['novelties-details','all',false]).
   // Se o cache estiver vazio, allNovelties será undefined — o breakdown fica [].
+  // BUG-HEAD-GUARD FIX (2026-06-23): 2 HEAD requests sem guard de rolesLoaded.
+  const { rolesLoaded } = useAuth();
   const { data: allNovelties } = useNoveltiesWithDetails();
 
   // GROUP BY supplier_id client-side — O(n) sobre o dataset em memória.
@@ -595,8 +598,10 @@ export function useNoveltyStats() {
         arrivedLast15Days: fifteenRes.count ?? 0,
       };
     },
+    enabled: rolesLoaded,  // BUG-HEAD-GUARD
     // ISSUE-40 FIX: stats alinhadas ao staleTime de useNoveltiesWithDetails (2 min).
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,  // BUG-HEAD-GUARD
     retry: 2,
   });
 
