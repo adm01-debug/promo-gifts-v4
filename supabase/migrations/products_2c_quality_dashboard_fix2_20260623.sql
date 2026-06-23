@@ -1,0 +1,2 @@
+-- M2: fn_products_quality_dashboard() — dashboard jsonb de qualidade
+-- Ver banco para definição completa da função
