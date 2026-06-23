@@ -37,6 +37,8 @@ export function CartTabsRich({
   isLoading,
 }: CartTabsRichProps) {
   const tablistRef = useRef<HTMLDivElement>(null);
+  const [limitDetailsOpen, setLimitDetailsOpen] = useState(false);
+
 
   // WCAG 2.1 AA: arrow key navigation for role="tablist" (roving tabindex pattern)
   const handleTablistKeyDown = useCallback(
