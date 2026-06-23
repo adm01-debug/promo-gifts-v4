@@ -142,6 +142,7 @@ function CartsListContent() {
           onClick={() => setPickerOpen(true)}
           disabled={!canCreateCart}
           data-testid="carts-list-new"
+          aria-label={canCreateCart ? 'Criar novo carrinho' : SELLER_CART_LIMIT_REACHED_MESSAGE}
           className="gap-2"
           title={
             !canCreateCart
