@@ -172,11 +172,20 @@ export async function handleSyncBitrix(params: {
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
   if (Object.keys(crmUpdates).length > 0) {
-    try {
-      // rls-allow: update por id; RLS valida ownership
-      await supabase.from('quotes').update(crmUpdates).eq('id', quoteId);
-    } catch {
-      /* ignore */
+    // BUG-SYNC-STATUS-SILENT-FAIL FIX: previously used try-catch which never
+    // catches Supabase errors (they resolve, not throw). Destructure { error }
+    // and log it — the sync is still considered successful (fail-open), but the
+    // failure is now visible in logs instead of silently reverting on next reload.
+    // rls-allow: update por id; RLS valida ownership
+    const { error: crmUpdateErr } = await supabase
+      .from('quotes')
+      .update(crmUpdates)
+      .eq('id', quoteId);
+    if (crmUpdateErr) {
+      logger.warn(
+        '[QuoteActionHandlers] Non-fatal: CRM status/bitrix_id update failed after Bitrix sync:',
+        crmUpdateErr,
+      );
     }
   }
 
