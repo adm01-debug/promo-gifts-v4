@@ -266,7 +266,10 @@ export function useQuoteBuilderState() {
     if (paymentMethod && paymentTerms && deliveryTime && shippingType) {
       if (shippingType !== 'fob_pre' || shippingCost > 0) {
         // BUG-005 FIX: validUntil missing from condition check
-        const validityOk = validUntil && new Date(validUntil) > new Date();
+        // FIX-C04b: usar T23:59:59 (hora local) para evitar falso negativo de validade expirada.
+        // new Date('yyyy-MM-dd') é midnight UTC, que em BRT (UTC-3) é 21h do dia anterior,
+        // fazendo validUntil=hoje parecer expirado mesmo não sendo.
+        const validityOk = validUntil && new Date(validUntil + 'T23:59:59') > new Date();
         if (validityOk) steps.push('conditions');
       }
     }
@@ -906,8 +909,14 @@ export function useQuoteBuilderState() {
     }
     if (template.notes) setNotes(template.notes);
     if (template.internal_notes) setInternalNotes(template.internal_notes);
-    if (template.validity_days)
-      setValidUntil(format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd'));
+    if (template.validity_days) {
+      // FIX-C03: sincronizar validityDays Select após aplicar template.
+      // Antes: setValidUntil era chamado mas setValidityDays não, causando
+      // dessincronização visual (Select mostrava "Selecione" com data já preenchida).
+      const newValidUntil = format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd');
+      setValidUntil(newValidUntil);
+      setValidityDays(syncValidityDaysFromDate(newValidUntil));
+    }
     // FIX-07/08: restaurar campos de condições comerciais do template
     if (template.payment_method) setPaymentMethod(template.payment_method);
     if (template.payment_terms) setPaymentTerms(template.payment_terms);
@@ -1006,7 +1015,10 @@ export function useQuoteBuilderState() {
         }
 
         // BUG-015 FIX: Block sending with past validity date
-        if (status !== 'draft' && validUntil && new Date(validUntil) < new Date()) {
+        // FIX-C04: usar T23:59:59 (hora local) para não bloquear no mesmo dia da validade.
+        // new Date('yyyy-MM-dd') = midnight UTC = 21h BRT do dia anterior — causava
+        // bloqueio indevido quando o usuário tentava enviar no próprio dia da validade.
+        if (status !== 'draft' && validUntil && new Date(validUntil + 'T23:59:59') < new Date()) {
           toast.error(
             'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
           );
