@@ -50,7 +50,20 @@ export function CartHeaderButton() {
   // UI-local: carrinhos que o usuário recolheu explicitamente. Necessário porque
   // o contexto faz fallback automático para carts[0] quando activeCartId === null,
   // o que impediria o usuário de recolher o primeiro carrinho da lista.
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
+  // Persistido em localStorage para sobreviver a refresh; sanitizado contra
+  // ids que não existem mais na lista (cart removido/renomeado).
+  const COLLAPSED_STORAGE_KEY = 'seller:collapsed-cart-ids';
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? new Set(parsed.filter((x) => typeof x === 'string')) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   // Listen for FAB "open cart" event
   useEffect(() => {
