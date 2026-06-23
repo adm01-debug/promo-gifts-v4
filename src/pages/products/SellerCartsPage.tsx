@@ -18,6 +18,10 @@ import {
 } from '@/components/cart/CartTablePreferences';
 
 import { type CartStatus } from '@/hooks/products';
+import {
+  SELLER_CART_LIMIT_REACHED_MESSAGE,
+  SELLER_CART_LIMIT_REACHED_SHORT,
+} from '@/hooks/products/useSellerCarts';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
