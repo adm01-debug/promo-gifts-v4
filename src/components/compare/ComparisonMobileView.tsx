@@ -80,15 +80,15 @@ export function ComparisonMobileView({
         return <span className="text-xs">{p.stock ?? 0}</span>;
       case 'colors':
         return (
-          <div className="flex flex-wrap gap-0.5">
-            {(p.colors ?? []).slice(0, 4).map((c: ProductColor, i: number) => (
+          <div className="flex flex-wrap gap-0.5" aria-label={`${p.colors?.length ?? 0} cores`}>
+            {(p.colors ?? []).map((c: ProductColor, i: number) => (
               <div
                 key={i}
                 className="h-3 w-3 rounded-full border border-border"
                 style={{ backgroundColor: c.hex }}
+                title={c.name}
               />
             ))}
-            {p.colors?.length > 4 && <span className="text-[10px]">+{p.colors.length - 4}</span>}
           </div>
         );
       case 'supplier':
