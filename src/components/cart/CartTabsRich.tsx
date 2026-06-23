@@ -2,15 +2,22 @@
  * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente,
  * indicador de follow-up e botão "+" para criar novo.
  */
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { type SellerCart } from '@/hooks/products';
-import { Building2, Plus, Clock } from 'lucide-react';
+import { Building2, Plus, Clock, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
 import { getStatusCfg } from '@/components/cart/CartUtilComponents';
 import { Skeleton } from '@/components/ui/skeleton';
 import { m as motion } from 'framer-motion';
 import { MAX_SELLER_CARTS, SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface CartTabsRichProps {
   carts: SellerCart[];
