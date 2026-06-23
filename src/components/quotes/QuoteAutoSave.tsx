@@ -28,6 +28,10 @@ interface QuoteAutoSaveProps {
   onChange?: (hasUnsavedChanges: boolean) => void;
   debounceMs?: number;
   className?: string;
+  /** Timestamp (Date.now()) set by the parent after a successful server save.
+   *  When it changes, the "unsaved changes" baseline is reset so the indicator
+   *  clears without needing to navigate away and back. */
+  serverSavedAt?: number;
 }
 
 const STORAGE_KEY_PREFIX = 'quote_draft_';
@@ -39,6 +43,7 @@ export function QuoteAutoSave({
   onChange,
   debounceMs = 2000,
   className,
+  serverSavedAt,
 }: QuoteAutoSaveProps) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -98,6 +103,18 @@ export function QuoteAutoSave({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   });
+
+  // BUG-SERVER-SAVED-AT FIX: when the parent reports a successful server save,
+  // reset the "unsaved changes" baseline to the current snapshot so the badge
+  // clears immediately — previously serverSavedAt was passed but never consumed,
+  // leaving the "Não salvo" badge visible even after a successful save.
+  useEffect(() => {
+    if (!serverSavedAt) return;
+    initialDataRef.current = JSON.stringify(dataRef.current);
+    setHasUnsavedChanges(false);
+    onChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverSavedAt]);
 
   // Detectar mudanças
   useEffect(() => {
