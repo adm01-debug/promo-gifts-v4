@@ -185,7 +185,10 @@ export function buildItemsInsertPayload(
   items: QuoteItem[],
   quoteId: string,
 ): TablesInsert<'quote_items'>[] {
-  return items.map((item, index) => ({
+  // FIX-E06: silently drop items with quantity < 1 before persisting; they indicate
+  // a UI state that was never cleared and would create zero-value rows in the DB.
+  const validItems = items.filter((item) => (item.quantity ?? 0) >= 1);
+  return validItems.map((item, index) => ({
     quote_id: quoteId,
     product_id: item.product_id,
     product_name: item.product_name,
