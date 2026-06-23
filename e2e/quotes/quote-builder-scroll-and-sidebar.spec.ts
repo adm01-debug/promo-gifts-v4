@@ -137,7 +137,48 @@ test.describe('Novo Orçamento · scroll natural + sidebar fixo', () => {
         expect(stickyPos).not.toBe('sticky');
       }
 
+      // 3.4) Posição relativa da coluna sticky após rolar 0, 200 e 400px.
+      //      Desktop: top do sticky deve ficar ancorado dentro da faixa
+      //      [header+breadcrumb, header+breadcrumb+tolerância] independente do scroll.
+      //      Mobile: como não é sticky, o top deve acompanhar o scroll
+      //      (delta(top) ≈ -delta(scrollY)).
+      const STICKY_TOP_MIN = 56 + 40; // header + breadcrumb
+      const STICKY_TOP_MAX = 56 + 40 + 16 + 8; // + 1rem + tolerância
+      const SCROLL_DELTA_TOLERANCE = 2;
 
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await waitForVisualStability(page);
+
+      const samples: Array<{ scrollY: number; top: number }> = [];
+      for (const targetY of [0, 200, 400] as const) {
+        await page.evaluate((y) => window.scrollTo(0, y), targetY);
+        await waitForVisualStability(page);
+        const measured = await page.evaluate(() => {
+          const el = document.querySelector(
+            '[data-testid="quote-builder-summary-sticky"]',
+          ) as HTMLElement | null;
+          return {
+            scrollY: window.scrollY,
+            top: el ? el.getBoundingClientRect().top : Number.NaN,
+          };
+        });
+        expect(Number.isFinite(measured.top)).toBe(true);
+        samples.push(measured);
+      }
+
+      if (vp.name === 'desktop') {
+        for (const s of samples) {
+          expect(s.top).toBeGreaterThanOrEqual(STICKY_TOP_MIN - SCROLL_DELTA_TOLERANCE);
+          expect(s.top).toBeLessThanOrEqual(STICKY_TOP_MAX);
+        }
+      } else {
+        // No mobile, o top do sticky deve cair conforme a página rola.
+        const base = samples[0];
+        for (const s of samples.slice(1)) {
+          const expectedTop = base.top - (s.scrollY - base.scrollY);
+          expect(Math.abs(s.top - expectedTop)).toBeLessThanOrEqual(SCROLL_DELTA_TOLERANCE);
+        }
+      }
 
       // 4) Snapshot visual determinístico — volta ao topo, aguarda fontes,
       //    assets e 2 frames estáveis para evitar flakiness (FOUT/CLS).
