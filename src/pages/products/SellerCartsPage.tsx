@@ -53,7 +53,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Plus, Building2, Trash2, Clock, MapPin, FileText } from 'lucide-react';
+import { ShoppingCart, Plus, Building2, Briefcase, Trash2, Clock, MapPin, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -417,10 +417,14 @@ function SellerCartsContent() {
       </header>
 
       {/* Picker em Dialog */}
+      {/* BUG-4 FIX: navega para /carrinhos/:id após criar, sincronizando a URL */}
       <CartCompanyPickerDialog
         open={s.showNewCart}
         onOpenChange={s.setShowNewCart}
-        onCreated={() => s.setShowNewCart(false)}
+        onCreated={(cartId) => {
+          s.setShowNewCart(false);
+          if (cartId) s.navigate(`/carrinhos/${cartId}`);
+        }}
       />
 
       {/* Tabs ricas */}
@@ -500,7 +504,7 @@ function SellerCartsContent() {
                   <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
                     {s.activeCart.company_location && (
                       <span className="flex items-center gap-1.5 truncate">
-                        <MapPin aria-hidden="true" className="h-3 w-3 opacity-60" />
+                        <Briefcase aria-hidden="true" className="h-3 w-3 opacity-60" />
                         {s.activeCart.company_location}
                       </span>
                     )}
