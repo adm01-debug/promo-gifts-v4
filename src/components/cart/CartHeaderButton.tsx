@@ -284,12 +284,17 @@ export function CartHeaderButton() {
                           <div className="flex items-center gap-2.5 px-3 py-2.5">
                             <button
                               type="button"
-                              aria-label={`Selecionar carrinho de ${cart.company_name}`}
+                              aria-label={
+                                isActive
+                                  ? `Recolher carrinho de ${cart.company_name}`
+                                  : `Expandir carrinho de ${cart.company_name}`
+                              }
                               aria-pressed={isActive}
+                              aria-expanded={isActive}
                               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                               onClick={() => {
                                 setPendingDeleteId(null);
-                                setActiveCartId(cart.id);
+                                setActiveCartId(isActive ? null : cart.id);
                               }}
                             >
                               {cart.company_logo_url ? (
