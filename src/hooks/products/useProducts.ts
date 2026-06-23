@@ -16,6 +16,22 @@ export { findKnownHex } from '@/utils/product-colors';
 export { mapPromobrindToProduct } from '@/utils/product-mapper';
 
 /**
+ * Retorna true se o erro é um AbortError do browser.
+ *
+ * AbortErrors são esperados quando um componente desmonta enquanto o fetch
+ * está em curso — em particular quando o @dnd-kit reconcilia a árvore React
+ * durante drag/drop (BUG-PRODUCTS-ABORT-DND 2026-06-23).
+ * NÃO devem ser logados como erros nem contabilizados para retry.
+ */
+function isAbortError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === 'AbortError') return true;
+  if (err instanceof Error && err.name === 'AbortError') return true;
+  // Supabase wraps AbortError: { message: 'AbortError: ...' }
+  if (err instanceof Error && err.message?.startsWith('AbortError')) return true;
+  return false;
+}
+
+/**
  * Hook para buscar todos os produtos do catálogo externo.
  */
 export function useProducts(
@@ -28,6 +44,15 @@ export function useProducts(
       try {
         return await productService.fetchProducts(filters, { signal });
       } catch (error) {
+        // BUG-PRODUCTS-ABORT-DND (2026-06-23):
+        // AbortError é esperado quando o componente desmonta durante DnD.
+        // React Query v5 cancela o fetch via AbortController quando o último
+        // observer sai (componente desmonta). NÃO logar — é falso positivo
+        // que oculta erros reais no console.
+        // Re-throw para que React Query trate internamente (não conta para retry).
+        if (isAbortError(error)) {
+          throw error;
+        }
         logger.error('[useProducts] Error fetching products:', error);
         throw error;
       }
@@ -36,8 +61,16 @@ export function useProducts(
     gcTime: 24 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    retry: 3,
+    // AbortErrors não devem contar para retry — React Query v5 já os distingue,
+    // mas 'shouldRetryOnError' garante mesmo em edge cases de wrapping.
+    retry: (failureCount, error) => {
+      if (isAbortError(error)) return false;
+      return failureCount < 3;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // AbortErrors NÃO devem propagar para ErrorBoundary — são operações
+    // esperadas, não falhas do sistema.
+    throwOnError: (error) => !isAbortError(error),
     ...options,
   });
 }
