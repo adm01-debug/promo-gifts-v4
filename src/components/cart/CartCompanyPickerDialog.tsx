@@ -204,7 +204,7 @@ export function CartCompanyPickerDialog({
 
       // Já existe carrinho para esta empresa? Abre o existente em vez de duplicar
       // (evita dividir o pedido em 2 carrinhos → orçamento parcial). Antes do guard
-      // de limite: abrir o existente deve funcionar mesmo com 3 carrinhos.
+      // de limite: abrir o existente deve funcionar mesmo no limite máximo de carrinhos.
       const existingCart = carts.find((c) => c.company_id === company.id);
       if (existingCart) {
         setActiveCartId(existingCart.id);
