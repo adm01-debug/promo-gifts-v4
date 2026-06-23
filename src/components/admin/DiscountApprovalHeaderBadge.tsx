@@ -23,24 +23,28 @@ export function DiscountApprovalHeaderBadge() {
 
   const { data: count = 0 } = useQuery({
     queryKey: QUERY_KEY,
-    // FIX 2026-06-22 (BUG-DAR-ABORT): React Query cancela in-flight requests via
-    // AbortController ao desmontar o componente. Sem .abortSignal(signal), o Supabase
-    // ignora o cancelamento e o browser loga 'Falha ao carregar Buscar: HEAD'
-    // mesmo que o comportamento seja correto (componente desmontado).
-    // Passando o signal, o Supabase recebe o abort e cancela cleanly sem console error.
-    queryFn: async ({ signal }) => {
+    // BUG-DAR-ABORT-REGRESSION FIX (2026-06-23):
+    // O "fix" de 2026-06-22 (BUG-DAR-ABORT) passou .abortSignal(signal) ao Supabase,
+    // o que na verdade INTRODUZIU o console error "Falha ao carregar Buscar: HEAD".
+    // Causa raiz: React Query v5 chama controller.abort() quando enabled vai true→false
+    // durante race de auth no page load. Com .abortSignal(signal), o abort propaga ao
+    // fetch nativo -> browser loga "Falha ao carregar Buscar". SEM o signal, o fetch
+    // completa silenciosamente (React Query ignora o resultado) sem erro no console.
+    // O signal foi removido propositalmente.
+    queryFn: async () => {
       const { count: rawCount } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-        .abortSignal(signal);
+        .eq('status', 'pending');
       return rawCount || 0;
     },
     enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto
-    retry: 0, // sem retries: falha = falha, não flood de HEAD requests
-    retryOnMount: false, // não re-tenta ao remontar o componente
+    retry: 0,              // sem retries: falha = falha, nao flood
+    retryOnMount: false,   // nao re-tenta ao remontar
     refetchInterval: 60_000,
+    refetchOnWindowFocus: false,  // evita abort extra ao focar aba
+    refetchOnReconnect: false,    // evita abort extra ao reconectar
     staleTime: 15_000,
   });
 

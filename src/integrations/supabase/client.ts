@@ -153,7 +153,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
         }
         return response;
       } catch (error) {
-        log.error('request_failed', { error });
+        // BUG-FETCH-WRAPPER-ABORT FIX (2026-06-23):
+        // AbortError é cancelamento intencional (React Query, navegação, cleanup de hook).
+        // Logar como error polui o console com falsos positivos.
+        // A condição cobre: DOMException com name 'AbortError' (fetch nativo) e
+        // qualquer Error com name 'AbortError' (axios, supabase-js internals).
+        const isAbort =
+          error instanceof Error && error.name === 'AbortError';
+        if (!isAbort) {
+          log.error('request_failed', { error });
+        }
         throw error;
       }
     }

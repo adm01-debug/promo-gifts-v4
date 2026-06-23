@@ -405,6 +405,11 @@ export const SidebarReorganized = React.memo(
     const { isAdmin, isDev, rolesLoaded } = useAuth();
     const isMobile = useMediaQuery('(max-width: 1023px)');
 
+    // BUG-SIDEBAR-ABORT FIX (2026-06-23):
+    // refetchOnWindowFocus e refetchOnReconnect=false evitam aborts extra quando
+    // enabled (rolesLoaded && isAdmin) vai true→false durante race de auth no
+    // page load. Sem esses flags, React Query v5 aborta o fetch em voo quando
+    // enabled transita, e o browser loga "Falha ao carregar Buscar: HEAD".
     const { data: pendingApprovalCount } = useQuery({
       queryKey: ['pending-discount-approvals-count'],
       queryFn: async () => {
@@ -420,6 +425,8 @@ export const SidebarReorganized = React.memo(
       staleTime: 15_000,
       retry: 0,
       retryOnMount: false,
+      refetchOnWindowFocus: false,  // BUG-SIDEBAR-ABORT: evita abort extra ao focar aba
+      refetchOnReconnect: false,    // BUG-SIDEBAR-ABORT: evita abort extra ao reconectar
     });
 
     const enrichedNavGroups = useMemo(() => {
