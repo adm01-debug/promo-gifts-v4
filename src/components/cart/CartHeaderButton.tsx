@@ -596,7 +596,7 @@ export function CartHeaderButton() {
                       0,
                     );
                     return (
-                      <div className="space-y-2 border-t border-border/40 p-3">
+                      <div data-testid="cart-popover-footer" className="space-y-2 border-t border-border/40 p-3">
                         {/* Subtotal */}
                         <div className="flex items-center justify-between px-1">
                           <span className="text-xs text-muted-foreground">
