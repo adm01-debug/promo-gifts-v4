@@ -513,8 +513,10 @@ export function CartHeaderButton() {
                                         : `Expandir carrinho de ${cart.company_name}`
                                     }
                                     aria-expanded={isActive}
+                                    aria-pressed={!isActive}
+                                    data-collapsed={!isActive}
                                     data-testid={`cart-toggle-${cart.id}`}
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-primary/10 hover:text-primary active:scale-90 data-[collapsed=true]:bg-primary/10 data-[collapsed=true]:text-primary"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPendingDeleteId(null);
