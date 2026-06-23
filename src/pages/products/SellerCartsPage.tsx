@@ -403,7 +403,7 @@ function SellerCartsContent() {
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
             title={
               !s.canCreateCart
-                ? 'Limite de 3 carrinhos atingido. Exclua um carrinho para criar outro.'
+                ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
                 : undefined
             }
           >
@@ -928,7 +928,7 @@ function SellerCartsContent() {
               onShareCart={s.shareCartLink}
               onDuplicateCart={(id) => {
                 if (s.canCreateCart) s.duplicateCart(id);
-                else toast.error('Limite de 3 carrinhos atingido');
+                else toast.error('Limite de 10 carrinhos atingido');
               }}
               onExportCSV={s.exportCartToCSV}
               onExportPDF={s.exportCartToPDF}

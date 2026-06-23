@@ -181,7 +181,7 @@ export function CartTabsRich({
           data-testid="cart-tab-new"
           onClick={canCreateCart ? onNew : undefined}
           disabled={!canCreateCart}
-          title={!canCreateCart ? 'Limite de 3 carrinhos atingido' : 'Criar novo carrinho'}
+          title={!canCreateCart ? 'Limite de 10 carrinhos atingido' : 'Criar novo carrinho'}
           className={cn(
             'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-2.5 transition-all',
             canCreateCart
@@ -189,7 +189,7 @@ export function CartTabsRich({
               : 'cursor-not-allowed border-border/20 text-muted-foreground/30 opacity-50',
             'text-sm font-bold',
           )}
-          aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 3 carrinhos atingido'}
+          aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 10 carrinhos atingido'}
         >
           <div
             className={cn(

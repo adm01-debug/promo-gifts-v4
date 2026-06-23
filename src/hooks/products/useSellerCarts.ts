@@ -1,6 +1,6 @@
 /**
  * useSellerCarts - Hook para gerenciar carrinhos de vendedor
- * Persiste no banco de dados, máx 3 carrinhos simultâneos
+ * Persiste no banco de dados, máx MAX_SELLER_CARTS carrinhos simultâneos
  */
 
 import { useMemo } from 'react';
@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+
+/** Teto máximo de carrinhos simultâneos por vendedor (espelha o trigger `enforce_seller_cart_limit`). */
+export const MAX_SELLER_CARTS = 10;
 
 // ============================================
 // TYPES
@@ -164,9 +167,9 @@ export function useSellerCarts() {
         .single();
 
       if (error) {
-        if (error.code === '23514' || error.message?.includes('Limite de 3')) {
+        if (error.code === '23514' || /Limite de \d+ carrinhos?/i.test(error.message ?? '')) {
           throw new Error(
-            'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de criar outro.',
+            `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de criar outro.`,
           );
         }
         throw error;
@@ -392,9 +395,9 @@ export function useSellerCarts() {
         .select()
         .single();
       if (cartErr) {
-        if (cartErr.code === '23514' || cartErr.message?.includes('Limite de 3')) {
+        if (cartErr.code === '23514' || /Limite de \d+ carrinhos?/i.test(cartErr.message ?? '')) {
           throw new Error(
-            'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de duplicar.',
+            `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de duplicar.`,
           );
         }
         throw cartErr;
@@ -573,7 +576,7 @@ export function useSellerCarts() {
     return {
       carts: c,
       totalItems: c.reduce((sum, cart) => sum + cart.items.length, 0),
-      canCreateCart: c.length < 3,
+      canCreateCart: c.length < MAX_SELLER_CARTS,
     };
   }, [cartsQuery.data]);
 
