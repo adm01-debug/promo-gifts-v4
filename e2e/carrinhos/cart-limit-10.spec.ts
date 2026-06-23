@@ -96,19 +96,61 @@ test.describe('Carrinhos · limite de 10', () => {
     const detailBtn = page.getByTestId('seller-carts-new');
     await expect(detailBtn).toBeEnabled();
 
-    // Drawer (sidebar): único bloqueio com mensagem SSOT.
+    // Drawer (sidebar): único bloqueio com mensagem SSOT + contador + explicação.
     await gotoAndSettle(page, '/');
     await page.getByTestId('cart-trigger').click();
     const drawerBtn = page.getByTestId('cart-tab-new');
     await expect(drawerBtn).toBeDisabled();
-    await expect(drawerBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_SHORT);
+    // title agora inclui contador e explicação ("Exclua um carrinho para criar outro.")
+    const tooltipRegex = new RegExp(
+      `${SELLER_CART_LIMIT_REACHED_SHORT}.*\\(15/${MAX_SELLER_CARTS}\\).*Exclua um carrinho para criar outro\\.`,
+    );
+    await expect(drawerBtn).toHaveAttribute('title', tooltipRegex);
+    await expect(drawerBtn).toHaveAttribute('aria-label', SELLER_CART_LIMIT_REACHED_SHORT);
 
     // Contador visível "15/10" no banner do sidebar.
     const counter = page.getByTestId('cart-tab-new-counter');
     await expect(counter).toBeVisible();
-    await expect(counter).toContainText('15');
-    await expect(counter).toContainText('10');
+    await expect(counter).toHaveText(`15/${MAX_SELLER_CARTS}`);
+
+    // Link "Ver detalhes do limite" abre modal com explicação completa.
+    await page.getByTestId('cart-limit-details-link').click();
+    const modal = page.getByTestId('cart-limit-details-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal).toContainText(`Limite de ${MAX_SELLER_CARTS} carrinhos`);
+    await expect(modal).toContainText('Exclua um carrinho');
   });
+
+  test('regressão: criar carrinho em /carrinhos funciona mesmo com >10 ativos', async ({ page }) => {
+    const carts = await bootWithCarts(page, 15);
+
+    // Espia POST para garantir que dispara (sem trigger do BD bloqueando).
+    let postFired = false;
+    await page.route('**/rest/v1/seller_carts**', (route) => {
+      const req = route.request();
+      if (req.method() === 'POST') {
+        postFired = true;
+        const newCart = makeMockCart(99, 0);
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          headers: { 'Content-Range': '0-0/1' },
+          body: JSON.stringify([newCart]),
+        });
+      }
+      return route.continue();
+    });
+
+    await gotoAndSettle(page, '/carrinhos');
+    const listBtn = page.getByTestId('carts-list-new');
+    await expect(listBtn).toBeEnabled();
+    await listBtn.click();
+
+    // Aguarda POST disparar (sem 400 do trigger).
+    await expect.poll(() => postFired, { timeout: 5000 }).toBe(true);
+    expect(carts.length).toBe(15);
+  });
+
 
   test('11º carrinho → POST bloqueado pelo trigger surfaceia toast SSOT', async ({ page }) => {
     // UI mostra 10 carrinhos; o botão está bloqueado pela UI, então simulamos o cenário
@@ -137,6 +179,6 @@ test.describe('Carrinhos · limite de 10', () => {
     await page.getByTestId('cart-trigger').click();
     const drawerBtn = page.getByTestId('cart-tab-new');
     await expect(drawerBtn).toBeDisabled();
-    await expect(drawerBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_SHORT);
+    await expect(drawerBtn).toHaveAttribute('title', new RegExp(SELLER_CART_LIMIT_REACHED_SHORT));
   });
 });
