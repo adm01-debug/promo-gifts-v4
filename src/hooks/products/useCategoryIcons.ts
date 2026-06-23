@@ -8,14 +8,6 @@ export interface CategoryIcon {
   description?: string | null;
 }
 
-/**
- * Hook para buscar ícones das categorias do Supabase.
- *
- * Retorna a tabela `category_icons` completa para uso no `getCategoryIcon()`.
- * Resultados ficam em cache por 30 min (dados muito estáveis).
- *
- * @see docs/CATEGORY_ICONS_GUIDE.md
- */
 export function useCategoryIcons() {
   return useQuery<CategoryIcon[]>({
     queryKey: ['category-icons'],
@@ -42,31 +34,30 @@ export function useCategoryIcons() {
  * - Keywords COMPOSTAS (multi-palavra) devem vir **antes** das simples
  *   que causariam match incorreto, pois `Object.entries()` preserva ordem
  *   de inserção e o primeiro match vence.
- *   Ex: `'kit viagem'` deve preceder `'kit'` para que "Kit Viagem"
- *   retorne `Luggage` e não `Gift`.
- * - Valores SEMPRE em PascalCase: nomes válidos do ICON_MAP em CategoryIcon.tsx
  * - Property names com hífen DEVEM usar aspas simples: `'guarda-chuva'`
  *
- * @see src/components/ui/CategoryIcon.tsx — ICON_MAP com todos os ícones disponíveis
+ * @see src/components/ui/CategoryIcon.tsx — ICON_MAP
  * @see docs/CATEGORY_ICONS_GUIDE.md — guia completo
  */
 const KEYWORD_ICONS: Record<string, string> = {
 
-  // ── COMPOSTOS / ESPECÍFICOS — devem preceder keywords genéricas (♡ ordem importa!) ───
-  // REGRA: `Object.entries()` usa ordem de inserção. Coloque a keyword mais
-  // específica primeiro para evitar que a genérica vence incorretamente.
+  // ── COMPOSTOS / ESPECÍFICOS — devem preceder keywords genéricas (♡ ordem importa!) ──
+  // REGRA: `Object.entries()` usa ordem de inserção. Keywords compostas primeiro.
   //
-  // Conflitos fixados:
+  // Conflitos corrigidos:
   //   'kit viagem'      antes de  'kit'       (Gift seria errado para Kit Viagem)
   //   'kit higiene'     antes de  'kit'       (Gift seria errado para Kit Higiene)
+  //   'kit churrasco'   antes de  'kit'       (Gift seria errado para Kit Churrasco)
   //   'bolsa viagem'    antes de  'bolsa'     (ShoppingBag seria errado)
   //   'brinquedo pet'   antes de  'brinquedo' (Star seria errado para produto pet)
-  //   'roupao'          antes de  'roupa'     (Shirt seria errado para roupão/bata)
+  //   'roupão'          antes de  'roupa'     (Shirt seria errado para roupão/bata)
+  //   FIX v2: 'roup\u00e3o' corrigido (era 'roupaão' — encoding errada, extra 'a')
   'kit viagem':      'Luggage',    // antes de 'kit' → Gift
   'kit higiene':     'Droplets',   // antes de 'kit' → Gift
+  'kit churrasco':   'Flame',      // antes de 'kit' → Gift (NOVO)
   'bolsa viagem':    'Luggage',    // antes de 'bolsa' → ShoppingBag
   'brinquedo pet':   'PawPrint',   // antes de 'brinquedo' → Star
-  'roupaão':         'Layers',     // antes de 'roupa' → Shirt (roupão = bathrobe = Layers)
+  'roupão':          'Layers',     // FIX: era 'roupaão' (typo); roupão = Layers
   'power bank':      'Battery',
   'pen drive':       'HardDrive',
   'porta-retrato':   'Image',
@@ -74,9 +65,9 @@ const KEYWORD_ICONS: Record<string, string> = {
   'guarda-sol':      'Umbrella',
   'anti furto':      'Lock',
   'berço':           'Package',
-  'caixa de som':    'Speaker',    // 'caixa de som' já vem antes de 'caixa' neste arquivo
+  'caixa de som':    'Speaker',
 
-  // ── BAR / COZINHA / GOURMET ────────────────────────────────────
+  // ── BAR / COZINHA / GOURMET ─────────────────────────────────
   copo:              'GlassWater',
   taça:              'Wine',
   caneca:            'Coffee',
@@ -87,7 +78,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   térm:              'Thermometer',
   cooler:            'Thermometer',
   iso:               'Thermometer',
-  kit:               'Gift',         // genérico; 'kit viagem' e 'kit higiene' já estão acima
+  kit:               'Gift',        // genérico; compostos acima têm prioridade
   vinho:             'Wine',
   cerveja:           'Beer',
   café:              'Coffee',
@@ -108,7 +99,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   coquetel:          'Wine',
   shakeira:          'Wine',
 
-  // ── UTENSÍLIOS DE COZINHA ────────────────────────────────
+  // ── UTENSÍLIOS DE COZINHA ───────────────────────────────
   tábua:             'Utensils',
   faca:              'Scissors',
   cutelaria:         'Scissors',
@@ -125,8 +116,8 @@ const KEYWORD_ICONS: Record<string, string> = {
   alimentos:         'Utensils',
   comida:            'Utensils',
 
-  // ── BOLSAS / ACESSÓRIOS / VIAGEM ──────────────────────────
-  bolsa:             'ShoppingBag',  // genérico; 'bolsa viagem' já está acima
+  // ── BOLSAS / ACESSÓRIOS / VIAGEM ─────────────────────────
+  bolsa:             'ShoppingBag',
   mochila:           'Backpack',
   sacochila:         'Backpack',
   necessaire:        'ShoppingBag',
@@ -139,7 +130,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   mala:              'Luggage',
   viagem:            'Luggage',
 
-  // ── VESTUÁRIO / CALÇADOS ───────────────────────────────────
+  // ── VESTUÁRIO / CALÇADOS ─────────────────────────────────
   camisa:            'Shirt',
   camiseta:          'Shirt',
   boné:              'Tag',
@@ -159,10 +150,9 @@ const KEYWORD_ICONS: Record<string, string> = {
   calçado:           'Dumbbell',
   botína:            'Dumbbell',
   sandália:          'Dumbbell',
-  roupa:             'Shirt',        // FIX: era 'Droplets' (errado). Roupas = Shirt.
-                                     // 'roupão' (bathrobe) = Layers, definido acima na seção COMPOSTOS.
+  roupa:             'Shirt',
 
-  // ── ESCRITÓRIO / PAPELARIA ─────────────────────────────────
+  // ── ESCRITÓRIO / PAPELARIA ────────────────────────────────
   caneta:            'PenLine',
   lápis:             'Pencil',
   lapiseira:         'Pencil',
@@ -207,7 +197,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   botton:            'Pin',
   broche:            'Pin',
 
-  // ── ESPORTES / LAZER ──────────────────────────────────────
+  // ── ESPORTES / LAZER ─────────────────────────────────────
   bola:              'CircleDot',
   futebol:           'CircleDot',
   vôlei:             'CircleDot',
@@ -223,7 +213,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   guarda:            'Umbrella',
   chuva:             'Umbrella',
 
-  // ── SAÚDE / BELEZA ────────────────────────────────────────
+  // ── SAÚDE / BELEZA ───────────────────────────────────────
   espelho:           'Sparkles',
   escova:            'Scissors',
   pente:             'Scissors',
@@ -242,18 +232,16 @@ const KEYWORD_ICONS: Record<string, string> = {
   medicamento:       'Pill',
   spa:               'Droplets',
   banho:             'Droplets',
-  // 'kit higiene' removido daqui — movido para COMPOSTOS (linha acima)
-  // 'roupa' removido daqui — movido para VESTUÁRIO com valor correto 'Shirt'
 
-  // ── JOGOS ─────────────────────────────────────────────────
+  // ── JOGOS ────────────────────────────────────────────────
   jogo:              'Gamepad2',
   dominó:            'Dices',
   baralho:           'Dices',
   xadrez:            'Dices',
-  brinquedo:         'Star',        // genérico; 'brinquedo pet' já está no COMPOSTOS
+  brinquedo:         'Star',
   quebra:            'Layers',
 
-  // ── CASA / DECORAÇÃO ──────────────────────────────────────
+  // ── CASA / DECORAÇÃO ─────────────────────────────────────
   vela:              'Flame',
   retrato:           'Image',
   relógio:           'Clock',
@@ -264,32 +252,31 @@ const KEYWORD_ICONS: Record<string, string> = {
   decoração:        'Home',
   despertador:       'AlarmClock',
 
-  // ── PET ─────────────────────────────────────────────────
+  // ── PET ────────────────────────────────────────────────
   pet:               'PawPrint',
   cachorro:          'PawPrint',
   gato:              'PawPrint',
   coleira:           'PawPrint',
   comedouro:         'PawPrint',
   bebedouro:         'PawPrint',
-  // 'brinquedo pet' removido daqui — movido para COMPOSTOS (linha acima)
   ração:             'PawPrint',
   cama:              'PawPrint',
   casinha:           'PawPrint',
 
-  // ── EMBALAGENS / CAIXAS ───────────────────────────────────
+  // ── EMBALAGENS / CAIXAS ─────────────────────────────────
   embalagem:         'Package',
-  caixa:             'Package',      // genérico; 'caixa de som' já está no COMPOSTOS
+  caixa:             'Package',
   estojo:            'Package',
   papel:             'Paperclip',
   marmita:           'Package',
   lancheira:         'Package',
 
-  // ── INFANTIL ──────────────────────────────────────────────
+  // ── INFANTIL ────────────────────────────────────────────
   infantil:          'Star',
   criança:           'Star',
   bebê:              'Heart',
 
-  // ── PREMIUM / PREMIAÇÕES ──────────────────────────────────
+  // ── PREMIUM / PREMIAÇÕES ────────────────────────────────
   troféu:            'Trophy',
   medalha:           'Medal',
   placa:             'Award',
@@ -302,7 +289,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   festas:            'Sparkles',
   evento:            'Sparkles',
 
-  // ── ALIMENTOS / DOCES ─────────────────────────────────────
+  // ── ALIMENTOS / DOCES ─────────────────────────────────
   doce:              'Gift',
   chocolate:         'Heart',
   bombom:            'Gift',
@@ -310,7 +297,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   alimento:          'Utensils',
   castanha:          'Leaf',
 
-  // ── ECO / SUSTENTÁVEL / AGRO ──────────────────────────────
+  // ── ECO / SUSTENTÁVEL / AGRO ────────────────────────────
   eco:               'Leaf',
   ecológico:         'Leaf',
   reciclado:         'Recycle',
@@ -325,45 +312,19 @@ const KEYWORD_ICONS: Record<string, string> = {
   broto:             'Sprout',
   muda:              'Sprout',
 
-  // ── IDENTIFICAÇÃO / CRACHÁ ────────────────────────────────
+  // ── IDENTIFICAÇÃO / CRACHÁ ──────────────────────────────
   crachá:            'CreditCard',
   credencial:        'CreditCard',
   identificação:     'CreditCard',
   cordão:            'CreditCard',
 
-  // ── VEÍCULOS / AUTOMOTIVO ─────────────────────────────────
+  // ── VEÍCULOS / AUTOMOTIVO ──────────────────────────────
   veículo:           'Car',
   carro:             'Car',
   automotivo:        'Car',
   moto:              'Car',
 };
 
-/**
- * Retorna o ícone (nome Lucide ou emoji) de uma categoria pelo nome.
- *
- * ## Pipeline de resolução (4 passes)
- *
- * | Pass | Fonte                        | Exemplo                          |
- * |------|------------------------------|----------------------------------|
- * | 1    | Busca exata em category_icons  | "Canecas" → "Coffee"            |
- * | 2    | Busca parcial (contém)         | "Canecas | Vidro" → "Coffee"    |
- * | 3    | KEYWORD_ICONS (mapa estático)  | "caneca" → "Coffee"             |
- * | 4    | Primeira palavra no banco      | "Kit" → busca no banco          |
- * | -    | Fallback                       | '📦' (Package como emoji)          |
- *
- * ## Valores retornados
- *
- * - Nome Lucide: `"Coffee"`, `"Luggage"`, `"CircleDot"` → CategoryIcon renderiza SVG
- * - Emoji legado: `"☕"` (se ainda no DB) → CategoryIcon renderiza como `<span>`
- * - Fallback: `"📦"` → CategoryIcon renderiza como `<span>` com Package emoji
- *
- * @param categoryName Nome da categoria (ex: "Canecas | Porcelana")
- * @param icons Lista de ícones do banco (via useCategoryIcons)
- * @returns String com nome Lucide ou emoji/fallback
- *
- * @see src/components/ui/CategoryIcon.tsx — renderizador final
- * @see docs/CATEGORY_ICONS_GUIDE.md — guia completo
- */
 export function getCategoryIcon(
   categoryName: string | null | undefined,
   icons: CategoryIcon[],
@@ -383,9 +344,7 @@ export function getCategoryIcon(
   });
   if (partial) return partial.icon;
 
-  // 3. Busca por palavras-chave no mapa estático (retorna nome Lucide)
-  //    ATENÇÃO: keywords compostas (multi-palavra) ficam no início do objeto
-  //    para serem verificadas antes das genéricas (primeiro match vence)
+  // 3. Busca por palavras-chave (primeiro match vence — keywords compostas estão no topo)
   for (const [keyword, iconName] of Object.entries(KEYWORD_ICONS)) {
     if (nameLower.includes(keyword)) {
       return iconName;
@@ -401,5 +360,5 @@ export function getCategoryIcon(
     if (firstWordMatch) return firstWordMatch.icon;
   }
 
-  return '📦'; // Fallback final — CategoryIcon renderiza como emoji Package
+  return '📦';
 }
