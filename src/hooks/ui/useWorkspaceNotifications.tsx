@@ -96,6 +96,10 @@ export function useWorkspaceNotifications() {
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);
+  // BUG-NOTIF-HEAD-ABORT FIX (2026-06-23): AbortController dedicado para a HEAD
+  // request de unread count. Garante que chamadas concorrentes de fetchNotifications
+  // cancelem corretamente a HEAD anterior antes de disparar uma nova.
+  const headAbortRef = useRef<AbortController | null>(null);
 
   // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): coalesce rapid Realtime events into a
   // single fetch. n8n bulk-imports (e.g., 50 notifications in < 1s) fire 50 Realtime
@@ -237,21 +241,37 @@ export function useWorkspaceNotifications() {
         setNotifications(items);
         setTotalCount(count ?? 0);
 
-        // Also fetch unread count separately to keep badge sync.
-        // BUG-HEAD-FALLBACK FIX (2026-06-22): wrapped in separate try/catch.
-        // If the HEAD request fails (503 during Vercel deploy window, network error),
-        // we fall back to deriving count from the already-fetched items instead of
-        // leaving the unread badge stale at its previous value.
+        // BUG-NOTIF-HEAD-ABORT FIX (2026-06-23): HEAD request para unread count agora usa
+        // AbortController dedicado. Cancela HEAD anterior se fetchNotifications for chamada
+        // novamente antes da HEAD completar (evita "Falha ao carregar Buscar: HEAD").
+        // O AbortController é reiniciado a cada chamada via headAbortRef.
+        if (headAbortRef.current) {
+          headAbortRef.current.abort();
+        }
+        headAbortRef.current = new AbortController();
+        const headSignal = headAbortRef.current.signal;
+
         try {
           const { count: unread, error: unreadErr } = await untypedFrom('workspace_notifications')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .eq('is_read', false);
-          setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
-        } catch {
-          // Network error for HEAD request — derive count from fetched items as fallback.
-          // Uses idx_workspace_notifications_user_unread (user_id, is_read, created_at DESC).
-          setUnreadCount(items.filter((n) => !n.is_read).length);
+            .eq('is_read', false)
+            .abortSignal(headSignal);
+          if (!headSignal.aborted) {
+            setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
+          }
+        } catch (headErr) {
+          // AbortError = cancelamento intencional por nova chamada concorrente.
+          // NetworkError = fallback: derivar contagem dos itens ja carregados.
+          const isAbort = headErr instanceof Error && headErr.name === 'AbortError';
+          if (!isAbort) {
+            setUnreadCount(items.filter((n) => !n.is_read).length);
+          }
+        } finally {
+          // Limpar ref se ainda aponta para este controller (não foi substituído)
+          if (headAbortRef.current?.signal === headSignal) {
+            headAbortRef.current = null;
+          }
         }
 
         lastFetchAtRef.current = Date.now();
@@ -390,9 +410,14 @@ export function useWorkspaceNotifications() {
     };
   }, [user, rolesLoaded, fetchNotifications]);
 
-  // Final summary on unmount
+  // Cleanup on unmount: cancelar HEAD em flight + emitir metricas
   useEffect(() => {
     return () => {
+      // BUG-NOTIF-HEAD-ABORT FIX: cancelar HEAD em voo ao desmontar o hook
+      if (headAbortRef.current) {
+        headAbortRef.current.abort();
+        headAbortRef.current = null;
+      }
       notificationsMetrics.logBadgeBudgetSummary('hook-unmount');
     };
   }, []);
