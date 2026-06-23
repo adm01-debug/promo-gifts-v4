@@ -218,10 +218,16 @@ export function useQuoteBuilderState() {
   }, []);
 
   const handleDeliveryDateChange = useCallback((date: Date | undefined) => {
-    setDeliveryDate(date);
     if (date) {
-      setDeliveryTime(`date:${format(date, 'yyyy-MM-dd')}`);
+      // FIX-E07: normalize to LOCAL noon to prevent UTC-midnight dates (returned by some
+      // Calendar implementations) from shifting the day in UTC-3 (Brazil) timezone.
+      // Without this, a UTC midnight date like 2026-07-15T00:00:00Z would format as
+      // July 14 with date-fns (local time), silently storing the wrong day.
+      const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+      setDeliveryDate(normalized);
+      setDeliveryTime(`date:${format(normalized, 'yyyy-MM-dd')}`);
     } else {
+      setDeliveryDate(undefined);
       setDeliveryTime('');
     }
   }, []);
