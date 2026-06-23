@@ -10,7 +10,7 @@ import { differenceInDays } from 'date-fns';
 import { getStatusCfg } from '@/components/cart/CartUtilComponents';
 import { Skeleton } from '@/components/ui/skeleton';
 import { m as motion } from 'framer-motion';
-import { SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
+import { MAX_SELLER_CARTS, SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
 
 interface CartTabsRichProps {
   carts: SellerCart[];
@@ -177,12 +177,16 @@ export function CartTabsRich({
         })}
       </div>
 
-      <div className="flex-shrink-0 pb-2 pr-1">
+      <div className="flex flex-shrink-0 items-center gap-2 pb-2 pr-1">
         <button
           data-testid="cart-tab-new"
           onClick={canCreateCart ? onNew : undefined}
           disabled={!canCreateCart}
-          title={!canCreateCart ? SELLER_CART_LIMIT_REACHED_SHORT : 'Criar novo carrinho'}
+          title={
+            !canCreateCart
+              ? `${SELLER_CART_LIMIT_REACHED_SHORT} (${carts.length}/${MAX_SELLER_CARTS}). Exclua um carrinho para criar outro.`
+              : `Criar novo carrinho (${carts.length}/${MAX_SELLER_CARTS})`
+          }
           className={cn(
             'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-2.5 transition-all',
             canCreateCart
@@ -207,6 +211,18 @@ export function CartTabsRich({
             />
           </div>
           <span>Novo</span>
+          <span
+            data-testid="cart-tab-new-counter"
+            className={cn(
+              'ml-1 inline-flex min-w-[2.5rem] items-center justify-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+              canCreateCart
+                ? 'border-border/40 bg-muted/20 text-muted-foreground'
+                : 'border-destructive/40 bg-destructive/10 text-destructive',
+            )}
+            aria-label={`${carts.length} de ${MAX_SELLER_CARTS} carrinhos usados`}
+          >
+            {carts.length}/{MAX_SELLER_CARTS}
+          </span>
         </button>
       </div>
     </div>
