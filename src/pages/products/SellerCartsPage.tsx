@@ -932,7 +932,7 @@ function SellerCartsContent() {
               onShareCart={s.shareCartLink}
               onDuplicateCart={(id) => {
                 if (s.canCreateCart) s.duplicateCart(id);
-                else toast.error('Limite de 10 carrinhos atingido');
+                else toast.error(SELLER_CART_LIMIT_REACHED_SHORT);
               }}
               onExportCSV={s.exportCartToCSV}
               onExportPDF={s.exportCartToPDF}
