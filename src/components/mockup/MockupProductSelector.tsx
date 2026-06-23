@@ -13,6 +13,7 @@ import { Search, Package, X, SearchX, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getCdnUrl } from '@/utils/image-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -113,9 +114,9 @@ export function MockupProductSelector({
 
   const handleColorSelect = (variant: ExternalVariantStock | null, product: Product) => {
     const variantThumb = variant?.selected_thumbnail
-      ? `${variant.selected_thumbnail}/thumbnail`
+      ? getCdnUrl(variant.selected_thumbnail, 'thumbnail')
       : null;
-    const variantFirstImg = variant?.images?.[0] ? `${variant.images[0]}/thumbnail` : null;
+    const variantFirstImg = variant?.images?.[0] ? getCdnUrl(variant.images[0], 'thumbnail') : null;
     const imageUrl = variantThumb || variantFirstImg || product.images?.[0] || '/placeholder.svg';
 
     onSelect({
@@ -148,7 +149,7 @@ export function MockupProductSelector({
             onError={(e) => {
               const t = e.currentTarget;
               if (t.src.includes('/thumbnail')) {
-                t.src = t.src.replace('/thumbnail', '');
+                t.src = getCdnUrl(t.src, 'public');
               } else if (selection.product.images?.[0]) {
                 t.src = selection.product.images[0];
               } else {

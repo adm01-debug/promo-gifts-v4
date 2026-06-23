@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertTriangle, Package, PackageCheck, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCdnUrl } from '@/utils/image-utils';
 import { QuoteProductColorSelector } from '@/components/quotes/QuoteProductColorSelector';
 import type { ExternalVariantStock } from '@/hooks/products';
 
@@ -148,7 +149,7 @@ export function QuoteBuilderProductSearch({
                             {product.images && product.images.length > 0 ? (
                               <img
                                 loading="lazy"
-                                src={`${product.images[0]}/thumbnail`}
+                                src={getCdnUrl(product.images[0], 'thumbnail')}
                                 alt={product.name}
                                 className="h-11 w-11 rounded-lg bg-muted object-cover transition-opacity duration-300"
                                 onLoad={(e) => e.currentTarget.classList.add('opacity-100')}

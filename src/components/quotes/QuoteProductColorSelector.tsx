@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCdnUrl } from '@/utils/image-utils';
 import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products';
 
 interface QuoteProductColorSelectorProps {
@@ -128,7 +129,7 @@ export function QuoteProductColorSelector({
               {/* Thumbnail ou swatch */}
               {variant.selected_thumbnail ? (
                 <img
-                  src={`${variant.selected_thumbnail}/thumbnail`}
+                  src={getCdnUrl(variant.selected_thumbnail, 'thumbnail')}
                   alt={variant.color_name ?? ''}
                   className="h-10 w-10 shrink-0 rounded-md border border-border object-cover"
                   onError={(e) => {
