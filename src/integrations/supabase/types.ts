@@ -5737,6 +5737,7 @@ export type Database = {
           results_count: number
           search_context: string | null
           search_term: string
+          seller_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -5745,6 +5746,7 @@ export type Database = {
           results_count?: number
           search_context?: string | null
           search_term: string
+          seller_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -5753,6 +5755,7 @@ export type Database = {
           results_count?: number
           search_context?: string | null
           search_term?: string
+          seller_id?: string | null
           user_id?: string | null
         }
         Relationships: []
