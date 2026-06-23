@@ -22,10 +22,14 @@ import { ListItemActions } from './list-item/ListItemActions';
 import { useNavigate } from 'react-router-dom';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { isLightColor } from '@/hooks/products/useColorSystem';
-import { useExternalVariantStock, type ExternalVariantStock } from '@/hooks/products/useExternalVariantStock';
+import {
+  useExternalVariantStock,
+  type ExternalVariantStock,
+} from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 import { GenderBadge } from './GenderBadge';
@@ -42,7 +46,10 @@ import { PriceFreshnessBadge } from './PriceFreshnessBadge';
 import { resolveAllMatchingColors } from '@/utils/color-variant-carousel';
 import { ProductColorSwatches } from './ProductColorSwatches';
 import { ColorSwatchPicker } from '@/components/ui/ColorSwatchPicker';
-import { useProductColorSwatch, type ColorSwatch as ProductColorSwatchData } from '@/hooks/useProductColorSwatch';
+import {
+  useProductColorSwatch,
+  type ColorSwatch as ProductColorSwatchData,
+} from '@/hooks/useProductColorSwatch';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { showUndoToast, showErrorToast } from '@/utils/undoToast';
 import { AddToCollectionModal } from '@/components/collections/AddToCollectionModal';
@@ -148,9 +155,12 @@ export const ProductListItem = memo(
 
     // V2 — color_swatches do BD externo + ColorSwatchPicker (flag useColorSwatchesV2).
     const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
-    const productSwatchesData = ((product as unknown as {
-      color_swatches?: ProductColorSwatchData[] | null;
-    }).color_swatches) ?? null;
+    const productSwatchesData =
+      (
+        product as unknown as {
+          color_swatches?: ProductColorSwatchData[] | null;
+        }
+      ).color_swatches ?? null;
     const swatchV2 = useProductColorSwatch({
       id: product.id,
       name: product.name,
@@ -475,7 +485,7 @@ export const ProductListItem = memo(
                 alt={product.name}
                 className="object-contain transition-transform duration-300 group-hover/thumb:scale-105"
                 containerClassName="h-full w-full"
-                urlOriginal={product.images?.[0]}
+                urlOriginal={getProxiedImageUrl(product.images?.[0]) ?? null}
                 priority={priority}
               />
             </div>
