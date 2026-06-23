@@ -185,9 +185,8 @@ export function CompareTableView({
                           {/* Hover swatches → swap header image */}
                           {(entry.product.colors?.length ?? 0) > 1 && (
                             <div className="flex flex-wrap justify-center gap-0.5">
-                              {entry.product.colors
-                                .slice(0, 6)
-                                .map((c: { name: string; hex?: string }, i: number) => (
+                              {entry.product.colors.map(
+                                (c: { name: string; hex?: string }, i: number) => (
                                   <button
                                     key={i}
                                     type="button"
@@ -209,7 +208,8 @@ export function CompareTableView({
                                       }))
                                     }
                                   />
-                                ))}
+                                ),
+                              )}
                             </div>
                           )}
                           <StockRiskBadge product={entry.product} />
