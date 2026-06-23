@@ -37,7 +37,8 @@ window.addEventListener('vite:preloadError', () => {
   try {
     const last = sessionStorage.getItem(_CHUNK_RELOAD_KEY);
     const now = Date.now();
-    if (!last || now - parseInt(last, 10) > 10_000) {
+    const elapsed = last ? now - parseInt(last, 10) : Infinity;
+    if (!last || isNaN(elapsed) || elapsed > 10_000) { // isNaN: handles corrupted/non-numeric values
       sessionStorage.setItem(_CHUNK_RELOAD_KEY, String(now));
       window.location.reload();
     }
