@@ -24,10 +24,10 @@ async function bootWithCarts(page: Page, count: number): Promise<MockCart[]> {
   return carts;
 }
 
-test.describe('Carrinhos · limite de 10 @smoke', () => {
+test.describe('Carrinhos · limite de 10', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await loginAs(page, 'seller');
+    await loginAs(page, 'user');
   });
 
   test('9 carrinhos → botão novo habilitado em drawer, lista e detalhe', async ({ page }) => {
