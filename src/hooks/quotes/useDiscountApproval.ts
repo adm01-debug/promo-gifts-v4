@@ -266,7 +266,11 @@ export function useDiscountApproval() {
         }
 
         // Notify the seller
-        await supabase.from('workspace_notifications').insert({
+        // BUG-NOTIFY-SELLER-SILENT-FAIL FIX: previously a bare `await supabase...` was used
+        // here — Supabase JS v2 never throws on DB errors, so any RLS denial or constraint
+        // violation was silently swallowed. The seller would never receive the decision
+        // notification and nothing was logged. Destructure { error } and log on failure.
+        const { error: sellerNotifyErr } = await supabase.from('workspace_notifications').insert({
           user_id: typedReq.seller_id,
           title: approved ? 'Desconto aprovado ✅' : 'Desconto rejeitado ❌',
           message: approved
@@ -276,6 +280,8 @@ export function useDiscountApproval() {
           category: 'discount',
           action_url: `/orcamentos/${typedReq.quote_id}`,
         });
+        if (sellerNotifyErr)
+          logger.error('Failed to notify seller of approval decision:', sellerNotifyErr);
 
         toast.success(approved ? 'Desconto aprovado!' : 'Desconto rejeitado');
         return true;
