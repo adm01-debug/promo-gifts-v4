@@ -66,13 +66,12 @@ export function useOptimizationQueue() {
     // com GETs enquanto o auth está carregando. refetchInterval permanece 10s quando
     // enabled=true pois o painel mostra progresso em tempo real da fila de otimizações.
     refetchInterval: (query) => (query.state.status === 'success' ? 10_000 : false),
-    queryFn: async ({ signal }) => {
+    queryFn: async () => { // BUG-OQ-ABORT FIX (2026-06-23): removido { signal } + .abortSignal(signal). Idêntico ao BUG-DAR-ABORT.
       const { data, error } = await supabase
         .from('optimization_queue' as never)
         .select('*')
         .order('priority', { ascending: true })
         .order('created_at', { ascending: true })
-        .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as OptimizationItem[];
     },
