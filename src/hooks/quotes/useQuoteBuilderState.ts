@@ -878,7 +878,14 @@ export function useQuoteBuilderState() {
     const ts = new Date().toISOString();
     setItems((prev) =>
       prev.map((item) => {
-        if (item.price_confirmed_at) return item;
+        // BUG-STALE-CONFIRM FIX: skip only when confirmed AND confirmation postdates
+        // the last price update. If price was updated AFTER confirmation, the confirmation
+        // is stale and the warning must re-appear.
+        if (
+          item.price_confirmed_at &&
+          (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+        )
+          return item;
         const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
         return f.shouldWarn ? { ...item, price_confirmed_at: ts } : item;
       }),
@@ -1062,7 +1069,13 @@ export function useQuoteBuilderState() {
         // Bloqueio de fechamento: preços defasados precisam de confirmação
         if (status !== 'draft') {
           const staleUnconfirmed = items.filter((item) => {
-            if (item.price_confirmed_at) return false;
+            // BUG-STALE-CONFIRM FIX: a confirmation is only valid when it postdates
+            // the last price update. If price_updated_at is newer, re-flag as unconfirmed.
+            if (
+              item.price_confirmed_at &&
+              (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+            )
+              return false;
             const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
             return f.isStale;
           });
