@@ -557,7 +557,7 @@ export default function QuoteBuilderPage() {
                         <CurrencyInput
                           data-testid="shipping-cost-input"
                           value={s.shippingCost || 0}
-                          onChange={(n) => s.setShippingCost(n)}
+                          onChange={(n) => s.setShippingCost(Math.max(0, n))}
                           className={cn(
                             'h-8 text-xs',
                             s.validationErrors.includes('valor_frete') && 'border-destructive',

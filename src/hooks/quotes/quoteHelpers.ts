@@ -80,8 +80,9 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const discountAmount = quote.discount_percent
     ? round2(subtotal * (quote.discount_percent / 100))
     : quote.discount_amount || 0;
+  // FIX-E10: clamp shipping_cost to ≥0 — negative freight makes no business sense
   const shippingCostValue =
-    quote.shipping_type === 'fob_pre' ? round2(quote.shipping_cost || 0) : 0;
+    quote.shipping_type === 'fob_pre' ? round2(Math.max(0, quote.shipping_cost || 0)) : 0;
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
