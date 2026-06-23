@@ -264,7 +264,7 @@ export function CartHeaderButton() {
               </div>
             ) : (
               <>
-                <ScrollArea className="max-h-[440px]">
+                <ScrollArea className="h-[min(60vh,440px)]">
                   <div className="space-y-2 p-3">
                     {carts.map((cart) => {
                       const isActive = cart.id === activeCartId;
