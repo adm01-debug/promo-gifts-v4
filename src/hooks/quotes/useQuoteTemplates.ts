@@ -38,6 +38,11 @@ export interface QuoteTemplateItem {
   }[];
 }
 
+/**
+ * FIX-07/08 (2026-06-23): Adicionados shipping_type, payment_method e shipping_cost.
+ * Esses campos eram omitidos do template, causando perda das condições de frete e
+ * pagamento ao aplicar um template — vendedor tinha que preencher manualmente toda vez.
+ */
 export interface QuoteTemplate {
   id: string;
   seller_id: string;
@@ -50,8 +55,11 @@ export interface QuoteTemplate {
   discount_amount: number;
   notes?: string;
   internal_notes?: string;
+  payment_method?: string;
   payment_terms?: string;
   delivery_time?: string;
+  shipping_type?: string;
+  shipping_cost?: number;
   validity_days: number;
   created_at: string;
   updated_at: string;
@@ -66,8 +74,11 @@ export interface CreateTemplateInput {
   discount_amount?: number;
   notes?: string;
   internal_notes?: string;
+  payment_method?: string;
   payment_terms?: string;
   delivery_time?: string;
+  shipping_type?: string;
+  shipping_cost?: number;
   validity_days?: number;
 }
 
@@ -83,6 +94,10 @@ function transformTemplates(data: QuoteTemplateRow[]): QuoteTemplate[] {
     discount_percent: item.discount_percent ?? 0,
     discount_amount: item.discount_amount ?? 0,
     validity_days: item.validity_days ?? 30,
+    // FIX-07: mapear campos de condições comerciais do template
+    payment_method: (item as Record<string, unknown>)['payment_method'] as string | undefined,
+    shipping_type: (item as Record<string, unknown>)['shipping_type'] as string | undefined,
+    shipping_cost: ((item as Record<string, unknown>)['shipping_cost'] as number | undefined) ?? 0,
   })) as unknown as QuoteTemplate[];
 }
 
@@ -210,8 +225,11 @@ export function useQuoteTemplates() {
           discount_amount: input.discount_amount || 0,
           notes: input.notes || null,
           internal_notes: input.internal_notes || null,
+          payment_method: (input.payment_method || null) as never,
           payment_terms: input.payment_terms || null,
           delivery_time: input.delivery_time || null,
+          shipping_type: (input.shipping_type || null) as never,
+          shipping_cost: (input.shipping_cost || 0) as never,
           validity_days: input.validity_days || 30,
         };
 
@@ -332,8 +350,11 @@ export function useQuoteTemplates() {
         discount_amount: template.discount_amount,
         notes: template.notes,
         internal_notes: template.internal_notes,
+        payment_method: template.payment_method,
         payment_terms: template.payment_terms,
         delivery_time: template.delivery_time,
+        shipping_type: template.shipping_type,
+        shipping_cost: template.shipping_cost,
         validity_days: template.validity_days,
       });
     },
@@ -369,8 +390,11 @@ export function useQuoteTemplates() {
           discount_amount: template.discount_amount || 0,
           notes: template.notes || null,
           internal_notes: template.internal_notes || null,
+          payment_method: (template.payment_method || null) as never,
           payment_terms: template.payment_terms || null,
           delivery_time: template.delivery_time || null,
+          shipping_type: (template.shipping_type || null) as never,
+          shipping_cost: (template.shipping_cost || 0) as never,
           validity_days: template.validity_days || 30,
         };
 
