@@ -182,3 +182,54 @@ describe('fetchAllTemplates — isAdmin guard', () => {
     expect(callsAfter).toBe(callsBefore);
   });
 });
+
+// ── createTemplate — dual-default guard ──────────────────────────────────
+describe('createTemplate — dual-default guard', () => {
+  // BUG-TEMPLATE-DUAL-DEFAULT regression:
+  // Previously the reset-prior-default UPDATE had no error handling — on failure,
+  // the old template kept is_default=true while the new one also got true → two defaults.
+  it('BUG-TEMPLATE-DUAL-DEFAULT: loga erro de reset mas ainda cria o template', async () => {
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: mockUser, isAdmin: false } as never);
+
+    const mockInsertFn = vi.fn().mockReturnValue({
+      select: vi.fn().mockResolvedValue({ data: [{ id: 'tpl-new', name: 'Novo Template' }], error: null }),
+    });
+    const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+    vi.mocked(supabaseClient.from).mockReturnValue({
+      // .update().eq().eq() → reset fails (non-fatal)
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({ error: { message: 'Reset denied' } }),
+        }),
+      }),
+      // .insert().select() → create succeeds
+      insert: mockInsertFn,
+      // .select().order().limit() → fetchTemplates called after insert
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+        }),
+      }),
+    } as never);
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useQuoteTemplates());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let created: unknown;
+    await act(async () => {
+      created = await result.current.createTemplate({
+        name: 'Novo Template',
+        is_default: true,
+      });
+    });
+
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Failed to clear previous default template:',
+      expect.anything(),
+    );
+    expect(mockInsertFn).toHaveBeenCalled();
+    expect(created).not.toBeNull();
+  });
+});

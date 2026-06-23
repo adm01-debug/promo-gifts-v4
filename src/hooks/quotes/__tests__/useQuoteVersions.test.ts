@@ -198,4 +198,55 @@ describe('createNewVersion', () => {
     // Hook catch block calls toast.error, not logger.error
     expect(vi.mocked(toast.error)).toHaveBeenCalled();
   });
+
+  // BUG-VERSION-SILENT-FAIL regression:
+  // Previously the is_latest_version clear UPDATE had no error handling — on failure,
+  // both the old and new versions would have is_latest_version=true, corrupting the tree.
+  it('BUG-VERSION-SILENT-FAIL: aborta e retorna null quando is_latest_version clear falha', async () => {
+    const fakeQuote = {
+      id: 'q-src', quote_number: 'ORC-001', client_id: 'c1', client_name: 'Test',
+      client_email: 'a@b.com', client_phone: null, client_company: 'Co', client_cnpj: null,
+      discount_percent: 0, discount_amount: 0, negotiation_markup_percent: 0,
+      notes: null, payment_method: null, payment_terms: null,
+      delivery_time: null, shipping_type: null, shipping_cost: 0,
+      internal_notes: null, valid_until: null, contact_id: null, items: [],
+    };
+    mockFetchQuote.mockResolvedValue(fakeQuote);
+
+    let quotesCallCount = 0;
+    const { supabase } = await import('@/integrations/supabase/client');
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'quotes') {
+        quotesCallCount++;
+        if (quotesCallCount === 1) {
+          // .select('version, parent_quote_id').eq().single()
+          const singleFn = vi.fn().mockResolvedValue({ data: { version: 1, parent_quote_id: null }, error: null });
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: singleFn }) }) } as never;
+        }
+        if (quotesCallCount === 2) {
+          // .select('version').or().order().limit() — max version lookup
+          const limitFn = vi.fn().mockResolvedValue({ data: [{ version: 1 }], error: null });
+          return { select: vi.fn().mockReturnValue({ or: vi.fn().mockReturnValue({ order: vi.fn().mockReturnValue({ limit: limitFn }) }) }) } as never;
+        }
+        // Third call: .update({ is_latest_version: false }).or() → FAILS
+        return { update: vi.fn().mockReturnValue({ or: vi.fn().mockResolvedValue({ error: { message: 'RLS denied' } }) }) } as never;
+      }
+      return {} as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useQuoteVersions());
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await result.current.createNewVersion('q-src');
+    });
+
+    expect(outcome).toBeNull();
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Failed to clear is_latest_version on prior versions:',
+      expect.anything(),
+    );
+    // createQuote must NOT have been called — the abort prevents dual-true corruption
+    expect(mockCreateQuote).not.toHaveBeenCalled();
+  });
 });

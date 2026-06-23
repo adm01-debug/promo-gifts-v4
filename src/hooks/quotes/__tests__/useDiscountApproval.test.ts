@@ -151,6 +151,53 @@ describe('requestApproval', () => {
     });
     expect(outcome).toBe(false);
   });
+
+  // BUG-APPROVAL-DEDUP-SILENT-FAIL regression:
+  // Previously { error } was not destructured from the dedup check — a network failure
+  // caused `existing` to stay null and we always INSERTed, flooding the approval queue.
+  it('BUG-APPROVAL-DEDUP-SILENT-FAIL: loga warn mas prossegue com INSERT quando dedup check falha', async () => {
+    let darCallCount = 0;
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'discount_approval_requests') {
+        darCallCount++;
+        if (darCallCount === 1) {
+          // First call: dedup SELECT → error
+          const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'Network error' } });
+          const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn });
+          return { select: vi.fn().mockReturnValue({ eq: outerEqFn }) } as never;
+        }
+        // Subsequent call: INSERT → success
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as never;
+      }
+      if (table === 'quotes') {
+        return {
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+        } as never;
+      }
+      if (table === 'user_roles') {
+        return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) }) } as never;
+      }
+      return {
+        insert: vi.fn().mockResolvedValue({ error: null }),
+        select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+      } as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let outcome: boolean | undefined;
+    await act(async () => {
+      outcome = await result.current.requestApproval('q-dedup-err', 15, 10);
+    });
+
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'Dedup check failed, proceeding with INSERT:',
+      expect.anything(),
+    );
+    expect(outcome).toBe(true);
+  });
 });
 
 // ── respondToApproval ─────────────────────────────────────────────────────────
@@ -262,6 +309,33 @@ describe('getApprovalStatus', () => {
     });
     expect(found).not.toBeNull();
     expect((found as { quote_id: string })?.quote_id).toBe('q-target');
+  });
+
+  // BUG-APPROVAL-STATUS-SILENT-FAIL regression:
+  // Previously { error } was not destructured — RLS denials silently returned null,
+  // which callers interpreted as "no pending request", bypassing the approval gate.
+  it('BUG-APPROVAL-STATUS-SILENT-FAIL: loga erro e retorna null quando DB retorna error', async () => {
+    const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+    const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } });
+    const limitFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+    const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
+    const eqFn = vi.fn().mockReturnValue({ order: orderFn });
+    vi.mocked(supabaseClient.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({ eq: eqFn }),
+    } as never);
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let status: unknown;
+    await act(async () => {
+      status = await result.current.getApprovalStatus('q-rls-error');
+    });
+
+    expect(status).toBeNull();
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Error fetching approval status:',
+      expect.anything(),
+    );
   });
 });
 
