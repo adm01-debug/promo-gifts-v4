@@ -1,12 +1,15 @@
 /**
  * useProductCustomizationOptions — Hook para buscar opções de personalização
  *
- * Chama fn_get_product_customization_options via external-db-bridge.
- * Retorna todos os locais e técnicas disponíveis para um produto.
+ * Chama fn_get_product_customization_options via supabase.rpc() direto.
  *
- * O payload bruto passa pelo `adaptCustomizationOptions` para que o front
- * receba sempre a struct canônica, independentemente do back enviar nomes
- * em PT (atual) ou EN (futuro).
+ * CHANGELOG:
+ *  - FIX-RQ-01: exposto isError/error/refetch para diagnóstico no componente
+ *  - FIX-RQ-02: staleTime reduzido p/ 30s (dados semi-estáticos mas precisam
+ *               refletir correções de banco sem exigir hard-refresh)
+ *  - FIX-RQ-03: retry: 3 explícito — não depende do default global que
+ *               pode bloquear em estado de erro por sessão inteira
+ *  - FIX-RQ-04: refetchOnMount: true — garante dados frescos ao montar
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +31,13 @@ export function useProductCustomizationOptions(productId: string | null) {
       return adaptCustomizationOptions(result);
     },
     enabled: !!productId,
-    staleTime: 5 * 60 * 1000,
+    // FIX-RQ-02: 30s staleTime — técnicas mudam raramente mas precisam
+    // refletir correções de banco sem exigir hard-refresh manual
+    staleTime: 30 * 1000,
+    // FIX-RQ-03: retry explícito com backoff curto
+    retry: 3,
+    retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 5_000),
+    // FIX-RQ-04: refetch no mount para pegar estado atual do banco
+    refetchOnMount: true,
   });
 }
