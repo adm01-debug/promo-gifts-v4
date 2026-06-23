@@ -13,6 +13,25 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 /** Teto máximo de carrinhos simultâneos por vendedor (espelha o trigger `enforce_seller_cart_limit`). */
 export const MAX_SELLER_CARTS = 10;
 
+/** Mensagem padrão (SSOT) para limite de carrinhos atingido — tooltips/aria-labels. */
+export const SELLER_CART_LIMIT_REACHED_MESSAGE = `Limite de ${MAX_SELLER_CARTS} carrinhos atingido. Exclua um carrinho para criar outro.`;
+/** Versão curta (para toasts e títulos compactos). */
+export const SELLER_CART_LIMIT_REACHED_SHORT = `Limite de ${MAX_SELLER_CARTS} carrinhos atingido`;
+
+/**
+ * Detecta se um erro do Supabase corresponde ao limite de carrinhos.
+ * Fallback robusto: cobre code 23514 (check_violation), P0001 (RAISE genérico)
+ * e variações de mensagem (caso o trigger mude o texto no futuro).
+ */
+function isCartLimitError(
+  err: { code?: string; message?: string | null } | null | undefined,
+): boolean {
+  if (!err) return false;
+  if (err.code === '23514' || err.code === 'P0001') return true;
+  const msg = err.message ?? '';
+  return /Limite de \d+ carrinhos?/i.test(msg) || /cart.*limit|carrinho.*atingid/i.test(msg);
+}
+
 // ============================================
 // TYPES
 // ============================================
@@ -167,7 +186,7 @@ export function useSellerCarts() {
         .single();
 
       if (error) {
-        if (error.code === '23514' || /Limite de \d+ carrinhos?/i.test(error.message ?? '')) {
+        if (isCartLimitError(error)) {
           throw new Error(
             `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de criar outro.`,
           );
@@ -395,7 +414,7 @@ export function useSellerCarts() {
         .select()
         .single();
       if (cartErr) {
-        if (cartErr.code === '23514' || /Limite de \d+ carrinhos?/i.test(cartErr.message ?? '')) {
+        if (isCartLimitError(cartErr)) {
           throw new Error(
             `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de duplicar.`,
           );

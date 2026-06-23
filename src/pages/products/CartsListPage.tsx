@@ -35,6 +35,7 @@ import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDial
 import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
 import type { SellerCart, CartStatus } from '@/hooks/products';
+import { SELLER_CART_LIMIT_REACHED_MESSAGE } from '@/hooks/products/useSellerCarts';
 
 type StatusFilter = CartStatus | 'all';
 type SortKey = 'items-desc' | 'recent' | 'value-desc';
@@ -144,7 +145,7 @@ function CartsListContent() {
           className="gap-2"
           title={
             !canCreateCart
-              ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
+              ? SELLER_CART_LIMIT_REACHED_MESSAGE
               : undefined
           }
         >
@@ -245,7 +246,7 @@ function CartsListContent() {
             className="gap-2"
             title={
               !canCreateCart
-                ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
+                ? SELLER_CART_LIMIT_REACHED_MESSAGE
                 : undefined
             }
           >

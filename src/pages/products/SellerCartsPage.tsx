@@ -18,6 +18,10 @@ import {
 } from '@/components/cart/CartTablePreferences';
 
 import { type CartStatus } from '@/hooks/products';
+import {
+  SELLER_CART_LIMIT_REACHED_MESSAGE,
+  SELLER_CART_LIMIT_REACHED_SHORT,
+} from '@/hooks/products/useSellerCarts';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartTabsRich } from '@/components/cart/CartTabsRich';
@@ -403,7 +407,7 @@ function SellerCartsContent() {
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
             title={
               !s.canCreateCart
-                ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
+                ? SELLER_CART_LIMIT_REACHED_MESSAGE
                 : undefined
             }
           >
@@ -928,7 +932,7 @@ function SellerCartsContent() {
               onShareCart={s.shareCartLink}
               onDuplicateCart={(id) => {
                 if (s.canCreateCart) s.duplicateCart(id);
-                else toast.error('Limite de 10 carrinhos atingido');
+                else toast.error(SELLER_CART_LIMIT_REACHED_SHORT);
               }}
               onExportCSV={s.exportCartToCSV}
               onExportPDF={s.exportCartToPDF}
