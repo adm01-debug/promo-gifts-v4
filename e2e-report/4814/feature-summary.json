@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-06-23T16:28:58.293Z",
+  "projects": "chromium-smoke",
+  "totals": {
+    "total": 52,
+    "passed": 6,
+    "failed": 1,
+    "skipped": 45,
+    "duration": 143816
+  },
+  "features": [
+    {
+      "feature": "uncategorized",
+      "total": 52,
+      "passed": 6,
+      "failed": 1,
+      "skipped": 45,
+      "duration": 143816,
+      "failures": [
+        {
+          "feature": "uncategorized",
+          "file": "flows/25-password-reset-smoke.spec.ts",
+          "project": "chromium-smoke",
+          "title": "flows/25-password-reset-smoke.spec.ts › Fluxo: Password Reset UI › renderiza formulário quando há token no hash",
+          "status": "timedOut",
+          "duration": 121545,
+          "location": "flows/25-password-reset-smoke.spec.ts:15",
+          "error": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m",
+          "e2eName": null
+        }
+      ]
+    }
+  ],
+  "e2eNames": []
+}
