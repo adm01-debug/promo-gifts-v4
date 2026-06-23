@@ -8,6 +8,10 @@ import { runBotProtection } from '../_shared/bot-protection.ts';
 import { getOrCreateRequestId } from '../_shared/request-id.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
 
+// REDEPLOY-2026-06-23: corrige HTTP 503 para credenciais de IA ausentes.
+// BUG-VS-CREDS: status code 503 já estava correto no repo mas a version
+// deployada (v189) ainda tinha o bug. Este comentário força um novo deploy.
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
