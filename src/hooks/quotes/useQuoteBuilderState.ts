@@ -1122,11 +1122,16 @@ export function useQuoteBuilderState() {
         if (isEditMode && quoteId) {
           // Detecção de concorrência via updated_at baseline
           if (baselineUpdatedAtRef.current) {
-            const { data: remoteQuote } = await supabase
+            // BUG-CONFLICT-CHECK-SILENT-FAIL FIX: previously { error } was not destructured.
+            // A network failure or RLS denial returned { data: null, error } silently,
+            // disabling concurrency protection for this save without any log trace.
+            const { data: remoteQuote, error: conflictCheckErr } = await supabase
               .from('quotes')
               .select('updated_at')
               .eq('id', quoteId)
               .single();
+            if (conflictCheckErr)
+              logger.warn('Conflict check query failed, proceeding without check:', conflictCheckErr);
 
             const remoteTs = remoteQuote?.updated_at;
             if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
