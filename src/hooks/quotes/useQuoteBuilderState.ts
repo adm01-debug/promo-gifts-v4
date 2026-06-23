@@ -575,7 +575,7 @@ export function useQuoteBuilderState() {
           // Salva baseline para detecção de conflito
           baselineUpdatedAtRef.current = quote.updated_at ?? null;
           // QBP-08 FIX: salvar versão carregada para ativar optimistic lock server-side
-          quoteVersionRef.current = (quote as unknown as Record<string, number>).version ?? null;
+          quoteVersionRef.current = quote.version ?? null;
         }
         setLoadingQuote(false);
       })
@@ -1147,7 +1147,7 @@ export function useQuoteBuilderState() {
         }
 
         // Atualizar versão após save bem-sucedido
-        const newVersion = (result as unknown as Record<string, number>)?.version;
+        const newVersion = result?.version;
         if (newVersion != null) quoteVersionRef.current = newVersion;
 
         return result?.updated_at ?? undefined;

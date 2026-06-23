@@ -1,21 +1,5 @@
 {
-  "generatedAt": "2026-06-21T13:34:06.397Z",
-  "totalErrors": 11,
-  "counts": {
-    "src/hooks/simulator/useSimulatorWizard.ts": {
-      "TS2322": 1,
-      "TS2353": 1
-    },
-    "src/hooks/simulator/wizardReducer.ts": {
-      "TS2339": 3,
-      "TS2678": 1,
-      "TS7006": 2
-    },
-    "src/integrations/supabase/types.ts": {
-      "TS2456": 1
-    },
-    "src/pages/products/product-match/MatchFiltersPanel.tsx": {
-      "TS2339": 2
-    }
-  }
+  "generatedAt": "2026-06-23T20:35:02.112Z",
+  "totalErrors": 0,
+  "counts": {}
 }
