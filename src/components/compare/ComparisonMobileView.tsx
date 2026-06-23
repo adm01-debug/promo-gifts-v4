@@ -80,13 +80,19 @@ export function ComparisonMobileView({
         return <span className="text-xs">{p.stock ?? 0}</span>;
       case 'colors':
         return (
-          <div className="flex flex-wrap gap-0.5" aria-label={`${p.colors?.length ?? 0} cores`}>
+          <div
+            className="flex flex-wrap gap-0.5"
+            aria-label={`${p.colors?.length ?? 0} cores`}
+            data-testid="compare-colors-cell"
+            data-colors-count={p.colors?.length ?? 0}
+          >
             {(p.colors ?? []).map((c: ProductColor, i: number) => (
               <div
                 key={i}
                 className="h-3 w-3 rounded-full border border-border"
                 style={{ backgroundColor: c.hex }}
                 title={c.name}
+                data-testid="compare-color-dot"
               />
             ))}
           </div>
