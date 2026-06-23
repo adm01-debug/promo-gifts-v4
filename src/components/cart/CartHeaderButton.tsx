@@ -47,6 +47,10 @@ export function CartHeaderButton() {
   const [open, setOpen] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  // UI-local: carrinhos que o usuário recolheu explicitamente. Necessário porque
+  // o contexto faz fallback automático para carts[0] quando activeCartId === null,
+  // o que impediria o usuário de recolher o primeiro carrinho da lista.
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
 
   // Listen for FAB "open cart" event
   useEffect(() => {
@@ -270,7 +274,7 @@ export function CartHeaderButton() {
                 <ScrollArea data-testid="cart-popover-scroll" className="h-[min(60vh,440px)]">
                   <div className="space-y-2 p-3">
                     {carts.map((cart) => {
-                      const isActive = cart.id === activeCartId;
+                      const isActive = cart.id === activeCartId && !collapsedIds.has(cart.id);
                       return (
                         <div
                           key={cart.id}
@@ -295,7 +299,17 @@ export function CartHeaderButton() {
                               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                               onClick={() => {
                                 setPendingDeleteId(null);
-                                setActiveCartId(isActive ? null : cart.id);
+                                if (isActive) {
+                                  setCollapsedIds((prev) => new Set(prev).add(cart.id));
+                                } else {
+                                  setCollapsedIds((prev) => {
+                                    if (!prev.has(cart.id)) return prev;
+                                    const next = new Set(prev);
+                                    next.delete(cart.id);
+                                    return next;
+                                  });
+                                  setActiveCartId(cart.id);
+                                }
                               }}
                             >
                               {cart.company_logo_url ? (
@@ -453,7 +467,17 @@ export function CartHeaderButton() {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPendingDeleteId(null);
-                                      setActiveCartId(isActive ? null : cart.id);
+                                      if (isActive) {
+                                        setCollapsedIds((prev) => new Set(prev).add(cart.id));
+                                      } else {
+                                        setCollapsedIds((prev) => {
+                                          if (!prev.has(cart.id)) return prev;
+                                          const next = new Set(prev);
+                                          next.delete(cart.id);
+                                          return next;
+                                        });
+                                        setActiveCartId(cart.id);
+                                      }
                                     }}
                                   >
                                     {isActive ? (
