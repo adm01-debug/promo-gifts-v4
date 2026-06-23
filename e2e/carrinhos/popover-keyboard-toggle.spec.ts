@@ -9,48 +9,14 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import { seedAndMock } from '../helpers/cart-mock';
 
-const STORAGE_KEY = 'cart-store-v1';
 
 test.use({
   trace: 'retain-on-failure',
   screenshot: 'only-on-failure',
   video: 'retain-on-failure',
 });
-
-function items(i: number, n: number) {
-  return Array.from({ length: n }, (_, j) => ({
-    id: `it-${i}-${j}`,
-    product_id: `p-${i}-${j}`,
-    product_name: `Produto seed ${i}-${j}`,
-    product_image_url: null,
-    product_price: 19.9 + j,
-    quantity: 5 + j,
-    color_name: 'Preto',
-    color_hex: '#000000',
-  }));
-}
-
-async function seed(page: Page) {
-  const carts = [
-    {
-      id: 'seed-cart-0',
-      company_id: 'co-0',
-      company_name: 'Empresa seed 00',
-      company_location: 'BR',
-      updated_at: new Date().toISOString(),
-      items: items(0, 3),
-    },
-  ];
-  await page.evaluate(
-    ({ key, value }) =>
-      localStorage.setItem(
-        key,
-        JSON.stringify({ state: { carts: value, activeCartId: value[0].id }, version: 1 }),
-      ),
-    { key: STORAGE_KEY, value: carts },
-  );
-}
 
 async function bootstrap(page: Page) {
   await loginAs(page, 'seller');
@@ -67,7 +33,7 @@ for (const key of ['Enter', 'Space'] as const) {
     test(`@smoke tecla ${key} alterna popover e mantém foco — ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await bootstrap(page);
-      await seed(page);
+      await seedAndMock(page, { count: 3, itemsPerCart: 3 });
       await page.reload();
 
       const trigger = page.getByTestId('cart-trigger');

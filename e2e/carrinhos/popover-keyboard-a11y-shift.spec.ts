@@ -13,8 +13,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import { seedAndMock } from '../helpers/cart-mock';
 
-const STORAGE_KEY = 'cart-store-v1';
 
 // Artifacts automáticos no formato esperado pelo CI (test-results/<spec>/<test>/).
 // retain-on-failure mantém apenas em falhas — não polui execuções verdes.
@@ -23,39 +23,6 @@ test.use({
   screenshot: { mode: 'only-on-failure', fullPage: false },
   video: 'retain-on-failure',
 });
-
-function items(i: number, n: number) {
-  return Array.from({ length: n }, (_, j) => ({
-    id: `it-${i}-${j}`,
-    product_id: `p-${i}-${j}`,
-    product_name: `Produto seed ${i}-${j}`,
-    product_image_url: null,
-    product_price: 19.9 + j,
-    quantity: 5 + j,
-    color_name: 'Preto',
-    color_hex: '#000000',
-  }));
-}
-
-async function seed(page: Page, count: number, itemsPerCart: number) {
-  const carts = Array.from({ length: count }, (_, i) => ({
-    id: `seed-cart-${i}`,
-    company_id: `co-${i}`,
-    company_name: `Empresa seed ${i.toString().padStart(2, '0')}`,
-    company_location: 'BR',
-    updated_at: new Date().toISOString(),
-    items: items(i, itemsPerCart),
-  }));
-  await page.evaluate(
-    ({ key, value, active }) => {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ state: { carts: value, activeCartId: active }, version: 1 }),
-      );
-    },
-    { key: STORAGE_KEY, value: carts, active: carts[0]?.id ?? null },
-  );
-}
 
 async function bootstrap(page: Page) {
   await loginAs(page, 'seller');
@@ -75,7 +42,7 @@ test.describe('Carrinhos · teclado, a11y formal e layout shift @smoke', () => {
   test('Tab/Shift+Tab + Enter/Espaço alternam o popover via teclado', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, 2, 3);
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
 
     const trigger = page.getByTestId('cart-trigger');
@@ -105,7 +72,7 @@ test.describe('Carrinhos · teclado, a11y formal e layout shift @smoke', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, 2, 3);
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
 
     const trigger = page.getByTestId('cart-trigger');
@@ -119,7 +86,7 @@ test.describe('Carrinhos · teclado, a11y formal e layout shift @smoke', () => {
     // Radix expõe aria-controls apontando para o id do PopoverContent
     await expect(trigger).toHaveAttribute('aria-controls', /.+/);
 
-    const activeId = 'seed-cart-0';
+    const activeId = 'mock-cart-0';
     const chevron = page.getByTestId(`cart-toggle-${activeId}`);
     await expect(chevron).toHaveAttribute('aria-expanded', 'true');
     await expect(chevron).toHaveRole('button');
@@ -146,7 +113,7 @@ test.describe('Carrinhos · teclado, a11y formal e layout shift @smoke', () => {
     test(`regressão visual versionada do rodapé fixo — ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await bootstrap(page);
-      await seed(page, 6, 6);
+      await seedAndMock(page, { count: 3, itemsPerCart: 3 });
       await page.reload();
 
       await page.getByTestId('cart-trigger').click();
@@ -173,7 +140,7 @@ test.describe('Carrinhos · teclado, a11y formal e layout shift @smoke', () => {
   test('toggle durante scroll do rodapé fixo não causa layout shift', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, 5, 6);
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
 
     await page.getByTestId('cart-trigger').click();
@@ -191,7 +158,7 @@ test.describe('Carrinhos · teclado, a11y formal e layout shift @smoke', () => {
     await viewport.evaluate((el) =>
       el.scrollBy({ top: 300, behavior: 'instant' as ScrollBehavior }),
     );
-    const chevron = page.getByTestId('cart-toggle-seed-cart-0');
+    const chevron = page.getByTestId('cart-toggle-mock-cart-0');
     await chevron.click();
     await expect(chevron).toHaveAttribute('aria-expanded', 'false');
     await chevron.click();

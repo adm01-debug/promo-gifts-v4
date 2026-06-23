@@ -10,8 +10,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import { seedAndMock } from '../helpers/cart-mock';
 
-const STORAGE_KEY = 'cart-store-v1';
 
 // Diagnóstico automático: ativa trace/screenshot/vídeo apenas neste spec,
 // sem alterar a configuração global do Playwright.
@@ -20,39 +20,6 @@ test.use({
   screenshot: 'only-on-failure',
   video: 'retain-on-failure',
 });
-
-function items(i: number, n: number) {
-  return Array.from({ length: n }, (_, j) => ({
-    id: `it-${i}-${j}`,
-    product_id: `p-${i}-${j}`,
-    product_name: `Produto seed ${i}-${j}`,
-    product_image_url: null,
-    product_price: 19.9 + j,
-    quantity: 5 + j,
-    color_name: 'Preto',
-    color_hex: '#000000',
-  }));
-}
-
-async function seed(page: Page, count: number, itemsPerCart: number) {
-  const carts = Array.from({ length: count }, (_, i) => ({
-    id: `seed-cart-${i}`,
-    company_id: `co-${i}`,
-    company_name: `Empresa seed ${i.toString().padStart(2, '0')}`,
-    company_location: 'BR',
-    updated_at: new Date().toISOString(),
-    items: items(i, itemsPerCart),
-  }));
-  await page.evaluate(
-    ({ key, value, active }) => {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ state: { carts: value, activeCartId: active }, version: 1 }),
-      );
-    },
-    { key: STORAGE_KEY, value: carts, active: carts[0]?.id ?? null },
-  );
-}
 
 async function bootstrap(page: Page) {
   await loginAs(page, 'seller');
@@ -70,7 +37,7 @@ test.describe('Carrinhos · fechamento e regressão visual @smoke', () => {
   test('clique fora fecha o popover e devolve o foco ao trigger', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, 2, 3);
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
 
     const trigger = await openPopover(page);
@@ -95,7 +62,7 @@ test.describe('Carrinhos · fechamento e regressão visual @smoke', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, 2, 3);
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
 
     const trigger = await openPopover(page);
@@ -118,7 +85,7 @@ test.describe('Carrinhos · fechamento e regressão visual @smoke', () => {
     test(`regressão visual · rodapé fixo durante scroll — ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await bootstrap(page);
-      await seed(page, 6, 6);
+      await seedAndMock(page, { count: 3, itemsPerCart: 3 });
       await page.reload();
       await openPopover(page);
 

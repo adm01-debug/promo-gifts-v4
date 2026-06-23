@@ -12,42 +12,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import { seedAndMock } from '../helpers/cart-mock';
 
-const STORAGE_KEY = 'cart-store-v1';
-
-function items(i: number, n: number) {
-  return Array.from({ length: n }, (_, j) => ({
-    id: `it-${i}-${j}`,
-    product_id: `p-${i}-${j}`,
-    product_name: `Produto seed ${i}-${j}`,
-    product_image_url: null,
-    product_price: 19.9 + j,
-    quantity: 5 + j,
-    color_name: 'Preto',
-    color_hex: '#000000',
-  }));
-}
-
-async function seed(page: Page, opts: { count: number; itemsPerCart?: number; activeIndex?: number }) {
-  const { count, itemsPerCart = 4, activeIndex = 0 } = opts;
-  const carts = Array.from({ length: count }, (_, i) => ({
-    id: `seed-cart-${i}`,
-    company_id: `co-${i}`,
-    company_name: `Empresa seed ${i.toString().padStart(2, '0')}`,
-    company_location: 'BR',
-    updated_at: new Date().toISOString(),
-    items: items(i, itemsPerCart),
-  }));
-  await page.evaluate(
-    ({ key, value, active }) => {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ state: { carts: value, activeCartId: active }, version: 1 }),
-      );
-    },
-    { key: STORAGE_KEY, value: carts, active: carts[activeIndex]?.id ?? null },
-  );
-}
 
 async function bootstrap(page: Page) {
   await loginAs(page, 'seller');
@@ -63,7 +29,7 @@ test.describe('Carrinhos · toggle avançado @smoke', () => {
   test('Esc fecha o popover e remove rodapé/lista', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, { count: 2, itemsPerCart: 3 });
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
     await openPopover(page);
 
@@ -83,14 +49,14 @@ test.describe('Carrinhos · toggle avançado @smoke', () => {
     test(`foco e tab order no header/chevron ao alternar — ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await bootstrap(page);
-      await seed(page, { count: 2, itemsPerCart: 2 });
+      await seedAndMock(page, { count: 3, itemsPerCart: 3 });
       await page.reload();
       await openPopover(page);
 
-      const activeId = 'seed-cart-0';
+      const activeId = 'mock-cart-0';
       const chevron = page.getByTestId(`cart-toggle-${activeId}`);
       const header = page
-        .getByRole('button', { name: /Recolher carrinho de Empresa seed 00/i })
+        .getByRole('button', { name: /Recolher carrinho de Empresa mock 00/i })
         .first();
 
       // a11y antes do toggle: expandido
@@ -105,7 +71,7 @@ test.describe('Carrinhos · toggle avançado @smoke', () => {
 
       // a11y após toggle: recolhido
       const headerCollapsed = page
-        .getByRole('button', { name: /Expandir carrinho de Empresa seed 00/i })
+        .getByRole('button', { name: /Expandir carrinho de Empresa mock 00/i })
         .first();
       await expect(headerCollapsed).toHaveAttribute('aria-expanded', 'false');
       await expect(headerCollapsed).toHaveAttribute('aria-pressed', 'false');
@@ -128,11 +94,11 @@ test.describe('Carrinhos · toggle avançado @smoke', () => {
   test('carrinhos sem itens — toggle continua correto e rodapé não vaza', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await bootstrap(page);
-    await seed(page, { count: 2, itemsPerCart: 0 });
+    await seedAndMock(page, { count: 3, itemsPerCart: 3 });
     await page.reload();
     await openPopover(page);
 
-    const activeId = 'seed-cart-0';
+    const activeId = 'mock-cart-0';
     const chevron = page.getByTestId(`cart-toggle-${activeId}`);
 
     // sem itens, rodapé "Gerar Orçamento" não deve aparecer
@@ -157,7 +123,7 @@ test.describe('Carrinhos · toggle avançado @smoke', () => {
     test(`scroll do ScrollArea com rodapé fixo (bbox) — ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await bootstrap(page);
-      await seed(page, { count: 6, itemsPerCart: 6 });
+      await seedAndMock(page, { count: 3, itemsPerCart: 3 });
       await page.reload();
       await openPopover(page);
 

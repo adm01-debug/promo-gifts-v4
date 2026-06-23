@@ -10,41 +10,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import { seedAndMock } from '../helpers/cart-mock';
 
-const STORAGE_KEY = 'cart-store-v1';
-
-function makeItems(i: number, n = 3) {
-  return Array.from({ length: n }, (_, j) => ({
-    id: `item-${i}-${j}`,
-    product_id: `prod-${i}-${j}`,
-    product_name: `Produto seed ${i}-${j}`,
-    product_image_url: null,
-    product_price: 19.9 + j,
-    quantity: 10 + j,
-    color_name: 'Preto',
-    color_hex: '#000000',
-  }));
-}
-
-async function seedCarts(page: Page, count = 6) {
-  const carts = Array.from({ length: count }, (_, i) => ({
-    id: `seed-cart-${i}`,
-    company_id: `co-${i}`,
-    company_name: `Empresa seed ${i.toString().padStart(2, '0')}`,
-    company_location: 'BR',
-    updated_at: new Date().toISOString(),
-    items: makeItems(i),
-  }));
-  await page.evaluate(
-    ({ key, value }) => {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ state: { carts: value, activeCartId: value[0]?.id ?? null }, version: 1 }),
-      );
-    },
-    { key: STORAGE_KEY, value: carts },
-  );
-}
 
 async function openPopover(page: Page) {
   await page.getByTestId('cart-trigger').click();
@@ -130,7 +97,7 @@ test.describe('Carrinhos · popover scroll + rodapé fixo @smoke', () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await loginAs(page, 'seller');
       await gotoAndSettle(page, '/');
-      await seedCarts(page, 6);
+      await seedAndMock(page, { count: 6, itemsPerCart: 4 });
       await page.reload();
       await page.waitForLoadState('domcontentloaded');
 
@@ -152,7 +119,7 @@ test.describe('Carrinhos · popover scroll + rodapé fixo @smoke', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/');
-    await seedCarts(page, 6);
+    await seedAndMock(page, { count: 6, itemsPerCart: 4 });
     await page.reload();
     await page.waitForLoadState('domcontentloaded');
 
