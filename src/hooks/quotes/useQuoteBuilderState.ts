@@ -842,11 +842,22 @@ export function useQuoteBuilderState() {
     [realSubtotal, subtotal, discountAmount],
   );
 
-  // BUG-032 FIX: Clamp amount-mode discount when markup decreases below discountValue
+  // BUG-032 FIX: Clamp amount-mode discount when markup decreases below discountValue.
+  // FIX-E09: notify the user when the clamp actually fires so they're not surprised.
   useEffect(() => {
     if (discountType !== 'amount') return;
-    setDiscountValue((prev) => (prev > subtotal ? QuoteCalc.round2(subtotal) : prev));
-  }, [subtotal, discountType]);
+    setDiscountValue((prev) => {
+      if (prev > subtotal) {
+        const clamped = QuoteCalc.round2(subtotal);
+        toast.warning('Desconto ajustado automaticamente', {
+          description: `O desconto foi reduzido para ${formatCurrency(clamped)} pois a margem de negociação diminuiu.`,
+          duration: 5000,
+        });
+        return clamped;
+      }
+      return prev;
+    });
+  }, [subtotal, discountType]); // formatCurrency omitted: stable reference; toast omitted: stable
 
   const handleProductClick = useCallback((product: Product) => {
     setSelectedProductForColor(product);
