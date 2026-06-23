@@ -121,6 +121,7 @@ export function useProfileRoles() {
     isLoading,
     setIsLoading,
     rolesLoaded,
+    setRolesLoaded, // BUG-WATCHDOG-ROLES FIX (2026-06-23): exposto para o watchdog do AuthContext poder forçar rolesLoaded=true em stall
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,
