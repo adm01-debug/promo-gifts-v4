@@ -231,10 +231,12 @@ export const ProductCard = memo(
       // Quando a flag estiver ON e o produto tiver color_swatches populado
       // (vindo do BD externo), o pipeline V2 assume image/stock/swatches.
       const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
-      const productSwatchesData = (product as unknown as {
-        color_swatches?: ProductColorSwatchData[];
-        has_colors?: boolean;
-      }).color_swatches;
+      const productSwatchesData = (
+        product as unknown as {
+          color_swatches?: ProductColorSwatchData[];
+          has_colors?: boolean;
+        }
+      ).color_swatches;
       const swatchV2 = useProductColorSwatch({
         id: product.id,
         name: product.name,
@@ -243,8 +245,7 @@ export const ProductCard = memo(
         color_swatches: productSwatchesData,
         has_colors: !!productSwatchesData?.length,
       });
-      const useSwatchesV2 =
-        swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
+      const useSwatchesV2 = swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
 
       // TDZ FIX: `allMatchingVariants` antes era declarado na linha ~298, depois
       // do useEffect abaixo que o referencia no array de deps — isso quebrava em
@@ -817,7 +818,8 @@ export const ProductCard = memo(
                     window.history.replaceState({}, '', currentUrl.toString());
                   }
                   setImageLoaded(false);
-                  setQuickViewOpen(true);
+                  // FIX-SWATCH-INLINE-V2: seleção de cor inline — sem abrir QuickView automaticamente.
+                  // Usuário clica na foto para abrir QuickView já na cor correta.
                 }}
                 onReset={() => {
                   feedback.light();
@@ -861,7 +863,8 @@ export const ProductCard = memo(
                     currentUrl.searchParams.set('pid', product.id);
                     window.history.replaceState({}, '', currentUrl.toString());
 
-                    setQuickViewOpen(true);
+                    // FIX-SWATCH-INLINE-V1: seleção de cor inline — sem abrir QuickView automaticamente.
+                    // Imagem e estoque já refletem a cor selecionada no card. Botão "Todos" reseta.
                   }
                 }}
                 onClear={() => {
