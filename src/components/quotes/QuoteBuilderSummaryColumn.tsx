@@ -136,9 +136,10 @@ export function QuoteBuilderSummaryColumn({
         setDiscountValue(round2(Math.max(0, Math.min(100, pct))));
       }
     } else if (presentedSubtotal === 0 && discountValue > 0) {
-      if (next === 'percent') {
-        setDiscountValue(0);
-      }
+      // BUG-DISCOUNT-ZERO FIX: with a 0 subtotal, any discount is meaningless.
+      // The old code only reset when switching TO percent (X% of 0 = 0); it forgot
+      // the reverse direction (R$ amount when subtotal is 0 also makes no sense).
+      setDiscountValue(0);
     }
     setDiscountType(next);
   };
