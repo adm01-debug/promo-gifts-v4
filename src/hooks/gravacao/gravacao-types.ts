@@ -5,12 +5,12 @@
 
 /**
  * Técnica de gravação da tabela oficial
- * (tabela_preco_gravacao_oficial - 43 registros)
+ * (tabela_preco_gravacao_oficial - 92 registros)
  */
 export interface TabelaPrecoOficial {
   id: string;
   tecnica_variante_id: string | null;
-  /** @deprecated use `code` */
+  /** @deprecated use `codigo_curto` ou `codigo_tabela`. Gerado como alias de codigo_tabela. */
   codigo: string;
   /** Alias EN do `codigo`. Preenchido pelo adapter quando o back devolve nome novo. */
   code?: string | null;
@@ -42,7 +42,6 @@ export interface TabelaPrecoOficial {
   custo_setup_por_cor: boolean;
   /** Alias EN do `custo_setup_por_cor`. */
   setup_by_color?: boolean | null;
-  /** @deprecated pode sumir do schema novo. */
   tipo_setup?: string | null;
   custo_manuseio: number | null;
   /** Alias EN do `custo_manuseio`. */
@@ -67,11 +66,29 @@ export interface TabelaPrecoOficial {
   active?: boolean | null;
   created_at: string;
   updated_at: string;
+
+  // ── Campos do banco não declarados anteriormente (sincronizados 2026-06-23) ──
+  /** Código curto único (ex: "FIBER-PL-01"). Chave canônica da técnica. */
+  codigo_curto?: string | null;
+  /** Markup percentual aplicado na cotação (ex: 115 = 115%). */
+  markup_percent?: number | null;
+  /** Preço mínimo unitário de venda em R$. A cotação nunca fica abaixo disso. */
+  preco_minimo_unitario?: number | null;
+  /** Preço máximo unitário de venda em R$. Teto de precificação. */
+  preco_maximo_unitario?: number | null;
+  /** Se true, faixas de preço são dimensionais (largura × altura cm). */
+  usa_faixa_dimensional?: boolean | null;
+  /** Modificadores de preço em JSONB (promoções, condições especiais). */
+  opcoes_modificadores?: Record<string, unknown> | null;
+  /** Opções de tonalidade/cor em JSONB (CMYK, Pantone, etc.). */
+  tom_options?: Record<string, unknown> | null;
+  /** Nome do grupo/categoria (alias gerado de grupo_tecnica). */
+  nome_grupo?: string | null;
 }
 
 /**
  * Faixa de preço da tabela oficial
- * (tabela_preco_gravacao_oficial_faixa - 301 registros)
+ * (tabela_preco_gravacao_oficial_faixa - 916 registros)
  */
 export interface FaixaPrecoOficial {
   id: string;
@@ -92,12 +109,17 @@ export interface FaixaPrecoOficial {
   /** @deprecated use `display_order` */
   ordem: number;
   display_order?: number | null;
+  // Faixas dimensionais
+  largura_min?: number | null;
+  largura_max?: number | null;
+  altura_min?: number | null;
+  altura_max?: number | null;
   created_at: string;
   updated_at: string;
 }
 
 /**
- * Retorno da função fn_get_customization_price v5.1
+ * Retorno da função fn_get_customization_price v2 (2026-06-23)
  */
 export interface CustomizationPriceV2 {
   success: boolean;
