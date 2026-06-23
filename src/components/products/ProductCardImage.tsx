@@ -13,6 +13,13 @@
  * image fades in. The effect is suppressed when the user is actively
  * navigating color variants in the mini-carousel (showing the selected
  * variant's image takes priority over the set image).
+ *
+ * BUG-SPOT-CORS FIX (2026-06-23):
+ * urlOriginal passava a URL bruta spotgifts.com.br para OptimizedImage como
+ * fallback quando a imagem Cloudflare falhava. O browser tentava carregar
+ * diretamente → bloqueado por CORS policy ("No 'Access-Control-Allow-Origin'").
+ * Fix: getProxiedImageUrl() envolve a URL antes de passar para OptimizedImage,
+ * roteando o fallback pelo edge function image-proxy (que tem CORS configurado).
  */
 import { memo } from 'react';
 import { Package } from 'lucide-react';
@@ -22,7 +29,7 @@ import { resolveNoveltyDaysRemaining } from '@/lib/products/novelty-days';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
-import { deriveOriginalUrl } from '@/utils/imageProxy';
+import { deriveOriginalUrl, getProxiedImageUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
 import { isProductKit } from '@/lib/products/kit-detection';
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
@@ -200,7 +207,13 @@ export const ProductCardImage = memo(
                   }}
                   containerClassName="h-full w-full"
                   urlOriginal={
-                    deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url || null
+                    // BUG-SPOT-CORS FIX (2026-06-23): getProxiedImageUrl() garante que
+                    // URLs spotgifts.com.br passem pelo edge function image-proxy antes
+                    // de chegar ao browser. Sem isso, OptimizedImage tentava carregar
+                    // diretamente a URL original → bloqueada por CORS policy.
+                    getProxiedImageUrl(
+                      deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url
+                    ) || null
                   }
                   blurhash={cardImageBlurhash}
                   priority={priority}
