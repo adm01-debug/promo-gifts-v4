@@ -123,7 +123,25 @@ export const quoteService = {
     return { ...(created as Quote), items } as Quote;
   },
 
-  async updateQuote(quoteId: string, quote: Partial<Quote>, items: QuoteItem[]): Promise<Quote> {
+  /**
+   * QBP-08 FIX (2026-06-22): Adicionado parâmetro `expectedVersion` para ativar
+   * o optimistic lock server-side em `update_quote_transactional`.
+   *
+   * PROBLEMA ORIGINAL: `_expected_version` nunca era passado (sempre NULL).
+   * A RPC tem lógica completa de detecção de conflito por versão, mas estava inativa.
+   * O lock app-level (updated_at comparison) é suficiente para UX, mas o lock
+   * server-side garante atomicidade no banco mesmo em race conditions não detectados
+   * pelo app (ex: dois tabs simultâneos sem shared state).
+   *
+   * NOTA: expectedVersion é opcional (compatibilidade retroativa). Quando NULL,
+   * o comportamento da RPC é idêntico ao anterior (sem lock server-side).
+   */
+  async updateQuote(
+    quoteId: string,
+    quote: Partial<Quote>,
+    items: QuoteItem[],
+    expectedVersion?: number | null,
+  ): Promise<Quote> {
     const totals = calculateQuoteTotals(quote, items);
     const updatePayload = buildUpdatePayload(quote, totals);
     const itemsPayload = buildItemsInsertPayload(items, quoteId).map((item, index) => ({
@@ -143,6 +161,8 @@ export const quoteService = {
         _quote_id: quoteId,
         _quote_patch: updatePayload,
         _items: itemsPayload,
+        // QBP-08 FIX: passar versão para ativar lock server-side
+        _expected_version: expectedVersion ?? null,
       } as never,
     );
 
