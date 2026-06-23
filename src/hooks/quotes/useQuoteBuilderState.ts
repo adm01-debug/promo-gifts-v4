@@ -22,7 +22,7 @@ import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
 import { supabase } from '@/integrations/supabase/client';
 import type { ConflictInfo } from '@/hooks/quotes/useQuoteConcurrencyGuard';
-import { format, addDays } from 'date-fns';
+import { format, addDays, startOfDay } from 'date-fns';
 import { toast } from 'sonner';
 import { formatCurrency as fmtCurrency } from '@/lib/format';
 import { validateQuoteForm, QUOTE_FIELD_LABELS } from '@/lib/validations';
@@ -46,6 +46,20 @@ import { isValidQuoteTransition, getQuoteStatusLabel } from '@/lib/quote-status-
 import type { QuoteStatus } from '@/types/quote';
 
 import { logger } from '@/lib/logger';
+
+const VALIDITY_PRESETS = ['1', '3', '7', '15', '30'] as const;
+
+function syncValidityDaysFromDate(dateStr: string): string {
+  try {
+    const daysFromNow = Math.round(
+      (new Date(dateStr).getTime() - startOfDay(new Date()).getTime()) / (1000 * 60 * 60 * 24),
+    );
+    return VALIDITY_PRESETS.find((p) => parseInt(p, 10) === daysFromNow) ?? '';
+  } catch {
+    return '';
+  }
+}
+
 interface Product {
   id: string;
   name: string;
@@ -101,8 +115,6 @@ async function loadQuoteSearchProducts(search: string): Promise<Product[]> {
     return productsData.map((p) => mapQuoteSearchProduct(p, getProductImageUrl));
   }
 
-  // Two-layer search: prefix matches (1st layer) + broad matches (2nd layer).
-  // allSettled instead of all: one layer failing should not discard the other's results.
   const [prefixResult, broadResult] = await Promise.allSettled([
     fetchPromobrindProducts({ filters: { _name_prefix: normalizedSearch }, limit: 200 }),
     fetchPromobrindProducts({ search: normalizedSearch, limit: 500 }),
@@ -137,26 +149,20 @@ export function useQuoteBuilderState() {
   const [companyInfo, setCompanyInfo] = useState<SelectedCompanyInfo | null>(null);
   const [contactInfo, setContactInfo] = useState<SelectedContactInfo | null>(null);
 
-  // ── Detecção de concorrência: armazena updated_at ao abrir o orçamento ──
+  // QBP-08 FIX: rastrear versão carregada do quote para ativar o lock server-side
+  const quoteVersionRef = useRef<number | null>(null);
+
+  // Detecção de concorrência: armazena updated_at ao abrir o orçamento
   const baselineUpdatedAtRef = useRef<string | null>(null);
   // BUG-011: Prevents double-submit when the user clicks "Save" twice rapidly
-  // (or two async paths race to call handleSaveQuote simultaneously).
   const isSavingRef = useRef(false);
   const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
-  // Status que o usuário tentou salvar quando o conflito foi detectado.
-  // Preserva a intenção (ex.: finalizar como 'pending') ao escolher "sobrescrever",
-  // evitando rebaixar silenciosamente o orçamento para rascunho.
   const pendingSaveStatusRef = useRef<'draft' | 'pending_approval' | 'pending'>('draft');
-  // Preserva a justificativa de aprovação digitada pelo vendedor caso um conflito
-  // de concorrência interrompa o save: o diálogo de aprovação limpa seu estado local
-  // logo após o submit, então sem isto o replay do overwrite enviaria sellerNotes
-  // = undefined e o admin perderia o motivo informado.
   const pendingSellerNotesRef = useRef<string | undefined>(undefined);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
   const [discountType, setDiscountType] = useState<'amount' | 'percent'>('percent');
   const [discountValue, setDiscountValue] = useState(0);
-  /** Margem de negociação interna 0–50%. Default 0 (desligado). */
   const [negotiationMarkup, setNegotiationMarkup] = useState(0);
   const [notes, setNotes] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
@@ -186,6 +192,24 @@ export function useQuoteBuilderState() {
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [shippingType, setShippingType] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
+
+  // QBP-07 FIX: defer shippingType restore via state+useEffect com cleanup
+  // Evita chamar setShippingType em componente desmontado (setTimeout sem cleanup)
+  const [pendingShippingTypeRestore, setPendingShippingTypeRestore] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pendingShippingTypeRestore) return;
+    let mounted = true;
+    const id = setTimeout(() => {
+      if (mounted) {
+        setShippingType(pendingShippingTypeRestore);
+        setPendingShippingTypeRestore(null);
+      }
+    }, 0);
+    return () => {
+      mounted = false;
+      clearTimeout(id);
+    };
+  }, [pendingShippingTypeRestore]);
 
   const handleDeliveryModeChange = useCallback((mode: 'data' | 'prazo') => {
     setDeliveryMode(mode);
@@ -228,7 +252,6 @@ export function useQuoteBuilderState() {
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
   const [templateApplied, setTemplateApplied] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(isEditMode);
-  // Removido estado duplicado de items e activeItemIndex (gerenciados pelo useQuoteItems)
 
   const debouncedProductSearch = useDebounce(productSearch, 400);
 
@@ -242,17 +265,12 @@ export function useQuoteBuilderState() {
     if (clientId && contactId) steps.push('client');
     if (paymentMethod && paymentTerms && deliveryTime && shippingType) {
       if (shippingType !== 'fob_pre' || shippingCost > 0) {
-        // BUG-005: validUntil was missing from the conditions check, causing the
-        // stepper to show the "Conditions" step as ✓ even when the validity date
-        // is in the past. Save would then fail with a toast error — contradiction.
-        // We mark it incomplete when the date is missing or expired so the seller
-        // sees a clear signal before attempting to send the quote.
+        // BUG-005 FIX: validUntil missing from condition check
         const validityOk = validUntil && new Date(validUntil) > new Date();
         if (validityOk) steps.push('conditions');
       }
     }
     if (items.length > 0) steps.push('items');
-    // Consideramos personalização "concluída" se houver itens e pelo menos um item tiver personalização
     const hasAnyPersonalization = items.some((it) => (it.personalizations?.length ?? 0) > 0);
     if (items.length > 0 && hasAnyPersonalization) steps.push('personalization');
     return steps;
@@ -401,9 +419,7 @@ export function useQuoteBuilderState() {
 
       if (targetIndex === currentIndex) return;
 
-      // Se estiver tentando ir para uma etapa posterior, validar as anteriores
       if (targetIndex > currentIndex) {
-        // Validar cada etapa entre a atual e a alvo (não inclusiva da alvo, pois a alvo é onde queremos chegar)
         for (let i = currentIndex; i < targetIndex; i++) {
           if (!validateStep(steps[i])) return;
         }
@@ -414,6 +430,7 @@ export function useQuoteBuilderState() {
     },
     [currentStep, validateStep],
   );
+
   // ── AutoSave ──
   const { clearAutoSave } = useAutoSaveQuote({
     enabled: (!!clientId || items.length > 0) && !isEditMode,
@@ -436,8 +453,6 @@ export function useQuoteBuilderState() {
       validUntil,
     },
     onRestore: (saved) => {
-      // Para evitar sobrescrever um carregamento de rascunho real (via URL),
-      // só restauramos se não estiver em modo edição.
       if (!isEditMode) {
         if (saved.clientId) setClientId(saved.clientId);
         if (saved.contactId) setContactId(saved.contactId);
@@ -464,34 +479,25 @@ export function useQuoteBuilderState() {
           }
         }
         if (saved.shippingType) {
-          // Usar setTimeout para garantir que o Radix Select reaja após a montagem do componente
-          setTimeout(() => setShippingType(saved.shippingType), 0);
+          // QBP-07 FIX: usar state pendente + useEffect com cleanup (evita setState em desmontado)
+          setPendingShippingTypeRestore(saved.shippingType);
         }
         if (saved.shippingCost) setShippingCost(saved.shippingCost);
-        if (saved.validUntil) setValidUntil(saved.validUntil);
+        if (saved.validUntil) {
+          setValidUntil(saved.validUntil);
+          // QBP-12 FIX: sincronizar validityDays Select ao restaurar AutoSave
+          // Antes: o Select ficava em "Selecione" mesmo com data válida restaurada
+          setValidityDays(syncValidityDaysFromDate(saved.validUntil));
+        }
         if (saved.notes) setNotes(saved.notes);
         if (saved.internalNotes) setInternalNotes(saved.internalNotes);
       }
     },
   });
 
-  // Note: beforeunload is now handled by useUnsavedChangesGuard in QuoteBuilderPage
-
   // ── Load existing quote ──
   useEffect(() => {
     if (!isEditMode || !quoteId) return;
-    /**
-     * BUG-18 FIX: isMounted guard prevents ~15 setState calls on an unmounted
-     * component when the user navigates away before fetchQuote resolves.
-     *
-     * WITHOUT THIS FIX: If the user opens a quote edit page and immediately
-     * navigates away (e.g. back button on slow network, ~200ms latency), the
-     * .then() callback fires after unmount, calling setClientId, setContactId,
-     * setNotes, etc. on a dead component — React warning + potential state
-     * corruption on remount.
-     *
-     * fetchQuote also added to deps array to prevent stale closure.
-     */
     let isMounted = true;
     setLoadingQuote(true);
     fetchQuote(quoteId)
@@ -501,15 +507,9 @@ export function useQuoteBuilderState() {
           setClientId(quote.client_id || '');
           setContactId(quote.contact_id || '');
           setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-          // BUG-007: validityDays Select showed '7 dias' even when the loaded quote had
-          // a different expiry. Sync to the closest preset so the UI is honest.
-          // If the date doesn't match a preset exactly, '' shows "Selecione" (placeholder).
+          // BUG-007 FIX: sync validityDays Select ao carregar quote existente
           if (quote.valid_until) {
-            const daysRemaining = Math.round(
-              (new Date(quote.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-            );
-            const PRESETS = ['1', '3', '7', '15', '30'];
-            setValidityDays(PRESETS.find((p) => parseInt(p, 10) === daysRemaining) ?? '');
+            setValidityDays(syncValidityDaysFromDate(quote.valid_until));
           }
           setNotes(quote.notes || '');
           setInternalNotes(quote.internal_notes || '');
@@ -531,8 +531,7 @@ export function useQuoteBuilderState() {
               ramo_atividade: undefined,
             });
           }
-          // BUG-003: Log a warning when both fields are set — indicates data corruption
-          // (only one should be > 0 at a time). We pick percent as the canonical value.
+          // BUG-003 FIX: log quando ambos os campos de desconto estão preenchidos
           if ((quote.discount_percent ?? 0) > 0 && (quote.discount_amount ?? 0) > 0) {
             logger.warn(
               '[useQuoteBuilderState] Both discount_percent and discount_amount are set on loaded quote — possible data corruption. Picking percent.',
@@ -551,8 +550,7 @@ export function useQuoteBuilderState() {
           if (quote.payment_method) setPaymentMethod(quote.payment_method);
           if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
           if (quote.shipping_type) setShippingType(quote.shipping_type);
-          // BUG-004: falsy check skips 0, which is valid for CIF (freight included).
-          // Use explicit null/undefined check instead.
+          // BUG-004 FIX: falsy check skips 0 (valid for CIF); use explicit null check
           if (quote.shipping_cost !== null && quote.shipping_cost !== undefined)
             setShippingCost(quote.shipping_cost);
           if (quote.delivery_time) {
@@ -565,8 +563,10 @@ export function useQuoteBuilderState() {
             setDeliveryTime(quote.delivery_time);
           }
           if (quote.items) setItems(quote.items);
-          // Salva o updated_at como baseline para detecção de conflito
+          // Salva baseline para detecção de conflito
           baselineUpdatedAtRef.current = quote.updated_at ?? null;
+          // QBP-08 FIX: salvar versão carregada para ativar optimistic lock server-side
+          quoteVersionRef.current = (quote as unknown as Record<string, number>).version ?? null;
         }
         setLoadingQuote(false);
       })
@@ -708,13 +708,11 @@ export function useQuoteBuilderState() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  // ── Pre-fill from URL params (single product or bulk items[]) ──
+  // ── Pre-fill from URL params ──
   useEffect(() => {
     if (isEditMode) return;
-    // Avoid duplicating if items already exist (e.g. restored draft)
     if (items.length > 0) return;
 
-    // ── Bulk: items[] JSON array from catalog/filter selection ──
     const rawItems = searchParams.getAll('items[]');
     if (rawItems.length > 0) {
       try {
@@ -746,7 +744,6 @@ export function useQuoteBuilderState() {
       }
     }
 
-    // ── Single product: product_id param ──
     const productId = searchParams.get('product_id') || searchParams.get('productId');
     if (!productId) return;
     const productName = searchParams.get('product_name') || '';
@@ -770,7 +767,6 @@ export function useQuoteBuilderState() {
         `Produto "${productName}" adicionado ao orçamento${colorName ? ` — ${colorName}` : ''}`,
       );
     }
-    // Clean URL params without triggering React Router re-render
     window.history.replaceState({}, document.title, location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -783,12 +779,6 @@ export function useQuoteBuilderState() {
     placeholderData: (previousData) => previousData,
   });
 
-  /**
-   * BUG-05 FIX: removida dependência fantasma `productSearch`.
-   *
-   * PROBLEMA ORIGINAL: productSearch estava na lista de deps mas nunca era usado
-   * no corpo do useMemo — causava re-computações desnecessárias a cada keystroke.
-   */
   const filteredProducts = useMemo(() => {
     return products || [];
   }, [products]);
@@ -810,7 +800,6 @@ export function useQuoteBuilderState() {
     });
   }, []);
 
-  // ── Subtotal real (sem markup) e apresentado (com markup) ──
   const realSubtotal = useMemo(
     () =>
       QuoteCalc.calculateSubtotal(
@@ -839,18 +828,12 @@ export function useQuoteBuilderState() {
     return QuoteCalc.round2(baseTotal + shipping);
   }, [subtotal, discountAmount, shippingCost, shippingType]);
 
-  // ── Desconto REAL (sobre subtotal real) — usado para alçada ──
   const realDiscountPercent = useMemo(
     () => QuoteCalc.calculateRealDiscountPercent(realSubtotal, subtotal, discountAmount),
     [realSubtotal, subtotal, discountAmount],
   );
 
-  // BUG-032: Clamp amount-mode discount when markup decreases below discountValue.
-  // Without this, the UI input keeps showing the stale R$ value while discountAmount
-  // is silently clamped by calculateDiscountAmount — confusing the seller.
-  // FIX: use functional updater so discountValue is NOT in deps — the effect must
-  // fire only when subtotal or discountType changes, not on every user keystroke.
-  // The functional form reads the latest discountValue at update time (no stale closure).
+  // BUG-032 FIX: Clamp amount-mode discount when markup decreases below discountValue
   useEffect(() => {
     if (discountType !== 'amount') return;
     setDiscountValue((prev) => (prev > subtotal ? QuoteCalc.round2(subtotal) : prev));
@@ -887,7 +870,7 @@ export function useQuoteBuilderState() {
     const newItems: QuoteItem[] = template.items.map((item) => ({
       product_id: item.productId || '',
       product_name: item.productName,
-      product_sku: item.productSku,
+      product_sku: item.productSku || '',
       product_image_url: item.productImageUrl,
       quantity: item.quantity,
       unit_price: item.unitPrice,
@@ -895,7 +878,7 @@ export function useQuoteBuilderState() {
       color_hex: item.colorHex,
       personalizations: item.personalizations?.map((p) => ({
         technique_id: p.techniqueId,
-        technique_name: p.techniqueName,
+        technique_name: p.techniqueName || '',
         location_code: p.locationCode,
         location_name: p.locationName,
         personalized_quantity: p.personalizedQuantity,
@@ -918,7 +901,6 @@ export function useQuoteBuilderState() {
       setDiscountType('amount');
       setDiscountValue(template.discount_amount);
     } else {
-      // Template has no discount — reset any previously applied discount.
       setDiscountType('percent');
       setDiscountValue(0);
     }
@@ -926,6 +908,16 @@ export function useQuoteBuilderState() {
     if (template.internal_notes) setInternalNotes(template.internal_notes);
     if (template.validity_days)
       setValidUntil(format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd'));
+    // FIX-07/08: restaurar campos de condições comerciais do template
+    if (template.payment_method) setPaymentMethod(template.payment_method);
+    if (template.payment_terms) setPaymentTerms(template.payment_terms);
+    if (template.delivery_time) setDeliveryTime(template.delivery_time);
+    if (template.shipping_type) {
+      setPendingShippingTypeRestore(template.shipping_type); // usa defer seguro
+    }
+    if (template.shipping_cost && template.shipping_cost > 0) {
+      setShippingCost(template.shipping_cost);
+    }
     setTemplateApplied(template.name);
     toast.success(`Template "${template.name}" aplicado!`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -988,14 +980,6 @@ export function useQuoteBuilderState() {
   const isFormValid = validationErrors.length === 0;
   const isDraftValid = !!clientId;
 
-  // ── Discount limit check ──
-  // Compara contra o DESCONTO REAL (sobre o subtotal real, sem markup) — exatamente
-  // a métrica que o trigger server-side `fn_quotes_validate_discount` enforce via
-  // `real_discount_percent`. Usar o desconto APARENTE aqui (discountValue ou
-  // discountValue/subtotal) divergia da regra do banco quando havia margem de
-  // negociação: o markup dilui o desconto real, então um desconto aparente acima
-  // do limite podia estar, na verdade, dentro da alçada. O gate antigo empurrava
-  // esses casos para aprovação desnecessariamente — anulando o propósito do markup.
   const isDiscountExceeded = useMemo(() => {
     if (maxDiscountPercent === null) return false;
     return realDiscountPercent > maxDiscountPercent;
@@ -1004,7 +988,6 @@ export function useQuoteBuilderState() {
   // ── Save ──
   const handleSaveQuote = useCallback(
     async (status: 'draft' | 'pending_approval' | 'pending' = 'draft', sellerNotes?: string) => {
-      // BUG-011: Prevent double-save from rapid clicks or concurrent async callers.
       if (isSavingRef.current) {
         toast.error('Salvamento em andamento. Aguarde.');
         return;
@@ -1022,8 +1005,7 @@ export function useQuoteBuilderState() {
           return;
         }
 
-        // BUG-015: Block sending a quote whose validity date is already in the past.
-        // Drafts are exempt — sellers legitimately archive old drafts with expired dates.
+        // BUG-015 FIX: Block sending with past validity date
         if (status !== 'draft' && validUntil && new Date(validUntil) < new Date()) {
           toast.error(
             'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
@@ -1031,11 +1013,7 @@ export function useQuoteBuilderState() {
           return;
         }
 
-        // BUG-008: Validate that the status transition is allowed before hitting the DB.
-        // Without this guard, the app could attempt illegal transitions (e.g. approved→draft,
-        // converted→anything) that the DB CHECK constraint would reject with a cryptic error.
-        // Same-status saves (e.g. re-saving a draft) are always allowed (not a transition).
-        // Only applies in edit mode — new quotes always start at the requested status.
+        // BUG-008 FIX: Validate status transition before hitting DB
         if (isEditMode && quoteId && currentStatus && currentStatus !== status) {
           if (!isValidQuoteTransition(currentStatus as QuoteStatus, status as QuoteStatus)) {
             toast.error(
@@ -1045,8 +1023,7 @@ export function useQuoteBuilderState() {
           }
         }
 
-        // ── Bloqueio de fechamento: itens com preço defasado precisam de confirmação ──
-        // Só validamos ao fechar (pending / pending_approval). Rascunho permanece livre.
+        // Bloqueio de fechamento: preços defasados precisam de confirmação
         if (status !== 'draft') {
           const staleUnconfirmed = items.filter((item) => {
             if (item.price_confirmed_at) return false;
@@ -1094,12 +1071,9 @@ export function useQuoteBuilderState() {
         };
         let result;
         if (isEditMode && quoteId) {
-          // ── Detecção de concorrência ──
-          // Compara updated_at atual do banco com o baseline registrado ao abrir o orçamento.
-          // Se outro usuário/sessão salvou enquanto estava aberto, exibe alerta.
+          // Detecção de concorrência via updated_at baseline
           if (baselineUpdatedAtRef.current) {
             const { data: remoteQuote } = await supabase
-              // rls-allow: RLS scopes quotes to seller; concurrency check reads specific quote by id
               .from('quotes')
               .select('updated_at')
               .eq('id', quoteId)
@@ -1115,18 +1089,18 @@ export function useQuoteBuilderState() {
                 minute: '2-digit',
                 timeZone: 'America/Sao_Paulo',
               });
-              pendingSaveStatusRef.current = status; // preserva a intenção do save
-              pendingSellerNotesRef.current = sellerNotes; // preserva a justificativa de aprovação
+              pendingSaveStatusRef.current = status;
+              pendingSellerNotesRef.current = sellerNotes;
               setConflictInfo({ modifiedAt: remoteTs, label });
-              return; // Bloqueia o save — usuário decide no banner
+              return;
             }
           }
-          result = await updateQuote(quoteId, quoteData, items);
+          // QBP-08 FIX: passar versão ao atualizar para ativar lock server-side
+          result = await updateQuote(quoteId, quoteData, items, quoteVersionRef.current ?? undefined);
         } else {
           result = await createQuote(quoteData, items);
         }
 
-        // If pending_approval, create approval request usando desconto REAL (não aparente)
         if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
           await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
         }
@@ -1135,6 +1109,10 @@ export function useQuoteBuilderState() {
           clearAutoSave();
           navigate(`/orcamentos/${result.id}`);
         }
+
+        // Atualizar versão após save bem-sucedido
+        const newVersion = (result as unknown as Record<string, number>)?.version;
+        if (newVersion != null) quoteVersionRef.current = newVersion;
 
         return result?.updated_at ?? undefined;
       } finally {
@@ -1179,16 +1157,13 @@ export function useQuoteBuilderState() {
   const isBuilderBootstrapping = loadingQuote || templatesLoading;
 
   return {
-    // Navigation
     navigate,
     quoteId,
     isEditMode,
     loadingQuote: isBuilderBootstrapping,
     currentStep,
     setCurrentStep,
-    // Auth
     user,
-    // State setters
     clientId,
     setClientId,
     contactId,
@@ -1241,7 +1216,6 @@ export function useQuoteBuilderState() {
     setExpandedItems,
     activeItemIndex,
     setActiveItemIndex,
-    // Computed
     completedSteps,
     activeStep,
     filteredProducts,
@@ -1256,10 +1230,8 @@ export function useQuoteBuilderState() {
     quotesLoading,
     templates,
     defaultTemplate,
-    // Discount limits
     maxDiscountPercent,
     isDiscountExceeded,
-    // Actions
     validateStep,
     nextStep,
     prevStep,
@@ -1281,32 +1253,17 @@ export function useQuoteBuilderState() {
     handleSaveQuote,
     conflictInfo,
     dismissConflict: () => setConflictInfo(null),
-    /**
-     * Ignora o conflito detectado e salva mesmo assim (overwrite consciente).
-     * Preserva o status que o usuário tentou salvar (não rebaixa para rascunho).
-     * Após o save, atualiza o baseline para evitar falsos positivos futuros.
-     */
     overwriteAndSave: async (status?: 'draft' | 'pending_approval' | 'pending') => {
       const effectiveStatus = status ?? pendingSaveStatusRef.current;
-      // Repassa a justificativa preservada para que o requestApproval no replay
-      // não perca o motivo informado pelo vendedor.
       const sellerNotes =
         effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
       setConflictInfo(null);
-      // Clear baseline BEFORE calling handleSaveQuote so the conflict check inside is
-      // bypassed. Without this, handleSaveQuote would re-detect the same conflict
-      // (baseline still points to the old timestamp) and abort again — the user would
-      // be permanently stuck in the conflict dialog.
       const previousBaseline = baselineUpdatedAtRef.current;
       baselineUpdatedAtRef.current = null;
       try {
         const savedUpdatedAt = await handleSaveQuote(effectiveStatus, sellerNotes);
-        // Re-arm baseline to the server's updated_at to avoid clock-skew false conflicts.
         baselineUpdatedAtRef.current = savedUpdatedAt ?? new Date().toISOString();
       } catch (err) {
-        // Restore previous baseline so the next save attempt still performs
-        // conflict detection — without this, a failed overwrite leaves baseline
-        // null permanently and all subsequent saves bypass concurrency checks.
         baselineUpdatedAtRef.current = previousBaseline;
         throw err;
       }
