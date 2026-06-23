@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface CollectionListItemProps {
   collection: Collection;
@@ -69,6 +70,7 @@ export function CollectionListItem({
         {previewImage ? (
           <OptimizedImage
             src={getCdnUrl(previewImage, 'thumbnail')}
+            urlOriginal={getProxiedImageUrl(previewImage) ?? null}
             alt=""
             className="object-cover"
             containerClassName="h-full w-full"

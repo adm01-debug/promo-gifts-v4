@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface GalleryFullscreenProps {
   open: boolean;
@@ -205,6 +206,7 @@ export function GalleryFullscreen({
                 ) : (
                   <OptimizedImage
                     src={getCdnUrl(media, 'thumbnail')}
+                    urlOriginal={getProxiedImageUrl(media) ?? null}
                     alt={`${productName} - ${index + 1}`}
                     className="object-cover"
                     containerClassName="h-full w-full"

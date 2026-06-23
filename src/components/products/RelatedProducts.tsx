@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface RelatedProductsProps {
   currentProduct: Product;
@@ -37,6 +38,7 @@ function ProductMiniCard({ product, onClick }: { product: Product; onClick: () =
       <div className="relative aspect-square overflow-hidden bg-muted/30">
         <OptimizedImage
           src={getCdnUrl(product.images[0] || '/placeholder.svg', 'card')}
+          urlOriginal={getProxiedImageUrl(product.images[0]) ?? null}
           alt={product.name}
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
         />

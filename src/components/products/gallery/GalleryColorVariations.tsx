@@ -11,6 +11,7 @@ import { ColorTooltipContent, colorTooltipClassName } from '../ColorTooltipConte
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface ColorMedia {
   name: string;
@@ -141,6 +142,7 @@ export function GalleryColorVariations({
                         <div className="h-full w-full">
                           <OptimizedImage
                             src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
+                            urlOriginal={getProxiedImageUrl(color.images?.[0] || color.image || '') ?? null}
                             alt={color.name}
                             className="object-cover transition-transform duration-700 ease-out group-hover/color:scale-110"
                             containerClassName="h-full w-full"

@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { findMatchingColorIndex } from '@/lib/variant-matching';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface ProductColor {
   name?: string | null;
@@ -273,6 +274,7 @@ export function SyncedZoomGallery({ products, onProductClick }: SyncedZoomGaller
                     >
                       <OptimizedImage
                         src={getCdnUrl(img, 'thumbnail')}
+                        urlOriginal={getProxiedImageUrl(img) ?? null}
                         alt={`${product.name} - ${idx + 1}`}
                         className="object-cover"
                         containerClassName="h-full w-full"

@@ -25,6 +25,7 @@ import type { KitComponent } from '@/types/product-catalog';
 import { KitComponentCard } from './kit-composition/KitComponentCard';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 // BUG-KIT-01 FIX (2026-06-21): formatWeight era recriada como arrow function dentro
 // do componente em cada render. Movida para módulo — é uma função pura sem deps.
@@ -87,6 +88,7 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
                   {item.imageUrl ? (
                     <OptimizedImage
                       src={getCdnUrl(item.imageUrl, 'thumbnail')}
+                      urlOriginal={getProxiedImageUrl(item.imageUrl) ?? null}
                       alt=""
                       className="object-contain p-0.5"
                       containerClassName="h-full w-full"

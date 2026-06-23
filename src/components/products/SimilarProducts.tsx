@@ -9,6 +9,7 @@ import { useSimilarProducts, type SimilarProductItem } from '@/hooks/products/us
 import type { Product } from '@/types/product-catalog';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface SimilarProductsProps {
   currentProduct: Product;
@@ -44,6 +45,7 @@ const SimilarProductCard = forwardRef<
       <div className="relative aspect-square overflow-hidden bg-muted">
         <OptimizedImage
           src={getCdnUrl(item.image_url, 'card')}
+          urlOriginal={getProxiedImageUrl(item.image_url) ?? null}
           alt={item.name}
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           containerClassName="h-full w-full"

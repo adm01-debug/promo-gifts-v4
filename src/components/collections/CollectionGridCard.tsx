@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface CollectionGridCardProps {
   collection: Collection;
@@ -54,6 +55,7 @@ function DynamicCollage({ images }: { images: string[] }) {
       <div className="absolute inset-0">
         <OptimizedImage
           src={getCdnUrl(images[0], 'card')}
+          urlOriginal={getProxiedImageUrl(images[0]) ?? null}
           alt=""
           className={imgClass}
           containerClassName="h-full w-full"
@@ -68,6 +70,7 @@ function DynamicCollage({ images }: { images: string[] }) {
         <div className="overflow-hidden">
           <OptimizedImage
             src={getCdnUrl(images[0], 'card')}
+            urlOriginal={getProxiedImageUrl(images[0]) ?? null}
             alt=""
             className={imgClass}
             containerClassName="h-full w-full"
@@ -76,6 +79,7 @@ function DynamicCollage({ images }: { images: string[] }) {
         <div className="overflow-hidden">
           <OptimizedImage
             src={getCdnUrl(images[1], 'card')}
+            urlOriginal={getProxiedImageUrl(images[1]) ?? null}
             alt=""
             className={imgClass}
             containerClassName="h-full w-full"
@@ -91,6 +95,7 @@ function DynamicCollage({ images }: { images: string[] }) {
         <div className="row-span-2 overflow-hidden">
           <OptimizedImage
             src={getCdnUrl(images[0], 'card')}
+            urlOriginal={getProxiedImageUrl(images[0]) ?? null}
             alt=""
             className={imgClass}
             containerClassName="h-full w-full"
@@ -99,6 +104,7 @@ function DynamicCollage({ images }: { images: string[] }) {
         <div className="overflow-hidden">
           <OptimizedImage
             src={getCdnUrl(images[1], 'card')}
+            urlOriginal={getProxiedImageUrl(images[1]) ?? null}
             alt=""
             className={imgClass}
             containerClassName="h-full w-full"
@@ -107,6 +113,7 @@ function DynamicCollage({ images }: { images: string[] }) {
         <div className="overflow-hidden">
           <OptimizedImage
             src={getCdnUrl(images[2], 'card')}
+            urlOriginal={getProxiedImageUrl(images[2]) ?? null}
             alt=""
             className={imgClass}
             containerClassName="h-full w-full"
@@ -122,6 +129,7 @@ function DynamicCollage({ images }: { images: string[] }) {
       <div className="overflow-hidden">
         <OptimizedImage
           src={getCdnUrl(display[0], 'card')}
+          urlOriginal={getProxiedImageUrl(display[0]) ?? null}
           alt=""
           className={imgClass}
           containerClassName="h-full w-full"
@@ -130,6 +138,7 @@ function DynamicCollage({ images }: { images: string[] }) {
       <div className="overflow-hidden">
         <OptimizedImage
           src={getCdnUrl(display[1], 'card')}
+          urlOriginal={getProxiedImageUrl(display[1]) ?? null}
           alt=""
           className={imgClass}
           containerClassName="h-full w-full"
@@ -138,6 +147,7 @@ function DynamicCollage({ images }: { images: string[] }) {
       <div className="overflow-hidden">
         <OptimizedImage
           src={getCdnUrl(display[2], 'card')}
+          urlOriginal={getProxiedImageUrl(display[2]) ?? null}
           alt=""
           className={imgClass}
           containerClassName="h-full w-full"
@@ -146,6 +156,7 @@ function DynamicCollage({ images }: { images: string[] }) {
       <div className="overflow-hidden">
         <OptimizedImage
           src={getCdnUrl(display[3], 'card')}
+          urlOriginal={getProxiedImageUrl(display[3]) ?? null}
           alt=""
           className={imgClass}
           containerClassName="h-full w-full"

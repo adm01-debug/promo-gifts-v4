@@ -13,6 +13,7 @@ import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
 import type { ExternalVariantStock } from '@/hooks/products';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface QuickAddToQuoteProps {
   productId: string;
@@ -248,6 +249,7 @@ export function QuickAddToQuote({
                 {selectedVariant.selected_thumbnail ? (
                   <OptimizedImage
                     src={getCdnUrl(selectedVariant.selected_thumbnail, 'thumbnail')}
+                    urlOriginal={getProxiedImageUrl(selectedVariant.selected_thumbnail) ?? null}
                     alt={selectedVariant.color_name ?? ''}
                     className="rounded-md border border-border/50 object-cover"
                     containerClassName="h-7 w-7"

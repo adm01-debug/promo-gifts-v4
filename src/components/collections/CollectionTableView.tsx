@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 type SortKey = 'featured' | 'name' | 'products' | 'updated';
 type SortDir = 'asc' | 'desc';
@@ -133,6 +134,7 @@ function CollectionTableRow({
           {previewImage ? (
             <OptimizedImage
               src={getCdnUrl(previewImage, 'thumbnail')}
+              urlOriginal={getProxiedImageUrl(previewImage) ?? null}
               alt=""
               className="rounded object-cover"
               containerClassName="h-8 w-8 shrink-0"

@@ -8,6 +8,7 @@ import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
 
 // BUG-RVB-02 FIX (2026-06-21): Intl.NumberFormat construída dentro do map por produto/render.
@@ -72,6 +73,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                     >
                       <OptimizedImage
                         src={getCdnUrl(product.images?.[0] ?? '', 'thumbnail')}
+                        urlOriginal={getProxiedImageUrl(product.images?.[0] ?? '') ?? null}
                         alt={product.name}
                         className="object-cover"
                         containerClassName="h-full w-full"

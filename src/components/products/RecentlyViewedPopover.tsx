@@ -9,6 +9,7 @@ import { useProductsContext } from '@/contexts/ProductsContext';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
 
 interface RecentlyViewedPopoverProps {
@@ -104,6 +105,7 @@ export function RecentlyViewedPopover({ maxVisible = 10 }: RecentlyViewedPopover
                   >
                     <OptimizedImage
                       src={getCdnUrl(product.images?.[0], 'thumbnail')}
+                      urlOriginal={getProxiedImageUrl(product.images?.[0]) ?? null}
                       alt={product.name}
                       className="object-cover"
                       containerClassName="h-full w-full"

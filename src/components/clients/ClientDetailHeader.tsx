@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface ClientDetailHeaderProps {
   client: CrmCompany;
@@ -27,6 +28,7 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
           {client.logo_url ? (
             <OptimizedImage
               src={client.logo_url}
+              urlOriginal={getProxiedImageUrl(client.logo_url) ?? null}
               alt={name}
               className="object-cover"
               containerClassName="h-full w-full"

@@ -17,6 +17,7 @@ import { openWhatsAppShare } from './whatsapp';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface ShareKitDialogProps {
   open: boolean;
@@ -185,6 +186,7 @@ export function ShareKitDialog({ open, onOpenChange, product, mode }: ShareKitDi
                       {item.imageUrl ? (
                         <OptimizedImage
                           src={getCdnUrl(item.imageUrl, 'thumbnail')}
+                          urlOriginal={getProxiedImageUrl(item.imageUrl) ?? null}
                           alt={item.productName}
                           className="object-cover"
                           containerClassName="h-full w-full"

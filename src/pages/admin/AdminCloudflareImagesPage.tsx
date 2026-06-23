@@ -35,6 +35,7 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 type CfSyncStatus = 'failed' | 'pending' | 'skipped' | 'syncing' | 'verified';
 
@@ -373,6 +374,7 @@ export default function AdminCloudflareImagesPage() {
                             <div className="h-10 w-10 overflow-hidden rounded-md border border-border/50 bg-muted/30">
                               <OptimizedImage
                                 src={getCdnUrl(img.url_cdn, 'thumbnail')}
+                                urlOriginal={getProxiedImageUrl(img.url_original) ?? null}
                                 alt={img.alt_text ?? ''}
                                 className="object-contain"
                                 containerClassName="h-full w-full"

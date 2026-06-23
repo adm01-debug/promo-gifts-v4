@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import type { Product } from '@/hooks/products';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 // BUG-HP-05 FIX (2026-06-21): Intl.NumberFormat dentro de formatPrice era recriado a cada render.
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -37,6 +38,7 @@ export function ProductHoverPreview({
         <div className="relative aspect-[16/10] overflow-hidden bg-muted">
           <OptimizedImage
             src={getCdnUrl(product.images?.[0] ?? '', 'medium')}
+            urlOriginal={getProxiedImageUrl(product.images?.[0] ?? '') ?? null}
             alt={product.name}
             className="object-cover"
             containerClassName="h-full w-full"

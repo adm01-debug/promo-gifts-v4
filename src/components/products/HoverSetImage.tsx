@@ -16,6 +16,7 @@ import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface HoverSetImageProps {
   /** Imagem principal do produto (primary_image_url) */
@@ -55,6 +56,7 @@ export const HoverSetImage = memo(
       <>
         <OptimizedImage
           src={getCdnUrl(primary, 'card')}
+          urlOriginal={getProxiedImageUrl(primary) ?? null}
           alt={alt}
           className={cn(
             'object-contain transition-all duration-300 ease-out',
