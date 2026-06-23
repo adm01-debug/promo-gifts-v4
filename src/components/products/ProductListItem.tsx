@@ -717,7 +717,7 @@ export const ProductListItem = memo(
                         window.history.replaceState({}, '', url.toString());
                       }
                     }
-                    setQuickViewOpen(true);
+                    // FIX-SWATCH-INLINE-V2: seleção de cor inline no modo lista.
                   }}
                   onReset={() => {
                     swatchV2.resetActive();
@@ -753,7 +753,7 @@ export const ProductListItem = memo(
                       url.searchParams.set('pid', product.id);
                       window.history.replaceState({}, '', url.toString());
                     }
-                    setQuickViewOpen(true);
+                    // FIX-SWATCH-INLINE-V1: seleção de cor inline no modo lista.
                   }}
                   onClear={() => {
                     useProductSelectionStore.setState((state) => {
