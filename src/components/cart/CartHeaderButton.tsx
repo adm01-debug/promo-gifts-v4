@@ -34,6 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSellerCartContextSafe } from '@/contexts/SellerCartContext';
+import { MAX_SELLER_CARTS } from '@/hooks/products/useSellerCarts';
 import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
@@ -186,7 +187,7 @@ export function CartHeaderButton() {
                   </h3>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
-                      {carts.length}/3
+                      {carts.length}/{MAX_SELLER_CARTS}
                     </span>
                     <span className="text-[10px] text-muted-foreground opacity-30">|</span>
                     <button
