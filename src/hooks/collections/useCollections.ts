@@ -122,7 +122,8 @@ function dbToCollection(row: DbCollectionRow, items: DbCollectionItemRow[]): Col
 export function useCollections() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const { user } = useAuth();
+  // BUG-HEAD-GUARD FIX (2026-06-23): HEAD em collections sem guard.
+  const { user, rolesLoaded } = useAuth();
 
   // Load collections from DB
   const loadCollections = useCallback(async () => {
@@ -169,7 +170,7 @@ export function useCollections() {
 
   // Migrate localStorage data on first load
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !rolesLoaded) return;  // BUG-HEAD-GUARD
 
     const migrateAndLoad = async () => {
       try {

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Activity,
   Webhook,
@@ -231,6 +232,8 @@ function SourceCountChip({
 }
 
 export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatus[] }) {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 5 HEAD requests sem JWT validado.
+  const { rolesLoaded, isAdmin } = useAuth();
   const [auditing, setAuditing] = useState(false);
   const { setFilter } = useCredentialsSourceFilter();
   const sourceCounts = useMemo(() => {
@@ -249,8 +252,11 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['integrations-health'],
     queryFn: fetchHealth,
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 60_000,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const handleAudit = async () => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -24,11 +25,14 @@ interface AuditRow {
 }
 
 export function AutoDefenseTab() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 1 HEAD request sem guard.
+  const { rolesLoaded, isAdmin } = useAuth();
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [count7d, setCount7d] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!rolesLoaded || !isAdmin) return;
     const load = async () => {
       setLoading(true);
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -52,7 +56,7 @@ export function AutoDefenseTab() {
       setLoading(false);
     };
     void load();
-  }, []);
+  }, [rolesLoaded, isAdmin]);  // BUG-HEAD-GUARD
 
   return (
     <div className="space-y-3">

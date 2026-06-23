@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 'notifications' table not yet in generated schema — bypass type checking via raw client cast
 const db = supabase as unknown as ReturnType<typeof createClient>;
@@ -73,9 +74,11 @@ export function useSecurityData(
   // Guarda de montagem: evita setState após o unmount (await que resolve
   // após o teardown vaza "window is not defined" em testes).
   const mountedRef = useRef(true);
+  // BUG-HEAD-GUARD FIX (2026-06-23): HEAD em user_known_devices sem guard.
+  const { rolesLoaded } = useAuth();
 
   const loadSecurityData = useCallback(async () => {
-    if (!effectiveUserId) return;
+    if (!effectiveUserId || !rolesLoaded) return;
     if (mountedRef.current) setIsLoading(true);
     try {
       const { data: attempts } = await supabase
@@ -129,11 +132,11 @@ export function useSecurityData(
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }
-  }, [effectiveUserId, is2FAEnabled, allowedIPs]);
+  }, [effectiveUserId, rolesLoaded, is2FAEnabled, allowedIPs]);  // BUG-HEAD-GUARD
 
   useEffect(() => {
     mountedRef.current = true;
-    if (effectiveUserId) loadSecurityData();
+    if (effectiveUserId && rolesLoaded) loadSecurityData();
     return () => {
       mountedRef.current = false;
     };
