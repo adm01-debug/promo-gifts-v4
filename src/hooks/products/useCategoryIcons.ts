@@ -99,6 +99,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   comida:         'Utensils',
 
   // ── BOLSAS / ACESSÓRIOS ────────────────────────────────
+  'bolsa de viagem': 'Luggage',  // fix: 'Bolsa de Viagem' → Luggage (before 'bolsa'→ShoppingBag)
   bolsa:          'ShoppingBag',
   mochila:        'Backpack',
   sacochila:      'Backpack',
@@ -158,6 +159,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   teclado:        'Keyboard',
   pendrive:       'HardDrive',
   'pen drive':    'HardDrive',
+  'caixas de som': 'Speaker', // fix: plural form (before 'caixa de som' and 'caixa')
   'caixa de som': 'Speaker',
   celular:        'Smartphone',
   smartphone:     'Smartphone',
@@ -228,6 +230,7 @@ const KEYWORD_ICONS: Record<string, string> = {
   jogo:           'Gamepad2',
   dominó:         'Dices',
   xadrez:         'Dices',
+  'brinquedo pet': 'PawPrint', // fix: must precede 'brinquedo'→Star
   brinquedo:      'Star',
   quebra:         'Layers',
 
@@ -250,7 +253,6 @@ const KEYWORD_ICONS: Record<string, string> = {
   coleira:        'PawPrint',
   comedouro:      'PawPrint',
   bebedouro:      'PawPrint',
-  'brinquedo pet':'PawPrint',
   ração:          'PawPrint',
   cama:           'PawPrint',
   casinha:        'PawPrint',
