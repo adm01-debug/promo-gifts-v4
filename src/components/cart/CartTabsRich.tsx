@@ -233,7 +233,44 @@ export function CartTabsRich({
             {carts.length}/{MAX_SELLER_CARTS}
           </span>
         </button>
+        {!canCreateCart && (
+          <button
+            type="button"
+            data-testid="cart-limit-details-link"
+            onClick={() => setLimitDetailsOpen(true)}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            <Info aria-hidden="true" className="h-3 w-3" />
+            Ver detalhes do limite
+          </button>
+        )}
       </div>
+
+      <Dialog open={limitDetailsOpen} onOpenChange={setLimitDetailsOpen}>
+        <DialogContent data-testid="cart-limit-details-modal" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Limite de {MAX_SELLER_CARTS} carrinhos ativos</DialogTitle>
+            <DialogDescription className="space-y-2 pt-2 text-sm leading-relaxed">
+              <span className="block">
+                Você está usando{' '}
+                <strong className="text-foreground">
+                  {carts.length} de {MAX_SELLER_CARTS}
+                </strong>{' '}
+                carrinhos simultâneos no menu lateral.
+              </span>
+              <span className="block">
+                O atalho rápido do menu lateral fica indisponível ao atingir o limite, para manter o
+                fluxo organizado. <strong>Exclua um carrinho</strong> ou finalize um orçamento para
+                liberar a criação por aqui novamente.
+              </span>
+              <span className="block text-muted-foreground">
+                Você pode continuar criando carrinhos normalmente pela página{' '}
+                <strong>Carrinhos</strong> — o limite vale apenas para este atalho.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
