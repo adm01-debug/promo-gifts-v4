@@ -34,7 +34,8 @@ import {
   ExternalLink,
   Info,
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+// FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
+import { format, addDays, startOfDay } from 'date-fns';
 
 import { QuoteTemplateSelector } from '@/components/quotes/QuoteTemplateSelector';
 import { SaveAsTemplateButton } from '@/components/quotes/SaveAsTemplateButton';
@@ -99,10 +100,6 @@ export default function QuoteBuilderPage() {
         className="fixed right-4 top-20 z-40"
       />
 
-      {/* ── Banner de conflito de edição simultânea ──
-          Aparece quando outro usuário/sessão modificou o orçamento enquanto estava aberto.
-          onReload: descarta alterações locais e busca versão mais recente
-          onOverwrite: ignora conflito e salva (overwrite consciente) */}
       {conflictInfo && (
         <div className="px-4 pt-4 lg:px-6 xl:px-8">
           <QuoteConcurrencyAlert
@@ -118,7 +115,6 @@ export default function QuoteBuilderPage() {
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 sm:space-y-4 sm:px-4 sm:pb-24 sm:pt-4 lg:px-6 lg:pb-28 xl:px-8">
         <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer" />
-        {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
@@ -167,14 +163,12 @@ export default function QuoteBuilderPage() {
           </div>
         </div>
 
-        {/* Stepper */}
         <QuoteBuilderStepper
           completedSteps={s.completedSteps}
           activeStep={s.activeStep}
           onStepClick={s.goToStep}
         />
 
-        {/* Template notifications */}
         {s.templateApplied && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="flex items-center justify-between py-3">
@@ -215,12 +209,10 @@ export default function QuoteBuilderPage() {
           </Card>
         )}
 
-        {/* 3-column layout */}
         <div data-testid="quote-builder-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
           <div className="min-w-0 lg:col-span-3">
             <div className="space-y-3 pr-1">
-              {/* Empresa + Contato */}
               <div
                 className={cn(
                   'space-y-4 rounded-2xl border bg-card p-4',
@@ -292,7 +284,6 @@ export default function QuoteBuilderPage() {
                   Condições
                 </h3>
 
-                {/* Pagamento Form */}
                 <div className="space-y-1.5">
                   <Label
                     className={cn(
@@ -330,7 +321,6 @@ export default function QuoteBuilderPage() {
                   </Select>
                 </div>
 
-                {/* Pagamento Terms */}
                 <div className="space-y-1.5">
                   <Label
                     className={cn(
@@ -487,7 +477,10 @@ export default function QuoteBuilderPage() {
                           mode="single"
                           selected={s.deliveryDate}
                           onSelect={s.handleDeliveryDateChange}
-                          disabled={(date) => date < new Date()}
+                          {/* FIX-C01: startOfDay garante que HOJE seja selecionável.
+                              Antes: date < new Date() bloqueava hoje pois datas do
+                              calendário são meia-noite e new Date() inclui hora atual. */}
+                          disabled={(date) => date < startOfDay(new Date())}
                           initialFocus
                         />
                       </PopoverContent>
@@ -564,8 +557,6 @@ export default function QuoteBuilderPage() {
                   )}
                 </div>
 
-                {/* Atalho para Business Analytics do cliente — substitui o antigo painel de Recomendações IA,
-                  consolidando inteligência comercial no módulo /ferramentas/bi (SSOT). */}
                 {s.companyInfo?.id && (
                   <a
                     href={`/ferramentas/bi?clientId=${s.companyInfo.id}`}
@@ -698,7 +689,6 @@ export default function QuoteBuilderPage() {
         </div>
       </div>
 
-      {/* Product Search Dialog */}
       <QuoteBuilderProductSearch
         open={s.productSearchOpen}
         onOpenChange={s.setProductSearchOpen}
