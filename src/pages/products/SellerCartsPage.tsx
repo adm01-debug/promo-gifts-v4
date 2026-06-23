@@ -403,7 +403,7 @@ function SellerCartsContent() {
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
             title={
               !s.canCreateCart
-                ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
+                ? SELLER_CART_LIMIT_REACHED_MESSAGE
                 : undefined
             }
           >

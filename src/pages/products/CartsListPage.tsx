@@ -145,7 +145,7 @@ function CartsListContent() {
           className="gap-2"
           title={
             !canCreateCart
-              ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
+              ? SELLER_CART_LIMIT_REACHED_MESSAGE
               : undefined
           }
         >
@@ -246,7 +246,7 @@ function CartsListContent() {
             className="gap-2"
             title={
               !canCreateCart
-                ? 'Limite de 10 carrinhos atingido. Exclua um carrinho para criar outro.'
+                ? SELLER_CART_LIMIT_REACHED_MESSAGE
                 : undefined
             }
           >
