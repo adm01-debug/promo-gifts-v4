@@ -811,11 +811,15 @@ export function QuoteBuilderSummaryColumn({
               <Textarea
                 data-testid="quote-approval-justification"
                 value={sellerNotes}
-                onChange={(e) => setSellerNotes(e.target.value)}
+                onChange={(e) => setSellerNotes(e.target.value.slice(0, 1000))}
                 placeholder="Ex: Cliente estratégico, pedido de grande volume, negociação especial..."
                 rows={3}
                 autoFocus
+                maxLength={1000}
               />
+              <p className="text-right text-xs text-muted-foreground">
+                {sellerNotes.length}/1000
+              </p>
             </div>
           </div>
           <DialogFooter>

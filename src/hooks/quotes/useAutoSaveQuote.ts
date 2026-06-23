@@ -48,6 +48,36 @@ export function migratePayload<T>(
   return payload as AutoSavePayload<T>;
 }
 
+const STALE_DRAFT_DAYS = 7;
+
+/**
+ * FIX-E03/E11: Remove stale quote_draft_* and quote_builder_autosave entries from
+ * localStorage to free space. Called before retrying after a QuotaExceededError
+ * and also runs once on hook mount to prevent accumulation of old 'new' quote drafts.
+ */
+export function cleanOldQuoteDrafts(olderThanDays = STALE_DRAFT_DAYS): number {
+  const cutoff = Date.now() - olderThanDays * 86_400_000;
+  let removed = 0;
+  const keys = Object.keys(localStorage);
+  for (const k of keys) {
+    if (!k.startsWith('quote_draft_') && k !== 'quote_builder_autosave') continue;
+    try {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as { savedAt?: string };
+      const savedAt = parsed.savedAt ? new Date(parsed.savedAt).getTime() : 0;
+      if (savedAt < cutoff) {
+        localStorage.removeItem(k);
+        removed++;
+      }
+    } catch {
+      localStorage.removeItem(k);
+      removed++;
+    }
+  }
+  return removed;
+}
+
 /**
  * Hook para persistencia automatica de rascunhos no LocalStorage com versionamento.
  */
@@ -88,6 +118,14 @@ export function useAutoSaveQuote<T>({
     }
   }, [enabled, key]);
 
+  // FIX-E11: Clean up stale drafts once per hook instance to prevent accumulation.
+  useEffect(() => {
+    if (!enabled) return;
+    const removed = cleanOldQuoteDrafts();
+    if (removed > 0) logger.debug(`[AutoSave] Cleaned ${removed} stale draft(s) from localStorage`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run once per mount
+
   // Efeito de salvamento (Debounced)
   // NOTE: `data` MUST stay in deps. Each `data` change cancels the pending timer
   // and starts a fresh one — that is the intended debounce behaviour.
@@ -107,9 +145,28 @@ export function useAutoSaveQuote<T>({
         savedAt: new Date().toISOString(),
       };
 
-      localStorage.setItem(key, JSON.stringify(payload));
-      lastSavedRef.current = stringData;
+      const serialized = JSON.stringify(payload);
 
+      // FIX-E03: Handle QuotaExceededError — clean stale drafts then retry once.
+      try {
+        localStorage.setItem(key, serialized);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'QuotaExceededError') {
+          const removed = cleanOldQuoteDrafts(0); // remove ALL stale, regardless of age
+          logger.warn(`[AutoSave] Quota exceeded — cleaned ${removed} draft(s), retrying`);
+          try {
+            localStorage.setItem(key, serialized);
+          } catch (retryErr) {
+            logger.error('[AutoSave] Quota exceeded even after cleanup — draft NOT saved', retryErr);
+            return;
+          }
+        } else {
+          logger.error('[AutoSave] Unexpected error saving draft', err);
+          return;
+        }
+      }
+
+      lastSavedRef.current = stringData;
       logger.debug(`[AutoSave] Quote saved to localStorage (v${AUTOSAVE_SCHEMA_VERSION})`);
     }, debounceMs);
 

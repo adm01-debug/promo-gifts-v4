@@ -60,6 +60,8 @@ export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
   const { conflictInfo, dismissConflict, overwriteAndSave } = s;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
+  const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
     hasUnsavedChanges,
   });
@@ -68,6 +70,15 @@ export default function QuoteBuilderPage() {
     return <QuoteBuilderSkeleton />;
   }
 
+  // FIX-E04: wrap handleSaveQuote to signal QuoteAutoSave when a server save succeeds.
+  const handleSaveQuoteWithSignal = async (
+    ...args: Parameters<typeof s.handleSaveQuote>
+  ) => {
+    const result = await s.handleSaveQuote(...args);
+    // handleSaveQuote returns updated_at string on success, undefined on failure/early-return
+    if (result !== undefined) setServerSavedAt(Date.now());
+    return result;
+  };
 
   return (
     <>
@@ -99,6 +110,7 @@ export default function QuoteBuilderPage() {
           items: s.items,
         }}
         onChange={setHasUnsavedChanges}
+        serverSavedAt={serverSavedAt}
         className="fixed right-4 top-20 z-40"
       />
 
@@ -545,7 +557,7 @@ export default function QuoteBuilderPage() {
                         <CurrencyInput
                           data-testid="shipping-cost-input"
                           value={s.shippingCost || 0}
-                          onChange={(n) => s.setShippingCost(n)}
+                          onChange={(n) => s.setShippingCost(Math.max(0, n))}
                           className={cn(
                             'h-8 text-xs',
                             s.validationErrors.includes('valor_frete') && 'border-destructive',
@@ -721,7 +733,7 @@ export default function QuoteBuilderPage() {
             formatCurrency={s.formatCurrency}
             calculateItemPersonalizationTotal={s.calculateItemPersonalizationTotal}
             calculateItemTotal={s.calculateItemTotal}
-            onSave={s.handleSaveQuote}
+            onSave={handleSaveQuoteWithSignal}
             maxDiscountPercent={s.maxDiscountPercent}
             isDiscountExceeded={s.isDiscountExceeded}
             negotiationMarkup={s.negotiationMarkup}

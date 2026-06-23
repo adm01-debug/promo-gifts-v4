@@ -20,8 +20,15 @@ import {
   isValidQuoteTransition,
 } from '@/lib/quote-status-config';
 import type { QuoteStatus } from '@/types/quote';
+import { sendTransactionalEmail, type EmailEventType } from '@/hooks/common/useTransactionalEmail';
 
 import { logger } from '@/lib/logger';
+
+const EMAIL_STATUS_MAP: Partial<Record<QuoteStatus, EmailEventType>> = {
+  sent: 'quote_sent',
+  approved: 'quote_approved',
+  rejected: 'quote_rejected',
+};
 export const quoteService = {
   async fetchQuotes(userId: string, scope: string) {
     let query = supabase
@@ -222,11 +229,11 @@ export const quoteService = {
   },
 
   async updateQuoteStatus(quoteId: string, status: Quote['status']) {
-    // Fetch current status to enforce valid transition at the service layer.
+    // Fetch current status + email fields in one query to avoid a second round-trip.
     // rls-allow: SELECT por id; RLS (can_access_quote) valida ownership
     const { data: current, error: fetchErr } = await supabase
       .from('quotes')
-      .select('status')
+      .select('status, client_email, client_name, quote_number, total, valid_until')
       .eq('id', quoteId)
       .single();
     if (fetchErr) throw fetchErr;
@@ -243,6 +250,24 @@ export const quoteService = {
     // rls-allow: UPDATE de status por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').update({ status }).eq('id', quoteId);
     if (error) throw error;
+
+    // FIX-E01: fire transactional email for status changes that the client cares about.
+    // Fire-and-forget — never throw; a broken email must never roll back the status change.
+    const eventType = EMAIL_STATUS_MAP[toStatus];
+    if (eventType && current.client_email) {
+      sendTransactionalEmail({
+        event_type: eventType,
+        recipient_email: current.client_email as string,
+        recipient_name: (current.client_name as string) ?? undefined,
+        data: {
+          quote_number: current.quote_number,
+          total: current.total,
+          valid_until: current.valid_until ?? null,
+        },
+      }).catch((err) => {
+        logger.error('[quoteService.updateQuoteStatus] Email send failed (non-fatal):', err);
+      });
+    }
   },
 
   async deleteQuote(quoteId: string) {

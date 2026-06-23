@@ -218,10 +218,16 @@ export function useQuoteBuilderState() {
   }, []);
 
   const handleDeliveryDateChange = useCallback((date: Date | undefined) => {
-    setDeliveryDate(date);
     if (date) {
-      setDeliveryTime(`date:${format(date, 'yyyy-MM-dd')}`);
+      // FIX-E07: normalize to LOCAL noon to prevent UTC-midnight dates (returned by some
+      // Calendar implementations) from shifting the day in UTC-3 (Brazil) timezone.
+      // Without this, a UTC midnight date like 2026-07-15T00:00:00Z would format as
+      // July 14 with date-fns (local time), silently storing the wrong day.
+      const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+      setDeliveryDate(normalized);
+      setDeliveryTime(`date:${format(normalized, 'yyyy-MM-dd')}`);
     } else {
+      setDeliveryDate(undefined);
       setDeliveryTime('');
     }
   }, []);
@@ -836,11 +842,22 @@ export function useQuoteBuilderState() {
     [realSubtotal, subtotal, discountAmount],
   );
 
-  // BUG-032 FIX: Clamp amount-mode discount when markup decreases below discountValue
+  // BUG-032 FIX: Clamp amount-mode discount when markup decreases below discountValue.
+  // FIX-E09: notify the user when the clamp actually fires so they're not surprised.
   useEffect(() => {
     if (discountType !== 'amount') return;
-    setDiscountValue((prev) => (prev > subtotal ? QuoteCalc.round2(subtotal) : prev));
-  }, [subtotal, discountType]);
+    setDiscountValue((prev) => {
+      if (prev > subtotal) {
+        const clamped = QuoteCalc.round2(subtotal);
+        toast.warning('Desconto ajustado automaticamente', {
+          description: `O desconto foi reduzido para ${formatCurrency(clamped)} pois a margem de negociação diminuiu.`,
+          duration: 5000,
+        });
+        return clamped;
+      }
+      return prev;
+    });
+  }, [subtotal, discountType]); // formatCurrency omitted: stable reference; toast omitted: stable
 
   const handleProductClick = useCallback((product: Product) => {
     setSelectedProductForColor(product);

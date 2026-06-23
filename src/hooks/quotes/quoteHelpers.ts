@@ -80,8 +80,9 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
   const discountAmount = quote.discount_percent
     ? round2(subtotal * (quote.discount_percent / 100))
     : quote.discount_amount || 0;
+  // FIX-E10: clamp shipping_cost to ≥0 — negative freight makes no business sense
   const shippingCostValue =
-    quote.shipping_type === 'fob_pre' ? round2(quote.shipping_cost || 0) : 0;
+    quote.shipping_type === 'fob_pre' ? round2(Math.max(0, quote.shipping_cost || 0)) : 0;
   const total = round2(subtotal - discountAmount + shippingCostValue);
 
   const finalBeforeShipping = subtotal - discountAmount;
@@ -185,7 +186,10 @@ export function buildItemsInsertPayload(
   items: QuoteItem[],
   quoteId: string,
 ): TablesInsert<'quote_items'>[] {
-  return items.map((item, index) => ({
+  // FIX-E06: silently drop items with quantity < 1 before persisting; they indicate
+  // a UI state that was never cleared and would create zero-value rows in the DB.
+  const validItems = items.filter((item) => (item.quantity ?? 0) >= 1);
+  return validItems.map((item, index) => ({
     quote_id: quoteId,
     product_id: item.product_id,
     product_name: item.product_name,

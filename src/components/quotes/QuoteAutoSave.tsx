@@ -4,16 +4,17 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Cloud, CloudOff, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Cloud, CloudOff, Check, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
-type SaveStatus = 'error' | 'idle' | 'offline' | 'saved' | 'saving';
+type SaveStatus = 'conflict' | 'error' | 'idle' | 'offline' | 'saved' | 'saving';
 
 interface QuoteDraft {
   id: string;
@@ -28,6 +29,8 @@ interface QuoteAutoSaveProps {
   onChange?: (hasUnsavedChanges: boolean) => void;
   debounceMs?: number;
   className?: string;
+  /** FIX-E04: Pass a new value whenever a server save succeeds to reset the baseline. */
+  serverSavedAt?: number | string;
 }
 
 const STORAGE_KEY_PREFIX = 'quote_draft_';
@@ -39,6 +42,7 @@ export function QuoteAutoSave({
   onChange,
   debounceMs = 2000,
   className,
+  serverSavedAt,
 }: QuoteAutoSaveProps) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -98,6 +102,47 @@ export function QuoteAutoSave({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   });
+
+  // FIX-E04: when the parent signals a successful server save, reset the baseline so
+  // the component no longer shows "Alterações não salvas" for already-persisted data.
+  useEffect(() => {
+    if (!serverSavedAt) return;
+    initialDataRef.current = JSON.stringify(dataRef.current);
+    setHasUnsavedChanges(false);
+    onChange?.(false);
+    setLastSaved(new Date());
+    setStatus('saved');
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setStatus('idle');
+    }, 2000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverSavedAt]);
+
+  // FIX-E12: detect when another tab writes to the same storageKey (tab conflict).
+  // `storage` events fire in ALL OTHER tabs when localStorage changes, not in the
+  // writing tab itself — perfect for cross-tab conflict detection.
+  useEffect(() => {
+    if (!quoteId) return; // only relevant for edit-mode (real quoteId)
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key !== storageKey) return;
+      if (!mountedRef.current) return;
+      setStatus('conflict');
+      toast.warning('Orçamento aberto em outra aba', {
+        id: `tab-conflict-${quoteId}`,
+        description: 'Outra aba salvou alterações neste orçamento. Recarregue para evitar conflito.',
+        duration: 0, // persist until dismissed
+        action: {
+          label: 'Recarregar',
+          onClick: () => window.location.reload(),
+        },
+      });
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [quoteId, storageKey]);
 
   // Detectar mudanças
   useEffect(() => {
@@ -233,6 +278,8 @@ export function QuoteAutoSave({
         return <AlertCircle className="h-4 w-4 text-destructive" />;
       case 'offline':
         return <CloudOff className="h-4 w-4 text-warning" />;
+      case 'conflict':
+        return <RefreshCw className="h-4 w-4 text-warning" />;
       default:
         return <Cloud className="h-4 w-4" />;
     }
@@ -255,6 +302,8 @@ export function QuoteAutoSave({
         return 'Erro ao salvar';
       case 'offline':
         return 'Offline';
+      case 'conflict':
+        return 'Conflito de abas';
       default:
         return hasUnsavedChanges
           ? 'Alterações não salvas'

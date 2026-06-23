@@ -136,13 +136,21 @@ Deno.serve(async (req) => {
         const quoteData = await fetchQuoteFromCRM(quoteId);
         if (!quoteData) throw new Error("Quote not found in CRM");
 
+        // FIX-E05: track N8N success separately.
+        // synced_to_bitrix is only set to true when N8N actually succeeds (or is not configured).
+        // A failed N8N call must NOT mark the quote as synced — the batch job will retry it.
         let n8nResponse: Record<string, unknown> = {};
+        let n8nSucceeded = !n8nWebhookUrl; // no webhook configured → treat as "not required"
+        let n8nError: string | null = null;
         if (n8nWebhookUrl) {
-          try { n8nResponse = await sendToN8N(quoteData, n8nWebhookUrl); }
-          catch (err) {
+          try {
+            n8nResponse = await sendToN8N(quoteData, n8nWebhookUrl);
+            n8nSucceeded = true;
+          } catch (err) {
             const errMsg = err instanceof Error ? err.message : String(err);
             const errType = err instanceof Error ? err.constructor.name : typeof err;
-            console.error("N8N sync failed (non-blocking):", {
+            n8nError = errMsg;
+            console.error("N8N sync failed:", {
               error: errMsg,
               type: errType,
               quoteId,
@@ -152,7 +160,18 @@ Deno.serve(async (req) => {
         }
 
         await sendToSalesPro(quoteData);
-        await updateCRMSyncStatus(quoteId, n8nResponse);
+
+        // Only mark synced when N8N either succeeded or was not required.
+        if (n8nSucceeded) {
+          await updateCRMSyncStatus(quoteId, n8nResponse);
+        }
+
+        if (!n8nSucceeded) {
+          return new Response(
+            JSON.stringify({ success: false, error: `N8N sync failed: ${n8nError}`, bitrix_deal_id: null }),
+            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
 
         return new Response(
           JSON.stringify({ success: true, message: "Quote synced successfully", bitrix_deal_id: n8nResponse.bitrix_deal_id, bitrix_quote_id: n8nResponse.bitrix_quote_id }),
