@@ -62,10 +62,15 @@ export function useOptimizationQueue() {
     refetch,
   } = useQuery<OptimizationItem[]>({
     queryKey: QUEUE_KEY,
-    // BUG-OQ-INTERVAL FIX (2026-06-23): respeitar enabled para não poluir o console
-    // com GETs enquanto o auth está carregando. refetchInterval permanece 10s quando
-    // enabled=true pois o painel mostra progresso em tempo real da fila de otimizações.
-    refetchInterval: (query) => (query.state.status === 'success' ? 10_000 : false),
+    // BUG-OQ-INTERVAL FIX (2026-06-23): evitar polling antes do primeiro fetch completar.
+    // BUG-OQ-DATAUPATEDAT FIX (2026-06-23): substituir status==='success' por
+    // dataUpdatedAt===0. Com status==='success', quando a query vai para 'error'
+    // (ex: Supabase temporariamente indisponível após retry limit) o polling PARA
+    // permanentemente — painel desatualizado até reload manual.
+    // dataUpdatedAt===0 significa "nunca teve fetch bem-sucedido" → pausa apenas
+    // no arranque, mas retoma polling após primeiro sucesso E mantém recovery
+    // automático a cada 10s mesmo em caso de erro subsequente.
+    refetchInterval: (query) => (query.state.dataUpdatedAt === 0 ? false : 10_000),
     queryFn: async () => { // BUG-OQ-ABORT FIX (2026-06-23): removido { signal } + .abortSignal(signal). Idêntico ao BUG-DAR-ABORT.
       const { data, error } = await supabase
         .from('optimization_queue' as never)

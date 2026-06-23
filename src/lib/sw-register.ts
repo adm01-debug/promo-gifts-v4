@@ -1,6 +1,7 @@
 // src/lib/sw-register.ts
 
 import { logger } from '@/lib/logger';
+import { swConfirmedStaleUrls } from '@/lib/chunk-recovery';
 
 // Guard: prevents concurrent reload loops if multiple SW_STALE_CHUNK messages arrive.
 let _staleChunkReloadScheduled = false;
@@ -47,6 +48,16 @@ export async function registerServiceWorker(): Promise<void> {
       // app está QUEBRADO (chunk 404), não em toda atualização do SW.
       navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
         if (event.data?.type === 'SW_STALE_CHUNK') {
+          // BUG-CR-2 FIX: registra URL stale ANTES do reload para que
+          // probeAsset() pule o HEAD request — eliminando as mensagens
+          // "Falha ao carregar Buscar: HEAD" no DevTools do browser.
+          // Race window: se lazyWithRetry.attemptChunkRecovery() disparar
+          // antes do reload em 300ms, encontrará a URL no set e skip o probe.
+          const staleUrl = event.data?.url as string | undefined;
+          if (staleUrl) {
+            swConfirmedStaleUrls.add(staleUrl);
+            logger.log('[SW] chunk stale confirmado — URL registrada:', staleUrl);
+          }
           logger.log(
             '🔄 [SW] Chunk desatualizado detectado — recarregando para obter chunks atualizados:',
             event.data.url,
