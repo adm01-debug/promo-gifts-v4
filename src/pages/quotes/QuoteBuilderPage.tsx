@@ -479,9 +479,6 @@ export default function QuoteBuilderPage() {
                           mode="single"
                           selected={s.deliveryDate}
                           onSelect={s.handleDeliveryDateChange}
-                          {/* FIX-C01: startOfDay garante que HOJE seja selecionável.
-                              Antes: date < new Date() bloqueava hoje pois datas do
-                              calendário são meia-noite e new Date() inclui hora atual. */}
                           disabled={(date) => date < startOfDay(new Date())}
                           initialFocus
                         />
