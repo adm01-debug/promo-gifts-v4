@@ -467,7 +467,17 @@ export function CartHeaderButton() {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPendingDeleteId(null);
-                                      setActiveCartId(isActive ? null : cart.id);
+                                      if (isActive) {
+                                        setCollapsedIds((prev) => new Set(prev).add(cart.id));
+                                      } else {
+                                        setCollapsedIds((prev) => {
+                                          if (!prev.has(cart.id)) return prev;
+                                          const next = new Set(prev);
+                                          next.delete(cart.id);
+                                          return next;
+                                        });
+                                        setActiveCartId(cart.id);
+                                      }
                                     }}
                                   >
                                     {isActive ? (
