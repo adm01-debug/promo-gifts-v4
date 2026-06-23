@@ -1,0 +1,163 @@
+================================================================
+🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 13)
+================================================================
+Run:        #4796 (id 28030760357)
+SHA:        06bf135d093ba56115974db8ed35f76059f4d049
+Event:      push
+Outcome:    failure
+Conclusion: success
+Marker:     absent (smoke exit != 0)
+
+--- Environment ---
+  pwd: /home/runner/work/promo-gifts-v4/promo-gifts-v4
+  GH_TOKEN length: 426
+  GITHUB_TOKEN length: 426
+  which gh: /usr/bin/gh
+  which curl: /usr/bin/curl
+
+--- ls -la playwright-report/ ---
+total 144
+drwxr-xr-x  2 runner runner   4096 Jun 23 13:50 .
+drwxr-xr-x 21 runner runner   4096 Jun 23 13:50 ..
+-rw-r--r--  1 runner runner    568 Jun 23 13:50 T14-step-log.txt
+-rw-r--r--  1 runner runner 114844 Jun 23 13:50 results.json
+-rw-r--r--  1 runner runner  11005 Jun 23 13:50 smoke-summary.json
+-rw-r--r--  1 runner runner   3205 Jun 23 13:50 smoke-summary.md
+
+--- find playwright-report -type f ---
+playwright-report/smoke-summary.md
+playwright-report/results.json
+playwright-report/smoke-summary.json
+playwright-report/T14-step-log.txt
+
+--- head -100 smoke-summary.md ---
+# 🚦 E2E Smoke Summary
+
+- **Project:** `chromium-smoke`
+- **Started:** 2026-06-23 13:49
+- **Wall time:** 31.4s
+- **Totals:** 38 · ✅ 0 · ❌ 1 · ⏭ 37
+- **🛑 Primeira falha:** `90 · Tela de login renderiza`
+
+## Status por funcionalidade
+
+| # | Funcionalidade | Status | Duração | Retries | Grupo |
+|---:|---|:---:|---:|---:|:---:|
+| 00 | Sessão autenticada carregada | ⏭ | 0.2s | — | 🔐 auth |
+| 01 | Dashboard inicial | ⏭ | 0.2s | — | 🔐 auth |
+| 02 | Dashboard customizável | ⏭ | 0.2s | — | 🔐 auth |
+| 03 | Catálogo de produtos | ⏭ | 0.2s | — | 🔐 auth |
+| 04 | Filtros avançados | ⏭ | 0.2s | — | 🔐 auth |
+| 05 | Novidades | ⏭ | 0.2s | — | 🔐 auth |
+| 06 | Tendências | ⏭ | 0.2s | — | 🔐 auth |
+| 07 | Favoritos | ⏭ | 0.2s | — | 🔐 auth |
+| 08 | Coleções | ⏭ | 0.2s | — | 🔐 auth |
+| 09 | Comparador de produtos | ⏭ | 0.2s | — | 🔐 auth |
+| 10 | Carrinhos do vendedor | ⏭ | 0.2s | — | 🔐 auth |
+| 11 | Lista de orçamentos | ⏭ | 0.2s | — | 🔐 auth |
+| 12 | Dashboard de orçamentos | ⏭ | 0.2s | — | 🔐 auth |
+| 13 | Funil (Kanban) de orçamentos | ⏭ | 0.2s | — | 🔐 auth |
+| 14 | Templates de orçamento | ⏭ | 0.2s | — | 🔐 auth |
+| 15 | Criar novo orçamento (wizard) | ⏭ | 0.2s | — | 🔐 auth |
+| 16 | Simulador (wizard) | ⏭ | 0.2s | — | 🔐 auth |
+| 17 | Simulador de preços | ⏭ | 0.2s | — | 🔐 auth |
+| 18 | Busca avançada de preço | ⏭ | 0.2s | — | 🔐 auth |
+| 19 | Estoque | ⏭ | 0.2s | — | 🔐 auth |
+| 20 | Reposição | ⏭ | 0.2s | — | 🔐 auth |
+| 21 | Kit Builder | ⏭ | 0.2s | — | 🔐 auth |
+| 22 | Meus Kits | ⏭ | 0.2s | — | 🔐 auth |
+| 23 | Gerador de Mockup | ⏭ | 0.2s | — | 🔐 auth |
+| 24 | Histórico de Mockups | ⏭ | 0.2s | — | 🔐 auth |
+| 25 | Magic Up (publicidade IA) | ⏭ | 0.2s | — | 🔐 auth |
+| 26 | Inteligência comercial | ⏭ | 0.2s | — | 🔐 auth |
+| 27 | Business Intelligence | ⏭ | 0.2s | — | 🔐 auth |
+| 28 | BI — Comparador de clientes | ⏭ | 0.2s | — | 🔐 auth |
+| 29 | Match de produtos | ⏭ | 0.2s | — | 🔐 auth |
+| 30 | Dropbox browser | ⏭ | 0.2s | — | 🔐 auth |
+| 90 | Tela de login renderiza | ❌ | 16.7s | — | 🌐 public |
+| 91 | Reset de senha renderiza | ⏭ | 0.0s | — | 🌐 public |
+| 92 | 404 (rota inexistente) | ⏭ | 0.0s | — | 🌐 public |
+| 93 | Login com credenciais inválidas permanece em /login | ⏭ | 0.0s | — | 🌐 public |
+| 94 | RLS bloqueia leitura de tabelas sensíveis para o usuário comum | ⏭ | 0.0s | — | 🔐 auth |
+| 95 | /reset-password sem token não habilita reset | ⏭ | 0.0s | — | 🌐 public |
+| 99 | Cobertura smoke ↔ catálogo está sincronizada | ⏭ | 0.2s | — | 🛡 gov |
+
+## ❌ Falhas detalhadas
+
+### `90 · Tela de login renderiza`
+- **Local:** `flows/20-all-features-smoke.spec.ts:253`
+- **Status:** `failed`
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('[data-testid="login-email-input"]')
+Expected: visible
+Timeout: 15000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 15000ms
+  - waiting for locator('[data-testid="login-email-input"]')
+```
+
+================================================================
+
+=== PROBE A: curl direct heartbeat ===
+Heartbeat content (cat):
+# T14 heartbeat
+
+Run #4796 at 2026-06-23T13:50:28Z
+SHA: 06bf135d093ba56115974db8ed35f76059f4d049
+---
+Base64 length: 132
+GET HTTP: 404
+GET response (first 200 chars): {
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+  "status": "404"
+}
+Existing SHA: ''
+PUT body size: 193 bytes
+PUT HTTP: 409
+PUT response (first 500 chars): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+✗ Heartbeat FAILED (HTTP 409)
+
+=== PROBE B: Diagnostic file commits via curl ===
+  [playwright-report/results.json] exists, size=114844 bytes
+    existing SHA: '' (GET HTTP 404)
+/home/runner/work/_temp/5e290f10-eb78-48e5-afd1-a52e73ed3e7d.sh: line 125: /usr/bin/python3: Argument list too long
+    ✗ failed (HTTP 400): {
+  "message": "Body should be a JSON object",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "400"
+}
+  [playwright-report/smoke-summary.md] exists, size=3205 bytes
+    existing SHA: '' (GET HTTP 404)
+    ✗ failed (HTTP 409): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+  [playwright-report/smoke-summary.json] exists, size=11005 bytes
+    existing SHA: '' (GET HTTP 404)
+    ✗ failed (HTTP 409): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+
+Done.
