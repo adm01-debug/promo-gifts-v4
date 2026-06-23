@@ -51,7 +51,7 @@ export function useQuotes() {
   useEffect(() => {
     if (!userId) return;
 
-    // BUG-NEW-03 FIX: tópico ÚNICO por inscrição. O supabase-js reaproveita canais que
+    // BUG-NEW-03 FIX: tópico Único por inscrição. O supabase-js reaproveita canais que
     // compartilham o mesmo tópico; com o nome estático 'quotes-realtime', duas instâncias
     // deste hook montadas em paralelo (ou um remount antes de removeChannel — assíncrono —
     // concluir) recebiam o MESMO canal já inscrito, e o segundo .on('postgres_changes') era
@@ -125,16 +125,23 @@ export function useQuotes() {
     },
   });
 
+  /**
+   * QBP-08 FIX: updateMutation agora aceita `expectedVersion` para ativar
+   * o optimistic lock server-side em update_quote_transactional.
+   * Sem expectedVersion (null), comportamento idêntico ao anterior.
+   */
   const updateMutation = useMutation({
     mutationFn: ({
       quoteId,
       quote,
       items,
+      expectedVersion,
     }: {
       quoteId: string;
       quote: Partial<Quote>;
       items: QuoteItem[];
-    }) => quoteService.updateQuote(quoteId, quote, items),
+      expectedVersion?: number | null;
+    }) => quoteService.updateQuote(quoteId, quote, items, expectedVersion),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       toast.success('Orçamento atualizado!');
@@ -160,7 +167,7 @@ export function useQuotes() {
     mutationFn: (quoteId: string) => quoteService.deleteQuote(quoteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast.success('Orçamento excluído');
+      toast.success('Orçamento exluído');
     },
     onError: () => {
       toast.error('Erro ao excluir orçamento');
@@ -181,9 +188,18 @@ export function useQuotes() {
     return createMutation.mutateAsync({ quote, items });
   };
 
-  const updateQuote = async (quoteId: string, quote: Partial<Quote>, items: QuoteItem[]) => {
+  /**
+   * QBP-08 FIX: updateQuote agora aceita `expectedVersion`.
+   * useQuoteBuilderState passa a versão carregada do quote para ativar o lock.
+   */
+  const updateQuote = async (
+    quoteId: string,
+    quote: Partial<Quote>,
+    items: QuoteItem[],
+    expectedVersion?: number | null,
+  ) => {
     if (!user) return null;
-    return updateMutation.mutateAsync({ quoteId, quote, items });
+    return updateMutation.mutateAsync({ quoteId, quote, items, expectedVersion });
   };
 
   const updateQuoteStatus = async (quoteId: string, status: Quote['status']) => {
@@ -266,9 +282,6 @@ export function useQuotes() {
           shipping_type: original.shipping_type,
           shipping_cost: original.shipping_cost,
           // BUG-NEW-01 FIX: preserve negotiation_markup_percent when duplicating.
-          // Previously this field was omitted, causing the markup to be lost (reset
-          // to 0) on every duplication. The total would diverge from the original
-          // without any visible explanation, potentially sending wrong pricing to clients.
           negotiation_markup_percent: original.negotiation_markup_percent ?? 0,
           internal_notes: `Duplicado de ${original.quote_number}`,
           valid_until: original.valid_until,
