@@ -186,7 +186,7 @@ export function useSellerCarts() {
         .single();
 
       if (error) {
-        if (error.code === '23514' || /Limite de \d+ carrinhos?/i.test(error.message ?? '')) {
+        if (isCartLimitError(error)) {
           throw new Error(
             `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de criar outro.`,
           );
