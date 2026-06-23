@@ -25,7 +25,10 @@ import { useExternalVariantStock } from '@/hooks/products/useExternalVariantStoc
 import { useProductSelectionStore } from '@/stores/useProductSelectionStore';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 import { ColorSwatchPicker } from '@/components/ui/ColorSwatchPicker';
-import { useProductColorSwatch, type ColorSwatch as ProductColorSwatchData } from '@/hooks/useProductColorSwatch';
+import {
+  useProductColorSwatch,
+  type ColorSwatch as ProductColorSwatchData,
+} from '@/hooks/useProductColorSwatch';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
@@ -78,285 +81,300 @@ export interface ProductTableRowProps {
   onToggleFavorite?: (id: string) => void;
   onToggleCompare?: (id: string) => { added: boolean; isFull: boolean };
   onOpenVariantPicker: (product: Product, mode: VariantActionMode) => void;
-  onOpenQuickView: (product: Product, triggerEl?: HTMLElement | null, initialColorName?: string | null) => void;
+  onOpenQuickView: (
+    product: Product,
+    triggerEl?: HTMLElement | null,
+    initialColorName?: string | null,
+  ) => void;
   quickViewOpen: boolean;
   variantPickerOpen: boolean;
   collectionModalOpen: boolean;
   shareDialogOpen: boolean;
 }
 
-export const ProductTableRow = memo(({
-  product,
-  virtualStart,
-  measureRef,
-  dataIndex,
-  selectionMode,
-  isSelected,
-  activeColorFilter,
-  onProductClick,
-  onToggleSelect,
-  selectColorWithUrl,
-  clearSelectedColor,
-  canAddToCompare,
-  isFavorite,
-  isInCompare,
-  onToggleFavorite,
-  onToggleCompare,
-  onOpenVariantPicker,
-  onOpenQuickView,
-  quickViewOpen,
-  variantPickerOpen,
-  collectionModalOpen,
-  shareDialogOpen,
-}: ProductTableRowProps) => {
-  // Cor selecionada manualmente nesta linha — lida do store global (SSOT)
-  const userSelectedColorName =
-    useProductSelectionStore((s) => s.selectedColors[product.id]) ?? null;
+export const ProductTableRow = memo(
+  ({
+    product,
+    virtualStart,
+    measureRef,
+    dataIndex,
+    selectionMode,
+    isSelected,
+    activeColorFilter,
+    onProductClick,
+    onToggleSelect,
+    selectColorWithUrl,
+    clearSelectedColor,
+    canAddToCompare,
+    isFavorite,
+    isInCompare,
+    onToggleFavorite,
+    onToggleCompare,
+    onOpenVariantPicker,
+    onOpenQuickView,
+    quickViewOpen,
+    variantPickerOpen,
+    collectionModalOpen,
+    shareDialogOpen,
+  }: ProductTableRowProps) => {
+    // Cor selecionada manualmente nesta linha — lida do store global (SSOT)
+    const userSelectedColorName =
+      useProductSelectionStore((s) => s.selectedColors[product.id]) ?? null;
 
-  // FIX-COLOR-SEL-03: busca dados reais da variante ao selecionar cor.
-  // Dispara SOMENTE quando o usuário clicou numa bolinha — zero overhead no mount.
-  // Cache 15min compartilhado com ProductCard/ProductListItem.
-  const { data: liveVariants } = useExternalVariantStock(
-    userSelectedColorName ? product.id : undefined,
-  );
+    // FIX-COLOR-SEL-03: busca dados reais da variante ao selecionar cor.
+    // Dispara SOMENTE quando o usuário clicou numa bolinha — zero overhead no mount.
+    // Cache 15min compartilhado com ProductCard/ProductListItem.
+    const { data: liveVariants } = useExternalVariantStock(
+      userSelectedColorName ? product.id : undefined,
+    );
 
-  // V2 — color_swatches via ColorSwatchPicker (flag useColorSwatchesV2).
-  const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
-  const productSwatchesData = ((product as unknown as {
-    color_swatches?: ProductColorSwatchData[] | null;
-  }).color_swatches) ?? null;
-  const swatchV2 = useProductColorSwatch({
-    id: product.id,
-    name: product.name,
-    primary_image_url: product.primary_image_url ?? null,
-    stock_quantity: product.stock ?? 0,
-    color_swatches: productSwatchesData ?? undefined,
-    has_colors: !!productSwatchesData?.length,
-  });
-  const useSwatchesV2 = swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
+    // V2 — color_swatches via ColorSwatchPicker (flag useColorSwatchesV2).
+    const swatchesV2Enabled = isFeatureEnabled('useColorSwatchesV2');
+    const productSwatchesData =
+      (
+        product as unknown as {
+          color_swatches?: ProductColorSwatchData[] | null;
+        }
+      ).color_swatches ?? null;
+    const swatchV2 = useProductColorSwatch({
+      id: product.id,
+      name: product.name,
+      primary_image_url: product.primary_image_url ?? null,
+      stock_quantity: product.stock ?? 0,
+      color_swatches: productSwatchesData ?? undefined,
+      has_colors: !!productSwatchesData?.length,
+    });
+    const useSwatchesV2 = swatchesV2Enabled && (productSwatchesData?.length ?? 0) > 0;
 
-  const liveMatchForColor =
-    userSelectedColorName && liveVariants?.length
-      ? liveVariants.find(
-          (v) => (v.color_name || '').toLowerCase() === userSelectedColorName.toLowerCase(),
-        )
-      : undefined;
-  const liveImage = liveMatchForColor?.selected_thumbnail || undefined;
-  const liveStockQty: number | null = liveMatchForColor?.stock_quantity ?? null;
+    const liveMatchForColor =
+      userSelectedColorName && liveVariants?.length
+        ? liveVariants.find(
+            (v) => (v.color_name || '').toLowerCase() === userSelectedColorName.toLowerCase(),
+          )
+        : undefined;
+    const liveImage = liveMatchForColor?.selected_thumbnail || undefined;
+    const liveStockQty: number | null = liveMatchForColor?.stock_quantity ?? null;
 
-  // Foto: colors[].image (FIX-1 batch) > live thumbnail > filtro > primária
-  const userSelectedColor =
-    userSelectedColorName && product.colors?.length
-      ? product.colors.find(
-          (c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase(),
-        ) || null
-      : null;
-  const colorSpecificImage = resolveColorImage(product, activeColorFilter);
-  const rawImg =
-    (userSelectedColor as { image?: string | null } | null)?.image ||
-    liveImage ||
-    colorSpecificImage ||
-    product.primary_image_url ||
-    product.og_image_url ||
-    product.images[0] ||
-    null;
-  const baseRaw = useSwatchesV2 ? (swatchV2.displayImage ?? rawImg) : rawImg;
-  const thumbUrl = baseRaw ? getCdnUrl(baseRaw, 'card') : '/placeholder.svg';
+    // Foto: colors[].image (FIX-1 batch) > live thumbnail > filtro > primária
+    const userSelectedColor =
+      userSelectedColorName && product.colors?.length
+        ? product.colors.find(
+            (c) => c.name.toLowerCase() === userSelectedColorName.toLowerCase(),
+          ) || null
+        : null;
+    const colorSpecificImage = resolveColorImage(product, activeColorFilter);
+    const rawImg =
+      (userSelectedColor as { image?: string | null } | null)?.image ||
+      liveImage ||
+      colorSpecificImage ||
+      product.primary_image_url ||
+      product.og_image_url ||
+      product.images[0] ||
+      null;
+    const baseRaw = useSwatchesV2 ? (swatchV2.displayImage ?? rawImg) : rawImg;
+    const thumbUrl = baseRaw ? getCdnUrl(baseRaw, 'card') : '/placeholder.svg';
 
-  // Estoque: liveStockQty (BD real) > batch (colors[].stock) > total
-  const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
-  const displayStock = useSwatchesV2
-    ? swatchV2.displayStock
-    : liveStockQty !== null ? liveStockQty : (colorStock?.stock ?? product.stock);
-  const displayStatus = useSwatchesV2
-    ? getCatalogStockStatus(swatchV2.displayStock, undefined, product.minQuantity)
-    : liveStockQty !== null
-      ? getCatalogStockStatus(liveStockQty, undefined, product.minQuantity)
-      : (colorStock?.stockStatus ?? product.stockStatus);
+    // Estoque: liveStockQty (BD real) > batch (colors[].stock) > total
+    const colorStock = resolveColorStock(product, activeColorFilter, userSelectedColorName);
+    const displayStock = useSwatchesV2
+      ? swatchV2.displayStock
+      : liveStockQty !== null
+        ? liveStockQty
+        : (colorStock?.stock ?? product.stock);
+    const displayStatus = useSwatchesV2
+      ? getCatalogStockStatus(swatchV2.displayStock, undefined, product.minQuantity)
+      : liveStockQty !== null
+        ? getCatalogStockStatus(liveStockQty, undefined, product.minQuantity)
+        : (colorStock?.stockStatus ?? product.stockStatus);
 
-  const activeColorName =
-    userSelectedColorName || getActiveColorName(product, activeColorFilter);
+    const activeColorName = userSelectedColorName || getActiveColorName(product, activeColorFilter);
 
-  const handleClick = () => {
-    if (selectionMode) {
-      onToggleSelect?.(product.id);
-    } else {
-      onProductClick?.(product.id);
-    }
-  };
+    const handleClick = () => {
+      if (selectionMode) {
+        onToggleSelect?.(product.id);
+      } else {
+        onProductClick?.(product.id);
+      }
+    };
 
-  const handleOpenQV = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.stopPropagation();
-    if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
-    onOpenQuickView(product, e.currentTarget as HTMLElement, activeColorName ?? null);
-  };
+    const handleOpenQV = (e: React.MouseEvent | React.KeyboardEvent) => {
+      e.stopPropagation();
+      if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
+      onOpenQuickView(product, e.currentTarget as HTMLElement, activeColorName ?? null);
+    };
 
-  return (
-    <div
-      data-index={dataIndex}
-      ref={measureRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        transform: `translateY(${virtualStart}px)`,
-      }}
-      className={cn(
-        'group flex h-14 cursor-pointer items-center border-b border-border/30 px-4 transition-colors hover:bg-accent/30',
-        isSelected && 'bg-primary/5',
-      )}
-      onClick={handleClick}
-    >
-      {selectionMode && (
-        <div className="flex w-10 justify-center px-2">
-          <SelectionCheckbox
-            checked={!!isSelected}
-            onChange={() => onToggleSelect?.(product.id)}
-            size="sm"
-          />
+    return (
+      <div
+        data-index={dataIndex}
+        ref={measureRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          transform: `translateY(${virtualStart}px)`,
+        }}
+        className={cn(
+          'group flex h-14 cursor-pointer items-center border-b border-border/30 px-4 transition-colors hover:bg-accent/30',
+          isSelected && 'bg-primary/5',
+        )}
+        onClick={handleClick}
+      >
+        {selectionMode && (
+          <div className="flex w-10 justify-center px-2">
+            <SelectionCheckbox
+              checked={!!isSelected}
+              onChange={() => onToggleSelect?.(product.id)}
+              size="sm"
+            />
+          </div>
+        )}
+
+        <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
+          {product.supplier?.name}
         </div>
-      )}
 
-      <div className="hidden w-40 truncate px-3 text-xs text-muted-foreground lg:block">
-        {product.supplier?.name}
-      </div>
+        {/* Thumbnail — QuickView ao clicar */}
+        <div className="w-12 px-2">
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={`Visualização rápida de ${product.name}`}
+            aria-haspopup="dialog"
+            aria-expanded={quickViewOpen}
+            data-testid="product-table-row-thumb"
+            data-product-id={product.id}
+            className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            style={{ touchAction: 'manipulation' }}
+            onClick={handleOpenQV}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleOpenQV(e);
+              }
+            }}
+          >
+            <img
+              src={thumbUrl}
+              alt=""
+              className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
+              loading="lazy"
+            />
+          </div>
+        </div>
 
-      {/* Thumbnail — QuickView ao clicar */}
-      <div className="w-12 px-2">
+        {/* Nome + badge cor */}
+        <div className="min-w-0 flex-1 px-3">
+          <p className="truncate text-[13px] font-medium text-foreground transition-colors group-hover:text-primary">
+            {product.name}
+          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground md:hidden">{product.sku}</p>
+            {activeColorName && (
+              <Badge
+                variant="outline"
+                className="h-4 border-primary/30 px-1.5 py-0 text-[9px] text-primary/80"
+              >
+                {activeColorName}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* SKU */}
+        <div className="hidden w-32 truncate px-3 font-mono text-xs text-muted-foreground md:block">
+          {product.sku}
+        </div>
+
+        {/* Bolinhas de cor + botão Todos */}
         <div
-          role="button"
-          tabIndex={0}
-          aria-label={`Visualização rápida de ${product.name}`}
-          aria-haspopup="dialog"
-          aria-expanded={quickViewOpen}
-          data-testid="product-table-row-thumb"
-          data-product-id={product.id}
-          className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          style={{ touchAction: 'manipulation' }}
-          onClick={handleOpenQV}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenQV(e); }
-          }}
+          className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
+          onClick={(e) => e.stopPropagation()}
         >
-          <img
-            src={thumbUrl}
-            alt=""
-            className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
-            loading="lazy"
-          />
-        </div>
-      </div>
-
-      {/* Nome + badge cor */}
-      <div className="min-w-0 flex-1 px-3">
-        <p className="truncate text-[13px] font-medium text-foreground transition-colors group-hover:text-primary">
-          {product.name}
-        </p>
-        <div className="flex items-center gap-2">
-          <p className="text-[10px] text-muted-foreground md:hidden">{product.sku}</p>
-          {activeColorName && (
-            <Badge variant="outline" className="h-4 border-primary/30 px-1.5 py-0 text-[9px] text-primary/80">
-              {activeColorName}
-            </Badge>
+          {useSwatchesV2 ? (
+            <ColorSwatchPicker
+              swatches={swatchV2.swatches}
+              activeVariantId={swatchV2.activeVariantId}
+              size="sm"
+              maxVisible={4}
+              onSelect={(variantId) => {
+                const sw = swatchV2.swatches.find((s) => s.variant_id === variantId);
+                swatchV2.selectVariant(variantId);
+                if (sw) selectColorWithUrl(product.id, sw.color_name);
+                // FIX-SWATCH-INLINE-V2: seleção de cor inline na tabela — sem abrir QuickView.
+              }}
+              onReset={() => {
+                swatchV2.resetActive();
+                clearSelectedColor(product.id);
+              }}
+            />
+          ) : product.colors.length > 0 ? (
+            <ProductColorSwatches
+              colors={product.colors.map((c) => ({
+                name: c.name,
+                hex: c.hex ?? null,
+                image: (c as { image?: string | null }).image ?? null,
+              }))}
+              max={5}
+              size="sm"
+              hideWhenEmpty={false}
+              selectedName={userSelectedColorName}
+              onSelect={(c) => {
+                selectColorWithUrl(product.id, c.name);
+                // FIX-SWATCH-INLINE-V1: seleção de cor inline na tabela — sem abrir QuickView.
+                // Imagem e estoque do row refletem a cor. Botão "Todos" reseta via onClear.
+              }}
+              onClear={() => clearSelectedColor(product.id)}
+            />
+          ) : (
+            <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
           )}
         </div>
-      </div>
 
-      {/* SKU */}
-      <div className="hidden w-32 truncate px-3 font-mono text-xs text-muted-foreground md:block">
-        {product.sku}
-      </div>
-
-      {/* Bolinhas de cor + botão Todos */}
-      <div
-        className="hidden w-44 items-center gap-1.5 px-3 sm:flex"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {useSwatchesV2 ? (
-          <ColorSwatchPicker
-            swatches={swatchV2.swatches}
-            activeVariantId={swatchV2.activeVariantId}
-            size="sm"
-            maxVisible={4}
-            onSelect={(variantId) => {
-              const sw = swatchV2.swatches.find((s) => s.variant_id === variantId);
-              swatchV2.selectVariant(variantId);
-              if (sw) selectColorWithUrl(product.id, sw.color_name);
-              if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
-              if (sw) onOpenQuickView(product, null, sw.color_name);
-            }}
-            onReset={() => {
-              swatchV2.resetActive();
-              clearSelectedColor(product.id);
-            }}
-          />
-        ) : product.colors.length > 0 ? (
-          <ProductColorSwatches
-            colors={product.colors.map((c) => ({
-              name: c.name,
-              hex: c.hex ?? null,
-              image: (c as { image?: string | null }).image ?? null,
-            }))}
-            max={5}
-            size="sm"
-            hideWhenEmpty={false}
-            selectedName={userSelectedColorName}
-            onSelect={(c) => {
-              selectColorWithUrl(product.id, c.name);
-              if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;
-              onOpenQuickView(product, null, c.name);
-            }}
-            onClear={() => clearSelectedColor(product.id)}
-          />
-        ) : (
-          <div className="h-1 w-2 rounded-full bg-muted-foreground/20" />
-        )}
-      </div>
-
-      {/* Estoque */}
-      <div
-        className={cn(
-          'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
-          rowStockColor(displayStatus),
-        )}
-        data-testid="product-stock-value"
-        data-stock-qty={displayStock ?? 0}
-      >
+        {/* Estoque */}
         <div
           className={cn(
-            'h-1.5 w-1.5 rounded-full',
-            displayStatus === 'in-stock'
-              ? 'animate-pulse bg-success'
-              : displayStatus === 'low-stock'
-                ? 'bg-warning'
-                : 'bg-destructive',
+            'flex w-32 items-center justify-end gap-1.5 px-3 text-right text-[11px] font-bold tracking-tight',
+            rowStockColor(displayStatus),
           )}
-        />
-        {(displayStock || 0).toLocaleString('pt-BR')}
-      </div>
+          data-testid="product-stock-value"
+          data-stock-qty={displayStock ?? 0}
+        >
+          <div
+            className={cn(
+              'h-1.5 w-1.5 rounded-full',
+              displayStatus === 'in-stock'
+                ? 'animate-pulse bg-success'
+                : displayStatus === 'low-stock'
+                  ? 'bg-warning'
+                  : 'bg-destructive',
+            )}
+          />
+          {(displayStock || 0).toLocaleString('pt-BR')}
+        </div>
 
-      {/* Preço */}
-      <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
-        {formatRowPrice(product.price)}
-        <PriceFreshnessBadge priceUpdatedAt={product.priceUpdatedAt} variant="icon-only" />
-      </div>
+        {/* Preço */}
+        <div className="inline-flex w-32 items-center justify-end gap-1 px-3 text-right text-[13px] font-bold">
+          {formatRowPrice(product.price)}
+          <PriceFreshnessBadge priceUpdatedAt={product.priceUpdatedAt} variant="icon-only" />
+        </div>
 
-      {/* Ações */}
-      <div className="w-48 shrink-0 px-1">
-        <TableRowActions
-          product={product}
-          isFavorite={isFavorite?.(product.id) || false}
-          isInCompare={isInCompare?.(product.id) || false}
-          canAddToCompare={canAddToCompare}
-          onToggleFavorite={onToggleFavorite}
-          onToggleCompare={onToggleCompare}
-          onOpenVariantPicker={onOpenVariantPicker}
-          onOpenQuickView={(p) => onOpenQuickView(p)}
-        />
+        {/* Ações */}
+        <div className="w-48 shrink-0 px-1">
+          <TableRowActions
+            product={product}
+            isFavorite={isFavorite?.(product.id) || false}
+            isInCompare={isInCompare?.(product.id) || false}
+            canAddToCompare={canAddToCompare}
+            onToggleFavorite={onToggleFavorite}
+            onToggleCompare={onToggleCompare}
+            onOpenVariantPicker={onOpenVariantPicker}
+            onOpenQuickView={(p) => onOpenQuickView(p)}
+          />
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 ProductTableRow.displayName = 'ProductTableRow';
