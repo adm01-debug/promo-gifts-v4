@@ -404,6 +404,8 @@ function SellerCartsContent() {
             onClick={() => s.setShowNewCart(true)}
             disabled={!s.canCreateCart}
             size="sm"
+            data-testid="seller-carts-new"
+            aria-label={s.canCreateCart ? 'Criar novo carrinho' : SELLER_CART_LIMIT_REACHED_MESSAGE}
             className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed"
             title={
               !s.canCreateCart
