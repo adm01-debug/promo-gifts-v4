@@ -182,7 +182,7 @@ export function CartTabsRich({
           data-testid="cart-tab-new"
           onClick={canCreateCart ? onNew : undefined}
           disabled={!canCreateCart}
-          title={!canCreateCart ? 'Limite de 10 carrinhos atingido' : 'Criar novo carrinho'}
+          title={!canCreateCart ? SELLER_CART_LIMIT_REACHED_SHORT : 'Criar novo carrinho'}
           className={cn(
             'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-2.5 transition-all',
             canCreateCart
