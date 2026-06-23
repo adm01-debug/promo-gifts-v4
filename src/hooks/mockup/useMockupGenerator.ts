@@ -11,6 +11,7 @@ import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import { needsConversion, ensureSupportedFormat } from '@/lib/image-converter';
+import { getCdnUrl } from '@/utils/image-utils';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useFilteredTechniques,
@@ -483,7 +484,7 @@ export function useMockupGenerator() {
   const getProductImage = useCallback((): string | null => {
     if (productSelection?.imageUrl) {
       const url = productSelection.imageUrl;
-      return url.endsWith('/thumbnail') ? url.replace('/thumbnail', '') : url;
+      return getCdnUrl(url, 'public');
     }
     return selectedProduct?.images?.[0] || null;
   }, [productSelection, selectedProduct]);

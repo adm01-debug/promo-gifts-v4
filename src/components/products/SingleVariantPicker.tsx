@@ -4,6 +4,7 @@
  */
 import { useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { getCdnUrl } from '@/utils/image-utils';
 import { Package, AlertTriangle, SkipForward } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -119,7 +120,7 @@ export function SingleVariantPicker({
             >
               {variant.selected_thumbnail ? (
                 <img
-                  src={`${variant.selected_thumbnail}/thumbnail`}
+                  src={getCdnUrl(variant.selected_thumbnail, 'thumbnail')}
                   alt={variant.color_name ?? ''}
                   className="h-8 w-8 shrink-0 rounded-md border border-border/50 object-cover transition-transform group-hover:scale-105"
                   onError={(e) => {
