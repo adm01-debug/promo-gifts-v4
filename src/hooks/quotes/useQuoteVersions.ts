@@ -137,11 +137,18 @@ export function useQuoteVersions(quoteId?: string) {
         const newVersion = maxVersion + 1;
 
         // Mark all existing versions as not latest
-        await supabase
+        // BUG-VERSION-SILENT-FAIL FIX: silent failure here leaves the old version
+        // with is_latest_version=true and the new one also marked true, corrupting
+        // the version tree. Log and throw so createNewVersion rolls back cleanly.
+        const { error: clearErr } = await supabase
           // rls-allow: lookup por quote_id; RLS valida ownership
           .from('quotes')
           .update({ is_latest_version: false })
           .or(`id.eq.${rootId},parent_quote_id.eq.${rootId}`);
+        if (clearErr) {
+          logger.error('Failed to clear is_latest_version on prior versions:', clearErr);
+          throw clearErr;
+        }
 
         // Create new version via duplicate
         const items =
@@ -198,7 +205,9 @@ export function useQuoteVersions(quoteId?: string) {
 
         if (newQuote?.id) {
           // Update the new quote with version info
-          await supabase
+          // BUG-VERSION-SILENT-FAIL FIX: silent failure here leaves the new quote
+          // without a version number or parent link — the version tree is broken.
+          const { error: versionErr } = await supabase
             // rls-allow: lookup por quote_id; RLS valida ownership
             .from('quotes')
             .update({
@@ -207,6 +216,7 @@ export function useQuoteVersions(quoteId?: string) {
               is_latest_version: true,
             })
             .eq('id', newQuote.id);
+          if (versionErr) logger.error('Failed to set version metadata on new quote:', versionErr);
 
           await logQuoteHistory(
             newQuote.id,
