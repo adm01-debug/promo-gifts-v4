@@ -109,8 +109,22 @@ Deno.serve(async (req) => {
     const { value: AI_HF_ACCESS_TOKEN } = await resolveCredential('HF_ACCESS_TOKEN');
 
     if (!AI_LOVABLE_API_KEY && !AI_HF_ACCESS_TOKEN) {
-      throw new Error(
-        'Configuração ausente: LOVABLE_API_KEY ou HF_ACCESS_TOKEN não configurados no backend.',
+      // BUG-VS-CREDS (2026-06-23): Retorna 503 (não 500) para credencial ausente.
+      // 500 implica bug no código; 503 implica serviço/infra não configurado.
+      // Ação: configurar HF_ACCESS_TOKEN ou LOVABLE_API_KEY como Supabase EF secret
+      // via dashboard ou inserir em integration_credentials.
+      console.error('[visual-search] Nenhuma credencial de IA configurada. Configure HF_ACCESS_TOKEN ou LOVABLE_API_KEY.');
+      return new Response(
+        JSON.stringify({
+          error: 'Busca visual temporariamente indisponível. Configure as credenciais de IA no painel administrativo.',
+          code: 'AI_CREDENTIALS_MISSING',
+          step: currentStep,
+          requestId,
+        }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
       );
     }
 
@@ -294,8 +308,21 @@ Responda APENAS em JSON com este formato:
     }
 
     if (!analysisContent) {
-      throw new Error(
-        'Não foi possível realizar a análise visual. Verifique as configurações de IA (Hugging Face/Lovable) e se há créditos disponíveis.',
+      // BUG-VS-AI-FAIL (2026-06-23): providers AI retornaram sem conteúdo.
+      // Retorna 503 (não 500) — falha de provider, não bug no código.
+      console.error('[visual-search] Ambos os providers de IA falharam em retornar análise.');
+      return new Response(
+        JSON.stringify({
+          error: 'Análise visual indisponível no momento. Tente novamente em instantes.',
+          code: 'AI_ANALYSIS_FAILED',
+          step: currentStep,
+          requestId,
+          usedProvider,
+        }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
       );
     }
 
