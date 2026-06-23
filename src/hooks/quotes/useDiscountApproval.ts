@@ -55,13 +55,18 @@ export function useDiscountApproval() {
         // BUG-040: Dedup guard — idempotent under double-clicks / retries.
         // A pending row for this quote already satisfies the intent; skip the
         // duplicate INSERT to avoid confusing the admin approval queue.
-        const { data: existing } = await supabase
+        // BUG-APPROVAL-DEDUP-SILENT-FAIL FIX: previously { error } was not destructured.
+        // An RLS denial or network error returned { data: null, error } but the error
+        // was silently swallowed — existing stayed null and we always proceeded to INSERT,
+        // defeating the dedup guard and flooding the admin approval queue.
+        const { data: existing, error: dupCheckErr } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
           .select('id')
           .eq('quote_id', quoteId)
           .eq('status', 'pending')
           .maybeSingle();
+        if (dupCheckErr) logger.warn('Dedup check failed, proceeding with INSERT:', dupCheckErr);
         if (existing) {
           toast.success('Solicitação de aprovação enviada ao admin!');
           return true;
@@ -346,7 +351,11 @@ export function useDiscountApproval() {
   const getApprovalStatus = useCallback(
     async (quoteId: string): Promise<DiscountApprovalRequest | null> => {
       try {
-        const { data } = await supabase
+        // BUG-APPROVAL-STATUS-SILENT-FAIL FIX: previously { error } was not destructured.
+        // Any RLS denial or network failure returned { data: null, error } silently —
+        // callers saw null and treated it as "no approval request exists", which could
+        // allow the discount flow to bypass the pending_approval gate.
+        const { data, error } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
           .select('*')
@@ -354,8 +363,10 @@ export function useDiscountApproval() {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+        if (error) logger.error('Error fetching approval status:', error);
         return (data as DiscountApprovalRequest) || null;
-      } catch {
+      } catch (err) {
+        logger.error('Unexpected error in getApprovalStatus:', err);
         return null;
       }
     },
