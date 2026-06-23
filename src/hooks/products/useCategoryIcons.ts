@@ -52,8 +52,8 @@ const KEYWORD_ICONS: Record<string, string> = {
   taça: 'Wine',
   caneca: 'Coffee',
   xícara: 'Coffee',
+  squeeze: 'Droplets',  // fix: before 'garrafa' — 'Garrafa squeeze' deve dar Droplets
   garrafa: 'Wine',
-  squeeze: 'Droplets',
   térmica: 'Thermometer',
   térm: 'Thermometer',
   cooler: 'Thermometer',
@@ -194,12 +194,12 @@ const KEYWORD_ICONS: Record<string, string> = {
   academia: 'Dumbbell',
   esporte: 'Dumbbell',
   corrida: 'Dumbbell',
-  praia: 'Sun',
-  piscina: 'Droplets',
+  'guarda-chuva': 'Umbrella', // fix: before 'praia' (Sun) — guarda-sol de praia deve dar Umbrella
+  'guarda-sol': 'Umbrella',   // fix: before 'praia' (Sun)
   guarda: 'Umbrella',
   chuva: 'Umbrella',
-  'guarda-chuva': 'Umbrella',
-  'guarda-sol': 'Umbrella',
+  praia: 'Sun',
+  piscina: 'Droplets',
 
   // ── SAÚDE / BELEZA ─────────────────────────────────
   espelho: 'Sparkles',
@@ -227,8 +227,9 @@ const KEYWORD_ICONS: Record<string, string> = {
   jogo: 'Gamepad2',
   dominó: 'Dices',
   xadrez: 'Dices',
-  brinquedo: 'Star',
   quebra: 'Layers',
+  // brinquedo movido para o final da seção JOGOS — após brinquedo pet (PET section)
+  // para que 'brinquedo pet' (PawPrint) tome precedência sobre 'brinquedo' (Star)
 
   // ── CASA / DECORAÇÃO ──────────────────────────────
   vela: 'Flame',
@@ -243,16 +244,17 @@ const KEYWORD_ICONS: Record<string, string> = {
   despertador: 'AlarmClock',
 
   // ── PET ────────────────────────────────────────────
+  'brinquedo pet': 'PawPrint', // fix: before 'brinquedo' (Star) — produto pet precede genérico
   pet: 'PawPrint',
   cachorro: 'PawPrint',
   gato: 'PawPrint',
   coleira: 'PawPrint',
   comedouro: 'PawPrint',
   bebedouro: 'PawPrint',
-  'brinquedo pet': 'PawPrint',
   ração: 'PawPrint',
   cama: 'PawPrint',
   casinha: 'PawPrint',
+  brinquedo: 'Star',          // fix: movido para cá — depois de 'brinquedo pet'
 
   // ── EMBALAGENS / CAIXAS ─────────────────────────────
   embalagem: 'Package',
@@ -290,10 +292,10 @@ const KEYWORD_ICONS: Record<string, string> = {
   castanha: 'Leaf',
 
   // ── ECO / SUSTENTÁVEL / AGRO ────────────────────────
+  bambu: 'TreePine',   // fix: before 'eco' — produto de bambu deve dar TreePine
   eco: 'Leaf',
   ecológico: 'Leaf',
   reciclado: 'Recycle',
-  bambu: 'TreePine',
   sustentável: 'Leaf',
   madeira: 'TreePine',
   cortiça: 'TreePine',
