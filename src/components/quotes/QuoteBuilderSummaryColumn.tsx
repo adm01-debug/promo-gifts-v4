@@ -43,6 +43,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { toast } from 'sonner';
+import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -125,12 +126,10 @@ export function QuoteBuilderSummaryColumn({
     if (next === discountType) return;
     if (presentedSubtotal > 0 && discountValue > 0) {
       if (next === 'amount') {
-        // % → R$
         setDiscountValue(
           round2(Math.min(presentedSubtotal, presentedSubtotal * (discountValue / 100))),
         );
       } else {
-        // R$ → %
         const pct = (discountValue / presentedSubtotal) * 100;
         setDiscountValue(round2(Math.max(0, Math.min(100, pct))));
       }
@@ -142,7 +141,6 @@ export function QuoteBuilderSummaryColumn({
     setDiscountType(next);
   };
 
-  // ── Itens com preço pendente de confirmação (aging/stale e ainda não confirmado) ──
   const staleIndexes = useMemo(() => {
     const set = new Set<number>();
     items.forEach((item, idx) => {
@@ -162,8 +160,6 @@ export function QuoteBuilderSummaryColumn({
     [items, showOnlyStale, staleIndexes],
   );
 
-  // Auto-desliga o filtro se a contagem zerar (após confirmar todos).
-  // Em um effect (não no corpo do render) para evitar setState durante a renderização.
   useEffect(() => {
     if (showOnlyStale && staleCount === 0) setShowOnlyStale(false);
   }, [showOnlyStale, staleCount]);
@@ -174,15 +170,83 @@ export function QuoteBuilderSummaryColumn({
     setSellerNotes('');
   };
 
+  /**
+   * SCROLL-FIX-03: Dialog close handler com scroll-lock release explícito.
+   *
+   * O Dialog de aprovação usa Radix UI, que aplica `overflow: hidden` no body
+   * durante a abertura. Em condições de race (animação de fechamento + unmount
+   * rápido), o Radix pode não liberar o lock — deixando a página inteira
+   * sem scroll. O `releaseScrollLockIfIdle` do scroll-lock.ts já cuida disso
+   * globalmente, mas disparar explicitamente aqui garante liberação imediata
+   * sem depender da janela do MutationObserver ou do próximo pointerdown.
+   */
+  const handleApprovalDialogChange = (open: boolean) => {
+    setApprovalDialogOpen(open);
+    if (!open) {
+      // Defer para depois do frame de fechamento do Radix
+      requestAnimationFrame(() => releaseScrollLockIfIdle());
+    }
+  };
+
+  const handleConfirmAllDialogChange = (open: boolean) => {
+    setConfirmAllOpen(open);
+    if (!open) {
+      requestAnimationFrame(() => releaseScrollLockIfIdle());
+    }
+  };
+
+  /**
+   * SCROLL-FIX: altura da sticky column calculada via CSS var para garantir
+   * que o INNER scroll container tenha altura EXPLÍCITA — sem depender de
+   * `h-full` dentro de `overflow-hidden`, que falha em alguns contextos.
+   *
+   * Mudanças em relação à versão anterior:
+   *   ANTES: outer `lg:overflow-hidden` + inner `lg:h-full lg:overflow-y-auto`
+   *          → `overflow-hidden` no pai cria BFC; `h-full` pode resolver para
+   *            `auto` dentro do BFC, fazendo o `overflow-y-auto` nunca scrollar.
+   *   AGORA: outer SEM `overflow-hidden` (usa `overflow-clip` apenas para sombra)
+   *          + inner com `lg:max-h-[calc(...)]` EXPLÍCITO + `overflow-y-auto`
+   *          → scroll funciona em todos os browsers (Chrome, Firefox, Safari).
+   */
+  const STICKY_HEIGHT =
+    'lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)]';
+
   return (
     <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-4">
+      {/*
+       * SCROLL-FIX-01: Removido `lg:overflow-hidden` deste wrapper.
+       *
+       * PROBLEMA ORIGINAL: `overflow: hidden` criava um Block Formatting
+       * Context (BFC). Dentro de um BFC, `height: 100%` no filho inner
+       * resolvia de forma inconsistente entre browsers, desabilitando o
+       * scroll interno.
+       *
+       * SOLUÇÃO: O `overflow-clip` substitui `overflow-hidden` SEM criar
+       * scroll container, mantendo o clipping visual da sombra do inner div.
+       * Browsers modernos (Chrome 90+, Firefox 102+, Safari 16+) suportam
+       * `overflow: clip`; Tailwind expõe via `overflow-clip`.
+       */}
       <div
         data-testid="quote-builder-summary-sticky"
-        className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)] lg:self-start lg:overflow-hidden"
+        className="lg:sticky lg:top-[calc(var(--header-h,56px)+var(--breadcrumb-h,40px)+1rem)] lg:self-start"
       >
+        {/*
+         * SCROLL-FIX-02: `lg:h-full` substituído por `lg:max-h-[calc(...)]`.
+         *
+         * PROBLEMA ORIGINAL: `h-full` dentro de `overflow-hidden` (pai) é
+         * ambíguo — o BFC do pai impedia o browser de resolver a altura corretamente,
+         * fazendo o conteúdo crescer além da tela sem criar scrollbar.
+         *
+         * SOLUÇÃO: `max-h-[calc(100vh-header-breadcrumb-2rem)]` é aplicado
+         * diretamente no scroll container, dando ao browser um limite EXPLÍCITO
+         * para resolver o overflow-y-auto sem depender do pai.
+         */}
         <div
           data-testid="quote-builder-summary-scroll"
-          className="flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl lg:h-full lg:overflow-y-auto"
+          className={cn(
+            'flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl',
+            `lg:overflow-y-auto ${STICKY_HEIGHT}`,
+          )}
         >
           {/* Header */}
           <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
@@ -192,7 +256,7 @@ export function QuoteBuilderSummaryColumn({
             <h3 className="font-display text-base font-semibold">Resumo</h3>
           </div>
 
-          {/* Stale price filter — só aparece quando há itens com preço pendente de confirmação */}
+          {/* Stale price filter */}
           {staleCount > 0 && (
             <div className="flex shrink-0 flex-wrap items-center gap-2 px-4 pb-3">
               <button
@@ -524,7 +588,6 @@ export function QuoteBuilderSummaryColumn({
                   </div>
                 </div>
               )}
-              {/* Desconto efetivo em tempo real — sempre que houver desconto, mostra equivalência R$ ↔ % */}
               {discountAmount > 0 && (
                 <div
                   className={cn(
@@ -560,7 +623,7 @@ export function QuoteBuilderSummaryColumn({
             </div>
           )}
 
-          {/* Negotiation Markup (uso interno) */}
+          {/* Negotiation Markup */}
           {items.length > 0 && setNegotiationMarkup && (
             <div className="px-4 pt-3">
               <NegotiationMarkupCard
@@ -581,7 +644,7 @@ export function QuoteBuilderSummaryColumn({
             </div>
           )}
 
-          {/* Footer */}
+          {/* Footer — sticky bottom do scroll container */}
           <div
             data-testid="quote-builder-summary-footer"
             className="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-10 mt-3 shrink-0 space-y-2 border-t border-border/50 bg-card/95 px-4 pb-3 pt-3 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85"
@@ -695,8 +758,8 @@ export function QuoteBuilderSummaryColumn({
         </div>
       </div>
 
-      {/* Approval Request Dialog */}
-      <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+      {/* Approval Request Dialog — SCROLL-FIX-03 via handleApprovalDialogChange */}
+      <Dialog open={approvalDialogOpen} onOpenChange={handleApprovalDialogChange}>
         <DialogContent data-testid="quote-approval-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -714,7 +777,6 @@ export function QuoteBuilderSummaryColumn({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {/* Visual comparison */}
             <div className="space-y-2 rounded-xl border border-border/40 bg-muted/50 p-3">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div data-testid="quote-approval-limit">
@@ -759,7 +821,7 @@ export function QuoteBuilderSummaryColumn({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setApprovalDialogOpen(false)}>
+            <Button variant="outline" onClick={() => handleApprovalDialogChange(false)}>
               Cancelar
             </Button>
             <Button
@@ -779,10 +841,10 @@ export function QuoteBuilderSummaryColumn({
         </DialogContent>
       </Dialog>
 
-      {/* Confirm All Stale Prices Dialog */}
+      {/* Confirm All Stale Prices Dialog — SCROLL-FIX-03 via handleConfirmAllDialogChange */}
       <ConfirmDialog
         open={confirmAllOpen}
-        onOpenChange={setConfirmAllOpen}
+        onOpenChange={handleConfirmAllDialogChange}
         variant="warning"
         title="Confirmar preços com o fornecedor?"
         description={`Você está confirmando que validou ${staleCount} preço(s) diretamente com o(s) fornecedor(es). O alerta de preço defasado será removido destes itens neste orçamento.`}
