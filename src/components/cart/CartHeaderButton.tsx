@@ -24,6 +24,8 @@ import {
   Eraser,
   Minus,
   Eye,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
