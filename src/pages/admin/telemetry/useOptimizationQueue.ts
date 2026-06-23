@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { waitForBridgeReady, invalidateBridgeReadyCache } from '@/lib/external-db/health-check';
@@ -52,6 +53,7 @@ const QUEUE_KEY = ['admin', 'optimization-queue'];
 
 export function useOptimizationQueue() {
   const queryClient = useQueryClient();
+  const { rolesLoaded, isAdmin } = useAuth();
   const [autoRun, setAutoRun] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const stopRef = useRef(false);
@@ -62,6 +64,9 @@ export function useOptimizationQueue() {
     refetch,
   } = useQuery<OptimizationItem[]>({
     queryKey: QUEUE_KEY,
+    enabled: rolesLoaded && Boolean(isAdmin),
+    staleTime: 5_000,
+    refetchOnWindowFocus: false,
     // BUG-OQ-INTERVAL FIX (2026-06-23): evitar polling antes do primeiro fetch completar.
     // BUG-OQ-DATAUPATEDAT FIX (2026-06-23): substituir status==='success' por
     // dataUpdatedAt===0. Com status==='success', quando a query vai para 'error'

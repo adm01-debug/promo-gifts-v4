@@ -35,6 +35,7 @@ export function useOptimizationMetrics() {
     queryKey: QUERY_KEY,
     enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 60_000,
+    staleTime: 30_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     queryFn: async (): Promise<OptimizationMetrics> => {
