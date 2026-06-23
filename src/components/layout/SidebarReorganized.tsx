@@ -407,16 +407,24 @@ export const SidebarReorganized = React.memo(
 
     const { data: pendingApprovalCount } = useQuery({
       queryKey: ['pending-discount-approvals-count'],
-      queryFn: async () => {
-        const { count } = await supabase
+      // FIX 2026-06-23 (BUG-SIDEBAR-ABORT): espelhar BUG-DAR-ABORT fix do
+      // DiscountApprovalHeaderBadge.tsx. Sem { signal } + .abortSignal(signal), o React
+      // Query cancela via AbortController ao desmontar mas o Supabase fetch continua —
+      // browser loga "Falha ao carregar Buscar: HEAD ...discount_approval_requests..."
+      // mesmo que o resultado seja ignorado. Com signal, o Supabase cancela cleanly.
+      // FIX: refetchInterval 30_000 → 60_000 — alinha com DiscountApprovalHeaderBadge
+      // (mesma queryKey compartilhada; o intervalo mais curto vencia e causava 2 fetches/min).
+      queryFn: async ({ signal }) => {
+        const { count: rawCount } = await supabase
           // rls-allow: admin-only badge query, guarded by `enabled: isAdmin`
           .from('discount_approval_requests')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-        return count || 0;
+          .eq('status', 'pending')
+          .abortSignal(signal);
+        return rawCount || 0;
       },
       enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto — FIX 2026-06-18 BUG-DAR-401
-      refetchInterval: 30_000,
+      refetchInterval: 60_000, // alinhado com DiscountApprovalHeaderBadge (queryKey compartilhada)
       staleTime: 15_000,
       retry: 0,
       retryOnMount: false,

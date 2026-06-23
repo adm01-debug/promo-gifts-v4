@@ -62,13 +62,17 @@ export function useOptimizationQueue() {
     refetch,
   } = useQuery<OptimizationItem[]>({
     queryKey: QUEUE_KEY,
-    refetchInterval: 10_000,
-    queryFn: async () => {
+    // BUG-OQ-INTERVAL FIX (2026-06-23): respeitar enabled para não poluir o console
+    // com GETs enquanto o auth está carregando. refetchInterval permanece 10s quando
+    // enabled=true pois o painel mostra progresso em tempo real da fila de otimizações.
+    refetchInterval: (query) => (query.state.status === 'success' ? 10_000 : false),
+    queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from('optimization_queue' as never)
         .select('*')
         .order('priority', { ascending: true })
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as OptimizationItem[];
     },

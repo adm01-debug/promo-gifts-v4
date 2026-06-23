@@ -96,6 +96,10 @@ export function useWorkspaceNotifications() {
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);
+  // BUG-HEAD-ABORT FIX (2026-06-23): AbortController para o HEAD de unread count.
+  // Salvo em ref para poder cancelar fetch em voo quando um novo fetch inicia ou
+  // quando o componente desmonta, evitando "Falha ao carregar Buscar: HEAD ..." no console.
+  const headAbortRef = useRef<AbortController | null>(null);
 
   // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): coalesce rapid Realtime events into a
   // single fetch. n8n bulk-imports (e.g., 50 notifications in < 1s) fire 50 Realtime
@@ -239,19 +243,28 @@ export function useWorkspaceNotifications() {
 
         // Also fetch unread count separately to keep badge sync.
         // BUG-HEAD-FALLBACK FIX (2026-06-22): wrapped in separate try/catch.
-        // If the HEAD request fails (503 during Vercel deploy window, network error),
-        // we fall back to deriving count from the already-fetched items instead of
-        // leaving the unread badge stale at its previous value.
+        // BUG-HEAD-ABORT FIX (2026-06-23): usar AbortController para cancelar o HEAD
+        // ao desmontar o componente ou ao iniciar um novo fetch, evitando que o browser
+        // logue "Falha ao carregar Buscar: HEAD ...workspace_notifications..." no console.
+        // O abort é propagado via headAbortRef; o catch já fornece o fallback correto.
+        headAbortRef.current?.abort(); // cancelar HEAD anterior se ainda em voo
+        const headController = new AbortController();
+        headAbortRef.current = headController;
         try {
           const { count: unread, error: unreadErr } = await untypedFrom('workspace_notifications')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .eq('is_read', false);
-          setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
+            .eq('is_read', false)
+            .abortSignal(headController.signal);
+          if (!headController.signal.aborted) {
+            setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
+          }
         } catch {
-          // Network error for HEAD request — derive count from fetched items as fallback.
+          // AbortError (componente desmontou) ou network error — fallback seguro.
           // Uses idx_workspace_notifications_user_unread (user_id, is_read, created_at DESC).
-          setUnreadCount(items.filter((n) => !n.is_read).length);
+          if (!headController.signal.aborted) {
+            setUnreadCount(items.filter((n) => !n.is_read).length);
+          }
         }
 
         lastFetchAtRef.current = Date.now();
@@ -301,7 +314,7 @@ export function useWorkspaceNotifications() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user], // FIX BUG-08: removido notifications.length — usa notificationsLengthRef
-            // FIX BUG-NOTIF-403: rolesLoaded acessado via rolesLoadedRef — não nas deps
+    // FIX BUG-NOTIF-403: rolesLoaded acessado via rolesLoadedRef — não nas deps
   );
 
   // Fetch notifications when filters or page changes
@@ -316,7 +329,17 @@ export function useWorkspaceNotifications() {
     const source: FetchSource = didInitialFetchRef.current ? 'filter-change' : 'initial';
     didInitialFetchRef.current = true;
     fetchNotifications({ source });
-  }, [user, rolesLoaded, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
+  }, [
+    user,
+    rolesLoaded,
+    page,
+    search,
+    category,
+    unreadOnly,
+    dateRange.from,
+    dateRange.to,
+    fetchNotifications,
+  ]);
 
   // Polling every 60s - estavel: fetchNotifications nao recria com notifications.length.
   // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
@@ -374,7 +397,10 @@ export function useWorkspaceNotifications() {
       )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          logger.warn('[useWorkspaceNotifications] realtime channel error — polling interval maintains freshness', { status, err });
+          logger.warn(
+            '[useWorkspaceNotifications] realtime channel error — polling interval maintains freshness',
+            { status, err },
+          );
           fetchNotifications({ silent: true, source: 'mutation' });
         }
       });
@@ -390,9 +416,12 @@ export function useWorkspaceNotifications() {
     };
   }, [user, rolesLoaded, fetchNotifications]);
 
-  // Final summary on unmount
+  // Final summary on unmount + cleanup HEAD abort controller
+  // BUG-HEAD-ABORT FIX (2026-06-23): abortar o HEAD de unread count quando o hook desmonta,
+  // garantindo que não haja fetch em voo após unmount que cause "Falha ao carregar Buscar".
   useEffect(() => {
     return () => {
+      headAbortRef.current?.abort();
       notificationsMetrics.logBadgeBudgetSummary('hook-unmount');
     };
   }, []);
