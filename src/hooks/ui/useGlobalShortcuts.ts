@@ -11,6 +11,8 @@
  * Existing Alt shortcuts (sidebar): Alt+N novo orçamento, Alt+O orçamentos,
  *   Alt+R carrinhos, Alt+P produtos, Alt+F super filtro, Alt+M mockup, Alt+S simulador.
  *   Header: Alt+F favoritos, Alt+C comparar, Alt+T tema.
+ * BUG-9 FIX: Ctrl+Shift+C agora abre o carrinho via onToggleCart (passado por MainLayout).
+ *   Alt+O no CartHeaderButton foi removido — conflitava com Alt+O=Orçamentos do Sidebar.
  */
 import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';

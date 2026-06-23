@@ -204,7 +204,9 @@ export function useGlobalSearch() {
         case 'open_cart':
           setTimeout(() => {
             setVoiceOverlayOpen(false);
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', altKey: true }));
+            // BUG-9 FIX: substituído KeyboardEvent Alt+O (conflitava com Alt+O=Orçamentos)
+            // pelo mecanismo correto: evento customizado 'open-seller-cart'.
+            window.dispatchEvent(new CustomEvent('open-seller-cart'));
           }, 500);
           break;
       }

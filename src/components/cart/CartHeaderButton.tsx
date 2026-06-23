@@ -72,17 +72,11 @@ export function CartHeaderButton() {
     return () => window.removeEventListener('open-seller-cart', handler);
   }, []);
 
-  // Keyboard shortcut: Alt+O to toggle cart
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key.toLowerCase() === 'o') {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  // BUG-9 FIX: Alt+O foi removido — conflitava com Alt+O=Orçamentos no Sidebar.
+  // O atalho correto para abrir o carrinho é Ctrl+Shift+C (registrado em useGlobalShortcuts
+  // e passado via onToggleCart em MainLayout).
+  // Este componente também responde ao evento customizado 'open-seller-cart'
+  // (disparado por QuickQuoteFAB, useGlobalShortcuts→onToggleCart, etc.).
 
   // SAFE context hook — retorna null em vez de lançar erro quando o Provider está ausente.
   // Resolve 21.664 unhandled_error + 5.123 React_Boundary_Error em frontend_telemetry.
@@ -192,7 +186,7 @@ export function CartHeaderButton() {
         </TooltipTrigger>
         <TooltipContent className="border-border bg-card">
           Carrinho de Orçamentos{' '}
-          <kbd className="text-tooltip ml-1.5 rounded bg-muted px-1 py-0.5 font-mono">Alt+O</kbd>
+          <kbd className="text-tooltip ml-1.5 rounded bg-muted px-1 py-0.5 font-mono">Ctrl+Shift+C</kbd>
         </TooltipContent>
       </Tooltip>
 

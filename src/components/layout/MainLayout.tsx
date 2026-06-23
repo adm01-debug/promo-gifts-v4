@@ -45,7 +45,13 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   useScrollLockFix();
   useMobileSidebarFix(() => setSidebarOpen(false), sidebarOpen);
-  useGlobalShortcuts();
+  // BUG-9 FIX: passa onToggleCart → ativa Ctrl+Shift+C para abrir o carrinho.
+  // CartHeaderButton escuta 'open-seller-cart' via window.addEventListener.
+  // Antes era undefined (MainLayout chamava useGlobalShortcuts sem handlers),
+  // tornando Ctrl+Shift+C dead code.
+  useGlobalShortcuts({
+    onToggleCart: () => window.dispatchEvent(new CustomEvent('open-seller-cart')),
+  });
 
   useEffect(() => {
     performanceTracker.mark('main-layout-mounted');
