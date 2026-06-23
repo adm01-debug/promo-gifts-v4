@@ -82,14 +82,19 @@ export function isChunkLoadError(error: unknown): boolean {
 
   if (!message) return false;
 
+  // Use toLowerCase() for case-insensitive matching across browsers
+  // (Firefox may capitalize: 'Error loading...' vs 'error loading...')
+  const msgLower = message.toLowerCase();
+
   return (
-    message.includes('Failed to fetch dynamically imported module') ||
-    message.includes('error loading dynamically imported module') ||
-    message.includes('Loading chunk') ||
-    message.includes('ChunkLoadError') ||
-    message.includes('Importing a module script failed') ||
-    message.includes('Unable to preload CSS') ||
-    /\b(404|502|503|504)\b/.test(message) // 404: Chrome may include status in error.message
+    msgLower.includes('failed to fetch dynamically imported module') ||
+    msgLower.includes('error loading dynamically imported module') ||
+    msgLower.includes('loading chunk') ||
+    msgLower.includes('chunkloaderror') ||
+    msgLower.includes('importing a module script failed') ||
+    msgLower.includes('unable to preload css') ||
+    /\\b(404|502|503|504)\\b/.test(message) // 404: Chrome may include status in error.message
+  );
   );
 }
 
