@@ -79,6 +79,35 @@ test.describe('Carrinhos · limite de 10', () => {
     await expect(detailBtn).toBeEnabled();
     await expect(detailBtn).toHaveAttribute('aria-label', 'Criar novo carrinho');
   });
+
+  test('15 carrinhos (acima do limite) → /carrinhos e detalhe seguem habilitados; só drawer bloqueia', async ({
+    page,
+  }) => {
+    const carts = await bootWithCarts(page, 15);
+
+    // CartsListPage: sem gate, sempre habilitado.
+    await gotoAndSettle(page, '/carrinhos');
+    const listBtn = page.getByTestId('carts-list-new');
+    await expect(listBtn).toBeEnabled();
+    await expect(listBtn).toHaveAttribute('aria-label', 'Criar novo carrinho');
+
+    // SellerCartsPage: sem gate.
+    await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
+    const detailBtn = page.getByTestId('seller-carts-new');
+    await expect(detailBtn).toBeEnabled();
+
+    // Drawer (sidebar): único bloqueio com mensagem SSOT.
+    await gotoAndSettle(page, '/');
+    await page.getByTestId('cart-trigger').click();
+    const drawerBtn = page.getByTestId('cart-tab-new');
+    await expect(drawerBtn).toBeDisabled();
+    await expect(drawerBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_SHORT);
+
+    // Contador visível "15/10" no banner do sidebar.
+    const counter = page.getByTestId('cart-tab-new-counter');
+    await expect(counter).toBeVisible();
+    await expect(counter).toContainText('15');
+    await expect(counter).toContainText('10');
   });
 
   test('11º carrinho → POST bloqueado pelo trigger surfaceia toast SSOT', async ({ page }) => {
