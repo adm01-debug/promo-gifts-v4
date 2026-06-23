@@ -206,12 +206,16 @@ export function useQuoteTemplates() {
 
       try {
         if (input.is_default) {
+          // BUG-TEMPLATE-DUAL-DEFAULT FIX: silent failure here leaves the old template
+          // still marked is_default=true; the newly created one also gets true, giving
+          // the seller two defaults. Log if it fails — non-fatal but worth knowing.
           const resetPayload: TablesUpdate<'quote_templates'> = { is_default: false };
-          await supabase
+          const { error: resetErr } = await supabase
             .from('quote_templates')
             .update(resetPayload)
             .eq('seller_id', user.id)
             .eq('is_default', true);
+          if (resetErr) logger.error('Failed to clear previous default template:', resetErr);
         }
 
         const insertPayload: TablesInsert<'quote_templates'> = {
@@ -265,12 +269,14 @@ export function useQuoteTemplates() {
 
       try {
         if (updates.is_default) {
+          // BUG-TEMPLATE-DUAL-DEFAULT FIX: same silent-failure guard as createTemplate.
           const resetPayload: TablesUpdate<'quote_templates'> = { is_default: false };
-          await supabase
+          const { error: resetErr } = await supabase
             .from('quote_templates')
             .update(resetPayload)
             .eq('seller_id', user.id)
             .eq('is_default', true);
+          if (resetErr) logger.error('Failed to clear previous default template:', resetErr);
         }
 
         const updatePayload: TablesUpdate<'quote_templates'> = {
