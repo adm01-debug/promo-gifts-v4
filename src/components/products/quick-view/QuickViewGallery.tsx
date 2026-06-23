@@ -1,5 +1,11 @@
 /**
  * Image gallery section for ProductQuickView — extracted for modularity
+ *
+ * BUG-SPOT-CORS-QV FIX (2026-06-23):
+ * urlOriginal={currentImage?.url_original} passava a URL bruta spotgifts.com.br
+ * diretamente para OptimizedImage. Quando a imagem Cloudflare falhava, o fallback
+ * tentava carregar a URL diretamente → bloqueado por CORS policy.
+ * Fix: getProxiedImageUrl() envolve url_original antes de passar para OptimizedImage.
  */
 import { ChevronLeft, ChevronRight, Sparkles, Layers, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getCdnUrl, getSrcSet, type ProductImageMeta } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface QuickViewGalleryProps {
   productName: string;
@@ -74,7 +81,7 @@ export function QuickViewGallery({
             sizes="(max-width: 768px) 100vw, 50vw"
             alt={currentAlt}
             blurhash={currentImage?.blurhash}
-            urlOriginal={currentImage?.url_original}
+            urlOriginal={getProxiedImageUrl(currentImage?.url_original) ?? null}
             priority
             className="object-contain p-8"
             containerClassName="h-full w-full"
