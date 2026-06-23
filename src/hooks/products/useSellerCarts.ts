@@ -1,6 +1,6 @@
 /**
  * useSellerCarts - Hook para gerenciar carrinhos de vendedor
- * Persiste no banco de dados, máx 3 carrinhos simultâneos
+ * Persiste no banco de dados, máx MAX_SELLER_CARTS carrinhos simultâneos
  */
 
 import { useMemo } from 'react';
@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+
+/** Teto máximo de carrinhos simultâneos por vendedor (espelha o trigger `enforce_seller_cart_limit`). */
+export const MAX_SELLER_CARTS = 10;
 
 // ============================================
 // TYPES
