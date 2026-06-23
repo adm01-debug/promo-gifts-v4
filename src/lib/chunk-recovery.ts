@@ -28,6 +28,18 @@ const STORAGE_KEY = '__chunk_recovery__';
 const WINDOW_MS = 30_000;
 const MAX_HARD_RELOADS = 2;
 
+/**
+ * URLs confirmadas pelo Service Worker como HTTP 404 pós-deploy.
+ * Populado por sw-register.ts ao receber mensagens SW_STALE_CHUNK.
+ *
+ * probeAsset() verifica este set antes de emitir o request HEAD.
+ * Se a URL estiver aqui, retorna false imediatamente sem rede —
+ * eliminando as mensagens "Falha ao carregar Buscar: HEAD" no DevTools.
+ *
+ * BUG-CR-2 FIX: elimina HEAD failures visíveis no console do browser.
+ */
+export const swConfirmedStaleUrls = new Set<string>();
+
 interface RecoveryState {
   attempts: number;
   firstAt: number;
@@ -103,6 +115,13 @@ export function isChunkLoadError(error: unknown): boolean {
  * Retorna true se o servidor parece OK (status 2xx/3xx), false caso contrário.
  */
 async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
+  // BUG-CR-2 FIX: se SW confirmou 404, skip do HEAD request.
+  // O chunk foi removido intencionalmente (novo deploy); não há motivo para
+  // sondar a rede — isso apenas gera ruído no DevTools do browser.
+  if (swConfirmedStaleUrls.has(url)) {
+    logger.log('[chunk-recovery] probe skipped — SW already confirmed stale:', url);
+    return false;
+  }
   if (typeof fetch === 'undefined') return false;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -239,24 +258,37 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
     NProgress.set(0.8);
     NProgress.start();
 
-    // Sonda opcional: se conseguimos a URL e ela ainda está down,
-    // espera um pouco mais antes de recarregar (back-off curto).
+    // Sonda: distingue 502 transitório de 404 intencional (novo deploy).
+    // Se SW confirmou stale, pula rede + backoff — reload imediato.
     if (url) {
-      const ok = await probeAsset(url);
-      if (!ok) {
-        const backoffMs = 500 * attempts;
-        logger.warn(
-          `[chunk-recovery] asset ainda indisponível, aguardando ${backoffMs}ms antes do reload`,
-        );
-        await new Promise((r) => {
-          setTimeout(r, backoffMs);
-        });
+      const isSwConfirmedStale = swConfirmedStaleUrls.has(url);
+      if (!isSwConfirmedStale) {
+        // URL sem confirmação SW: probar para distinguir 404 de 502/503.
+        const ok = await probeAsset(url);
+        if (!ok) {
+          const backoffMs = 500 * attempts;
+          logger.warn(
+            `[chunk-recovery] asset indisponível, aguardando ${backoffMs}ms antes do reload`,
+          );
+          await new Promise((r) => {
+            setTimeout(r, backoffMs);
+          });
+        }
+      } else {
+        // BUG-CR-2 FIX: SW confirmou 404 — chunk removido pelo deploy.
+        // Reload imediato sem HEAD probe e sem backoff desnecessário.
+        logger.log('[chunk-recovery] SW confirmou chunk stale — reload imediato sem probe');
       }
     }
 
     await hardReload();
     return true;
-  })();
+  })().finally(() => {
+    // BUG-CR-1 FIX: reseta inFlight para permitir nova tentativa de recovery.
+    // Sem isso, botão "Tentar novamente" do ErrorBoundary retorna a promise
+    // já resolvida em vez de iniciar um novo ciclo de recuperação.
+    inFlight = null;
+  });
 
   return inFlight;
 }
