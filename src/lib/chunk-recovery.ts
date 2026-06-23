@@ -93,8 +93,7 @@ export function isChunkLoadError(error: unknown): boolean {
     msgLower.includes('chunkloaderror') ||
     msgLower.includes('importing a module script failed') ||
     msgLower.includes('unable to preload css') ||
-    /\\b(404|502|503|504)\\b/.test(message) // 404: Chrome may include status in error.message
-  );
+    /\b(404|502|503|504)\b/.test(message) // 404: Chrome may include status in error.message
   );
 }
 
