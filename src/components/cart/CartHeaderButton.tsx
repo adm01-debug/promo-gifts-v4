@@ -50,7 +50,20 @@ export function CartHeaderButton() {
   // UI-local: carrinhos que o usuário recolheu explicitamente. Necessário porque
   // o contexto faz fallback automático para carts[0] quando activeCartId === null,
   // o que impediria o usuário de recolher o primeiro carrinho da lista.
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => new Set());
+  // Persistido em localStorage para sobreviver a refresh; sanitizado contra
+  // ids que não existem mais na lista (cart removido/renomeado).
+  const COLLAPSED_STORAGE_KEY = 'seller:collapsed-cart-ids';
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? new Set(parsed.filter((x) => typeof x === 'string')) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   // Listen for FAB "open cart" event
   useEffect(() => {
@@ -107,6 +120,44 @@ export function CartHeaderButton() {
     clearCart,
     restoreItems,
   } = cartContext;
+
+  // Sanitiza collapsedIds: remove ids que não existem mais na lista (cart deletado/renomeado).
+  // Persiste em localStorage para sobreviver a refresh.
+  useEffect(() => {
+    const validIds = new Set(carts.map((c) => c.id));
+    setCollapsedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [carts]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        COLLAPSED_STORAGE_KEY,
+        JSON.stringify(Array.from(collapsedIds)),
+      );
+    } catch {
+      /* quota/safari private mode — ignora silenciosamente */
+    }
+  }, [collapsedIds]);
+
+  // Debug em dev: rastreia activeCartId, fallback e collapsedIds.
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('[CartHeaderButton]', {
+      activeCartId,
+      collapsedIds: Array.from(collapsedIds),
+      fallbackTo: !activeCartId && carts.length > 0 ? carts[0].id : null,
+    });
+  }
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -462,8 +513,10 @@ export function CartHeaderButton() {
                                         : `Expandir carrinho de ${cart.company_name}`
                                     }
                                     aria-expanded={isActive}
+                                    aria-pressed={!isActive}
+                                    data-collapsed={!isActive}
                                     data-testid={`cart-toggle-${cart.id}`}
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-primary/10 hover:text-primary active:scale-90 data-[collapsed=true]:bg-primary/10 data-[collapsed=true]:text-primary"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPendingDeleteId(null);
