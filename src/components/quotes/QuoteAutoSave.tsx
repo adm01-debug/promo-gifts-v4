@@ -54,19 +54,50 @@ export function QuoteAutoSave({
   const storageKey = `${STORAGE_KEY_PREFIX}${quoteId || 'new'}`;
 
   // Cleanup timers on unmount
+  // BUG-H FIX: clear edit-mode localStorage entries on unmount to prevent orphan accumulation
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      // Only clean up edit-mode drafts (quoteId is a real UUID, not 'new').
+      // New-quote drafts are intentionally kept so useAutoSaveQuote can restore them.
+      if (quoteId) {
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && (k === storageKey || k.startsWith(`${storageKey}_v`))) {
+              keysToRemove.push(k);
+            }
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
+        } catch { /* ignore storage errors on unmount */ }
+      }
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteId, storageKey]);
 
-  // Salvar estado inicial para comparação
+  // BUG-J FIX: snapshot initial data AFTER the first real render, not on storageKey change.
+  // Previously, the snapshot was taken synchronously when storageKey changed — before
+  // useAutoSaveQuote could restore state, so the component immediately showed "Alterações
+  // não salvas" even though the data was just restored from localStorage.
+  // Using a one-shot ref flag ensures the snapshot is taken on the second render,
+  // by which time restored state has propagated into props.
+  const initialSnapshottedRef = useRef(false);
   useEffect(() => {
-    initialDataRef.current = JSON.stringify(data);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Reset snapshot gate whenever storageKey changes (e.g. navigating between quotes)
+    initialSnapshottedRef.current = false;
+    initialDataRef.current = null;
   }, [storageKey]);
+
+  useEffect(() => {
+    if (!initialSnapshottedRef.current) {
+      initialSnapshottedRef.current = true;
+      initialDataRef.current = JSON.stringify(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
 
   // Detectar mudanças
   useEffect(() => {

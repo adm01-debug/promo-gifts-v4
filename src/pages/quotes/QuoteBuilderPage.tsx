@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -26,13 +27,14 @@ import {
   FileText,
   Plus,
   Package,
-  
   BookTemplate,
   AlertTriangle,
   Calendar as CalendarIcon,
   Sparkles,
   ExternalLink,
   Info,
+  MessageSquare,
+  Lock,
 } from 'lucide-react';
 // FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
 import { format, addDays, startOfDay } from 'date-fns';
@@ -578,6 +580,52 @@ export default function QuoteBuilderPage() {
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                   </a>
                 )}
+              </div>
+
+              {/* BUG-K FIX: Notes UI — previously only populated via templates */}
+              <div className="space-y-3 rounded-2xl border border-border/50 bg-card p-4">
+                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  Observações
+                </h3>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Para o cliente</Label>
+                  <Textarea
+                    data-testid="quote-notes-input"
+                    value={s.notes || ''}
+                    onChange={(e) => s.setNotes(e.target.value)}
+                    placeholder="Observações visíveis na proposta..."
+                    rows={3}
+                    maxLength={2000}
+                    className="resize-none text-xs"
+                  />
+                  {s.notes && (
+                    <p className="text-right text-[10px] text-muted-foreground">
+                      {s.notes.length}/2000
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Lock className="h-3 w-3" />
+                    Notas internas
+                    <span className="text-[10px] italic">(não aparece na proposta)</span>
+                  </Label>
+                  <Textarea
+                    data-testid="quote-internal-notes-input"
+                    value={s.internalNotes || ''}
+                    onChange={(e) => s.setInternalNotes(e.target.value)}
+                    placeholder="Anotações para uso interno..."
+                    rows={2}
+                    maxLength={2000}
+                    className="resize-none text-xs"
+                  />
+                  {s.internalNotes && (
+                    <p className="text-right text-[10px] text-muted-foreground">
+                      {s.internalNotes.length}/2000
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

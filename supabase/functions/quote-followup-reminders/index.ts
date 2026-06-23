@@ -35,10 +35,12 @@ Deno.serve(async (req) => {
     // Usa sent_at (data em que o status virou 'sent') como referência — não updated_at,
     // pois qualquer edição no orçamento reseta updated_at e zeraria o timer de follow-up.
     // Fallback: quotes sem sent_at preenchido (legados) são ignorados intencionalmente.
+    // BUG-N FIX: include 'viewed' — client opened link but hasn't responded yet;
+    // still needs follow-up after 2 days just as much as 'sent' quotes.
     const { data: quotes, error: qErr } = await supabase
       .from("quotes")
-      .select("id, quote_number, client_name, seller_id, sent_at")
-      .in("status", ["sent"])
+      .select("id, quote_number, client_name, seller_id, sent_at, status")
+      .in("status", ["sent", "viewed"])
       .not("sent_at", "is", null)
       .lte("sent_at", twoDaysAgo)
       .limit(500);
@@ -62,18 +64,28 @@ Deno.serve(async (req) => {
       .gte("created_at", todayStart.toISOString());
     const existingSet = new Set((existing || []).map((e) => e.quote_id));
 
+    // BUG-N FIX: reminder_type and message differ by status:
+    // 'sent'   → client hasn't opened the link yet (no_view)
+    // 'viewed' → client opened but hasn't responded (no_response)
     const toInsert = candidates
       .filter((c) => !existingSet.has(c.id) && c.seller_id)
-      .map((c) => ({
-        quote_id: c.id,
-        seller_id: c.seller_id!,
-        reminder_type: "no_view",
-        scheduled_for: new Date().toISOString(),
-        title: `Orcamento ${c.quote_number} sem visualizacao`,
-        notes: `Cliente ${c.client_name || "--"} ainda nao abriu o link. Considere enviar follow-up.`,
-        is_sent: true,
-        sent_at: new Date().toISOString(),
-      }));
+      .map((c) => {
+        const isViewed = c.status === "viewed";
+        return {
+          quote_id: c.id,
+          seller_id: c.seller_id!,
+          reminder_type: isViewed ? "no_response" : "no_view",
+          scheduled_for: new Date().toISOString(),
+          title: isViewed
+            ? `Orcamento ${c.quote_number} sem resposta`
+            : `Orcamento ${c.quote_number} sem visualizacao`,
+          notes: isViewed
+            ? `Cliente ${c.client_name || "--"} visualizou mas nao respondeu. Considere entrar em contato.`
+            : `Cliente ${c.client_name || "--"} ainda nao abriu o link. Considere enviar follow-up.`,
+          is_sent: true,
+          sent_at: new Date().toISOString(),
+        };
+      });
 
     let inserted = 0;
     if (toInsert.length > 0) {

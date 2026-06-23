@@ -25,6 +25,7 @@ export interface Quote {
   client_company: string | null;
   seller_id: string | null; // FK profiles.id
   status: QuoteStatus;
+  payment_method: string | null;
   subtotal: number | null;
   discount_percent: number | null;
   discount_amount: number | null;
