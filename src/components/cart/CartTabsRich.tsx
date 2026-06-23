@@ -190,7 +190,7 @@ export function CartTabsRich({
               : 'cursor-not-allowed border-border/20 text-muted-foreground/30 opacity-50',
             'text-sm font-bold',
           )}
-          aria-label={canCreateCart ? 'Criar novo carrinho' : 'Limite de 10 carrinhos atingido'}
+          aria-label={canCreateCart ? 'Criar novo carrinho' : SELLER_CART_LIMIT_REACHED_SHORT}
         >
           <div
             className={cn(
