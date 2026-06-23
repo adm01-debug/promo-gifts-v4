@@ -54,12 +54,12 @@ test.describe('Carrinhos · limite de 10', () => {
     await expect(detailBtn).toHaveAttribute('aria-label', 'Criar novo carrinho');
   });
 
-  test('10 carrinhos → botão novo bloqueado com tooltip SSOT em drawer, lista e detalhe', async ({
+  test('10 carrinhos → apenas drawer bloqueia (lista e detalhe permanecem livres)', async ({
     page,
   }) => {
     const carts = await bootWithCarts(page, MAX_SELLER_CARTS);
 
-    // Drawer usa SHORT (aria-label/title)
+    // Drawer usa SHORT (aria-label/title) — única superfície com gate de UI.
     await gotoAndSettle(page, '/');
     await page.getByTestId('cart-trigger').click();
     const drawerBtn = page.getByTestId('cart-tab-new');
@@ -67,19 +67,18 @@ test.describe('Carrinhos · limite de 10', () => {
     await expect(drawerBtn).toHaveAttribute('aria-label', SELLER_CART_LIMIT_REACHED_SHORT);
     await expect(drawerBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_SHORT);
 
-    // CartsListPage usa MESSAGE (longo)
+    // CartsListPage: SEM gate (limite só no banner do sidebar).
     await gotoAndSettle(page, '/carrinhos');
     const listBtn = page.getByTestId('carts-list-new');
-    await expect(listBtn).toBeDisabled();
-    await expect(listBtn).toHaveAttribute('aria-label', SELLER_CART_LIMIT_REACHED_MESSAGE);
-    await expect(listBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_MESSAGE);
+    await expect(listBtn).toBeEnabled();
+    await expect(listBtn).toHaveAttribute('aria-label', 'Criar novo carrinho');
 
-    // SellerCartsPage usa MESSAGE (longo)
+    // SellerCartsPage: SEM gate.
     await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
     const detailBtn = page.getByTestId('seller-carts-new');
-    await expect(detailBtn).toBeDisabled();
-    await expect(detailBtn).toHaveAttribute('aria-label', SELLER_CART_LIMIT_REACHED_MESSAGE);
-    await expect(detailBtn).toHaveAttribute('title', SELLER_CART_LIMIT_REACHED_MESSAGE);
+    await expect(detailBtn).toBeEnabled();
+    await expect(detailBtn).toHaveAttribute('aria-label', 'Criar novo carrinho');
+  });
   });
 
   test('11º carrinho → POST bloqueado pelo trigger surfaceia toast SSOT', async ({ page }) => {
