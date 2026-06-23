@@ -1151,7 +1151,18 @@ export function useQuoteBuilderState() {
         }
 
         if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
-          await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
+          // BUG-APPROVAL-CATCH FIX: wrap requestApproval in its own try-catch.
+          // If this fails, the quote is already saved as pending_approval, so we
+          // warn the user rather than letting the exception silently bubble up.
+          try {
+            await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
+          } catch (approvalError) {
+            logger.error('Erro ao criar solicitação de aprovação:', approvalError);
+            toast.warning(
+              'Orçamento salvo, mas a solicitação de aprovação não pôde ser criada. Contate o administrador.',
+              { duration: 8000 },
+            );
+          }
         }
 
         if (result?.id) {
@@ -1164,6 +1175,14 @@ export function useQuoteBuilderState() {
         if (newVersion != null) quoteVersionRef.current = newVersion;
 
         return result?.updated_at ?? undefined;
+      } catch (error) {
+        // BUG-SAVE-CATCH FIX: handleSaveQuote previously had no catch block — any
+        // network error, RLS denial or DB error from createQuote/updateQuote would
+        // propagate uncaught, crashing the component with no user feedback.
+        logger.error('Erro ao salvar orçamento:', error);
+        toast.error('Erro ao salvar orçamento. Tente novamente.', {
+          description: error instanceof Error ? error.message : 'Erro desconhecido',
+        });
       } finally {
         isSavingRef.current = false;
       }

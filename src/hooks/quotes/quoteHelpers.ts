@@ -63,6 +63,16 @@ export function calculateQuoteTotals(quote: Partial<Quote>, items: QuoteItem[]) 
     return sum + baseTotal + persTotal;
   }, 0);
 
+  // BUG-NAN-GUARD FIX: NaN item prices (data corruption, API response gap) cause
+  // realSubtotal to be NaN, which then silently propagates through totals → DB.
+  // round2() would return 0 for NaN inputs (hiding the bug), so we throw explicitly
+  // so the UI can surface a clear error instead of persisting wrong totals.
+  if (!Number.isFinite(realSubtotal)) {
+    throw new Error(
+      `Subtotal dos itens inválido: ${realSubtotal}. Verifique se todos os itens possuem preço e quantidade válidos.`,
+    );
+  }
+
   const rawMarkup = quote.negotiation_markup_percent || 0;
 
   // BUG-NEW-03 FIX: previously used Math.min(50, ...) which silently clamped

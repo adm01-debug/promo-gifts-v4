@@ -146,7 +146,15 @@ export function QuoteBuilderSummaryColumn({
   const staleIndexes = useMemo(() => {
     const set = new Set<number>();
     items.forEach((item, idx) => {
-      if (item.price_confirmed_at) return;
+      // BUG-STALE-CONFIRM FIX (summary): a confirmation is only valid when it
+      // postdates the last price update. Without this check, a re-priced item
+      // with an OLD price_confirmed_at would never show the badge in the summary
+      // column, causing stale prices to reach the client silently.
+      if (
+        item.price_confirmed_at &&
+        (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+      )
+        return;
       const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
       if (f.shouldWarn) set.add(idx);
     });
