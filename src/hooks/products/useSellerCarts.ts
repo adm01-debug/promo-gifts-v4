@@ -395,9 +395,9 @@ export function useSellerCarts() {
         .select()
         .single();
       if (cartErr) {
-        if (cartErr.code === '23514' || cartErr.message?.includes('Limite de 3')) {
+        if (cartErr.code === '23514' || /Limite de \d+ carrinhos?/i.test(cartErr.message ?? '')) {
           throw new Error(
-            'Você já tem 3 carrinhos ativos. Finalize ou exclua um antes de duplicar.',
+            `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de duplicar.`,
           );
         }
         throw cartErr;
