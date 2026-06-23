@@ -1,0 +1,35 @@
+{
+  "generatedAt": "2026-06-23T13:48:12.587Z",
+  "projects": "chromium-smoke",
+  "totals": {
+    "total": 52,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 51,
+    "duration": 24314
+  },
+  "features": [
+    {
+      "feature": "uncategorized",
+      "total": 52,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 51,
+      "duration": 24314,
+      "failures": [
+        {
+          "feature": "uncategorized",
+          "file": "flows/20-all-features-smoke.spec.ts",
+          "project": "chromium-smoke",
+          "title": "flows/20-all-features-smoke.spec.ts › @smoke Rotas públicas (gate de CI) › 90 · Tela de login renderiza",
+          "status": "failed",
+          "duration": 16572,
+          "location": "flows/20-all-features-smoke.spec.ts:253",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed",
+          "e2eName": null
+        }
+      ]
+    }
+  ],
+  "e2eNames": []
+}
