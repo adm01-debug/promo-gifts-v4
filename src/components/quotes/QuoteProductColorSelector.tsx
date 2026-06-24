@@ -41,6 +41,7 @@ export function QuoteProductColorSelector({
   onBack,
 }: QuoteProductColorSelectorProps) {
   const { data: variants, isLoading } = useExternalVariantStock(product.id);
+  const [pendingOutOfStock, setPendingOutOfStock] = useState<ExternalVariantStock | null>(null);
 
   const sortedVariants = useMemo(() => {
     if (!variants) return [];
