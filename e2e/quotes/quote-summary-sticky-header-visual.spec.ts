@@ -83,8 +83,6 @@ for (const vp of VIEWPORTS) {
     test(`baseline antes do scroll — ${vp.name}`, async ({ page }) => {
       const header = page.getByTestId('quote-summary-header');
       await expect(header).toBeVisible();
-      // mascarar áreas que mudam por dado (valores monetários no footer não
-      // aparecem aqui, mas o tooltip pode flutuar — fechamos para evitar flake).
       await page.mouse.move(0, 0);
       await expect(header).toHaveScreenshot(
         `summary-header-initial-${vp.name}.png`,
@@ -104,5 +102,28 @@ for (const vp of VIEWPORTS) {
         { animations: 'disabled', maxDiffPixelRatio: 0.02 },
       );
     });
+
+    test(`par de botões Criar + Rascunho — ${vp.name}`, async ({ page }) => {
+      const criar = page
+        .locator('[data-testid="quote-save-final"], [data-testid="quote-request-approval-button"]')
+        .first();
+      const rascunho = page.getByTestId('quote-save-draft');
+      await expect(criar).toBeVisible();
+      await expect(rascunho).toBeVisible();
+
+      // Container pai imediato dos dois botões (o flex row criado no rodapé).
+      const pair = criar.locator('xpath=..');
+      await expect(pair).toBeVisible();
+
+      // Garante estado neutro (sem hover/focus) p/ baseline estável.
+      await page.mouse.move(0, 0);
+      await page.keyboard.press('Escape').catch(() => {});
+
+      await expect(pair).toHaveScreenshot(
+        `summary-action-buttons-${vp.name}.png`,
+        { animations: 'disabled', maxDiffPixelRatio: 0.02 },
+      );
+    });
   });
 }
+
