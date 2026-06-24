@@ -23,9 +23,9 @@ const TITLE = 'Resumo das Configurações';
 const WINDOW_BEFORE = 400;
 const WINDOW_AFTER = 2200;
 
-const GUARDED_FILES = [
-  'src/components/products/ProductCustomizationOptions.tsx',
-];
+const GUARDED_FILES = process.env.SUMMARY_GATE_FILES
+  ? process.env.SUMMARY_GATE_FILES.split(',').map((s) => s.trim()).filter(Boolean)
+  : ['src/components/products/ProductCustomizationOptions.tsx'];
 
 const REQUIRED = [
   /\bbg-success\b/,
