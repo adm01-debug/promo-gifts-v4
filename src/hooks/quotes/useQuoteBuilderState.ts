@@ -10,13 +10,10 @@ import {
   useDiscountApproval,
   useQuoteItems,
   useQuotes,
-  useQuoteTemplates,
   useSellerDiscountLimits,
   type Quote,
   type QuoteItem,
   type QuoteItemPersonalization,
-  type QuoteTemplate,
-  type QuoteTemplateItem,
 } from '@/hooks/quotes';
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
