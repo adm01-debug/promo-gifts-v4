@@ -230,6 +230,20 @@ export function QuoteBuilderSummaryColumn({
     setCollapsedItemKeys((prev) => toggleCollapsedItem(quoteId, prev, key));
   };
 
+  // Toggle global: recolhe todos os itens abertos (ou expande todos se já estão todos recolhidos).
+  const allItemKeys = useMemo(
+    () => items.map((it, idx) => it.id ?? `__idx_${idx}`),
+    [items],
+  );
+  const allCollapsed =
+    allItemKeys.length > 0 && allItemKeys.every((k) => collapsedItemKeys.has(k));
+  const toggleAllCollapsed = () => {
+    const next = allCollapsed ? new Set<string>() : new Set<string>(allItemKeys);
+    setCollapsedItemKeys(next);
+    saveCollapsedItems(quoteId, next);
+  };
+
+
   // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
