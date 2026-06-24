@@ -117,13 +117,6 @@ vi.mock('@/components/quotes/CompanyContactSelector', () => ({
   CompanyContactSelector: () => <div data-testid="company-contact-selector" />,
 }));
 
-vi.mock('@/components/quotes/QuoteTemplateSelector', () => ({
-  QuoteTemplateSelector: () => <div data-testid="quote-template-selector" />,
-}));
-
-vi.mock('@/components/quotes/SaveAsTemplateButton', () => ({
-  SaveAsTemplateButton: () => <div data-testid="save-as-template-button" />,
-}));
 
 vi.mock('@/components/quotes/QuoteBuilderStepper', () => ({
   QuoteBuilderStepper: () => <div data-testid="quote-builder-stepper" />,
