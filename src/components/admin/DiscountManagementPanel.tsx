@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import {
   useDiscountApproval,
   useSellerDiscountLimits,
@@ -89,10 +90,16 @@ export function DiscountManagementPanel() {
   }>({ open: false, request: null, action: null, notes: '' });
 
   const fetchSellers = useCallback(async () => {
-    const { data } = await supabase
+    // BUG-DISCOUNTPANEL-SELLERS-SELECT-SILENT-FAIL FIX: { data } without error check —
+    // RLS failure silently kept sellers list empty, showing no vendedores in the panel.
+    const { data, error: sellersErr } = await supabase
       .from('profiles')
       .select('user_id, full_name, email, role')
       .order('full_name');
+    if (sellersErr) {
+      logger.warn('[DiscountManagementPanel] fetchSellers failed:', sellersErr);
+      return;
+    }
     setSellers((data || []) as SellerProfile[]);
   }, []);
 

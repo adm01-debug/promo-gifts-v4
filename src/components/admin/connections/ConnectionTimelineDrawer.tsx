@@ -96,11 +96,21 @@ export function ConnectionTimelineDrawer({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      // Busca conexões deste tipo
-      const { data: conns } = await supabase
+      // BUG-CONNTIMEDRAWER-CONNS-SELECT-SILENT-FAIL FIX: error not checked — RLS failure
+      // silently set ids=[] causing drawer to show empty-state instead of an error.
+      const { data: conns, error: connsErr } = await supabase
         .from('external_connections')
         .select('id')
         .eq('type', type);
+      if (connsErr) {
+        logger.error('[connections.timeline] failed to load connections', {
+          type,
+          code: connsErr.code ?? 'unknown',
+          message: maskSensitiveText(connsErr.message) ?? 'unknown',
+        });
+        if (!cancelled) setLoading(false);
+        return;
+      }
       const ids = (conns ?? []).map((c) => c.id);
       if (ids.length === 0) {
         if (!cancelled) {

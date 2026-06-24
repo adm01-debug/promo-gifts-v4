@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle2, ImageOff, FolderX, Tag } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface QualityMetrics {
   totalSyncRuns: number;
@@ -24,11 +25,14 @@ export function CatalogQualityDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase
+        // BUG-CATALOGQUALITY-SYNCLOG-SELECT-SILENT-FAIL FIX: { data } without error check —
+        // a failed SELECT produced null data and metrics showed health 100% / all zeros.
+        const { data, error: syncErr } = await supabase
           .from('product_sync_logs')
           .select('status, records_processed, records_failed, created_at')
           .order('created_at', { ascending: false })
           .limit(50);
+        if (syncErr) throw syncErr;
 
         const rows = data || [];
         setMetrics({
@@ -38,6 +42,9 @@ export function CatalogQualityDashboard() {
           totalRecordsProcessed: rows.reduce((sum, r) => sum + (r.records_processed || 0), 0),
           totalRecordsFailed: rows.reduce((sum, r) => sum + (r.records_failed || 0), 0),
         });
+      } catch (err) {
+        logger.error('[CatalogQualityDashboard] Failed to load sync metrics:', err);
+        // metrics stays null → component returns null (invisible, better than fake 0% data)
       } finally {
         setIsLoading(false);
       }

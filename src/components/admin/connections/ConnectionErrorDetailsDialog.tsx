@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import type { LastTestInfo } from './LastTestLine';
 import type { ErrorKind } from '@/hooks/intelligence';
@@ -149,27 +150,36 @@ export function ConnectionErrorDetailsDialog({
       try {
         let q = supabase.from('external_connections').select('id').eq('type', connectionType);
         if (envKey) q = q.eq('env_key', envKey);
-        const { data: conns } = await q;
+        // BUG-CONNERRDETAIL-CONNS-SELECT-SILENT-FAIL FIX: error not checked — RLS failure
+        // silently set ids=[] and the dialog showed no detail despite a real DB failure.
+        const { data: conns, error: connsErr } = await q;
+        if (connsErr) throw connsErr;
         let ids = (conns ?? []).map((c) => c.id);
         if (ids.length === 0 && envKey) {
-          const { data: fallbackConns } = await supabase
+          // BUG-CONNERRDETAIL-FALLBACK-SELECT-SILENT-FAIL FIX
+          const { data: fallbackConns, error: fallbackErr } = await supabase
             .from('external_connections')
             .select('id')
             .eq('type', connectionType);
+          if (fallbackErr) throw fallbackErr;
           ids = (fallbackConns ?? []).map((c) => c.id);
         }
         if (ids.length === 0) {
           if (!cancelled) setDetail(null);
           return;
         }
-        const { data } = await supabase
+        // BUG-CONNERRDETAIL-HIST-SELECT-SILENT-FAIL FIX
+        const { data, error: histErr } = await supabase
           .from('connection_test_history')
           .select('id,tested_at,success,latency_ms,status_code,error_message,error_kind')
           .in('connection_id', ids)
           .eq('success', false)
           .order('tested_at', { ascending: false })
           .limit(1);
+        if (histErr) throw histErr;
         if (!cancelled) setDetail(((data ?? [])[0] as DetailRow) ?? null);
+      } catch (err) {
+        logger.error('[connection-details] failed to load error details', err);
       } finally {
         if (!cancelled) setLoading(false);
       }
