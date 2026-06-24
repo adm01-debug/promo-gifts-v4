@@ -40,9 +40,13 @@ export function GroupInheritance({
   const copyGroupRulesToProduct = async () => {
     setIsCopying(true);
     try {
-      const { data: groupComponents } = await untypedFrom('product_group_components')
+      // BUG-GROUPINHERITANCE-GROUPCOMPONENTS-SELECT-SILENT-FAIL FIX: error not checked —
+      // a failed SELECT would produce null, incorrectly showing "no components" toast
+      // instead of the actual error, leaving nothing to copy.
+      const { data: groupComponents, error: gcErr } = await untypedFrom('product_group_components')
         .select('*')
         .eq('product_group_id', productMembership.product_group_id);
+      if (gcErr) throw gcErr;
 
       if (!groupComponents?.length) {
         toast.error('Grupo não possui componentes configurados');
@@ -72,9 +76,12 @@ export function GroupInheritance({
           .single();
         if (compError) throw compError;
 
-        const { data: groupLocations } = await untypedFrom('product_group_locations')
+        // BUG-GROUPINHERITANCE-GROUPLOCATIONS-SELECT-SILENT-FAIL FIX: error not checked —
+        // a failed SELECT silently skipped location copy, producing components without areas.
+        const { data: groupLocations, error: glErr } = await untypedFrom('product_group_locations')
           .select('*')
           .eq('group_component_id', gc.id);
+        if (glErr) throw glErr;
         if (groupLocations?.length) {
           for (const gl of groupLocations) {
             const { data: newLoc, error: locError } = await untypedFrom(
@@ -94,9 +101,12 @@ export function GroupInheritance({
               .single();
             if (locError) throw locError;
 
-            const { data: groupTechs } = await untypedFrom('product_group_location_techniques')
+            // BUG-GROUPINHERITANCE-GROUPTECHS-SELECT-SILENT-FAIL FIX: error not checked —
+            // a failed SELECT silently skipped technique copy, creating locations without printing methods.
+            const { data: groupTechs, error: gtErr } = await untypedFrom('product_group_location_techniques')
               .select('*')
               .eq('group_location_id', gl.id);
+            if (gtErr) throw gtErr;
             if (groupTechs?.length) {
               for (const gt of groupTechs) {
                 const tech = techniques?.find((t) => t.id === gt.technique_id);

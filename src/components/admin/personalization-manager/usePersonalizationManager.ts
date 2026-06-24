@@ -445,9 +445,13 @@ export function usePersonalizationManager() {
     if (!selectedProduct || !productMembership?.product_group_id) return;
     setIsCopying(true);
     try {
-      const { data: groupComponents } = await untypedFrom('product_group_components')
+      // BUG-PERSMAN-GROUPCOMPONENTS-SELECT-SILENT-FAIL FIX: error not checked —
+      // a failed SELECT would produce null data, mistakenly showing "no components"
+      // toast instead of the actual error, and leaving nothing to copy.
+      const { data: groupComponents, error: gcErr } = await untypedFrom('product_group_components')
         .select('*')
         .eq('product_group_id', productMembership.product_group_id);
+      if (gcErr) throw gcErr;
       if (!groupComponents?.length) {
         toast.error('Grupo não possui componentes configurados');
         return;
@@ -473,9 +477,12 @@ export function usePersonalizationManager() {
           .select()
           .single();
         if (compError) throw compError;
-        const { data: groupLocations } = await untypedFrom('product_group_locations')
+        // BUG-PERSMAN-GROUPLOCATIONS-SELECT-SILENT-FAIL FIX: error not checked —
+        // a failed SELECT silently skipped locations, producing components without areas.
+        const { data: groupLocations, error: glErr } = await untypedFrom('product_group_locations')
           .select('*')
           .eq('group_component_id', gc.id);
+        if (glErr) throw glErr;
         if (groupLocations?.length) {
           for (const gl of groupLocations) {
             const { data: newLoc, error: locError } = await untypedFrom(
@@ -494,9 +501,12 @@ export function usePersonalizationManager() {
               .select()
               .single();
             if (locError) throw locError;
-            const { data: groupTechniques } = await untypedFrom('product_group_location_techniques')
+            // BUG-PERSMAN-GROUPTECHS-SELECT-SILENT-FAIL FIX: error not checked —
+            // a failed SELECT silently skipped techniques, creating locations without printing methods.
+            const { data: groupTechniques, error: gtErr } = await untypedFrom('product_group_location_techniques')
               .select('*')
               .eq('group_location_id', gl.id);
+            if (gtErr) throw gtErr;
             if (groupTechniques?.length) {
               for (const gt of groupTechniques) {
                 const technique = techniques?.find((t) => t.id === gt.technique_id);
