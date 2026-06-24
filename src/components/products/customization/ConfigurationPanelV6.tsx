@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,7 @@ export function ConfigurationPanelV6({
   const [showConfirmError, setShowConfirmError] = useState(false);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const isLocked = isConfirmed && !editing;
 
   const larguraNum = parseFloat(largura) || 0;
@@ -156,16 +157,31 @@ export function ConfigurationPanelV6({
           isConfirmed ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-secondary/30',
         )}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {isConfirmed && !editing ? 'Gravação confirmada' : 'Configure a gravação'}
           </p>
-          {isConfirmed && !editing && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-primary">
-              <Check className="h-3 w-3" /> Adicionada ao orçamento
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {isConfirmed && !editing && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-primary">
+                <Check className="h-3 w-3" /> Adicionada ao orçamento
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setCollapsed((v) => !v)}
+              aria-label={collapsed ? 'Expandir' : 'Recolher'}
+              aria-expanded={!collapsed}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              data-testid="customization-collapse-toggle"
+            >
+              {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
+
+        {!collapsed && (<>
+
 
         {/* Dimension inputs (conditional) */}
         {technique.usa_dimensao && (
@@ -399,6 +415,7 @@ export function ConfigurationPanelV6({
             )}
           </div>
         </div>
+        </>)}
       </div>
     </>
   );
