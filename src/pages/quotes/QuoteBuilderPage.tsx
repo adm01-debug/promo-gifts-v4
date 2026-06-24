@@ -150,8 +150,8 @@ export default function QuoteBuilderPage() {
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 sm:space-y-4 sm:px-4 sm:pb-24 sm:pt-4 lg:px-6 lg:pb-28 xl:px-8">
         <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer" />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4 lg:shrink-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
               <FileText className="h-5 w-5" />
             </div>
@@ -171,13 +171,19 @@ export default function QuoteBuilderPage() {
               </p>
             </div>
           </div>
+
+          {/* LAYOUT-FIX: stepper compactado e alinhado à direita do título no desktop
+              para reduzir a altura do header e liberar espaço vertical de trabalho. */}
+          <div className="min-w-0 flex-1 lg:max-w-3xl lg:ml-auto">
+            <QuoteBuilderStepper
+              completedSteps={s.completedSteps}
+              activeStep={s.activeStep}
+              onStepClick={s.goToStep}
+              compact
+            />
+          </div>
         </div>
 
-        <QuoteBuilderStepper
-          completedSteps={s.completedSteps}
-          activeStep={s.activeStep}
-          onStepClick={s.goToStep}
-        />
 
 
         <div data-testid="quote-builder-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
