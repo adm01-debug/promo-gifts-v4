@@ -43,3 +43,12 @@ scripts/sentinel-check.sh
 scripts/check-tsc-baseline.mjs
 scripts/check-eslint-baseline.mjs
 scripts/seo-sanity-check.mjs
+# ============================================================
+# Resumo do Orçamento — botão "Recolher / Expandir" + invariantes a11y
+# Lovable já reverteu (2026-06) tooltip dinâmico, aria-expanded,
+# data-open-count, focus-visible:ring-primary e motion-reduce.
+# Alterações destes arquivos exigem revisão manual.
+# ============================================================
+src/components/quotes/QuoteBuilderSummaryColumn.tsx
+src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts
+e2e/quotes/quote-summary-collapse-all.spec.ts
