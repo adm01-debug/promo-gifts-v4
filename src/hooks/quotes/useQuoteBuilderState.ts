@@ -1155,8 +1155,6 @@ export function useQuoteBuilderState() {
     setNegotiationMarkup,
     notes,
     setNotes,
-    internalNotes,
-    setInternalNotes,
     items,
     setItems,
     quoteNumber,
