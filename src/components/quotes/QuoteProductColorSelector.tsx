@@ -99,19 +99,8 @@ export function QuoteProductColorSelector({
         </Badge>
       </div>
 
-      {/* Aviso inline: cor é obrigatória — clique em uma cor disponível para adicionar */}
-      <div
-        role="status"
-        data-testid="color-required-hint"
-        className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground"
-      >
-        <strong className="font-semibold">Selecione uma cor</strong> na grade abaixo para
-        adicionar o produto ao orçamento. Cores com estoque zerado estão desabilitadas.
-      </div>
-
       {/* Grid de cores — cada tile funciona como botão "adicionar nesta cor".
-          Tiles sem estoque ficam desabilitados (aria-disabled) para impedir avanço sem
-          cor válida. */}
+          Tiles sem estoque pedem confirmação antes de adicionar. */}
       <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
         {sortedVariants.map((variant) => {
           const stock = variant.stock_quantity ?? 0;
@@ -119,7 +108,7 @@ export function QuoteProductColorSelector({
           const isLowStock = stock > 0 && stock < 100;
           const colorLabel = variant.color_name || 'Sem nome';
           const ariaLabel = isOutOfStock
-            ? `Cor ${colorLabel} indisponível — estoque zerado`
+            ? `Adicionar cor ${colorLabel} mesmo com estoque zerado (requer confirmação)`
             : `Adicionar na cor ${colorLabel}, ${stock} em estoque`;
 
           return (
@@ -127,19 +116,22 @@ export function QuoteProductColorSelector({
               key={variant.id}
               type="button"
               onClick={() => {
-                if (isOutOfStock) return;
+                if (isOutOfStock) {
+                  const ok = window.confirm(
+                    `O estoque da cor "${colorLabel}" está zerado no fornecedor.\n\nTem certeza que deseja adicioná-la ao orçamento?`,
+                  );
+                  if (!ok) return;
+                }
                 onSelect(variant);
               }}
-              disabled={isOutOfStock}
-              aria-disabled={isOutOfStock}
               aria-label={ariaLabel}
-              data-testid={`color-variant-tile${isOutOfStock ? '-disabled' : ''}`}
+              data-testid={`color-variant-tile${isOutOfStock ? '-out-of-stock' : ''}`}
               className={cn(
-                'relative flex items-center gap-2.5 rounded-lg border p-3 text-left transition-all',
+                'relative flex items-center gap-2.5 rounded-lg border p-3 text-left transition-all cursor-pointer',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 isOutOfStock
-                  ? 'cursor-not-allowed border-border bg-muted/30 opacity-60'
-                  : 'cursor-pointer border-border bg-card hover:border-primary/50 hover:bg-accent',
+                  ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/70 hover:bg-destructive/10'
+                  : 'border-border bg-card hover:border-primary/50 hover:bg-accent',
               )}
             >
               {/* Thumbnail ou swatch */}
