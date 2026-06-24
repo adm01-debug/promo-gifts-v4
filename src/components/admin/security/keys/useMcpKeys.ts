@@ -12,6 +12,7 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { logger } from '@/lib/logger';
 
 export interface McpKeyRow {
   id: string;
@@ -99,18 +100,24 @@ export function useMcpKeys() {
     const ids = [...new Set((keys ?? []).map((k) => k.created_by).filter(Boolean))];
     let creators = new Map<string, { email: string | null; name: string | null }>();
     if (ids.length > 0) {
-      const { data: profiles } = await supabase
+      // BUG-MCPKEYS-PROFILES-SELECT-SILENT-FAIL FIX: { data: profiles } without error check —
+      // RLS failure silently left creator_email/creator_name null on all keys.
+      const { data: profiles, error: profErr } = await supabase
         .from('profiles')
         .select('user_id, email, full_name')
         .in('user_id', ids);
-      creators = new Map(
-        (profiles ?? [])
-          .filter(
-            (p): p is { user_id: string; email: string | null; full_name: string | null } =>
-              p.user_id !== null,
-          )
-          .map((p) => [p.user_id, { email: p.email, name: p.full_name }]),
-      );
+      if (profErr) {
+        logger.warn('[useMcpKeys] profile enrichment failed — creator info unavailable:', profErr);
+      } else {
+        creators = new Map(
+          (profiles ?? [])
+            .filter(
+              (p): p is { user_id: string; email: string | null; full_name: string | null } =>
+                p.user_id !== null,
+            )
+            .map((p) => [p.user_id, { email: p.email, name: p.full_name }]),
+        );
+      }
     }
 
     const enriched: McpKeyRow[] = (keys ?? []).map((k) => {
