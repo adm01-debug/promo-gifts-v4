@@ -26,6 +26,8 @@ import {
 import {
   AlertTriangle,
   Edit,
+  GripVertical,
+  Layers,
   Loader2,
   Package,
   Save,
@@ -36,6 +38,23 @@ import {
   CheckCircle2,
   X,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import type { QuoteItem } from '@/hooks/quotes';
 import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
