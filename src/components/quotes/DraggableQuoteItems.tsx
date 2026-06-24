@@ -73,7 +73,7 @@ function SortableItem({
   renderPersonalization,
   formatCurrency,
 }: SortableItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id || `item-${index}`,
   });
 
