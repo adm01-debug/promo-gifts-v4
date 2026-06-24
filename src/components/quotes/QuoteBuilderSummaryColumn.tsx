@@ -72,6 +72,11 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatColors, formatArea } from '@/lib/quotes/personalizationSummary';
+import {
+  loadCollapsedItems,
+  toggleCollapsedItem,
+  pruneCollapsedItems,
+} from '@/lib/quotes/collapsedItemsStorage';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { persistItemsOrder } from '@/services/quoteItemsReorder';
@@ -202,35 +207,23 @@ export function QuoteBuilderSummaryColumn({
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  // Chave por orçamento — evita misturar estado de colapso entre orçamentos
-  // distintos (e isola "novo" de orçamentos salvos). Mesmo padrão do card
-  // "Condições" (ver conditions-collapse-persistence.test.ts).
-  const collapseStorageKey = useMemo(
-    () => `quote-builder:collapsed-item-keys:${quoteId ?? 'new'}`,
-    [quoteId],
+  // Persistência do colapso por orçamento via SSOT `collapsedItemsStorage`.
+  // - Chave única por quoteId (ou "new" para rascunho) — isola estado entre orçamentos.
+  // - `pruneCollapsedItems` limpa ids zumbis quando o usuário remove um produto.
+  const [collapsedItemKeys, setCollapsedItemKeys] = useState<Set<string>>(() =>
+    loadCollapsedItems(quoteId),
   );
-  const [collapsedItemKeys, setCollapsedItemKeys] = useState<Set<string>>(new Set());
-  // Recarrega quando o quoteId muda (ex.: transição "new" → id real após salvar).
+  // Recarrega ao trocar de orçamento (transição "new" → id real após salvar).
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(collapseStorageKey);
-      setCollapsedItemKeys(raw ? new Set(JSON.parse(raw) as string[]) : new Set());
-    } catch {
-      setCollapsedItemKeys(new Set());
-    }
-  }, [collapseStorageKey]);
+    setCollapsedItemKeys(loadCollapsedItems(quoteId));
+  }, [quoteId]);
+  // Prune: remove do storage chaves de itens que não existem mais (exclusão).
+  useEffect(() => {
+    const currentIds = items.map((it, idx) => it.id ?? `__idx_${idx}`);
+    setCollapsedItemKeys((prev) => pruneCollapsedItems(quoteId, prev, currentIds));
+  }, [items, quoteId]);
   const toggleItemCollapsed = (key: string) => {
-    setCollapsedItemKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      try {
-        window.localStorage.setItem(collapseStorageKey, JSON.stringify([...next]));
-      } catch {
-        /* noop */
-      }
-      return next;
-    });
+    setCollapsedItemKeys((prev) => toggleCollapsedItem(quoteId, prev, key));
   };
 
   // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
