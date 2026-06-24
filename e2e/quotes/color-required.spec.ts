@@ -72,28 +72,35 @@ test.describe('Orçamento — seleção de cor obrigatória', () => {
     }
   });
 
-  test('backend rejeita INSERT em quote_items sem color_name', async ({ page }) => {
-    await loginAs(page, 'seller');
+  for (const colorName of [null, '', '   '] as const) {
+    test(`backend rejeita INSERT em quote_items com color_name=${JSON.stringify(colorName)}`, async ({
+      page,
+    }) => {
+      await loginAs(page, 'seller');
 
-    const result = await page.evaluate(async () => {
-      const mod = await import('/src/integrations/supabase/client.ts');
-      const { error } = await mod.supabase
-        .from('quote_items')
-        .insert({
-          quote_id: '00000000-0000-0000-0000-000000000000',
-          product_id: '00000000-0000-0000-0000-000000000000',
-          product_name: 'Teste sem cor',
-          quantity: 1,
-          unit_price: 1,
-          subtotal: 1,
-          color_name: null,
-        } as never);
-      return { code: error?.code ?? null, message: error?.message ?? null };
+      const result = await page.evaluate(async (value) => {
+        const mod = await import('/src/integrations/supabase/client.ts');
+        const { error } = await mod.supabase
+          .from('quote_items')
+          .insert({
+            quote_id: '00000000-0000-0000-0000-000000000000',
+            product_id: '00000000-0000-0000-0000-000000000000',
+            product_name: 'Teste sem cor',
+            quantity: 1,
+            unit_price: 1,
+            subtotal: 1,
+            color_name: value,
+          } as never);
+        return { code: error?.code ?? null, message: error?.message ?? null };
+      }, colorName);
+
+      // Resposta consistente: check_violation (constraint) OU RLS (sem permissão).
+      // Ambos provam que o backend recusa — nunca aceita.
+      expect(['23514', '42501']).toContain(result.code);
+      if (result.code === '23514') {
+        expect(result.message).toMatch(/quote_items_color_required/i);
+      }
+      expect(result.message).toBeTruthy();
     });
-
-    expect(['23514', '42501']).toContain(result.code);
-    if (result.code === '23514') {
-      expect(result.message).toMatch(/quote_items_color_required/i);
-    }
-  });
+  }
 });
