@@ -639,7 +639,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Product Cards — única área rolável no desktop */}
           <div
             data-testid="quote-summary-items-scroll"
-            className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+            className="lg:min-h-[140px] lg:flex-1 [@media(min-height:700px)]:lg:min-h-0 [@media(min-height:700px)]:lg:overflow-y-auto"
           >
             <div className="px-4">
               <div className="space-y-3 pr-1">
