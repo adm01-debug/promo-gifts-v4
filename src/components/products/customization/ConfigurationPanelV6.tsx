@@ -67,7 +67,33 @@ export function ConfigurationPanelV6({
   const [showConfirmError, setShowConfirmError] = useState(false);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+
+  // Persistência do estado de colapso por técnica (localStorage)
+  const collapseStorageKey = `customization-collapsed:${technique.technique_id}`;
+  const [collapsed, setCollapsedState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(collapseStorageKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setCollapsed = useCallback(
+    (next: boolean | ((v: boolean) => boolean)) => {
+      setCollapsedState((prev) => {
+        const value = typeof next === 'function' ? (next as (v: boolean) => boolean)(prev) : next;
+        try {
+          window.localStorage.setItem(collapseStorageKey, value ? '1' : '0');
+        } catch {
+          /* ignore */
+        }
+        return value;
+      });
+    },
+    [collapseStorageKey],
+  );
+
+  const contentId = useId();
   const isLocked = isConfirmed && !editing;
 
   const larguraNum = parseFloat(largura) || 0;
