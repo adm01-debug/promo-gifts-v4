@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -702,62 +703,80 @@ export function QuoteBuilderSummaryColumn({
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex shrink-0 items-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      aria-label="Editar"
-                                      className={cn(
-                                        'h-6 w-6',
-                                        isActive ? 'text-primary' : 'text-muted-foreground',
-                                      )}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveItemIndex(idx);
-                                      }}
-                                    >
-                                      <Edit className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      aria-label="Excluir"
-                                      data-testid={`quote-summary-delete-${idx}`}
-                                      className="h-6 w-6 text-destructive hover:bg-destructive/10"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeItem(idx);
-                                        if (activeItemIndex === idx) setActiveItemIndex(null);
-                                        else if (
-                                          activeItemIndex !== null &&
-                                          activeItemIndex > idx
-                                        )
-                                          setActiveItemIndex(activeItemIndex - 1);
-                                      }}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      aria-label={isCollapsed ? 'Expandir' : 'Recolher'}
-                                      aria-expanded={!isCollapsed}
-                                      aria-pressed={isCollapsed}
-                                      data-collapsed={isCollapsed}
-                                      data-testid={`quote-summary-toggle-${idx}`}
-                                      title={isCollapsed ? 'Expandir card' : 'Recolher card'}
-                                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleItemCollapsed(collapseKey);
-                                      }}
-                                    >
-                                      {isCollapsed ? (
-                                        <ChevronDown className="h-3.5 w-3.5" />
-                                      ) : (
-                                        <ChevronUp className="h-3.5 w-3.5" />
-                                      )}
-                                    </Button>
+                                  <div className="flex shrink-0 items-center gap-0.5">
+                                    <TooltipProvider delayDuration={200}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Editar"
+                                            className={cn(
+                                              'h-5 w-5 rounded-md',
+                                              isActive ? 'text-primary' : 'text-muted-foreground/70 hover:text-foreground',
+                                            )}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveItemIndex(idx);
+                                            }}
+                                          >
+                                            <Edit className="h-3 w-3" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="text-xs">Ajustar este item</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Excluir"
+                                            data-testid={`quote-summary-delete-${idx}`}
+                                            className="h-5 w-5 rounded-md text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              removeItem(idx);
+                                              if (activeItemIndex === idx) setActiveItemIndex(null);
+                                              else if (
+                                                activeItemIndex !== null &&
+                                                activeItemIndex > idx
+                                              )
+                                                setActiveItemIndex(activeItemIndex - 1);
+                                            }}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="text-xs">Remover do orçamento</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label={isCollapsed ? 'Expandir' : 'Recolher'}
+                                            aria-expanded={!isCollapsed}
+                                            aria-pressed={isCollapsed}
+                                            data-collapsed={isCollapsed}
+                                            data-testid={`quote-summary-toggle-${idx}`}
+                                            className="h-5 w-5 rounded-md text-muted-foreground/70 hover:text-foreground"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleItemCollapsed(collapseKey);
+                                            }}
+                                          >
+                                            {isCollapsed ? (
+                                              <ChevronDown className="h-3 w-3" />
+                                            ) : (
+                                              <ChevronUp className="h-3 w-3" />
+                                            )}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="text-xs">
+                                          {isCollapsed ? 'Ver detalhes' : 'Ocultar detalhes'}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                 </div>
                                 {!isCollapsed && (
