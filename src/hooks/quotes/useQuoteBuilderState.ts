@@ -1106,7 +1106,6 @@ export function useQuoteBuilderState() {
       negotiationMarkup,
       realDiscountPercent,
       notes,
-      internalNotes,
       validUntil,
       paymentMethod,
       paymentTerms,
