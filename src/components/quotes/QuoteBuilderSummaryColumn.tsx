@@ -202,6 +202,30 @@ export function QuoteBuilderSummaryColumn({
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [collapsedItemKeys, setCollapsedItemKeys] = useState<Set<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem('quote-builder:collapsed-item-keys');
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const toggleItemCollapsed = (key: string) => {
+    setCollapsedItemKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        window.localStorage.setItem(
+          'quote-builder:collapsed-item-keys',
+          JSON.stringify([...next]),
+        );
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
   const dndSensors = useSensors(
