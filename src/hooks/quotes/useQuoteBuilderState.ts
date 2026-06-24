@@ -515,7 +515,6 @@ export function useQuoteBuilderState() {
             setValidityDays(syncValidityDaysFromDate(quote.valid_until));
           }
           setNotes(quote.notes || '');
-          setInternalNotes(quote.internal_notes || '');
           setQuoteNumber(quote.quote_number || '');
           setCurrentStatus(quote.status);
           if (quote.client_name) {
