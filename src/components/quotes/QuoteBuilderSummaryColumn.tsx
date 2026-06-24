@@ -712,7 +712,7 @@ export function QuoteBuilderSummaryColumn({
                                             size="icon"
                                             aria-label="Editar"
                                             className={cn(
-                                              'h-4 w-4 rounded',
+                                              'h-3 w-3 rounded-sm',
                                               isActive ? 'text-primary' : 'text-muted-foreground/70 hover:text-foreground',
                                             )}
                                             onClick={(e) => {
@@ -720,7 +720,7 @@ export function QuoteBuilderSummaryColumn({
                                               setActiveItemIndex(idx);
                                             }}
                                           >
-                                            <Edit className="h-2.5 w-2.5" />
+                                            <Edit className="h-2 w-2" />
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent side="top" className="text-xs">Ajustar este item</TooltipContent>
@@ -732,7 +732,7 @@ export function QuoteBuilderSummaryColumn({
                                             size="icon"
                                             aria-label="Excluir"
                                             data-testid={`quote-summary-delete-${idx}`}
-                                            className="h-4 w-4 rounded text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                            className="h-3 w-3 rounded-sm text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               removeItem(idx);
@@ -744,7 +744,7 @@ export function QuoteBuilderSummaryColumn({
                                                 setActiveItemIndex(activeItemIndex - 1);
                                             }}
                                           >
-                                            <Trash2 className="h-2.5 w-2.5" />
+                                            <Trash2 className="h-2 w-2" />
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent side="top" className="text-xs">Remover do orçamento</TooltipContent>
@@ -759,16 +759,16 @@ export function QuoteBuilderSummaryColumn({
                                             aria-pressed={isCollapsed}
                                             data-collapsed={isCollapsed}
                                             data-testid={`quote-summary-toggle-${idx}`}
-                                            className="h-4 w-4 rounded text-muted-foreground/70 hover:text-foreground"
+                                            className="h-3 w-3 rounded-sm text-muted-foreground/70 hover:text-foreground"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               toggleItemCollapsed(collapseKey);
                                             }}
                                           >
                                             {isCollapsed ? (
-                                              <ChevronDown className="h-2.5 w-2.5" />
+                                              <ChevronDown className="h-2 w-2" />
                                             ) : (
-                                              <ChevronUp className="h-2.5 w-2.5" />
+                                              <ChevronUp className="h-2 w-2" />
                                             )}
                                           </Button>
                                         </TooltipTrigger>
