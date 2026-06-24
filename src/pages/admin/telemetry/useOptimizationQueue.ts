@@ -305,10 +305,12 @@ export function useOptimizationQueue() {
     if (!ok) return false;
 
     // 3) Marca o item original como 'skipped' para limpar a UI.
-    await supabase
+    // BUG-OPTQUEUE-REQUEUE-SKIP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: skipErr } = await supabase
       .from('optimization_queue' as never)
       .update({ status: 'skipped', error: `${target.error ?? ''} (re-enfileirado)` } as never)
       .eq('id', target.id);
+    if (skipErr) logger.warn('[optimization-queue] Failed to mark item as skipped:', skipErr);
     invalidate();
 
     // 4) Dispara o auto-runner imediatamente.
