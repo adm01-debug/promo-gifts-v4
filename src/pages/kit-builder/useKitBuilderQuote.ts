@@ -47,7 +47,7 @@ export function useKitBuilderQuote() {
         total: pricing.total,
         negotiation_markup_percent: 0,
         notes: `Kit: ${kitMetadataNote}`,
-        internal_notes: `Criado pelo Kit Builder. Quantidade de kits: ${kitQuantity}.`,
+        // internal_notes removido: campo descontinuado na UI.
         tags: {
           source: 'kit-builder',
           kit_name: kitLabel,
