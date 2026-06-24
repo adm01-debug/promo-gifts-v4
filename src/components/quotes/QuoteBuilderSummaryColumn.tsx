@@ -72,6 +72,11 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatColors, formatArea } from '@/lib/quotes/personalizationSummary';
+import {
+  loadCollapsedItems,
+  toggleCollapsedItem,
+  pruneCollapsedItems,
+} from '@/lib/quotes/collapsedItemsStorage';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { persistItemsOrder } from '@/services/quoteItemsReorder';
