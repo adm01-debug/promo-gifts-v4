@@ -990,7 +990,8 @@ export function QuoteBuilderSummaryColumn({
 
           {/* Discount */}
           {items.length > 0 && (
-            <div className="space-y-2.5 px-4 pt-3">
+            <div className="space-y-2.5 border-t border-border/50 bg-card/95 px-4 pt-3 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85">
+
               <div className="flex items-center gap-2">
                 <TooltipProvider delayDuration={200}>
                   {(() => {
@@ -1151,7 +1152,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Footer — sticky bottom do scroll container */}
           <div
             data-testid="quote-builder-summary-footer"
-            className="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-10 mt-3 shrink-0 space-y-2 border-t border-border/50 bg-card/95 px-4 pb-3 pt-3 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85"
+            className="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-10 mt-3 shrink-0 space-y-2 bg-card/95 px-4 pb-3 pt-3 backdrop-blur supports-[backdrop-filter]:bg-card/85"
           >
             <div className="flex items-center justify-between text-[11px] uppercase tracking-tight text-muted-foreground">
               <span>Subtotal</span>
