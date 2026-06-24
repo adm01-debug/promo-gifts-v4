@@ -359,7 +359,7 @@ export function ProductCustomizationOptions({
         {pricesRef.current.size > 0 && (
           <div className="mt-6 border-t border-border/60 pt-4 animate-in fade-in slide-in-from-bottom-2">
             <div className="mb-3 flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <div className="h-1.5 w-1.5 rounded-full bg-success" />
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-foreground">
                 Resumo das Configurações
               </h4>
@@ -369,10 +369,10 @@ export function ProductCustomizationOptions({
               {Array.from(pricesRef.current.values()).map((item) => (
                 <div
                   key={item.locationCode}
-                  className="flex items-start justify-between rounded-lg border border-primary/10 bg-primary/5 p-2.5"
+                  className="flex items-start justify-between rounded-lg border border-success/20 bg-success/5 p-2.5"
                 >
                   <div className="space-y-0.5">
-                    <p className="mb-1 text-[10px] font-bold uppercase leading-none text-primary">
+                    <p className="mb-1 text-[10px] font-bold uppercase leading-none text-success">
                       {item.locationName}
                     </p>
                     <p className="text-xs font-semibold text-foreground">{item.techniqueName}</p>
@@ -390,7 +390,8 @@ export function ProductCustomizationOptions({
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] uppercase text-muted-foreground">Total Local</p>
-                    <p className="text-xs font-bold text-primary">
+                    <p className="text-xs font-bold text-success">
+
                       {item.price?.total_cobrado?.toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
