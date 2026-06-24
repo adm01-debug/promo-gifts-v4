@@ -1,5 +1,5 @@
 /**
- * DraggableQuoteItems — Lista de itens do orçamento.
+ * QuoteItemsList — Lista de itens do orçamento.
  *
  * NOTA: o nome do componente é histórico. Reordenação por drag-and-drop foi
  * removida porque cada orçamento trata um produto por vez (tiragem, gravação,
@@ -19,7 +19,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 
 import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 
-interface DraggableQuoteItemsProps {
+interface QuoteItemsListProps {
   items: QuoteItem[];
   onUpdateQuantity: (index: number, quantity: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
@@ -235,7 +235,7 @@ function QuoteItemRow({
   );
 }
 
-export function DraggableQuoteItems({
+export function QuoteItemsList({
   items,
   onUpdateQuantity,
   onUpdatePrice,
@@ -245,7 +245,7 @@ export function DraggableQuoteItems({
   expandedItems = new Set(),
   renderPersonalization,
   formatCurrency,
-}: DraggableQuoteItemsProps) {
+}: QuoteItemsListProps) {
   if (items.length === 0) {
     return (
       <div

@@ -1,5 +1,5 @@
 /**
- * Testes — DraggableQuoteItems
+ * Testes — QuoteItemsList
  *
  * Garantem que:
  *  - Não há handle de arrasto renderizado no card (sem GripVertical, sem
@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { DraggableQuoteItems } from '../DraggableQuoteItems';
+import { QuoteItemsList } from '../QuoteItemsList';
 import type { QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 const items: QuoteItem[] = [
@@ -43,9 +43,9 @@ const items: QuoteItem[] = [
   } as unknown as QuoteItem,
 ];
 
-function renderList(extra?: Partial<React.ComponentProps<typeof DraggableQuoteItems>>) {
+function renderList(extra?: Partial<React.ComponentProps<typeof QuoteItemsList>>) {
   return render(
-    <DraggableQuoteItems
+    <QuoteItemsList
       items={items}
       onUpdateQuantity={() => {}}
       onUpdatePrice={() => {}}
@@ -56,7 +56,7 @@ function renderList(extra?: Partial<React.ComponentProps<typeof DraggableQuoteIt
   );
 }
 
-describe('DraggableQuoteItems — sem drag-and-drop', () => {
+describe('QuoteItemsList — sem drag-and-drop', () => {
   it('não renderiza handle de arrasto nos cards', () => {
     const { container } = renderList();
     expect(screen.queryByLabelText(/arrastar/i)).toBeNull();
@@ -82,7 +82,7 @@ describe('DraggableQuoteItems — sem drag-and-drop', () => {
 
   it('o componente não importa @dnd-kit nem expõe API de reorder (gate estático)', () => {
     const source = readFileSync(
-      resolve(__dirname, '..', 'DraggableQuoteItems.tsx'),
+      resolve(__dirname, '..', 'QuoteItemsList.tsx'),
       'utf8',
     );
     expect(source).not.toMatch(/@dnd-kit\//);

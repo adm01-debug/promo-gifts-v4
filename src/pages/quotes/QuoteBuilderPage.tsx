@@ -45,7 +45,7 @@ import { QuoteProductCustomization } from '@/components/quotes/QuoteProductCusto
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
-import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
+import { QuoteItemsList } from '@/components/quotes/QuoteItemsList';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
 import { QuoteBuilderSkeleton } from '@/components/quotes/QuoteBuilderSkeleton';
@@ -631,7 +631,7 @@ export default function QuoteBuilderPage() {
                       const idx = s.activeItemIndex;
                       return (
                         <div className="space-y-3">
-                          <DraggableQuoteItems
+                          <QuoteItemsList
                             items={[item]}
                             onUpdateQuantity={(_, qty) => s.updateItemQuantity(idx, qty)}
                             onUpdatePrice={(_, price) => s.updateItemPrice(idx, price)}
