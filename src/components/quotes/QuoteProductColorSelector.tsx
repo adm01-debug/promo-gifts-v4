@@ -4,10 +4,20 @@
  * Inclui suporte a size_code quando disponível.
  */
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ArrowLeft, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
@@ -31,6 +41,7 @@ export function QuoteProductColorSelector({
   onBack,
 }: QuoteProductColorSelectorProps) {
   const { data: variants, isLoading } = useExternalVariantStock(product.id);
+  const [pendingOutOfStock, setPendingOutOfStock] = useState<ExternalVariantStock | null>(null);
 
   const sortedVariants = useMemo(() => {
     if (!variants) return [];
@@ -99,31 +110,37 @@ export function QuoteProductColorSelector({
         </Badge>
       </div>
 
-      {/* Opção sem cor específica */}
-      <button
-        data-testid="product-add-without-color"
-        onClick={() => onSelect(null)}
-        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border p-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/50"
-      >
-        <div className="h-8 w-8 shrink-0 rounded-full border border-border bg-gradient-to-br from-destructive/80 via-success/80 to-info/80" />
-        <span>Adicionar sem cor específica</span>
-      </button>
-
-      {/* Grid de cores */}
+      {/* Grid de cores — cada tile funciona como botão "adicionar nesta cor".
+          Tiles sem estoque pedem confirmação antes de adicionar. */}
       <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
         {sortedVariants.map((variant) => {
           const stock = variant.stock_quantity ?? 0;
           const isOutOfStock = stock === 0;
           const isLowStock = stock > 0 && stock < 100;
+          const colorLabel = variant.color_name || 'Sem nome';
+          const ariaLabel = isOutOfStock
+            ? `Adicionar cor ${colorLabel} mesmo com estoque zerado (requer confirmação)`
+            : `Adicionar na cor ${colorLabel}, ${stock} em estoque`;
 
           return (
             <button
               key={variant.id}
-              onClick={() => onSelect(variant)}
+              type="button"
+              onClick={() => {
+                if (isOutOfStock) {
+                  setPendingOutOfStock(variant);
+                  return;
+                }
+                onSelect(variant);
+              }}
+              aria-label={ariaLabel}
+              data-testid={`color-variant-tile${isOutOfStock ? '-out-of-stock' : ''}`}
               className={cn(
-                'relative flex items-center gap-2.5 rounded-lg border p-3 text-left transition-all',
-                'hover:border-primary/50 hover:bg-accent',
-                isOutOfStock ? 'border-border bg-muted/30 opacity-60' : 'border-border bg-card',
+                'relative flex items-center gap-2.5 rounded-lg border p-3 text-left transition-all cursor-pointer',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                isOutOfStock
+                  ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/70 hover:bg-destructive/10'
+                  : 'border-border bg-card hover:border-primary/50 hover:bg-accent',
               )}
             >
               {/* Thumbnail ou swatch */}
@@ -150,7 +167,7 @@ export function QuoteProductColorSelector({
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium">
-                  {variant.color_name || 'Sem nome'}
+                  {colorLabel}
                   {variant.size_code && (
                     <span className="ml-1 text-muted-foreground">— {variant.size_code}</span>
                   )}
@@ -178,6 +195,44 @@ export function QuoteProductColorSelector({
           );
         })}
       </div>
+
+      <AlertDialog
+        open={pendingOutOfStock !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingOutOfStock(null);
+        }}
+      >
+        <AlertDialogContent data-testid="out-of-stock-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Estoque zerado no fornecedor
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O estoque da cor{' '}
+              <strong className="text-foreground">
+                {pendingOutOfStock?.color_name || 'selecionada'}
+              </strong>{' '}
+              está zerado no fornecedor. Você tem certeza que quer adicioná-la ao orçamento?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="out-of-stock-confirm-cancel">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="out-of-stock-confirm-accept"
+              onClick={() => {
+                const v = pendingOutOfStock;
+                setPendingOutOfStock(null);
+                if (v) onSelect(v);
+              }}
+            >
+              Adicionar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

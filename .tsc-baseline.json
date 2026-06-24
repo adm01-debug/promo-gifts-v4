@@ -1,10 +1,8 @@
 {
   "generatedAt": "2026-06-23T21:35:00.000Z",
   "description": "Baseline de erros TypeScript no CI (node_modules cache pode divergir do local). Falha apenas em REGRESSÃO (nova combinação file:rule ou contagem maior).",
-  "totalErrors": 24,
+  "totalErrors": 15,
   "counts": {
-    "src/components/admin/products/sections/ProductEngravingSection.tsx": { "TS2551": 5, "TS2339": 3 },
-    "src/components/admin/products/sections/engraving/useEngravingWizard.ts": { "TS1117": 1 },
     "src/components/products/ProductTableView.tsx": { "TS2322": 1 },
     "src/hooks/inventory/useSupplierReliabilityServer.ts": { "TS2589": 1, "TS2769": 1, "TS2345": 1, "TS2352": 1 },
     "src/hooks/products/useProducts.ts": { "TS2345": 1, "TS2554": 1 },
