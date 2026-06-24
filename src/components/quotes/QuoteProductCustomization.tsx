@@ -9,16 +9,10 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { CheckCircle2, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ProductCustomizationOptions } from '@/components/products/ProductCustomizationOptions';
 import type { QuoteItemPersonalization } from '@/hooks/quotes';
 import type { PersonalizationItem, CustomizationPriceResponseV6 } from '@/types/customization';
 
-function fmt(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
 
 interface QuoteProductCustomizationProps {
   productId: string;
