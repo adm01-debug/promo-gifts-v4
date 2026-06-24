@@ -1018,22 +1018,47 @@ export function QuoteBuilderSummaryColumn({
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <Select
-                  value={discountType}
-                  onValueChange={(v) => handleDiscountTypeChange(v as 'amount' | 'percent')}
-                >
-                  <SelectTrigger
-                    data-testid="quote-discount-type-select"
-                    className="h-8 w-16 text-xs"
-                    aria-label="Tipo de desconto"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percent">%</SelectItem>
-                    <SelectItem value="amount">R$</SelectItem>
-                  </SelectContent>
-                </Select>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <Select
+                          value={discountType}
+                          onValueChange={(v) => handleDiscountTypeChange(v as 'amount' | 'percent')}
+                        >
+                          <SelectTrigger
+                            data-testid="quote-discount-type-select"
+                            className="h-8 w-16 text-xs"
+                            aria-label="Tipo de desconto — clique para alternar entre % e R$"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percent">%</SelectItem>
+                            <SelectItem value="amount">R$</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="start" className="max-w-[260px] text-xs leading-relaxed">
+                      <p className="font-semibold mb-1">Como aplicar o desconto</p>
+                      <ul className="space-y-1 text-muted-foreground">
+                        <li>
+                          <span className="font-medium text-foreground">%</span> — percentual sobre o subtotal (ex.: 5 = 5%).
+                        </li>
+                        <li>
+                          <span className="font-medium text-foreground">R$</span> — valor fixo em reais (ex.: 50,00).
+                        </li>
+                      </ul>
+                      {maxDiscountPercent !== null && maxDiscountPercent !== undefined && (
+                        <p className="mt-2 border-t border-border/40 pt-1.5 text-[11px]">
+                          Seu limite sem aprovação do gestor:{' '}
+                          <span className="font-bold text-foreground">{maxDiscountPercent}%</span>.
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <div className="flex-1">
                   <CurrencyInput
                     data-testid="quote-discount-input"
