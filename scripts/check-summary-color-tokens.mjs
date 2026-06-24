@@ -34,12 +34,13 @@ const REQUIRED = [
   /\btext-success\b/,
 ];
 
+// Cobre token puro (`bg-primary`) e variantes com opacidade (`bg-primary/10`)
 const FORBIDDEN = [
-  { re: /\bborder-primary\/\d+/, label: 'border-primary/*' },
-  { re: /\bbg-primary\/\d+/, label: 'bg-primary/*' },
-  { re: /\btext-primary\b/, label: 'text-primary' },
-  { re: /\bborder-accent\/\d+/, label: 'border-accent/*' },
-  { re: /\bbg-accent\/\d+/, label: 'bg-accent/*' },
+  { re: /\bborder-primary(\/\d+)?\b/, label: 'border-primary[/*]' },
+  { re: /\bbg-primary(\/\d+)?\b/, label: 'bg-primary[/*]' },
+  { re: /\btext-primary(-foreground)?\b/, label: 'text-primary*' },
+  { re: /\bborder-accent(\/\d+)?\b/, label: 'border-accent[/*]' },
+  { re: /\bbg-accent(\/\d+)?\b/, label: 'bg-accent[/*]' },
   { re: /\btext-accent(-foreground)?\b/, label: 'text-accent*' },
 ];
 
