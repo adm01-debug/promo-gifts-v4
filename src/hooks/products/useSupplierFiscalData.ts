@@ -148,6 +148,9 @@ export function useSupplierFiscalData(
           .eq('supplier_id', supplierId)
           .in('variant_id', variantIds);
 
+        // BUG-FISCALDATA-VSS-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+        // A query failure would silently fall through to branch inheritance, giving wrong data.
+        if (vssResult.error) throw vssResult.error;
         if (vssResult.data?.length) {
           // Pick the VSS record whose variant appears earliest in the priority order
           const vssByVariantId = new Map<string, VSSRecord>(
@@ -175,7 +178,9 @@ export function useSupplierFiscalData(
               .select(BRANCH_SELECT)
               .eq('id', vss.supplier_branch_id)
               .limit(1);
-            if (branchResult.data?.length) {
+            // BUG-FISCALDATA-BRANCH-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+            if (branchResult.error) logger.warn('[useSupplierFiscalData] branch fetch failed (non-fatal):', branchResult.error);
+            else if (branchResult.data?.length) {
               branchData = branchResult.data[0];
             }
           } catch (err) {
