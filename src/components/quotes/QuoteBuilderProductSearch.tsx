@@ -57,7 +57,7 @@ export function QuoteBuilderProductSearch({
         }
       }}
     >
-      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col gap-4">
+      <DialogContent className="flex max-h-[85vh] max-w-[33.6rem] flex-col gap-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
