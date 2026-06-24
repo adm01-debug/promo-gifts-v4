@@ -873,11 +873,11 @@ export function QuoteBuilderSummaryColumn({
                                         />
                                       </div>
                                     )}
-                                  </>
+                                  </div>
                                 )}
                               </div>
                               {!isCollapsed && item.personalizations && item.personalizations.length > 0 && (
-                                <div className="px-3 pb-3 pt-0">
+                                <div className="animate-fade-in px-3 pb-3 pt-0 motion-reduce:animate-none">
                                   <div className="mb-1.5 flex items-center justify-between">
                                     <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                                       Gravações ({item.personalizations.length})
