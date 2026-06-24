@@ -494,7 +494,6 @@ export function useQuoteBuilderState() {
           setValidityDays(syncValidityDaysFromDate(saved.validUntil));
         }
         if (saved.notes) setNotes(saved.notes);
-        if (saved.internalNotes) setInternalNotes(saved.internalNotes);
       }
     },
   });
