@@ -990,7 +990,8 @@ export function QuoteBuilderSummaryColumn({
 
           {/* Discount */}
           {items.length > 0 && (
-            <div className="space-y-2.5 px-4 pt-3">
+            <div className="space-y-2.5 border-t border-border/50 bg-card/95 px-4 pt-3 shadow-[0_-16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85">
+
               <div className="flex items-center gap-2">
                 <TooltipProvider delayDuration={200}>
                   {(() => {
