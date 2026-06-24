@@ -283,7 +283,7 @@ export function useQuotes() {
           shipping_cost: original.shipping_cost,
           // BUG-NEW-01 FIX: preserve negotiation_markup_percent when duplicating.
           negotiation_markup_percent: original.negotiation_markup_percent ?? 0,
-          internal_notes: `Duplicado de ${original.quote_number}`,
+          // internal_notes removido: campo descontinuado na UI (apenas observações vão na proposta).
           valid_until: original.valid_until,
         },
         items,
