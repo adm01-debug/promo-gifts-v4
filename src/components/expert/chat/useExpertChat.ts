@@ -361,7 +361,6 @@ export function useExpertChat({
             client_id: clientId || null,
             client_name: clientName || 'Sem cliente',
             notes: proposalContent.slice(0, 2000),
-            internal_notes: 'Gerado pelo Flow - Assistente Pessoal',
           })
           .select('id, quote_number')
           .single();

@@ -162,7 +162,6 @@ export function useQuoteBuilderState() {
   const [discountValue, setDiscountValue] = useState(0);
   const [negotiationMarkup, setNegotiationMarkup] = useState(0);
   const [notes, setNotes] = useState('');
-  const [internalNotes, setInternalNotes] = useState('');
   const {
     items,
     setItems,
@@ -455,7 +454,6 @@ export function useQuoteBuilderState() {
       shippingType,
       shippingCost,
       notes,
-      internalNotes,
       validUntil,
     },
     onRestore: (saved) => {
@@ -496,7 +494,6 @@ export function useQuoteBuilderState() {
           setValidityDays(syncValidityDaysFromDate(saved.validUntil));
         }
         if (saved.notes) setNotes(saved.notes);
-        if (saved.internalNotes) setInternalNotes(saved.internalNotes);
       }
     },
   });
@@ -518,7 +515,6 @@ export function useQuoteBuilderState() {
             setValidityDays(syncValidityDaysFromDate(quote.valid_until));
           }
           setNotes(quote.notes || '');
-          setInternalNotes(quote.internal_notes || '');
           setQuoteNumber(quote.quote_number || '');
           setCurrentStatus(quote.status);
           if (quote.client_name) {
@@ -1015,7 +1011,6 @@ export function useQuoteBuilderState() {
           discount_amount: discountType === 'amount' ? discountAmount : 0,
           negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
           notes: notes || undefined,
-          internal_notes: internalNotes || undefined,
           valid_until: validUntil || undefined,
           payment_method: paymentMethod || undefined,
           payment_terms: paymentTerms || undefined,
@@ -1111,7 +1106,6 @@ export function useQuoteBuilderState() {
       negotiationMarkup,
       realDiscountPercent,
       notes,
-      internalNotes,
       validUntil,
       paymentMethod,
       paymentTerms,
@@ -1161,8 +1155,6 @@ export function useQuoteBuilderState() {
     setNegotiationMarkup,
     notes,
     setNotes,
-    internalNotes,
-    setInternalNotes,
     items,
     setItems,
     quoteNumber,

@@ -82,8 +82,6 @@ vi.mock('@/hooks/quotes', () => ({
     setContactInfo: vi.fn(),
     notes: '',
     setNotes: vi.fn(),
-    internalNotes: '',
-    setInternalNotes: vi.fn(),
     quoteNumber: '',
   })),
 }));
