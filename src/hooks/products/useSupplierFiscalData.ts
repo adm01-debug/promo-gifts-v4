@@ -281,6 +281,10 @@ export function useSupplierFiscalData(
           .eq('variant_id', variantId)
           .limit(1);
 
+        // BUG-FISCAL-EXISTING-SELECT-SILENT-FAIL FIX: error not checked — could proceed to INSERT
+        // when VSS exists, causing a unique constraint violation.
+        if (existingResult.error) throw existingResult.error;
+
         const payload = {
           cst: input.cst || null,
           cfop: input.cfop || null,
@@ -306,7 +310,9 @@ export function useSupplierFiscalData(
               .select('organization_id')
               .eq('supplier_id', supplierId)
               .limit(1);
-            if (orgResult.data?.length) {
+            // BUG-FISCAL-ORG-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+            if (orgResult.error) logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', orgResult.error);
+            else if (orgResult.data?.length) {
               organizationId = orgResult.data[0].organization_id;
             }
           } catch (e) {
@@ -353,6 +359,9 @@ export function useSupplierFiscalData(
         .eq('variant_id', variantId)
         .limit(1);
 
+      // BUG-FISCAL-REVERT-SELECT-SILENT-FAIL FIX: error not checked — silent success on query failure
+      // would mislead callers into thinking the revert succeeded when VSS still exists.
+      if (vssResult.error) throw vssResult.error;
       if (vssResult.data?.length) {
         // BUG-FISCAL-DELETE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
         const { error: deleteErr } = await untypedFrom('variant_supplier_sources')
