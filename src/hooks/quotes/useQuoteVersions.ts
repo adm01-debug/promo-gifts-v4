@@ -209,7 +209,7 @@ export function useQuoteVersions(quoteId?: string) {
             delivery_time: original.delivery_time,
             shipping_type: original.shipping_type,
             shipping_cost: original.shipping_cost,
-            internal_notes: original.internal_notes,
+            // internal_notes removido: campo descontinuado (apenas notes vai na proposta).
             valid_until: original.valid_until,
           },
           items,
