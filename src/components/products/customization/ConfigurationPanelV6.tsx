@@ -218,7 +218,7 @@ export function ConfigurationPanelV6({
           )}
         >
           <div className="min-h-0 overflow-hidden">
-            <div className="space-y-4 pt-4">
+            <div className="space-y-4">
 
 
 
