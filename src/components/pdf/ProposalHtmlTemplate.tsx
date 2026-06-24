@@ -32,6 +32,7 @@ import {
 
 export interface ProposalItemPersonalization {
   technique_name: string;
+  location_name?: string;
   material?: string;
   colors_count?: number;
   width_cm?: number;
