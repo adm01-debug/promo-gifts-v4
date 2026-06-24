@@ -66,8 +66,6 @@ vi.mock('@/hooks/quotes', () => ({
     setShippingType: vi.fn(),
     shippingCost: 0,
     setShippingCost: vi.fn(),
-    templates: [],
-    applyTemplate: vi.fn(),
     productSearchOpen: false,
     setProductSearchOpen: vi.fn(),
     productSearch: '',
@@ -86,9 +84,7 @@ vi.mock('@/hooks/quotes', () => ({
     setNotes: vi.fn(),
     internalNotes: '',
     setInternalNotes: vi.fn(),
-    getTemplateItems: () => [],
     quoteNumber: '',
-    defaultTemplate: null,
   })),
 }));
 
