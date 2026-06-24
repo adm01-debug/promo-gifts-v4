@@ -103,7 +103,7 @@ for (const vp of VIEWPORTS) {
       );
     });
 
-    test(`par de botões Criar + Rascunho — ${vp.name}`, async ({ page }) => {
+    test(`par de botões Criar + Rascunho — ${vp.name}`, async ({ page }, testInfo) => {
       const criar = page
         .locator('[data-testid="quote-save-final"], [data-testid="quote-request-approval-button"]')
         .first();
@@ -111,19 +111,37 @@ for (const vp of VIEWPORTS) {
       await expect(criar).toBeVisible();
       await expect(rascunho).toBeVisible();
 
-      // Container pai imediato dos dois botões (o flex row criado no rodapé).
       const pair = criar.locator('xpath=..');
       await expect(pair).toBeVisible();
 
-      // Garante estado neutro (sem hover/focus) p/ baseline estável.
       await page.mouse.move(0, 0);
       await page.keyboard.press('Escape').catch(() => {});
 
-      await expect(pair).toHaveScreenshot(
-        `summary-action-buttons-${vp.name}.png`,
-        { animations: 'disabled', maxDiffPixelRatio: 0.02 },
-      );
+      const snapshotName = `summary-action-buttons-${vp.name}.png`;
+      try {
+        await expect(pair).toHaveScreenshot(snapshotName, {
+          animations: 'disabled',
+          maxDiffPixelRatio: 0.02,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // Playwright lança "A snapshot doesn't exist" quando o baseline está ausente.
+        if (/snapshot.*(doesn't|does not) exist|missing/i.test(msg)) {
+          const hint =
+            `[VISUAL-BASELINE-MISSING] viewport=${vp.name} baseline="${snapshotName}".\n` +
+            `Gere localmente com:\n` +
+            `  npx playwright test e2e/quotes/quote-summary-sticky-header-visual.spec.ts ` +
+            `--project=chromium-authed --update-snapshots -g "Criar \\+ Rascunho — ${vp.name}"`;
+          console.warn(hint);
+          await testInfo.attach(`baseline-missing-${vp.name}.txt`, {
+            body: hint,
+            contentType: 'text/plain',
+          });
+        }
+        throw err;
+      }
     });
+
   });
 }
 
