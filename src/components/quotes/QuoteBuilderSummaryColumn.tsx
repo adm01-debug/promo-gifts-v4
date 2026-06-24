@@ -632,9 +632,13 @@ export function QuoteBuilderSummaryColumn({
             </div>
           )}
 
-          {/* Product Cards */}
-          <div className="px-4">
-            <div className="space-y-3 pr-1">
+          {/* Product Cards — única área rolável no desktop */}
+          <div
+            data-testid="quote-summary-items-scroll"
+            className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+          >
+            <div className="px-4">
+              <div className="space-y-3 pr-1">
               {items.length === 0 ? (
                 <div className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/5 p-8 transition-all duration-300 hover:border-primary/30">
                   <div className="mb-3 rounded-full bg-muted/30 p-3 transition-colors group-hover:bg-primary/10">
