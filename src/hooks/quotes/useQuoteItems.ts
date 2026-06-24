@@ -13,6 +13,8 @@ interface Product {
   minQuantity?: number;
   priceUpdatedAt?: string;
   priceFreshnessThresholdDays?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 export function useQuoteItems(initialItems: QuoteItem[] = []) {
