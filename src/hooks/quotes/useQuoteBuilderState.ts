@@ -253,7 +253,7 @@ export function useQuoteBuilderState() {
   const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
-  const [templateApplied, setTemplateApplied] = useState<string | null>(null);
+  
   const [loadingQuote, setLoadingQuote] = useState(isEditMode);
 
   const debouncedProductSearch = useDebounce(productSearch, 400);
