@@ -504,7 +504,7 @@ export function QuoteBuilderSummaryColumn({
           data-testid="quote-builder-summary-scroll"
           className={cn(
             'flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl',
-            `lg:overflow-y-auto ${STICKY_HEIGHT}`,
+            `lg:overflow-hidden ${STICKY_HEIGHT}`,
           )}
         >
           {/* Header — sticky top do scroll container (sempre visível ao rolar) */}
