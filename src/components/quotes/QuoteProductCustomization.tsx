@@ -137,9 +137,9 @@ export function QuoteProductCustomization({
 
       {/* 2) Gravações já confirmadas (aparecem ABAIXO, como resultado do passo) */}
       {confirmed.length > 0 ? (
-        <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
+        <div className="space-y-1.5 rounded-xl border border-accent/30 bg-accent/10 p-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">
+            <p className="text-xs font-bold uppercase tracking-wide text-accent-foreground">
               ✓ Gravações no orçamento
             </p>
             <Badge variant="secondary" className="text-[10px]">
@@ -149,10 +149,10 @@ export function QuoteProductCustomization({
           {confirmed.map((p, i) => (
             <div
               key={i}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/60 p-2"
+              className="flex items-center justify-between gap-2 rounded-lg border border-accent/20 bg-background/70 p-2"
             >
               <div className="flex min-w-0 items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-accent-foreground" />
                 <div className="min-w-0">
                   <span className="block truncate text-xs font-semibold text-foreground">
                     {p.technique_name}
@@ -179,9 +179,9 @@ export function QuoteProductCustomization({
               </div>
             </div>
           ))}
-          <div className="mt-1 flex justify-between border-t border-primary/15 px-1 pt-1 text-xs">
+          <div className="mt-1 flex justify-between border-t border-accent/20 px-1 pt-1 text-xs">
             <span className="text-muted-foreground">Total gravação:</span>
-            <span className="font-bold text-primary">{fmt(confirmedTotal)}</span>
+            <span className="font-bold text-accent-foreground">{fmt(confirmedTotal)}</span>
           </div>
         </div>
       ) : (
