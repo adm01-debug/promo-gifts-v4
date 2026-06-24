@@ -191,10 +191,12 @@ export function QuoteBuilderSummaryColumn({
   shippingCost = 0,
   onReorder,
   quoteId,
+  setSkipAutosaveSortOrder,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
