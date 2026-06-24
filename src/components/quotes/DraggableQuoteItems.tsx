@@ -4,8 +4,7 @@
  * NOTA: o nome do componente é histórico. Reordenação por drag-and-drop foi
  * removida porque cada orçamento trata um produto por vez (tiragem, gravação,
  * etc.) e mover itens não agrega valor. A ordem segue estritamente a fonte de
- * dados (`items`). A prop `onReorder` é mantida (no-op) apenas por compat
- * de assinatura com chamadas antigas — pode ser removida em refactor futuro.
+ * dados (`items`).
  */
 
 import { Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
@@ -22,8 +21,6 @@ import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 interface DraggableQuoteItemsProps {
   items: QuoteItem[];
-  /** @deprecated Reordenação removida — prop mantida apenas por compat. */
-  onReorder?: (items: QuoteItem[]) => void;
   onUpdateQuantity: (index: number, quantity: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
