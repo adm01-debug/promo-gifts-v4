@@ -27,6 +27,8 @@ import {
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
   ChevronUp,
   Edit,
   GripVertical,
@@ -77,6 +79,7 @@ import {
   loadCollapsedItems,
   toggleCollapsedItem,
   pruneCollapsedItems,
+  saveCollapsedItems,
 } from '@/lib/quotes/collapsedItemsStorage';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
@@ -226,6 +229,20 @@ export function QuoteBuilderSummaryColumn({
   const toggleItemCollapsed = (key: string) => {
     setCollapsedItemKeys((prev) => toggleCollapsedItem(quoteId, prev, key));
   };
+
+  // Toggle global: recolhe todos os itens abertos (ou expande todos se já estão todos recolhidos).
+  const allItemKeys = useMemo(
+    () => items.map((it, idx) => it.id ?? `__idx_${idx}`),
+    [items],
+  );
+  const allCollapsed =
+    allItemKeys.length > 0 && allItemKeys.every((k) => collapsedItemKeys.has(k));
+  const toggleAllCollapsed = () => {
+    const next = allCollapsed ? new Set<string>() : new Set<string>(allItemKeys);
+    setCollapsedItemKeys(next);
+    saveCollapsedItems(quoteId, next);
+  };
+
 
   // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
   const dndSensors = useSensors(
@@ -496,37 +513,67 @@ export function QuoteBuilderSummaryColumn({
               <ShoppingCart className="h-4 w-4 text-primary" />
             </div>
             <h3 className="font-display text-base font-semibold">Resumo</h3>
-            {items.length >= 2 && onReorder && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={groupedByProduct ? 'secondary' : 'outline'}
-                    className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
-                    title="Agrupar itens"
-                    data-testid="quote-summary-group-trigger"
-                  >
-                    <Layers className="h-3.5 w-3.5" />
-                    Agrupar
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={groupByProductId}
-                    data-testid="quote-summary-group-by-product"
-                  >
-                    Por produto (SKU)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={groupByCategory}
-                    data-testid="quote-summary-group-by-category"
-                  >
-                    Por categoria
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              {items.length >= 1 && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1.5 px-2.5 text-xs"
+                        onClick={toggleAllCollapsed}
+                        aria-pressed={allCollapsed}
+                        aria-label={allCollapsed ? 'Expandir todos os itens' : 'Recolher todos os itens'}
+                        data-testid="quote-summary-collapse-all"
+                      >
+                        {allCollapsed ? (
+                          <ChevronsUpDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronsDownUp className="h-3.5 w-3.5" />
+                        )}
+                        {allCollapsed ? 'Expandir' : 'Recolher'}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {allCollapsed ? 'Abrir todos os itens do resumo' : 'Fechar todos os itens do resumo'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {items.length >= 2 && onReorder && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={groupedByProduct ? 'secondary' : 'outline'}
+                      className="h-7 gap-1.5 px-2.5 text-xs"
+                      title="Agrupar itens"
+                      data-testid="quote-summary-group-trigger"
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                      Agrupar
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onClick={groupByProductId}
+                      data-testid="quote-summary-group-by-product"
+                    >
+                      Por produto (SKU)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={groupByCategory}
+                      data-testid="quote-summary-group-by-category"
+                    >
+                      Por categoria
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           {/* Stale price filter */}
