@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
+import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
   // FIX #3b: inicializar com src (não "") para que img.complete só retorne true

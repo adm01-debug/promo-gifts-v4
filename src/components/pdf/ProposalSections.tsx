@@ -21,6 +21,7 @@ import {
   type ProposalItem,
   type ProposalTemplateData,
 } from './ProposalHtmlTemplate';
+import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
 
 /* ─── Header ─── */
 export function HeaderSection({ data }: { data: ProposalTemplateData }) {
