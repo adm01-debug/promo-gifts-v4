@@ -213,4 +213,28 @@ describe('useQuoteBuilderState — BUG-01: discount_amount clamp antes de enviar
     expect(quoteArg.discount_percent).toBe(15);
     expect(quoteArg.discount_amount).toBe(0); // percent mode → amount = 0
   });
+
+  // GAP fechado via mutation testing: o caso "value>subtotal" acima é mascarado pelo
+  // clamp useEffect (deps [subtotal, discountType]) que reescreve discountValue ANTES do save.
+  // Aqui forçamos discountValue BRUTO no momento do save (sem re-disparar o effect) para
+  // garantir que o PAYLOAD usa discountAmount (clamped) e NÃO discountValue — o fix real do BUG-01.
+  it('[REGRESSÃO BUG-01 estrito] payload usa discountAmount (clamped), não discountValue bruto', async () => {
+    const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
+    await waitFor(() => expect(result.current.loadingQuote).toBe(false));
+    await waitFor(() => expect(result.current.isFormValid).toBe(true));
+
+    // 1) Entra em modo amount e deixa o clamp effect assentar (discountValue=0 → nada a clampar).
+    await act(async () => { result.current.setDiscountType('amount'); });
+    // 2) Eleva discountValue ACIMA do subtotal SEM mudar [subtotal, discountType]:
+    //    o clamp effect NÃO re-dispara, então discountValue permanece BRUTO (1200 > 1000).
+    await act(async () => { result.current.setDiscountValue(1200); });
+
+    expect(result.current.discountValue).toBe(1200); // bruto, NÃO clampado pelo effect
+    expect(result.current.discountAmount).toBe(1000); // memo clampa de forma síncrona
+
+    await act(async () => { await result.current.handleSaveQuote('pending'); });
+    expect(updateQuoteSpy).toHaveBeenCalledTimes(1);
+    const [, quoteArg] = updateQuoteSpy.mock.calls[0] as unknown as [string, { discount_amount: number }];
+    expect(quoteArg.discount_amount).toBe(1000); // MATA mutação: discountValue bruto enviaria 1200
+  });
 });
