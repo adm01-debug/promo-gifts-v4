@@ -105,7 +105,7 @@ test.describe('Quote Builder · Resumo sticky header — desktop', () => {
     await setup(page, 1440, 900);
   });
 
-  test('header permanece visível ao rolar a lista de produtos', async ({ page }) => {
+  test('header permanece visível ao rolar a lista de produtos', async ({ page }, testInfo) => {
     await skipIfEmpty(page);
 
     const header = page.getByTestId('quote-summary-header');
@@ -118,9 +118,14 @@ test.describe('Quote Builder · Resumo sticky header — desktop', () => {
     await expect(header).toBeVisible();
     const afterBox = await header.boundingBox();
     expect(afterBox).not.toBeNull();
-    // posição vertical praticamente inalterada (sticky pin no topo do container)
-    expect(Math.abs(afterBox!.y - beforeBox!.y)).toBeLessThanOrEqual(4);
+
+    const dy = Math.abs(afterBox!.y - beforeBox!.y);
+    if (dy > 4) {
+      await attachStickyDrift(page, testInfo, 'desktop-scroll', beforeBox!, afterBox!);
+    }
+    expect(dy, `Sticky header desviou ${dy}px no eixo Y após scroll`).toBeLessThanOrEqual(4);
   });
+
 
   test('botões continuam clicáveis no estado sticky', async ({ page }) => {
     await skipIfEmpty(page);
