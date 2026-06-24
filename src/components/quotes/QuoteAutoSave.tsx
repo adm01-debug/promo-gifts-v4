@@ -260,33 +260,37 @@ export function QuoteAutoSave({
   };
 
   const getStatusText = () => {
+    const T = QUOTE_AUTOSAVE_STATUS_TEXT;
     switch (status) {
       case 'saving':
-        return 'Salvando...';
+        return T.saving;
       case 'saved': {
         if (lastSaved) {
           const secsAgo = Math.round((Date.now() - lastSaved.getTime()) / 1000);
-          if (secsAgo < 60) return 'Salvo agora';
+          if (secsAgo < 60) return T.savedNow;
           const minsAgo = Math.round(secsAgo / 60);
-          return `Salvo há ${minsAgo} min`;
+          return T.savedMinutesAgo(minsAgo);
         }
-        return 'Salvo';
+        return T.savedGeneric;
       }
       case 'error':
-        return 'Erro ao salvar';
+        return T.error;
       case 'offline':
-        return 'Offline';
+        return T.offline;
       default:
         return hasUnsavedChanges
-          ? 'Alterações não salvas'
+          ? T.unsaved
           : lastSaved
-            ? `Salvo às ${format(lastSaved, 'HH:mm', { locale: ptBR })}`
-            : '';
+            ? T.savedAtTime(format(lastSaved, 'HH:mm', { locale: ptBR }))
+            : T.idle;
     }
   };
 
   const statusText = getStatusText();
   const showIcon = status !== 'idle' || statusText !== '';
+  // aria-live: 'polite' anuncia mudanças de status sem interromper o leitor.
+  // 'off' quando não há texto, para evitar anúncios vazios.
+  const ariaLive: 'off' | 'polite' = statusText ? 'polite' : 'off';
 
   return (
     <>
