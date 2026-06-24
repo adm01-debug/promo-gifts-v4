@@ -34,7 +34,7 @@ import {
   ExternalLink,
   Info,
   MessageSquare,
-  Lock,
+  
 } from 'lucide-react';
 // FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
 import { format, addDays, startOfDay } from 'date-fns';
