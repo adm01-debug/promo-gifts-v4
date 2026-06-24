@@ -176,7 +176,7 @@ export default function QuoteBuilderPage() {
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 lg:ml-auto lg:max-w-3xl">
+            <div className="min-w-0 flex-1 lg:max-w-3xl">
               <QuoteBuilderStepper
                 completedSteps={s.completedSteps}
                 activeStep={s.activeStep}
