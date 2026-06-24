@@ -712,7 +712,7 @@ export function QuoteBuilderSummaryColumn({
                                             size="icon"
                                             aria-label="Editar"
                                             className={cn(
-                                              'h-3 w-3 rounded-sm',
+                                              'h-3 w-3 rounded-sm relative before:absolute before:inset-[-10px] before:content-[""]',
                                               isActive ? 'text-primary' : 'text-muted-foreground/70 hover:text-foreground',
                                             )}
                                             onClick={(e) => {
@@ -732,7 +732,7 @@ export function QuoteBuilderSummaryColumn({
                                             size="icon"
                                             aria-label="Excluir"
                                             data-testid={`quote-summary-delete-${idx}`}
-                                            className="h-3 w-3 rounded-sm text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                            className="h-3 w-3 rounded-sm text-destructive/70 hover:text-destructive hover:bg-destructive/10 relative before:absolute before:inset-[-10px] before:content-['']"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               removeItem(idx);
@@ -759,7 +759,7 @@ export function QuoteBuilderSummaryColumn({
                                             aria-pressed={isCollapsed}
                                             data-collapsed={isCollapsed}
                                             data-testid={`quote-summary-toggle-${idx}`}
-                                            className="h-3 w-3 rounded-sm text-muted-foreground/70 hover:text-foreground"
+                                            className="h-3 w-3 rounded-sm text-muted-foreground/70 hover:text-foreground relative before:absolute before:inset-[-10px] before:content-['']"
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               toggleItemCollapsed(collapseKey);
