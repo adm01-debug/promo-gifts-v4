@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/dialog';
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Edit,
   GripVertical,
   Layers,
@@ -200,6 +202,30 @@ export function QuoteBuilderSummaryColumn({
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [collapsedItemKeys, setCollapsedItemKeys] = useState<Set<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem('quote-builder:collapsed-item-keys');
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const toggleItemCollapsed = (key: string) => {
+    setCollapsedItemKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        window.localStorage.setItem(
+          'quote-builder:collapsed-item-keys',
+          JSON.stringify([...next]),
+        );
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
 
   // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
   const dndSensors = useSensors(
@@ -588,6 +614,8 @@ export function QuoteBuilderSummaryColumn({
                       const isActive = activeItemIndex === idx;
                       const isStale = staleIndexes.has(idx);
                       const sortableId = item.id ?? `__idx_${idx}`;
+                      const collapseKey = item.id ?? `__idx_${idx}`;
+                      const isCollapsed = collapsedItemKeys.has(collapseKey);
                       // Drag desabilitado quando há filtro ativo (índices visíveis ≠ índices reais
                       // do array `items`, o que tornaria a reordenação inconsistente).
                       const dragDisabled = !onReorder || showOnlyStale;
@@ -709,41 +737,66 @@ export function QuoteBuilderSummaryColumn({
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      aria-label={isCollapsed ? 'Expandir' : 'Recolher'}
+                                      aria-expanded={!isCollapsed}
+                                      aria-pressed={isCollapsed}
+                                      data-collapsed={isCollapsed}
+                                      data-testid={`quote-summary-toggle-${idx}`}
+                                      title={isCollapsed ? 'Expandir card' : 'Recolher card'}
+                                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleItemCollapsed(collapseKey);
+                                      }}
+                                    >
+                                      {isCollapsed ? (
+                                        <ChevronDown className="h-3.5 w-3.5" />
+                                      ) : (
+                                        <ChevronUp className="h-3.5 w-3.5" />
+                                      )}
+                                    </Button>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-xs">
-                                  <span className="text-muted-foreground">Qtd:</span>
-                                  <span className="font-medium">{item.quantity}</span>
-                                  <span className="text-muted-foreground">×</span>
-                                  <span className="font-medium">
-                                    {formatCurrency(item.unit_price)}
-                                  </span>
-                                  <span className="ml-auto font-semibold tabular-nums text-foreground">
-                                    {formatCurrency(item.quantity * item.unit_price)}
-                                  </span>
-                                </div>
-                                {(item.price_updated_at || item.price_confirmed_at) && (
-                                  <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
-                                    <PriceFreshnessBadge
-                                      priceUpdatedAt={item.price_updated_at}
-                                      thresholdDays={item.price_freshness_threshold_days}
-                                      confirmedAt={item.price_confirmed_at}
-                                      variant="inline"
-                                      onConfirm={
-                                        confirmItemPrice
-                                          ? () => {
-                                              confirmItemPrice(idx);
-                                              toast.success('Preço confirmado com fornecedor', {
-                                                description: item.product_name,
-                                              });
-                                            }
-                                          : undefined
-                                      }
-                                    />
-                                  </div>
+                                {!isCollapsed && (
+                                  <>
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className="text-muted-foreground">Qtd:</span>
+                                      <span className="font-medium">{item.quantity}</span>
+                                      <span className="text-muted-foreground">×</span>
+                                      <span className="font-medium">
+                                        {formatCurrency(item.unit_price)}
+                                      </span>
+                                      <span className="ml-auto font-semibold tabular-nums text-foreground">
+                                        {formatCurrency(item.quantity * item.unit_price)}
+                                      </span>
+                                    </div>
+                                    {(item.price_updated_at || item.price_confirmed_at) && (
+                                      <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                                        <PriceFreshnessBadge
+                                          priceUpdatedAt={item.price_updated_at}
+                                          thresholdDays={item.price_freshness_threshold_days}
+                                          confirmedAt={item.price_confirmed_at}
+                                          variant="inline"
+                                          onConfirm={
+                                            confirmItemPrice
+                                              ? () => {
+                                                  confirmItemPrice(idx);
+                                                  toast.success('Preço confirmado com fornecedor', {
+                                                    description: item.product_name,
+                                                  });
+                                                }
+                                              : undefined
+                                          }
+                                        />
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
-                              {item.personalizations && item.personalizations.length > 0 && (
+                              {!isCollapsed && item.personalizations && item.personalizations.length > 0 && (
                                 <div className="px-3 pb-3 pt-0">
                                   <div className="mb-1.5 flex items-center justify-between">
                                     <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
