@@ -110,12 +110,16 @@ export function useDiscountApproval() {
         }
 
         // Buscar contexto do orçamento (markup + aparente) para auditoria e história
-        const { data: quoteCtx } = await supabase
+        // BUG-DISCOUNTAPPROVAL-QUOTECTX-SELECT-SILENT-FAIL FIX: { data: quoteCtx } without
+        // error check — RLS failure silently produced null ctx, markup logged as 0 in audit.
+        // Secondary fetch: primary update already succeeded; log.warn and degrade gracefully.
+        const { data: quoteCtx, error: quoteCtxErr } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('quotes')
           .select('discount_percent, negotiation_markup_percent, real_discount_percent')
           .eq('id', quoteId)
           .maybeSingle();
+        if (quoteCtxErr) logger.warn('Failed to fetch quote context for audit trail:', quoteCtxErr);
         const markup = Number(quoteCtx?.negotiation_markup_percent ?? 0);
         const apparent = Number(quoteCtx?.discount_percent ?? 0);
 

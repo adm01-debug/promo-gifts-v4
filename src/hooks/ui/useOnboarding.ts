@@ -176,11 +176,14 @@ export function useOnboarding() {
           if (insertError) {
             if (insertError.code === '23505') {
               // Race condition: another tab inserted concurrently — fetch the winner row
-              const { data: raceData } = await supabase
+              // BUG-ONBOARDING-RACEDATA-SELECT-SILENT-FAIL FIX: { data: raceData } without
+              // error check — RLS failure silently left onboarding state uninitialised.
+              const { data: raceData, error: raceErr } = await supabase
                 .from('user_onboarding')
                 .select('*')
                 .eq('user_id', user.id)
                 .maybeSingle();
+              if (raceErr) logger.warn('[useOnboarding] race-condition recovery fetch failed:', raceErr);
               if (raceData) {
                 setOnboardingId(raceData.id);
                 setHasCompletedTour(raceData.has_completed_tour || false);
