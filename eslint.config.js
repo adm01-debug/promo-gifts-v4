@@ -1620,4 +1620,39 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off', // 26 intentional non-null assertions; rule re-added by firehose batch
     },
   },
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Módulo de quotes — proíbe dnd-kit e useSortable.
+  // Reordenação de itens foi removida por decisão de produto (um produto
+  // por orçamento). Esta regra evita regressões futuras.
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    files: [
+      'src/components/quotes/**/*.{ts,tsx}',
+      'src/pages/quotes/**/*.{ts,tsx}',
+      'src/hooks/quotes/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@dnd-kit/*'],
+              message:
+                'dnd-kit é proibido no módulo de quotes — reordenação foi removida por decisão de produto.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='useSortable']",
+          message:
+            'useSortable é proibido no módulo de quotes — reordenação foi removida por decisão de produto.',
+        },
+      ],
+    },
+  },
 ];
