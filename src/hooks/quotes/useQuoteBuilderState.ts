@@ -66,6 +66,8 @@ interface Product {
   colors?: { name: string; hex?: string; stock?: number }[];
   minQuantity?: number;
   totalStock?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 interface RawProductColor {
