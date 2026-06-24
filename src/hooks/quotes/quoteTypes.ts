@@ -41,6 +41,11 @@ export interface QuoteItem {
   kit_name?: string | null;
   size_code?: string | null;
   gender?: string | null;
+  /** Runtime-only (não persistido em quote_items). Hidratado via lookup em products
+   * no fetchQuote ou populado ao adicionar o item ao orçamento. Usado para
+   * "Agrupar por categoria" no card Resumo. */
+  product_category_id?: string | null;
+  product_category_name?: string | null;
   /** ISO timestamp da última atualização do preço no catálogo externo (SSOT). Usado pelo badge "preço pode estar defasado". */
   price_updated_at?: string | null;
   /** Janela (em dias) configurada por produto para alertar preço defasado. Default 60. */
