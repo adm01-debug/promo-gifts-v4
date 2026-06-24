@@ -127,21 +127,23 @@ export default function QuoteBuilderPage() {
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 sm:space-y-4 sm:px-4 sm:pb-24 sm:pt-4 lg:px-6 lg:pb-28 xl:px-8">
         <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer" />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
-              <FileText className="h-5 w-5 text-primary" />
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm sm:h-10 sm:w-10">
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
+            <div className="flex min-w-0 flex-1 items-baseline gap-2 truncate">
               <h1
                 data-testid={
                   s.isEditMode ? 'page-title-orcamento-editar' : 'page-title-orcamento-novo'
                 }
-                className="font-display text-xl font-bold leading-tight sm:text-2xl"
+                className="shrink-0 font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl"
               >
                 {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
               </h1>
-              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                Crie um orçamento com produtos e personalizações
+              <p className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm">
+                {s.isEditMode
+                  ? 'Atualize os produtos, condições e personalizações do orçamento'
+                  : 'Crie um orçamento com produtos e personalizações'}
               </p>
             </div>
           </div>
