@@ -202,24 +202,30 @@ export function QuoteBuilderSummaryColumn({
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [collapsedItemKeys, setCollapsedItemKeys] = useState<Set<string>>(() => {
+  // Chave por orçamento — evita misturar estado de colapso entre orçamentos
+  // distintos (e isola "novo" de orçamentos salvos). Mesmo padrão do card
+  // "Condições" (ver conditions-collapse-persistence.test.ts).
+  const collapseStorageKey = useMemo(
+    () => `quote-builder:collapsed-item-keys:${quoteId ?? 'new'}`,
+    [quoteId],
+  );
+  const [collapsedItemKeys, setCollapsedItemKeys] = useState<Set<string>>(new Set());
+  // Recarrega quando o quoteId muda (ex.: transição "new" → id real após salvar).
+  useEffect(() => {
     try {
-      const raw = window.localStorage.getItem('quote-builder:collapsed-item-keys');
-      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+      const raw = window.localStorage.getItem(collapseStorageKey);
+      setCollapsedItemKeys(raw ? new Set(JSON.parse(raw) as string[]) : new Set());
     } catch {
-      return new Set();
+      setCollapsedItemKeys(new Set());
     }
-  });
+  }, [collapseStorageKey]);
   const toggleItemCollapsed = (key: string) => {
     setCollapsedItemKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       try {
-        window.localStorage.setItem(
-          'quote-builder:collapsed-item-keys',
-          JSON.stringify([...next]),
-        );
+        window.localStorage.setItem(collapseStorageKey, JSON.stringify([...next]));
       } catch {
         /* noop */
       }
