@@ -178,7 +178,9 @@ export function useMagicUpState() {
     queryKey: ['magic-up-history', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data } = await supabase
+      // BUG-MAGICUPSTATE-HISTORY-SELECT-SILENT-FAIL FIX: { data } without error check —
+      // RLS failure silently returned [] making queryFn succeed with empty history list.
+      const { data, error: histErr } = await supabase
         .from('magic_up_generations')
         .select(
           'id, generated_image_url, product_name, scene_title, scene_category, is_favorite, created_at, client_name, quality_score, status, channel, aspect_ratio, metadata, copy_pack',
@@ -186,6 +188,7 @@ export function useMagicUpState() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
+      if (histErr) throw histErr;
       return (data || []) as GenerationHistoryItem[];
     },
     enabled: !!user?.id,

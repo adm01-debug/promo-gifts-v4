@@ -65,10 +65,14 @@ export function useQuoteVersions(quoteId?: string) {
 
         // Count items for each version
         const versionIds = (data || []).map((v) => v.id);
-        const { data: itemCounts } = await supabase
+        // BUG-QUOTEVERSIONS-ITEMCOUNTS-SELECT-SILENT-FAIL FIX: { data: itemCounts } without
+        // error check — RLS failure silently showed items_count=0 on all versions.
+        // Secondary fetch: primary versions query already succeeded; log.warn and degrade.
+        const { data: itemCounts, error: itemCountsErr } = await supabase
           .from('quote_items')
           .select('quote_id')
           .in('quote_id', versionIds);
+        if (itemCountsErr) logger.warn('Failed to fetch item counts for versions:', itemCountsErr);
 
         const countMap = new Map<string, number>();
         (itemCounts || []).forEach((item) => {

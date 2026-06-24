@@ -135,12 +135,17 @@ export function usePasswordResetRequests() {
       const normalizedEmail = email.trim().toLowerCase();
       // Verificar se já existe uma solicitação pendente para este email
       const supabase = await getSupabaseClient();
-      const { data: existing } = await supabase
+      // BUG-PASSWORDRESET-DUPCHECK-SELECT-SILENT-FAIL FIX: { data: existing } without error
+      // check — RLS failure silently set existing=null, bypassing the dup-check gate and
+      // allowing duplicate reset requests to be inserted. PGRST116 (no rows = no dup) is
+      // the expected case; any other error code indicates a real RLS/DB failure.
+      const { data: existing, error: dupCheckErr } = await supabase
         .from('password_reset_requests')
         .select('id')
         .eq('email', normalizedEmail)
         .eq('status', 'pending')
         .single();
+      if (dupCheckErr && dupCheckErr.code !== 'PGRST116') throw dupCheckErr;
 
       if (existing) {
         return {

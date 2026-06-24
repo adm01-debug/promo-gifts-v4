@@ -375,27 +375,35 @@ export function useSegmentAnalysis(
       if (hasFilter && productIds) {
         const pids = Array.from(productIds).slice(0, 200);
         if (!pids.length) return [];
-        const { data: oi } = await supabase
+        // BUG-COMMERCIALINTEL-SEGMENTS-OI-SELECT-SILENT-FAIL FIX: { data: oi } without error
+        // check — RLS failure silently returned [] making queryFn succeed with empty segments.
+        const { data: oi, error: oiErr } = await supabase
           .from('order_items')
           .select('order_id')
           .gte('created_at', since)
           .in('product_id', pids);
+        if (oiErr) throw oiErr;
         const orderIds = [
           ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
-        const { data: orders } = await supabase
+        // BUG-COMMERCIALINTEL-SEGMENTS-ORDERS-SELECT-SILENT-FAIL FIX: { data: orders } without
+        // error check — failure silently produced empty segments instead of triggering retry.
+        const { data: orders, error: ordersErr } = await supabase
           // rls-allow: respeita can_view_all_sales server-side
           .from('orders')
           .select('id, client_company, total')
           .in('id', orderIds.slice(0, 200));
+        if (ordersErr) throw ordersErr;
         return aggregateSegments(orders || []);
       }
-      const { data: orders } = await supabase
+      // BUG-COMMERCIALINTEL-SEGMENTS-ALLORDERS-SELECT-SILENT-FAIL FIX
+      const { data: orders, error: ordersErr } = await supabase
         // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_company, total')
         .gte('created_at', since);
+      if (ordersErr) throw ordersErr;
       return aggregateSegments(orders || []);
     },
     staleTime: 1000 * 60 * 5,
@@ -524,27 +532,34 @@ export function useTopClients(
       if (hasFilter && productIds) {
         const pids = Array.from(productIds).slice(0, 200);
         if (!pids.length) return [];
-        const { data: oi } = await supabase
+        // BUG-TOPCLIENTS-OI-SELECT-SILENT-FAIL FIX: { data: oi } without error check —
+        // RLS failure silently returned [] making queryFn succeed with empty client list.
+        const { data: oi, error: oiErr } = await supabase
           .from('order_items')
           .select('order_id, quantity, unit_price')
           .gte('created_at', since)
           .in('product_id', pids);
+        if (oiErr) throw oiErr;
         const orderIds = [
           ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
-        const { data: orders } = await supabase
+        // BUG-TOPCLIENTS-ORDERS-FILTERED-SELECT-SILENT-FAIL FIX
+        const { data: orders, error: ordersFilteredErr } = await supabase
           // rls-allow: respeita can_view_all_sales server-side
           .from('orders')
           .select('id, client_name, client_company, total')
           .in('id', orderIds.slice(0, 200));
+        if (ordersFilteredErr) throw ordersFilteredErr;
         return aggregateClients(orders || []);
       }
-      const { data: orders } = await supabase
+      // BUG-TOPCLIENTS-ALLORDERS-SELECT-SILENT-FAIL FIX
+      const { data: orders, error: ordersErr } = await supabase
         // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_name, client_company, total')
         .gte('created_at', since);
+      if (ordersErr) throw ordersErr;
       return aggregateClients(orders || []);
     },
     staleTime: 1000 * 60 * 5,
