@@ -89,24 +89,33 @@ export function useComparisonSync() {
 
         const ids = (rows ?? []).map((r) => r.id);
         if (ids.length > 0) {
-          await supabase
+          // BUG-COMPARISON-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+          const { error: updateErr } = await supabase
             .from('user_comparisons')
             .update({
               items: structuredClone(compareItems) as unknown as Json,
               updated_at: new Date().toISOString(),
             })
             .eq('id', ids[0]);
+          if (updateErr) logger.warn('[useComparisonSync] update failed:', updateErr);
           // Auto-cura duplicatas do slot "current".
           if (ids.length > 1) {
-            await supabase.from('user_comparisons').delete().in('id', ids.slice(1));
+            // BUG-COMPARISON-DELETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+            const { error: deleteErr } = await supabase
+              .from('user_comparisons')
+              .delete()
+              .in('id', ids.slice(1));
+            if (deleteErr) logger.warn('[useComparisonSync] delete duplicates failed:', deleteErr);
           }
         } else if (compareItems.length > 0) {
-          await supabase.from('user_comparisons').insert({
+          // BUG-COMPARISON-INSERT-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+          const { error: insertErr } = await supabase.from('user_comparisons').insert({
             user_id: userId,
             client_name: CURRENT_SLOT_KEY,
             items: structuredClone(compareItems) as unknown as Json,
             is_public: false,
           });
+          if (insertErr) logger.warn('[useComparisonSync] insert failed:', insertErr);
         }
       } catch (e) {
         logger.warn('[useComparisonSync] upsert failed', e);
