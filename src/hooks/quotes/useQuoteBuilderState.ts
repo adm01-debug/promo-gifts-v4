@@ -1186,6 +1186,9 @@ export function useQuoteBuilderState() {
     setNotes,
     items,
     setItems,
+    skipAutosaveSortOrder,
+    setSkipAutosaveSortOrder,
+
     quoteNumber,
     currentStatus,
     paymentMethod,
