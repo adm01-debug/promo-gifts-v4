@@ -62,10 +62,12 @@ describe('ConfigurationPanelV6 — botão de colapso', () => {
     expect(toggle.getAttribute('aria-controls')).toBe(region.id);
   });
 
-  it('persiste o estado de colapso em localStorage', () => {
+  it('persiste o estado de colapso em localStorage (mapa por technique_id)', () => {
     const { unmount } = renderPanel();
     fireEvent.click(screen.getByTestId('customization-collapse-toggle'));
-    expect(window.localStorage.getItem('customization-collapsed:tec-1')).toBe('1');
+    const raw = window.localStorage.getItem('customization-collapsed:v1');
+    expect(raw).toBeTruthy();
+    expect(JSON.parse(raw as string)).toMatchObject({ 'tec-1': true });
 
     unmount();
     renderPanel();
