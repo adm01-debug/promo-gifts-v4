@@ -44,12 +44,15 @@ export function useQuoteComments(quoteId: string | undefined) {
       let profileMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {};
 
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
+        // BUG-QUOTECOMMENTS-PROFILES-SELECT-SILENT-FAIL FIX: { data: profiles } without
+        // error check — RLS failure silently showed 'Usuário' for all comment authors.
+        const { data: profiles, error: profErr } = await supabase
           .from('profiles')
           .select('user_id, full_name, avatar_url')
           .in('user_id', userIds);
-
-        if (profiles) {
+        if (profErr) {
+          logger.warn('[useQuoteComments] profile enrichment failed — showing generic author:', profErr);
+        } else if (profiles) {
           profileMap = Object.fromEntries(
             profiles.map((p) => [p.user_id, { full_name: p.full_name, avatar_url: p.avatar_url }]),
           );

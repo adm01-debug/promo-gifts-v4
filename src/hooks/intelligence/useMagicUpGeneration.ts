@@ -295,11 +295,14 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
       ),
     );
     if (currentVariation.id) {
-      const { data: existing } = await supabase
+      // BUG-MAGICUP-SCOREUPDATE-PREFETCH-SILENT-FAIL FIX: { data: existing } without error check —
+      // RLS failure silently used empty metadata, potentially overwriting stored quality diagnosis.
+      const { data: existing, error: existingErr } = await supabase
         .from('magic_up_generations')
         .select('metadata,status')
         .eq('id', currentVariation.id)
         .maybeSingle();
+      if (existingErr) logger.warn('[magic-up] pre-fetch for score update failed, using empty metadata:', existingErr);
       const metadata = toJsonRecord(existing?.metadata);
       const status = (existing?.status as MagicUpCurationStatus | null) || curationStatus;
       // BUG-MAGICUP-SCORE-SILENT-FAIL FIX: bare await swallowed RLS errors.
@@ -346,11 +349,14 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         ),
       );
       if (currentVariation?.id) {
-        const { data: existing } = await supabase
+        // BUG-MAGICUP-CURATIONUPDATE-PREFETCH-SILENT-FAIL FIX: { data: existing } without error
+        // check — RLS failure silently used empty metadata, discarding stored quality scores.
+        const { data: existing, error: existingErr } = await supabase
           .from('magic_up_generations')
           .select('metadata')
           .eq('id', currentVariation.id)
           .maybeSingle();
+        if (existingErr) logger.warn('[magic-up] pre-fetch for curation update failed, using empty metadata:', existingErr);
         const metadata = toJsonRecord(existing?.metadata);
         // BUG-MAGICUP-CURATION-SILENT-FAIL FIX: bare await swallowed RLS errors;
         // optimistic local state (lines above) diverges from DB on failure.

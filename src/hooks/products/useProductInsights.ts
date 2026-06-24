@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { logger } from '@/lib/logger';
 
 interface ProductInsight {
   totalViews: number;
@@ -35,10 +36,13 @@ export function useProductInsights(productId?: string, productSku?: string) {
         };
       }
 
+      // BUG-PRODUCTINSIGHTS-PRIMARY-PARALLEL-SILENT-FAIL FIX: all three destructures
+      // omitted error — RLS failure produced 0 counts across the board, making every
+      // product appear with zero views, quotes, and orders.
       const [
-        { count: viewsCount },
-        { data: quoteItems, count: quotesCount },
-        { data: orderItems, count: ordersCount },
+        { count: viewsCount, error: e1 },
+        { data: quoteItems, count: quotesCount, error: e2 },
+        { data: orderItems, count: ordersCount, error: e3 },
       ] = await Promise.all([
         untypedFrom('product_views')
           .select('*', { count: 'exact', head: true })
@@ -50,6 +54,8 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .select('quantity, order_id', { count: 'exact' })
           .eq('product_sku', productSku),
       ]);
+      const primaryErr = e1 ?? e2 ?? e3;
+      if (primaryErr) throw primaryErr;
 
       const allQuantities = [
         ...(quoteItems || []).map((q) => q.quantity),
@@ -69,11 +75,14 @@ export function useProductInsights(productId?: string, productSku?: string) {
       let topSegments: ProductInsight['topSegments'] = [];
 
       if (orderIds.length > 0) {
-        const { data: orders } = await supabase
+        // BUG-PRODUCTINSIGHTS-ORDERS-SELECT-SILENT-FAIL FIX: { data: orders } without error —
+        // RLS failure silently returned null, producing empty topSegments without diagnostic.
+        const { data: orders, error: ordersErr } = await supabase
           // rls-allow: seller-scope enforced by RLS policy; orderIds filtered from seller's own items
           .from('orders')
           .select('client_id')
           .in('id', orderIds);
+        if (ordersErr) logger.warn('[useProductInsights] orders fetch for segments failed:', ordersErr);
 
         const clientIds = [...new Set((orders || []).map((o) => o.client_id).filter(Boolean))];
 
@@ -106,7 +115,9 @@ export function useProductInsights(productId?: string, productSku?: string) {
 
       const recentActivity: ProductInsight['recentActivity'] = [];
 
-      const [{ data: recentViews }, { data: recentQuotes }] = await Promise.all([
+      // BUG-PRODUCTINSIGHTS-RECENT-PARALLEL-SILENT-FAIL FIX: both destructures omitted error —
+      // RLS failure silently produced empty recentActivity without any diagnostic.
+      const [{ data: recentViews, error: e4 }, { data: recentQuotes, error: e5 }] = await Promise.all([
         untypedFrom('product_views')
           .select('created_at, seller_id')
           .eq('product_sku', productSku)
@@ -118,6 +129,8 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .order('created_at', { ascending: false })
           .limit(3),
       ]);
+      const recentErr = e4 ?? e5;
+      if (recentErr) logger.warn('[useProductInsights] recent activity fetch failed:', recentErr);
 
       (recentViews || []).forEach((v) => {
         recentActivity.push({

@@ -39,15 +39,18 @@ async function fetchStatus(): Promise<PulseBarStatus> {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
+  // BUG-PULSEBAR-PARALLEL-QUERIES-SILENT-FAIL FIX: all 8 Promise.all results destructured
+  // only { count } or { data } — error was silently discarded. RLS failure returned 0/null
+  // for every KPI, making the dashboard appear fully green when infra was actually broken.
   const [
-    { count: activeWebhooks },
-    { count: totalWebhooks },
-    { data: deliveries24h },
-    { data: lastSuccess },
-    { count: failingConnections },
-    { data: rotations },
-    { count: autoDisabledWebhooks },
-    { data: lastAutoTest },
+    { count: activeWebhooks, error: e1 },
+    { count: totalWebhooks, error: e2 },
+    { data: deliveries24h, error: e3 },
+    { data: lastSuccess, error: e4 },
+    { count: failingConnections, error: e5 },
+    { data: rotations, error: e6 },
+    { count: autoDisabledWebhooks, error: e7 },
+    { data: lastAutoTest, error: e8 },
   ] = await Promise.all([
     supabase
       .from('outbound_webhooks')
@@ -82,6 +85,9 @@ async function fetchStatus(): Promise<PulseBarStatus> {
       .limit(1)
       .maybeSingle(),
   ]);
+
+  const firstError = e1 ?? e2 ?? e3 ?? e4 ?? e5 ?? e6 ?? e7 ?? e8;
+  if (firstError) throw firstError;
 
   const total = deliveries24h?.length ?? 0;
   const success = deliveries24h?.filter((d) => d.success).length ?? 0;

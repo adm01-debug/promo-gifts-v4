@@ -149,11 +149,18 @@ export function useCollections() {
 
     // Load all items for user's collections
     const colIds = colRows.map((c) => c.id);
-    const { data: itemRows } = await supabase
+    // BUG-COLLECTIONS-ITEMROWS-SELECT-SILENT-FAIL FIX: { data: itemRows } without error
+    // check — RLS failure silently showed all collections as empty (no items loaded).
+    const { data: itemRows, error: itemRowsErr } = await supabase
       .from('collection_items')
       .select('*')
       .in('collection_id', colIds)
       .order('sort_order', { ascending: true });
+    if (itemRowsErr) {
+      logger.error('[useCollections] failed to load collection items:', itemRowsErr);
+      setIsLoaded(true);
+      return;
+    }
 
     const itemsByCollection = new Map<string, DbCollectionItemRow[]>();
     (itemRows || []).forEach((item) => {
@@ -179,15 +186,21 @@ export function useCollections() {
           const legacyCollections = JSON.parse(stored);
           if (Array.isArray(legacyCollections) && legacyCollections.length > 0) {
             // Check if user already has DB collections
-            const { count } = await supabase
+            // BUG-COLLECTIONS-MIGRATE-COUNT-SILENT-FAIL FIX: { count } without error check
+            // — RLS failure returned undefined count; `count === 0` (false) skipped migration
+            // silently, but undefined also reads as 0 in loose comparisons on some paths.
+            const { count, error: countErr } = await supabase
               .from('collections')
               .select('*', { count: 'exact', head: true })
               .eq('user_id', user.id);
+            if (countErr) throw countErr;
 
             if (count === 0) {
               // Migrate each collection
               for (const col of legacyCollections) {
-                const { data: newCol } = await supabase
+                // BUG-COLLECTIONS-MIGRATE-INSERT-SILENT-FAIL FIX: { data: newCol } without
+                // error check — failed insert silently skipped item migration (newCol=null).
+                const { data: newCol, error: newColErr } = await supabase
                   .from('collections')
                   .insert({
                     user_id: user.id,
@@ -198,6 +211,7 @@ export function useCollections() {
                   })
                   .select()
                   .single();
+                if (newColErr) throw newColErr;
 
                 if (newCol) {
                   const items =
