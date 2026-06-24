@@ -1,0 +1,60 @@
+name: Quote Summary — Sticky Header (e2e + visual)
+
+# Bloqueia merges quando o header sticky do Resumo regride (posicionamento,
+# bordas, backdrop-blur ou clicabilidade dos botões em desktop/mobile/tablet).
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/QuoteBuilderSummaryColumn.tsx'
+      - 'src/components/quotes/**'
+      - 'e2e/quotes/quote-summary-sticky-header.spec.ts'
+      - 'e2e/quotes/quote-summary-sticky-header-visual.spec.ts'
+      - '.github/workflows/quote-summary-sticky-header.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/QuoteBuilderSummaryColumn.tsx'
+      - 'src/components/quotes/**'
+      - 'e2e/quotes/quote-summary-sticky-header.spec.ts'
+      - 'e2e/quotes/quote-summary-sticky-header-visual.spec.ts'
+
+concurrency:
+  group: quote-summary-sticky-header-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sticky-header-e2e:
+    name: Quote Summary sticky header — Playwright (e2e + visual)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run sticky header specs
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-summary-sticky-header.spec.ts \
+            e2e/quotes/quote-summary-sticky-header-visual.spec.ts \
+            --project=chromium-authed --retries=2
+      - name: Upload Playwright report + visual diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-sticky-header
+          path: |
+            playwright-report/
+            test-results/**/*.png
+            test-results/**/trace.zip
+          retention-days: 14
