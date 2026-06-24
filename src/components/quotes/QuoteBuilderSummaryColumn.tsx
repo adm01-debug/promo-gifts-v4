@@ -336,6 +336,20 @@ export function QuoteBuilderSummaryColumn({
               <ShoppingCart className="h-4 w-4 text-primary" />
             </div>
             <h3 className="font-display text-base font-semibold">Resumo</h3>
+            {items.length >= 2 && onReorder && (
+              <Button
+                type="button"
+                size="sm"
+                variant={groupedByProduct ? 'secondary' : 'outline'}
+                className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
+                onClick={handleGroupByProduct}
+                title="Agrupa itens do mesmo produto (mesmo SKU) lado a lado"
+                data-testid="quote-summary-group-by-product"
+              >
+                <Layers className="h-3.5 w-3.5" />
+                Agrupar
+              </Button>
+            )}
           </div>
 
           {/* Stale price filter */}
