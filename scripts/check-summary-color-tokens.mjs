@@ -11,10 +11,21 @@
  * a lista padrão — usado em fuzz tests in-process.
  */
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
+// Resolve ROOT de forma resiliente — sob Vitest/Vite o `import.meta.url`
+// pode chegar como `http://`; nesse caso fallback para cwd.
+function resolveRoot() {
+  try {
+    const url = new URL('..', import.meta.url);
+    if (url.protocol === 'file:') return resolve(fileURLToPath(url));
+  } catch {
+    /* noop */
+  }
+  return process.cwd();
+}
+export const ROOT = resolveRoot();
 export const TITLE = 'Resumo das Configurações';
 export const WINDOW_BEFORE = 400;
 export const WINDOW_AFTER = 2200;
