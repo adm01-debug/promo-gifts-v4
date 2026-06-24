@@ -841,7 +841,7 @@ export function QuoteBuilderSummaryColumn({
                                   </div>
                                 </div>
                                 {!isCollapsed && (
-                                  <>
+                                  <div className="animate-fade-in motion-reduce:animate-none">
                                     <div className="flex items-center gap-2 text-xs">
                                       <span className="text-muted-foreground">Qtd:</span>
                                       <span className="font-medium">{item.quantity}</span>
