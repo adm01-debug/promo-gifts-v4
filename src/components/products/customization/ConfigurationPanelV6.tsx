@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
