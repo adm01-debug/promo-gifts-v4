@@ -3,7 +3,7 @@
  * Refatorado: lógica em useQuoteBuilderState, UI em sub-componentes.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 
