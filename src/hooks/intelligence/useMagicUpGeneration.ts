@@ -455,16 +455,24 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
     setVariations((prev) =>
       prev.map((v, i) => (i === activeVariation ? { ...v, isFavorite: newVal } : v)),
     );
-    await supabase
+    // BUG-MAGICUP-FAVORITE-SILENT-FAIL FIX: bare await swallowed RLS errors;
+    // on failure the optimistic UI update above was not rolled back.
+    const { error: favErr } = await supabase
       .from('magic_up_generations')
       .update({ is_favorite: newVal })
       .eq('id', currentVariation.id);
+    if (favErr) logger.warn('[magic-up] Toggle favorite failed:', favErr);
     queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
   }, [currentVariation, activeVariation, queryClient]);
 
   const handleToggleHistoryFavorite = useCallback(
     async (id: string, current: boolean) => {
-      await supabase.from('magic_up_generations').update({ is_favorite: !current }).eq('id', id);
+      // BUG-MAGICUP-HISTORY-FAVORITE-SILENT-FAIL FIX: bare await swallowed errors.
+      const { error: favErr } = await supabase
+        .from('magic_up_generations')
+        .update({ is_favorite: !current })
+        .eq('id', id);
+      if (favErr) logger.warn('[magic-up] Toggle history favorite failed:', favErr);
       queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
     },
     [queryClient],
@@ -472,7 +480,16 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
 
   const handleDeleteHistory = useCallback(
     async (id: string) => {
-      await supabase.from('magic_up_generations').delete().eq('id', id);
+      // BUG-MAGICUP-DELETE-SILENT-FAIL FIX: bare await swallowed RLS denials;
+      // the success toast fired even when the DB row was not deleted.
+      const { error: delErr } = await supabase
+        .from('magic_up_generations')
+        .delete()
+        .eq('id', id);
+      if (delErr) {
+        logger.warn('[magic-up] Delete history failed:', delErr);
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
       toast.success('Imagem removida do histórico');
     },
