@@ -216,24 +216,7 @@ export function ProductRow({ item }: { item: ProposalItem }) {
   const persTotal = item.personalizations?.reduce((s, p) => s + (p.total_cost || 0), 0) || 0;
   const total = item.quantity * item.unitPrice + persTotal - itemDiscount * item.quantity;
 
-  const gravacao = item.personalizations
-    ?.map((p) => {
-      let s = p.location_name ? `[${p.location_name}] ${p.technique_name}` : p.technique_name;
-      let widthCm = p.width_cm;
-      let heightCm = p.height_cm;
-      if ((!widthCm || !heightCm) && p.notes) {
-        const dimMatch = /\|\s*([\d.]+)×([\d.]+)cm/.exec(p.notes);
-        if (dimMatch) {
-          widthCm = parseFloat(dimMatch[1]);
-          heightCm = parseFloat(dimMatch[2]);
-        }
-      }
-      if (widthCm && heightCm) s += ` ${widthCm}×${heightCm}cm`;
-      if (p.colors_count) s += ` | ${p.colors_count} cor${p.colors_count > 1 ? 'es' : ''}`;
-      if (p.material) s += ` | ${p.material}`;
-      return s;
-    })
-    .join(' · ');
+  const gravacao = formatPersonalizationsList(item.personalizations ?? []);
 
   return (
     <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
