@@ -25,6 +25,7 @@ function makeItem(quantity: number, unit_price: number): QuoteItem {
     quote_id: 'q-1',
     product_id: 'p-1',
     product_name: 'Produto Teste',
+    color_name: 'Azul', // cor obrigatória em buildItemsInsertPayload
     quantity,
     unit_price,
     total_price: quantity * unit_price,
