@@ -338,7 +338,9 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     if (cnpjDigits.length === 14) {
       try {
         const { untypedFrom } = await import('@/lib/supabase-untyped');
-        const { data: existingRecords } = await untypedFrom<{
+        // BUG-NEWSUPPLIER-CNPJ-DUPCHECK-SILENT-FAIL FIX: { data } without error check — a failed
+        // SELECT silently bypassed the CNPJ dup check; now throws so the outer catch logs it.
+        const { data: existingRecords, error: cnpjCheckErr } = await untypedFrom<{
           id: string;
           name: string;
           cnpj: string;
@@ -346,6 +348,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           .select('id,name,cnpj')
           .eq('cnpj', cnpj.trim())
           .limit(1);
+        if (cnpjCheckErr) throw cnpjCheckErr;
         if (existingRecords && existingRecords.length > 0) {
           toast.error(`Já existe um fornecedor com este CNPJ: "${existingRecords[0].name}".`);
           setSaving(false);
