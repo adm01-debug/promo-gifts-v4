@@ -72,7 +72,7 @@ describe('fetchComments', () => {
 
     // Wait for initial fetch
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 10));
+      await new Promise<void>((r) => { setTimeout(r, 10); });
     });
 
     expect(result.current.comments).toHaveLength(1);
@@ -96,7 +96,7 @@ describe('fetchComments', () => {
   it('não faz fetch quando quoteId é undefined', async () => {
     const { result } = renderHook(() => useQuoteComments(undefined));
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 10));
+      await new Promise<void>((r) => { setTimeout(r, 10); });
     });
     expect(result.current.comments).toEqual([]);
     expect(vi.mocked(supabase.from)).not.toHaveBeenCalled();
