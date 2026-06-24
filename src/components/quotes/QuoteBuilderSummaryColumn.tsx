@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/dialog';
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Edit,
   GripVertical,
   Layers,
