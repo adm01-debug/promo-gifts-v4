@@ -14,7 +14,6 @@ vi.mock('@/hooks/quotes', () => ({
   useAutoSaveQuote: vi.fn(() => ({ saving: false })),
   useQuoteItems: vi.fn(() => ({ items: [], setItems: vi.fn() })),
   useQuoteComments: vi.fn(() => ({ comments: [], addComment: vi.fn() })),
-  useQuoteTemplates: vi.fn(() => ({ templates: [], isLoading: false })),
   useQuoteVersions: vi.fn(() => ({ versions: [], isLoading: false })),
   useProdutoPersonalizacao: vi.fn(() => ({})),
   useSellerDiscountLimits: vi.fn(() => ({ limit: 0, isLoading: false })),

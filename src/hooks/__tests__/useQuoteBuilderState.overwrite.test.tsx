@@ -93,7 +93,6 @@ vi.mock('@/hooks/quotes', () => ({
     fetchQuote: fetchQuoteSpy,
     isLoading: false,
   }),
-  useQuoteTemplates: () => ({ templates: [] }),
   useSellerDiscountLimits: () => ({ myLimit: 50 }),
   useDiscountApproval: () => ({ requestApproval: requestApprovalSpy }),
   useQuoteItems: () => ({
