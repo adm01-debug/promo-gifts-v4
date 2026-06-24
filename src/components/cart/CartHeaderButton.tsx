@@ -192,7 +192,7 @@ export function CartHeaderButton() {
 
       <PopoverContent
         data-testid="cart-drawer"
-        className="w-[420px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
+        className="w-[336px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
         align="end"
         sideOffset={8}
         onCloseAutoFocus={() => {
@@ -316,7 +316,7 @@ export function CartHeaderButton() {
               </div>
             ) : (
               <>
-                <ScrollArea data-testid="cart-popover-scroll" className="h-[min(60vh,440px)]">
+                <ScrollArea data-testid="cart-popover-scroll" className="h-[min(48vh,352px)]">
                   <div className="space-y-2 p-3">
                     {carts.map((cart) => {
                       const isActive = cart.id === activeCartId && !collapsedIds.has(cart.id);
