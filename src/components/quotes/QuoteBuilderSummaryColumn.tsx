@@ -456,18 +456,35 @@ export function QuoteBuilderSummaryColumn({
             </div>
             <h3 className="font-display text-base font-semibold">Resumo</h3>
             {items.length >= 2 && onReorder && (
-              <Button
-                type="button"
-                size="sm"
-                variant={groupedByProduct ? 'secondary' : 'outline'}
-                className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
-                onClick={handleGroupByProduct}
-                title="Agrupa itens do mesmo produto (mesmo SKU) lado a lado"
-                data-testid="quote-summary-group-by-product"
-              >
-                <Layers className="h-3.5 w-3.5" />
-                Agrupar
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={groupedByProduct ? 'secondary' : 'outline'}
+                    className="ml-auto h-7 gap-1.5 px-2.5 text-xs"
+                    title="Agrupar itens"
+                    data-testid="quote-summary-group-trigger"
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                    Agrupar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={groupByProductId}
+                    data-testid="quote-summary-group-by-product"
+                  >
+                    Por produto (SKU)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={groupByCategory}
+                    data-testid="quote-summary-group-by-category"
+                  >
+                    Por categoria
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 
