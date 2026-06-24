@@ -47,11 +47,13 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run Quote Summary specs (e2e + visual + action buttons)
+        id: pwtest
         run: |
           npx playwright test \
             e2e/quotes/quote-summary-sticky-header.spec.ts \
             e2e/quotes/quote-summary-sticky-header-visual.spec.ts \
             e2e/quotes/quote-summary-action-buttons.spec.ts \
+            e2e/quotes/quote-summary-action-buttons-states.spec.ts \
             --project=chromium-authed --retries=2 \
             --trace=retain-on-failure \
             --screenshot=only-on-failure \
@@ -59,6 +61,7 @@ jobs:
             --reporter=html,github
       - name: Upload Playwright HTML report
         if: always()
+        id: upload-report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-quote-summary
@@ -67,6 +70,7 @@ jobs:
           if-no-files-found: ignore
       - name: Upload failure artifacts (screenshots, diffs, traces, videos)
         if: failure()
+        id: upload-failures
         uses: actions/upload-artifact@v4
         with:
           name: playwright-failures-quote-summary
@@ -78,5 +82,55 @@ jobs:
             test-results/**/trace.zip
             test-results/**/video.webm
           retention-days: 14
+          if-no-files-found: ignore
+      - name: Comentar na PR com links de diffs e traces (em falha)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          REPORT_URL: ${{ steps.upload-report.outputs.artifact-url }}
+          FAILURES_URL: ${{ steps.upload-failures.outputs.artifact-url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const { REPORT_URL, FAILURES_URL, RUN_URL } = process.env;
+            const marker = '<!-- quote-summary-sticky-header-failure -->';
+            const body = [
+              marker,
+              '### ❌ Quote Summary — Playwright falhou',
+              '',
+              'Specs cobertas: sticky header (e2e + visual), action buttons (alinhamento + estados).',
+              '',
+              `- 📊 **Relatório HTML (sempre):** ${REPORT_URL || '_artefato indisponível_'}`,
+              `- 🖼️ **Diffs visuais + screenshots + traces + vídeos (falha):** ${FAILURES_URL || '_artefato indisponível_'}`,
+              `- 🔧 **Run completo:** ${RUN_URL}`,
+              '',
+              '<details><summary>Como inspecionar localmente</summary>',
+              '',
+              '```bash',
+              '# Baixe o zip "playwright-failures-quote-summary" e:',
+              'unzip playwright-failures-quote-summary.zip -d ./pw-fail',
+              'npx playwright show-trace ./pw-fail/**/trace.zip',
+              '```',
+              '',
+              'Para regravar baselines visuais após mudança intencional:',
+              '```bash',
+              'npx playwright test e2e/quotes/quote-summary-sticky-header-visual.spec.ts \\',
+              '  --project=chromium-authed --update-snapshots',
+              '```',
+              '</details>',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
           if-no-files-found: ignore
 
