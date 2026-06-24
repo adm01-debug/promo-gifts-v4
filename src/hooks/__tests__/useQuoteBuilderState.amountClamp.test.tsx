@@ -96,7 +96,6 @@ vi.mock('@/hooks/quotes', () => ({
     fetchQuote: fetchQuoteSpy,
     isLoading: false,
   }),
-  useQuoteTemplates: () => ({ templates: [] }),
   // myLimit = 100 → evita aprovação mesmo com desconto real de 100%
   useSellerDiscountLimits: () => ({ myLimit: 100 }),
   useDiscountApproval: () => ({ requestApproval: requestApprovalSpy }),

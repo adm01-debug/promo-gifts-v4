@@ -31,7 +31,6 @@ vi.mock('@/hooks/quotes', async () => {
       fetchQuote: vi.fn(),
       isLoading: false,
     }),
-    useQuoteTemplates: () => ({ templates: [] }),
     useSellerDiscountLimits: () => ({ myLimit: 10 }),
     useDiscountApproval: () => ({ requestApproval: vi.fn() }),
   };
