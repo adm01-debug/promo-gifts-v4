@@ -281,6 +281,9 @@ export function QuoteAutoSave({
     }
   };
 
+  const statusText = getStatusText();
+  const showIcon = status !== 'idle' || statusText !== '';
+
   return (
     <>
       {/* Indicador de status */}
@@ -288,18 +291,20 @@ export function QuoteAutoSave({
         <TooltipTrigger asChild>
           <div className={cn('flex items-center gap-2', className)}>
             <AnimatePresence mode="wait">
-              <motion.div
-                key={status}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                {getStatusIcon()}
-              </motion.div>
+              {showIcon && (
+                <motion.div
+                  key={status}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {getStatusIcon()}
+                </motion.div>
+              )}
             </AnimatePresence>
             <span className="hidden text-xs text-muted-foreground sm:inline">
-              {getStatusText()}
+              {statusText}
             </span>
             {hasUnsavedChanges && status !== 'saving' && (
               <Badge variant="outline" className="h-5 text-[10px]">
@@ -308,6 +313,7 @@ export function QuoteAutoSave({
             )}
           </div>
         </TooltipTrigger>
+
         <TooltipContent>
           <div className="space-y-1 text-xs">
             <p className="font-medium">{getStatusText()}</p>
