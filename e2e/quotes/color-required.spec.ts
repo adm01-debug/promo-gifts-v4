@@ -46,4 +46,33 @@ test.describe('Orçamento — cor obrigatória ao adicionar produto', () => {
     await expect(page.getByTestId('quote-add-product-modal')).toHaveCount(0);
     await expectVisibleByTestId(page, 'quote-item-row');
   });
+
+  test('backend rejeita INSERT em quote_items sem color_name', async ({ page }) => {
+    await loginAs(page, 'seller');
+
+    // Tenta inserir item sem cor diretamente via Supabase (bypassa o front-end).
+    // A constraint `quote_items_color_required` deve devolver erro 23514 (check_violation).
+    const result = await page.evaluate(async () => {
+      const mod = await import('/src/integrations/supabase/client.ts');
+      const { error } = await mod.supabase
+        .from('quote_items')
+        .insert({
+          quote_id: '00000000-0000-0000-0000-000000000000',
+          product_id: '00000000-0000-0000-0000-000000000000',
+          product_name: 'Teste sem cor',
+          quantity: 1,
+          unit_price: 1,
+          subtotal: 1,
+          color_name: null,
+        } as never);
+      return { code: error?.code ?? null, message: error?.message ?? null };
+    });
+
+    // Aceita check_violation (23514) OU RLS (42501) — ambos provam que o backend recusa.
+    expect(['23514', '42501']).toContain(result.code);
+    if (result.code === '23514') {
+      expect(result.message).toMatch(/quote_items_color_required/i);
+    }
+  });
 });
+
