@@ -141,6 +141,7 @@ export function useQuoteViewData(id: string | undefined) {
         personalizations:
           item.personalizations?.map((p) => ({
             technique_name: p.technique_name || 'Personalizacao',
+            location_name: p.location_name || undefined,
             colors_count: p.colors_count || 1,
             width_cm: p.width_cm || undefined,
             height_cm: p.height_cm || undefined,
