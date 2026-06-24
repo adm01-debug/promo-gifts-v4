@@ -30,6 +30,8 @@ interface QuoteBuilderStepperProps {
   /** Navigation callback */
   onStepClick?: (step: QuoteBuilderStep) => void;
   className?: string;
+  /** Compact variant: smaller circles + tighter spacing for inline header usage. */
+  compact?: boolean;
 }
 
 export function QuoteBuilderStepper({
@@ -37,7 +39,14 @@ export function QuoteBuilderStepper({
   activeStep,
   onStepClick,
   className,
+  compact = false,
 }: QuoteBuilderStepperProps) {
+  const circleSize = compact ? 'h-7 w-7' : 'h-10 w-10';
+  const iconSize = compact ? 'h-[14px] w-[14px]' : 'h-[18px] w-[18px]';
+  const labelSize = compact ? 'text-[10px] sm:text-[11px]' : 'text-[10px] sm:text-xs';
+  const connectorMt = compact ? 'mt-[13px]' : 'mt-[19px]';
+  const gap = compact ? 'gap-1' : 'gap-2';
+
   return (
     <nav
       aria-label="Progresso do orçamento"
@@ -64,12 +73,16 @@ export function QuoteBuilderStepper({
               <button
                 type="button"
                 onClick={() => onStepClick?.(step.id)}
-                className="group flex shrink-0 cursor-pointer flex-col items-center gap-2 focus:outline-none disabled:cursor-not-allowed"
+                className={cn(
+                  'group flex shrink-0 cursor-pointer flex-col items-center focus:outline-none disabled:cursor-not-allowed',
+                  gap,
+                )}
                 aria-label={`Etapa ${stepNumber}: ${step.label} (${status})`}
               >
                 <div
                   className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-200',
+                    'flex items-center justify-center rounded-full border-2 transition-all duration-200',
+                    circleSize,
                     'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                     isCompleted && !isActive && 'border-primary bg-primary/20 text-primary',
                     isActive &&
@@ -78,16 +91,17 @@ export function QuoteBuilderStepper({
                   )}
                 >
                   {isCompleted && !isActive ? (
-                    <Check className="h-[18px] w-[18px]" strokeWidth={2.25} />
+                    <Check className={iconSize} strokeWidth={2.25} />
                   ) : (
-                    <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                    <Icon className={iconSize} strokeWidth={2} />
                   )}
                 </div>
                 <span
                   className={cn(
-                    'whitespace-nowrap text-[10px] font-medium leading-none transition-colors sm:text-xs',
-                    'hidden sm:block', // Esconde no mobile por padrão para economizar espaço
-                    isActive && 'block font-semibold text-primary', // Sempre mostra o texto da etapa ativa
+                    'whitespace-nowrap font-medium leading-none transition-colors',
+                    labelSize,
+                    'hidden sm:block',
+                    isActive && 'block font-semibold text-primary',
                     isCompleted && !isActive && 'text-foreground',
                     !isActive && !isCompleted && 'text-muted-foreground',
                   )}
@@ -98,7 +112,14 @@ export function QuoteBuilderStepper({
 
               {/* Connector line */}
               {index < STEPS.length - 1 && (
-                <div className="mx-1 mt-[19px] h-0.5 flex-1 sm:mx-4" aria-hidden="true">
+                <div
+                  className={cn(
+                    'h-0.5 flex-1',
+                    connectorMt,
+                    compact ? 'mx-1 sm:mx-2' : 'mx-1 sm:mx-4',
+                  )}
+                  aria-hidden="true"
+                >
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-300',
@@ -114,3 +135,4 @@ export function QuoteBuilderStepper({
     </nav>
   );
 }
+
