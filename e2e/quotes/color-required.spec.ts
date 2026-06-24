@@ -4,54 +4,61 @@ import { gotoAndSettle } from '../helpers/nav';
 import { waitForTestId, expectVisibleByTestId } from '../helpers/waits';
 
 /**
- * Garante que o fluxo "Adicionar Produto" no orçamento exige seleção de cor:
- * - hint inline orientando seleção
- * - tiles sem estoque ficam disabled (aria-disabled)
- * - clique numa cor válida adiciona o item
+ * Fluxo "Adicionar Produto" ao orçamento:
+ * - cor é obrigatória (não existe mais opção "adicionar sem cor")
+ * - cores com estoque zerado abrem AlertDialog de confirmação
+ * - cancelar mantém o usuário no seletor; confirmar adiciona o item
+ * - backend recusa INSERT em quote_items sem color_name
  */
-test.describe('Orçamento — cor obrigatória ao adicionar produto', () => {
-  test('hint inline aparece e tile válido adiciona o item', async ({ page }) => {
+test.describe('Orçamento — seleção de cor obrigatória', () => {
+  test('cor em estoque adiciona direto; sem estoque pede confirmação', async ({ page }) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/orcamentos/novo');
 
-    // Abre modal de adicionar produto
     await page.getByTestId('quote-add-product-button').first().click();
     await waitForTestId(page, 'quote-add-product-modal');
 
-    // Seleciona o primeiro produto da busca
     await page.getByTestId('product-search-input').fill('');
-    const firstProduct = page.getByTestId(/^product-search-result-/).first();
-    await firstProduct.click();
+    await page.getByTestId(/^product-search-result-/).first().click();
 
-    // Hint de cor obrigatória deve aparecer
-    await expectVisibleByTestId(page, 'color-required-hint');
-    await expect(page.getByTestId('color-required-hint')).toContainText(/selecione uma cor/i);
-
-    // Confirma que NÃO existe mais a opção "adicionar sem cor"
+    // Não existe mais o hint antigo nem a opção "adicionar sem cor"
+    await expect(page.getByTestId('color-required-hint')).toHaveCount(0);
     await expect(page.getByTestId('product-add-without-color')).toHaveCount(0);
 
-    // Tiles sem estoque ficam disabled
-    const disabledTiles = page.getByTestId('color-variant-tile-disabled');
-    const disabledCount = await disabledTiles.count();
-    if (disabledCount > 0) {
-      await expect(disabledTiles.first()).toBeDisabled();
+    const oosTiles = page.getByTestId('color-variant-tile-out-of-stock');
+    const oosCount = await oosTiles.count();
+
+    if (oosCount > 0) {
+      // Cancelar: dialog abre e fecha sem adicionar item
+      await oosTiles.first().click();
+      await expectVisibleByTestId(page, 'out-of-stock-confirm-dialog');
+      await expect(
+        page.getByTestId('out-of-stock-confirm-dialog'),
+      ).toContainText(/estoque.*zerado/i);
+      await page.getByTestId('out-of-stock-confirm-cancel').click();
+      await expect(page.getByTestId('out-of-stock-confirm-dialog')).toHaveCount(0);
+      await expect(page.getByTestId('quote-add-product-modal')).toBeVisible();
+      await expect(page.getByTestId('quote-item-row')).toHaveCount(0);
+
+      // Confirmar: adiciona o item mesmo com estoque zerado
+      await oosTiles.first().click();
+      await expectVisibleByTestId(page, 'out-of-stock-confirm-dialog');
+      await page.getByTestId('out-of-stock-confirm-accept').click();
+      await expect(page.getByTestId('quote-add-product-modal')).toHaveCount(0);
+      await expectVisibleByTestId(page, 'quote-item-row');
+    } else {
+      // Sem variantes OOS: clique em tile válido adiciona direto
+      const validTile = page.getByTestId('color-variant-tile').first();
+      await expect(validTile).toBeEnabled();
+      await validTile.click();
+      await expect(page.getByTestId('quote-add-product-modal')).toHaveCount(0);
+      await expectVisibleByTestId(page, 'quote-item-row');
     }
-
-    // Clica num tile válido → item entra na lista do orçamento
-    const validTile = page.getByTestId('color-variant-tile').first();
-    await expect(validTile).toBeEnabled();
-    await validTile.click();
-
-    // Modal fecha e item aparece
-    await expect(page.getByTestId('quote-add-product-modal')).toHaveCount(0);
-    await expectVisibleByTestId(page, 'quote-item-row');
   });
 
   test('backend rejeita INSERT em quote_items sem color_name', async ({ page }) => {
     await loginAs(page, 'seller');
 
-    // Tenta inserir item sem cor diretamente via Supabase (bypassa o front-end).
-    // A constraint `quote_items_color_required` deve devolver erro 23514 (check_violation).
     const result = await page.evaluate(async () => {
       const mod = await import('/src/integrations/supabase/client.ts');
       const { error } = await mod.supabase
@@ -68,11 +75,9 @@ test.describe('Orçamento — cor obrigatória ao adicionar produto', () => {
       return { code: error?.code ?? null, message: error?.message ?? null };
     });
 
-    // Aceita check_violation (23514) OU RLS (42501) — ambos provam que o backend recusa.
     expect(['23514', '42501']).toContain(result.code);
     if (result.code === '23514') {
       expect(result.message).toMatch(/quote_items_color_required/i);
     }
   });
 });
-

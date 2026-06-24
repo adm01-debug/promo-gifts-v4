@@ -4,10 +4,20 @@
  * Inclui suporte a size_code quando disponível.
  */
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ArrowLeft, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
@@ -31,6 +41,7 @@ export function QuoteProductColorSelector({
   onBack,
 }: QuoteProductColorSelectorProps) {
   const { data: variants, isLoading } = useExternalVariantStock(product.id);
+  const [pendingOutOfStock, setPendingOutOfStock] = useState<ExternalVariantStock | null>(null);
 
   const sortedVariants = useMemo(() => {
     if (!variants) return [];
@@ -117,10 +128,8 @@ export function QuoteProductColorSelector({
               type="button"
               onClick={() => {
                 if (isOutOfStock) {
-                  const ok = window.confirm(
-                    `O estoque da cor "${colorLabel}" está zerado no fornecedor.\n\nTem certeza que deseja adicioná-la ao orçamento?`,
-                  );
-                  if (!ok) return;
+                  setPendingOutOfStock(variant);
+                  return;
                 }
                 onSelect(variant);
               }}
@@ -187,6 +196,43 @@ export function QuoteProductColorSelector({
         })}
       </div>
 
+      <AlertDialog
+        open={pendingOutOfStock !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingOutOfStock(null);
+        }}
+      >
+        <AlertDialogContent data-testid="out-of-stock-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Estoque zerado no fornecedor
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O estoque da cor{' '}
+              <strong className="text-foreground">
+                {pendingOutOfStock?.color_name || 'selecionada'}
+              </strong>{' '}
+              está zerado no fornecedor. Você tem certeza que quer adicioná-la ao orçamento?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="out-of-stock-confirm-cancel">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="out-of-stock-confirm-accept"
+              onClick={() => {
+                const v = pendingOutOfStock;
+                setPendingOutOfStock(null);
+                if (v) onSelect(v);
+              }}
+            >
+              Adicionar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
