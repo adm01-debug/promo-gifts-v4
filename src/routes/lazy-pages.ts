@@ -51,7 +51,7 @@ export const CollectionDetailPage = lazyWithRetry(
 // ─────────────────────────────────────────────────────────────────
 // Quotes
 // ─────────────────────────────────────────────────────────────────
-export const QuoteTemplatesPage = lazyWithRetry(() => import('@/pages/quotes/QuoteTemplatesPage'));
+
 export const QuotesListPage = lazyWithRetry(() => import('@/pages/quotes/QuotesListPage'));
 export const QuotesDashboardPage = lazyWithRetry(
   () => import('@/pages/quotes/QuotesDashboardPage'),
