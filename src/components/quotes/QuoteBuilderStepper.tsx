@@ -41,11 +41,11 @@ export function QuoteBuilderStepper({
   className,
   compact = false,
 }: QuoteBuilderStepperProps) {
-  const circleSize = compact ? 'h-6 w-6 sm:h-7 sm:w-7' : 'h-10 w-10';
-  const iconSize = compact ? 'h-3 w-3 sm:h-[14px] sm:w-[14px]' : 'h-[18px] w-[18px]';
-  const labelSize = compact ? 'text-[10px] sm:text-[11px]' : 'text-[10px] sm:text-xs';
-  const connectorMt = compact ? 'mt-[11px] sm:mt-[13px]' : 'mt-[19px]';
-  const gap = compact ? 'gap-1' : 'gap-2';
+  const circleSize = compact ? 'h-7 w-7 sm:h-8 sm:w-8' : 'h-10 w-10';
+  const iconSize = compact ? 'h-[14px] w-[14px] sm:h-4 sm:w-4' : 'h-[18px] w-[18px]';
+  const labelSize = compact ? 'text-[11px] sm:text-[13px]' : 'text-[10px] sm:text-xs';
+  const connectorMt = compact ? 'mt-[13px] sm:mt-[15px]' : 'mt-[19px]';
+  const gap = compact ? 'gap-1.5' : 'gap-2';
 
   return (
     <nav
