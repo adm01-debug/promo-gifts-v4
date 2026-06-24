@@ -1,10 +1,9 @@
 /**
  * QuoteItemsList — Lista de itens do orçamento.
  *
- * NOTA: o nome do componente é histórico. Reordenação por drag-and-drop foi
- * removida porque cada orçamento trata um produto por vez (tiragem, gravação,
- * etc.) e mover itens não agrega valor. A ordem segue estritamente a fonte de
- * dados (`items`).
+ * Reordenação por drag-and-drop foi removida porque cada orçamento trata um
+ * produto por vez (tiragem, gravação, etc.) e mover itens não agrega valor.
+ * A ordem segue estritamente a fonte de dados (`items`).
  */
 
 import { Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
