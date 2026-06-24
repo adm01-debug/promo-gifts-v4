@@ -148,41 +148,40 @@ export default function QuoteBuilderPage() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3 sm:space-y-4 sm:px-4 sm:pb-24 sm:pt-4 lg:px-6 lg:pb-28 xl:px-8">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-2 sm:space-y-3 sm:px-4 sm:pb-24 sm:pt-3 lg:px-6 lg:pb-28 xl:px-8">
         <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer" />
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4 lg:shrink-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-11 sm:w-11">
-              <FileText className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1
-                data-testid={
-                  s.isEditMode ? 'page-title-orcamento-editar' : 'page-title-orcamento-novo'
-                }
-                className="truncate font-display text-xl font-bold leading-tight tracking-tight sm:text-2xl"
-              >
-                {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
-              </h1>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
-                {s.isEditMode
-                  ? 'Atualize os produtos, condições e personalizações do orçamento'
-                  : 'Crie um orçamento com produtos e personalizações'}
-              </p>
-            </div>
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-10 sm:w-10">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-
-          {/* LAYOUT-FIX: stepper compactado e alinhado à direita do título no desktop
-              para reduzir a altura do header e liberar espaço vertical de trabalho. */}
-          <div className="min-w-0 flex-1 lg:max-w-3xl lg:ml-auto">
-            <QuoteBuilderStepper
-              completedSteps={s.completedSteps}
-              activeStep={s.activeStep}
-              onStepClick={s.goToStep}
-              compact
-            />
+          <div className="min-w-0 flex-1">
+            <h1
+              data-testid={
+                s.isEditMode ? 'page-title-orcamento-editar' : 'page-title-orcamento-novo'
+              }
+              className="truncate font-display text-lg font-bold leading-tight tracking-tight sm:text-xl"
+            >
+              {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
+            </h1>
+            <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
+              {s.isEditMode
+                ? 'Atualize os produtos, condições e personalizações do orçamento'
+                : 'Crie um orçamento com produtos e personalizações'}
+            </p>
           </div>
         </div>
+
+        {/* LAYOUT-FIX: stepper logo abaixo do título e sticky no topo para preservar
+            contexto durante o scroll, liberando espaço vertical acima da dobra. */}
+        <div className="sticky top-0 z-30 -mx-3 border-b border-border/40 bg-background/85 px-3 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
+          <QuoteBuilderStepper
+            completedSteps={s.completedSteps}
+            activeStep={s.activeStep}
+            onStepClick={s.goToStep}
+            compact
+          />
+        </div>
+
 
 
 
