@@ -132,7 +132,7 @@ export default function QuoteBuilderPage() {
         }}
         onChange={setHasUnsavedChanges}
         serverSavedAt={serverSavedAt}
-        className="fixed right-4 top-20 z-40"
+        className="sr-only pointer-events-none"
       />
 
       {conflictInfo && (
