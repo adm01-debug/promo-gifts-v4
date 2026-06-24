@@ -45,7 +45,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -55,6 +57,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { QuoteItem } from '@/hooks/quotes';
 import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
@@ -64,6 +72,8 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatColors, formatArea } from '@/lib/quotes/personalizationSummary';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
+import { persistItemsOrder } from '@/services/quoteItemsReorder';
+import { logger } from '@/lib/logger';
 // BUG-C FIX: import SSOT round2 instead of duplicating it locally
 import { round2 } from '@/hooks/quotes/quoteHelpers';
 
