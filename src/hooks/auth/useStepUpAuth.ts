@@ -5,6 +5,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export type StepUpAction =
   | 'demote_dev'
@@ -141,9 +142,12 @@ export function useStepUpAuth() {
     const challengeId = challengeIdRef.current;
     if (!challengeId) return;
     try {
-      await supabase.functions.invoke('step-up-verify', {
+      // BUG-STEPUP-CANCEL-SILENT-FAIL FIX: functions.invoke returns { data, error }
+      // for application-level errors — bare await discarded them.
+      const { error: cancelErr } = await supabase.functions.invoke('step-up-verify', {
         body: { step: 'cancel', challenge_id: challengeId, cancel_reason: reason ?? null },
       });
+      if (cancelErr) logger.warn('[step-up] cancel RPC failed:', cancelErr);
     } catch {
       /* best-effort */
     }

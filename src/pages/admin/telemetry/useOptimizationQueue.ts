@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { waitForBridgeReady, invalidateBridgeReadyCache } from '@/lib/external-db/health-check';
+import { logger } from '@/lib/logger';
 
 /** Detecta erros do bridge causados por 503 / cold-start do isolate. */
 const BRIDGE_FAILURE_PATTERNS = [
@@ -183,7 +184,9 @@ export function useOptimizationQueue() {
       notes = errorMsg;
     }
 
-    await supabase.rpc(
+    // BUG-OPTQUEUE-COMPLETE-SILENT-FAIL FIX: bare RPC await with no error handling.
+    // If this fails, item stays 'pending' in DB but function returns 'done' — state corruption.
+    const { error: completeErr } = await supabase.rpc(
       'complete_optimization' as never,
       {
         _id: item.id,
@@ -194,6 +197,10 @@ export function useOptimizationQueue() {
         _error: errorMsg,
       } as never,
     );
+    if (completeErr) {
+      logger.warn('[optimization-queue] complete_optimization RPC failed:', completeErr);
+      throw completeErr;
+    }
 
     invalidate();
     return finalStatus === 'blocked' ? 'blocked' : 'done';

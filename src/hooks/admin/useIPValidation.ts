@@ -174,7 +174,9 @@ export function useIPValidation() {
         const currentIP = await fetchCurrentIP();
 
         const supabase = await getSupabaseClient();
-        await supabase.functions.invoke('log-login-attempt', {
+        // BUG-IPVALIDATION-LOGIN-LOG-SILENT-FAIL FIX: functions.invoke returns { data, error }
+        // for application errors — bare await discarded them. try-catch only catches network failures.
+        const { error: loginLogErr } = await supabase.functions.invoke('log-login-attempt', {
           body: {
             email,
             user_id: userId,
@@ -184,8 +186,9 @@ export function useIPValidation() {
             user_agent: navigator.userAgent,
           },
         });
+        if (loginLogErr) logger.warn('Error logging login attempt (function error):', loginLogErr);
       } catch (error) {
-        logger.error('Error logging login attempt:', error);
+        logger.error('Error logging login attempt (network):', error);
       }
     },
     [fetchCurrentIP],
