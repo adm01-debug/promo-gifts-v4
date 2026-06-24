@@ -13,16 +13,52 @@ import { supabase } from '@/integrations/supabase/client';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const LS_KEY = 'customization-collapsed:v1';
+const LEGACY_PREFIX = 'customization-collapsed:'; // antigo: 1 chave por technique_id
 const NS = '__customization_collapse';
+const REMOTE_DEBOUNCE_MS = 800;
 const log = createClientLogger('customization.collapsePrefs');
 
 type Map = Record<string, boolean>;
 
+/**
+ * Migra chaves no formato antigo `customization-collapsed:<technique_id>` (valor
+ * "1"/"0") para o novo mapa unificado `customization-collapsed:v1`. Idempotente
+ * — após migrar, remove as chaves legadas. Exportada para uso em testes.
+ */
+export function migrateLegacyCollapseKeys(storage: Storage = window.localStorage): Map {
+  let merged: Map = {};
+  try {
+    const rawNew = storage.getItem(LS_KEY);
+    merged = rawNew ? (JSON.parse(rawNew) as Map) : {};
+  } catch {
+    merged = {};
+  }
+  const legacyKeys: string[] = [];
+  for (let i = 0; i < storage.length; i += 1) {
+    const key = storage.key(i);
+    if (!key || key === LS_KEY || !key.startsWith(LEGACY_PREFIX)) continue;
+    const id = key.slice(LEGACY_PREFIX.length);
+    if (!id) continue;
+    const value = storage.getItem(key);
+    // Não sobrescreve se o mapa novo já tem entrada para esta técnica.
+    if (!(id in merged)) merged[id] = value === '1';
+    legacyKeys.push(key);
+  }
+  if (legacyKeys.length > 0) {
+    try {
+      storage.setItem(LS_KEY, JSON.stringify(merged));
+    } catch {
+      /* ignore */
+    }
+    legacyKeys.forEach((k) => storage.removeItem(k));
+  }
+  return merged;
+}
+
 function readLocal(): Map {
   if (typeof window === 'undefined') return {};
   try {
-    const raw = window.localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as Map) : {};
+    return migrateLegacyCollapseKeys(window.localStorage);
   } catch {
     return {};
   }
