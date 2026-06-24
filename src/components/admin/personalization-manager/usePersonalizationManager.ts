@@ -444,7 +444,13 @@ export function usePersonalizationManager() {
         toast.error('Grupo não possui componentes configurados');
         return;
       }
-      await supabase.from('product_components').delete().eq('product_id', selectedProduct);
+      // BUG-PERSONALIZATION-DELETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      // If delete fails, component insert loop would create duplicates.
+      const { error: deleteCompErr } = await supabase
+        .from('product_components')
+        .delete()
+        .eq('product_id', selectedProduct);
+      if (deleteCompErr) throw deleteCompErr;
       for (const gc of groupComponents) {
         const { data: newComp, error: compError } = await supabase
           .from('product_components')
