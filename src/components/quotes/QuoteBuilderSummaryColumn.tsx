@@ -873,7 +873,7 @@ export function QuoteBuilderSummaryColumn({
                                         />
                                       </div>
                                     )}
-                                  </>
+                                  </div>
                                 )}
                               </div>
                               {!isCollapsed && item.personalizations && item.personalizations.length > 0 && (
