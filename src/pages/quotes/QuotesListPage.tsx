@@ -3,7 +3,7 @@ import {
   FileText,
   Plus,
   Search,
-  BookTemplate,
+  
   ArrowUpDown,
   AlertTriangle,
   CheckCircle2,

@@ -27,7 +27,7 @@ import {
   FileText,
   Plus,
   Package,
-  BookTemplate,
+  
   AlertTriangle,
   Calendar as CalendarIcon,
   Sparkles,
