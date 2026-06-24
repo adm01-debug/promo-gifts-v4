@@ -31,6 +31,11 @@ jobs:
     name: Quote Summary sticky header — Playwright (e2e + visual)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
     env:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
