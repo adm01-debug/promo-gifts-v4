@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
