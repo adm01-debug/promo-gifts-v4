@@ -677,33 +677,33 @@ export function QuoteBuilderSummaryColumn({
                                       </div>
                                     )}
                                   </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium leading-tight">
-                                      {item.product_name}
-                                    </p>
-                                    <div className="mt-0.5 flex items-center gap-1.5">
-                                      <Badge
-                                        variant="secondary"
-                                        className="h-4 px-1.5 py-0 font-mono text-[10px]"
-                                      >
-                                        {item.product_sku}
-                                      </Badge>
-                                      {item.color_name && (
-                                        <div className="flex items-center gap-1">
-                                          <div
-                                            className="h-2.5 w-2.5 rounded-full border border-border/50"
-                                            style={{
-                                              backgroundColor: item.color_hex || '#CCC',
-                                            }}
-                                          />
-                                          <span className="text-[10px] text-muted-foreground">
-                                            {item.color_name}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex shrink-0 items-start gap-0.5 pt-0.5">
+                                   <div className="min-w-0 flex-1">
+                                     <p className="truncate pr-1 text-sm font-medium leading-[1.125rem]">
+                                       {item.product_name}
+                                     </p>
+                                     <div className="mt-1 flex items-center gap-1.5">
+                                       <Badge
+                                         variant="secondary"
+                                         className="h-4 px-1.5 py-0 font-mono text-[10px]"
+                                       >
+                                         {item.product_sku}
+                                       </Badge>
+                                       {item.color_name && (
+                                         <div className="flex items-center gap-1">
+                                           <div
+                                             className="h-2.5 w-2.5 rounded-full border border-border/50"
+                                             style={{
+                                               backgroundColor: item.color_hex || '#CCC',
+                                             }}
+                                           />
+                                           <span className="text-[10px] text-muted-foreground">
+                                             {item.color_name}
+                                           </span>
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
+                                   <div className="flex h-[1.125rem] shrink-0 items-center gap-0.5">
                                     <TooltipProvider delayDuration={200}>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
