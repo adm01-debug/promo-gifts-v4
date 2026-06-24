@@ -27,6 +27,8 @@ import {
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
   ChevronUp,
   Edit,
   GripVertical,
