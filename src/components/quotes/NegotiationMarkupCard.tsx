@@ -71,35 +71,31 @@ export function NegotiationMarkupCard({
           className,
         )}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
+        {/* Header — tudo em uma linha */}
+        <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <div className="shrink-0 rounded-lg bg-primary/10 p-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h4 className="text-sm font-semibold leading-tight">Margem de Negociação</h4>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" aria-label="Sobre margem de negociação">
-                      <Info className="h-3 w-3 text-muted-foreground/60" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className=" ">
-                    Infla o subtotal apresentado ao cliente para criar a sensação de um desconto
-                    maior, mantendo o desconto real dentro da sua alçada. Não aparece no PDF, e-mail
-                    ou link público.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Badge
-                variant="outline"
-                className="mt-1 h-4 gap-1 border-warning/30 bg-warning/10 text-[9px] text-warning"
-              >
-                <EyeOff className="h-2.5 w-2.5" /> Uso interno
-              </Badge>
-            </div>
+            <h4 className="truncate text-sm font-semibold leading-tight">Margem de Negociação</h4>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" aria-label="Sobre margem de negociação" className="shrink-0">
+                  <Info className="h-3 w-3 text-muted-foreground/60" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                Infla o subtotal apresentado ao cliente para criar a sensação de um desconto
+                maior, mantendo o desconto real dentro da sua alçada. Não aparece no PDF, e-mail
+                ou link público.
+              </TooltipContent>
+            </Tooltip>
+            <Badge
+              variant="outline"
+              className="h-4 shrink-0 gap-1 border-warning/30 bg-warning/10 text-[9px] text-warning"
+            >
+              <EyeOff className="h-2.5 w-2.5" /> Uso interno
+            </Badge>
           </div>
           <Switch
             checked={enabled}
@@ -211,12 +207,6 @@ export function NegotiationMarkupCard({
           </>
         )}
 
-        {!enabled && (
-          <p className="text-[10px] leading-snug text-muted-foreground">
-            Ative para inflar o subtotal apresentado ao cliente e dar margem psicológica de desconto
-            sem exceder sua alçada real.
-          </p>
-        )}
       </div>
     </TooltipProvider>
   );
