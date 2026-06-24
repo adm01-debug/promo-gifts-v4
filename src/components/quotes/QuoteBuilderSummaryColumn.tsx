@@ -514,34 +514,48 @@ export function QuoteBuilderSummaryColumn({
             </div>
             <h3 className="font-display text-base font-semibold">Resumo</h3>
             <div className="ml-auto flex items-center gap-2">
-              {items.length >= 1 && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-7 gap-1.5 px-2.5 text-xs"
-                        onClick={toggleAllCollapsed}
-                        aria-pressed={allCollapsed}
-                        aria-label={allCollapsed ? 'Expandir todos os itens' : 'Recolher todos os itens'}
-                        data-testid="quote-summary-collapse-all"
-                      >
-                        {allCollapsed ? (
-                          <ChevronsUpDown className="h-3.5 w-3.5" />
-                        ) : (
-                          <ChevronsDownUp className="h-3.5 w-3.5" />
-                        )}
-                        {allCollapsed ? 'Expandir' : 'Recolher'}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      {allCollapsed ? 'Abrir todos os itens do resumo' : 'Fechar todos os itens do resumo'}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              {items.length >= 1 && (() => {
+                const openCount = items.length - collapsedItemKeys.size;
+                const tooltipMsg = allCollapsed
+                  ? 'Todos os itens estão recolhidos — clique para abrir todos'
+                  : openCount === 1
+                    ? '1 produto aberto — clique para recolher todos'
+                    : `${openCount} produtos abertos — clique para recolher todos`;
+                return (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1.5 px-2.5 text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                          onClick={toggleAllCollapsed}
+                          aria-pressed={allCollapsed}
+                          aria-expanded={!allCollapsed}
+                          aria-label={
+                            allCollapsed
+                              ? `Expandir todos os ${items.length} itens do resumo`
+                              : `Recolher ${openCount} ${openCount === 1 ? 'item aberto' : 'itens abertos'} do resumo`
+                          }
+                          data-testid="quote-summary-collapse-all"
+                          data-open-count={openCount}
+                        >
+                          {allCollapsed ? (
+                            <ChevronsUpDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronsDownUp className="h-3.5 w-3.5" />
+                          )}
+                          {allCollapsed ? 'Expandir' : 'Recolher'}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        {tooltipMsg}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })()}
               {items.length >= 2 && onReorder && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
