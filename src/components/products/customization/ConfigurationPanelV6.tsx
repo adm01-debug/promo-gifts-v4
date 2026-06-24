@@ -67,6 +67,7 @@ export function ConfigurationPanelV6({
   const [showConfirmError, setShowConfirmError] = useState(false);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const isLocked = isConfirmed && !editing;
 
   const larguraNum = parseFloat(largura) || 0;
