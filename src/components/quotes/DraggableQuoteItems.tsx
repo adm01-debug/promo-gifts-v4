@@ -373,8 +373,8 @@ export function DraggableQuoteItems({
           <Card className="opacity-90 shadow-2xl ring-2 ring-primary">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <GripVertical className="h-5 w-5 text-muted-foreground" />
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+
                   {activeItem.product_image_url ? (
                     <img
                       src={activeItem.product_image_url}
