@@ -34,6 +34,8 @@ import {
   ExternalLink,
   Info,
   MessageSquare,
+  ChevronDown,
+
   
 } from 'lucide-react';
 // FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
@@ -60,6 +62,21 @@ export default function QuoteBuilderPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
   const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
+  const [conditionsCollapsed, setConditionsCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('quote-builder:conditions-collapsed') === '1';
+  });
+  const toggleConditionsCollapsed = () => {
+    setConditionsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem('quote-builder:conditions-collapsed', next ? '1' : '0');
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
     hasUnsavedChanges,
   });
@@ -226,10 +243,31 @@ export default function QuoteBuilderPage() {
                     : 'border-border/50',
                 )}
               >
-                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
-                  <Package className="h-4 w-4 text-primary" />
-                  Condições
-                </h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+                    <Package className="h-4 w-4 text-primary" />
+                    Condições
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={toggleConditionsCollapsed}
+                    aria-expanded={!conditionsCollapsed}
+                    aria-controls="quote-conditions-body"
+                    aria-label={conditionsCollapsed ? 'Expandir condições' : 'Colapsar condições'}
+                    title={conditionsCollapsed ? 'Expandir' : 'Colapsar'}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        'h-4 w-4 transition-transform duration-200',
+                        conditionsCollapsed && '-rotate-90',
+                      )}
+                    />
+                  </button>
+                </div>
+                {!conditionsCollapsed && (
+                  <div id="quote-conditions-body" className="space-y-3">
+
 
                 <div className="space-y-1.5">
                   <Label
@@ -521,6 +559,8 @@ export default function QuoteBuilderPage() {
                     </div>
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                   </a>
+                )}
+                  </div>
                 )}
               </div>
 
