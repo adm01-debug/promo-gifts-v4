@@ -114,7 +114,11 @@ interface Props {
   /** ID do orçamento já persistido — quando presente, ativa persistência granular
    * do `sort_order` via UPDATE direto em quote_items (sem disparar autosave global). */
   quoteId?: string | null;
+  /** Liga/desliga supressão do `sort_order` no payload de autosave global enquanto
+   * o reorder granular está em voo (drag-and-drop ou "Agrupar"). RACE-PROOF. */
+  setSkipAutosaveSortOrder?: (v: boolean) => void;
 }
+
 
 /**
  * SortableSummaryCard — wrapper de drag-and-drop para um card do Resumo.
@@ -187,10 +191,12 @@ export function QuoteBuilderSummaryColumn({
   shippingCost = 0,
   onReorder,
   quoteId,
+  setSkipAutosaveSortOrder,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -202,18 +208,27 @@ export function QuoteBuilderSummaryColumn({
   );
 
   /** Persiste a nova ordem em background via UPDATE granular em quote_items.
-   * Não bloqueia a UI (otimista) e mostra toast saneado em falha. */
+   * Não bloqueia a UI (otimista) e mostra toast saneado em falha.
+   * RACE-PROOF: ativa skipAutosaveSortOrder enquanto o UPDATE está em voo para
+   * impedir o autosave global de gravar um `sort_order` intermediário no
+   * LocalStorage entre o arrayMove em memória e o ACK do banco. */
   const persistOrderInBackground = (reordered: QuoteItem[]) => {
     if (!quoteId) return;
     const rows = reordered
       .map((it, i) => ({ id: it.id ?? '', sort_order: i }))
       .filter((r) => r.id);
     if (rows.length === 0) return;
-    persistItemsOrder(quoteId, rows).catch((err) => {
-      logger.error('[QuoteBuilderSummaryColumn] persistItemsOrder failed', err);
-      toast.error('Não foi possível salvar a nova ordem. Tente novamente.');
-    });
+    setSkipAutosaveSortOrder?.(true);
+    persistItemsOrder(quoteId, rows)
+      .catch((err) => {
+        logger.error('[QuoteBuilderSummaryColumn] persistItemsOrder failed', err);
+        toast.error('Não foi possível salvar a nova ordem. Tente novamente.');
+      })
+      .finally(() => {
+        setSkipAutosaveSortOrder?.(false);
+      });
   };
+
 
   const handleDragStart = (e: DragStartEvent) => {
     setActiveDragId(String(e.active.id));
