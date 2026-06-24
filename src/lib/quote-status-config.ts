@@ -95,6 +95,14 @@ export function getQuoteStatusColor(status: string): string {
 /**
  * Valid status transitions for quotes (SSOT — enforced at service layer).
  * Terminal states (converted, cancelled) have empty arrays: no outgoing transitions.
+ *
+ * Financially-committed states (approved, converted) are LOCKED to mirror the DB
+ * authority public.fn_quotes_enforce_immutability, which — for non-service-role users —
+ * permits only approved->converted/expired and converted->expired and rejects anything
+ * else with SQLSTATE 23514. The FE intentionally stays a SUBSET (FE ⊆ DB): it must
+ * never offer a transition the DB will reject, otherwise the UI exposes an action that
+ * errors out (e.g. the Bitrix sync attempting approved->sent). `expired` is automation-
+ * driven and is not exposed to humans here. Guarded by quote-status-config.transitions.test.ts.
  */
 export const QUOTE_VALID_TRANSITIONS: Readonly<Record<QuoteStatus, readonly QuoteStatus[]>> = {
   draft: ['pending', 'pending_approval', 'sent', 'cancelled'],
@@ -102,7 +110,7 @@ export const QUOTE_VALID_TRANSITIONS: Readonly<Record<QuoteStatus, readonly Quot
   pending: ['draft', 'sent', 'expired', 'cancelled'],
   sent: ['approved', 'rejected', 'viewed', 'pending', 'expired', 'cancelled'],
   viewed: ['approved', 'rejected', 'pending', 'expired', 'cancelled'],
-  approved: ['converted', 'sent', 'cancelled'],
+  approved: ['converted'], // committed: DB rejects ->sent/->cancelled (see note above)
   converted: [],
   rejected: ['draft', 'sent', 'cancelled'],
   expired: ['draft', 'pending', 'sent', 'cancelled'],
