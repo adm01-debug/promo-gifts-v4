@@ -57,7 +57,18 @@ export function QuoteBuilderProductSearch({
         }
       }}
     >
-      <DialogContent className="flex max-h-[85vh] max-w-[33.6rem] flex-col gap-4">
+      {/*
+        Larguras responsivas — redução de ~20% vs. o `max-w-2xl` original (42rem).
+        - mobile (<640px):   w-[calc(100vw-2rem)]   → respeita gutter de 1rem em cada lado
+        - sm (≥640px):       max-w-[28rem]          (~448px, –22% vs 36rem original do sm)
+        - md (≥768px):       max-w-[30rem]          (~480px)
+        - lg (≥1024px):      max-w-[33.6rem]        (~537px, exatamente –20% de 42rem)
+      */}
+      <DialogContent
+        data-testid="quote-add-product-modal"
+        className="flex max-h-[85vh] w-[calc(100vw-2rem)] flex-col gap-4 sm:max-w-[28rem] md:max-w-[30rem] lg:max-w-[33.6rem]"
+      >
+
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
