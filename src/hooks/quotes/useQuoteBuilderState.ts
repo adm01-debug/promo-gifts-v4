@@ -1131,8 +1131,7 @@ export function useQuoteBuilderState() {
     ],
   );
 
-  const defaultTemplate = useMemo(() => templates.find((t) => t.is_default), [templates]);
-  const isBuilderBootstrapping = loadingQuote || templatesLoading;
+  const isBuilderBootstrapping = loadingQuote;
 
   return {
     navigate,
