@@ -415,6 +415,7 @@ export function ConfigurationPanelV6({
             )}
           </div>
         </div>
+        </>)}
       </div>
     </>
   );
