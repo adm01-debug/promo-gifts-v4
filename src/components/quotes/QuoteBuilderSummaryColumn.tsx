@@ -712,7 +712,7 @@ export function QuoteBuilderSummaryColumn({
                                             size="icon"
                                             aria-label="Editar"
                                             className={cn(
-                                              'h-3 w-3 rounded-sm relative before:absolute before:inset-[-10px] before:content-['']',
+                                              'h-3 w-3 rounded-sm relative before:absolute before:inset-[-10px] before:content-[""]',
                                               isActive ? 'text-primary' : 'text-muted-foreground/70 hover:text-foreground',
                                             )}
                                             onClick={(e) => {
