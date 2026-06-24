@@ -99,6 +99,8 @@ interface Props {
   confirmAllStalePrices?: () => void;
   shippingType?: string;
   shippingCost?: number;
+  /** Reordena os itens do orçamento (drag-and-drop ou agrupamento). Recebe o novo array completo. */
+  onReorder?: (items: QuoteItem[]) => void;
 }
 
 export function QuoteBuilderSummaryColumn({
