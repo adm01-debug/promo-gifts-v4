@@ -79,6 +79,7 @@ import {
   loadCollapsedItems,
   toggleCollapsedItem,
   pruneCollapsedItems,
+  saveCollapsedItems,
 } from '@/lib/quotes/collapsedItemsStorage';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
