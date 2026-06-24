@@ -13,7 +13,11 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { logger } from '@/lib/logger';
-type SaveStatus = 'error' | 'idle' | 'offline' | 'saved' | 'saving';
+import {
+  QUOTE_AUTOSAVE_STATUS_TEXT,
+  QUOTE_AUTOSAVE_ARIA_LABEL,
+  type SaveStatus,
+} from './quoteAutoSaveStatus';
 
 interface QuoteDraft {
   id: string;
