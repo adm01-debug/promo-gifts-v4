@@ -26,7 +26,10 @@ export function useComparisonSync() {
       userIdRef.current = userId;
 
       try {
-        const { data: rows } = await supabase
+        // BUG-COMPARISONSYNC-HYDRATE-SELECT-SILENT-FAIL FIX: { data: rows } without error
+        // check — RLS failure silently produced rows=undefined, treating remote as empty
+        // and potentially overwriting local items with an empty merge result.
+        const { data: rows, error: rowsErr } = await supabase
           .from('user_comparisons')
           .select('id, items, updated_at')
           .eq('user_id', userId)
@@ -34,8 +37,9 @@ export function useComparisonSync() {
           .is('share_token', null)
           .order('updated_at', { ascending: false })
           .limit(1);
+        if (rowsErr) throw rowsErr;
 
-        const remote = (rows?.[0]?.items as CompareItem[] | undefined) ?? [];
+        const remote = (rows?.[0]?.items as unknown as CompareItem[] | undefined) ?? [];
         const local = useComparisonStore.getState().compareItems;
 
         // Merge inteligente: união preservando ordem local primeiro, max 4
@@ -79,13 +83,16 @@ export function useComparisonSync() {
         // Lista todos os slots "current" (não usa maybeSingle: sem constraint de
         // unicidade, uma corrida entre abas/dispositivos pode ter criado mais de
         // um — maybeSingle lançaria e travaria o sync para sempre).
-        const { data: rows } = await supabase
+        // BUG-COMPARISONSYNC-PERSIST-SELECT-SILENT-FAIL FIX: { data: rows } without error
+        // check — RLS failure silently treated as empty, skipping update+dedup entirely.
+        const { data: rows, error: rowsErr } = await supabase
           .from('user_comparisons')
           .select('id')
           .eq('user_id', userId)
           .eq('client_name', CURRENT_SLOT_KEY)
           .is('share_token', null)
           .order('updated_at', { ascending: false });
+        if (rowsErr) throw rowsErr;
 
         const ids = (rows ?? []).map((r) => r.id);
         if (ids.length > 0) {
