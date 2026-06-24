@@ -23,7 +23,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -73,7 +73,7 @@ function SortableItem({
   renderPersonalization,
   formatCurrency,
 }: SortableItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id || `item-${index}`,
   });
 
@@ -117,19 +117,10 @@ function SortableItem({
           )}
         >
           <div className="flex items-start gap-3">
-            {/* Drag Handle */}
-            <button
-              {...attributes}
-              {...listeners}
-              className={cn(
-                'mt-2 cursor-grab rounded p-1 hover:bg-muted active:cursor-grabbing',
-                'touch-none select-none focus:outline-none focus:ring-2 focus:ring-primary',
-                'transition-colors',
-              )}
-              aria-label="Arrastar para reordenar"
-            >
-              <GripVertical className="h-5 w-5 text-muted-foreground" />
-            </button>
+            {/* Drag handle removido: orçamentos tratam um produto por vez
+                (tiragem, gravação, etc) — reordenar não agrega valor aqui. */}
+
+
 
             {/* Product Image */}
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -382,8 +373,8 @@ export function DraggableQuoteItems({
           <Card className="opacity-90 shadow-2xl ring-2 ring-primary">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <GripVertical className="h-5 w-5 text-muted-foreground" />
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+
                   {activeItem.product_image_url ? (
                     <img
                       src={activeItem.product_image_url}
