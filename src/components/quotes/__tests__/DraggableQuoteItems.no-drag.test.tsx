@@ -80,7 +80,7 @@ describe('DraggableQuoteItems — sem drag-and-drop', () => {
     expect(after.map((r) => r.getAttribute('data-quote-item-id'))).toEqual(['a', 'b']);
   });
 
-  it('o componente não importa @dnd-kit (gate estático contra regressão)', () => {
+  it('o componente não importa @dnd-kit nem expõe API de reorder (gate estático)', () => {
     const source = readFileSync(
       resolve(__dirname, '..', 'DraggableQuoteItems.tsx'),
       'utf8',
@@ -88,6 +88,7 @@ describe('DraggableQuoteItems — sem drag-and-drop', () => {
     expect(source).not.toMatch(/@dnd-kit\//);
     expect(source).not.toMatch(/useSortable|DndContext|DragOverlay|SortableContext/);
     expect(source).not.toMatch(/GripVertical/);
+    expect(source).not.toMatch(/onReorder/);
   });
 
   it('renderiza estado vazio quando items=[]', () => {
