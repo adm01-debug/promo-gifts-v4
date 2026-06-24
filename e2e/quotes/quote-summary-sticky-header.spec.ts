@@ -38,27 +38,67 @@ async function skipIfEmpty(page: Page) {
   await expect(firstCard).toBeVisible({ timeout: 10_000 });
 }
 
-/** Scrolla o container de scroll mais próximo do header até o fim. */
+/** Scrolla o container scrollável até o fim e aguarda estabilizar (sem timeout cego). */
 async function scrollSummaryToBottom(page: Page) {
   await page.evaluate(() => {
     const header = document.querySelector('[data-testid="quote-summary-header"]');
     if (!header) return;
-    // sobe a árvore até achar o ancestral scrollável
     let el: HTMLElement | null = header.parentElement;
     while (el) {
-      const style = getComputedStyle(el);
-      const scrollable = /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight;
-      if (scrollable) {
+      const s = getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight) {
         el.scrollTop = el.scrollHeight;
         return;
       }
       el = el.parentElement;
     }
-    // fallback: window
     window.scrollTo(0, document.body.scrollHeight);
   });
-  await page.waitForTimeout(150);
+  // Aguarda o container realmente atingir o fim (sem waitForTimeout).
+  await page.waitForFunction(() => {
+    const header = document.querySelector('[data-testid="quote-summary-header"]');
+    if (!header) return false;
+    let el: HTMLElement | null = header.parentElement;
+    while (el) {
+      const s = getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight) {
+        return el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      }
+      el = el.parentElement;
+    }
+    return true;
+  }, null, { timeout: 5000 });
 }
+
+/** Anexa screenshot + log estruturado quando a posição sticky desviar. */
+async function attachStickyDrift(
+  page: Page,
+  testInfo: import('@playwright/test').TestInfo,
+  context: string,
+  before: { x: number; y: number; width: number; height: number },
+  after: { x: number; y: number; width: number; height: number },
+) {
+  const evidence = {
+    context,
+    viewport: page.viewportSize(),
+    before,
+    after,
+    dy: after.y - before.y,
+    dx: after.x - before.x,
+  };
+  await testInfo.attach(`sticky-drift-${context}.json`, {
+    body: Buffer.from(JSON.stringify(evidence, null, 2)),
+    contentType: 'application/json',
+  });
+  const shot = await page.screenshot({ fullPage: false });
+  await testInfo.attach(`sticky-drift-${context}.png`, {
+    body: shot,
+    contentType: 'image/png',
+  });
+   
+  console.warn('[sticky-header-drift]', JSON.stringify(evidence));
+}
+
 
 test.describe('Quote Builder · Resumo sticky header — desktop', () => {
   test.beforeEach(async ({ page }) => {
