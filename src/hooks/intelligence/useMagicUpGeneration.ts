@@ -302,7 +302,8 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         .maybeSingle();
       const metadata = toJsonRecord(existing?.metadata);
       const status = (existing?.status as MagicUpCurationStatus | null) || curationStatus;
-      await supabase
+      // BUG-MAGICUP-SCORE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: scoreErr } = await supabase
         .from('magic_up_generations')
         .update({
           quality_score: diagnosis.total,
@@ -319,6 +320,10 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           },
         })
         .eq('id', currentVariation.id);
+      if (scoreErr) {
+        logger.warn('[magic-up] quality score UPDATE failed:', scoreErr);
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
     }
     toast.success('Magic Score atualizado');
@@ -347,7 +352,9 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           .eq('id', currentVariation.id)
           .maybeSingle();
         const metadata = toJsonRecord(existing?.metadata);
-        await supabase
+        // BUG-MAGICUP-CURATION-SILENT-FAIL FIX: bare await swallowed RLS errors;
+        // optimistic local state (lines above) diverges from DB on failure.
+        const { error: curationErr } = await supabase
           .from('magic_up_generations')
           .update({
             status,
@@ -361,6 +368,10 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
             },
           })
           .eq('id', currentVariation.id);
+        if (curationErr) {
+          logger.warn('[magic-up] curation status UPDATE failed:', curationErr);
+          return;
+        }
         queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
       }
     },

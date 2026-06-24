@@ -147,11 +147,13 @@ export function useExpertConversations(clientId?: string) {
 
       if (error) throw error;
 
-      // Update conversation updated_at
-      await supabase
+      // Update conversation updated_at (best-effort — non-fatal if it fails)
+      // BUG-EXPERTCHAT-UPDATEDATEAT-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: tsErr } = await supabase
         .from('expert_conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', conversationId);
+      if (tsErr) logger.warn('[expert-chat] updated_at timestamp update failed:', tsErr);
     } catch (error) {
       logger.error('Error saving message:', error);
     }
