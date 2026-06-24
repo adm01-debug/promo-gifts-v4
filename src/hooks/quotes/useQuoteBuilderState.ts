@@ -136,7 +136,7 @@ export function useQuoteBuilderState() {
 
   const { user } = useAuth();
   const { createQuote, updateQuote, fetchQuote, isLoading: quotesLoading } = useQuotes();
-  const { templates, loading: templatesLoading } = useQuoteTemplates();
+  
   const { myLimit: maxDiscountPercent } = useSellerDiscountLimits();
   const { requestApproval } = useDiscountApproval();
 
