@@ -199,7 +199,21 @@ export function buildItemsInsertPayload(
   // FIX-E06: silently drop items with quantity < 1 before persisting; they indicate
   // a UI state that was never cleared and would create zero-value rows in the DB.
   const validItems = items.filter((item) => (item.quantity ?? 0) >= 1);
+
+  // Cor é obrigatória ao salvar/enviar orçamento. Bloqueia no front-end antes do
+  // request, evitando POST inválido e mensagem genérica do backend.
+  const semCor = validItems.filter(
+    (item) => !item.color_name || !item.color_name.trim(),
+  );
+  if (semCor.length > 0) {
+    const nomes = semCor.map((i) => i.product_name || i.product_sku || i.product_id).join(', ');
+    throw new Error(
+      `Selecione uma cor para o(s) produto(s) antes de salvar o orçamento: ${nomes}.`,
+    );
+  }
+
   return validItems.map((item, index) => ({
+
     quote_id: quoteId,
     product_id: item.product_id,
     product_name: item.product_name,
