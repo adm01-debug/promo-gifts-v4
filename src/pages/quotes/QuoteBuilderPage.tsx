@@ -633,7 +633,6 @@ export default function QuoteBuilderPage() {
                         <div className="space-y-3">
                           <DraggableQuoteItems
                             items={[item]}
-                            onReorder={() => {}}
                             onUpdateQuantity={(_, qty) => s.updateItemQuantity(idx, qty)}
                             onUpdatePrice={(_, price) => s.updateItemPrice(idx, price)}
                             onRemove={() => {
