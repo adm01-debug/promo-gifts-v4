@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, Package, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCdnUrl } from '@/utils/image-utils';
@@ -96,24 +97,36 @@ export function QuoteProductColorSelector({
   return (
     <div className="space-y-4">
       {/* Header com info do produto */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Button variant="ghost" size="sm" onClick={onBack} className="shrink-0">
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
         <div className="min-w-0 flex-1">
-          <Badge
-            variant="secondary"
-            className="mb-1 rounded-md px-1.5 py-0 font-mono text-[11px] font-medium leading-none"
-          >
-            {product.sku}
-          </Badge>
-          <p className="truncate text-sm font-medium">{product.name}</p>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Badge
+                    variant="secondary"
+                    aria-label={`Código do produto: ${product.sku}`}
+                    data-testid="quote-product-sku-badge"
+                    className="mb-1 rounded-md px-1.5 py-0 font-mono text-[11px] font-medium leading-none"
+                  >
+                    {product.sku}
+                  </Badge>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">SKU: {product.sku}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <p className="truncate text-sm font-medium" data-testid="quote-product-name">{product.name}</p>
         </div>
-        <Badge variant="outline" className="gap-1 text-xs">
+        <Badge variant="outline" className="shrink-0 gap-1 text-xs">
           <Package className="h-3 w-3" />
           {formatStock(totalStock)} total
         </Badge>
       </div>
+
 
       {/* Grid de cores — cada tile funciona como botão "adicionar nesta cor".
           Tiles sem estoque pedem confirmação antes de adicionar. */}
