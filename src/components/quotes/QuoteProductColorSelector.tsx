@@ -99,15 +99,10 @@ export function QuoteProductColorSelector({
         </Badge>
       </div>
 
-      {/* Opção sem cor específica */}
-      <button
-        data-testid="product-add-without-color"
-        onClick={() => onSelect(null)}
-        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border p-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/50"
-      >
-        <div className="h-8 w-8 shrink-0 rounded-full border border-border bg-gradient-to-br from-destructive/80 via-success/80 to-info/80" />
-        <span>Adicionar sem cor específica</span>
-      </button>
+      {/* Opção "sem cor específica" removida — seleção de cor é obrigatória ao adicionar
+          um produto ao orçamento. */}
+
+
 
       {/* Grid de cores */}
       <div className="grid max-h-72 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
