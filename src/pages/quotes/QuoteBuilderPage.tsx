@@ -547,27 +547,6 @@ export default function QuoteBuilderPage() {
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Lock className="h-3 w-3" />
-                    Notas internas
-                    <span className="text-[10px] italic">(não aparece na proposta)</span>
-                  </Label>
-                  <Textarea
-                    data-testid="quote-internal-notes-input"
-                    value={s.internalNotes || ''}
-                    onChange={(e) => s.setInternalNotes(e.target.value)}
-                    placeholder="Anotações para uso interno..."
-                    rows={2}
-                    maxLength={2000}
-                    className="resize-none text-xs"
-                  />
-                  {s.internalNotes && (
-                    <p className="text-right text-[10px] text-muted-foreground">
-                      {s.internalNotes.length}/2000
-                    </p>
-                  )}
-                </div>
               </div>
             </div>
           </div>
