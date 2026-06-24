@@ -63,9 +63,4 @@ test.describe("Fluxo completo de Orçamento", () => {
     await expect(body).not.toContainText("500");
   });
 
-  test("rota de template de orçamentos carrega", async ({ page }) => {
-    await page.goto("/orcamentos/templates");
-    await expect(page).not.toHaveURL(/\/login/);
-    await expect(page.locator("body")).not.toContainText("500");
-  });
 });

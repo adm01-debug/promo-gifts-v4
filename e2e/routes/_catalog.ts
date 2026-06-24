@@ -95,7 +95,7 @@ export const QUOTES_ROUTES: RouteEntry[] = [
   { path: "/orcamentos/dashboard", area: "quotes", titleSlug: "orcamentos-dashboard", feature: "quotes-dashboard", smoke: true, description: "Dashboard de orçamentos" },
   { path: "/orcamentos/lista", area: "quotes", titleSlug: "orcamentos", feature: "quotes-list-alt" },
   { path: "/orcamentos/kanban", area: "quotes", titleSlug: "orcamentos-funil", feature: "quotes-kanban", smoke: true, description: "Funil (Kanban) de orçamentos" },
-  { path: "/orcamentos/templates", area: "quotes", titleSlug: "orcamentos-templates", feature: "quotes-templates", smoke: true, description: "Templates de orçamento" },
+  
   { path: "/orcamentos/novo", area: "quotes", titleSlug: "orcamento-novo", feature: "quote-new", smoke: true, description: "Criar novo orçamento (wizard)" },
   { path: `/orcamentos/${SAMPLE_ID}`, area: "quotes", feature: "quote-detail" },
   { path: `/orcamentos/${SAMPLE_ID}/editar`, area: "quotes", feature: "quote-edit" },
