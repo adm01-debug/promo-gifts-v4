@@ -77,6 +77,32 @@ export function useCustomizationCollapsePrefs(techniqueId: string | undefined) {
   const mapRef = useRef(map);
   mapRef.current = map;
 
+  // Debounce do upsert remoto: agrupa rajadas de toggle em uma única chamada.
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushRemote = useCallback(async () => {
+    const snapshot = mapRef.current;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: existing } = await supabase
+        .from('user_preferences')
+        .select('filter_states')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const filterStates = (existing?.filter_states as Record<string, unknown> | null) ?? {};
+      const updated = { ...filterStates, [NS]: snapshot };
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({ user_id: user.id, filter_states: updated }, { onConflict: 'user_id' });
+      if (error) log.warn('remote_sync_failed', { error: error.message });
+    } catch (err) {
+      log.warn('remote_sync_threw', { error: (err as Error).message });
+    }
+  }, []);
+
   // Hydrate from user_preferences (cross-device) quando autenticado.
   useEffect(() => {
     let active = true;
@@ -107,44 +133,43 @@ export function useCustomizationCollapsePrefs(techniqueId: string | undefined) {
     };
   }, []);
 
+  // Flush pendente ao desmontar / antes de fechar a aba.
+  useEffect(() => {
+    const onUnload = () => {
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+        syncTimerRef.current = null;
+        void flushRemote();
+      }
+    };
+    window.addEventListener('beforeunload', onUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onUnload);
+      onUnload();
+    };
+  }, [flushRemote]);
+
   const setCollapsed = useCallback(
-    async (id: string, value: boolean) => {
+    (id: string, value: boolean) => {
       const next = { ...mapRef.current, [id]: value };
       mapRef.current = next;
       setMap(next);
       writeLocal(next);
 
-      // Analytics — emite evento estruturado independente do backend.
+      // Analytics — emitido imediatamente em cada toggle (não sofre debounce).
       log.info(value ? 'panel_collapsed' : 'panel_expanded', {
         technique_id: id,
         state: value ? 'collapsed' : 'expanded',
       });
 
-      // Sync remoto (best-effort).
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data: existing } = await supabase
-          .from('user_preferences')
-          .select('filter_states')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        const filterStates = (existing?.filter_states as Record<string, unknown> | null) ?? {};
-        const updated = { ...filterStates, [NS]: next };
-        const { error } = await supabase
-          .from('user_preferences')
-          .upsert(
-            { user_id: user.id, filter_states: updated },
-            { onConflict: 'user_id' },
-          );
-        if (error) log.warn('remote_sync_failed', { error: error.message });
-      } catch (err) {
-        log.warn('remote_sync_threw', { error: (err as Error).message });
-      }
+      // Debounce do upsert: 800ms após o último toggle.
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => {
+        syncTimerRef.current = null;
+        void flushRemote();
+      }, REMOTE_DEBOUNCE_MS);
     },
-    [],
+    [flushRemote],
   );
 
   const collapsed = techniqueId ? !!map[techniqueId] : false;
