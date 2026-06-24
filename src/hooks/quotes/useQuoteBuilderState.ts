@@ -454,7 +454,6 @@ export function useQuoteBuilderState() {
       shippingType,
       shippingCost,
       notes,
-      internalNotes,
       validUntil,
     },
     onRestore: (saved) => {
