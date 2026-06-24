@@ -403,8 +403,12 @@ export function useProductImageGallery({
       const ext = extImageMap.get(url);
       if (ext?.id && productId) {
         try {
-          await untypedFrom('product_images').update({ is_active: false }).eq('id', ext.id);
-          queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
+          // BUG-IMAGE-REMOVE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: deactivateErr } = await untypedFrom('product_images')
+            .update({ is_active: false })
+            .eq('id', ext.id);
+          if (deactivateErr) logger.warn('Erro ao desativar imagem no BD externo:', deactivateErr);
+          else queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         } catch (err) {
           logger.warn('Erro ao desativar imagem no BD externo:', err);
         }
@@ -432,16 +436,20 @@ export function useProductImageGallery({
           // Clear is_primary from all images for this product
           const currentPrimary = externalImages.find((img) => img.is_primary);
           if (currentPrimary?.id) {
-            await untypedFrom('product_images')
+            // BUG-IMAGE-CLEAR-PRIMARY-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+            const { error: clearPrimaryErr } = await untypedFrom('product_images')
               .update({ is_primary: false })
               .eq('id', currentPrimary.id);
+            if (clearPrimaryErr) logger.warn('Erro ao limpar imagem principal:', clearPrimaryErr);
           }
           // Set new primary
           const newPrimaryExt = extImageMap.get(url);
           if (newPrimaryExt?.id) {
-            await untypedFrom('product_images')
+            // BUG-IMAGE-SET-PRIMARY-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+            const { error: setPrimaryErr } = await untypedFrom('product_images')
               .update({ is_primary: true, display_order: 0 })
               .eq('id', newPrimaryExt.id);
+            if (setPrimaryErr) logger.warn('Erro ao definir imagem principal:', setPrimaryErr);
           }
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         } catch (err) {

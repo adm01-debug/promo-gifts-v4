@@ -493,7 +493,10 @@ export function usePersonalizationManager() {
               for (const gt of groupTechniques) {
                 const technique = techniques?.find((t) => t.id === gt.technique_id);
                 const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code ?? ''}`;
-                await untypedFrom('product_component_location_techniques').insert({
+                // BUG-PERSMAN-TECH-INSERT-SILENT-FAIL FIX: bare untypedFrom await swallowed errors.
+                const { error: techErr } = await untypedFrom(
+                  'product_component_location_techniques',
+                ).insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,
                   composed_code: composedCode,
@@ -501,15 +504,18 @@ export function usePersonalizationManager() {
                   is_default: gt.is_default,
                   is_active: gt.is_active,
                 });
+                if (techErr) throw techErr;
               }
             }
           }
         }
       }
-      await supabase
+      // BUG-PERSMAN-MEMBER-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: memberErr } = await supabase
         .from('product_group_members')
         .update({ use_group_rules: false })
         .eq('id', productMembership.id);
+      if (memberErr) logger.warn('[personalization-manager] member update failed:', memberErr);
       queryClient.invalidateQueries({ queryKey: ['product-components'] });
       queryClient.invalidateQueries({ queryKey: ['component-locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-techniques'] });

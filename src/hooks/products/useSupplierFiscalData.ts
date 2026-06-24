@@ -288,10 +288,11 @@ export function useSupplierFiscalData(
         };
 
         if (existingResult.data?.length) {
-          // Update existing VSS
-          await untypedFrom('variant_supplier_sources')
+          // BUG-FISCAL-UPDATE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: updateErr } = await untypedFrom('variant_supplier_sources')
             .update(payload)
             .eq('id', existingResult.data[0].id);
+          if (updateErr) throw updateErr;
         } else {
           // Fetch organization_id from an existing VSS record for this supplier
           let organizationId: string | null = null;
@@ -307,14 +308,15 @@ export function useSupplierFiscalData(
             logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', e);
           }
 
-          // Create new VSS with supplier_branch_id from inherited data
-          await untypedFrom('variant_supplier_sources').insert({
+          // BUG-FISCAL-INSERT-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: insertErr } = await untypedFrom('variant_supplier_sources').insert({
             ...payload,
             supplier_id: supplierId,
             variant_id: variantId,
             supplier_branch_id: currentData?.supplier_branch_id || null,
             ...(organizationId ? { organization_id: organizationId } : {}),
           });
+          if (insertErr) throw insertErr;
         }
 
         // Invalidate and refetch
@@ -347,7 +349,11 @@ export function useSupplierFiscalData(
         .limit(1);
 
       if (vssResult.data?.length) {
-        await untypedFrom('variant_supplier_sources').delete().eq('id', vssResult.data[0].id);
+        // BUG-FISCAL-DELETE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+        const { error: deleteErr } = await untypedFrom('variant_supplier_sources')
+          .delete()
+          .eq('id', vssResult.data[0].id);
+        if (deleteErr) throw deleteErr;
       }
 
       await queryClient.invalidateQueries({ queryKey });
