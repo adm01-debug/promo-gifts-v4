@@ -10,13 +10,10 @@ import {
   useDiscountApproval,
   useQuoteItems,
   useQuotes,
-  useQuoteTemplates,
   useSellerDiscountLimits,
   type Quote,
   type QuoteItem,
   type QuoteItemPersonalization,
-  type QuoteTemplate,
-  type QuoteTemplateItem,
 } from '@/hooks/quotes';
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
@@ -139,7 +136,7 @@ export function useQuoteBuilderState() {
 
   const { user } = useAuth();
   const { createQuote, updateQuote, fetchQuote, isLoading: quotesLoading } = useQuotes();
-  const { templates, loading: templatesLoading } = useQuoteTemplates();
+  
   const { myLimit: maxDiscountPercent } = useSellerDiscountLimits();
   const { requestApproval } = useDiscountApproval();
 
@@ -256,7 +253,7 @@ export function useQuoteBuilderState() {
   const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
-  const [templateApplied, setTemplateApplied] = useState<string | null>(null);
+  
   const [loadingQuote, setLoadingQuote] = useState(isEditMode);
 
   const debouncedProductSearch = useDebounce(productSearch, 400);
@@ -892,98 +889,6 @@ export function useQuoteBuilderState() {
     );
   }, [setItems]);
 
-  // ── Template ──
-  const applyTemplate = useCallback((template: QuoteTemplate) => {
-    const newItems: QuoteItem[] = template.items.map((item) => ({
-      product_id: item.productId || '',
-      product_name: item.productName,
-      product_sku: item.productSku || '',
-      product_image_url: item.productImageUrl,
-      quantity: item.quantity,
-      unit_price: item.unitPrice,
-      color_name: item.colorName,
-      color_hex: item.colorHex,
-      personalizations: item.personalizations?.map((p) => ({
-        technique_id: p.techniqueId,
-        technique_name: p.techniqueName || '',
-        location_code: p.locationCode,
-        location_name: p.locationName,
-        personalized_quantity: p.personalizedQuantity,
-        colors_count: p.colorsCount,
-        positions_count: p.positionsCount,
-        area_cm2: p.areaCm2,
-        width_cm: p.widthCm,
-        height_cm: p.heightCm,
-        unit_cost: p.unitCost,
-        setup_cost: p.setupCost,
-        total_cost: p.totalCost,
-        notes: p.notes,
-      })),
-    }));
-    setItems(newItems);
-    if (template.discount_percent > 0) {
-      setDiscountType('percent');
-      setDiscountValue(template.discount_percent);
-    } else if (template.discount_amount > 0) {
-      setDiscountType('amount');
-      setDiscountValue(template.discount_amount);
-    } else {
-      setDiscountType('percent');
-      setDiscountValue(0);
-    }
-    if (template.notes) setNotes(template.notes);
-    if (template.internal_notes) setInternalNotes(template.internal_notes);
-    if (template.validity_days) {
-      // FIX-C03: sincronizar validityDays Select após aplicar template.
-      // Antes: setValidUntil era chamado mas setValidityDays não, causando
-      // dessincronização visual (Select mostrava "Selecione" com data já preenchida).
-      const newValidUntil = format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd');
-      setValidUntil(newValidUntil);
-      setValidityDays(syncValidityDaysFromDate(newValidUntil));
-    }
-    // FIX-07/08: restaurar campos de condições comerciais do template
-    if (template.payment_method) setPaymentMethod(template.payment_method);
-    if (template.payment_terms) setPaymentTerms(template.payment_terms);
-    if (template.delivery_time) setDeliveryTime(template.delivery_time);
-    if (template.shipping_type) {
-      setPendingShippingTypeRestore(template.shipping_type); // usa defer seguro
-    }
-    if (template.shipping_cost && template.shipping_cost > 0) {
-      setShippingCost(template.shipping_cost);
-    }
-    setTemplateApplied(template.name);
-    toast.success(`Template "${template.name}" aplicado!`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getTemplateItems = useCallback((): QuoteTemplateItem[] => {
-    return items.map((item) => ({
-      productId: item.product_id,
-      productSku: item.product_sku,
-      productName: item.product_name,
-      productImageUrl: item.product_image_url,
-      quantity: item.quantity,
-      unitPrice: item.unit_price,
-      colorName: item.color_name,
-      colorHex: item.color_hex,
-      personalizations: item.personalizations?.map((p) => ({
-        techniqueId: p.technique_id,
-        techniqueName: p.technique_name || '',
-        locationCode: p.location_code,
-        locationName: p.location_name,
-        personalizedQuantity: p.personalized_quantity,
-        colorsCount: p.colors_count,
-        positionsCount: p.positions_count,
-        areaCm2: p.area_cm2,
-        widthCm: p.width_cm,
-        heightCm: p.height_cm,
-        unitCost: p.unit_cost,
-        setupCost: p.setup_cost,
-        totalCost: p.total_cost,
-        notes: p.notes,
-      })),
-    }));
-  }, [items]);
 
   // ── Validation ──
   const validationErrors = useMemo(
@@ -1226,8 +1131,7 @@ export function useQuoteBuilderState() {
     ],
   );
 
-  const defaultTemplate = useMemo(() => templates.find((t) => t.is_default), [templates]);
-  const isBuilderBootstrapping = loadingQuote || templatesLoading;
+  const isBuilderBootstrapping = loadingQuote;
 
   return {
     navigate,
@@ -1283,8 +1187,6 @@ export function useQuoteBuilderState() {
     setProductSearch,
     selectedProductForColor,
     setSelectedProductForColor,
-    templateApplied,
-    setTemplateApplied,
     expandedItems,
     setExpandedItems,
     activeItemIndex,
@@ -1301,8 +1203,6 @@ export function useQuoteBuilderState() {
     isFormValid,
     isDraftValid,
     quotesLoading,
-    templates,
-    defaultTemplate,
     maxDiscountPercent,
     isDiscountExceeded,
     validateStep,
@@ -1321,8 +1221,6 @@ export function useQuoteBuilderState() {
     removeItem,
     confirmItemPrice,
     confirmAllStalePrices,
-    applyTemplate,
-    getTemplateItems,
     handleSaveQuote,
     conflictInfo,
     dismissConflict: () => setConflictInfo(null),

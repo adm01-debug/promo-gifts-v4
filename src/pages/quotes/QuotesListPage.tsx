@@ -3,7 +3,7 @@ import {
   FileText,
   Plus,
   Search,
-  BookTemplate,
+  
   ArrowUpDown,
   AlertTriangle,
   CheckCircle2,
@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -106,17 +106,6 @@ export default function QuotesListPage() {
               </div>
             </FadeInView>
             <div className="flex gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" onClick={() => navigate('/orcamentos/templates')}>
-                    <BookTemplate className="mr-2 h-4 w-4" />
-                    Templates
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Modelos pré-configurados para agilizar orçamentos</p>
-                </TooltipContent>
-              </Tooltip>
               <Button data-testid="quote-new-button" onClick={() => navigate('/orcamentos/novo')}>
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Orçamento

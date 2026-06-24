@@ -27,7 +27,7 @@ import {
   FileText,
   Plus,
   Package,
-  BookTemplate,
+  
   AlertTriangle,
   Calendar as CalendarIcon,
   Sparkles,
@@ -155,45 +155,6 @@ export default function QuoteBuilderPage() {
           onStepClick={s.goToStep}
         />
 
-        {s.templateApplied && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-2">
-                <BookTemplate className="h-4 w-4 text-primary" />
-                <span className="text-sm">
-                  Template <strong>"{s.templateApplied}"</strong> aplicado
-                </span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => s.setTemplateApplied(null)}>
-                Fechar
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {!s.isEditMode && s.defaultTemplate && s.items.length === 0 && !s.templateApplied && (
-          <Card className="border-dashed bg-muted/50">
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-3">
-                <BookTemplate className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Template padrão disponível</p>
-                  <p className="text-sm text-muted-foreground">
-                    Use "{s.defaultTemplate.name}" para começar rapidamente
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (s.defaultTemplate) s.applyTemplate(s.defaultTemplate);
-                }}
-              >
-                Aplicar Template
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         <div data-testid="quote-builder-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
