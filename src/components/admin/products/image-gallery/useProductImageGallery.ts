@@ -473,11 +473,17 @@ export function useProductImageGallery({
       });
       if (updates.length === 0) return;
       try {
-        await Promise.all(
+        // BUG-IMAGEGALLERY-REORDER-SILENT-FAIL FIX: Promise.all resolves to array of { data, error };
+        // bare await discarded errors — reorder appeared to succeed even when DB updates failed.
+        const reorderResults = await Promise.all(
           updates.map(({ id, display_order: displayOrder }) =>
             untypedFrom('product_images').update({ display_order: displayOrder }).eq('id', id),
           ),
         );
+        const reorderErrors = reorderResults.filter((r) => r.error);
+        if (reorderErrors.length > 0) {
+          throw new Error(reorderErrors[0].error?.message || 'Erro ao reordenar imagens');
+        }
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         toast.success('Ordem salva automaticamente');
       } catch (err) {
