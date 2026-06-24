@@ -154,8 +154,8 @@ export default function QuoteBuilderPage() {
         {/* LAYOUT-FIX: header + stepper na MESMA linha (inline à direita do título)
             e sticky no topo para preservar contexto sem consumir altura extra. */}
         <div className="sticky top-0 z-30 -mx-3 border-b border-border/40 bg-background/85 px-3 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-6">
-            <div className="flex min-w-0 items-center gap-3 lg:shrink-0">
+          <div className="flex flex-row items-center gap-3 sm:gap-4 lg:gap-6">
+            <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-10 sm:w-10">
                 <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
