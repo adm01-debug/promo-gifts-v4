@@ -77,15 +77,6 @@ export function QuoteProductCustomization({
     [quantity, onPersonalizationsChange],
   );
 
-  const handleRemove = useCallback(
-    (idx: number) => {
-      const updated = personalizationsRef.current.filter((_, i) => i !== idx);
-      personalizationsRef.current = updated;
-      onPersonalizationsChange(updated);
-    },
-    [onPersonalizationsChange],
-  );
-
   if (!productId) {
     return (
       <div className="py-4 text-center text-sm text-muted-foreground">
@@ -95,7 +86,7 @@ export function QuoteProductCustomization({
   }
 
   const confirmed = existingPersonalizations;
-  const confirmedTotal = confirmed.reduce((s, p) => s + (p.total_cost || 0), 0);
+
 
   return (
     <div className="space-y-4">
