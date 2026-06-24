@@ -558,7 +558,9 @@ export function QuoteBuilderSummaryColumn({
                 <DndContext
                   sensors={dndSensors}
                   collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
+                  onDragCancel={() => setActiveDragId(null)}
                 >
                   <SortableContext
                     items={visibleItems.map(
