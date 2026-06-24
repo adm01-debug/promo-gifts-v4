@@ -192,7 +192,7 @@ export function CartHeaderButton() {
 
       <PopoverContent
         data-testid="cart-drawer"
-        className="w-[336px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
+        className="w-[min(336px,calc(100vw-1rem))] max-h-[min(80vh,560px)] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
         align="end"
         sideOffset={8}
         onCloseAutoFocus={() => {
