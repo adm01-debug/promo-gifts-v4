@@ -117,19 +117,10 @@ function SortableItem({
           )}
         >
           <div className="flex items-start gap-3">
-            {/* Drag Handle */}
-            <button
-              {...attributes}
-              {...listeners}
-              className={cn(
-                'mt-2 cursor-grab rounded p-1 hover:bg-muted active:cursor-grabbing',
-                'touch-none select-none focus:outline-none focus:ring-2 focus:ring-primary',
-                'transition-colors',
-              )}
-              aria-label="Arrastar para reordenar"
-            >
-              <GripVertical className="h-5 w-5 text-muted-foreground" />
-            </button>
+            {/* Drag handle removido: orçamentos tratam um produto por vez
+                (tiragem, gravação, etc) — reordenar não agrega valor aqui. */}
+
+
 
             {/* Product Image */}
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
