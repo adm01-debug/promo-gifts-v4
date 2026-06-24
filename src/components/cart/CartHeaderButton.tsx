@@ -316,7 +316,7 @@ export function CartHeaderButton() {
               </div>
             ) : (
               <>
-                <ScrollArea data-testid="cart-popover-scroll" className="h-[min(60vh,440px)]">
+                <ScrollArea data-testid="cart-popover-scroll" className="h-[min(48vh,352px)]">
                   <div className="space-y-2 p-3">
                     {carts.map((cart) => {
                       const isActive = cart.id === activeCartId && !collapsedIds.has(cart.id);
