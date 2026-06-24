@@ -560,6 +560,8 @@ export default function QuoteBuilderPage() {
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                   </a>
                 )}
+                  </div>
+                )}
               </div>
 
               {/* BUG-K FIX: Notes UI — previously only populated via templates */}
