@@ -104,7 +104,6 @@ export default function QuoteBuilderPage() {
           shippingType: s.shippingType,
           shippingCost: s.shippingCost,
           notes: s.notes,
-          internalNotes: s.internalNotes,
           items: s.items,
         }}
         onChange={setHasUnsavedChanges}
