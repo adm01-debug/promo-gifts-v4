@@ -249,4 +249,122 @@ describe('createNewVersion', () => {
     // createQuote must NOT have been called — the abort prevents dual-true corruption
     expect(mockCreateQuote).not.toHaveBeenCalled();
   });
+
+  // BUG-VERSION-CTX-SILENT-FAIL regression:
+  // Previously { error } was not destructured from the version context query.
+  // A failed lookup silently left currentVersion=1 and rootId=sourceQuoteId,
+  // risking duplicate version numbers.
+  // Fixed to log warn and continue (non-fatal — defaults are safe fallbacks).
+  it('BUG-VERSION-CTX-SILENT-FAIL: loga warn quando version context query falha mas continua', async () => {
+    const fakeQuote = {
+      id: 'q-src', quote_number: 'ORC-001', client_id: 'c1', client_name: 'Test',
+      client_email: 'a@b.com', client_phone: null, client_company: 'Co', client_cnpj: null,
+      discount_percent: 0, discount_amount: 0, negotiation_markup_percent: 0,
+      notes: null, payment_method: null, payment_terms: null,
+      delivery_time: null, shipping_type: null, shipping_cost: 0,
+      internal_notes: null, valid_until: null, contact_id: null, items: [],
+    };
+    mockFetchQuote.mockResolvedValue(fakeQuote);
+    mockCreateQuote.mockResolvedValue({ id: 'q-new', quote_number: 'ORC-002' });
+    mockLogQuoteHistory.mockResolvedValue(undefined);
+
+    let quotesCallCount = 0;
+    const { supabase } = await import('@/integrations/supabase/client');
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'quotes') {
+        quotesCallCount++;
+        if (quotesCallCount === 1) {
+          // version context query → FAILS with RLS denied
+          const singleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } });
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: singleFn }) }) } as never;
+        }
+        if (quotesCallCount === 2) {
+          // max version lookup → succeeds
+          const limitFn = vi.fn().mockResolvedValue({ data: [{ version: 1 }], error: null });
+          return { select: vi.fn().mockReturnValue({ or: vi.fn().mockReturnValue({ order: vi.fn().mockReturnValue({ limit: limitFn }) }) }) } as never;
+        }
+        if (quotesCallCount === 3) {
+          // clear is_latest_version → succeeds
+          return { update: vi.fn().mockReturnValue({ or: vi.fn().mockResolvedValue({ error: null }) }) } as never;
+        }
+        // version metadata update after create
+        return { update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }) } as never;
+      }
+      return {} as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useQuoteVersions());
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await result.current.createNewVersion('q-src');
+    });
+
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'Failed to fetch version context, defaulting:',
+      expect.anything(),
+    );
+    // Operation continues despite the warn — createQuote IS called
+    expect(mockCreateQuote).toHaveBeenCalled();
+    expect(outcome).not.toBeNull();
+  });
+
+  // BUG-VERSION-MAX-SILENT-FAIL regression:
+  // Previously { error } was not destructured from the max version query.
+  // A failed query silently defaulted maxVersion=currentVersion, risking duplicate
+  // version numbers when the actual max in the DB was higher.
+  // Fixed to log warn and default to currentVersion (safe fallback).
+  it('BUG-VERSION-MAX-SILENT-FAIL: loga warn quando max version query falha mas continua', async () => {
+    const fakeQuote = {
+      id: 'q-src', quote_number: 'ORC-001', client_id: 'c1', client_name: 'Test',
+      client_email: 'a@b.com', client_phone: null, client_company: 'Co', client_cnpj: null,
+      discount_percent: 0, discount_amount: 0, negotiation_markup_percent: 0,
+      notes: null, payment_method: null, payment_terms: null,
+      delivery_time: null, shipping_type: null, shipping_cost: 0,
+      internal_notes: null, valid_until: null, contact_id: null, items: [],
+    };
+    mockFetchQuote.mockResolvedValue(fakeQuote);
+    mockCreateQuote.mockResolvedValue({ id: 'q-new', quote_number: 'ORC-002' });
+    mockLogQuoteHistory.mockResolvedValue(undefined);
+
+    let quotesCallCount = 0;
+    const { supabase } = await import('@/integrations/supabase/client');
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'quotes') {
+        quotesCallCount++;
+        if (quotesCallCount === 1) {
+          // version context → succeeds
+          const singleFn = vi.fn().mockResolvedValue({ data: { version: 1, parent_quote_id: null }, error: null });
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: singleFn }) }) } as never;
+        }
+        if (quotesCallCount === 2) {
+          // max version lookup → FAILS
+          const limitFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'timeout' } });
+          return { select: vi.fn().mockReturnValue({ or: vi.fn().mockReturnValue({ order: vi.fn().mockReturnValue({ limit: limitFn }) }) }) } as never;
+        }
+        if (quotesCallCount === 3) {
+          // clear is_latest_version → succeeds
+          return { update: vi.fn().mockReturnValue({ or: vi.fn().mockResolvedValue({ error: null }) }) } as never;
+        }
+        // version metadata update after create
+        return { update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }) } as never;
+      }
+      return {} as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useQuoteVersions());
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await result.current.createNewVersion('q-src');
+    });
+
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'Failed to fetch max version, defaulting to currentVersion:',
+      expect.anything(),
+    );
+    // Operation continues — createQuote IS called even with max version fallback
+    expect(mockCreateQuote).toHaveBeenCalled();
+    expect(outcome).not.toBeNull();
+  });
 });
