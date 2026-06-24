@@ -507,8 +507,11 @@ export function QuoteBuilderSummaryColumn({
             `lg:overflow-y-auto ${STICKY_HEIGHT}`,
           )}
         >
-          {/* Header */}
-          <div className="flex shrink-0 items-center gap-2 p-4 pb-3">
+          {/* Header — sticky top do scroll container (sempre visível ao rolar) */}
+          <div
+            data-testid="quote-summary-header"
+            className="sticky top-0 z-20 flex shrink-0 items-center gap-2 rounded-t-2xl border-b border-border/50 bg-card/95 p-4 pb-3 shadow-[0_16px_24px_-24px_hsl(var(--foreground)/0.55)] backdrop-blur supports-[backdrop-filter]:bg-card/85"
+          >
             <div className="rounded-lg bg-primary/10 p-2">
               <ShoppingCart className="h-4 w-4 text-primary" />
             </div>
