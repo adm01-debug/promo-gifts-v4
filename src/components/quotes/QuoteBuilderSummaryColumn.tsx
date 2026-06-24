@@ -614,6 +614,8 @@ export function QuoteBuilderSummaryColumn({
                       const isActive = activeItemIndex === idx;
                       const isStale = staleIndexes.has(idx);
                       const sortableId = item.id ?? `__idx_${idx}`;
+                      const collapseKey = item.id ?? `__idx_${idx}`;
+                      const isCollapsed = collapsedItemKeys.has(collapseKey);
                       // Drag desabilitado quando há filtro ativo (índices visíveis ≠ índices reais
                       // do array `items`, o que tornaria a reordenação inconsistente).
                       const dragDisabled = !onReorder || showOnlyStale;
