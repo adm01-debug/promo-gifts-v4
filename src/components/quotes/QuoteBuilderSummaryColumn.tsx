@@ -981,42 +981,6 @@ export function QuoteBuilderSummaryColumn({
           {/* Discount */}
           {items.length > 0 && (
             <div className="space-y-2.5 px-4 pt-3">
-              {maxDiscountPercent !== null && maxDiscountPercent !== undefined && (
-                <div
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-colors',
-                    isDiscountExceeded
-                      ? 'border border-amber-500/30 bg-amber-500/10'
-                      : 'bg-muted/50',
-                  )}
-                >
-                  <Shield
-                    className={cn(
-                      'h-3.5 w-3.5 shrink-0',
-                      isDiscountExceeded ? 'text-amber-500' : 'text-muted-foreground',
-                    )}
-                  />
-                  <span className="text-muted-foreground">
-                    Seu limite:{' '}
-                    <span
-                      className={cn(
-                        'font-bold',
-                        isDiscountExceeded ? 'text-amber-500' : 'text-foreground',
-                      )}
-                    >
-                      {maxDiscountPercent}%
-                    </span>
-                  </span>
-                  {isDiscountExceeded && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-auto h-4 gap-0.5 border-amber-500/30 bg-amber-500/15 text-[9px] font-semibold text-amber-600"
-                    >
-                      <AlertTriangle className="h-2.5 w-2.5" /> Excedido
-                    </Badge>
-                  )}
-                </div>
-              )}
               <div className="flex items-center gap-2">
                 <TooltipProvider delayDuration={200}>
                   {(() => {
