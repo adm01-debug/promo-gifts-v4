@@ -43,15 +43,17 @@ test.describe('Orçamento — seleção de cor obrigatória', () => {
       // Foco inicial no botão de confirmação (autoFocus)
       await expect(page.getByTestId('out-of-stock-confirm-accept')).toBeFocused();
 
-      // Snapshot da contagem de itens via DB do orçamento em rascunho.
-      // Captura via window.localStorage do draft store (sem network) para garantir
-      // que cancelar não dispara persistência alguma.
+      // Snapshot da contagem de itens antes do cancelamento
       const itemsBefore = await page.getByTestId('quote-item-row').count();
 
+      // Guarda o tile que abriu o dialog para validar foco de retorno
+      const firstOosTile = oosTiles.first();
       await page.getByTestId('out-of-stock-confirm-cancel').click();
       await expect(dialog).toHaveCount(0);
       await expect(page.getByTestId('quote-add-product-modal')).toBeVisible();
-      // Nenhum item novo após cancelar
+      // Foco volta ao tile que originou o dialog (gerenciamento Radix)
+      await expect(firstOosTile).toBeFocused();
+      // Nenhum item novo após cancelar (cancelar não envia request)
       await expect(page.getByTestId('quote-item-row')).toHaveCount(itemsBefore);
 
       // Confirmar: adiciona o item mesmo com estoque zerado
