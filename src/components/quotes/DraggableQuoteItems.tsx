@@ -1,31 +1,16 @@
 /**
- * DraggableQuoteItems - Lista de itens do orçamento com drag-and-drop
- * Permite reordenar itens arrastando e soltando
+ * DraggableQuoteItems — Lista de itens do orçamento.
+ *
+ * NOTA: o nome do componente é histórico. Reordenação por drag-and-drop foi
+ * removida porque cada orçamento trata um produto por vez (tiragem, gravação,
+ * etc.) e mover itens não agrega valor. A ordem segue estritamente a fonte de
+ * dados (`items`). A prop `onReorder` é mantida (no-op) apenas por compat
+ * de assinatura com chamadas antigas — pode ser removida em refactor futuro.
  */
 
-import { useState } from 'react';
-import {
-  DndContext,
-  type DragEndEvent,
-  DragOverlay,
-  type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Badge } from '@/components/ui/badge';
@@ -37,18 +22,19 @@ import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 
 interface DraggableQuoteItemsProps {
   items: QuoteItem[];
-  onReorder: (items: QuoteItem[]) => void;
+  /** @deprecated Reordenação removida — prop mantida apenas por compat. */
+  onReorder?: (items: QuoteItem[]) => void;
   onUpdateQuantity: (index: number, quantity: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
   onTogglePersonalization?: (index: number) => void;
-  onConfirmPrice?: (index: number) => void; // Nova ação
+  onConfirmPrice?: (index: number) => void;
   expandedItems?: Set<number>;
   renderPersonalization?: (item: QuoteItem, index: number) => React.ReactNode;
   formatCurrency: (value: number) => string;
 }
 
-interface SortableItemProps {
+interface QuoteItemRowProps {
   item: QuoteItem;
   index: number;
   isExpanded: boolean;
@@ -56,12 +42,12 @@ interface SortableItemProps {
   onUpdatePrice: (price: number) => void;
   onRemove: () => void;
   onTogglePersonalization?: () => void;
-  onConfirmPrice?: () => void; // Adicionado
+  onConfirmPrice?: () => void;
   renderPersonalization?: () => React.ReactNode;
   formatCurrency: (value: number) => string;
 }
 
-function SortableItem({
+function QuoteItemRow({
   item,
   index,
   isExpanded,
@@ -72,17 +58,7 @@ function SortableItem({
   onConfirmPrice,
   renderPersonalization,
   formatCurrency,
-}: SortableItemProps) {
-  const { setNodeRef, transform, transition, isDragging } = useSortable({
-    id: item.id || `item-${index}`,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : 0,
-  };
-
+}: QuoteItemRowProps) {
   const hasPersonalizations = item.personalizations && item.personalizations.length > 0;
   const personalizationTotal = (item.personalizations || []).reduce(
     (sum, p) => sum + (p.total_cost || 0),
@@ -92,8 +68,6 @@ function SortableItem({
 
   return (
     <motion.div
-      ref={setNodeRef}
-      style={style}
       data-testid={`quote-item-${index}`}
       data-quote-item-id={item.id}
       initial={{ opacity: 0, y: 20 }}
@@ -104,7 +78,6 @@ function SortableItem({
       <Card
         className={cn(
           'overflow-hidden transition-all duration-200',
-          isDragging && 'opacity-50 shadow-2xl ring-2 ring-primary',
           'hover:shadow-md',
           isExpanded && 'flex max-h-[calc(100vh-12rem)] flex-col',
         )}
@@ -117,11 +90,6 @@ function SortableItem({
           )}
         >
           <div className="flex items-start gap-3">
-            {/* Drag handle removido: orçamentos tratam um produto por vez
-                (tiragem, gravação, etc) — reordenar não agrega valor aqui. */}
-
-
-
             {/* Product Image */}
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
               {item.product_image_url ? (
@@ -272,7 +240,6 @@ function SortableItem({
 
 export function DraggableQuoteItems({
   items,
-  onReorder,
   onUpdateQuantity,
   onUpdatePrice,
   onRemove,
@@ -282,47 +249,12 @@ export function DraggableQuoteItems({
   renderPersonalization,
   formatCurrency,
 }: DraggableQuoteItemsProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  // Gerar IDs únicos para items sem ID
-  const itemsWithIds = items.map((item, index) => ({
-    ...item,
-    id: item.id || `item-${index}`,
-  }));
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (over && active.id !== over.id) {
-      const oldIndex = itemsWithIds.findIndex((item) => item.id === active.id);
-      const newIndex = itemsWithIds.findIndex((item) => item.id === over.id);
-
-      const reordered = arrayMove(itemsWithIds, oldIndex, newIndex);
-      onReorder(reordered);
-    }
-  };
-
-  const activeItem = activeId ? itemsWithIds.find((item) => item.id === activeId) : null;
-
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border-2 border-dashed py-12 text-center">
+      <div
+        className="rounded-xl border-2 border-dashed py-12 text-center"
+        data-testid="quote-items-empty"
+      >
         <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
         <p className="font-medium text-muted-foreground">Nenhum item adicionado</p>
         <p className="mt-1 text-sm text-muted-foreground/70">
@@ -333,71 +265,28 @@ export function DraggableQuoteItems({
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={itemsWithIds.map((item) => item.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="space-y-5">
-          <AnimatePresence>
-            {itemsWithIds.map((item, index) => (
-              <SortableItem
-                key={item.id}
-                item={item}
-                index={index}
-                isExpanded={expandedItems.has(index)}
-                onUpdateQuantity={(qty) => onUpdateQuantity(index, qty)}
-                onUpdatePrice={(price) => onUpdatePrice(index, price)}
-                onRemove={() => onRemove(index)}
-                onTogglePersonalization={
-                  onTogglePersonalization ? () => onTogglePersonalization(index) : undefined
-                }
-                onConfirmPrice={onConfirmPrice ? () => onConfirmPrice(index) : undefined}
-                renderPersonalization={
-                  renderPersonalization ? () => renderPersonalization(item, index) : undefined
-                }
-                formatCurrency={formatCurrency}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      </SortableContext>
-
-      <DragOverlay>
-        {activeItem && (
-          <Card className="opacity-90 shadow-2xl ring-2 ring-primary">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-
-                  {activeItem.product_image_url ? (
-                    <img
-                      src={activeItem.product_image_url}
-                      alt={activeItem.product_name}
-                      className="h-full w-full rounded-lg object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
-                  ) : (
-                    <Package className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{activeItem.product_name}</p>
-                  <p className="text-xs text-muted-foreground">{activeItem.product_sku}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </DragOverlay>
-    </DndContext>
+    <div className="space-y-5" data-testid="quote-items-list">
+      <AnimatePresence>
+        {items.map((item, index) => (
+          <QuoteItemRow
+            key={item.id || `item-${index}`}
+            item={item}
+            index={index}
+            isExpanded={expandedItems.has(index)}
+            onUpdateQuantity={(qty) => onUpdateQuantity(index, qty)}
+            onUpdatePrice={(price) => onUpdatePrice(index, price)}
+            onRemove={() => onRemove(index)}
+            onTogglePersonalization={
+              onTogglePersonalization ? () => onTogglePersonalization(index) : undefined
+            }
+            onConfirmPrice={onConfirmPrice ? () => onConfirmPrice(index) : undefined}
+            renderPersonalization={
+              renderPersonalization ? () => renderPersonalization(item, index) : undefined
+            }
+            formatCurrency={formatCurrency}
+          />
+        ))}
+      </AnimatePresence>
+    </div>
   );
 }
