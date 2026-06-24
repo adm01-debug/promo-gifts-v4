@@ -6,7 +6,7 @@
  * Briefing v6 (12/02/2026).
  */
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useId, useCallback } from 'react';
 import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,7 +67,33 @@ export function ConfigurationPanelV6({
   const [showConfirmError, setShowConfirmError] = useState(false);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+
+  // Persistência do estado de colapso por técnica (localStorage)
+  const collapseStorageKey = `customization-collapsed:${technique.technique_id}`;
+  const [collapsed, setCollapsedState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(collapseStorageKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setCollapsed = useCallback(
+    (next: boolean | ((v: boolean) => boolean)) => {
+      setCollapsedState((prev) => {
+        const value = typeof next === 'function' ? (next as (v: boolean) => boolean)(prev) : next;
+        try {
+          window.localStorage.setItem(collapseStorageKey, value ? '1' : '0');
+        } catch {
+          /* ignore */
+        }
+        return value;
+      });
+    },
+    [collapseStorageKey],
+  );
+
+  const contentId = useId();
   const isLocked = isConfirmed && !editing;
 
   const larguraNum = parseFloat(largura) || 0;
@@ -170,9 +196,10 @@ export function ConfigurationPanelV6({
             <button
               type="button"
               onClick={() => setCollapsed((v) => !v)}
-              aria-label={collapsed ? 'Expandir' : 'Recolher'}
+              aria-label={collapsed ? 'Expandir configurações da gravação' : 'Recolher configurações da gravação'}
               aria-expanded={!collapsed}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-controls={contentId}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background sm:h-6 sm:w-6"
               data-testid="customization-collapse-toggle"
             >
               {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -180,7 +207,19 @@ export function ConfigurationPanelV6({
           </div>
         </div>
 
-        {!collapsed && (<>
+        <div
+          id={contentId}
+          role="region"
+          aria-label="Configurações da gravação"
+          hidden={collapsed}
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none',
+            collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="space-y-4">
+
 
 
         {/* Dimension inputs (conditional) */}
@@ -415,7 +454,9 @@ export function ConfigurationPanelV6({
             )}
           </div>
         </div>
-        </>)}
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
