@@ -19,6 +19,7 @@ const baseItem = (overrides: Partial<QuoteItem> = {}): QuoteItem =>
     color_name: 'Azul',
     color_hex: '#0000ff',
     personalizations: [],
+    ...overrides,
   }) as unknown as QuoteItem;
 
 describe('buildItemsInsertPayload — cor obrigatória', () => {
