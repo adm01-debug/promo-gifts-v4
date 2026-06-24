@@ -452,16 +452,21 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
   const handleToggleFavorite = useCallback(async () => {
     if (!currentVariation?.id) return;
     const newVal = !currentVariation.isFavorite;
+    // Optimistic update
     setVariations((prev) =>
       prev.map((v, i) => (i === activeVariation ? { ...v, isFavorite: newVal } : v)),
     );
-    // BUG-MAGICUP-FAVORITE-SILENT-FAIL FIX: bare await swallowed RLS errors;
-    // on failure the optimistic UI update above was not rolled back.
     const { error: favErr } = await supabase
       .from('magic_up_generations')
       .update({ is_favorite: newVal })
       .eq('id', currentVariation.id);
-    if (favErr) logger.warn('[magic-up] Toggle favorite failed:', favErr);
+    if (favErr) {
+      // BUG-MAGICUP-FAVORITE-ROLLBACK FIX: revert optimistic update on DB failure.
+      setVariations((prev) =>
+        prev.map((v, i) => (i === activeVariation ? { ...v, isFavorite: !newVal } : v)),
+      );
+      logger.warn('[magic-up] Toggle favorite failed — rolled back:', favErr);
+    }
     queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
   }, [currentVariation, activeVariation, queryClient]);
 
