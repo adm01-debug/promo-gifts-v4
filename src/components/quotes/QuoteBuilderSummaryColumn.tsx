@@ -1180,51 +1180,55 @@ export function QuoteBuilderSummaryColumn({
               </div>
             )}
 
-            {isDiscountExceeded ? (
-              <Button
-                size="lg"
-                data-testid="quote-request-approval-button"
-                className="h-12 w-full gap-2 bg-amber-500 text-sm font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600"
-                onClick={() => setApprovalDialogOpen(true)}
-                disabled={quotesLoading || !isFormValid}
-              >
-                {quotesLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Shield className="h-5 w-5" />
-                )}
-                Solicitar Aprovação
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                className="h-12 w-full gap-2 bg-primary text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
-                data-testid="quote-save-final"
-                onClick={() => onSave('pending')}
-                disabled={quotesLoading || !isFormValid}
-              >
-                {quotesLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Send className="h-5 w-5" />
-                )}
-                {isEditMode ? 'Salvar' : 'Criar'}
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              className="w-full"
-              data-testid="quote-save-draft"
-              onClick={() => onSave('draft')}
-              disabled={quotesLoading || !isDraftValid}
-            >
-              {quotesLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className="flex w-full items-stretch gap-2">
+              {isDiscountExceeded ? (
+                <Button
+                  size="lg"
+                  data-testid="quote-request-approval-button"
+                  className="h-12 flex-1 gap-2 bg-amber-500 text-sm font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-600"
+                  onClick={() => setApprovalDialogOpen(true)}
+                  disabled={quotesLoading || !isFormValid}
+                >
+                  {quotesLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Shield className="h-5 w-5" />
+                  )}
+                  Solicitar Aprovação
+                </Button>
               ) : (
-                <Save className="mr-2 h-4 w-4" />
+                <Button
+                  size="lg"
+                  className="h-12 flex-1 gap-2 bg-primary text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90"
+                  data-testid="quote-save-final"
+                  onClick={() => onSave('pending')}
+                  disabled={quotesLoading || !isFormValid}
+                >
+                  {quotesLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                  {isEditMode ? 'Salvar' : 'Criar'}
+                </Button>
               )}
-              {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
-            </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-12 flex-1"
+                data-testid="quote-save-draft"
+                onClick={() => onSave('draft')}
+                disabled={quotesLoading || !isDraftValid}
+              >
+                {quotesLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+              </Button>
+            </div>
+
           </div>
         </div>
       </div>
