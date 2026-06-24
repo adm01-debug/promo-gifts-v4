@@ -196,6 +196,43 @@ export function QuoteProductColorSelector({
         })}
       </div>
 
+      <AlertDialog
+        open={pendingOutOfStock !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingOutOfStock(null);
+        }}
+      >
+        <AlertDialogContent data-testid="out-of-stock-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Estoque zerado no fornecedor
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O estoque da cor{' '}
+              <strong className="text-foreground">
+                {pendingOutOfStock?.color_name || 'selecionada'}
+              </strong>{' '}
+              está zerado no fornecedor. Você tem certeza que quer adicioná-la ao orçamento?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="out-of-stock-confirm-cancel">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="out-of-stock-confirm-accept"
+              onClick={() => {
+                const v = pendingOutOfStock;
+                setPendingOutOfStock(null);
+                if (v) onSelect(v);
+              }}
+            >
+              Adicionar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
