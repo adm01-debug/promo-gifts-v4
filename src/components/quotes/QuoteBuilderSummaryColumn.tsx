@@ -111,6 +111,9 @@ interface Props {
   shippingCost?: number;
   /** Reordena os itens do orçamento (drag-and-drop ou agrupamento). Recebe o novo array completo. */
   onReorder?: (items: QuoteItem[]) => void;
+  /** ID do orçamento já persistido — quando presente, ativa persistência granular
+   * do `sort_order` via UPDATE direto em quote_items (sem disparar autosave global). */
+  quoteId?: string | null;
 }
 
 /**
