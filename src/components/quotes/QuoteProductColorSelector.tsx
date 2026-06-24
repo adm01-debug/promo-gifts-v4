@@ -128,10 +128,8 @@ export function QuoteProductColorSelector({
               type="button"
               onClick={() => {
                 if (isOutOfStock) {
-                  const ok = window.confirm(
-                    `O estoque da cor "${colorLabel}" está zerado no fornecedor.\n\nTem certeza que deseja adicioná-la ao orçamento?`,
-                  );
-                  if (!ok) return;
+                  setPendingOutOfStock(variant);
+                  return;
                 }
                 onSelect(variant);
               }}
