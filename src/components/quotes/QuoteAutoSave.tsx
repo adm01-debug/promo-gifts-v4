@@ -277,7 +277,7 @@ export function QuoteAutoSave({
           ? 'Alterações não salvas'
           : lastSaved
             ? `Salvo às ${format(lastSaved, 'HH:mm', { locale: ptBR })}`
-            : 'Salvo automaticamente';
+            : '';
     }
   };
 
