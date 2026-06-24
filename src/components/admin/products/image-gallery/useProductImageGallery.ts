@@ -264,7 +264,9 @@ export function useProductImageGallery({
   const removeStorageFileByUrl = useCallback(async (url: string) => {
     const parts = url.split('/personalization-images/');
     if (parts.length < 2) return;
-    await supabase.storage.from('personalization-images').remove([decodeURIComponent(parts[1])]);
+    // BUG-IMAGEGALLERY-STORAGE-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error } — not throws.
+    const { error: storageErr } = await supabase.storage.from('personalization-images').remove([decodeURIComponent(parts[1])]);
+    if (storageErr) logger.warn('[useProductImageGallery] storage remove failed:', storageErr);
   }, []);
 
   const createExternalImageRecord = useCallback(

@@ -120,7 +120,10 @@ export function ImageUploadButton({
       const urlParts = currentImageUrl.split('/personalization-images/');
       if (urlParts.length > 1) {
         const filePath = urlParts[1];
-        await supabase.storage.from('personalization-images').remove([filePath]);
+        // BUG-IMAGEUPLOAD-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error }
+        // — bare await discarded the error, calling onRemove even on failure.
+        const { error: removeErr } = await supabase.storage.from('personalization-images').remove([filePath]);
+        if (removeErr) throw removeErr;
       }
       onRemove();
       toast.success('Imagem removida!');

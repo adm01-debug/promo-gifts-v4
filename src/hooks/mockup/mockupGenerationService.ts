@@ -530,11 +530,9 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
   }
 
   if (pathsToRemove.length > 0) {
-    try {
-      await supabase.storage.from('mockup-assets').remove(pathsToRemove);
-    } catch (storageErr) {
-      logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
-    }
+    // BUG-MOCKUP-STORAGE-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error } — not throws.
+    const { error: storageErr } = await supabase.storage.from('mockup-assets').remove(pathsToRemove);
+    if (storageErr) logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
   }
 }
 

@@ -125,7 +125,9 @@ export function ArtFileUpload({
         if (insErr || !row) {
           logger.error('[ArtFileUpload] db insert error', insErr);
           toast.error(`Falha ao registrar ${file.name}`);
-          await supabase.storage.from('mockup-art-files').remove([path]);
+          // BUG-ARTFILE-CLEANUP-SILENT-FAIL FIX: storage.remove returns { data, error } — best-effort cleanup.
+          const { error: cleanupErr } = await supabase.storage.from('mockup-art-files').remove([path]);
+          if (cleanupErr) logger.warn('[ArtFileUpload] storage cleanup failed:', cleanupErr);
           continue;
         }
 
