@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { KitState } from '@/lib/kit-builder';
 import type { Json } from '@/integrations/supabase/types';
+import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES
@@ -164,16 +165,17 @@ export function useCustomKitPersistence() {
   const bumpLastUsed = useCallback(
     async (kitId: string) => {
       if (!user?.id) return;
-      try {
-        await supabase
-          .from('custom_kits')
-          .update({ last_used_at: new Date().toISOString() })
-          .eq('id', kitId)
-          .eq('user_id', user.id);
-        queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      } catch {
-        /* best-effort */
+      // BUG-KITPERSISTENCE-BUMP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: bumpErr } = await supabase
+        .from('custom_kits')
+        .update({ last_used_at: new Date().toISOString() })
+        .eq('id', kitId)
+        .eq('user_id', user.id);
+      if (bumpErr) {
+        logger.warn('[kit-persistence] bumpLastUsed failed (non-fatal):', bumpErr);
+        return;
       }
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
     [user?.id, queryClient],
   );
@@ -184,22 +186,27 @@ export function useCustomKitPersistence() {
       if (!user?.id) return;
       try {
         if (value) {
-          // Desfixa qualquer outro kit fixado primeiro
-          await supabase
+          // BUG-KITPERSISTENCE-UNPIN-SILENT-FAIL FIX: bare await swallowed RLS errors —
+          // if unpin-others fails, we must not proceed to pin the target (would create
+          // multiple pinned kits violating the "only 1 pinned" invariant).
+          const { error: unpinErr } = await supabase
             .from('custom_kits')
             .update({ is_pinned: false })
             .eq('user_id', user.id)
             .eq('is_pinned', true);
+          if (unpinErr) throw unpinErr;
         }
-        await supabase
+        // BUG-KITPERSISTENCE-PIN-SILENT-FAIL FIX: bare await swallowed RLS errors.
+        const { error: pinErr } = await supabase
           .from('custom_kits')
           .update({ is_pinned: value })
           .eq('id', kitId)
           .eq('user_id', user.id);
+        if (pinErr) throw pinErr;
         queryClient.invalidateQueries({ queryKey: QUERY_KEY });
         toast.success(value ? 'Kit fixado em destaque' : 'Kit desafixado');
-      } catch {
-        toast.error('Erro ao alterar destaque');
+      } catch (err) {
+        toast.error('Erro ao alterar destaque', { description: sanitizeError(err) });
       }
     },
     [user?.id, queryClient],
