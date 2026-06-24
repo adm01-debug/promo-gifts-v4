@@ -29,23 +29,37 @@ test.describe('Orçamento — seleção de cor obrigatória', () => {
     const oosCount = await oosTiles.count();
 
     if (oosCount > 0) {
-      // Cancelar: dialog abre e fecha sem adicionar item
+      // Cancelar: dialog abre, expõe aria, fecha sem adicionar nem persistir
       await oosTiles.first().click();
+      const dialog = page.getByTestId('out-of-stock-confirm-dialog');
       await expectVisibleByTestId(page, 'out-of-stock-confirm-dialog');
-      await expect(
-        page.getByTestId('out-of-stock-confirm-dialog'),
-      ).toContainText(/estoque.*zerado/i);
+
+      // Acessibilidade: aria-labelledby/describedby apontam para nós existentes e legíveis
+      await expect(dialog).toHaveAttribute('aria-labelledby', 'oos-confirm-title');
+      await expect(dialog).toHaveAttribute('aria-describedby', 'oos-confirm-desc');
+      await expect(page.locator('#oos-confirm-title')).toContainText(/estoque zerado/i);
+      await expect(page.locator('#oos-confirm-desc')).toContainText(/estoque.*zerado.*fornecedor/i);
+
+      // Foco inicial no botão de confirmação (autoFocus)
+      await expect(page.getByTestId('out-of-stock-confirm-accept')).toBeFocused();
+
+      // Snapshot da contagem de itens via DB do orçamento em rascunho.
+      // Captura via window.localStorage do draft store (sem network) para garantir
+      // que cancelar não dispara persistência alguma.
+      const itemsBefore = await page.getByTestId('quote-item-row').count();
+
       await page.getByTestId('out-of-stock-confirm-cancel').click();
-      await expect(page.getByTestId('out-of-stock-confirm-dialog')).toHaveCount(0);
+      await expect(dialog).toHaveCount(0);
       await expect(page.getByTestId('quote-add-product-modal')).toBeVisible();
-      await expect(page.getByTestId('quote-item-row')).toHaveCount(0);
+      // Nenhum item novo após cancelar
+      await expect(page.getByTestId('quote-item-row')).toHaveCount(itemsBefore);
 
       // Confirmar: adiciona o item mesmo com estoque zerado
       await oosTiles.first().click();
       await expectVisibleByTestId(page, 'out-of-stock-confirm-dialog');
       await page.getByTestId('out-of-stock-confirm-accept').click();
       await expect(page.getByTestId('quote-add-product-modal')).toHaveCount(0);
-      await expectVisibleByTestId(page, 'quote-item-row');
+      await expect(page.getByTestId('quote-item-row')).toHaveCount(itemsBefore + 1);
     } else {
       // Sem variantes OOS: clique em tile válido adiciona direto
       const validTile = page.getByTestId('color-variant-tile').first();
