@@ -3,7 +3,7 @@
  * Refatorado: lógica em useQuoteBuilderState, UI em sub-componentes.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 
@@ -62,15 +62,22 @@ export default function QuoteBuilderPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
   const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
-  const [conditionsCollapsed, setConditionsCollapsed] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('quote-builder:conditions-collapsed') === '1';
-  });
+  const conditionsStorageKey = `quote-builder:conditions-collapsed:${s.quoteId ?? 'new'}`;
+  const [conditionsCollapsed, setConditionsCollapsed] = useState<boolean>(false);
+  // Rehidrata o estado de colapso quando o ID do orçamento muda (incl. transição novo → salvo).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      setConditionsCollapsed(window.localStorage.getItem(conditionsStorageKey) === '1');
+    } catch {
+      setConditionsCollapsed(false);
+    }
+  }, [conditionsStorageKey]);
   const toggleConditionsCollapsed = () => {
     setConditionsCollapsed((prev) => {
       const next = !prev;
       try {
-        window.localStorage.setItem('quote-builder:conditions-collapsed', next ? '1' : '0');
+        window.localStorage.setItem(conditionsStorageKey, next ? '1' : '0');
       } catch {
         /* noop */
       }
