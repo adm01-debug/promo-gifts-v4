@@ -2,42 +2,118 @@
  * useProductCustomizationOptions — Hook para buscar opções de personalização
  *
  * Chama fn_get_product_customization_options via supabase.rpc() direto.
- *
- * CHANGELOG:
- *  - FIX-RQ-01: exposto isError/error/refetch para diagnóstico no componente
- *  - FIX-RQ-02: staleTime reduzido p/ 30s (dados semi-estáticos mas precisam
- *               refletir correções de banco sem exigir hard-refresh)
- *  - FIX-RQ-03: retry: 3 explícito — não depende do default global que
- *               pode bloquear em estado de erro por sessão inteira
- *  - FIX-RQ-04: refetchOnMount: true — garante dados frescos ao montar
+ * Em falha, classifica o erro (rede/RPC/vazio) e devolve mensagem amigável
+ * em pt-BR para o componente exibir com botão "Tentar novamente".
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';
 import { adaptCustomizationOptions } from '@/lib/personalization/adapters';
 import type { CustomizationOptionsResponse } from '@/types/customization';
+import { logger } from '@/lib/logger';
 
-export function useProductCustomizationOptions(productId: string | null) {
+export type TechniquesErrorKind = 'network' | 'rpc' | 'empty' | 'unknown';
+
+export class TechniquesLoadError extends Error {
+  readonly kind: TechniquesErrorKind;
+  readonly originalMessage: string;
+  constructor(kind: TechniquesErrorKind, friendly: string, originalMessage = '') {
+    super(friendly);
+    this.name = 'TechniquesLoadError';
+    this.kind = kind;
+    this.originalMessage = originalMessage;
+  }
+}
+
+function classifyError(raw: unknown): TechniquesLoadError {
+  const msg = raw instanceof Error ? raw.message : String(raw ?? '');
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes('failed to fetch') ||
+    lower.includes('network') ||
+    lower.includes('econnreset') ||
+    lower.includes('socket hang up') ||
+    lower.includes('aborterror')
+  ) {
+    return new TechniquesLoadError(
+      'network',
+      'Sem conexão com o servidor de técnicas. Verifique sua internet e tente novamente.',
+      msg,
+    );
+  }
+  if (
+    lower.includes('timed out') ||
+    lower.includes('timeout') ||
+    lower.includes('502') ||
+    lower.includes('503') ||
+    lower.includes('504')
+  ) {
+    return new TechniquesLoadError(
+      'rpc',
+      'O serviço de técnicas está temporariamente indisponível. Tente novamente em instantes.',
+      msg,
+    );
+  }
+  return new TechniquesLoadError(
+    'unknown',
+    'Não foi possível carregar as técnicas de personalização. Tente novamente.',
+    msg,
+  );
+}
+
+interface UseProductCustomizationOptionsArgs {
+  productId: string | null;
+  /** Contexto opcional para diagnóstico nos logs (id do orçamento, etapa, etc.). */
+  diagnosticsContext?: {
+    quoteId?: string | null;
+    step?: string;
+  };
+}
+
+export function useProductCustomizationOptions(
+  productIdOrArgs: string | null | UseProductCustomizationOptionsArgs,
+) {
+  // Backward compatible: aceita string OU objeto com contexto
+  const args: UseProductCustomizationOptionsArgs =
+    typeof productIdOrArgs === 'object' && productIdOrArgs !== null
+      ? productIdOrArgs
+      : { productId: productIdOrArgs };
+
+  const { productId, diagnosticsContext } = args;
+
   return useQuery({
     queryKey: ['product-customization-options', productId],
     queryFn: async (): Promise<CustomizationOptionsResponse | null> => {
       if (!productId) return null;
-
-      const result = await invokeExternalRpc<Record<string, unknown>>(
-        'fn_get_product_customization_options',
-        { p_product_id: productId },
-      );
-
-      return adaptCustomizationOptions(result);
+      try {
+        const result = await invokeExternalRpc<Record<string, unknown>>(
+          'fn_get_product_customization_options',
+          { p_product_id: productId },
+        );
+        const adapted = adaptCustomizationOptions(result);
+        if (!adapted || !adapted.locations?.length) {
+          // Sem técnicas configuradas: NÃO lança — componente já trata locations.length===0.
+          logger.info('[useProductCustomizationOptions] sem técnicas', {
+            productId,
+            ...diagnosticsContext,
+          });
+        }
+        return adapted;
+      } catch (err) {
+        const classified = classifyError(err);
+        logger.error('[useProductCustomizationOptions] falha ao carregar técnicas', {
+          productId,
+          kind: classified.kind,
+          message: classified.originalMessage,
+          ...diagnosticsContext,
+        });
+        throw classified;
+      }
     },
     enabled: !!productId,
-    // FIX-RQ-02: 30s staleTime — técnicas mudam raramente mas precisam
-    // refletir correções de banco sem exigir hard-refresh manual
     staleTime: 30 * 1000,
-    // FIX-RQ-03: retry explícito com backoff curto
     retry: 3,
     retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 5_000),
-    // FIX-RQ-04: refetch no mount para pegar estado atual do banco
     refetchOnMount: true,
   });
 }
