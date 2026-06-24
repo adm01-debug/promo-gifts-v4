@@ -62,6 +62,21 @@ export default function QuoteBuilderPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
   const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
+  const [conditionsCollapsed, setConditionsCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('quote-builder:conditions-collapsed') === '1';
+  });
+  const toggleConditionsCollapsed = () => {
+    setConditionsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem('quote-builder:conditions-collapsed', next ? '1' : '0');
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
     hasUnsavedChanges,
   });
