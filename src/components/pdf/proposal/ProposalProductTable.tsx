@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
+import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
   // FIX #3b: inicializar com src (não "") para que img.complete só retorne true
@@ -169,25 +170,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
               const lineTotal = item.quantity * item.unitPrice + persTotal - itemDiscount;
               const isEven = globalIdx % 2 === 0;
 
-              const gravacao = item.personalizations
-                ?.map((p) => {
-                  let s = p.location_name ? `[${p.location_name}] ${p.technique_name}` : p.technique_name;
-                  let widthCm = p.width_cm;
-                  let heightCm = p.height_cm;
-                  if ((!widthCm || !heightCm) && p.notes) {
-                    const dimMatch = /\|\s*([\d.]+)×([\d.]+)cm/.exec(p.notes);
-                    if (dimMatch) {
-                      widthCm = parseFloat(dimMatch[1]);
-                      heightCm = parseFloat(dimMatch[2]);
-                    }
-                  }
-                  if (widthCm && heightCm) s += ` ${widthCm}×${heightCm}cm`;
-                  if (p.colors_count)
-                    s += ` | ${p.colors_count} cor${p.colors_count > 1 ? 'es' : ''}`;
-                  if (p.material) s += ` | ${p.material}`;
-                  return s;
-                })
-                .join(' · ');
+              const gravacao = formatPersonalizationsList(item.personalizations ?? []);
 
               return (
                 <tr

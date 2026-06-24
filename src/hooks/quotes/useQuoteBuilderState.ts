@@ -592,6 +592,7 @@ export function useQuoteBuilderState() {
         quantity?: number;
         personalizations?: Array<{
           technique?: { id: string; name: string };
+          location?: { locationCode?: string; locationName?: string } | null;
           specs?: { colors?: number; width?: number; height?: number };
           pricing?: { setupPrice?: number; unitPrice?: number; totalPrice?: number };
         }>;
@@ -600,18 +601,27 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
-    const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => ({
-      technique_id: p.technique?.id ?? '',
-      technique_name: p.technique?.name ?? '',
-      colors_count: p.specs?.colors || 1,
-      positions_count: 1,
-      width_cm: p.specs?.width || undefined,
-      height_cm: p.specs?.height || undefined,
-      area_cm2: (p.specs?.width || 0) * (p.specs?.height || 0),
-      setup_cost: p.pricing?.setupPrice || 0,
-      unit_cost: p.pricing?.unitPrice || 0,
-      total_cost: p.pricing?.totalPrice || 0,
-    }));
+    const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
+      // Fallback: wizard pode vir sem location explícito — usa 'Frente' como padrão
+      // consistente para que a proposta SEMPRE exiba Lado A/B/Circular/Frente.
+      const locName = p.location?.locationName?.trim() || 'Frente';
+      const locCode = p.location?.locationCode?.trim() || undefined;
+      const colors = p.specs?.colors && p.specs.colors > 0 ? p.specs.colors : 1;
+      return {
+        technique_id: p.technique?.id ?? '',
+        technique_name: p.technique?.name ?? '',
+        location_code: locCode,
+        location_name: locName,
+        colors_count: colors,
+        positions_count: 1,
+        width_cm: p.specs?.width || undefined,
+        height_cm: p.specs?.height || undefined,
+        area_cm2: (p.specs?.width || 0) * (p.specs?.height || 0),
+        setup_cost: p.pricing?.setupPrice || 0,
+        unit_cost: p.pricing?.unitPrice || 0,
+        total_cost: p.pricing?.totalPrice || 0,
+      };
+    });
     const newItem: QuoteItem = {
       product_id: product.id,
       product_name: product.name,

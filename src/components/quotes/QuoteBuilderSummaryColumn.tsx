@@ -42,6 +42,7 @@ import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { formatColors, formatArea } from '@/lib/quotes/personalizationSummary';
 import { toast } from 'sonner';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 // BUG-C FIX: import SSOT round2 instead of duplicating it locally
@@ -493,16 +494,10 @@ export function QuoteBuilderSummaryColumn({
                                       {p.technique_name}
                                     </span>
                                     <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-muted-foreground">
-                                      {p.width_cm && p.height_cm && (
-                                        <span>
-                                          Área {p.width_cm}×{p.height_cm}cm
-                                        </span>
+                                      {formatArea(p.width_cm, p.height_cm) && (
+                                        <span>Área {formatArea(p.width_cm, p.height_cm)}</span>
                                       )}
-                                      {p.colors_count && p.colors_count > 0 && (
-                                        <span>
-                                          • {p.colors_count} cor{p.colors_count > 1 ? 'es' : ''}
-                                        </span>
-                                      )}
+                                      <span>• {formatColors(p.colors_count)}</span>
                                       {p.personalized_quantity && (
                                         <span>• {p.personalized_quantity} pç(s)</span>
                                       )}
