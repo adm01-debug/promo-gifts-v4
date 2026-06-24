@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useCustomizationPriceReactive } from '@/hooks/simulation';
 import type { TechniqueOption, CustomizationPriceResponseV6 } from '@/types/customization';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useCustomizationCollapsePrefs } from '@/hooks/customization/useCustomizationCollapsePrefs';
 
 interface ConfigurationPanelV6Props {
   technique: TechniqueOption;
