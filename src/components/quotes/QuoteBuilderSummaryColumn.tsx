@@ -504,7 +504,11 @@ export function QuoteBuilderSummaryColumn({
           data-testid="quote-builder-summary-scroll"
           className={cn(
             'flex flex-col rounded-2xl border border-border/50 bg-card shadow-xl',
-            `lg:overflow-hidden ${STICKY_HEIGHT}`,
+            // Default desktop: bloco de baixo fixo, lista rola sozinha.
+            // Fallback p/ viewports curtos (<700px de altura): card inteiro vira scroll
+            // p/ evitar que o bloco fixo (desconto+markup+totais+CTAs) seja cortado.
+            'lg:overflow-y-auto [@media(min-height:700px)]:lg:overflow-hidden',
+            STICKY_HEIGHT,
           )}
         >
           {/* Header — sticky top do scroll container (sempre visível ao rolar) */}
@@ -635,7 +639,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Product Cards — única área rolável no desktop */}
           <div
             data-testid="quote-summary-items-scroll"
-            className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+            className="lg:min-h-[140px] lg:flex-1 [@media(min-height:700px)]:lg:min-h-0 [@media(min-height:700px)]:lg:overflow-y-auto"
           >
             <div className="px-4">
               <div className="space-y-3 pr-1">
