@@ -114,7 +114,11 @@ interface Props {
   /** ID do orçamento já persistido — quando presente, ativa persistência granular
    * do `sort_order` via UPDATE direto em quote_items (sem disparar autosave global). */
   quoteId?: string | null;
+  /** Liga/desliga supressão do `sort_order` no payload de autosave global enquanto
+   * o reorder granular está em voo (drag-and-drop ou "Agrupar"). RACE-PROOF. */
+  setSkipAutosaveSortOrder?: (v: boolean) => void;
 }
+
 
 /**
  * SortableSummaryCard — wrapper de drag-and-drop para um card do Resumo.
