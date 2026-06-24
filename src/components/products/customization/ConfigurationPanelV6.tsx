@@ -196,9 +196,10 @@ export function ConfigurationPanelV6({
             <button
               type="button"
               onClick={() => setCollapsed((v) => !v)}
-              aria-label={collapsed ? 'Expandir' : 'Recolher'}
+              aria-label={collapsed ? 'Expandir configurações da gravação' : 'Recolher configurações da gravação'}
               aria-expanded={!collapsed}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-controls={contentId}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background sm:h-6 sm:w-6"
               data-testid="customization-collapse-toggle"
             >
               {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -206,7 +207,19 @@ export function ConfigurationPanelV6({
           </div>
         </div>
 
-        {!collapsed && (<>
+        <div
+          id={contentId}
+          role="region"
+          aria-label="Configurações da gravação"
+          hidden={collapsed}
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none',
+            collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="space-y-4 pt-4">
+
 
 
         {/* Dimension inputs (conditional) */}
