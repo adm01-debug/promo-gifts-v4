@@ -185,9 +185,8 @@ export function CompareTableView({
                           {/* Hover swatches → swap header image */}
                           {(entry.product.colors?.length ?? 0) > 1 && (
                             <div className="flex flex-wrap justify-center gap-0.5">
-                              {entry.product.colors
-                                .slice(0, 6)
-                                .map((c: { name: string; hex?: string }, i: number) => (
+                              {entry.product.colors.map(
+                                (c: { name: string; hex?: string }, i: number) => (
                                   <button
                                     key={i}
                                     type="button"
@@ -209,7 +208,8 @@ export function CompareTableView({
                                       }))
                                     }
                                   />
-                                ))}
+                                ),
+                              )}
                             </div>
                           )}
                           <StockRiskBadge product={entry.product} />
@@ -333,18 +333,21 @@ export function CompareTableView({
                 label="Cores disponíveis"
                 products={products}
                 render={(p) => (
-                  <div className="flex flex-wrap justify-center gap-1">
-                    {p.colors?.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
+                  <div
+                    className="flex flex-wrap justify-center gap-1"
+                    aria-label={`${p.colors?.length ?? 0} cores`}
+                    data-testid="compare-colors-cell"
+                    data-colors-count={p.colors?.length ?? 0}
+                  >
+                    {p.colors?.map((c: { name: string; hex?: string }, i: number) => (
                       <div
                         key={i}
                         className="h-5 w-5 rounded-full border border-border"
                         style={{ backgroundColor: c.hex }}
                         title={c.name}
+                        data-testid="compare-color-dot"
                       />
                     ))}
-                    {(p.colors?.length ?? 0) > 6 && (
-                      <span className="text-xs text-muted-foreground">+{p.colors.length - 6}</span>
-                    )}
                   </div>
                 )}
               />

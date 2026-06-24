@@ -39,11 +39,14 @@ export async function invokeExternalRpc<T>(
   rpcName: string,
   params: Record<string, unknown>,
 ): Promise<T> {
-  // supabase.rpc requires a generated function name; dynamic names go through unknown
-  const rpc = supabase.rpc as unknown as (
+  // supabase.rpc requires a generated function name; dynamic names go through unknown.
+  // IMPORTANTE: bind(supabase) — supabase-js v2 chama `this.rest.rpc(...)` internamente,
+  // então destructuring/aliasing perde o `this` e dispara
+  // "Cannot read properties of undefined (reading 'rest')".
+  const rpc = (supabase.rpc as unknown as (
     fn: string,
     args: Record<string, unknown>,
-  ) => Promise<{ data: T | null; error: { message: string } | null }>;
+  ) => Promise<{ data: T | null; error: { message: string } | null }>).bind(supabase);
 
   let deadlineTimer: ReturnType<typeof setTimeout> = 0 as unknown as ReturnType<typeof setTimeout>;
   const deadlinePromise = new Promise<never>((_, reject) => {

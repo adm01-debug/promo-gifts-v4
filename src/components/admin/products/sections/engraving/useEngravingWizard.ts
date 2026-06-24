@@ -292,6 +292,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
   return {
     // State
     wizardStep,
+    setWizardStep,
     expandedId,
     setExpandedId,
     selectedComponent,
@@ -306,6 +307,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     detailForm,
     setDetailForm,
     deleteAreaConfirm,
+    localAreas,
     // Data
     techniques,
     filteredTechniques,
@@ -317,6 +319,9 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    wizardStepIndex: WIZARD_STEPS_IDS.indexOf(wizardStep),
+    isBusy: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isLoading: loadingTechs || (isEdit && loadingAreas),
     // Actions
     startWizard,
     resetWizard,
@@ -325,7 +330,6 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
     handleSelectTechnique,
     handleSaveArea,
     handleDeleteArea,
-    deleteAreaConfirm: deleteAreaConfirm,
     confirmDeleteArea,
     cancelDeleteArea,
     handleToggleActive,
