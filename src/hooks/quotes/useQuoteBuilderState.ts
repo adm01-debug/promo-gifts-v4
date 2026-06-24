@@ -441,6 +441,20 @@ export function useQuoteBuilderState() {
   );
 
   // ── AutoSave ──
+  // RACE-PROOF: quando o reorder granular está em voo (drag-and-drop ou
+  // "Agrupar"), o autosave global NÃO deve persistir `sort_order` — caso
+  // contrário o LocalStorage (e qualquer save posterior) sobrescreveria
+  // a ordem recém-gravada pelo persistItemsOrder com um snapshot intermediário.
+  // O componente de Resumo liga/desliga essa flag em volta do drag.
+  const [skipAutosaveSortOrder, setSkipAutosaveSortOrder] = useState(false);
+  const autosaveItems = useMemo(
+    () =>
+      skipAutosaveSortOrder
+        ? items.map(({ sort_order: _omit, ...rest }) => rest as QuoteItem)
+        : items,
+    [items, skipAutosaveSortOrder],
+  );
+
   const { clearAutoSave } = useAutoSaveQuote({
     enabled: (!!clientId || items.length > 0) && !isEditMode,
     data: {
@@ -448,7 +462,7 @@ export function useQuoteBuilderState() {
       contactId,
       contactInfo,
       companyInfo,
-      items,
+      items: autosaveItems,
       discountType,
       discountValue,
       negotiationMarkup,
@@ -460,6 +474,7 @@ export function useQuoteBuilderState() {
       notes,
       validUntil,
     },
+
     onRestore: (saved) => {
       if (!isEditMode) {
         if (saved.clientId) setClientId(saved.clientId);
