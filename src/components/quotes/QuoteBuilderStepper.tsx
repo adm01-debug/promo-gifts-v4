@@ -41,17 +41,17 @@ export function QuoteBuilderStepper({
   className,
   compact = false,
 }: QuoteBuilderStepperProps) {
-  const circleSize = compact ? 'h-7 w-7' : 'h-10 w-10';
-  const iconSize = compact ? 'h-[14px] w-[14px]' : 'h-[18px] w-[18px]';
+  const circleSize = compact ? 'h-6 w-6 sm:h-7 sm:w-7' : 'h-10 w-10';
+  const iconSize = compact ? 'h-3 w-3 sm:h-[14px] sm:w-[14px]' : 'h-[18px] w-[18px]';
   const labelSize = compact ? 'text-[10px] sm:text-[11px]' : 'text-[10px] sm:text-xs';
-  const connectorMt = compact ? 'mt-[13px]' : 'mt-[19px]';
+  const connectorMt = compact ? 'mt-[11px] sm:mt-[13px]' : 'mt-[19px]';
   const gap = compact ? 'gap-1' : 'gap-2';
 
   return (
     <nav
       aria-label="Progresso do orçamento"
       data-testid="quote-wizard"
-      className={cn('w-full', className)}
+      className={cn('w-full min-w-0 overflow-hidden', className)}
     >
       <ol className="m-0 flex list-none items-start justify-between p-0">
         {STEPS.map((step, index) => {
