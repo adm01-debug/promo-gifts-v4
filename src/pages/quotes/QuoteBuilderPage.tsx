@@ -154,7 +154,7 @@ export default function QuoteBuilderPage() {
         {/* LAYOUT-FIX: header + stepper na MESMA linha (inline à direita do título)
             e sticky no topo para preservar contexto sem consumir altura extra. */}
         <div
-          className="sticky z-30 -mx-3 transform-gpu border-b border-border/40 bg-background/85 px-3 py-2 backdrop-blur-md [contain:layout_paint] [will-change:transform] supports-[backdrop-filter]:bg-background/70 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
+          className="sticky z-40 -mx-3 border-b border-border/40 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/80 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
           style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 40px))' }}
         >
           <div className="flex flex-row items-center gap-2 sm:gap-4 lg:gap-6">
