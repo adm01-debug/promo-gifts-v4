@@ -133,11 +133,60 @@ export function QuoteBuilderSummaryColumn({
   confirmAllStalePrices,
   shippingType,
   shippingCost = 0,
+  onReorder,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [showOnlyStale, setShowOnlyStale] = useState(false);
+  const [groupedByProduct, setGroupedByProduct] = useState(false);
+
+  // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id || !onReorder) return;
+    const oldIndex = items.findIndex(
+      (it, i) => (it.id ?? `__idx_${i}`) === String(active.id),
+    );
+    const newIndex = items.findIndex(
+      (it, i) => (it.id ?? `__idx_${i}`) === String(over.id),
+    );
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(items, oldIndex, newIndex).map((it, i) => ({
+      ...it,
+      sort_order: i,
+    }));
+    onReorder(reordered);
+  };
+
+  const handleGroupByProduct = () => {
+    if (!onReorder || items.length < 2) return;
+    // Agrupa por product_id, preservando a ordem relativa de aparição (stable).
+    const seen = new Map<string, number>();
+    items.forEach((it, i) => {
+      const key = it.product_id || `__no_pid_${i}`;
+      if (!seen.has(key)) seen.set(key, seen.size);
+    });
+    const grouped = [...items]
+      .map((it, i) => ({ it, i }))
+      .sort((a, b) => {
+        const ka = a.it.product_id || `__no_pid_${a.i}`;
+        const kb = b.it.product_id || `__no_pid_${b.i}`;
+        const ga = seen.get(ka) ?? 0;
+        const gb = seen.get(kb) ?? 0;
+        if (ga !== gb) return ga - gb;
+        return a.i - b.i;
+      })
+      .map(({ it }, i) => ({ ...it, sort_order: i }));
+    onReorder(grouped);
+    setGroupedByProduct(true);
+    toast.success('Itens agrupados por produto');
+  };
 
   // ── Base apresentada (subtotal + markup) — referência para converter desconto %/R$ ──
   // BUG-D FIX: clamp markup to [0,50] so this mirrors calculateQuoteTotals exactly
