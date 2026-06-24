@@ -218,7 +218,7 @@ export function ProductRow({ item }: { item: ProposalItem }) {
 
   const gravacao = item.personalizations
     ?.map((p) => {
-      let s = p.technique_name;
+      let s = p.location_name ? `[${p.location_name}] ${p.technique_name}` : p.technique_name;
       let widthCm = p.width_cm;
       let heightCm = p.height_cm;
       if ((!widthCm || !heightCm) && p.notes) {

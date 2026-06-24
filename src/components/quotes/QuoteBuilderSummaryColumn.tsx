@@ -485,12 +485,22 @@ export function QuoteBuilderSummaryColumn({
                                   </Badge>
                                   <div className="min-w-0">
                                     <span className="block truncate text-[11px] font-medium text-primary">
+                                      {p.location_name ? (
+                                        <span className="mr-1 rounded bg-primary/15 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-primary">
+                                          {p.location_name}
+                                        </span>
+                                      ) : null}
                                       {p.technique_name}
                                     </span>
-                                    <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+                                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-muted-foreground">
                                       {p.width_cm && p.height_cm && (
                                         <span>
-                                          {p.width_cm}×{p.height_cm}cm
+                                          Área {p.width_cm}×{p.height_cm}cm
+                                        </span>
+                                      )}
+                                      {p.colors_count && p.colors_count > 0 && (
+                                        <span>
+                                          • {p.colors_count} cor{p.colors_count > 1 ? 'es' : ''}
                                         </span>
                                       )}
                                       {p.personalized_quantity && (
