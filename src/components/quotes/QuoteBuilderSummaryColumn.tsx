@@ -186,12 +186,14 @@ export function QuoteBuilderSummaryColumn({
   shippingType,
   shippingCost = 0,
   onReorder,
+  quoteId,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   // Sensors do dnd-kit — pointer (mouse/touch) + keyboard (acessibilidade).
   const dndSensors = useSensors(
@@ -199,8 +201,27 @@ export function QuoteBuilderSummaryColumn({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  /** Persiste a nova ordem em background via UPDATE granular em quote_items.
+   * Não bloqueia a UI (otimista) e mostra toast saneado em falha. */
+  const persistOrderInBackground = (reordered: QuoteItem[]) => {
+    if (!quoteId) return;
+    const rows = reordered
+      .map((it, i) => ({ id: it.id ?? '', sort_order: i }))
+      .filter((r) => r.id);
+    if (rows.length === 0) return;
+    persistItemsOrder(quoteId, rows).catch((err) => {
+      logger.error('[QuoteBuilderSummaryColumn] persistItemsOrder failed', err);
+      toast.error('Não foi possível salvar a nova ordem. Tente novamente.');
+    });
+  };
+
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveDragId(String(e.active.id));
+  };
+
   const handleDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
+    setActiveDragId(null);
     if (!over || active.id === over.id || !onReorder) return;
     const oldIndex = items.findIndex(
       (it, i) => (it.id ?? `__idx_${i}`) === String(active.id),
@@ -214,11 +235,11 @@ export function QuoteBuilderSummaryColumn({
       sort_order: i,
     }));
     onReorder(reordered);
+    persistOrderInBackground(reordered);
   };
 
-  const handleGroupByProduct = () => {
+  const groupByProductId = () => {
     if (!onReorder || items.length < 2) return;
-    // Agrupa por product_id, preservando a ordem relativa de aparição (stable).
     const seen = new Map<string, number>();
     items.forEach((it, i) => {
       const key = it.product_id || `__no_pid_${i}`;
@@ -236,9 +257,55 @@ export function QuoteBuilderSummaryColumn({
       })
       .map(({ it }, i) => ({ ...it, sort_order: i }));
     onReorder(grouped);
+    persistOrderInBackground(grouped);
     setGroupedByProduct(true);
     toast.success('Itens agrupados por produto');
   };
+
+  const groupByCategory = () => {
+    if (!onReorder || items.length < 2) return;
+    const BUCKET_UNCAT = '__uncategorized__';
+    const seen = new Map<string, number>();
+    items.forEach((it) => {
+      const key = it.product_category_id || BUCKET_UNCAT;
+      if (!seen.has(key)) seen.set(key, seen.size);
+    });
+    // Garante bucket sem categoria por último.
+    if (seen.has(BUCKET_UNCAT)) {
+      seen.delete(BUCKET_UNCAT);
+      seen.set(BUCKET_UNCAT, seen.size);
+    }
+    const uncategorized = items.filter((it) => !it.product_category_id).length;
+    if (uncategorized > 0) {
+      logger.info('[QuoteBuilderSummaryColumn] quote_summary_group_uncategorized', {
+        count: uncategorized,
+        total: items.length,
+      });
+    }
+    const grouped = [...items]
+      .map((it, i) => ({ it, i }))
+      .sort((a, b) => {
+        const ka = a.it.product_category_id || BUCKET_UNCAT;
+        const kb = b.it.product_category_id || BUCKET_UNCAT;
+        const ga = seen.get(ka) ?? 0;
+        const gb = seen.get(kb) ?? 0;
+        if (ga !== gb) return ga - gb;
+        return a.i - b.i;
+      })
+      .map(({ it }, i) => ({ ...it, sort_order: i }));
+    onReorder(grouped);
+    persistOrderInBackground(grouped);
+    setGroupedByProduct(true);
+    toast.success('Itens agrupados por categoria');
+  };
+
+  // Snapshot do item arrastado para o DragOverlay.
+  const activeItemForOverlay = useMemo(() => {
+    if (!activeDragId) return null;
+    return (
+      items.find((it, i) => (it.id ?? `__idx_${i}`) === activeDragId) ?? null
+    );
+  }, [activeDragId, items]);
 
   // ── Base apresentada (subtotal + markup) — referência para converter desconto %/R$ ──
   // BUG-D FIX: clamp markup to [0,50] so this mirrors calculateQuoteTotals exactly
