@@ -13,6 +13,17 @@ vi.mock('@/hooks/simulation', () => ({
   useCustomizationPriceReactive: () => ({ price: null, loading: false, error: null }),
 }));
 
+// Supabase — sem autenticação durante os testes; sync remoto vira no-op.
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    auth: { getUser: async () => ({ data: { user: null } }) },
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+      upsert: async () => ({ error: null }),
+    }),
+  },
+}));
+
 const technique: TechniqueOption = {
   technique_id: 'tec-1',
   technique_name: 'Serigrafia',
