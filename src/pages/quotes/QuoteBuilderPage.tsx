@@ -701,6 +701,7 @@ export default function QuoteBuilderPage() {
             confirmItemPrice={s.confirmItemPrice}
             confirmAllStalePrices={s.confirmAllStalePrices}
             onReorder={(newItems) => s.setItems(newItems)}
+            quoteId={s.quoteId ?? null}
           />
         </div>
       </div>

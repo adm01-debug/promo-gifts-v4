@@ -66,6 +66,8 @@ interface Product {
   colors?: { name: string; hex?: string; stock?: number }[];
   minQuantity?: number;
   totalStock?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 interface RawProductColor {
@@ -100,6 +102,8 @@ function mapQuoteSearchProduct(
           sum + (typeof c === 'object' ? (c.stock ?? 0) : 0),
         0,
       ),
+    categoryId: (p as { category_id?: string | null }).category_id ?? null,
+    categoryName: (p as { category_name?: string | null }).category_name ?? null,
   };
 }
 
