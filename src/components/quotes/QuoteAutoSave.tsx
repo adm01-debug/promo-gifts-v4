@@ -13,7 +13,11 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { logger } from '@/lib/logger';
-type SaveStatus = 'error' | 'idle' | 'offline' | 'saved' | 'saving';
+import {
+  QUOTE_AUTOSAVE_STATUS_TEXT,
+  QUOTE_AUTOSAVE_ARIA_LABEL,
+  type SaveStatus,
+} from './quoteAutoSaveStatus';
 
 interface QuoteDraft {
   id: string;
@@ -256,40 +260,52 @@ export function QuoteAutoSave({
   };
 
   const getStatusText = () => {
+    const T = QUOTE_AUTOSAVE_STATUS_TEXT;
     switch (status) {
       case 'saving':
-        return 'Salvando...';
+        return T.saving;
       case 'saved': {
         if (lastSaved) {
           const secsAgo = Math.round((Date.now() - lastSaved.getTime()) / 1000);
-          if (secsAgo < 60) return 'Salvo agora';
+          if (secsAgo < 60) return T.savedNow;
           const minsAgo = Math.round(secsAgo / 60);
-          return `Salvo há ${minsAgo} min`;
+          return T.savedMinutesAgo(minsAgo);
         }
-        return 'Salvo';
+        return T.savedGeneric;
       }
       case 'error':
-        return 'Erro ao salvar';
+        return T.error;
       case 'offline':
-        return 'Offline';
+        return T.offline;
       default:
         return hasUnsavedChanges
-          ? 'Alterações não salvas'
+          ? T.unsaved
           : lastSaved
-            ? `Salvo às ${format(lastSaved, 'HH:mm', { locale: ptBR })}`
-            : '';
+            ? T.savedAtTime(format(lastSaved, 'HH:mm', { locale: ptBR }))
+            : T.idle;
     }
   };
 
   const statusText = getStatusText();
   const showIcon = status !== 'idle' || statusText !== '';
+  // aria-live: 'polite' anuncia mudanças de status sem interromper o leitor.
+  // 'off' quando não há texto, para evitar anúncios vazios.
+  const ariaLive: 'off' | 'polite' = statusText ? 'polite' : 'off';
 
   return (
     <>
       {/* Indicador de status */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn('flex items-center gap-2', className)}>
+          <div
+            className={cn('flex items-center gap-2', className)}
+            role="status"
+            aria-label={QUOTE_AUTOSAVE_ARIA_LABEL}
+            aria-live={ariaLive}
+            aria-atomic="true"
+            data-testid="quote-autosave-indicator"
+            data-status={status}
+          >
             <AnimatePresence mode="wait">
               {showIcon && (
                 <motion.div
@@ -298,17 +314,21 @@ export function QuoteAutoSave({
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ duration: 0.15 }}
+                  aria-hidden="true"
                 >
                   {getStatusIcon()}
                 </motion.div>
               )}
             </AnimatePresence>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
+            <span
+              className="hidden text-xs text-muted-foreground sm:inline"
+              data-testid="quote-autosave-text"
+            >
               {statusText}
             </span>
             {hasUnsavedChanges && status !== 'saving' && (
               <Badge variant="outline" className="h-5 text-[10px]">
-                Não salvo
+                {QUOTE_AUTOSAVE_STATUS_TEXT.unsavedBadge}
               </Badge>
             )}
           </div>
