@@ -202,13 +202,17 @@ export function QuoteProductColorSelector({
           if (!open) setPendingOutOfStock(null);
         }}
       >
-        <AlertDialogContent data-testid="out-of-stock-confirm-dialog">
+        <AlertDialogContent
+          data-testid="out-of-stock-confirm-dialog"
+          aria-labelledby="oos-confirm-title"
+          aria-describedby="oos-confirm-desc"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
+            <AlertDialogTitle id="oos-confirm-title" className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />
               Estoque zerado no fornecedor
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription id="oos-confirm-desc">
               O estoque da cor{' '}
               <strong className="text-foreground">
                 {pendingOutOfStock?.color_name || 'selecionada'}
@@ -222,6 +226,7 @@ export function QuoteProductColorSelector({
             </AlertDialogCancel>
             <AlertDialogAction
               data-testid="out-of-stock-confirm-accept"
+              autoFocus
               onClick={() => {
                 const v = pendingOutOfStock;
                 setPendingOutOfStock(null);
