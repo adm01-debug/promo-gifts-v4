@@ -86,6 +86,41 @@ export const quoteService = {
       personalizations: allPersonalizations.filter((p) => p.quote_item_id === item.id),
     })) as unknown as QuoteItem[];
 
+    // Hidratação runtime-only de categoria (não persistida em quote_items): batch
+    // lookup por product_id para alimentar "Agrupar por categoria" no Resumo.
+    const productIds = Array.from(
+      new Set(items.map((i) => i.product_id).filter((v): v is string => !!v)),
+    );
+    if (productIds.length > 0) {
+      try {
+        const { data: prodCats } = await supabase
+          .from('products')
+          .select('id, category_id, category_name')
+          .in('id', productIds);
+        if (prodCats) {
+          const catById = new Map(
+            prodCats.map((p) => [
+              p.id as string,
+              {
+                cid: (p as { category_id?: string | null }).category_id ?? null,
+                cname: (p as { category_name?: string | null }).category_name ?? null,
+              },
+            ]),
+          );
+          for (const it of items) {
+            if (!it.product_id) continue;
+            const c = catById.get(it.product_id);
+            if (c) {
+              it.product_category_id = c.cid;
+              it.product_category_name = c.cname;
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('[quoteService.fetchQuote] category hydration failed', err);
+      }
+    }
+
     return { ...quoteData, items } as Quote;
   },
 
