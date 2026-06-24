@@ -34,7 +34,7 @@ import {
   ExternalLink,
   Info,
   MessageSquare,
-  Lock,
+  
 } from 'lucide-react';
 // FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
 import { format, addDays, startOfDay } from 'date-fns';
@@ -544,27 +544,6 @@ export default function QuoteBuilderPage() {
                   {s.notes && (
                     <p className="text-right text-[10px] text-muted-foreground">
                       {s.notes.length}/2000
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Lock className="h-3 w-3" />
-                    Notas internas
-                    <span className="text-[10px] italic">(não aparece na proposta)</span>
-                  </Label>
-                  <Textarea
-                    data-testid="quote-internal-notes-input"
-                    value={s.internalNotes || ''}
-                    onChange={(e) => s.setInternalNotes(e.target.value)}
-                    placeholder="Anotações para uso interno..."
-                    rows={2}
-                    maxLength={2000}
-                    className="resize-none text-xs"
-                  />
-                  {s.internalNotes && (
-                    <p className="text-right text-[10px] text-muted-foreground">
-                      {s.internalNotes.length}/2000
                     </p>
                   )}
                 </div>
