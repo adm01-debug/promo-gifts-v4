@@ -243,10 +243,31 @@ export default function QuoteBuilderPage() {
                     : 'border-border/50',
                 )}
               >
-                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
-                  <Package className="h-4 w-4 text-primary" />
-                  Condições
-                </h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+                    <Package className="h-4 w-4 text-primary" />
+                    Condições
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={toggleConditionsCollapsed}
+                    aria-expanded={!conditionsCollapsed}
+                    aria-controls="quote-conditions-body"
+                    aria-label={conditionsCollapsed ? 'Expandir condições' : 'Colapsar condições'}
+                    title={conditionsCollapsed ? 'Expandir' : 'Colapsar'}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronDown
+                      className={cn(
+                        'h-4 w-4 transition-transform duration-200',
+                        conditionsCollapsed && '-rotate-90',
+                      )}
+                    />
+                  </button>
+                </div>
+                {!conditionsCollapsed && (
+                  <div id="quote-conditions-body" className="space-y-3">
+
 
                 <div className="space-y-1.5">
                   <Label
