@@ -1011,7 +1011,6 @@ export function useQuoteBuilderState() {
           discount_amount: discountType === 'amount' ? discountAmount : 0,
           negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
           notes: notes || undefined,
-          internal_notes: internalNotes || undefined,
           valid_until: validUntil || undefined,
           payment_method: paymentMethod || undefined,
           payment_terms: paymentTerms || undefined,
