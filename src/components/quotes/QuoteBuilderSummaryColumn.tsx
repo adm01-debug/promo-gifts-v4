@@ -787,6 +787,41 @@ export function QuoteBuilderSummaryColumn({
                       );
                     })}
                   </SortableContext>
+                  <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.18,0.67,0.6,1.22)' }}>
+                    {activeItemForOverlay ? (
+                      <div
+                        data-testid="quote-summary-drag-overlay"
+                        className={cn(
+                          'pointer-events-none rounded-xl border-[1.5px] border-primary/60 bg-card p-3',
+                          'shadow-2xl ring-2 ring-primary/40 rotate-[0.5deg] scale-[1.02]',
+                          'animate-fade-in',
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 text-primary" />
+                          {activeItemForOverlay.product_image_url ? (
+                            <img
+                              src={activeItemForOverlay.product_image_url}
+                              alt=""
+                              className="h-10 w-10 rounded-lg bg-muted object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">
+                              {activeItemForOverlay.product_name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {activeItemForOverlay.quantity} × {formatCurrency(activeItemForOverlay.unit_price)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </DragOverlay>
                 </DndContext>
               )}
             </div>
