@@ -722,6 +722,7 @@ export function QuoteBuilderSummaryColumn({
                                       variant="ghost"
                                       size="icon"
                                       aria-label="Excluir"
+                                      data-testid={`quote-summary-delete-${idx}`}
                                       className="h-6 w-6 text-destructive hover:bg-destructive/10"
                                       onClick={(e) => {
                                         e.stopPropagation();
