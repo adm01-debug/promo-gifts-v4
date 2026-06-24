@@ -25,7 +25,11 @@ const { updateQuoteSpy, createQuoteSpy, requestApprovalSpy, fetchQuoteSpy, VALID
       contact_id: 'contact-1',
       client_name: 'Contato Teste',
       client_company: 'Empresa Teste',
-      status: 'pending',
+      // Status inicial 'draft': única origem válida para a transição → 'pending_approval'
+      // (ver QUOTE_VALID_TRANSITIONS). Nestes testes o que importa é o status-ALVO do save
+      // ('pending' / 'pending_approval'), não o status carregado. Com 'pending' aqui o gate de
+      // transição bloquearia o save ANTES da checagem de conflito, e o teste nunca o exercitaria.
+      status: 'draft',
       payment_method: 'boleto',
       payment_terms: '14_dias',
       delivery_time: '14_dias',
@@ -49,12 +53,12 @@ const { updateQuoteSpy, createQuoteSpy, requestApprovalSpy, fetchQuoteSpy, VALID
       requestApprovalSpy: vi.fn(() => undefined),
       // Referência estável: o efeito de load do hook depende de `fetchQuote`; um
       // spy recriado a cada render reentraria no efeito em loop.
-      fetchQuoteSpy: vi.fn(() => loadedQuote),
+      fetchQuoteSpy: vi.fn(() => Promise.resolve(loadedQuote)),
     };
   });
 
 vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock('react-router-dom', () => ({

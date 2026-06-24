@@ -53,12 +53,12 @@ const { updateQuoteSpy, createQuoteSpy, requestApprovalSpy, fetchQuoteSpy, VALID
       requestApprovalSpy: vi.fn(() => undefined),
       // Referência estável: a factory de vi.mock('@/hooks/quotes') é içada ao topo do
       // arquivo; vi.hoisted garante que fetchQuoteSpy está inicializado nesse momento.
-      fetchQuoteSpy: vi.fn(() => loadedQuote),
+      fetchQuoteSpy: vi.fn(() => Promise.resolve(loadedQuote)),
     };
   });
 
 vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock('react-router-dom', () => ({
