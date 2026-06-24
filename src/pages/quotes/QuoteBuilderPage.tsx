@@ -700,6 +700,7 @@ export default function QuoteBuilderPage() {
             realDiscountPercent={s.realDiscountPercent}
             confirmItemPrice={s.confirmItemPrice}
             confirmAllStalePrices={s.confirmAllStalePrices}
+            onReorder={(newItems) => s.setItems(newItems)}
           />
         </div>
       </div>
