@@ -980,7 +980,9 @@ export function QuoteBuilderSummaryColumn({
                 </DndContext>
               )}
             </div>
+            </div>
           </div>
+
 
           {/* Discount */}
           {items.length > 0 && (
