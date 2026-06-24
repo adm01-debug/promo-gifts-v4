@@ -297,7 +297,15 @@ export function QuoteAutoSave({
       {/* Indicador de status */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn('flex items-center gap-2', className)}>
+          <div
+            className={cn('flex items-center gap-2', className)}
+            role="status"
+            aria-label={QUOTE_AUTOSAVE_ARIA_LABEL}
+            aria-live={ariaLive}
+            aria-atomic="true"
+            data-testid="quote-autosave-indicator"
+            data-status={status}
+          >
             <AnimatePresence mode="wait">
               {showIcon && (
                 <motion.div
@@ -306,17 +314,21 @@ export function QuoteAutoSave({
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ duration: 0.15 }}
+                  aria-hidden="true"
                 >
                   {getStatusIcon()}
                 </motion.div>
               )}
             </AnimatePresence>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
+            <span
+              className="hidden text-xs text-muted-foreground sm:inline"
+              data-testid="quote-autosave-text"
+            >
               {statusText}
             </span>
             {hasUnsavedChanges && status !== 'saving' && (
               <Badge variant="outline" className="h-5 text-[10px]">
-                Não salvo
+                {QUOTE_AUTOSAVE_STATUS_TEXT.unsavedBadge}
               </Badge>
             )}
           </div>
