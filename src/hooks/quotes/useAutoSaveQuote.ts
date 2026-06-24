@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 // Versao atual do schema do payload de AutoSave
@@ -113,7 +114,14 @@ export function useAutoSaveQuote<T>({
           lastSavedRef.current = JSON.stringify(migrated.data);
         }
       } catch (e) {
+        // BUG-AUTOSAVE-CORRUPT FIX: previously silent — user had no idea the draft
+        // was lost. Now we notify and purge the corrupted entry so it isn't retried.
         logger.error('Failed to parse/migrate autosave data', e);
+        try { localStorage.removeItem(key); } catch { /* ignore */ }
+        toast.warning('Rascunho anterior não pôde ser restaurado (dados corrompidos).', {
+          description: 'O formulário foi iniciado em branco. Salve o orçamento assim que possível.',
+          duration: 6000,
+        });
       }
     }
   }, [enabled, key]);

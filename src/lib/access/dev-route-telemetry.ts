@@ -13,6 +13,7 @@
  *  - Falhas são engolidas: telemetria nunca pode quebrar a UX.
  */
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { logger } from '@/lib/logger';
 
 export type DevRouteUxEvent =
   | 'abandon'
@@ -55,13 +56,15 @@ export async function recordDevRouteTelemetry(params: RecordParams): Promise<voi
 
   try {
     const supabase = await getSupabaseClient();
-    await supabase.rpc('record_dev_route_telemetry', {
+    // BUG-DEVTELEMETRY-SILENT-FAIL FIX: bare RPC await swallowed DB errors.
+    const { error: telemetryErr } = await supabase.rpc('record_dev_route_telemetry', {
       _event_type: params.event,
       _blocked_path: params.blockedPath,
       _user_role: params.userRole ?? undefined,
       _duration_ms:
         typeof params.durationMs === 'number' ? Math.round(params.durationMs) : undefined,
     });
+    if (telemetryErr) logger.warn('[dev-route-telemetry] RPC failed:', telemetryErr);
   } catch {
     // Telemetria não pode quebrar UX — engole erro silenciosamente.
   }

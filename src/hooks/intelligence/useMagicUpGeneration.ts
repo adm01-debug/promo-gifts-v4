@@ -302,7 +302,8 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         .maybeSingle();
       const metadata = toJsonRecord(existing?.metadata);
       const status = (existing?.status as MagicUpCurationStatus | null) || curationStatus;
-      await supabase
+      // BUG-MAGICUP-SCORE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: scoreErr } = await supabase
         .from('magic_up_generations')
         .update({
           quality_score: diagnosis.total,
@@ -319,6 +320,10 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           },
         })
         .eq('id', currentVariation.id);
+      if (scoreErr) {
+        logger.warn('[magic-up] quality score UPDATE failed:', scoreErr);
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
     }
     toast.success('Magic Score atualizado');
@@ -347,7 +352,9 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           .eq('id', currentVariation.id)
           .maybeSingle();
         const metadata = toJsonRecord(existing?.metadata);
-        await supabase
+        // BUG-MAGICUP-CURATION-SILENT-FAIL FIX: bare await swallowed RLS errors;
+        // optimistic local state (lines above) diverges from DB on failure.
+        const { error: curationErr } = await supabase
           .from('magic_up_generations')
           .update({
             status,
@@ -361,6 +368,10 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
             },
           })
           .eq('id', currentVariation.id);
+        if (curationErr) {
+          logger.warn('[magic-up] curation status UPDATE failed:', curationErr);
+          return;
+        }
         queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
       }
     },
@@ -452,19 +463,32 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
   const handleToggleFavorite = useCallback(async () => {
     if (!currentVariation?.id) return;
     const newVal = !currentVariation.isFavorite;
+    // Optimistic update
     setVariations((prev) =>
       prev.map((v, i) => (i === activeVariation ? { ...v, isFavorite: newVal } : v)),
     );
-    await supabase
+    const { error: favErr } = await supabase
       .from('magic_up_generations')
       .update({ is_favorite: newVal })
       .eq('id', currentVariation.id);
+    if (favErr) {
+      // BUG-MAGICUP-FAVORITE-ROLLBACK FIX: revert optimistic update on DB failure.
+      setVariations((prev) =>
+        prev.map((v, i) => (i === activeVariation ? { ...v, isFavorite: !newVal } : v)),
+      );
+      logger.warn('[magic-up] Toggle favorite failed — rolled back:', favErr);
+    }
     queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
   }, [currentVariation, activeVariation, queryClient]);
 
   const handleToggleHistoryFavorite = useCallback(
     async (id: string, current: boolean) => {
-      await supabase.from('magic_up_generations').update({ is_favorite: !current }).eq('id', id);
+      // BUG-MAGICUP-HISTORY-FAVORITE-SILENT-FAIL FIX: bare await swallowed errors.
+      const { error: favErr } = await supabase
+        .from('magic_up_generations')
+        .update({ is_favorite: !current })
+        .eq('id', id);
+      if (favErr) logger.warn('[magic-up] Toggle history favorite failed:', favErr);
       queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
     },
     [queryClient],
@@ -472,7 +496,16 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
 
   const handleDeleteHistory = useCallback(
     async (id: string) => {
-      await supabase.from('magic_up_generations').delete().eq('id', id);
+      // BUG-MAGICUP-DELETE-SILENT-FAIL FIX: bare await swallowed RLS denials;
+      // the success toast fired even when the DB row was not deleted.
+      const { error: delErr } = await supabase
+        .from('magic_up_generations')
+        .delete()
+        .eq('id', id);
+      if (delErr) {
+        logger.warn('[magic-up] Delete history failed:', delErr);
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['magic-up-history'] });
       toast.success('Imagem removida do histórico');
     },

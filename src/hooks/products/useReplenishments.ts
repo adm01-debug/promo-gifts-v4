@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { untypedRpc } from '@/lib/supabase-untyped';
 import { shouldRetry } from '@/lib/db/postgrest';
+import { logger } from '@/lib/logger';
 
 /**
  * Módulo Reposição — FONTE ÚNICA DE VERDADE: RPC `fn_get_reposicao_listing`.
@@ -208,7 +209,7 @@ async function fetchReposicao(limit: number): Promise<ReplenishmentWithDetails[]
 
   if (error) {
     if (isGoneError(error)) {
-      console.warn(
+      logger.warn(
         '[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.',
         error.message,
       );
@@ -255,7 +256,7 @@ export function useReplenishmentStats() {
 
       if (error) {
         if (isGoneError(error)) {
-          console.warn(
+          logger.warn(
             '[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.',
             error.message,
           );

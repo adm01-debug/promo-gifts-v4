@@ -151,6 +151,114 @@ describe('requestApproval', () => {
     });
     expect(outcome).toBe(false);
   });
+
+  // BUG-NOTIFY-ADMIN-SILENT-FAIL regression:
+  // Previously { error } was not destructured from the user_roles query in Promise.all.
+  // If the query failed, adminRoles was null, the guard `if (adminRoles && ...)` silently
+  // skipped notification, and nothing was logged — admins never knew a discount approval
+  // had been requested. Fixed to warn and continue (non-fatal secondary op).
+  it('BUG-NOTIFY-ADMIN-SILENT-FAIL: loga warn mas retorna true quando user_roles query falha', async () => {
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'discount_approval_requests') {
+        const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
+        const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+        const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn, maybeSingle: maybeSingleFn });
+        return {
+          select: vi.fn().mockReturnValue({ eq: outerEqFn }),
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        } as never;
+      }
+      if (table === 'quotes') {
+        return {
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+        } as never;
+      }
+      if (table === 'user_roles') {
+        // Simulate RLS denial on admin roles lookup
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } }),
+          }),
+        } as never;
+      }
+      // quote_history, admin_audit_log, profiles, workspace_notifications
+      return {
+        insert: vi.fn().mockResolvedValue({ error: null }),
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      } as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let outcome: boolean | undefined;
+    await act(async () => {
+      outcome = await result.current.requestApproval('q-admin-notify-fail', 15, 10);
+    });
+
+    // Non-fatal: the approval request was committed, still returns true
+    expect(outcome).toBe(true);
+    // Warn must be logged so ops can detect missing admin notification
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'Failed to fetch admin roles for discount notification:',
+      expect.anything(),
+    );
+  });
+
+  // BUG-APPROVAL-DEDUP-SILENT-FAIL regression:
+  // Previously { error } was not destructured from the dedup check — a network failure
+  // caused `existing` to stay null and we always INSERTed, flooding the approval queue.
+  it('BUG-APPROVAL-DEDUP-SILENT-FAIL: loga warn mas prossegue com INSERT quando dedup check falha', async () => {
+    let darCallCount = 0;
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'discount_approval_requests') {
+        darCallCount++;
+        if (darCallCount === 1) {
+          // First call: dedup SELECT → error
+          const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'Network error' } });
+          const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn });
+          return { select: vi.fn().mockReturnValue({ eq: outerEqFn }) } as never;
+        }
+        // Subsequent call: INSERT → success
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as never;
+      }
+      if (table === 'quotes') {
+        return {
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+        } as never;
+      }
+      if (table === 'user_roles') {
+        return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) }) } as never;
+      }
+      return {
+        insert: vi.fn().mockResolvedValue({ error: null }),
+        select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+      } as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let outcome: boolean | undefined;
+    await act(async () => {
+      outcome = await result.current.requestApproval('q-dedup-err', 15, 10);
+    });
+
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'Dedup check failed, proceeding with INSERT:',
+      expect.anything(),
+    );
+    expect(outcome).toBe(true);
+  });
 });
 
 // ── respondToApproval ─────────────────────────────────────────────────────────
@@ -220,6 +328,59 @@ describe('respondToApproval', () => {
     expect(outcome).toBe(true);
     expect(vi.mocked(toast.success)).toHaveBeenCalled();
   });
+
+  // BUG-NOTIFY-SELLER-SILENT-FAIL regression:
+  // Previously workspace_notifications.insert used bare `await supabase...` without
+  // destructuring { error } — Supabase JS v2 never throws on DB errors, so an RLS
+  // denial or constraint violation was silently ignored and the seller was never
+  // notified of the admin's decision. Fixed to log the error but still return true
+  // (non-fatal: the approval decision is already committed to the DB).
+  it('BUG-NOTIFY-SELLER-SILENT-FAIL: loga erro mas retorna true quando workspace_notifications falha', async () => {
+    const fakeRequest = {
+      id: 'req-notify-fail',
+      quote_id: 'q-notify-fail',
+      seller_id: 'seller-001',
+      requested_discount_percent: 20,
+      max_allowed_percent: 15,
+    };
+
+    vi.mocked(supabase.from).mockImplementation((table: string) => {
+      if (table === 'discount_approval_requests') {
+        const singleFn = vi.fn().mockResolvedValue({ data: fakeRequest, error: null });
+        const selectAfterEq = vi.fn().mockReturnValue({ single: singleFn });
+        const eqFn = vi.fn().mockReturnValue({ select: selectAfterEq });
+        return { update: vi.fn().mockReturnValue({ eq: eqFn }) } as never;
+      }
+      if (table === 'quotes') {
+        return {
+          update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
+        } as never;
+      }
+      if (table === 'quote_history') {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) } as never;
+      }
+      if (table === 'workspace_notifications') {
+        // Simulate RLS denial or constraint violation on seller notification
+        return { insert: vi.fn().mockResolvedValue({ error: { message: 'RLS denied' } }) } as never;
+      }
+      return { insert: vi.fn().mockResolvedValue({ error: null }) } as never;
+    });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let outcome: boolean | undefined;
+    await act(async () => {
+      outcome = await result.current.respondToApproval('req-notify-fail', true, 'ok');
+    });
+
+    // Non-fatal: approval was committed, so still returns true
+    expect(outcome).toBe(true);
+    // Error must be logged so ops can detect notification failures
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Failed to notify seller of approval decision:',
+      expect.anything(),
+    );
+  });
 });
 
 // ── getApprovalStatus ─────────────────────────────────────────────────────────
@@ -262,6 +423,33 @@ describe('getApprovalStatus', () => {
     });
     expect(found).not.toBeNull();
     expect((found as { quote_id: string })?.quote_id).toBe('q-target');
+  });
+
+  // BUG-APPROVAL-STATUS-SILENT-FAIL regression:
+  // Previously { error } was not destructured — RLS denials silently returned null,
+  // which callers interpreted as "no pending request", bypassing the approval gate.
+  it('BUG-APPROVAL-STATUS-SILENT-FAIL: loga erro e retorna null quando DB retorna error', async () => {
+    const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
+    const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } });
+    const limitFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+    const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
+    const eqFn = vi.fn().mockReturnValue({ order: orderFn });
+    vi.mocked(supabaseClient.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({ eq: eqFn }),
+    } as never);
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useDiscountApproval());
+    let status: unknown;
+    await act(async () => {
+      status = await result.current.getApprovalStatus('q-rls-error');
+    });
+
+    expect(status).toBeNull();
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Error fetching approval status:',
+      expect.anything(),
+    );
   });
 });
 

@@ -31,18 +31,18 @@ export function useProductAnalytics() {
       if (!user?.id) return;
 
       try {
-        // Using type assertion since table was just created
-        // Best-effort insert - must NOT affect UX, but failures are logged for observability
-        await supabase.from('product_views').insert({
+        // BUG-ANALYTICS-VIEW-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+        // Supabase JS v2 never throws for DB errors — must destructure { error }.
+        const { error: viewErr } = await supabase.from('product_views').insert({
           product_id: productId,
           product_sku: productSku,
           product_name: productName,
           seller_id: user.id,
           view_type: viewType,
         });
+        if (viewErr) logger.warn('[analytics] trackProductView insert failed', viewErr);
       } catch (error) {
-        // Best-effort analytics: never block UX, but surface the failure (was silently swallowed).
-        logger.warn('[analytics] trackProductView insert failed', error);
+        logger.warn('[analytics] trackProductView unexpected error', error);
       }
     },
     [user?.id],
@@ -53,15 +53,15 @@ export function useProductAnalytics() {
       if (!user?.id || !searchTerm.trim()) return;
 
       try {
-        // Best-effort insert - must NOT affect UX, but failures are logged for observability
-        await supabase.from('search_analytics').insert({
+        // BUG-ANALYTICS-SEARCH-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+        const { error: searchErr } = await supabase.from('search_analytics').insert({
           search_term: searchTerm.toLowerCase().trim(),
           results_count: resultsCount,
           user_id: user.id,
         });
+        if (searchErr) logger.warn('[analytics] trackSearch insert failed', searchErr);
       } catch (error) {
-        // Best-effort analytics: never block UX, but surface the failure (was silently swallowed).
-        logger.warn('[analytics] trackSearch insert failed', error);
+        logger.warn('[analytics] trackSearch unexpected error', error);
       }
     },
     [user?.id],
@@ -75,7 +75,8 @@ export function useProductAnalytics() {
       if (!user?.id) return;
 
       try {
-        await supabase.from('catalog_analytics').insert({
+        // BUG-ANALYTICS-SORT-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+        const { error: sortErr } = await supabase.from('catalog_analytics').insert({
           user_id: user.id,
           event_type: 'sort',
           event_data: {
@@ -86,9 +87,9 @@ export function useProductAnalytics() {
             url: window.location.href,
           },
         });
+        if (sortErr) logger.warn('[analytics] trackSort insert failed', sortErr);
       } catch (error) {
-        // Best-effort analytics: never block UX, but surface the failure (was silently swallowed).
-        logger.warn('[analytics] trackSort insert failed', error);
+        logger.warn('[analytics] trackSort unexpected error', error);
       }
     },
     [user?.id],

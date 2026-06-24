@@ -209,11 +209,16 @@ export default function QuoteViewPage() {
                   <DropdownMenuItem
                     onClick={async () => {
                       try {
-                        await supabase
+                        // BUG-REVERT-SILENT-FAIL FIX: Supabase .update() does NOT throw on RLS
+                        // denial or DB errors — it returns { error }. Without destructuring, an
+                        // RLS rejection was silently swallowed and the success toast fired anyway,
+                        // misleading the seller into thinking the status was reverted when it wasn't.
+                        const { error: revertErr } = await supabase
                           // rls-allow: lookup por id; RLS valida ownership
                           .from('quotes')
                           .update({ status: 'pending' } as never)
                           .eq('id', quote.id ?? '');
+                        if (revertErr) throw revertErr;
                         await logQuoteHistory(
                           quote.id ?? '',
                           'status_change',

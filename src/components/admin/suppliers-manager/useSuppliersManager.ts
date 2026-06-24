@@ -350,7 +350,9 @@ export function useSuppliersManager() {
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const { data: existingRecords } = await untypedFrom<{
+        // BUG-SUPPLIERMGR-CNPJ-DUPCHECK-SILENT-FAIL FIX: { data } without error check — a failed
+        // SELECT silently bypassed the CNPJ dup check; now throws so the outer catch logs it.
+        const { data: existingRecords, error: cnpjCheckErr } = await untypedFrom<{
           id: string;
           name: string;
           cnpj: string;
@@ -358,6 +360,7 @@ export function useSuppliersManager() {
           .select('id,name,cnpj')
           .eq('cnpj', editingSupplier.cnpj.trim())
           .limit(5);
+        if (cnpjCheckErr) throw cnpjCheckErr;
         const duplicate = existingRecords?.find((r) => r.id !== editingSupplier.id);
         if (duplicate) {
           toast.error(`Já existe outro fornecedor com este CNPJ: "${duplicate.name}".`);

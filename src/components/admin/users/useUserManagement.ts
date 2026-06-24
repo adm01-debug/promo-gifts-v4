@@ -224,7 +224,12 @@ export function useUserManagement() {
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', userId);
+      // BUG-AVATAR-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', userId);
+      if (profileErr) logger.warn('[useUserManagement] avatar update failed:', profileErr);
       setUsers((prev) =>
         prev.map((u) => (u.user_id === userId ? { ...u, avatar_url: publicUrl } : u)),
       );
@@ -241,7 +246,16 @@ export function useUserManagement() {
 
   const handleRemoveAvatar = async (userId: string) => {
     try {
-      await supabase.from('profiles').update({ avatar_url: null }).eq('user_id', userId);
+      // BUG-AVATAR-REMOVE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: removeErr } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('user_id', userId);
+      if (removeErr) {
+        logger.warn('[useUserManagement] avatar remove failed:', removeErr);
+        toast.error('Erro ao remover foto');
+        return false;
+      }
       setUsers((prev) => prev.map((u) => (u.user_id === userId ? { ...u, avatar_url: null } : u)));
       toast.success('Foto removida');
       return true;

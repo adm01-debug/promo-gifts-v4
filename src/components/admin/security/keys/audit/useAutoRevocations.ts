@@ -7,6 +7,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export interface AutoRevocationRow {
   id: string;
@@ -49,12 +50,18 @@ export function useAutoRevocations() {
       const userIds = [...new Set(rows.map((r) => r.created_by))];
       const emailMap = new Map<string, string>();
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
+        // BUG-AUTOREVOCATIONS-PROFILES-SELECT-SILENT-FAIL FIX: { data: profiles } without
+        // error check — RLS failure silently set actor_email=null on all revocation rows.
+        const { data: profiles, error: profErr } = await supabase
           .from('profiles')
           .select('user_id, email')
           .in('user_id', userIds);
-        for (const p of (profiles ?? []) as Array<{ user_id: string; email: string | null }>) {
-          if (p.email) emailMap.set(p.user_id, p.email);
+        if (profErr) {
+          logger.warn('[useAutoRevocations] profile enrichment failed — actor emails unavailable:', profErr);
+        } else {
+          for (const p of (profiles ?? []) as Array<{ user_id: string; email: string | null }>) {
+            if (p.email) emailMap.set(p.user_id, p.email);
+          }
         }
       }
 

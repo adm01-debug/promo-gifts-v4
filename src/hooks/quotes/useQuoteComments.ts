@@ -160,10 +160,16 @@ async function createCommentNotification(
 ) {
   try {
     // Get all participants in this quote's comments (except the author)
-    const { data: participants } = await supabase
+    // BUG-COMMENT-NOTIFY-SILENT-FAIL FIX: previously { error } was not destructured.
+    // An RLS denial returned { data: null, error } silently — participants stayed null,
+    // uniqueUsers was empty, and no notification was sent without any diagnostic trace.
+    const { data: participants, error: participantsErr } = await supabase
       .from('quote_comments')
       .select('user_id')
       .eq('quote_id', quoteId);
+    if (participantsErr) {
+      logger.warn('Failed to fetch comment participants for notification:', participantsErr);
+    }
 
     const uniqueUsers = [...new Set((participants || []).map((p) => p.user_id))].filter(
       (uid) => uid !== authorId,
@@ -181,7 +187,13 @@ async function createCommentNotification(
       metadata: { quote_id: quoteId },
     }));
 
-    await supabase.from('workspace_notifications').insert(notifications);
+    // BUG-COMMENT-NOTIFY-SILENT-FAIL FIX: previously a bare `await supabase...` was used —
+    // Supabase JS v2 never throws on DB errors, so any RLS denial or constraint violation
+    // was silently swallowed and the notification was never sent.
+    const { error: notifyErr } = await supabase
+      .from('workspace_notifications')
+      .insert(notifications);
+    if (notifyErr) logger.warn('Failed to send comment notifications:', notifyErr);
   } catch {
     // Non-blocking
   }

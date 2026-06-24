@@ -575,7 +575,7 @@ export function useQuoteBuilderState() {
           // Salva baseline para detecção de conflito
           baselineUpdatedAtRef.current = quote.updated_at ?? null;
           // QBP-08 FIX: salvar versão carregada para ativar optimistic lock server-side
-          quoteVersionRef.current = (quote as unknown as Record<string, number>).version ?? null;
+          quoteVersionRef.current = quote.version ?? null;
         }
         setLoadingQuote(false);
       })
@@ -878,7 +878,14 @@ export function useQuoteBuilderState() {
     const ts = new Date().toISOString();
     setItems((prev) =>
       prev.map((item) => {
-        if (item.price_confirmed_at) return item;
+        // BUG-STALE-CONFIRM FIX: skip only when confirmed AND confirmation postdates
+        // the last price update. If price was updated AFTER confirmation, the confirmation
+        // is stale and the warning must re-appear.
+        if (
+          item.price_confirmed_at &&
+          (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+        )
+          return item;
         const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
         return f.shouldWarn ? { ...item, price_confirmed_at: ts } : item;
       }),
@@ -1062,7 +1069,13 @@ export function useQuoteBuilderState() {
         // Bloqueio de fechamento: preços defasados precisam de confirmação
         if (status !== 'draft') {
           const staleUnconfirmed = items.filter((item) => {
-            if (item.price_confirmed_at) return false;
+            // BUG-STALE-CONFIRM FIX: a confirmation is only valid when it postdates
+            // the last price update. If price_updated_at is newer, re-flag as unconfirmed.
+            if (
+              item.price_confirmed_at &&
+              (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+            )
+              return false;
             const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
             return f.isStale;
           });
@@ -1109,11 +1122,16 @@ export function useQuoteBuilderState() {
         if (isEditMode && quoteId) {
           // Detecção de concorrência via updated_at baseline
           if (baselineUpdatedAtRef.current) {
-            const { data: remoteQuote } = await supabase
+            // BUG-CONFLICT-CHECK-SILENT-FAIL FIX: previously { error } was not destructured.
+            // A network failure or RLS denial returned { data: null, error } silently,
+            // disabling concurrency protection for this save without any log trace.
+            const { data: remoteQuote, error: conflictCheckErr } = await supabase
               .from('quotes')
               .select('updated_at')
               .eq('id', quoteId)
               .single();
+            if (conflictCheckErr)
+              logger.warn('Conflict check query failed, proceeding without check:', conflictCheckErr);
 
             const remoteTs = remoteQuote?.updated_at;
             if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
@@ -1138,7 +1156,18 @@ export function useQuoteBuilderState() {
         }
 
         if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
-          await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
+          // BUG-APPROVAL-CATCH FIX: wrap requestApproval in its own try-catch.
+          // If this fails, the quote is already saved as pending_approval, so we
+          // warn the user rather than letting the exception silently bubble up.
+          try {
+            await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
+          } catch (approvalError) {
+            logger.error('Erro ao criar solicitação de aprovação:', approvalError);
+            toast.warning(
+              'Orçamento salvo, mas a solicitação de aprovação não pôde ser criada. Contate o administrador.',
+              { duration: 8000 },
+            );
+          }
         }
 
         if (result?.id) {
@@ -1147,10 +1176,18 @@ export function useQuoteBuilderState() {
         }
 
         // Atualizar versão após save bem-sucedido
-        const newVersion = (result as unknown as Record<string, number>)?.version;
+        const newVersion = result?.version;
         if (newVersion != null) quoteVersionRef.current = newVersion;
 
         return result?.updated_at ?? undefined;
+      } catch (error) {
+        // BUG-SAVE-CATCH FIX: handleSaveQuote previously had no catch block — any
+        // network error, RLS denial or DB error from createQuote/updateQuote would
+        // propagate uncaught, crashing the component with no user feedback.
+        logger.error('Erro ao salvar orçamento:', error);
+        toast.error('Erro ao salvar orçamento. Tente novamente.', {
+          description: error instanceof Error ? error.message : 'Erro desconhecido',
+        });
       } finally {
         isSavingRef.current = false;
       }

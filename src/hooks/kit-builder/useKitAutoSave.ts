@@ -94,10 +94,26 @@ export function useKitAutoSave(
     try {
       const kitId = autoSavedKitIdRef.current || currentKitId;
       if (kitId) {
-        await supabase.from('custom_kits').update(payload).eq('id', kitId).eq('user_id', user.id);
+        // BUG-AUTOSAVE-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS and constraint
+        // errors — if update fails the user keeps seeing "saved" state while data is lost.
+        const { error: updateErr } = await supabase
+          .from('custom_kits')
+          .update(payload)
+          .eq('id', kitId)
+          .eq('user_id', user.id);
+        if (updateErr) logger.warn('[auto-save] Update failed:', updateErr);
       } else {
-        const { data } = await supabase.from('custom_kits').insert(payload).select('id').single();
-        if (data) {
+        // BUG-AUTOSAVE-INSERT-SILENT-FAIL FIX: bare data destructure missed { error }.
+        // If insert fails (e.g. RLS denial), data=null but no error is logged and the
+        // kit ID is never assigned, causing all subsequent saves to re-attempt insert.
+        const { data, error: insertErr } = await supabase
+          .from('custom_kits')
+          .insert(payload)
+          .select('id')
+          .single();
+        if (insertErr) {
+          logger.warn('[auto-save] Insert failed:', insertErr);
+        } else if (data) {
           autoSavedKitIdRef.current = data.id;
           setAutoSavedKitId(data.id);
           currentOnKitIdCreated?.(data.id);

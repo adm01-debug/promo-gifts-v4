@@ -301,7 +301,8 @@ export function useProductVideoGallery(productId?: string) {
           if (videoId && uploadVariant !== 'none') {
             const variant = variantMap.get(uploadVariant);
             if (variant) {
-              await supabase.from('video_variant_links').insert({
+              // BUG-VIDEO-UPLOAD-LINK-SILENT-FAIL FIX: bare await swallowed RLS errors.
+              const { error: linkErr } = await supabase.from('video_variant_links').insert({
                 video_id: videoId,
                 variant_id: variant.id,
                 variant_name: variant.color_name || variant.name,
@@ -309,6 +310,7 @@ export function useProductVideoGallery(productId?: string) {
                 supplier_code: variant.supplier_code || null,
                 product_id: productId,
               });
+              if (linkErr) logger.warn('[video-gallery] variant link insert failed:', linkErr);
             }
           }
           successCount++;
@@ -353,7 +355,8 @@ export function useProductVideoGallery(productId?: string) {
       if (videoId && uploadVariant !== 'none') {
         const variant = variantMap.get(uploadVariant);
         if (variant) {
-          await supabase.from('video_variant_links').insert({
+          // BUG-VIDEO-YOUTUBE-LINK-SILENT-FAIL FIX: bare await swallowed RLS errors.
+          const { error: ytLinkErr } = await supabase.from('video_variant_links').insert({
             video_id: videoId,
             variant_id: variant.id,
             variant_name: variant.color_name || variant.name,
@@ -361,6 +364,7 @@ export function useProductVideoGallery(productId?: string) {
             supplier_code: variant.supplier_code || null,
             product_id: productId,
           });
+          if (ytLinkErr) logger.warn('[video-gallery] youtube variant link insert failed:', ytLinkErr);
         }
       }
       queryClient.invalidateQueries({ queryKey: ['product-videos-ext', productId] });
@@ -378,7 +382,12 @@ export function useProductVideoGallery(productId?: string) {
   const handleRemove = useCallback(
     async (videoId: string) => {
       try {
-        await supabase.from('video_variant_links').delete().eq('video_id', videoId);
+        // BUG-VIDEO-REMOVE-LINK-SILENT-FAIL FIX: bare await swallowed RLS errors.
+        const { error: delLinkErr } = await supabase
+          .from('video_variant_links')
+          .delete()
+          .eq('video_id', videoId);
+        if (delLinkErr) logger.warn('[video-gallery] variant link delete failed:', delLinkErr);
         const { error } = await untypedFrom('product_videos')
           .update({ is_active: false })
           .eq('id', videoId);

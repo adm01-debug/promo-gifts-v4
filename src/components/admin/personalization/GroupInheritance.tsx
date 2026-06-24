@@ -17,9 +17,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { ProductGroupMember, Technique } from './usePersonalizationData';
 
-import { logger } from '@/lib/logger';
 interface GroupInheritanceProps {
   productMembership: ProductGroupMember;
   selectedProduct: string;
@@ -40,16 +40,26 @@ export function GroupInheritance({
   const copyGroupRulesToProduct = async () => {
     setIsCopying(true);
     try {
-      const { data: groupComponents } = await untypedFrom('product_group_components')
+      // BUG-GROUPINHERITANCE-GROUPCOMPONENTS-SELECT-SILENT-FAIL FIX: error not checked —
+      // a failed SELECT would produce null, incorrectly showing "no components" toast
+      // instead of the actual error, leaving nothing to copy.
+      const { data: groupComponents, error: gcErr } = await untypedFrom('product_group_components')
         .select('*')
         .eq('product_group_id', productMembership.product_group_id);
+      if (gcErr) throw gcErr;
 
       if (!groupComponents?.length) {
         toast.error('Grupo não possui componentes configurados');
         return;
       }
 
-      await supabase.from('product_components').delete().eq('product_id', selectedProduct);
+      // BUG-GROUPINHERITANCE-DELETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      // Must throw on failure — proceeding would create duplicate components.
+      const { error: deleteCompErr } = await supabase
+        .from('product_components')
+        .delete()
+        .eq('product_id', selectedProduct);
+      if (deleteCompErr) throw deleteCompErr;
 
       for (const gc of groupComponents) {
         const { data: newComp, error: compError } = await supabase
@@ -66,9 +76,12 @@ export function GroupInheritance({
           .single();
         if (compError) throw compError;
 
-        const { data: groupLocations } = await untypedFrom('product_group_locations')
+        // BUG-GROUPINHERITANCE-GROUPLOCATIONS-SELECT-SILENT-FAIL FIX: error not checked —
+        // a failed SELECT silently skipped location copy, producing components without areas.
+        const { data: groupLocations, error: glErr } = await untypedFrom('product_group_locations')
           .select('*')
           .eq('group_component_id', gc.id);
+        if (glErr) throw glErr;
         if (groupLocations?.length) {
           for (const gl of groupLocations) {
             const { data: newLoc, error: locError } = await untypedFrom(
@@ -88,13 +101,19 @@ export function GroupInheritance({
               .single();
             if (locError) throw locError;
 
-            const { data: groupTechs } = await untypedFrom('product_group_location_techniques')
+            // BUG-GROUPINHERITANCE-GROUPTECHS-SELECT-SILENT-FAIL FIX: error not checked —
+            // a failed SELECT silently skipped technique copy, creating locations without printing methods.
+            const { data: groupTechs, error: gtErr } = await untypedFrom('product_group_location_techniques')
               .select('*')
               .eq('group_location_id', gl.id);
+            if (gtErr) throw gtErr;
             if (groupTechs?.length) {
               for (const gt of groupTechs) {
                 const tech = techniques?.find((t) => t.id === gt.technique_id);
-                await untypedFrom('product_component_location_techniques').insert({
+                // BUG-GROUPINHERITANCE-TECH-INSERT-SILENT-FAIL FIX: bare await on untypedFrom.
+                const { error: techInsertErr } = await untypedFrom(
+                  'product_component_location_techniques',
+                ).insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,
                   composed_code: `${gc.component_code}-${gl.location_code}-${tech?.code ?? ''}`,
@@ -102,16 +121,22 @@ export function GroupInheritance({
                   is_default: gt.is_default,
                   is_active: gt.is_active,
                 });
+                if (techInsertErr) {
+                  logger.warn('[group-inheritance] technique insert failed:', techInsertErr);
+                  throw techInsertErr;
+                }
               }
             }
           }
         }
       }
 
-      await supabase
+      // BUG-GROUPINHERITANCE-MEMBER-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: memberUpdateErr } = await supabase
         .from('product_group_members')
         .update({ use_group_rules: false })
         .eq('id', productMembership.id);
+      if (memberUpdateErr) logger.warn('[group-inheritance] member update failed:', memberUpdateErr);
       queryClient.invalidateQueries({ queryKey: ['product-components'] });
       queryClient.invalidateQueries({ queryKey: ['component-locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-techniques'] });

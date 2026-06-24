@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 // DRY (audit 200-commits, P2-2): URL e anon key vem do client canonico
 // (com validateEnv + fallback). Removidas as constantes locais duplicadas e a
@@ -88,7 +89,7 @@ class MaterialService {
     const isSchemaWarmup =
       errCode === 'PGRST002' || /schema cache/i.test(errMsg) || response.status === 503;
     if (isSchemaWarmup) {
-      console.warn('[materialService] external schema cache warming up — empty payload', {
+      logger.warn('[materialService] external schema cache warming up — empty payload', {
         status: response.status,
         errCode,
         errMsg,

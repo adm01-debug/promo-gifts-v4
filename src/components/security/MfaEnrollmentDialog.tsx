@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface MfaEnrollmentDialogProps {
   open: boolean;
@@ -60,7 +61,11 @@ export function MfaEnrollmentDialog({
       // runtime (enroll interrompido) — cast para detectá-los e limpá-los.
       const { data: existing } = await supabase.auth.mfa.listFactors();
       const stale = existing?.totp?.find((f) => (f.status as string) === 'unverified');
-      if (stale) await supabase.auth.mfa.unenroll({ factorId: stale.id });
+      // BUG-MFA-UNENROLL-SILENT-FAIL FIX: mfa.unenroll returns { data, error } — not throws.
+      if (stale) {
+        const { error: unenrollErr } = await supabase.auth.mfa.unenroll({ factorId: stale.id });
+        if (unenrollErr) logger.warn('[MfaEnrollmentDialog] unenroll stale factor failed:', unenrollErr);
+      }
 
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',

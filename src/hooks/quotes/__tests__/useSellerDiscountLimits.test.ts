@@ -116,6 +116,26 @@ describe('fetchMyLimit', () => {
     });
     expect(supabase.from).not.toHaveBeenCalled();
   });
+
+  // BUG-LIMIT-SILENT-FAIL regression:
+  // Previously { error } was not destructured — a network failure or RLS denial left
+  // myLimit=null which callers treated as "no limit configured" → unlimited discounts.
+  it('BUG-LIMIT-SILENT-FAIL: loga erro e mantém myLimit=null quando DB retorna error', async () => {
+    const eqFn = vi.fn().mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Network error' } }),
+    });
+    mockSelect.mockReturnValue({ eq: eqFn });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useSellerDiscountLimits());
+    await waitFor(() => expect(mockSelect).toHaveBeenCalled());
+
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Error fetching seller discount limit:',
+      expect.anything(),
+    );
+    expect(result.current.myLimit).toBeNull();
+  });
 });
 
 // ── setLimit ──────────────────────────────────────────────────────────────────

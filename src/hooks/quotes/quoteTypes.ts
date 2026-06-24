@@ -90,6 +90,8 @@ export interface Quote {
   client_response_notes?: string;
   created_at?: string;
   updated_at?: string;
+  /** Versão de concorrência — incrementado pelo trigger em cada UPDATE. Usado pelo optimistic lock server-side. */
+  version?: number;
   items?: QuoteItem[];
 }
 

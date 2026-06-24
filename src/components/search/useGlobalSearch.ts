@@ -21,6 +21,7 @@ import type { VoiceAgentAction } from '@/hooks/voice/types';
 
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
 import type { PromobrindProduct } from '@/lib/external-db';
+import { logger } from '@/lib/logger';
 
 export type SearchResultType =
   | 'art_file'
@@ -306,9 +307,12 @@ export function useGlobalSearch() {
     setIsSearching(true);
     setIsAIProcessing(true);
     try {
-      const { data: aiResponse } = await supabase.functions.invoke('semantic-search', {
+      // BUG-SEARCH-SEMANTIC-SILENT-FAIL FIX: { data } without error check — AI search
+      // failures were invisible; fallback to keyword intent is intentional (/* silent */).
+      const { data: aiResponse, error: aiErr } = await supabase.functions.invoke('semantic-search', {
         body: { query: searchQuery },
       });
+      if (aiErr) logger.warn('[global-search] semantic-search invoke failed — falling back to keyword intent:', aiErr);
       if (controller.signal.aborted) return;
       setIsAIProcessing(false);
 

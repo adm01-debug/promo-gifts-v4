@@ -31,8 +31,17 @@ export interface ConflictInfo {
 }
 
 export function useQuoteConcurrencyGuard(quote: Quote | null | undefined) {
-  /** `updated_at` no momento em que carregamos o orçamento */
-  const baselineRef = useRef<string | null>(quote?.updated_at ?? null);
+  // BUG-CONCURRENCY-BASELINE FIX: useRef initializer runs on mount when quote is
+  // still null (loading from Supabase). The initial value is set once and never
+  // updated by React, so baselineRef.current would stay null permanently, making
+  // checkForConflict always return null (guard silently disabled).
+  // Fix: capture the baseline on the first render where quote.updated_at is available.
+  const baselineRef = useRef<string | null>(null);
+  const baselineSetRef = useRef(false);
+  if (quote?.updated_at && !baselineSetRef.current) {
+    baselineRef.current = quote.updated_at;
+    baselineSetRef.current = true;
+  }
 
   /**
    * Redefine o baseline após um save bem-sucedido para evitar

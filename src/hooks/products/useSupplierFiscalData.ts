@@ -148,6 +148,9 @@ export function useSupplierFiscalData(
           .eq('supplier_id', supplierId)
           .in('variant_id', variantIds);
 
+        // BUG-FISCALDATA-VSS-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+        // A query failure would silently fall through to branch inheritance, giving wrong data.
+        if (vssResult.error) throw vssResult.error;
         if (vssResult.data?.length) {
           // Pick the VSS record whose variant appears earliest in the priority order
           const vssByVariantId = new Map<string, VSSRecord>(
@@ -175,7 +178,9 @@ export function useSupplierFiscalData(
               .select(BRANCH_SELECT)
               .eq('id', vss.supplier_branch_id)
               .limit(1);
-            if (branchResult.data?.length) {
+            // BUG-FISCALDATA-BRANCH-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+            if (branchResult.error) logger.warn('[useSupplierFiscalData] branch fetch failed (non-fatal):', branchResult.error);
+            else if (branchResult.data?.length) {
               branchData = branchResult.data[0];
             }
           } catch (err) {
@@ -276,6 +281,10 @@ export function useSupplierFiscalData(
           .eq('variant_id', variantId)
           .limit(1);
 
+        // BUG-FISCAL-EXISTING-SELECT-SILENT-FAIL FIX: error not checked — could proceed to INSERT
+        // when VSS exists, causing a unique constraint violation.
+        if (existingResult.error) throw existingResult.error;
+
         const payload = {
           cst: input.cst || null,
           cfop: input.cfop || null,
@@ -288,10 +297,11 @@ export function useSupplierFiscalData(
         };
 
         if (existingResult.data?.length) {
-          // Update existing VSS
-          await untypedFrom('variant_supplier_sources')
+          // BUG-FISCAL-UPDATE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: updateErr } = await untypedFrom('variant_supplier_sources')
             .update(payload)
             .eq('id', existingResult.data[0].id);
+          if (updateErr) throw updateErr;
         } else {
           // Fetch organization_id from an existing VSS record for this supplier
           let organizationId: string | null = null;
@@ -300,21 +310,24 @@ export function useSupplierFiscalData(
               .select('organization_id')
               .eq('supplier_id', supplierId)
               .limit(1);
-            if (orgResult.data?.length) {
+            // BUG-FISCAL-ORG-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+            if (orgResult.error) logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', orgResult.error);
+            else if (orgResult.data?.length) {
               organizationId = orgResult.data[0].organization_id;
             }
           } catch (e) {
             logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', e);
           }
 
-          // Create new VSS with supplier_branch_id from inherited data
-          await untypedFrom('variant_supplier_sources').insert({
+          // BUG-FISCAL-INSERT-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: insertErr } = await untypedFrom('variant_supplier_sources').insert({
             ...payload,
             supplier_id: supplierId,
             variant_id: variantId,
             supplier_branch_id: currentData?.supplier_branch_id || null,
             ...(organizationId ? { organization_id: organizationId } : {}),
           });
+          if (insertErr) throw insertErr;
         }
 
         // Invalidate and refetch
@@ -346,8 +359,15 @@ export function useSupplierFiscalData(
         .eq('variant_id', variantId)
         .limit(1);
 
+      // BUG-FISCAL-REVERT-SELECT-SILENT-FAIL FIX: error not checked — silent success on query failure
+      // would mislead callers into thinking the revert succeeded when VSS still exists.
+      if (vssResult.error) throw vssResult.error;
       if (vssResult.data?.length) {
-        await untypedFrom('variant_supplier_sources').delete().eq('id', vssResult.data[0].id);
+        // BUG-FISCAL-DELETE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+        const { error: deleteErr } = await untypedFrom('variant_supplier_sources')
+          .delete()
+          .eq('id', vssResult.data[0].id);
+        if (deleteErr) throw deleteErr;
       }
 
       await queryClient.invalidateQueries({ queryKey });

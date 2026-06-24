@@ -10,6 +10,7 @@
  */
 import { dbInvoke, dbInvokeDelete } from '@/lib/db/postgrest';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -259,7 +260,7 @@ export function useEngravingWizard(productId: string | undefined, isEdit: boolea
           id: undefined,
           product_id: newProductId,
         });
-        if (error) console.error('flushLocalAreas error:', error);
+        if (error) logger.error('[useEngravingWizard] flushLocalAreas insert failed:', error);
       }
       setLocalAreas([]);
       queryClient.invalidateQueries({ queryKey: ['print-area-techniques', newProductId] });

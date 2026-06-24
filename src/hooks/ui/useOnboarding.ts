@@ -212,13 +212,15 @@ export function useOnboarding() {
 
       setCurrentStep(step);
 
-      await supabase
+      // BUG-ONBOARDING-STEP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: stepErr } = await supabase
         .from('user_onboarding')
         .update({
           current_step: step,
           completed_steps: ONBOARDING_STEPS.slice(0, step).map((s) => s.id),
         })
         .eq('id', onboardingId);
+      if (stepErr) logger.warn('[onboarding] updateStep failed:', stepErr);
     },
     [user, onboardingId],
   );
@@ -230,7 +232,8 @@ export function useOnboarding() {
     setShowTour(false);
     setHasCompletedTour(true);
 
-    await supabase
+    // BUG-ONBOARDING-COMPLETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: completeErr } = await supabase
       .from('user_onboarding')
       .update({
         has_completed_tour: true,
@@ -238,6 +241,7 @@ export function useOnboarding() {
         completed_steps: ONBOARDING_STEPS.map((s) => s.id),
       })
       .eq('id', onboardingId);
+    if (completeErr) logger.warn('[onboarding] completeTour failed:', completeErr);
   }, [user, onboardingId]);
 
   // Skip tour
@@ -247,13 +251,15 @@ export function useOnboarding() {
     setShowTour(false);
     setHasCompletedTour(true);
 
-    await supabase
+    // BUG-ONBOARDING-SKIP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: skipErr } = await supabase
       .from('user_onboarding')
       .update({
         has_completed_tour: true,
         completed_at: new Date().toISOString(),
       })
       .eq('id', onboardingId);
+    if (skipErr) logger.warn('[onboarding] skipTour failed:', skipErr);
   }, [user, onboardingId]);
 
   // Restart tour
@@ -264,7 +270,8 @@ export function useOnboarding() {
     setShowTour(true);
     setHasCompletedTour(false);
 
-    await supabase
+    // BUG-ONBOARDING-RESTART-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: restartErr } = await supabase
       .from('user_onboarding')
       .update({
         has_completed_tour: false,
@@ -273,6 +280,7 @@ export function useOnboarding() {
         completed_at: null,
       })
       .eq('id', onboardingId);
+    if (restartErr) logger.warn('[onboarding] restartTour failed:', restartErr);
   }, [user, onboardingId]);
 
   // Navigate to next step

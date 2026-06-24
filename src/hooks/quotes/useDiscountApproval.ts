@@ -55,13 +55,18 @@ export function useDiscountApproval() {
         // BUG-040: Dedup guard — idempotent under double-clicks / retries.
         // A pending row for this quote already satisfies the intent; skip the
         // duplicate INSERT to avoid confusing the admin approval queue.
-        const { data: existing } = await supabase
+        // BUG-APPROVAL-DEDUP-SILENT-FAIL FIX: previously { error } was not destructured.
+        // An RLS denial or network error returned { data: null, error } but the error
+        // was silently swallowed — existing stayed null and we always proceeded to INSERT,
+        // defeating the dedup guard and flooding the admin approval queue.
+        const { data: existing, error: dupCheckErr } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
           .select('id')
           .eq('quote_id', quoteId)
           .eq('status', 'pending')
           .maybeSingle();
+        if (dupCheckErr) logger.warn('Dedup check failed, proceeding with INSERT:', dupCheckErr);
         if (existing) {
           toast.success('Solicitação de aprovação enviada ao admin!');
           return true;
@@ -115,7 +120,11 @@ export function useDiscountApproval() {
         const apparent = Number(quoteCtx?.discount_percent ?? 0);
 
         // Log in quote history (incluindo flag de markup)
-        await supabase.from('quote_history').insert({
+        // BUG-SILENT-INSERT FIX: Supabase doesn't throw on failed mutations — it
+        // returns the error in the response. Await without destructuring meant any
+        // RLS denial or constraint violation was silently ignored, leaving gaps in
+        // the audit trail. These are non-critical secondary ops so we log but don't throw.
+        const { error: historyErr } = await supabase.from('quote_history').insert({
           quote_id: quoteId,
           user_id: user.id,
           action: 'discount_approval_requested',
@@ -132,10 +141,11 @@ export function useDiscountApproval() {
             negotiation_markup_percent: markup,
           },
         });
+        if (historyErr) logger.error('Failed to log quote history:', historyErr);
 
         // Audit trail dedicado quando há markup (visibilidade admin)
         if (markup > 0) {
-          await supabase.from('admin_audit_log').insert({
+          const { error: auditErr } = await supabase.from('admin_audit_log').insert({
             user_id: user.id,
             action: 'quote_negotiation_markup_applied',
             resource_type: 'quote',
@@ -148,20 +158,26 @@ export function useDiscountApproval() {
               context: 'discount_approval_request',
             },
           });
+          if (auditErr) logger.error('Failed to log audit trail:', auditErr);
         }
 
         // Notify all admins — both queries are independent, run in parallel
-        const [{ data: adminRoles }, { data: profile }] = await Promise.all([
+        // BUG-NOTIFY-ADMIN-SILENT-FAIL FIX: previously { error } was not destructured from
+        // the user_roles query. If the query failed (RLS denial, network error), adminRoles
+        // was null, the `if (adminRoles && ...)` guard silently skipped notification, and
+        // nothing was logged — admins never knew a discount approval had been requested.
+        const [{ data: adminRoles, error: rolesErr }, { data: profile }] = await Promise.all([
           supabase.from('user_roles').select('user_id').eq('role', 'admin'),
           supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
         ]);
+        if (rolesErr) logger.warn('Failed to fetch admin roles for discount notification:', rolesErr);
         if (adminRoles && adminRoles.length > 0) {
           const sellerName = profile?.full_name || 'Vendedor';
           const msg =
             markup > 0
               ? `${sellerName} solicitou desconto real de ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
               : `${sellerName} solicitou ${requestedPercent.toFixed(1)}% de desconto (limite: ${maxAllowedPercent}%)`;
-          await supabase.from('workspace_notifications').insert(
+          const { error: notifyErr } = await supabase.from('workspace_notifications').insert(
             adminRoles.map((a) => ({
               user_id: a.user_id,
               title: 'Solicitação de desconto',
@@ -171,6 +187,7 @@ export function useDiscountApproval() {
               action_url: '/admin/usuarios?tab=discounts',
             })),
           );
+          if (notifyErr) logger.error('Failed to notify admins of approval request:', notifyErr);
         }
 
         toast.success('Solicitação de aprovação enviada ao admin!');
@@ -254,7 +271,11 @@ export function useDiscountApproval() {
         }
 
         // Notify the seller
-        await supabase.from('workspace_notifications').insert({
+        // BUG-NOTIFY-SELLER-SILENT-FAIL FIX: previously a bare `await supabase...` was used
+        // here — Supabase JS v2 never throws on DB errors, so any RLS denial or constraint
+        // violation was silently swallowed. The seller would never receive the decision
+        // notification and nothing was logged. Destructure { error } and log on failure.
+        const { error: sellerNotifyErr } = await supabase.from('workspace_notifications').insert({
           user_id: typedReq.seller_id,
           title: approved ? 'Desconto aprovado ✅' : 'Desconto rejeitado ❌',
           message: approved
@@ -264,6 +285,8 @@ export function useDiscountApproval() {
           category: 'discount',
           action_url: `/orcamentos/${typedReq.quote_id}`,
         });
+        if (sellerNotifyErr)
+          logger.error('Failed to notify seller of approval decision:', sellerNotifyErr);
 
         toast.success(approved ? 'Desconto aprovado!' : 'Desconto rejeitado');
         return true;
@@ -339,7 +362,11 @@ export function useDiscountApproval() {
   const getApprovalStatus = useCallback(
     async (quoteId: string): Promise<DiscountApprovalRequest | null> => {
       try {
-        const { data } = await supabase
+        // BUG-APPROVAL-STATUS-SILENT-FAIL FIX: previously { error } was not destructured.
+        // Any RLS denial or network failure returned { data: null, error } silently —
+        // callers saw null and treated it as "no approval request exists", which could
+        // allow the discount flow to bypass the pending_approval gate.
+        const { data, error } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
           .select('*')
@@ -347,8 +374,10 @@ export function useDiscountApproval() {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+        if (error) logger.error('Error fetching approval status:', error);
         return (data as DiscountApprovalRequest) || null;
-      } catch {
+      } catch (err) {
+        logger.error('Unexpected error in getApprovalStatus:', err);
         return null;
       }
     },

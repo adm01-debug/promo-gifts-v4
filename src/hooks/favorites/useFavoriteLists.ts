@@ -67,8 +67,12 @@ export function useFavoriteLists() {
     queryKey: LISTS_KEY,
     queryFn: async (): Promise<FavoriteList[]> => {
       if (!user) return [];
-      // Garante lista padrão
-      await supabase.rpc('ensure_default_favorite_list', { _user_id: user.id });
+      // BUG-FAVORITES-RPC-SILENT-FAIL FIX: bare RPC await swallowed DB errors.
+      // Ensures default list exists — non-fatal if it fails (user still gets their lists).
+      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', {
+        _user_id: user.id,
+      });
+      if (ensureErr) logger.warn('[favorite-lists] ensure_default_favorite_list failed:', ensureErr);
 
       const { data, error } = await supabase
         .from('favorite_lists')

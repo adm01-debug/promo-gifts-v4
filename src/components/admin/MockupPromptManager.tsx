@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,7 +105,9 @@ export function MockupPromptManager() {
     if (!hasChanges(config)) return;
     setSavingId(config.id);
     try {
-      await supabase.from('mockup_prompt_history').insert({
+      // BUG-MOCKUP-HISTORY-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+      // History insert is best-effort — log failure but let config update proceed.
+      const { error: histErr } = await supabase.from('mockup_prompt_history').insert({
         config_id: config.id,
         config_key: config.config_key,
         version: config.version,
@@ -114,6 +117,7 @@ export function MockupPromptManager() {
         changed_by: user?.id,
         change_notes: changeNotes[config.id] || null,
       });
+      if (histErr) logger.warn('[mockup-prompts] history insert failed:', histErr);
       const { error } = await supabase
         .from('mockup_prompt_configs')
         .update({

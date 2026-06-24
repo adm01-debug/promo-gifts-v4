@@ -13,6 +13,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -137,16 +138,20 @@ export default function RolePermissionsPage() {
 
       // Remove permissions
       for (const item of toRemove) {
-        await supabase
+        // BUG-ROLEPERM-DELETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+        const { error: delErr } = await supabase
           .from('role_permissions')
           .delete()
           .eq('role', item.role)
           .eq('permission_code', item.permission_code);
+        if (delErr) logger.warn('[role-permissions] delete failed:', delErr);
       }
 
       // Add permissions
       if (toAdd.length > 0) {
-        await supabase.from('role_permissions').insert(toAdd);
+        // BUG-ROLEPERM-INSERT-SILENT-FAIL FIX: bare await swallowed RLS errors.
+        const { error: insErr } = await supabase.from('role_permissions').insert(toAdd);
+        if (insErr) logger.warn('[role-permissions] insert failed:', insErr);
       }
 
       toast({ title: 'Permissões atualizadas com sucesso!' });

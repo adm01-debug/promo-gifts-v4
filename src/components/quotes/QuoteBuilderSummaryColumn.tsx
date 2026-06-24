@@ -136,9 +136,10 @@ export function QuoteBuilderSummaryColumn({
         setDiscountValue(round2(Math.max(0, Math.min(100, pct))));
       }
     } else if (presentedSubtotal === 0 && discountValue > 0) {
-      if (next === 'percent') {
-        setDiscountValue(0);
-      }
+      // BUG-DISCOUNT-ZERO FIX: with a 0 subtotal, any discount is meaningless.
+      // The old code only reset when switching TO percent (X% of 0 = 0); it forgot
+      // the reverse direction (R$ amount when subtotal is 0 also makes no sense).
+      setDiscountValue(0);
     }
     setDiscountType(next);
   };
@@ -146,7 +147,15 @@ export function QuoteBuilderSummaryColumn({
   const staleIndexes = useMemo(() => {
     const set = new Set<number>();
     items.forEach((item, idx) => {
-      if (item.price_confirmed_at) return;
+      // BUG-STALE-CONFIRM FIX (summary): a confirmation is only valid when it
+      // postdates the last price update. Without this check, a re-priced item
+      // with an OLD price_confirmed_at would never show the badge in the summary
+      // column, causing stale prices to reach the client silently.
+      if (
+        item.price_confirmed_at &&
+        (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+      )
+        return;
       const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
       if (f.shouldWarn) set.add(idx);
     });

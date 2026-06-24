@@ -570,7 +570,9 @@ export function useCategoryRanking(
     queryKey: ['commercial-category-ranking', user?.id, days, categoryId, supplierId, productId],
     queryFn: async (): Promise<CategoryRankingItem[]> => {
       const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
-      const { data: orderItems } = pids
+      // BUG-COMMERCIAL-CATRANK-SILENT-FAIL FIX: { data } without error check silently returned
+      // empty results on RLS denial — now throws so TanStack Query retries/surfaces the error.
+      const { data: orderItems, error: orderErr } = pids
         ? await supabase
             .from('order_items')
             .select('product_id, quantity, unit_price')
@@ -580,6 +582,7 @@ export function useCategoryRanking(
             .from('order_items')
             .select('product_id, quantity, unit_price')
             .gte('created_at', since);
+      if (orderErr) throw orderErr;
 
       const { fetchPromobrindProducts } = await import('@/lib/external-db');
       const products = await fetchPromobrindProducts({ limit: 5000 });
@@ -669,7 +672,8 @@ export function useSupplierSales(
     queryKey: ['commercial-supplier-sales', user?.id, days, categoryId, supplierId],
     queryFn: async () => {
       const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
-      const { data: orderItems } = pids
+      // BUG-COMMERCIAL-SUPPLIERSALES-SILENT-FAIL FIX: { data } without error check.
+      const { data: orderItems, error: orderErr } = pids
         ? await supabase
             .from('order_items')
             .select('product_id, product_name, quantity, unit_price')
@@ -679,6 +683,7 @@ export function useSupplierSales(
             .from('order_items')
             .select('product_id, product_name, quantity, unit_price')
             .gte('created_at', since);
+      if (orderErr) throw orderErr;
       if (!orderItems?.length) return [];
 
       const { fetchPromobrindProducts } = await import('@/lib/external-db');
