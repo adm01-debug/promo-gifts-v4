@@ -162,7 +162,6 @@ export function useQuoteBuilderState() {
   const [discountValue, setDiscountValue] = useState(0);
   const [negotiationMarkup, setNegotiationMarkup] = useState(0);
   const [notes, setNotes] = useState('');
-  const [internalNotes, setInternalNotes] = useState('');
   const {
     items,
     setItems,
