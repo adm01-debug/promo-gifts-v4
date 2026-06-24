@@ -100,9 +100,14 @@ export function QuoteProductColorSelector({
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
         </Button>
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <p className="truncate text-sm font-medium">{product.name}</p>
-          <p className="font-mono text-xs text-muted-foreground">{product.sku}</p>
+          <Badge
+            variant="secondary"
+            className="shrink-0 rounded-md px-1.5 py-0 font-mono text-[10px] font-medium"
+          >
+            {product.sku}
+          </Badge>
         </div>
         <Badge variant="outline" className="gap-1 text-xs">
           <Package className="h-3 w-3" />
