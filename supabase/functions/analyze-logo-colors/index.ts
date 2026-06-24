@@ -116,8 +116,14 @@ Deno.serve(async (req) => {
     // BUG-A03 FIX (26/05/2026): LOVABLE_API_KEY via Deno.env.get() direto — sem SSOT.
     // Agora usa resolveCredential() para buscar do banco (integration_credentials).
     const { value: LOVABLE_API_KEY } = await resolveCredential('LOVABLE_API_KEY');
+    // BUG-CRED-1 FIX (2026-06-23): retorna 503 (dependência não configurada) em vez de 500
+    // (erro interno). Status 503 é mais preciso — o serviço não está disponível por falta de
+    // credencial, não por bug de código. Facilita triagem de alertas.
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured. Configure em /admin/conexoes > AI Models.');
+      return new Response(
+        JSON.stringify({ error: 'LOVABLE_API_KEY não configurada. Configure em /admin/conexoes > AI Models.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     const model = 'google/gemini-2.5-flash';

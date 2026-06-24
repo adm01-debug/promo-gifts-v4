@@ -351,6 +351,13 @@ export default function VisualSearchPage() {
           friendlyMessage = 'Nossos servidores de IA estão temporariamente ocupados.';
           tip = 'Dica: Aguarde alguns segundos e clique em "Tentar Novamente". Verifique se o produto está bem centralizado.';
         }
+      } else if (err.message?.includes('503') || (err as { status?: number }).status === 503) {
+        // BUG-VS-CREDS FIX (2026-06-23): 503 = serviço/credencial não configurados
+        // O backend retorna errorData.error com msg específica; só entra aqui no fallback
+        if (friendlyMessage === 'Ocorreu um problema na análise da imagem.') {
+          friendlyMessage = 'Serviço de análise visual temporariamente indisponível.';
+          tip = 'Dica: O administrador deve configurar as credenciais de IA (HF_ACCESS_TOKEN ou LOVABLE_API_KEY) no dashboard do Supabase.';
+        }
       } else if (err.message?.includes('network') || err.name === 'TypeError') {
         friendlyMessage = 'Houve uma falha de conexão.';
         tip = 'Dica: Verifique seu sinal de internet e tente reenviar a foto.';
@@ -513,7 +520,7 @@ export default function VisualSearchPage() {
                               animate={{ top: ['0%', '100%'] }}
                               transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
                             />
-                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay" />
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20200%20200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.65%22%20numOctaves%3D%223%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E')] opacity-[0.15] mix-blend-overlay" />
                           </div>
                         )}
                         

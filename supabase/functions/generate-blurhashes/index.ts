@@ -10,7 +10,7 @@
 // Called by pg_cron job 'generate-blurhashes' every 5 minutes.
 //
 // Coverage: JPEG+PNG+WebP+GIF ≈ 99.9% of all verified product images.
-// Throughput: 40 images/invocation × 12/hour ≈ 480 hashes/hour.
+// Throughput: 15 images/invocation × 12/hour ≈ 180 hashes/hour (safe sub-batching).
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { authorizeCron } from '../_shared/dispatcher-auth.ts'
 import { encode } from 'https://esm.sh/blurhash@2.0.5'
@@ -21,8 +21,12 @@ import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const BATCH_SIZE = 40
-const FETCH_TIMEOUT_MS = 15000
+// BUG-BLURHASH-1 FIX (2026-06-23): batch reduzido 40→15, timeout 15s→8s, sub-batch de 5
+// concorrentes. Antes: 40 paralelos×15s → timeout 546 (>150s limite Supabase).
+// Depois: sub-batches de 5×8s → ≤40s → dentro do limite seguro.
+const BATCH_SIZE = 15
+const FETCH_TIMEOUT_MS = 8000
+const SUB_BATCH_SIZE = 5  // máx imagens concorrentes por rodada
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 const THUMB_W = 32
 const THUMB_H = 32
@@ -205,13 +209,20 @@ Deno.serve(async (req: Request) => {
   // Track webp/gif attempts separately for monitoring
   const altFormatImages = (images as ImgRow[]).filter(i => i.format !== null && ALT_FORMATS.has(i.format))
 
-  const settled = await Promise.allSettled(
-    (images as ImgRow[]).map(img => computeBlurhash(img))
-  )
+  // BUG-BLURHASH-1 FIX: sub-batching (antes: Promise.allSettled de 40 paralelos → timeout 546).
+  // Processa SUB_BATCH_SIZE imagens por rodada para limitar I/O concorrente.
+  const allResults: ({ id: string; blurhash: string } | null)[] = []
+  const imgList = images as ImgRow[]
+  for (let i = 0; i < imgList.length; i += SUB_BATCH_SIZE) {
+    const chunk = imgList.slice(i, i + SUB_BATCH_SIZE)
+    const chunkSettled = await Promise.allSettled(chunk.map(img => computeBlurhash(img)))
+    for (const r of chunkSettled) {
+      allResults.push(r.status === 'fulfilled' ? r.value : null)
+    }
+  }
 
-  const successes = settled
-    .filter(r => r.status === 'fulfilled' && r.value !== null)
-    .map(r => (r as PromiseFulfilledResult<{ id: string; blurhash: string }>).value)
+  const successes = allResults
+    .filter((r): r is { id: string; blurhash: string } => r !== null)
 
   let updatedCount = 0
   for (const u of successes) {
