@@ -51,7 +51,59 @@ function fmtDate(iso: string): string {
   }
 }
 
+/**
+ * buildDiscountAuditPdfPlan — função pura (sem jsPDF) que monta a estrutura
+ * lógica do PDF: cabeçalho com vendedor/cliente/orçamento e lista de eventos
+ * com timestamps, percentuais e notas. Exposta para que testes automatizados
+ * possam validar o conteúdo sem precisar carregar o jsPDF (que requer Canvas).
+ */
+export interface DiscountAuditPdfPlan {
+  title: string;
+  header: string[];
+  events: Array<{
+    index: number;
+    title: string;
+    timestamp: string;
+    actor: string;
+    metrics: string;
+    sellerNotes?: string;
+    adminNotes?: string;
+  }>;
+  fileName: string;
+}
+
+export function buildDiscountAuditPdfPlan(ctx: DiscountAuditPdfContext): DiscountAuditPdfPlan {
+  const header: string[] = [`Solicitação: ${ctx.requestId}`];
+  if (ctx.quoteNumber) header.push(`Orçamento: ${ctx.quoteNumber}`);
+  if (ctx.clientName) header.push(`Cliente: ${ctx.clientName}`);
+  if (ctx.sellerName) header.push(`Vendedor: ${ctx.sellerName}`);
+  header.push(`Gerado em: ${new Date().toLocaleString('pt-BR')}`);
+
+  const events = ctx.rows.map((row, idx) => ({
+    index: idx + 1,
+    title: EVENT_LABEL[row.event] ?? row.event,
+    timestamp: fmtDate(row.created_at),
+    actor:
+      row.actor_name || row.actor_email
+        ? `${row.actor_name ?? '—'} (${row.actor_email ?? '—'}) · papel: ${row.actor_role}`
+        : `papel: ${row.actor_role}`,
+    metrics: `Solicitado: ${fmtPct(row.requested_discount_percent)} · Real: ${fmtPct(
+      row.real_discount_percent,
+    )} · Limite: ${fmtPct(row.max_allowed_percent)}`,
+    sellerNotes: row.seller_notes ?? undefined,
+    adminNotes: row.admin_notes ?? undefined,
+  }));
+
+  return {
+    title: 'Histórico de Aprovação de Desconto',
+    header,
+    events,
+    fileName: `historico-desconto-${ctx.quoteNumber ?? ctx.requestId.slice(0, 8)}.pdf`,
+  };
+}
+
 export async function exportDiscountAuditPdf(ctx: DiscountAuditPdfContext): Promise<void> {
+  const plan = buildDiscountAuditPdfPlan(ctx);
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -60,28 +112,17 @@ export async function exportDiscountAuditPdf(ctx: DiscountAuditPdfContext): Prom
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Histórico de Aprovação de Desconto', marginX, y);
+  doc.text(plan.title, marginX, y);
   y += 22;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(90);
-  doc.text(`Solicitação: ${ctx.requestId}`, marginX, y);
-  y += 14;
-  if (ctx.quoteNumber) {
-    doc.text(`Orçamento: ${ctx.quoteNumber}`, marginX, y);
+  plan.header.forEach((line) => {
+    doc.text(line, marginX, y);
     y += 14;
-  }
-  if (ctx.clientName) {
-    doc.text(`Cliente: ${ctx.clientName}`, marginX, y);
-    y += 14;
-  }
-  if (ctx.sellerName) {
-    doc.text(`Vendedor: ${ctx.sellerName}`, marginX, y);
-    y += 14;
-  }
-  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, marginX, y);
-  y += 22;
+  });
+  y += 8;
 
   doc.setDrawColor(220);
   doc.line(marginX, y, pageWidth - marginX, y);
@@ -90,17 +131,17 @@ export async function exportDiscountAuditPdf(ctx: DiscountAuditPdfContext): Prom
   doc.setTextColor(20);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text(`Eventos (${ctx.rows.length})`, marginX, y);
+  doc.text(`Eventos (${plan.events.length})`, marginX, y);
   y += 18;
 
-  if (ctx.rows.length === 0) {
+  if (plan.events.length === 0) {
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(10);
     doc.setTextColor(120);
     doc.text('Nenhum evento registrado.', marginX, y);
   }
 
-  ctx.rows.forEach((row, idx) => {
+  plan.events.forEach((row) => {
     if (y > 760) {
       doc.addPage();
       y = 50;
@@ -108,37 +149,29 @@ export async function exportDiscountAuditPdf(ctx: DiscountAuditPdfContext): Prom
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(20);
-    doc.text(`${idx + 1}. ${EVENT_LABEL[row.event] ?? row.event}`, marginX, y);
+    doc.text(`${row.index}. ${row.title}`, marginX, y);
     y += 14;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(80);
-    doc.text(`Em ${fmtDate(row.created_at)} · papel: ${row.actor_role}`, marginX, y);
+    doc.text(`Em ${row.timestamp} · ${row.actor}`, marginX, y);
     y += 13;
-    if (row.actor_name || row.actor_email) {
-      doc.text(`Por ${row.actor_name ?? '—'} (${row.actor_email ?? '—'})`, marginX, y);
-      y += 13;
-    }
-    doc.text(
-      `Solicitado: ${fmtPct(row.requested_discount_percent)} · Real: ${fmtPct(row.real_discount_percent)} · Limite: ${fmtPct(row.max_allowed_percent)}`,
-      marginX,
-      y,
-    );
+    doc.text(row.metrics, marginX, y);
     y += 13;
-    if (row.seller_notes) {
-      const lines = doc.splitTextToSize(`Justificativa: ${row.seller_notes}`, pageWidth - marginX * 2);
+    if (row.sellerNotes) {
+      const lines = doc.splitTextToSize(`Justificativa: ${row.sellerNotes}`, pageWidth - marginX * 2);
       doc.text(lines, marginX, y);
       y += 13 * lines.length;
     }
-    if (row.admin_notes) {
-      const lines = doc.splitTextToSize(`Notas do gestor: ${row.admin_notes}`, pageWidth - marginX * 2);
+    if (row.adminNotes) {
+      const lines = doc.splitTextToSize(`Notas do gestor: ${row.adminNotes}`, pageWidth - marginX * 2);
       doc.text(lines, marginX, y);
       y += 13 * lines.length;
     }
     y += 10;
   });
 
-  const fileName = `historico-desconto-${ctx.quoteNumber ?? ctx.requestId.slice(0, 8)}.pdf`;
-  doc.save(fileName);
+  doc.save(plan.fileName);
 }
+
