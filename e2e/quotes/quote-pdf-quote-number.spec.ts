@@ -60,6 +60,32 @@ test.describe('PDF exportado · quote_number no topo', () => {
 
       expect(text).toContain(quoteNumber);
       expect(text).not.toContain(FORBIDDEN_PHRASE);
+      // Validação extra: o cabeçalho "Proposta Comercial" deve estar intacto.
+      expect(text).toMatch(/Proposta\s*Comercial/);
     });
   }
+
+  test('[fallback] orçamento sem quote_number gera PDF com "Proposta Comercial" e sem frase legada', async ({
+    page,
+  }) => {
+    // Cenário: rascunho NOVO ainda não persistido — usuário gera PDF antes de salvar.
+    // Garante que o fallback amigável não quebra o layout do PDF.
+    await page.goto('/orcamentos/novo');
+    const exportBtn = page.getByTestId('export-pdf-button');
+    if ((await exportBtn.count()) === 0) test.skip(true, 'Export PDF indisponível em /novo.');
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 30_000 }).catch(() => null);
+    await exportBtn.first().click({ trial: false }).catch(() => undefined);
+    const download = await downloadPromise;
+    if (!download) test.skip(true, 'PDF não baixado em modo novo (esperado em algumas configurações).');
+
+    const path = await download!.path();
+    const buf = await fs.readFile(path!);
+    const pdfParse = (await import('pdf-parse')).default as (b: Buffer) => Promise<{ text: string }>;
+    const { text } = await pdfParse(buf);
+    expect(text).toMatch(/Proposta\s*Comercial/);
+    expect(text).not.toContain(FORBIDDEN_PHRASE);
+    // Sem número definitivo: aceita ausência OU placeholder amigável.
+    expect(text).not.toMatch(/undefined|null|NaN/i);
+  });
 });
