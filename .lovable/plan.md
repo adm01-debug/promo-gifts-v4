@@ -1,36 +1,80 @@
-## Auditoria das mudanças recentes em `QuotesListPage`
+## Plano: hardening de status de orçamentos + cobertura de testes
 
-### Validações OK
-1. **Imports** — todos os ícones e helpers removidos (`DollarSign`, `CheckCircle2`, `Clock`, `TrendingUp`, `TrendingDown`, `Card`, `CardContent`, `formatCurrency`) não têm mais uso na página.
-2. **Destructuring** — `kpis` e `funnelData` removidos do `useQuotesListPage()` sem quebrar nada (TypeScript não exige consumir tudo).
-3. **Layout** — header e filtros continuam encadeados; spacing `space-y-3/4` mantém ritmo.
-4. **Botão "Novo Orçamento"** — `px-2` + `mr-1` reduz largura ~30% sem alterar altura/cor/tipografia. `data-testid="quote-new-button"` preservado (E2E continua passando).
-5. **Tipos** — sem `any` introduzido; `QuoteStatus` ainda usado mais abaixo.
+### Escopo (4 entregas)
 
-### Gaps encontrados (limpeza)
+#### 1. Validação runtime de `QuoteStatus` (Zod + telemetria)
+- Em `src/types/quote.ts`: adicionar `quoteStatusSchema = z.enum([...QUOTE_STATUSES])` e exportar `QUOTE_STATUSES` como const tuple. `QuoteStatus` passa a ser inferido (`z.infer`). Zero quebra de tipo.
+- Em `src/services/quoteService.ts` (`fetchQuotes`/`getQuote`): validar cada linha vinda do banco com `quoteStatusSchema.safeParse(row.status)`. Se falhar:
+  - log estruturado via `createClientLogger('quotes_service').warn('quote_status_unknown', { quoteId, status })`
+  - fallback do registro para `status = 'pending'` (não derruba UI)
+- O guard cobre o cenário "DB adicionou status novo sem atualizar FE".
 
-**Gap 1 — Linha em branco dupla**
-`src/pages/quotes/QuotesListPage.tsx:109-110` ficou com 2 linhas vazias após a remoção do bloco KPI/Funil. Cosmético, mas o ESLint da casa marca.
+#### 2. Banner informativo quando só há `pending`
+- Em `useQuotesListPage`: novo computed `onlyPendingStatuses = quotes.length > 0 && quotes.every(q => q.status === 'pending')`, retornado pelo hook.
+- Em `QuotesListPage.tsx`: quando `onlyPendingStatuses === true`, renderizar `<Alert variant="info">` discreto acima dos filtros: "Todos os orçamentos visíveis estão em status **Pendente**. Avance o fluxo enviando ou aprovando para popular o funil."
+- Chips e sort continuam funcionando exatamente como hoje.
 
-**Gap 2 — Componente órfão**
-`src/components/quotes/QuotesFunnelChart.tsx` não tem mais nenhum import no projeto (`rg` confirmou). Vira dead code se não for usado em outro lugar.
+#### 3. Testes unitários
 
-**Gap 3 — Hook ainda computa dados não usados**
-`src/pages/quotes/useQuotesListPage.ts` continua calculando `kpis` (reduce sobre `filteredQuotes`) e `funnelData` (map de transições) a cada render. Sem consumidores, é trabalho desperdiçado em toda renderização da página de orçamentos.
+**3.1 `src/lib/__tests__/quote-status-config.transitions.test.ts`** (acrescentar — já existe)
+- Suite "transições inválidas explícitas": tabela com 12+ pares bloqueados, incluindo `draft→converted`, `pending→converted`, `cancelled→qualquer`, `converted→draft`, `approved→sent`, `approved→cancelled`.
+- Suite "status fora do enum retorna false sem throw" (regressão BUG-016).
 
-### Plano de correção
+**3.2 `src/types/__tests__/quote-status-schema.test.ts`** (novo)
+- 10 valores válidos passam; 6 valores inválidos (`'foo'`, `null`, `''`, `'PENDING'`, `'draft '`, `123`) reprovados.
+- `QUOTE_STATUSES` é tuple readonly com 10 itens (snapshot da SSOT).
 
-1. **`src/pages/quotes/QuotesListPage.tsx`** — colapsar as 2 linhas em branco da linha 109-110 para uma única linha.
-2. **`src/components/quotes/QuotesFunnelChart.tsx`** — deletar o arquivo (e qualquer teste/snapshot associado, se houver).
-3. **`src/pages/quotes/useQuotesListPage.ts`** — remover o cálculo de `kpis` e `funnelData` (e os imports que ficarem órfãos), e remover ambos do objeto retornado.
-4. **Verificação pós-edição** — `rg "QuotesFunnelChart|funnelData|kpis" src/pages/quotes src/components/quotes` deve voltar vazio.
+**3.3 `src/pages/quotes/__tests__/useQuotesListPage.test.ts`** (novo)
+- Mock `@/hooks/quotes` com `useQuotes` retornando dataset controlado.
+- Cenários (8):
+  - vazio → `filteredQuotes.length === 0`, `onlyPendingStatuses === false`
+  - só pending (3 quotes) → `onlyPendingStatuses === true`
+  - mistos (`pending` + `sent` + `approved`) → `onlyPendingStatuses === false`
+  - filtro `statusFilter='approved'` filtra corretamente
+  - busca `searchTerm` ≥ 2 chars aplica Fuse
+  - sort `highest`/`lowest`/`expiring`/`newest`/`oldest`
+  - `handleClearFilters` zera os 3 controles
+  - `handleMarkApproved` chama `updateQuoteStatus(id, 'approved')`
 
-### Não afetado (confirmado)
-- E2E specs (`quote-new-button` continua).
-- RLS / banco — nada toca em backend.
-- Outros consumidores de `kpis` no projeto (intelligence, sales) são objetos diferentes, sem colisão de nome.
+**3.4 `src/pages/quotes/__tests__/QuotesListPage.render.test.tsx`** (novo)
+- Mock do hook + `MemoryRouter`. Cobre:
+  - estado `loading` renderiza `QuotesSkeleton`
+  - estado `error` renderiza banner com texto do erro
+  - dataset vazio renderiza `EmptyState`
+  - dataset só-pending renderiza o banner novo do item 2
+  - dataset com 5 quotes renderiza header com contagem e botão `quote-new-button` (testid preservado)
+  - **regressão chave:** nenhum elemento com texto `Total em Aberto`, `Funil de Vendas`, `Aprovados`, `Conversão` aparece no DOM
+
+#### 4. Documentação do gap DB CHECK
+- Em `src/lib/quote-status-config.ts` (topo), adicionar comentário JSDoc:
+  ```
+  ⚠️ DB CHECK constraint `valid_quote_status` aceita apenas 7 status
+  ('draft','pending','sent','approved','rejected','expired','converted').
+  FE define 10 (faltam pending_approval/viewed/cancelled). Alinhar via
+  migration EXIGE aprovação explícita do PO (regra do projeto).
+  Até lá, transições para os 3 status FE-only só funcionam em-memória.
+  ```
+- Sem migration neste plano (respeita regra "NUNCA criar/alterar schema sem confirmação").
 
 ### Arquivos afetados
-- `src/pages/quotes/QuotesListPage.tsx` (1 linha)
-- `src/components/quotes/QuotesFunnelChart.tsx` (delete)
-- `src/pages/quotes/useQuotesListPage.ts` (remover bloco kpis+funnelData + imports órfãos)
+- `src/types/quote.ts` (refactor com Zod, mantendo export type `QuoteStatus`)
+- `src/services/quoteService.ts` (parse + fallback + log)
+- `src/lib/quote-status-config.ts` (comentário JSDoc)
+- `src/pages/quotes/useQuotesListPage.ts` (computed `onlyPendingStatuses`)
+- `src/pages/quotes/QuotesListPage.tsx` (banner condicional)
+- `src/lib/__tests__/quote-status-config.transitions.test.ts` (mais cenários)
+- `src/types/__tests__/quote-status-schema.test.ts` (novo)
+- `src/pages/quotes/__tests__/useQuotesListPage.test.ts` (novo)
+- `src/pages/quotes/__tests__/QuotesListPage.render.test.tsx` (novo)
+
+### Critérios de aceitação
+- `vitest run src/types src/lib src/pages/quotes` verde local.
+- Coverage: cada cenário listado acima vira ao menos 1 `expect`.
+- Nenhuma quebra de API pública do hook (mantém os outros campos retornados intactos).
+- Nenhuma alteração de schema/migration neste ciclo.
+- `data-testid="quote-new-button"` preservado (não quebra E2E `04ck`).
+
+### Fora de escopo (explícito)
+- Migration alinhando CHECK do banco — pendente aprovação separada.
+- Refatorar `useQuoteFunnel` (já removido do consumo).
+- Mudar visual dos chips ou layout do header.
