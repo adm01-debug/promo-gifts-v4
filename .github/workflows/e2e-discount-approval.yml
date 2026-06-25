@@ -1,0 +1,83 @@
+name: E2E Discount Approval (04c*)
+
+# Executa apenas os specs da fila de aprovação de desconto e faz upload
+# do playwright-report + trace/screenshot/video em qualquer falha.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "e2e/flows/04c*.spec.ts"
+      - "e2e/helpers/discount-approval-*.ts"
+      - "e2e/helpers/setup-discount-admin.ts"
+      - "e2e/helpers/discount-notification-seed.ts"
+      - "e2e/helpers/pagination-asserts.ts"
+      - "src/components/admin/DiscountApproval*"
+      - "src/pages/admin/DiscountRequestDetailPage.tsx"
+      - ".github/workflows/e2e-discount-approval.yml"
+  pull_request:
+    paths:
+      - "e2e/flows/04c*.spec.ts"
+      - "e2e/helpers/discount-approval-*.ts"
+      - "e2e/helpers/setup-discount-admin.ts"
+      - "e2e/helpers/discount-notification-seed.ts"
+      - "e2e/helpers/pagination-asserts.ts"
+      - "src/components/admin/DiscountApproval*"
+      - "src/pages/admin/DiscountRequestDetailPage.tsx"
+      - ".github/workflows/e2e-discount-approval.yml"
+  workflow_dispatch:
+
+jobs:
+  discount-approval-e2e:
+    name: Playwright — 04c* (discount approval)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app
+        run: npm run build
+
+      - name: Run 04c* discount approval specs
+        run: npx playwright test e2e/flows/04c --project=chromium-authed --reporter=html,list,github
+        env:
+          CI: "1"
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-04c
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload test-results (trace, screenshot, video, HTML dumps)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-04c
+          path: |
+            test-results/
+            e2e/.evidence/
+          retention-days: 14
+          if-no-files-found: ignore
