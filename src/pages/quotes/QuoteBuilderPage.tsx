@@ -170,21 +170,19 @@ export default function QuoteBuilderPage() {
                   }
                   className="truncate font-display text-lg font-bold leading-tight tracking-tight sm:text-xl"
                 >
-                  {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
+                  {s.isEditMode
+                    ? s.currentStatus === 'draft'
+                      ? 'Editar Rascunho'
+                      : s.currentStatus
+                        ? `Editar Proposta · ${getQuoteStatusLabel(s.currentStatus)}`
+                        : 'Editar Orçamento'
+                    : 'Novo Orçamento'}
                 </h1>
-                <p
-                  data-testid="quote-number-display"
-                  className="truncate font-mono text-[11px] text-muted-foreground sm:text-xs"
-                  title={s.quoteNumber ? `Número do orçamento: ${s.quoteNumber}` : undefined}
-                >
-                  {s.quoteNumber ? (
-                    <>
-                      Nº <span className="font-semibold text-foreground">{s.quoteNumber}</span>
-                    </>
-                  ) : (
-                    <span className="italic">Nº a ser gerado ao salvar</span>
-                  )}
-                </p>
+                <QuoteNumberSubtitle
+                  rawQuoteNumber={s.quoteNumber}
+                  isEditMode={s.isEditMode}
+                  currentStatus={s.currentStatus}
+                />
               </div>
             </div>
 
