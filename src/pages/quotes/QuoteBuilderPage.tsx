@@ -54,11 +54,13 @@ import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProdu
 import { useQuoteBuilderState } from '@/hooks/quotes';
 import { useUnsavedChangesGuard } from '@/hooks/common';
 import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
   const { conflictInfo, dismissConflict, overwriteAndSave } = s;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
   const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
   const conditionsStorageKey = `quote-builder:conditions-collapsed:${s.quoteId ?? 'new'}`;
