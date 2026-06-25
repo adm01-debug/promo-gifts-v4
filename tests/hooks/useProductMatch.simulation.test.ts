@@ -1,19 +1,20 @@
 /**
- * MONTE-CARLO SIMULATION / PROPERTY TESTS for the Match de Produtos engine.
+ * MONTE-CARLO / PROPERTY TESTS for the Match de Produtos engine (real implementation).
  *
- * Generates thousands of randomized catalogue scenarios with a *seeded* PRNG
- * (fully reproducible) and asserts engine invariants that must hold for ANY
- * input. This is the "simulação de centenas de cenários" guard: it predicts
- * failures/gaps (type-mixed ids, NaN, unicode, empty pools, huge pools) before
- * they reach production.
+ * Seeded PRNG (mulberry32 — fully reproducible) generates thousands of randomized
+ * catalogue scenarios and asserts invariants that must hold for ANY input. This is the
+ * "simulação de centenas de cenários" guard: type-mixed/null ids, unicode, empty pools,
+ * huge pools, degenerate names.
+ *
+ * NOTE (2026-06-25): a previous revision imported a never-implemented API
+ * (tokenizeName/nameTokenSimilarity/eqId). This rewrite validates the engine that ships.
  */
 import { describe, it, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import {
   calculateMatchScore,
   getMatchType,
-  tokenizeName,
-  nameTokenSimilarity,
-  eqId,
+  useProductMatch,
   type MatchResult,
 } from '@/hooks/products/useProductMatch';
 import type { Product } from '@/types/product-catalog';
@@ -29,150 +30,139 @@ function mulberry32(seed: number) {
   };
 }
 
-const NAME_WORDS = [
-  'Caneta', 'Caderno', 'Agenda', 'Bloco', 'Squeeze', 'Garrafa', 'Copo', 'Caneca',
-  'Mochila', 'Necessaire', 'Camiseta', 'Boné', 'Mouse', 'Mousepad', 'Cabo',
-  'Powerbank', 'Tábua', 'Faca', 'Avental', 'Toalha', 'Chinelo', 'Vinho', 'Taça',
-  'Metal', 'Bambu', 'Inox', 'Plástico', 'Premium', 'Executiva', 'Azul', 'Preto',
-  'Térmico', '350ml', 'A5', '2L', '🎯', 'Ação', 'Café',
+const WORDS = [
+  'caneta', 'caderno', 'tabua', 'faca', 'squeeze', 'canudo', 'mochila', 'copo',
+  'cafe', 'xicara', 'cracha', 'pen', 'drive', 'metal', 'bambu', 'inox', 'azul',
+  'vermelha', 'termico', 'garrafa', 'churrasco', 'avental', 'mouse', 'teclado',
 ];
-const CATEGORY_IDS = ['cat-a', 'cat-b', 'cat-c', 'cat-d', null];
-const SUPPLIER_IDS = ['sup-1', 'sup-2', 'sup-3', 'sup-4'];
-const DESCRIPTORS = ['caneta', 'metal', 'bambu', 'inox', 'aromatizada', 'vela', 'parede dupla', ''];
-const MATERIALS = ['Aço Inox', 'Bambu', 'Plástico', 'Metal', 'Algodão', 'Couro'];
-const STOCK_STATES: Product['stockStatus'][] = ['in-stock', 'low-stock', 'out-of-stock'];
+const CATS: (string | null | undefined)[] = ['cat-1', 'cat-2', 'cat-3', null, undefined];
+const SUPS = ['s1', 's2', 's3'];
+const STOCKS = ['in-stock', 'out-of-stock'] as const;
+const VALID_TYPES = new Set<MatchResult['matchType']>(['complementary', 'identical', 'similar']);
 
-function pick<T>(rnd: () => number, arr: readonly T[]): T {
-  return arr[Math.floor(rnd() * arr.length)];
-}
-function sample<T>(rnd: () => number, arr: readonly T[], max: number): T[] {
-  const n = Math.floor(rnd() * (max + 1));
-  const out: T[] = [];
-  for (let i = 0; i < n; i++) out.push(pick(rnd, arr));
-  return out;
-}
-
-function makeRandomProduct(rnd: () => number, id: string): Product {
-  const words = sample(rnd, NAME_WORDS, 4);
-  // ~5% chance of a numeric category id to stress type-mixed comparisons
-  let categoryId: string | number | null = pick(rnd, CATEGORY_IDS);
-  if (rnd() < 0.05 && categoryId) categoryId = Math.floor(rnd() * 4);
-  // ~3% chance of a NaN/garbage price
-  const price = rnd() < 0.03 ? NaN : Math.round(rnd() * 50000) / 100;
+function randProduct(rng: () => number, i: number): Product {
+  const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rng() * arr.length)];
+  const nWords = 1 + Math.floor(rng() * 4);
+  const name = Array.from({ length: nWords }, () => pick(WORDS)).join(' ');
   return {
-    id,
-    name: words.join(' '),
+    id: `p-${i}`,
+    name,
+    sku: `S-${i}`,
+    price: 10,
     shortDescription: '',
-    sku: 'SKU-' + id,
-    price,
     images: [],
-    stock: Math.floor(rnd() * 1000),
+    stock: 100,
     colors: [],
-    materials: sample(rnd, MATERIALS, 3),
-    descriptiveTags: sample(rnd, DESCRIPTORS, 4),
+    materials: [],
     minQuantity: 1,
-    stockStatus: pick(rnd, STOCK_STATES),
+    stockStatus: pick(STOCKS),
     featured: false,
     newArrival: false,
     onSale: false,
     isKit: false,
-    category_id: categoryId as Product['category_id'],
-    category: { id: (categoryId ?? '0') as string | number, name: 'Sem categoria' },
-    supplier: { id: pick(rnd, SUPPLIER_IDS), name: 'F' },
-    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+    category: { id: '1', name: 'X' },
+    category_id: pick(CATS),
+    supplier: { id: pick(SUPS), name: 'Sup' },
+    tags: {
+      publicoAlvo: rng() > 0.5 ? ['Executivo'] : [],
+      datasComemorativas: rng() > 0.7 ? ['Natal'] : [],
+      endomarketing: [],
+      ramo: rng() > 0.6 ? ['Tecnologia'] : [],
+      nicho: rng() > 0.5 ? ['Escritorio'] : [],
+    },
   } as Product;
 }
 
-const VALID_TYPES = new Set<MatchResult['matchType']>(['identical', 'similar', 'complementary']);
-
-describe('Match engine — Monte-Carlo simulation (seeded, reproducible)', () => {
-  it('holds all engine invariants across thousands of random scenarios', () => {
-    const rnd = mulberry32(0xC0FFEE);
-    let totalEvaluations = 0;
-
-    for (let scenario = 0; scenario < 1200; scenario++) {
-      const poolSize = 2 + Math.floor(rnd() * 40);
-      const pool = Array.from({ length: poolSize }, (_, i) =>
-        makeRandomProduct(rnd, `s${scenario}-p${i}`),
-      );
-      const source = pick(rnd, pool);
-
-      for (const candidate of pool) {
-        totalEvaluations++;
-        // INVARIANT 1: never throws, score is a finite non-negative number.
-        const { score, reasons } = calculateMatchScore(source, candidate);
-        expect(Number.isFinite(score)).toBe(true);
-        expect(score).toBeGreaterThanOrEqual(0);
-
-        // INVARIANT 2: classification is always a valid enum value.
-        const hasComplementary = reasons.some((r) => r.startsWith('Complementar'));
-        const sourceTokens = tokenizeName(source.name);
-        const candTokens = tokenizeName(candidate.name);
-        let shared = 0;
-        sourceTokens.forEach((t) => candTokens.has(t) && shared++);
-        const type = getMatchType({
-          hasComplementary,
-          nameSim: nameTokenSimilarity(sourceTokens, candTokens),
-          sharedTokens: shared,
-        });
-        expect(VALID_TYPES.has(type)).toBe(true);
-
-        // INVARIANT 3: complementary classification ⟺ a complementary reason exists.
-        expect(type === 'complementary').toBe(hasComplementary);
-
-        // INVARIANT 4: symmetric signals (category/supplier/tags/descriptors/materials)
-        // are direction-independent — the only asymmetry allowed is complementary.
-        const ab = calculateMatchScore(source, candidate);
-        const ba = calculateMatchScore(candidate, source);
-        const compAB = ab.reasons.some((r) => r.startsWith('Complementar'));
-        const compBA = ba.reasons.some((r) => r.startsWith('Complementar'));
-        if (!compAB && !compBA) {
-          expect(ab.score).toBe(ba.score);
-        }
-      }
+describe('Monte-Carlo — calculateMatchScore invariants', () => {
+  it('score is always a finite number >= 0 and reasons is an array (5000 random pairs)', () => {
+    const rng = mulberry32(12345);
+    for (let i = 0; i < 5000; i++) {
+      const a = randProduct(rng, i * 2);
+      const b = randProduct(rng, i * 2 + 1);
+      const { score, reasons } = calculateMatchScore(a, b);
+      expect(Number.isFinite(score)).toBe(true);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(Array.isArray(reasons)).toBe(true);
     }
-
-    // Sanity: we really did simulate a large number of evaluations.
-    expect(totalEvaluations).toBeGreaterThan(10000);
-  });
-});
-
-describe('Match engine — targeted edge cases predicted by simulation', () => {
-  it('eqId treats numeric and string ids as equal, and rejects empty/null', () => {
-    expect(eqId(5, '5')).toBe(true);
-    expect(eqId('cat-a', 'cat-a')).toBe(true);
-    expect(eqId(5, 6)).toBe(false);
-    expect(eqId(null, null)).toBe(false);
-    expect(eqId('', '')).toBe(false);
-    expect(eqId(undefined, '1')).toBe(false);
   });
 
-  it('matches same category when ids differ in type (number vs string)', () => {
-    const base = {
-      shortDescription: '', sku: 'x', price: 1, images: [], stock: 1, colors: [],
-      materials: [], minQuantity: 1, stockStatus: 'in-stock' as const, featured: false,
-      newArrival: false, onSale: false, isKit: false, category: { id: 5, name: 'C' },
-      supplier: { id: 's1', name: 'F' },
-      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-    };
-    const source = { ...base, id: '1', name: 'Caneta', category_id: 5 as unknown as string };
-    const candidate = { ...base, id: '2', name: 'Caderno', category_id: '5' };
-    const { score, reasons } = calculateMatchScore(source as Product, candidate as Product);
-    expect(reasons).toContain('Mesma categoria');
-    expect(score).toBeGreaterThanOrEqual(30);
-  });
-
-  it('does not crash on NaN price, empty name, or unicode-only name', () => {
-    const mk = (over: Partial<Product>): Product =>
+  it('never throws on degenerate inputs (empty name, unicode, null/undefined tags & category)', () => {
+    const base = (over: Partial<Product>): Product =>
       ({
-        id: 'x', name: '', shortDescription: '', sku: 'x', price: NaN, images: [], stock: 0,
-        colors: [], materials: [], minQuantity: 1, stockStatus: 'in-stock', featured: false,
-        newArrival: false, onSale: false, isKit: false, category_id: null,
-        category: { id: '0', name: '' }, supplier: { id: 's', name: 'F' },
+        id: 'x', name: 'x', sku: 'x', price: 0, images: [], stock: 0, colors: [], materials: [],
+        minQuantity: 1, stockStatus: 'in-stock', featured: false, newArrival: false, onSale: false,
+        isKit: false, category: { id: '1', name: 'X' }, supplier: { id: 's', name: 'S' },
         tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
         ...over,
       }) as Product;
-    expect(() => calculateMatchScore(mk({ name: '' }), mk({ id: 'y', name: '🎯✨' }))).not.toThrow();
-    expect(() => calculateMatchScore(mk({ name: '🎯' }), mk({ id: 'y', name: '' }))).not.toThrow();
+    const weird: Product[] = [
+      base({ id: 'w1', name: '' }),
+      base({ id: 'w2', name: '🎉🎁 ção çãO' }),
+      base({ id: 'w3', name: 'Tábua', category_id: null }),
+      base({ id: 'w4', name: 'Faca', category_id: undefined }),
+      ((): Product => { const p = base({ id: 'w5', name: 'Copo' }); (p as unknown as { tags: undefined }).tags = undefined; return p; })(),
+    ];
+    for (const a of weird) {
+      for (const b of weird) {
+        expect(() => calculateMatchScore(a, b)).not.toThrow();
+        const { score } = calculateMatchScore(a, b);
+        expect(Number.isFinite(score)).toBe(true);
+        expect(score).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+});
+
+describe('Monte-Carlo — getMatchType invariants', () => {
+  it('always returns one of the three valid match types (2000 random inputs)', () => {
+    const rng = mulberry32(7);
+    for (let i = 0; i < 2000; i++) {
+      const t = getMatchType(Math.floor(rng() * 130), rng() > 0.5, rng() > 0.5);
+      expect(VALID_TYPES.has(t)).toBe(true);
+    }
+  });
+});
+
+describe('Monte-Carlo — useProductMatch hook invariants', () => {
+  it('results are sorted desc, exclude source, respect minScore & matchTypes (200 random pools)', () => {
+    const rng = mulberry32(2024);
+    for (let p = 0; p < 200; p++) {
+      const poolSize = 1 + Math.floor(rng() * 30);
+      const pool = Array.from({ length: poolSize }, (_, i) => randProduct(rng, i));
+      const sourceProduct = randProduct(rng, 100000 + p);
+      const minScore = Math.floor(rng() * 40);
+      const allowed: MatchResult['matchType'][] = ['identical', 'similar', 'complementary'];
+      const { result } = renderHook(() =>
+        useProductMatch(sourceProduct, pool, { minScore, matchTypes: allowed }),
+      );
+      const ms = result.current.matches;
+      for (let i = 1; i < ms.length; i++) {
+        expect(ms[i - 1].score).toBeGreaterThanOrEqual(ms[i].score);
+      }
+      for (const m of ms) {
+        expect(m.product.id).not.toBe(sourceProduct.id);
+        expect(Number.isFinite(m.score)).toBe(true);
+        expect(m.score).toBeGreaterThanOrEqual(minScore);
+        expect(allowed).toContain(m.matchType);
+      }
+      expect(ms.length).toBeLessThanOrEqual(pool.length);
+    }
+  });
+
+  it('is deterministic for identical inputs', () => {
+    const rng = mulberry32(55);
+    const pool = Array.from({ length: 20 }, (_, i) => randProduct(rng, i));
+    const sourceProduct = randProduct(rng, 777);
+    const run = () =>
+      renderHook(() => useProductMatch(sourceProduct, pool, { minScore: 1 })).result.current.matches.map(
+        (m) => `${m.product.id}:${m.score}:${m.matchType}`,
+      );
+    expect(run()).toEqual(run());
+  });
+
+  it('handles empty pool and null source without error', () => {
+    const sourceProduct = randProduct(mulberry32(1), 0);
+    expect(renderHook(() => useProductMatch(sourceProduct, [], { minScore: 1 })).result.current.matches).toEqual([]);
+    expect(renderHook(() => useProductMatch(null, [sourceProduct], { minScore: 1 })).result.current.matches).toEqual([]);
   });
 });

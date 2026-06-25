@@ -59,14 +59,14 @@ const COMPLEMENTARY_PAIRS: [string[], string[]][] = [
   [['cadeira'], ['almofada', 'encosto', 'apoio']],
 ];
 
-function normalizeText(text: string): string {
+export function normalizeText(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function findComplementaryKeywords(name: string): string[] {
+export function findComplementaryKeywords(name: string): string[] {
   const normalized = normalizeText(name);
   const complements: string[] = [];
 
@@ -87,7 +87,7 @@ const MATCH_TAG_LABELS: Record<string, string> = {
   endomarketing: 'Endomarketing',
 } as const;
 
-function calculateMatchScore(
+export function calculateMatchScore(
   source: Product,
   candidate: Product,
 ): { score: number; reasons: string[] } {
@@ -158,7 +158,7 @@ function calculateMatchScore(
   return { score, reasons };
 }
 
-function getMatchType(
+export function getMatchType(
   score: number,
   isSameCategory: boolean,
   hasComplementary: boolean,
