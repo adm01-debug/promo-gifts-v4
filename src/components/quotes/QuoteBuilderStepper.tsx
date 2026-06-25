@@ -66,6 +66,7 @@ export function QuoteBuilderStepper({
           return (
             <li
               key={step.id}
+              data-testid={`quote-step-${step.id}`}
               className="flex min-w-0 flex-1 items-start"
               aria-current={isActive ? 'step' : undefined}
             >
