@@ -178,7 +178,35 @@ export default function QuoteBuilderPage() {
               </div>
             </div>
 
-            <div className="min-w-0 flex-1">
+            {/* RESET — descarta empresa, contato, itens e condições do orçamento
+                em construção. Em modo edição, redireciona para /orcamentos/novo
+                para não sobrescrever o orçamento persistido. */}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="quote-reset-button"
+                    onClick={() => setResetDialogOpen(true)}
+                    className="shrink-0 gap-1.5 text-muted-foreground hover:text-destructive"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Limpar empresa, contato, itens e condições do orçamento atual
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Spacer empurra o stepper para a direita, criando respiro
+                entre o título e a timeline. */}
+            <div className="hidden flex-1 lg:block" aria-hidden="true" />
+
+            <div className="min-w-0 w-full lg:w-auto lg:max-w-[60%] lg:flex lg:justify-end">
               <QuoteBuilderStepper
                 completedSteps={s.completedSteps}
                 activeStep={s.activeStep}
