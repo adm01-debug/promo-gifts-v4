@@ -130,15 +130,20 @@ export default function QuotesListPage() {
                     onClick={() => navigate('/orcamentos/novo')}
                     size="icon"
                     aria-label="Novo orçamento"
-                    className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="group relative h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:scale-110 hover:shadow-xl hover:shadow-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    <Plus className="h-5 w-5" />
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping"
+                    />
+                    <Plus className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
                   Criar novo orçamento em segundos
                 </TooltipContent>
               </Tooltip>
+
             </div>
           </div>
 
