@@ -44,7 +44,7 @@ test.describe('PDF exportado · quote_number no topo', () => {
       const quoteNumber = match![0];
 
       // Desktop: abre o dialog via `pdf-preview-trigger` e dispara o download
-      // via `export-pdf-button` (confirm dentro do dialog).
+      // via `pdf-generate-confirm` (confirm dentro do dialog).
       const trigger = page.getByTestId('pdf-preview-trigger');
       await expect(trigger, 'pdf-preview-trigger ausente no desktop').toHaveCount(1, {
         timeout: 10_000,
