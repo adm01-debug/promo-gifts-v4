@@ -207,6 +207,8 @@ export function DiscountApprovalQueue() {
             key={req.id}
             ref={isHighlighted ? highlightedRef : undefined}
             data-testid={`discount-request-card-${req.id}`}
+            data-status={req.status}
+            data-created-at={req.created_at}
             className={cn(
               isHighlighted && 'ring-2 ring-amber-500/60 shadow-lg shadow-amber-500/10',
             )}

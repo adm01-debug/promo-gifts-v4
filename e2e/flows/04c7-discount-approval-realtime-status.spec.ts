@@ -11,6 +11,7 @@
 import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { loginViaUI } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
+import { seedDiscountApprovalRequestsFromPage } from "../helpers/discount-approval-seed-page";
 
 test.describe("Discount approval — atualização de status sem reload", () => {
   test("aprovação em outra sessão reflete na timeline aberta", async ({ browser }) => {
@@ -26,12 +27,18 @@ test.describe("Discount approval — atualização de status sem reload", () => 
     await loginViaUI(pageA, { email, password });
     await loginViaUI(pageB, { email, password });
 
+    // Garante pelo menos 1 pending via seed idempotente.
     await gotoAndSettle(pageA, "/admin/usuarios?tab=discounts");
+    const seed = await seedDiscountApprovalRequestsFromPage(pageA, { minPending: 1 });
+    if (seed.skipped && seed.pendingTotal === 0) {
+      test.skip(true, `Sem pending e seed falhou: ${seed.skipped}`);
+    }
+    await gotoAndSettle(pageA, "/admin/usuarios?tab=discounts");
+
     const firstPending = pageA
       .locator('[data-testid^="discount-request-card-"][data-status="pending"]')
       .first();
-    const hasPending = await firstPending.isVisible({ timeout: 5_000 }).catch(() => false);
-    test.skip(!hasPending, "Sem solicitações pendentes para validar realtime");
+    await expect(firstPending).toBeVisible({ timeout: 10_000 });
 
     const requestId = (await firstPending.getAttribute("data-testid"))?.replace(
       "discount-request-card-",
@@ -39,21 +46,20 @@ test.describe("Discount approval — atualização de status sem reload", () => 
     );
     test.skip(!requestId, "data-testid sem id parseável");
 
-    // Sessão A: abre detalhe e fica observando
     await gotoAndSettle(pageA, `/admin/aprovacoes-desconto/${requestId}`);
     const statusA = pageA.locator('[data-testid="discount-request-status"]');
     await expect(statusA).toContainText(/pendente|pending/i, { timeout: 5_000 });
 
-    // Sessão B: aprova via fila
     await gotoAndSettle(pageB, "/admin/usuarios?tab=discounts");
-    const cardB = pageB.locator(`[data-testid="discount-request-card-${requestId}"]`);
-    await cardB.getByRole("button", { name: /aprovar/i }).first().click();
+    const approveB = pageB.getByTestId(`discount-approve-${requestId}`);
+    await expect(approveB).toBeVisible({ timeout: 10_000 });
+    await approveB.click();
     const confirmB = pageB.getByRole("button", { name: /confirmar|sim/i }).first();
     if (await confirmB.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await confirmB.click();
     }
 
-    // Sessão A: status atualiza sem reload (realtime/polling ≤ 30s)
+    // Sessão A: status atualiza sem reload (realtime/polling ≤ 35s)
     await expect(statusA).toContainText(/aprovado|approved/i, { timeout: 35_000 });
 
     await ctxA.close();
