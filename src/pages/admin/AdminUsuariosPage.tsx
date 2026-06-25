@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PasswordResetApproval } from '@/components/admin/PasswordResetApproval';
 import { DiscountManagementPanel } from '@/components/admin/DiscountManagementPanel';
+import { DiscountNotificationFilterPanel } from '@/components/admin/DiscountNotificationFilterPanel';
+
 import { usePasswordResetRequests } from '@/hooks/auth';
 
 import { useUserManagement } from '@/components/admin/users/useUserManagement';
