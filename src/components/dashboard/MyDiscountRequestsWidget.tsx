@@ -169,6 +169,10 @@ export function MyDiscountRequestsWidget() {
     }
     return m;
   }, [all]);
+  const totalPending = useMemo(
+    () => all.reduce((n, r) => (r.status === 'pending' ? n + 1 : n), 0),
+    [all],
+  );
   const dupKey = (r: RequestRow): string =>
     `${r.quote_id}::${Number(r.requested_discount_percent ?? 0).toFixed(4)}`;
 
