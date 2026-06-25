@@ -96,8 +96,12 @@ export default function QuotesListPage() {
               </div>
             </FadeInView>
             <div className="flex gap-2">
-              <Button data-testid="quote-new-button" onClick={() => navigate('/orcamentos/novo')}>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button
+                data-testid="quote-new-button"
+                onClick={() => navigate('/orcamentos/novo')}
+                className="px-2"
+              >
+                <Plus className="mr-1 h-4 w-4" />
                 Novo Orçamento
               </Button>
             </div>
