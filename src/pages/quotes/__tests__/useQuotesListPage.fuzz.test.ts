@@ -1,0 +1,138 @@
+/**
+ * Property-based / fuzz test do hook useQuotesListPage.
+ * 100 datasets randomizados validam invariantes de filtro, sort e banner.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import fc from 'fast-check';
+import { QUOTE_STATUSES } from '@/types/quote';
+
+const updateQuoteStatus = vi.fn(async () => true);
+const duplicateQuote = vi.fn(async () => null);
+const deleteQuote = vi.fn(async () => true);
+
+let mockQuotes: Array<Record<string, unknown>> = [];
+
+vi.mock('@/hooks/quotes', () => ({
+  useQuotes: () => ({
+    quotes: mockQuotes,
+    isLoading: false,
+    error: null,
+    deleteQuote,
+    duplicateQuote,
+    updateQuoteStatus,
+  }),
+}));
+
+vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
+
+const statusArb = fc.constantFrom(...QUOTE_STATUSES);
+
+const quoteArb = fc.record({
+  id: fc.uuid(),
+  quote_number: fc.stringMatching(/^ORC-\d{4}-\d{4}$/),
+  client_name: fc.string({ minLength: 0, maxLength: 30 }),
+  client_company: fc.string({ minLength: 0, maxLength: 30 }),
+  status: statusArb,
+  total: fc.float({ min: 0, max: 1_000_000, noNaN: true }),
+  created_at: fc
+    .integer({ min: 1_600_000_000_000, max: 1_900_000_000_000 })
+    .map((ts) => new Date(ts).toISOString()),
+  valid_until: fc.option(
+    fc
+      .integer({ min: 1_600_000_000_000, max: 1_900_000_000_000 })
+      .map((ts) => new Date(ts).toISOString()),
+    { nil: null },
+  ),
+  notes: fc.string({ maxLength: 50 }),
+});
+
+beforeEach(() => {
+  mockQuotes = [];
+});
+
+describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
+  it('filteredQuotes é sempre subconjunto de quotes', () => {
+    fc.assert(
+      fc.property(fc.array(quoteArb, { minLength: 0, maxLength: 30 }), (quotes) => {
+        mockQuotes = quotes;
+        const { result } = renderHook(() => useQuotesListPage());
+        const ids = new Set(quotes.map((q) => q.id));
+        for (const q of result.current.filteredQuotes) {
+          expect(ids.has(q.id as string)).toBe(true);
+        }
+      }),
+      { numRuns: 100 },
+    );
+  });
+
+  it('onlyPendingStatuses é true sse quotes.length>0 && todos pending', () => {
+    fc.assert(
+      fc.property(fc.array(quoteArb, { minLength: 0, maxLength: 20 }), (quotes) => {
+        mockQuotes = quotes;
+        const { result } = renderHook(() => useQuotesListPage());
+        const expected = quotes.length > 0 && quotes.every((q) => q.status === 'pending');
+        expect(result.current.onlyPendingStatuses).toBe(expected);
+      }),
+      { numRuns: 100 },
+    );
+  });
+
+  it('sort total sem perdas: |filteredQuotes| === |quotes| quando sem filtros', () => {
+    fc.assert(
+      fc.property(
+        fc.array(quoteArb, { minLength: 1, maxLength: 15 }),
+        fc.constantFrom('newest', 'oldest', 'highest', 'lowest', 'expiring'),
+        (quotes, sortBy) => {
+          mockQuotes = quotes;
+          const { result } = renderHook(() => useQuotesListPage());
+          act(() => {
+            result.current.setSortBy(sortBy as 'newest');
+          });
+          expect(result.current.filteredQuotes.length).toBe(quotes.length);
+        },
+      ),
+      { numRuns: 60 },
+    );
+  });
+
+  it('handleClearFilters reseta busca/status/sort', () => {
+    fc.assert(
+      fc.property(fc.array(quoteArb, { maxLength: 5 }), statusArb, (quotes, status) => {
+        mockQuotes = quotes;
+        const { result } = renderHook(() => useQuotesListPage());
+        act(() => {
+          result.current.setSearchTerm('xyz');
+          result.current.setStatusFilter(status);
+          result.current.setSortBy('lowest');
+        });
+        act(() => {
+          result.current.handleClearFilters();
+        });
+        expect(result.current.searchTerm).toBe('');
+        expect(result.current.statusFilter).toBe('all');
+        expect(result.current.sortBy).toBe('newest');
+      }),
+      { numRuns: 50 },
+    );
+  });
+
+  it('filtro por status retorna apenas quotes com status correspondente', () => {
+    fc.assert(
+      fc.property(fc.array(quoteArb, { minLength: 1, maxLength: 20 }), statusArb, (quotes, status) => {
+        mockQuotes = quotes;
+        const { result } = renderHook(() => useQuotesListPage());
+        act(() => {
+          result.current.setStatusFilter(status);
+        });
+        for (const q of result.current.filteredQuotes) {
+          expect(q.status).toBe(status);
+        }
+      }),
+      { numRuns: 100 },
+    );
+  });
+});
