@@ -43,7 +43,9 @@ describe('QuoteBuilderSummaryColumn Discount Logic', () => {
     );
 
     // Switch to amount
-    const select = screen.getByLabelText('Tipo de desconto');
+    // aria-label real do controle é descritivo ('Tipo de desconto — alternar entre % e R$');
+    // usa regex de substring em vez de match exato (a11y foi melhorada, teste ficou stale).
+    const select = screen.getByLabelText(/Tipo de desconto/);
     fireEvent.click(select);
     // Find R$ option and click it
     // In shadcn select, this might need more specific queries if it's open, but let's assume direct onValueChange works for now if we invoke it

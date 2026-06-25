@@ -236,7 +236,9 @@ describe('stock-filter — fuzz (500 simulações)', () => {
     // eslint-disable-next-line no-console
     console.log('[stock-filter fuzz]', report);
     expect(report.total).toBe(SIMS);
-  });
+    // timeout generoso: fuzz de 500 simulações pode levar ~17s sob saturação de CPU no run
+    // completo (passa folgado isolado). Não enfraquece invariantes — só evita falso-timeout.
+  }, 30000);
 
   it('cor inexistente sempre retorna lista vazia (fast-path via índice)', () => {
     const rnd = mulberry32(1);

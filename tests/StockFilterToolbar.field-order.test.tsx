@@ -40,5 +40,6 @@ describe('StockFilterToolbar — ordem dos campos', () => {
       expect(qty.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       unmount();
     }
-  });
+    // timeout generoso: 200 render+unmount estouram 5s sob carga do run completo (ok isolado).
+  }, 20000);
 });
