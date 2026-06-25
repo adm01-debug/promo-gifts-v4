@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { QuoteBuilderSummaryColumn } from '../QuoteBuilderSummaryColumn';
 
@@ -29,24 +29,19 @@ describe('QuoteBuilderSummaryColumn Discount Logic', () => {
     negotiationMarkup: 0,
   };
 
-  it('converts percent to amount correctly with round2', () => {
-    const setDiscountValue = vi.fn();
-    const setDiscountType = vi.fn();
-
+  it('renders the discount-type toggle with an accessible label (% ↔ R$)', () => {
     render(
       <QuoteBuilderSummaryColumn
         {...defaultProps}
         discountValue={10.589} // 10.59%
-        setDiscountValue={setDiscountValue}
-        setDiscountType={setDiscountType}
       />,
     );
 
-    // Switch to amount
-    const select = screen.getByLabelText('Tipo de desconto');
-    fireEvent.click(select);
-    // Find R$ option and click it
-    // In shadcn select, this might need more specific queries if it's open, but let's assume direct onValueChange works for now if we invoke it
+    // O seletor de tipo de desconto deve renderizar com rótulo acessível.
+    // (A conversão round2 % ↔ R$ é coberta pelos testes de lógica pura abaixo.)
+    const select = screen.getByLabelText(/Tipo de desconto/i);
+    expect(select).toBeInTheDocument();
+    expect(screen.getByTestId('quote-discount-type-select')).toBeInTheDocument();
   });
 
   // Since we want to test the logic in handleDiscountTypeChange specifically
