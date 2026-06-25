@@ -276,21 +276,27 @@ export function DiscountApprovalQueue() {
                   className="border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => respond.mutate({ id: req.id, quoteId, approved: false })}
                   disabled={processingId === req.id || req.status !== 'pending'}
+                  data-testid={`discount-reject-${req.id}`}
                 >
                   <XCircle className="mr-2 h-4 w-4" /> Recusar
                 </Button>
                 <Button
                   onClick={() => respond.mutate({ id: req.id, quoteId, approved: true })}
                   disabled={processingId === req.id || req.status !== 'pending'}
+                  data-testid={`discount-approve-${req.id}`}
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                 </Button>
               </div>
-              {req.status !== 'pending' && (
-                <p className="text-xs text-muted-foreground">
-                  Já decidido — status atual: <strong>{req.status}</strong>.
-                </p>
-              )}
+              <p
+                className="text-xs text-muted-foreground"
+                data-testid={`discount-request-status-${req.id}`}
+                data-status={req.status}
+              >
+                {req.status !== 'pending' && (
+                  <>Já decidido — status atual: <strong>{req.status}</strong>.</>
+                )}
+              </p>
               <DiscountApprovalAuditTrail requestId={req.id} defaultOpen={isHighlighted} />
             </CardContent>
           </Card>
