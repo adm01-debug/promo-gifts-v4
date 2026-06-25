@@ -76,6 +76,7 @@ interface Props {
 }
 
 export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: Props) {
+  const [search, setSearch] = useState('');
   const { data, isLoading } = useQuery({
     queryKey: ['discount-approval-audit', requestId],
     queryFn: async () => {
@@ -92,6 +93,25 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
     },
     staleTime: 30_000,
   });
+
+  const filtered = useMemo<AuditRow[]>(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return data;
+    return data.filter((r) => {
+      const actor = `${r.actor?.full_name ?? ''} ${r.actor?.email ?? ''}`.toLowerCase();
+      const meta = EVENT_META[r.event]?.label.toLowerCase() ?? '';
+      const notes = `${r.admin_notes ?? ''} ${r.seller_notes ?? ''}`.toLowerCase();
+      return (
+        actor.includes(q) ||
+        meta.includes(q) ||
+        notes.includes(q) ||
+        r.event.includes(q) ||
+        r.actor_role.toLowerCase().includes(q)
+      );
+    });
+  }, [data, search]);
+
 
   return (
     <Accordion
