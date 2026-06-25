@@ -40,18 +40,21 @@ export function DiscountApprovalQueue() {
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('request');
   const highlightedRef = useRef<HTMLDivElement | null>(null);
+  const [filters, setFilters] = useState<DiscountApprovalFilters>(EMPTY_FILTERS);
 
+  // Carregamos TODOS os status (até 200 últimos) para permitir busca/histórico.
+  // O filtro `status` da UI é aplicado client-side via `applyDiscountApprovalFilters`.
   const { data, isLoading: queryLoading } = useQuery({
-    queryKey: ['discount-approval-queue'],
+    queryKey: ['discount-approval-queue', 'all-status'],
     queryFn: async () => {
       const { data: rows, error } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select(
-          '*, quotes:quote_id(quote_number, client_name, client_company, total, subtotal, discount_percent, negotiation_markup_percent, real_subtotal, real_discount_percent)',
+          '*, quotes:quote_id(quote_number, client_name, client_company, total, subtotal, discount_percent, negotiation_markup_percent, real_subtotal, real_discount_percent), seller:seller_id(full_name, email)',
         )
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(200);
       if (error) throw error;
       return rows || [];
     },
@@ -59,6 +62,21 @@ export function DiscountApprovalQueue() {
     retry: 0,
     retryOnMount: false,
   });
+
+  const sellers = useMemo(() => {
+    const map = new Map<string, string>();
+    (data ?? []).forEach((r: { seller_id: string; seller?: { full_name?: string | null; email?: string | null } | null }) => {
+      const label = r.seller?.full_name || r.seller?.email || r.seller_id.slice(0, 8);
+      if (!map.has(r.seller_id)) map.set(r.seller_id, label);
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [data]);
+
+  const filteredData = useMemo(
+    () => (data ? applyDiscountApprovalFilters(data as Parameters<typeof applyDiscountApprovalFilters>[0], filters) : []),
+    [data, filters],
+  );
+
 
   const isLoading = !rolesLoaded || queryLoading;
 
