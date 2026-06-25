@@ -6,6 +6,7 @@
  * Renderizado dentro de cada card da `DiscountApprovalQueue`. Lazy: só busca
  * quando o usuário expande o accordion (evita N+1 inicial na fila).
  */
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,7 +18,8 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, XCircle, AlertTriangle, History, FileDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CheckCircle2, Clock, XCircle, AlertTriangle, History, FileDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportDiscountAuditPdf } from '@/lib/quotes/exportDiscountAuditPdf';
