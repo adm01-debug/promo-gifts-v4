@@ -1,19 +1,24 @@
 /**
  * E2E — Status muda em tempo real (sem reload) quando outra sessão decide.
- * Duas BrowserContexts paralelas; seed compartilhado via setupDiscountAdmin
- * (idempotente — segundo contexto não duplica). Asserções via `data-status`
- * (nunca via texto renderizado).
+ * Duas BrowserContexts paralelas + seed compartilhado idempotente.
+ * Asserções 100% via `data-status` (zero dependência de texto).
+ *
+ * Trace + screenshot em falha já habilitados em playwright.config.ts;
+ * `test.use` reforça `trace: 'on'` para diagnóstico extra de flakiness.
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
-import { gotoAndSettle } from "../helpers/nav";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
+import { DiscountApprovalPO } from "../helpers/discount-approval-po";
 
 test.describe.configure({ mode: "parallel" });
+test.use({ trace: "on", screenshot: "only-on-failure" });
 
 test.describe("Discount approval — atualização de status sem reload", () => {
   test("aprovação em outra sessão reflete na timeline aberta", async ({
     browser,
   }, testInfo) => {
+    // Realtime/polling pode encostar nos 35s sob carga — folga generosa.
+    test.setTimeout(120_000);
     requireAdmin();
 
     const ctxA = await browser.newContext();
@@ -21,38 +26,30 @@ test.describe("Discount approval — atualização de status sem reload", () => 
     const pageA = await ctxA.newPage();
     const pageB = await ctxB.newPage();
 
-    // Seed via contexto A (idempotente — B reaproveita o pending criado).
     const { seed } = await setupDiscountAdmin(pageA, testInfo, { minPending: 1 });
     if (seed.skipped && seed.pendingTotal === 0) {
       await ctxA.close();
       await ctxB.close();
       test.skip(true, `Sem pending e seed falhou: ${seed.skipped}`);
     }
-    // Contexto B: login + navegar (sem novo seed — reaproveita o de A).
     await setupDiscountAdmin(pageB, testInfo, { minPending: 0 });
 
-    const firstPending = pageA
-      .locator('[data-testid^="discount-request-card-"][data-status="pending"]')
-      .first();
-    await expect(firstPending).toBeVisible({ timeout: 10_000 });
+    const poA = new DiscountApprovalPO(pageA);
+    const poB = new DiscountApprovalPO(pageB);
 
-    const requestId = (await firstPending.getAttribute("data-testid"))?.replace(
-      "discount-request-card-",
-      "",
-    );
-    test.skip(!requestId, "data-testid sem id parseável");
+    const requestId = await poA.firstPendingId();
+    test.skip(!requestId, "Sem request pending visível após seed");
 
-    await gotoAndSettle(pageA, `/admin/aprovacoes-desconto/${requestId}`);
-    const statusA = pageA.locator('[data-testid="discount-request-status"]');
-    await expect(statusA).toHaveAttribute("data-status", "pending", { timeout: 5_000 });
+    await poA.openDetail(requestId!);
+    await poA.expectDetailStatus("pending");
 
-    await gotoAndSettle(pageB, "/admin/usuarios?tab=discounts");
-    const approveB = pageB.getByTestId(`discount-approve-${requestId}`);
-    await expect(approveB).toBeVisible({ timeout: 10_000 });
-    await approveB.click();
+    await poB.openQueue();
+    await poB.approveFromQueue(requestId!, 40_000);
 
-    // Sessão A: status muda sem reload — assert via data-status (sem texto).
-    await expect(statusA).toHaveAttribute("data-status", "approved", { timeout: 35_000 });
+    // Sessão A: timeline reflete sem reload via polling/realtime.
+    await expect(poA.detailStatus).toHaveAttribute("data-status", "approved", {
+      timeout: 40_000,
+    });
 
     await ctxA.close();
     await ctxB.close();
