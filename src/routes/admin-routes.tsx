@@ -23,6 +23,8 @@ import {
   EmaHealthPage,
 
   AdminUsuariosPage,
+  DiscountRequestDetailPage,
+
   AdminVideoVariantsPage,
   AdminWorkflowsPage,
   DevChallengeExamplesPage,
