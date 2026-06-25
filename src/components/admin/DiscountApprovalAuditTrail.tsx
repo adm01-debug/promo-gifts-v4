@@ -16,8 +16,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Clock, XCircle, AlertTriangle, History } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Clock, XCircle, AlertTriangle, History, FileDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { exportDiscountAuditPdf } from '@/lib/quotes/exportDiscountAuditPdf';
+
 
 interface AuditRow {
   id: string;
