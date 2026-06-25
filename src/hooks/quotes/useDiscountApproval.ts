@@ -144,6 +144,7 @@ export function useDiscountApproval() {
           if (code === '23505') {
             logger.warn('Duplicate pending approval intercepted by unique index; treating as idempotent success');
             toast.success('Solicitação de aprovação enviada ao admin!');
+            invalidateWidget();
             return true;
           }
           await logRlsDenial(error, {
