@@ -1,47 +1,36 @@
-Auditoria exaustiva — gaps encontrados e plano de correção
+## Auditoria das mudanças recentes em `QuotesListPage`
 
-Estado atual
-- Hook `useDiscountApproval.ts` ✅ correto: `invalidateWidget()` nos 4 caminhos, deps OK.
-- Widget `MyDiscountRequestsWidget.tsx` ✅ correto: `totalPending` via `useMemo`, badge `discount-widget-pending-total` com `data-count`, realtime com `refetchType: 'active'`.
-- CI: novo job `discount-widget-badge-live` adicionado com `--repeat-each=3` ✅.
+### Validações OK
+1. **Imports** — todos os ícones e helpers removidos (`DollarSign`, `CheckCircle2`, `Clock`, `TrendingUp`, `TrendingDown`, `Card`, `CardContent`, `formatCurrency`) não têm mais uso na página.
+2. **Destructuring** — `kpis` e `funnelData` removidos do `useQuotesListPage()` sem quebrar nada (TypeScript não exige consumir tudo).
+3. **Layout** — header e filtros continuam encadeados; spacing `space-y-3/4` mantém ritmo.
+4. **Botão "Novo Orçamento"** — `px-2` + `mr-1` reduz largura ~30% sem alterar altura/cor/tipografia. `data-testid="quote-new-button"` preservado (E2E continua passando).
+5. **Tipos** — sem `any` introduzido; `QuoteStatus` ainda usado mais abaixo.
 
-Gaps reais identificados na revisão (alto risco de skip silencioso ou flake)
+### Gaps encontrados (limpeza)
 
-GAP 1 — POST sem `seller_id` no spec 04ck
-- O spec atual envia o INSERT em `discount_approval_requests` sem `seller_id`. Os outros specs (`discount-approval-seed-page.ts` linha 119) enviam `seller_id: sellerId` explicitamente.
-- Sem `seller_id`, a RLS `dar_insert_scope` (que valida `seller_id = auth.uid()`) rejeita o INSERT → o `expect(inserted.id).toBeTruthy()` falha sem explicar a causa real.
+**Gap 1 — Linha em branco dupla**
+`src/pages/quotes/QuotesListPage.tsx:109-110` ficou com 2 linhas vazias após a remoção do bloco KPI/Funil. Cosmético, mas o ESLint da casa marca.
 
-GAP 2 — `pickEligibleQuote` não filtra por dono
-- A query `quotes?select=id&order=created_at.desc&limit=40` traz quotes de qualquer vendedor visíveis ao admin.
-- INSERT de `discount_approval_requests` para quote de outro seller dispara RLS, ou pior: cria registro "órfão" do ponto de vista do widget (porque o widget filtra `seller_id=eq.{userId}`), fazendo o badge NÃO incrementar.
-- Precisa filtrar `quotes?seller_id=eq.<adminUid>` (com paginação suficiente) e preferir quote do admin sem pending ativo.
+**Gap 2 — Componente órfão**
+`src/components/quotes/QuotesFunnelChart.tsx` não tem mais nenhum import no projeto (`rg` confirmou). Vira dead code se não for usado em outro lugar.
 
-GAP 3 — Captura do `auth.uid()` ausente
-- Para os GAPs 1 e 2 precisamos do `user.id` do admin. O JWT do localStorage já carrega `user.id` (visto em `discount-approval-seed-page.ts`). Vou ler `parsed.user.id` no mesmo `evaluate` que lê o JWT (helper `readJwtAndUid`).
+**Gap 3 — Hook ainda computa dados não usados**
+`src/pages/quotes/useQuotesListPage.ts` continua calculando `kpis` (reduce sobre `filteredQuotes`) e `funnelData` (map de transições) a cada render. Sem consumidores, é trabalho desperdiçado em toda renderização da página de orçamentos.
 
-GAP 4 (menor) — Duplicação de cobertura entre jobs
-- O job antigo `discount-approval-e2e` roda glob `04c` que inclui `04ck`. O novo job roda `04ck ×3`. Não é bug, apenas ruído — manter por ora porque cobrem cenários complementares (×1 + ×3).
+### Plano de correção
 
-Mudanças a aplicar (apenas no spec)
+1. **`src/pages/quotes/QuotesListPage.tsx`** — colapsar as 2 linhas em branco da linha 109-110 para uma única linha.
+2. **`src/components/quotes/QuotesFunnelChart.tsx`** — deletar o arquivo (e qualquer teste/snapshot associado, se houver).
+3. **`src/pages/quotes/useQuotesListPage.ts`** — remover o cálculo de `kpis` e `funnelData` (e os imports que ficarem órfãos), e remover ambos do objeto retornado.
+4. **Verificação pós-edição** — `rg "QuotesFunnelChart|funnelData|kpis" src/pages/quotes src/components/quotes` deve voltar vazio.
 
-`e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`:
-1. Trocar `readJwt` por `readJwtAndUid` retornando `{ jwt, uid }`.
-2. `pickEligibleQuote(page, jwt, uid)`:
-   - `quotes?select=id&seller_id=eq.<uid>&order=created_at.desc&limit=40`
-   - Mesma lógica de excluir quotes com pending ativo.
-3. POST com `seller_id: uid` no payload.
-4. Mensagens de `expect` mais explícitas mencionando a causa provável (RLS) para diagnóstico.
-5. Manter cleanup `DELETE` e seletores via `TID()`.
+### Não afetado (confirmado)
+- E2E specs (`quote-new-button` continua).
+- RLS / banco — nada toca em backend.
+- Outros consumidores de `kpis` no projeto (intelligence, sales) são objetos diferentes, sem colisão de nome.
 
-Critérios de validação (auto-checagem mental, sem rodar Playwright local — sem secrets)
-- INSERT do spec respeita `dar_insert_scope` (`seller_id = auth.uid()`).
-- Widget recebe evento realtime porque filtra `seller_id=eq.<userId>` e o INSERT bate com isso.
-- `pickEligibleQuote` só retorna quote do admin sem pending → impossível colidir com `uniq_dar_quote_pending`.
-- PATCH `approved` continua válido (admin decidindo a própria solicitação — mesmo padrão do `04cd`).
-- Cleanup `DELETE` admin sobre o próprio registro → RLS OK.
-- Quando `totalPending` volta a 0, `Badge` desmonta e `toHaveCount(0)` valida.
-
-Arquivos afetados
-- `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts` (editar).
-
-Sem alteração em hook, widget, schema, RLS, funções, edge functions ou CI.
+### Arquivos afetados
+- `src/pages/quotes/QuotesListPage.tsx` (1 linha)
+- `src/components/quotes/QuotesFunnelChart.tsx` (delete)
+- `src/pages/quotes/useQuotesListPage.ts` (remover bloco kpis+funnelData + imports órfãos)

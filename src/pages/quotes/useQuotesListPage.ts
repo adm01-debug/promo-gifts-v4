@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
-import { useQuoteFunnel, useQuotes } from '@/hooks/quotes';
+import { useQuotes } from '@/hooks/quotes';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
@@ -23,22 +23,6 @@ export function useQuotesListPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
-
-  // KPIs
-  const kpis = useMemo(() => {
-    const total = quotes.length;
-    const approved = quotes.filter((q) => q.status === 'approved').length;
-    const pending = quotes.filter((q) => ['pending', 'sent'].includes(q.status)).length;
-    const totalValue = quotes.reduce((sum, q) => sum + (q.total || 0), 0);
-    const approvedValue = quotes
-      .filter((q) => q.status === 'approved')
-      .reduce((sum, q) => sum + (q.total || 0), 0);
-    const conversionRate = total > 0 ? Math.round((approved / total) * 100) : 0;
-
-    return { total, approved, pending, totalValue, approvedValue, conversionRate };
-  }, [quotes]);
-
-  const funnelData = useQuoteFunnel(quotes, {});
 
   // Search
   const quoteFuse = useMemo(() => {
@@ -136,8 +120,6 @@ export function useQuotesListPage() {
     setDeleteConfirmId,
     bulkDeleteIds,
     setBulkDeleteIds,
-    kpis,
-    funnelData,
     filteredQuotes,
     handleDelete,
     handleBulkDelete,
