@@ -126,9 +126,10 @@ export default function QuotesListPage() {
               <Button
                 data-testid="quote-new-button"
                 onClick={() => navigate('/orcamentos/novo')}
-                className="px-2"
+                size="sm"
+                className="w-36 px-2 text-xs"
               >
-                <Plus className="mr-1 h-4 w-4" />
+                <Plus className="mr-1 h-3.5 w-3.5" />
                 Novo Orçamento
               </Button>
             </div>
