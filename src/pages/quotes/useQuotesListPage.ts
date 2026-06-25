@@ -120,8 +120,6 @@ export function useQuotesListPage() {
     setDeleteConfirmId,
     bulkDeleteIds,
     setBulkDeleteIds,
-    kpis,
-    funnelData,
     filteredQuotes,
     handleDelete,
     handleBulkDelete,
