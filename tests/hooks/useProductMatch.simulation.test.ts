@@ -1,13 +1,10 @@
 /**
- * MONTE-CARLO / PROPERTY TESTS for the Match de Produtos engine (real implementation).
+ * SIMULAÇÃO MONTE-CARLO / PROPERTY TESTS da engine RICA de Match de Produtos.
  *
- * Seeded PRNG (mulberry32 — fully reproducible) generates thousands of randomized
- * catalogue scenarios and asserts invariants that must hold for ANY input. This is the
- * "simulação de centenas de cenários" guard: type-mixed/null ids, unicode, empty pools,
- * huge pools, degenerate names.
- *
- * NOTE (2026-06-25): a previous revision imported a never-implemented API
- * (tokenizeName/nameTokenSimilarity/eqId). This rewrite validates the engine that ships.
+ * PRNG semeado (mulberry32 — totalmente reproduzível) gera milhares de cenários de catálogo
+ * aleatórios e afirma invariantes que devem valer para QUALQUER entrada. Este é o guard de
+ * "simulação de centenas de cenários": ids type-mixed/null, unicode, pools vazios, pools
+ * enormes, nomes degenerados, descritores/materiais aleatórios.
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
@@ -15,11 +12,12 @@ import {
   calculateMatchScore,
   getMatchType,
   useProductMatch,
+  eqId,
   type MatchResult,
 } from '@/hooks/products/useProductMatch';
 import type { Product } from '@/types/product-catalog';
 
-// ── Seeded PRNG (mulberry32) — reproducible ────────────────────────────────
+// ── PRNG semeado (mulberry32) — reproduzível ───────────────────────────────
 function mulberry32(seed: number) {
   return function () {
     seed |= 0;
@@ -35,6 +33,8 @@ const WORDS = [
   'cafe', 'xicara', 'cracha', 'pen', 'drive', 'metal', 'bambu', 'inox', 'azul',
   'vermelha', 'termico', 'garrafa', 'churrasco', 'avental', 'mouse', 'teclado',
 ];
+const DESCRIPTORS = ['leve', 'dobravel', 'parede dupla', 'antiderrapante', 'reciclado', 'premium'];
+const MATERIALS = ['aco inox', 'bambu', 'plastico', 'metal', 'vidro', 'silicone'];
 const CATS: (string | null | undefined)[] = ['cat-1', 'cat-2', 'cat-3', null, undefined];
 const SUPS = ['s1', 's2', 's3'];
 const STOCKS = ['in-stock', 'out-of-stock'] as const;
@@ -42,6 +42,8 @@ const VALID_TYPES = new Set<MatchResult['matchType']>(['complementary', 'identic
 
 function randProduct(rng: () => number, i: number): Product {
   const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rng() * arr.length)];
+  const sample = <T,>(arr: readonly T[], max: number): T[] =>
+    Array.from({ length: Math.floor(rng() * (max + 1)) }, () => pick(arr));
   const nWords = 1 + Math.floor(rng() * 4);
   const name = Array.from({ length: nWords }, () => pick(WORDS)).join(' ');
   return {
@@ -53,7 +55,8 @@ function randProduct(rng: () => number, i: number): Product {
     images: [],
     stock: 100,
     colors: [],
-    materials: [],
+    materials: sample(MATERIALS, 3),
+    descriptiveTags: sample(DESCRIPTORS, 3),
     minQuantity: 1,
     stockStatus: pick(STOCKS),
     featured: false,
@@ -73,6 +76,23 @@ function randProduct(rng: () => number, i: number): Product {
   } as Product;
 }
 
+describe('Monte-Carlo — eqId invariants', () => {
+  it('is reflexive/symmetric for type-mixed ids and null-safe (3000 cases)', () => {
+    const rng = mulberry32(99);
+    for (let i = 0; i < 3000; i++) {
+      const n = Math.floor(rng() * 50);
+      expect(eqId(n, String(n))).toBe(true);
+      expect(eqId(n, n)).toBe(true);
+      const a = rng() > 0.5 ? null : n;
+      const b = rng() > 0.5 ? undefined : n;
+      // null/undefined nunca são iguais a nada
+      if (a == null || b == null) expect(eqId(a, b)).toBe(false);
+      // simetria
+      expect(eqId(a, b)).toBe(eqId(b, a));
+    }
+  });
+});
+
 describe('Monte-Carlo — calculateMatchScore invariants', () => {
   it('score is always a finite number >= 0 and reasons is an array (5000 random pairs)', () => {
     const rng = mulberry32(12345);
@@ -90,8 +110,9 @@ describe('Monte-Carlo — calculateMatchScore invariants', () => {
     const base = (over: Partial<Product>): Product =>
       ({
         id: 'x', name: 'x', sku: 'x', price: 0, images: [], stock: 0, colors: [], materials: [],
-        minQuantity: 1, stockStatus: 'in-stock', featured: false, newArrival: false, onSale: false,
-        isKit: false, category: { id: '1', name: 'X' }, supplier: { id: 's', name: 'S' },
+        descriptiveTags: [], minQuantity: 1, stockStatus: 'in-stock', featured: false,
+        newArrival: false, onSale: false, isKit: false, category: { id: '1', name: 'X' },
+        supplier: { id: 's', name: 'S' },
         tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
         ...over,
       }) as Product;
@@ -101,6 +122,7 @@ describe('Monte-Carlo — calculateMatchScore invariants', () => {
       base({ id: 'w3', name: 'Tábua', category_id: null }),
       base({ id: 'w4', name: 'Faca', category_id: undefined }),
       ((): Product => { const p = base({ id: 'w5', name: 'Copo' }); (p as unknown as { tags: undefined }).tags = undefined; return p; })(),
+      ((): Product => { const p = base({ id: 'w6', name: 'Squeeze' }); (p as unknown as { materials: undefined }).materials = undefined; (p as unknown as { descriptiveTags: undefined }).descriptiveTags = undefined; return p; })(),
     ];
     for (const a of weird) {
       for (const b of weird) {
@@ -114,10 +136,21 @@ describe('Monte-Carlo — calculateMatchScore invariants', () => {
 });
 
 describe('Monte-Carlo — getMatchType invariants', () => {
-  it('always returns one of the three valid match types (2000 random inputs)', () => {
+  it('always returns one of the three valid match types (object arg, 2000 random inputs)', () => {
     const rng = mulberry32(7);
     for (let i = 0; i < 2000; i++) {
-      const t = getMatchType(Math.floor(rng() * 130), rng() > 0.5, rng() > 0.5);
+      const t = getMatchType({
+        hasComplementary: rng() > 0.5,
+        nameSim: rng(),
+        sharedTokens: Math.floor(rng() * 4),
+      });
+      expect(VALID_TYPES.has(t)).toBe(true);
+    }
+  });
+  it('returns a valid type even when sharedTokens is omitted', () => {
+    const rng = mulberry32(8);
+    for (let i = 0; i < 1000; i++) {
+      const t = getMatchType({ hasComplementary: rng() > 0.5, nameSim: rng() });
       expect(VALID_TYPES.has(t)).toBe(true);
     }
   });
@@ -144,8 +177,21 @@ describe('Monte-Carlo — useProductMatch hook invariants', () => {
         expect(Number.isFinite(m.score)).toBe(true);
         expect(m.score).toBeGreaterThanOrEqual(minScore);
         expect(allowed).toContain(m.matchType);
+        expect(Number.isFinite(m.nameSim)).toBe(true);
       }
       expect(ms.length).toBeLessThanOrEqual(pool.length);
+    }
+  });
+
+  it('strict matchTypes filter (only complementary) never returns other types (100 pools)', () => {
+    const rng = mulberry32(303);
+    for (let p = 0; p < 100; p++) {
+      const pool = Array.from({ length: 1 + Math.floor(rng() * 20) }, (_, i) => randProduct(rng, i));
+      const sourceProduct = randProduct(rng, 50000 + p);
+      const { result } = renderHook(() =>
+        useProductMatch(sourceProduct, pool, { minScore: 0, matchTypes: ['complementary'] }),
+      );
+      for (const m of result.current.matches) expect(m.matchType).toBe('complementary');
     }
   });
 
@@ -155,7 +201,7 @@ describe('Monte-Carlo — useProductMatch hook invariants', () => {
     const sourceProduct = randProduct(rng, 777);
     const run = () =>
       renderHook(() => useProductMatch(sourceProduct, pool, { minScore: 1 })).result.current.matches.map(
-        (m) => `${m.product.id}:${m.score}:${m.matchType}`,
+        (m) => `${m.product.id}:${m.score}:${m.matchType}:${m.nameSim.toFixed(4)}`,
       );
     expect(run()).toEqual(run());
   });
