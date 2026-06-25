@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProductInsight {
   totalViews: number;
@@ -21,6 +22,11 @@ interface ProductInsight {
 }
 
 export function useProductInsights(productId?: string, productSku?: string) {
+  // BUG-HEAD-2 FIX (2026-06-25): guard rolesLoaded para evitar HEAD request em
+  // product_views antes do JWT estar pronto (RLS bloqueia → 401/abort →
+  // "Falha ao carregar Buscar: HEAD" no DevTools).
+  const { rolesLoaded } = useAuth();
+
   return useQuery({
     queryKey: ['product-insights', productSku],
     queryFn: async (): Promise<ProductInsight> => {
@@ -160,7 +166,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
         recentActivity: recentActivity.slice(0, 5),
       };
     },
-    enabled: !!productSku,
+    enabled: !!productSku && rolesLoaded, // BUG-HEAD-2 FIX: guard JWT
     staleTime: 5 * 60 * 1000,
   });
 }

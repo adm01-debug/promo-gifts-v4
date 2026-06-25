@@ -30,10 +30,25 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 // A11y helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * BUG-A11Y-1 FIX (2026-06-25): Busca recursiva em profundidade arbitrária.
+ *
+ * A implementação anterior só verificava 2 níveis (children + grandchildren).
+ * O ConfirmDialog (ui) tem AlertDialogTitle em NÍVEL 4:
+ *   AlertDialogContent > AlertDialogHeader > div.flex > div.space-y-2 > AlertDialogTitle
+ *
+ * Com apenas 2 níveis, hasTitle=false → fallback sr-only é injetado → dois
+ * <h2 id={titleId}> no DOM → IDs duplicados → Radix UI emite console.error.
+ *
+ * A recursão tem limite de profundidade (maxDepth=8) para evitar percorrer
+ * árvores arbitrariamente grandes em componentes com muitos filhos.
+ */
 function childrenHaveType(
   children: React.ReactNode,
   types: Array<React.ElementType | string>,
+  maxDepth = 8,
 ): boolean {
+  if (maxDepth === 0) return false;
   let found = false;
   React.Children.forEach(children, (child) => {
     if (found) return;
@@ -46,15 +61,8 @@ function childrenHaveType(
       return;
     }
     const nested = (child.props as { children?: React.ReactNode }).children;
-    if (nested) {
-      React.Children.forEach(nested, (grandchild) => {
-        if (found) return;
-        if (!React.isValidElement(grandchild)) return;
-        const gt = grandchild.type as React.ElementType;
-        if (types.some((m) => m === gt || (gt as { displayName?: string }).displayName === m)) {
-          found = true;
-        }
-      });
+    if (nested && maxDepth > 1) {
+      found = childrenHaveType(nested, types, maxDepth - 1);
     }
   });
   return found;
