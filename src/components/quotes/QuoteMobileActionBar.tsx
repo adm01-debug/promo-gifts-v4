@@ -47,7 +47,13 @@ export function QuoteMobileActionBar({
           {isSyncing ? '...' : 'Sincronizar'}
         </Button>
       )}
-      <Button size="sm" onClick={onDownloadPDF} disabled={isGeneratingPDF} className="flex-1 gap-2">
+      <Button
+        size="sm"
+        onClick={onDownloadPDF}
+        disabled={isGeneratingPDF}
+        className="flex-1 gap-2"
+        data-testid="export-pdf-button"
+      >
         {isGeneratingPDF ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
