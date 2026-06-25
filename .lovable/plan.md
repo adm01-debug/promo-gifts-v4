@@ -1,58 +1,60 @@
-## Status: validação exaustiva já executada
+## Objetivo
+Modernizar o FAB "Novo Orçamento" (`quote-new-button`) em `src/pages/quotes/QuotesListPage.tsx` com efeito de pulsação sutil e profissional, mantendo todos os contratos de a11y que o gate `check-fab-a11y` valida.
 
-As 7 camadas do plano foram executadas no turno anterior. Resultado: **84/84 verificações verdes**, 1 risco real encontrado e corrigido.
+## Design proposto
 
-> Se reaprovar, eu apenas re-executo as camadas para reconfirmar (sem novas edições).
+**Camadas visuais (de fora pra dentro):**
+1. **Halo pulsante:** anel translúcido `bg-primary/40` posicionado absolutamente atrás do botão com `animate-ping` (Tailwind built-in) — cria a onda expandindo a cada ~1s.
+2. **Botão principal:** mantém formato circular, ganha `bg-gradient-to-br from-primary to-primary/80`, `shadow-lg shadow-primary/30` para sensação de elevação, ícone `Plus` com `transition-transform group-hover:rotate-90` (micro-interação moderna).
+3. **Hover state:** `hover:shadow-xl hover:shadow-primary/40 hover:scale-110` (intensifica brilho + cresce levemente).
+4. **Foco por teclado:** mantém `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`.
 
-## Resultado consolidado (último run)
-
-| Camada | Resultado | Detalhe |
-|---|---|---|
-| 1. Sanity estática | ✅ | Gate 8/8; npm script + step CI + workflow snapshots presentes |
-| 2. Mutation testing | ✅ | **8/8 mutações detectadas** (aria-label, h-11, w-11, focus-ring, copy, testid, asChild, rounded-full) |
-| 3. RTL focado (3 suítes, 14 testes) | ✅ | 14/14 verdes; apenas warnings cosméticos de `act()` (Radix em jsdom) |
-| 4. Stress run | ✅ | 5/5 estáveis, 0 flake |
-| 5. Edge cases RTL | ✅ | `MAX_STEPS=25` cobre regressão; Shift+Tab determinístico |
-| 6. Análise estática E2E | ⚠️ → ✅ | **1 risco real corrigido**: foco residual antes do screenshot |
-| 7. Relatório | ✅ | `qa/FAB_NOVO_ORCAMENTO_VALIDATION.md` salvo |
-
-## Risco encontrado e mitigado
-
-Após o último `keyboard.press('Tab')` do spec E2E, o foco fica em outro
-elemento (outline `focus-visible` visível) e poderia provocar diff
-visual flutuante na baseline `quote-new-fab-header-*.png`.
-
-**Fix aplicado em `e2e/quotes/quote-new-fab.spec.ts`** antes do
-`toHaveScreenshot`:
-```ts
-await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
-await page.mouse.move(0, 0);
+**Estrutura JSX (mantém `TooltipTrigger asChild` envolvendo um único `<Button>`):**
+```tsx
+<TooltipTrigger asChild>
+  <Button
+    data-testid="quote-new-button"
+    aria-label="Novo orçamento"
+    className="group relative h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:scale-110 hover:shadow-xl hover:shadow-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+  >
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping"
+    />
+    <Plus className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
+  </Button>
+</TooltipTrigger>
 ```
 
-## Riscos avaliados e descartados (com justificativa)
+**Por que `animate-ping` (Tailwind nativo):**
+- Não exige novos keyframes em `tailwind.config.ts` nem CSS custom.
+- Já usa `cubic-bezier(0, 0, 0.2, 1) infinite` com fade — pulsação elegante.
+- O `<span>` halo fica `inset-0` atrás do conteúdo, sem afetar o tap target (44×44) nem o foco.
 
-- **`toBeHidden` vs Radix Tooltip:** Radix remove o nó via Presence ao
-  fechar; Playwright considera "hidden" qualquer elemento não anexado.
-  Timeout 3 s cobre a animação.
-- **Race em `fab.tap()` mobile:** já há fallback explícito com
-  `page.goBack()` se o tap disparar navegação antes do tooltip.
-- **`Shift+Tab` assume 1 hop:** validado por 5 runs estáveis; FAB é o
-  último focável do header com mocks abaixo — hop determinístico.
+## Validação obrigatória
 
-## Cenários simulados
+Após a mudança, rodar o gate estático para garantir 0 regressão:
+```bash
+node scripts/check-fab-accessibility.mjs   # esperado 8/8
+```
+Contratos preservados:
+- ✅ `data-testid="quote-new-button"`
+- ✅ `aria-label="Novo orçamento"`
+- ✅ `rounded-full`, `h-11`, `w-11`
+- ✅ `focus-visible:ring`
+- ✅ `<TooltipTrigger asChild>` + `<TooltipContent>` com copy "Criar novo orçamento em segundos"
 
-- 8 mutações regex (gate)
-- 14 testes RTL × 5 runs = 70 execuções
-- 6 análises de risco no E2E (1 corrigido, 5 OK)
-- **Total: 84 verificações independentes**
+## Acessibilidade (não-negociável)
 
-## Se reaprovar este plano
+- Halo recebe `aria-hidden="true"` e `pointer-events-none` — leitor de tela ignora e clique passa direto pro botão.
+- Animação respeita `prefers-reduced-motion`: Tailwind `animate-ping` já desativa automaticamente quando o usuário ativa "reduzir movimento" no SO.
+- Tap target permanece 44×44 (botão `h-11 w-11`); halo se expande visualmente mas não conta para hit-box.
 
-Re-executo apenas as camadas 1 + 2 + 3 + 4 como sanity em CI-style
-(não há novo código para tocar). Tempo estimado: ~2 min.
+## Arquivos
+- Editar: `src/pages/quotes/QuotesListPage.tsx` (apenas o bloco `<Button>` do FAB, ~10 linhas).
 
-## Pendência operacional (fora do escopo de código)
-
-Disparar manualmente o workflow **Update Quote Visual Snapshots** no
-GitHub Actions para gerar as 5 baselines do FAB com o fix de blur
-incluído.
+## Fora de escopo
+- Não tocar em `Tooltip`/`TooltipContent`/`TooltipTrigger` (manter copy e estrutura).
+- Não alterar o handler de click, nem o `navigate('/orcamentos/novo')`.
+- Não mudar testes, gate, workflow ou E2E.
+- Não introduzir keyframes custom em `tailwind.config.ts` (built-in basta).
