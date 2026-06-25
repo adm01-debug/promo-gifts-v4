@@ -307,3 +307,85 @@ jobs:
               repo: context.repo.repo,
               body,
             });
+
+  # Job dedicado ao spec do PDF exportado. Bloqueia merge em qualquer
+  # regressão de conteúdo do PDF (quote_number ausente, frase legada vazando).
+  quote-pdf-quote-number-e2e:
+    name: E2E PDF exportado · quote_number
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm install -D pdf-parse @types/pdf-parse || true
+      - run: npm run test:e2e:install
+      - name: Run Playwright — quote-pdf-quote-number
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-pdf-quote-number.spec.ts \
+            --project=chromium-authed \
+            --retries=1 \
+            --reporter=list
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-pdf
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Publica TUDO útil para debug: PDFs baixados, HTML do preview, traces,
+      # vídeos e screenshots quando o spec falha.
+      - name: Upload PDF + preview HTML + diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-pdf-failure-bundle
+          path: |
+            test-results/**/*.pdf
+            test-results/**/*.html
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+            test-results/**/*.webm
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Comment PR with PDF artifacts (on failure)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '### ❌ `quote-pdf-quote-number.spec.ts` falhou',
+              '',
+              `- 📊 Playwright HTML report: [run #${context.runId}](${runUrl}) → artifact \`playwright-report-quote-pdf\``,
+              '- 📎 PDF baixado + HTML do preview + traces + diffs: artifact `quote-pdf-failure-bundle`',
+              '',
+              '<details><summary>Reproduzir localmente</summary>',
+              '',
+              '```bash',
+              'npx playwright test e2e/quotes/quote-pdf-quote-number.spec.ts \\',
+              '  --project=chromium-authed --headed --trace=on',
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
