@@ -194,6 +194,9 @@ export function useDiscountApproval() {
             markup > 0
               ? `${sellerName} solicitou desconto real de ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
               : `${sellerName} solicitou ${requestedPercent.toFixed(1)}% de desconto (limite: ${maxAllowedPercent}%)`;
+          const deepLink = newRequestId
+            ? `/admin/usuarios?tab=discounts&request=${newRequestId}`
+            : '/admin/usuarios?tab=discounts';
           const { error: notifyErr } = await supabase.from('workspace_notifications').insert(
             adminRoles.map((a) => ({
               user_id: a.user_id,
@@ -201,9 +204,22 @@ export function useDiscountApproval() {
               message: msg,
               type: 'warning',
               category: 'discount',
-              action_url: '/admin/usuarios?tab=discounts',
+              action_url: deepLink,
+              metadata: {
+                request_id: newRequestId,
+                quote_id: quoteId,
+                seller_id: user.id,
+                seller_name: sellerName,
+                requested_discount_percent: requestedPercent,
+                max_allowed_percent: maxAllowedPercent,
+                real_discount_percent: requestedPercent,
+                apparent_discount_percent: apparent,
+                negotiation_markup_percent: markup,
+                seller_notes: sellerNotes || null,
+              },
             })),
           );
+
           if (notifyErr) logger.error('Failed to notify admins of approval request:', notifyErr);
         }
 
