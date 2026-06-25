@@ -1,0 +1,79 @@
+name: Update Quote Reset Snapshots
+
+# Workflow manual: regenera as baselines visuais do spec
+# `quote-reset-stepper-layout.spec.ts` (--update-snapshots) e commita os PNGs
+# de volta no branch escolhido. Use APENAS quando a mudança visual for
+# intencional (refactor de layout, novo step, etc.).
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch destino do commit (default: branch atual)'
+        required: false
+        default: ''
+      commit_message:
+        description: 'Mensagem do commit de baselines'
+        required: false
+        default: 'test(e2e): update quote-reset-stepper-layout snapshots'
+
+env:
+  TZ: America/Sao_Paulo
+  CI: 'true'
+
+jobs:
+  update-snapshots:
+    name: Regerar baselines (--update-snapshots)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.branch || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+
+      - name: Run Playwright with --update-snapshots
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-reset-stepper-layout.spec.ts \
+            --project=chromium-authed \
+            --update-snapshots \
+            --reporter=list
+
+      - name: Commit & push baselines
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/quotes/quote-reset-stepper-layout.spec.ts-snapshots/ || true
+          if git diff --cached --quiet; then
+            echo "Nenhuma baseline nova/alterada — nada para commitar."
+            exit 0
+          fi
+          git commit -m "${{ inputs.commit_message }}"
+          git push origin HEAD:${{ inputs.branch || github.ref_name }}
+
+      - name: Upload HTML report (debug)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-update-snapshots
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

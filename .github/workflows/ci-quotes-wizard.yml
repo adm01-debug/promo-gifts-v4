@@ -116,7 +116,25 @@ jobs:
       # configurados em playwright.config.ts (retain-on-failure) — o spec usa
       # toHaveScreenshot, que já produz *-actual/*-expected/*-diff em falha.
       - name: Run Playwright — quote-reset-stepper-layout
+        id: pw_run
         run: npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts --project=chromium-authed --retries=2 --reporter=html
+
+      # Reexecução headed (apenas em falha) com trace/vídeo "on" para facilitar
+      # reprodução local. Usa xvfb para Chromium "headed" em runner CI.
+      # `continue-on-error: true` — o resultado bloqueante é o run acima.
+      - name: Re-run headed on failure (xvfb + trace/video on)
+        if: failure()
+        continue-on-error: true
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          xvfb-run -a npx playwright test \
+            e2e/quotes/quote-reset-stepper-layout.spec.ts \
+            --project=chromium-authed \
+            --headed \
+            --retries=0 \
+            --trace=on \
+            --reporter=list \
+            --output=test-results-headed
 
       - name: Upload Playwright HTML report
         if: always()
@@ -140,6 +158,42 @@ jobs:
             test-results/**/video.webm
             test-results/**/*.webm
             test-results/**/*.png
+            test-results-headed/**/trace.zip
+            test-results-headed/**/*.webm
+            test-results-headed/**/*.png
           retention-days: 14
           if-no-files-found: ignore
+
+      # Comenta no PR com link para o run + bundle de diffs quando falha.
+      - name: Comment PR with report + diffs (on failure)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '### ❌ E2E `quote-reset-stepper-layout` falhou',
+              '',
+              `- 📊 **Playwright HTML report:** [run #${context.runId}](${runUrl}) → artifact \`playwright-report-quote-reset-stepper\``,
+              '- 🖼️ **Diffs visuais (actual / expected / diff) + traces + vídeos:** artifact `quote-reset-stepper-failure-bundle`',
+              '- 🎥 **Reprodução headed:** pasta `test-results-headed/` dentro do bundle (trace.zip + .webm)',
+              '',
+              '<details><summary>Reproduzir localmente</summary>',
+              '',
+              '```bash',
+              'npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts \\',
+              '  --project=chromium-authed --headed --trace=on',
+              '# Aceitar mudança visual intencional:',
+              'npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts \\',
+              '  --project=chromium-authed --update-snapshots',
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
 
