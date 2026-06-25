@@ -73,6 +73,12 @@ import { cn } from '@/lib/utils';
 import type { QuoteItem } from '@/hooks/quotes';
 import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import {
+  getDiscountValidationMessage,
+  getApprovalChecklist,
+  isApprovalReady,
+  MIN_SELLER_NOTES_LENGTH,
+} from '@/lib/quotes/discount-validation-messages';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatColors, formatArea } from '@/lib/quotes/personalizationSummary';
