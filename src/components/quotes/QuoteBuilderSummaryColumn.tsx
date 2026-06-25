@@ -1292,6 +1292,10 @@ export function QuoteBuilderSummaryColumn({
                 {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
               </Button>
             </div>
+              );
+            })()}
+
+
 
           </div>
         </div>
