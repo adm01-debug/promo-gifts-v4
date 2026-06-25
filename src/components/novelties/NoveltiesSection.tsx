@@ -19,6 +19,7 @@ import {
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatDaysAgoFromCount } from '@/lib/novelty-dates';
 
 export function NoveltiesSection() {
@@ -35,10 +36,18 @@ export function NoveltiesSection() {
     return () => clearInterval(id);
   }, []);
 
+  // BUG-HEAD-3 FIX (2026-06-25): guard de autenticação para evitar GETs abortados.
+  // enabled=false quando rolesLoaded=false previne AbortError no DevTools.
+  // isPending:isLoading alias garante que o skeleton seja exibido tanto durante
+  // rolesLoaded=false (isPending=true, isFetching=false) quanto durante o fetch real.
+  // ANTI-REGRESSÃO fix_version=v4.1443b: não remover isReadyToFetch nem o alias.
+  const { user, rolesLoaded } = useAuth();
+  const isReadyToFetch = rolesLoaded && !!user;
+
   // ISSUE-22 FIX: sem limit → cache key ['novelties-details','all',false] compartilhada
   // com ExpiringNoveltiesWidget e NoveltyProductGrid. Elimina round-trip redundante.
   // A fatia de 8 cards acontece no useMemo de `novelties` via .slice(0, 8).
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
+  const { data: allNovelties, isPending: isLoading } = useNoveltiesWithDetails({ enabled: isReadyToFetch });
   const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
 
   // Extract unique suppliers from period-filtered data — faceted filtering:

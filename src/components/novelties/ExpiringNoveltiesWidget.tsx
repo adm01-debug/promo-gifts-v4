@@ -7,6 +7,7 @@ import { useExpiringNovelties, useNoveltiesWithDetails, useNoveltyStats } from '
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatDaysAgoFromTs, getRecencyVariant } from '@/lib/novelty-dates';
 
 /** Rótulo curto de quanto tempo resta como novidade. */
@@ -31,10 +32,16 @@ interface SupplierBreakdown {
 
 export function ExpiringNoveltiesWidget() {
   const navigate = useNavigate();
+  // BUG-HEAD-3 FIX (2026-06-25): guard de autenticação para evitar GETs abortados.
+  // ANTI-REGRESSÃO fix_version=v4.1443b: não remover isReadyToFetch nem isPending alias.
+  const { user, rolesLoaded } = useAuth();
+  const isReadyToFetch = rolesLoaded && !!user;
+
   // GAP-FIX: remover limit:200 compartilha a cache key ['novelties-details','all',false] com
   // NoveltyProductGrid — elimina a segunda round-trip ao servidor. O componente usa apenas
   // os top-10 mais recentes, mas o React Query devolve os dados já carregados pelo grid.
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails();
+  // isPending:isLoading alias cobre enabled=false (rolesLoaded=false) → skeleton correto.
+  const { data: allNovelties, isPending: isLoading } = useNoveltiesWithDetails({ enabled: isReadyToFetch });
 
   // ISSUE-34 FIX: tick a cada 60s para recalcular recência — sem isso, uma
   // novidade detectada "há 2 dias" continuaria mostrando badge 'hot' enquanto a
