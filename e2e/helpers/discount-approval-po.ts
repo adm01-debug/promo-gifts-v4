@@ -104,22 +104,43 @@ export class DiscountApprovalPO {
     );
   }
 
-  /** Clica em aprovar, espera resposta REST e o card refletir `data-status="approved"`. */
+  /**
+   * Após mutação, o filtro default da fila é `status: 'pending'`, então o card
+   * sai do DOM ao virar approved/rejected. Validamos sucesso aceitando uma de:
+   *   (a) card refletiu o novo `data-status` (filtro foi para "all"); OU
+   *   (b) card sumiu do DOM (filtrado para fora) — comportamento default.
+   * Em ambos os casos a resposta REST já foi confirmada como ok().
+   */
+  private async expectTransitionedOrGone(
+    id: string,
+    target: DiscountStatus,
+    timeout: number,
+  ): Promise<void> {
+    await expect(async () => {
+      const card = this.card(id);
+      const count = await card.count();
+      if (count === 0) return; // filtrado para fora — sucesso
+      const status = await card.first().getAttribute("data-status");
+      expect(status).toBe(target);
+    }).toPass({ timeout });
+  }
+
+  /** Clica em aprovar, espera resposta REST e confirma transição (ou remoção por filtro). */
   async approveFromQueue(id: string, timeout = 35_000): Promise<void> {
     await expect(this.approveButton(id)).toBeVisible({ timeout: 10_000 });
     const responsePromise = this.waitForMutationResponse(timeout);
     await this.approveButton(id).click();
     await responsePromise;
-    await expect(this.card(id)).toHaveAttribute("data-status", "approved", { timeout });
+    await this.expectTransitionedOrGone(id, "approved", timeout);
   }
 
-  /** Clica em recusar, espera resposta REST e o card refletir `data-status="rejected"`. */
+  /** Clica em recusar, espera resposta REST e confirma transição (ou remoção por filtro). */
   async rejectFromQueue(id: string, timeout = 35_000): Promise<void> {
     await expect(this.rejectButton(id)).toBeVisible({ timeout: 10_000 });
     const responsePromise = this.waitForMutationResponse(timeout);
     await this.rejectButton(id).click();
     await responsePromise;
-    await expect(this.card(id)).toHaveAttribute("data-status", "rejected", { timeout });
+    await this.expectTransitionedOrGone(id, "rejected", timeout);
   }
 
   /** Assert status atual via `data-status` (sem ler texto). */
