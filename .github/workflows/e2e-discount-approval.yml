@@ -57,8 +57,19 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Run 04c* discount approval specs
-        run: npx playwright test e2e/flows/04c --project=chromium-authed --reporter=html,list,github
+      # 1ª execução: rodar todos os 04c* sem retries internos do config.
+      # Falhas vão para test-results/.last-run.json (usado pelo --last-failed).
+      - name: Run 04c* discount approval specs (1ª passada)
+        id: run1
+        run: npx playwright test e2e/flows/04c --project=chromium-authed --retries=0 --reporter=html,list,github
+        env:
+          CI: "1"
+
+      # 2ª passada: rerodar APENAS os specs que falharam, uma única vez.
+      # Mantém upload de trace/screenshot/vídeo de ambas as passadas.
+      - name: Re-run failed specs (única retentativa)
+        if: failure() && steps.run1.conclusion == 'failure'
+        run: npx playwright test --last-failed --project=chromium-authed --retries=0 --reporter=html,list,github
         env:
           CI: "1"
 
