@@ -106,7 +106,9 @@ describe("FilterPanel", () => {
     expect(defaultFilters.priceRange).toEqual([0, 9999]);
     expect(Array.isArray(defaultFilters.categories)).toBe(true);
     expect(Array.isArray(defaultFilters.colors)).toBe(true);
-  });
+    // timeout generoso: o import dinâmico de FilterPanel pode levar ~15s sob saturação de CPU
+    // no run completo (passa folgado isolado). Não enfraquece asserções — evita falso-timeout.
+  }, 30000);
 
   it("defaultFilters has all required boolean fields as false", async () => {
     const { defaultFilters } = await import("@/components/filters/FilterPanel");
@@ -116,5 +118,5 @@ describe("FilterPanel", () => {
     expect(defaultFilters.isNew).toBe(false);
     expect(defaultFilters.hasPersonalization).toBe(false);
     expect(defaultFilters.hasCommercialPackaging).toBe(false);
-  });
+  }, 30000);
 });
