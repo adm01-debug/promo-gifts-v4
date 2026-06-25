@@ -7,8 +7,8 @@
  *
  * Filtro explícito por seller_id = auth.uid().
  */
-import { useMemo, useState, useCallback } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Percent,
