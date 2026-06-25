@@ -83,12 +83,12 @@ export default function QuotesListPage() {
       <TooltipProvider>
         <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
           {/* Header: título + filtros + ação no mesmo eixo */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex flex-wrap items-center gap-3">
             <FadeInView>
-              <div className="min-w-0">
+              <div className="flex-shrink-0 min-w-0">
                 <h1
                   data-testid="page-title-orcamentos"
-                  className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
+                  className="flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
                 >
                   <FileText className="h-7 w-7" />
                   Orçamentos
@@ -99,7 +99,7 @@ export default function QuotesListPage() {
               </div>
             </FadeInView>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:items-center">
               <div className="relative w-full sm:w-[260px] lg:w-[320px]">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
