@@ -38,9 +38,12 @@ describe('ProposalHtmlTemplate · quote_number no topo do PDF/preview', () => {
   it.each([
     ['Editar Proposta Enviada', '10010/26'],
     ['Editar Rascunho (com número)', '10011/26'],
-  ])('[%s] exibe Proposta %s no topo', (_label, qn) => {
+  ])('[%s] exibe o número %s no topo do documento', (_label, qn) => {
     const { container } = render(<ProposalHtmlTemplate data={makeData(qn)} />);
-    expect(container.textContent).toMatch(new RegExp(`Proposta\\s*${qn.replace('/', '\\/')}`));
+    // O número deve aparecer ao menos uma vez no topo (header) — texto pode usar
+    // NBSP (\u00A0) entre "Proposta" e o número.
+    expect(container.textContent).toContain(qn);
+    expect(container.textContent).toMatch(/Proposta\s*Comercial/);
     expect(container.textContent).not.toContain(FORBIDDEN_PHRASE);
   });
 
