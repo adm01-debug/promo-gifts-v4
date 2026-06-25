@@ -1,9 +1,10 @@
-name: Update Quote Reset Snapshots
+name: Update Quote Visual Snapshots
 
-# Workflow manual: regenera as baselines visuais do spec
-# `quote-reset-stepper-layout.spec.ts` (--update-snapshots) e commita os PNGs
-# de volta no branch escolhido. Use APENAS quando a mudança visual for
-# intencional (refactor de layout, novo step, etc.).
+# Workflow manual: regenera as baselines visuais dos specs:
+#   - e2e/quotes/quote-reset-stepper-layout.spec.ts
+#   - e2e/quotes/quote-number-subtitle.spec.ts (todos os breakpoints)
+# Use APENAS quando a mudança visual for intencional (refactor de layout,
+# novo step, novo subtítulo de quote_number, etc.).
 
 on:
   workflow_dispatch:
@@ -15,7 +16,7 @@ on:
       commit_message:
         description: 'Mensagem do commit de baselines'
         required: false
-        default: 'test(e2e): update quote-reset-stepper-layout snapshots'
+        default: 'test(e2e): update quote visual snapshots'
 
 env:
   TZ: America/Sao_Paulo
@@ -53,6 +54,7 @@ jobs:
         run: |
           npx playwright test \
             e2e/quotes/quote-reset-stepper-layout.spec.ts \
+            e2e/quotes/quote-number-subtitle.spec.ts \
             --project=chromium-authed \
             --update-snapshots \
             --reporter=list
@@ -61,7 +63,8 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add e2e/quotes/quote-reset-stepper-layout.spec.ts-snapshots/ || true
+          git add e2e/quotes/quote-reset-stepper-layout.spec.ts-snapshots/ \
+                  e2e/quotes/quote-number-subtitle.spec.ts-snapshots/ || true
           if git diff --cached --quiet; then
             echo "Nenhuma baseline nova/alterada — nada para commitar."
             exit 0
