@@ -8,6 +8,9 @@ import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 
+
+test.describe.configure({ mode: "parallel" });
+
 test.describe("Discount approval — notification deep-link mark-as-read", () => {
   test("clique no link da notificação reduz contador de não lidas", async ({ page }, testInfo) => {
     requireAdmin();

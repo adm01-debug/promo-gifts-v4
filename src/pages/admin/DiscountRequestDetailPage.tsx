@@ -141,7 +141,7 @@ export default function DiscountRequestDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin/usuarios?tab=discounts')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Fila de aprovações
         </Button>
-        <Badge variant={status.variant} data-testid="discount-request-status">
+        <Badge variant={status.variant} data-testid="discount-request-status" data-status={data.status}>
           {status.label}
         </Badge>
       </div>

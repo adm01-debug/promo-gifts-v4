@@ -7,6 +7,9 @@ import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 import { gotoAndSettle } from "../helpers/nav";
 
+
+test.describe.configure({ mode: "parallel" });
+
 const BOGUS_ID = "00000000-0000-0000-0000-000000000000";
 
 test.describe("Discount approval — deep-link inválido", () => {

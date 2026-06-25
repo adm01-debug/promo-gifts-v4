@@ -7,6 +7,10 @@
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
+import { assertCursorPagination } from "../helpers/pagination-asserts";
+
+
+test.describe.configure({ mode: "parallel" });
 
 const PAGE_SIZE = 50;
 const SUPABASE_URL =
@@ -63,27 +67,6 @@ test.describe("Discount approval — cursor ASC consistente", () => {
       cursor: string;
     };
 
-    // 1) Ordem ASC estritamente monotônica em ambas páginas
-    for (const arr of [r1, r2]) {
-      for (let i = 1; i < arr.length; i++) {
-        expect(new Date(arr[i].created_at).getTime()).toBeGreaterThanOrEqual(
-          new Date(arr[i - 1].created_at).getTime(),
-        );
-      }
-    }
-
-    // 2) Cursor estável: último da p1 == cursor enviado
-    expect(r1[r1.length - 1].created_at).toBe(cursor);
-
-    // 3) Zero interseção de IDs entre páginas
-    const p1Ids = new Set(r1.map((r) => r.id));
-    for (const row of r2) {
-      expect(p1Ids.has(row.id), `Item ${row.id} duplicado entre páginas ASC`).toBe(false);
-    }
-
-    // 4) Cursor isola corretamente (todos r2.created_at > cursor)
-    for (const row of r2) {
-      expect(new Date(row.created_at).getTime()).toBeGreaterThan(new Date(cursor).getTime());
-    }
+    assertCursorPagination(r1, r2, cursor, "asc");
   });
 });
