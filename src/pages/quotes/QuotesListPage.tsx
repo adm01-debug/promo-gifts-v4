@@ -134,7 +134,7 @@ export default function QuotesListPage() {
                   >
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping"
+                      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"
                     />
                     <Plus className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
                   </Button>
