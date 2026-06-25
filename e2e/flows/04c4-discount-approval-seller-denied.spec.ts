@@ -29,27 +29,29 @@ test.describe("Discount approval — vendedor bloqueado em /admin/aprovacoes-des
 
     await page.waitForLoadState("domcontentloaded");
     const url = page.url();
-    const onDetail = /\/admin\/aprovacoes-desconto\//.test(url);
+    const onDetail = /\/admin\/aprovacoes-desconto\/[0-9a-f-]+/i.test(url);
 
     if (!onDetail) {
-      // (a) ou (c) — redirect para fora da rota admin (ok)
-      expect(onDetail).toBe(false);
+      // (a) Redirect: deve aterrissar em /login, / ou rota não-admin
+      expect(url).not.toMatch(/\/admin\/aprovacoes-desconto\//);
+      expect(url).toMatch(/\/(login|acesso-negado|$)/);
       return;
     }
 
-    // (b) — ainda em /detail: deve mostrar acesso restrito (sem container admin)
+    // (b) Ainda em /detail: nenhum container admin deve renderizar
     const detailVisible = await page
       .locator('[data-testid="discount-request-detail"]')
       .isVisible({ timeout: 3_000 })
       .catch(() => false);
     expect(detailVisible).toBe(false);
 
-    const restrictedVisible = await page
+    // Mensagem exata de bloqueio (padrão AdminRoute / AccessDenied)
+    const restrictedLocator = page
       .locator(Sel.app.accessDenied)
-      .or(page.getByText(/acesso restrito|sem permissão|não autorizado/i))
-      .first()
-      .isVisible({ timeout: 3_000 })
-      .catch(() => false);
-    expect(restrictedVisible).toBe(true);
+      .or(page.getByText(/acesso restrito|acesso negado|sem permissão|não autorizado/i))
+      .first();
+    await expect(restrictedLocator).toBeVisible({ timeout: 5_000 });
+    const text = (await restrictedLocator.textContent())?.toLowerCase() ?? "";
+    expect(text).toMatch(/acesso|permiss|autoriz/);
   });
 });
