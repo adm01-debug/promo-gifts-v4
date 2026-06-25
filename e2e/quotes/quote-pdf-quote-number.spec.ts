@@ -4,7 +4,8 @@
  * Estratégia:
  *  1. Navega até a tela de visualização do orçamento (cenário Rascunho/Enviada/Novo
  *     quando aplicável — Novo gera "Proposta Comercial" sem numeração).
- *  2. Dispara o download do PDF via botão `data-testid="export-pdf-button"`.
+ *  2. No desktop: abre o dialog via `data-testid="pdf-preview-trigger"` e
+ *     dispara o download via `data-testid="export-pdf-button"` (confirm).
  *  3. Lê o PDF baixado e extrai o texto com `pdf-parse` (já listado em
  *     devDependencies via @types/pdf-parse). Falha o teste se a frase legada
  *     aparecer OU se o quote_number do orçamento atual não constar no PDF.
