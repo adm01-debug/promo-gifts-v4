@@ -5,7 +5,9 @@ import {
   Search,
   ArrowUpDown,
   AlertTriangle,
+  Info,
 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -56,6 +58,7 @@ export default function QuotesListPage() {
     bulkDeleteIds,
     setBulkDeleteIds,
     filteredQuotes,
+    onlyPendingStatuses,
     handleDelete,
     handleBulkDelete,
     handleClearFilters,
@@ -106,6 +109,20 @@ export default function QuotesListPage() {
               </Button>
             </div>
           </div>
+
+          {/* Banner: somente status pending no dataset */}
+          {onlyPendingStatuses && (
+            <Alert
+              data-testid="quotes-only-pending-banner"
+              className="border-info/30 bg-info/10 text-info"
+            >
+              <Info className="h-4 w-4" />
+              <AlertTitle>Todos os orçamentos estão em status Pendente</AlertTitle>
+              <AlertDescription className="text-muted-foreground">
+                Avance o fluxo enviando ou aprovando orçamentos para popular o funil de vendas.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Error banner */}
           {error && (

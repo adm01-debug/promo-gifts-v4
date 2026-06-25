@@ -73,3 +73,41 @@ describe('quote transitions — FE ⊆ DB (no broken UI actions)', () => {
     }
   });
 });
+
+describe('quote transitions — pares inválidos explícitos (regressão)', () => {
+  // Tabela de transições que NUNCA podem ser permitidas pelo FE.
+  // Inclui o caso pedido pelo PO: draft→converted bloqueado.
+  const BLOCKED: ReadonlyArray<[QuoteStatus, QuoteStatus]> = [
+    ['draft', 'converted'],
+    ['draft', 'approved'], // FE não oferece atalho; aprovação exige sent/viewed
+    ['draft', 'rejected'],
+    ['pending', 'converted'],
+    ['pending', 'approved'],
+    ['pending_approval', 'sent'],
+    ['pending_approval', 'approved'],
+    ['sent', 'converted'],
+    ['viewed', 'converted'],
+    ['rejected', 'approved'],
+    ['rejected', 'converted'],
+    ['expired', 'approved'],
+    ['expired', 'converted'],
+    ['cancelled', 'draft'],
+    ['cancelled', 'sent'],
+    ['cancelled', 'approved'],
+    ['cancelled', 'converted'],
+    ['converted', 'draft'],
+    ['converted', 'sent'],
+    ['converted', 'cancelled'],
+    ['approved', 'draft'],
+    ['approved', 'pending'],
+    ['approved', 'rejected'],
+  ];
+
+  it.each(BLOCKED)('bloqueia %s → %s', (from, to) => {
+    expect(isValidQuoteTransition(from, to)).toBe(false);
+  });
+
+  it('cobertura: tabela BLOCKED contém ≥ 20 cenários', () => {
+    expect(BLOCKED.length).toBeGreaterThanOrEqual(20);
+  });
+});

@@ -1,18 +1,35 @@
 // src/types/quote.ts
-// Orçamentos
+// Orçamentos — SSOT de status (FE) com guard Zod.
+import { z } from 'zod';
 
-export type QuoteStatus =
-  | 'approved'
-  | 'cancelled'
-  | 'converted'
-  | 'draft'
-  | 'expired'
-  | 'pending_approval'
-  | 'pending'
-  | 'rejected'
-  | 'sent'
-  | 'viewed';
+/**
+ * Tupla canônica de status FE. Mantém ordem alfabética para diffs estáveis.
+ * ⚠️ Ver `src/lib/quote-status-config.ts` quanto ao gap com o CHECK do banco.
+ */
+export const QUOTE_STATUSES = [
+  'approved',
+  'cancelled',
+  'converted',
+  'draft',
+  'expired',
+  'pending',
+  'pending_approval',
+  'rejected',
+  'sent',
+  'viewed',
+] as const;
+
+export const quoteStatusSchema = z.enum(QUOTE_STATUSES);
+
+export type QuoteStatus = z.infer<typeof quoteStatusSchema>;
+
+/** Type-guard sem throw — útil em filtros defensivos. */
+export function isQuoteStatus(value: unknown): value is QuoteStatus {
+  return quoteStatusSchema.safeParse(value).success;
+}
+
 export type ClientResponse = 'approved' | 'changes_requested' | 'rejected';
+
 
 export interface Quote {
   id: string;
