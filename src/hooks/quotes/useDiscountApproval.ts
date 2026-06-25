@@ -277,6 +277,7 @@ export function useDiscountApproval() {
         }
 
         toast.success('Solicitação de aprovação enviada ao admin!');
+        invalidateWidget();
         return true;
       } catch (err) {
         logger.error('Error requesting approval:', err);
