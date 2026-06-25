@@ -581,6 +581,11 @@ export function StockDashboard() {
                 // Qualquer outro card sai do modo "risco de ruptura"
                 if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
                 updateFilter('status', next);
+                // Restaura a abertura do OutOfStockDialog ao clicar em "Sem Estoque"
+                // com alertas críticos (trigger removido por engano em 98052925a, 2026-06-21).
+                if (card.filter === 'out_of_stock' && criticalAlerts.length > 0) {
+                  setOutOfStockDialogOpen(true);
+                }
                 updateFilter('sortBy', 'name');
                 updateFilter('sortDirection', 'asc');
               }}
@@ -598,6 +603,9 @@ export function StockDashboard() {
           isActive={filters.status === 'incoming'}
           onClick={() => {
             updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
+            // Restaura a abertura do FutureStockDialog quando há reposição prevista
+            // (trigger removido por engano em 98052925a, 2026-06-21).
+            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
             updateFilter('sortBy', 'name');
             updateFilter('sortDirection', 'asc');
           }}
