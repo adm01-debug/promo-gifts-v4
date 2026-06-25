@@ -354,10 +354,12 @@ jobs:
           path: |
             test-results/**/*.pdf
             test-results/**/*.html
+            test-results/**/*.png
             test-results/**/*-actual.png
             test-results/**/*-expected.png
             test-results/**/*-diff.png
-            test-results/**/trace.zip
+            test-results/**/trace*.zip
+            test-results/**/*.zip
             test-results/**/*.webm
           retention-days: 14
           if-no-files-found: ignore
