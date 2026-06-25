@@ -56,6 +56,7 @@ export default function QuotesListPage() {
     bulkDeleteIds,
     setBulkDeleteIds,
     filteredQuotes,
+    onlyPendingStatuses,
     handleDelete,
     handleBulkDelete,
     handleClearFilters,
