@@ -1231,13 +1231,14 @@ export function QuoteBuilderSummaryColumn({
                   <PopoverContent
                     side="top"
                     align="start"
-                    className="w-64 border-destructive/30 bg-destructive/5 p-3"
+                    sideOffset={8}
+                    className="z-50 w-64 border-destructive/40 bg-popover p-3 text-popover-foreground shadow-xl backdrop-blur-none"
                     data-testid="quote-missing-fields-popover"
                   >
                     <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-destructive">
                       <AlertTriangle className="h-3.5 w-3.5" /> Campos obrigatórios pendentes
                     </p>
-                    <ul className="list-inside list-disc space-y-0.5 text-xs text-destructive/90">
+                    <ul className="list-inside list-disc space-y-0.5 text-xs text-foreground">
                       {missingLabels.map((label) => (
                         <li key={label}>{label}</li>
                       ))}
