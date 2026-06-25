@@ -23,6 +23,8 @@ import {
   EmaHealthPage,
 
   AdminUsuariosPage,
+  DiscountRequestDetailPage,
+
   AdminVideoVariantsPage,
   AdminWorkflowsPage,
   DevChallengeExamplesPage,
@@ -78,6 +80,11 @@ export const adminRoutes = (
         path="/admin/aprovacoes-desconto"
         element={<Navigate to="/admin/usuarios?tab=discounts" replace />}
       />
+      <Route
+        path="/admin/aprovacoes-desconto/:id"
+        element={<DiscountRequestDetailPage />}
+      />
+
       <Route
         path="/admin/performance"
         element={

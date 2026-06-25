@@ -8,7 +8,7 @@
  *   - isLoading composto: !rolesLoaded || queryLoading — UX correta durante auth
  *   - Early return silencioso quando !isAdmin pós-carregamento
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +23,14 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { logger } from '@/lib/logger';
 import { DiscountApprovalAuditTrail } from './DiscountApprovalAuditTrail';
+import {
+  DiscountApprovalFilterBar,
+  EMPTY_FILTERS,
+  applyDiscountApprovalFilters,
+  type DiscountApprovalFilters,
+} from './DiscountApprovalFilterBar';
 import { cn } from '@/lib/utils';
+
 
 export function DiscountApprovalQueue() {
   const { isAdmin, rolesLoaded } = useAuth();
@@ -33,18 +40,21 @@ export function DiscountApprovalQueue() {
   const [searchParams] = useSearchParams();
   const highlightedId = searchParams.get('request');
   const highlightedRef = useRef<HTMLDivElement | null>(null);
+  const [filters, setFilters] = useState<DiscountApprovalFilters>(EMPTY_FILTERS);
 
+  // Carregamos TODOS os status (até 200 últimos) para permitir busca/histórico.
+  // O filtro `status` da UI é aplicado client-side via `applyDiscountApprovalFilters`.
   const { data, isLoading: queryLoading } = useQuery({
-    queryKey: ['discount-approval-queue'],
+    queryKey: ['discount-approval-queue', 'all-status'],
     queryFn: async () => {
       const { data: rows, error } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         .select(
-          '*, quotes:quote_id(quote_number, client_name, client_company, total, subtotal, discount_percent, negotiation_markup_percent, real_subtotal, real_discount_percent)',
+          '*, quotes:quote_id(quote_number, client_name, client_company, total, subtotal, discount_percent, negotiation_markup_percent, real_subtotal, real_discount_percent), seller:seller_id(full_name, email)',
         )
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(200);
       if (error) throw error;
       return rows || [];
     },
@@ -52,6 +62,21 @@ export function DiscountApprovalQueue() {
     retry: 0,
     retryOnMount: false,
   });
+
+  const sellers = useMemo(() => {
+    const map = new Map<string, string>();
+    (data ?? []).forEach((r: { seller_id: string; seller?: { full_name?: string | null; email?: string | null } | null }) => {
+      const label = r.seller?.full_name || r.seller?.email || r.seller_id.slice(0, 8);
+      if (!map.has(r.seller_id)) map.set(r.seller_id, label);
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [data]);
+
+  const filteredData = useMemo(
+    () => (data ? applyDiscountApprovalFilters(data as Parameters<typeof applyDiscountApprovalFilters>[0], filters) : []),
+    [data, filters],
+  );
+
 
   const isLoading = !rolesLoaded || queryLoading;
 
@@ -118,21 +143,34 @@ export function DiscountApprovalQueue() {
 
   if (!isAdmin) return null;
 
-  if (!data?.length) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <ShieldAlert className="mx-auto mb-2 h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Nenhuma solicitação pendente.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const totalCount = data?.length ?? 0;
+  const filteredCount = filteredData.length;
 
   return (
     <div className="space-y-3">
-      {data.map((req) => {
+      <DiscountApprovalFilterBar
+        value={filters}
+        onChange={setFilters}
+        sellers={sellers}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+      />
+
+      {filteredCount === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <ShieldAlert className="mx-auto mb-2 h-10 w-10 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {totalCount === 0
+                ? 'Nenhuma solicitação registrada.'
+                : 'Nenhum resultado para os filtros aplicados.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        filteredData.map((req) => {
         const reqTyped = req as {
+
           quote_id: string;
           quotes?: {
             quote_number?: string;
@@ -219,28 +257,36 @@ export function DiscountApprovalQueue() {
                 value={notes[req.id] ?? ''}
                 onChange={(e) => setNotes({ ...notes, [req.id]: e.target.value })}
                 rows={2}
+                disabled={req.status !== 'pending'}
               />
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   className="border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => respond.mutate({ id: req.id, quoteId, approved: false })}
-                  disabled={processingId === req.id}
+                  disabled={processingId === req.id || req.status !== 'pending'}
                 >
                   <XCircle className="mr-2 h-4 w-4" /> Recusar
                 </Button>
                 <Button
                   onClick={() => respond.mutate({ id: req.id, quoteId, approved: true })}
-                  disabled={processingId === req.id}
+                  disabled={processingId === req.id || req.status !== 'pending'}
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                 </Button>
               </div>
+              {req.status !== 'pending' && (
+                <p className="text-xs text-muted-foreground">
+                  Já decidido — status atual: <strong>{req.status}</strong>.
+                </p>
+              )}
               <DiscountApprovalAuditTrail requestId={req.id} defaultOpen={isHighlighted} />
             </CardContent>
           </Card>
         );
-      })}
+        })
+      )}
     </div>
   );
 }
+

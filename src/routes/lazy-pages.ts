@@ -64,6 +64,10 @@ export const QuotesKanbanPage = lazyWithRetry(() => import('@/pages/quotes/Quote
 // Admin (supervisor + dev)
 // ─────────────────────────────────────────────────────────────────
 export const AdminUsuariosPage = lazyWithRetry(() => import('@/pages/admin/AdminUsuariosPage'));
+export const DiscountRequestDetailPage = lazyWithRetry(
+  () => import('@/pages/admin/DiscountRequestDetailPage'),
+);
+
 export const AdminPromoverUsuarioPage = lazyWithRetry(
   () => import('@/pages/admin/AdminPromoverUsuarioPage'),
 );

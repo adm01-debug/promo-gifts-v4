@@ -608,8 +608,31 @@ export function DiscountManagementPanel() {
                               >
                                 <XCircle className="h-3.5 w-3.5" /> Rejeitar
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5"
+                                onClick={() => navigate(`/admin/aprovacoes-desconto/${req.id}`)}
+                                data-testid={`dmp-open-detail-${req.id}`}
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Detalhes
+                              </Button>
                             </div>
                           )}
+                          {req.status !== 'pending' && (
+                            <div className="flex shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5"
+                                onClick={() => navigate(`/admin/aprovacoes-desconto/${req.id}`)}
+                                data-testid={`dmp-open-detail-${req.id}`}
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Detalhes
+                              </Button>
+                            </div>
+                          )}
+
                         </div>
                       </CardContent>
                     </Card>
