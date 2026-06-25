@@ -1,29 +1,14 @@
-## Objetivo
-Desacelerar a pulsação do FAB "Novo Orçamento" — `animate-ping` padrão é 1s, queremos ~3s para um efeito mais sutil e elegante.
+## Status: mantido ✅
 
-## Mudança (1 linha)
+Pulso do FAB permanece em **3s** (`animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]`) — nenhuma alteração de código.
 
-Em `src/pages/quotes/QuotesListPage.tsx` linha 137, trocar `animate-ping` pela versão com duração customizada via arbitrary value do Tailwind:
-
-```diff
-- className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-ping"
-+ className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"
+## Validação (sanity)
+```bash
+node scripts/check-fab-accessibility.mjs   # esperado 8/8
 ```
-
-**Por que arbitrary value:** Tailwind permite redefinir `animation` inline sem precisar adicionar keyframes em `tailwind.config.ts` — `ping` já está registrado pelo preset, só sobrescrevemos a duração.
-
-## Resultado
-- Halo expande a cada 3s (era 1s) — pulso mais zen.
-- Respeita `prefers-reduced-motion` (mesmo comportamento do `animate-ping`).
 
 ## Arquivos
-- Editar: `src/pages/quotes/QuotesListPage.tsx` (1 linha).
+- Nenhum.
 
-## Fora de escopo
-- Mudar cor, escala do halo, gradiente, sombra, hover.
-- Gate, testes, workflow.
-
-## Validação
-```bash
-node scripts/check-fab-accessibility.mjs   # esperado 8/8 (inalterado)
-```
+## Próximos passos sugeridos
+- Disparar workflow "Update Quote Visual Snapshots" se quiser atualizar baselines visuais.
