@@ -227,6 +227,7 @@ export function DiscountApprovalQueue() {
                   <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                 </Button>
               </div>
+              <DiscountApprovalAuditTrail requestId={req.id} defaultOpen={isHighlighted} />
             </CardContent>
           </Card>
         );
