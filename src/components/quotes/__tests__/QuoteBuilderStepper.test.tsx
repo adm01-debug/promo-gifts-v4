@@ -19,15 +19,40 @@ vi.mock('lucide-react', async () => {
 });
 
 describe('QuoteBuilderStepper UI (5 etapas)', () => {
-  it('highlights active step with correct classes', () => {
+  it('highlights active step with standardized size (no ring inflation)', () => {
     render(<QuoteBuilderStepper completedSteps={[]} activeStep="client" />);
 
     const clientStep = screen.getByText('Cliente').parentElement?.querySelector('.rounded-full');
     expect(clientStep?.className).toContain('bg-primary');
     expect(clientStep?.className).toContain('text-primary-foreground');
-    expect(clientStep?.className).toContain('ring-4');
+    // Padronização: ativo NÃO pode ter ring-4 (causava círculo maior que os demais)
+    expect(clientStep?.className).not.toContain('ring-4');
     expect(clientStep?.className).toContain('w-10');
     expect(clientStep?.className).toContain('h-10');
+  });
+
+  it('todos os 5 círculos têm o MESMO tamanho (padronização)', () => {
+    const { container } = render(
+      <QuoteBuilderStepper completedSteps={['client', 'conditions']} activeStep="items" />,
+    );
+    const circles = container.querySelectorAll('li .rounded-full');
+    expect(circles.length).toBe(5);
+    circles.forEach((c) => {
+      expect(c.className).toContain('h-10');
+      expect(c.className).toContain('w-10');
+      expect(c.className).not.toContain('ring-4');
+    });
+  });
+
+  it('última etapa usa last:flex-none para encostar no canto direito', () => {
+    const { container } = render(<QuoteBuilderStepper completedSteps={[]} activeStep="client" />);
+    const items = container.querySelectorAll('ol > li');
+    expect(items.length).toBe(5);
+    // Classe utilitária aplicada via Tailwind variant; ela aparece no className
+    items.forEach((li) => {
+      expect(li.className).toContain('last:flex-none');
+      expect(li.className).toContain('flex-1');
+    });
   });
 
   it('shows check icon for completed non-active steps', () => {
