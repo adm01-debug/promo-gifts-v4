@@ -61,10 +61,11 @@ describe("getPriceFreshness", () => {
     expect(r.shouldWarn).toBe(false);
   });
 
-  it("returns 'aging' when exactly at threshold limit (100%)", () => {
+  it("returns 'stale' exactly at threshold limit (100%) — BUG-008: days >= threshold", () => {
     const r = getPriceFreshness(daysAgo(60), 60);
-    expect(r.status).toBe("aging");
+    expect(r.status).toBe("stale");
     expect(r.shouldWarn).toBe(true);
+    expect(r.isStale).toBe(true);
   });
 
   it("returns 'stale' when just above threshold", () => {
@@ -90,4 +91,17 @@ describe("getPriceFreshness", () => {
     expect(r.daysSinceUpdate).toBe(0);
     expect(r.status).toBe("fresh");
   });
+
+  // BUG-008 boundary sentinel: day == threshold MUST be 'stale' (>=), and the
+  // day before must NOT be stale. Locks the policy the 6 suites drifted from.
+  it.each([1, 2, 15, 30, 60, 90, 365])(
+    "threshold=%i: day==threshold -> 'stale'; day-1 -> not stale; day+1 -> 'stale'",
+    (t) => {
+      expect(getPriceFreshness(daysAgo(t), t).status).toBe("stale");
+      expect(getPriceFreshness(daysAgo(t + 1), t).status).toBe("stale");
+      expect(
+        getPriceFreshness(daysAgo(Math.max(0, t - 1)), t).status,
+      ).not.toBe("stale");
+    },
+  );
 });

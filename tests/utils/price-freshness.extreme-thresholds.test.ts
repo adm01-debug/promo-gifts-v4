@@ -11,12 +11,12 @@
  *   2. **Threshold = 1 dia** (caso operacional mais agressivo possível,
  *      ex.: produtos cotados em dólar com volatilidade alta):
  *        - `Math.floor(1/2) = 0` → metade vira 0
- *        - regra: aging quando days > 0 (qualquer dia ≥ 1)
- *        - regra: stale quando days > 1 (a partir do 2º dia)
+ *        - regra (BUG-008): stale quando days >= threshold -> dia 1 já é stale
+ *        - não há zona aging com threshold=1 (floor(1/2)=0, e 1 >= 1)
  *        - hoje (0d) ainda é fresh
  *   3. **Threshold = 365 dias** (catálogo institucional, preços anuais):
  *        - metade = 182, então aging começa em 183
- *        - stale só após 365
+ *        - stale a partir de 365 (BUG-008: days >= threshold)
  *   4. **Tooltips** sempre citam o threshold configurado, mesmo nos
  *      extremos (validação de copy para não quebrar UX em casos raros).
  *   5. **Frações** (ex.: 1.7) são truncadas via `Math.floor` antes de
@@ -66,14 +66,14 @@ describe("getPriceFreshness — threshold = 1 dia (cotação volátil)", () => {
     expect(r.tooltip).toMatch(/dentro do prazo/i);
   });
 
-  it("1 dia atrás vira aging — exatamente no threshold", () => {
-    // Regra: stale só quando days > threshold. 1 > 1 é falso → ainda aging.
+  it("1 dia atrás já é stale — exatamente no threshold (BUG-008: days >= threshold)", () => {
+    // Regra (BUG-008): stale quando days >= threshold. 1 >= 1 -> stale.
     const r = getPriceFreshness(daysAgo(1), 1);
-    expect(r.status).toBe("aging");
-    expect(r.label).toBe("Atualizado há 1 dia");
+    expect(r.status).toBe("stale");
+    expect(r.label).toBe("Preço pode estar defasado (há 1 dia)");
     expect(r.shouldWarn).toBe(true);
-    expect(r.isStale).toBe(false);
-    expect(r.tooltip).toMatch(/recomendamos confirmar/i);
+    expect(r.isStale).toBe(true);
+    expect(r.tooltip).toMatch(/confirme o valor/i);
   });
 
   it("2 dias atrás já é stale — passou do limite mínimo", () => {
@@ -93,12 +93,12 @@ describe("getPriceFreshness — threshold = 1 dia (cotação volátil)", () => {
 });
 
 describe("getPriceFreshness — threshold = 2 dias (borda do floor da metade)", () => {
-  // Math.floor(2/2) = 1 → aging começa quando days > 1
+  // Math.floor(2/2) = 1 → fresh até 1; dia 2 (>= threshold) já é stale (BUG-008)
   it("1 dia ainda é fresh (≤ floor(2/2)=1)", () => {
     expect(getPriceFreshness(daysAgo(1), 2).status).toBe("fresh");
   });
-  it("2 dias é aging (no threshold, ainda não passou)", () => {
-    expect(getPriceFreshness(daysAgo(2), 2).status).toBe("aging");
+  it("2 dias já é stale (no threshold; BUG-008: days >= threshold)", () => {
+    expect(getPriceFreshness(daysAgo(2), 2).status).toBe("stale");
   });
   it("3 dias é stale (passou do threshold)", () => {
     expect(getPriceFreshness(daysAgo(3), 2).status).toBe("stale");
@@ -119,11 +119,11 @@ describe("getPriceFreshness — threshold = 365 dias (catálogo institucional)",
     expect(getPriceFreshness(daysAgo(183), 365).status).toBe("aging");
   });
 
-  it("365d ainda é aging (no threshold exato, ainda não passou)", () => {
+  it("365d já é stale (no threshold exato; BUG-008: days >= threshold)", () => {
     const r = getPriceFreshness(daysAgo(365), 365);
-    expect(r.status).toBe("aging");
+    expect(r.status).toBe("stale");
     expect(r.shouldWarn).toBe(true);
-    expect(r.isStale).toBe(false);
+    expect(r.isStale).toBe(true);
   });
 
   it("366d vira stale (1 dia após o threshold anual)", () => {
@@ -144,14 +144,14 @@ describe("getPriceFreshness — threshold fracionário (truncado via Math.floor)
   it("threshold 1.9 é tratado como 1 (Math.floor)", () => {
     const r = getPriceFreshness(daysAgo(1), 1.9);
     expect(r.thresholdDays).toBe(1);
-    // mesmo comportamento de threshold=1 com 1d → aging
-    expect(r.status).toBe("aging");
+    // mesmo comportamento de threshold=1 com 1d → stale (BUG-008: days >= threshold)
+    expect(r.status).toBe("stale");
   });
 
   it("threshold 60.7 é tratado como 60 (Math.floor)", () => {
     const r = getPriceFreshness(daysAgo(60), 60.7);
     expect(r.thresholdDays).toBe(60);
-    expect(r.status).toBe("aging");
+    expect(r.status).toBe("stale");
   });
 });
 

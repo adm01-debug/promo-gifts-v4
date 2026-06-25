@@ -51,10 +51,10 @@ describe('PriceFreshnessBadge Component', () => {
   it('verifies text at limit dates (threshold transition)', () => {
     const threshold = 10;
 
-    // Exactly at threshold (10 days ago) -> Aging
+    // Exactly at threshold (10 days ago) -> Stale (BUG-008: days >= threshold)
     const tenDaysAgo = new Date('2026-04-23T12:00:00Z');
     const { unmount } = renderBadge({ priceUpdatedAt: tenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
-    expect(screen.getByText(/Atualizado em 23\/04\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Última atualização em 23\/04\/2026/)).toBeInTheDocument();
     unmount();
 
     // Just past threshold (11 days ago) -> Stale — shows "Última atualização em"

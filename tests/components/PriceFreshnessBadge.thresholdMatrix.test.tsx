@@ -10,8 +10,8 @@
  *
  * Regra do util (`getPriceFreshness`):
  *   - days ≤ floor(threshold/2)        → fresh
- *   - floor(threshold/2) < days ≤ threshold → aging
- *   - days > threshold                  → stale
+ *   - floor(threshold/2) < days < threshold → aging
+ *   - days >= threshold                  → stale
  *
  * Convenção de visibilidade:
  *   - icon-only / compact: só renderiza em aging|stale
@@ -56,28 +56,28 @@ const CASES: ReadonlyArray<{
   { threshold: 15, daysSince: 3, expected: "fresh" },
   { threshold: 15, daysSince: 7, expected: "fresh" }, // borda inferior (=half)
   { threshold: 15, daysSince: 10, expected: "aging" },
-  { threshold: 15, daysSince: 15, expected: "aging" }, // borda superior (=threshold)
+  { threshold: 15, daysSince: 15, expected: "stale" }, // no threshold -> stale (BUG-008: days >= threshold)
   { threshold: 15, daysSince: 20, expected: "stale" },
 
   // threshold 30 (têxteis)
   { threshold: 30, daysSince: 7, expected: "fresh" },
   { threshold: 30, daysSince: 15, expected: "fresh" },
   { threshold: 30, daysSince: 20, expected: "aging" },
-  { threshold: 30, daysSince: 30, expected: "aging" },
+  { threshold: 30, daysSince: 30, expected: "stale" },
   { threshold: 30, daysSince: 45, expected: "stale" },
 
   // threshold 60 (default catálogo)
   { threshold: 60, daysSince: 10, expected: "fresh" },
   { threshold: 60, daysSince: 30, expected: "fresh" },
   { threshold: 60, daysSince: 45, expected: "aging" },
-  { threshold: 60, daysSince: 60, expected: "aging" },
+  { threshold: 60, daysSince: 60, expected: "stale" },
   { threshold: 60, daysSince: 90, expected: "stale" },
 
   // threshold 90 (kits estáveis)
   { threshold: 90, daysSince: 20, expected: "fresh" },
   { threshold: 90, daysSince: 45, expected: "fresh" },
   { threshold: 90, daysSince: 60, expected: "aging" },
-  { threshold: 90, daysSince: 90, expected: "aging" },
+  { threshold: 90, daysSince: 90, expected: "stale" },
   { threshold: 90, daysSince: 120, expected: "stale" },
 ];
 
