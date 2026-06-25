@@ -137,7 +137,17 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
         </AccordionTrigger>
         <AccordionContent className="px-3 pb-3">
           {data && data.length > 0 && (
-            <div className="mb-2 flex justify-end">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por decisor, evento ou motivo…"
+                  className="h-7 pl-7 text-[11px]"
+                  data-testid={`discount-audit-search-${requestId}`}
+                />
+              </div>
               <Button
                 type="button"
                 size="sm"
@@ -180,10 +190,16 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
             </div>
           ) : !data || data.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nenhum evento registrado ainda.</p>
-
+          ) : filtered.length === 0 ? (
+            <p
+              className="text-xs text-muted-foreground"
+              data-testid={`discount-audit-empty-search-${requestId}`}
+            >
+              Nenhum evento corresponde a "{search}".
+            </p>
           ) : (
             <ol className="space-y-2" data-testid={`discount-audit-list-${requestId}`}>
-              {data.map((row) => {
+              {filtered.map((row) => {
                 const meta = EVENT_META[row.event];
                 const Icon = meta.icon;
                 const actorName = row.actor?.full_name || row.actor?.email || 'Sistema';
