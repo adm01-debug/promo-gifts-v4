@@ -57,6 +57,7 @@ jobs:
             e2e/quotes/quote-reset-stepper-layout.spec.ts \
             e2e/quotes/quote-number-subtitle.spec.ts \
             e2e/quotes/quote-pdf-header-snapshot.spec.ts \
+            e2e/quotes/quote-new-fab.spec.ts \
             --project=chromium-authed \
             --update-snapshots \
             --reporter=list
@@ -67,7 +68,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add e2e/quotes/quote-reset-stepper-layout.spec.ts-snapshots/ \
                   e2e/quotes/quote-number-subtitle.spec.ts-snapshots/ \
-                  e2e/quotes/quote-pdf-header-snapshot.spec.ts-snapshots/ || true
+                  e2e/quotes/quote-pdf-header-snapshot.spec.ts-snapshots/ \
+                  e2e/quotes/quote-new-fab.spec.ts-snapshots/ || true
           if git diff --cached --quiet; then
             echo "Nenhuma baseline nova/alterada — nada para commitar."
             exit 0

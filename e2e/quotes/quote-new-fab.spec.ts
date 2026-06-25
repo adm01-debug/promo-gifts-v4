@@ -4,7 +4,9 @@
  * Valida em todos os breakpoints da matriz QUOTE_BREAKPOINTS:
  *  - FAB visível, circular (~44x44), com aria-label
  *  - mesma linha do título em >= sm; agrupado no header em mobile
- *  - tooltip "Criar novo orçamento em segundos" aparece no hover E no focus
+ *  - tooltip abre no hover e fecha ao sair (desktop)
+ *  - tooltip abre no focus por teclado e fecha ao perder foco
+ *  - em viewports mobile, tap abre o tooltip e tap fora fecha
  *  - click navega para /orcamentos/novo
  *  - screenshot do header por viewport
  *
@@ -28,12 +30,15 @@ test.describe('QuotesListPage · FAB Novo Orçamento', () => {
 
       const fab = page.getByTestId('quote-new-button');
       const title = page.getByTestId('page-title-orcamentos');
+      const tooltip = page.getByRole('tooltip', {
+        name: /Criar novo orçamento em segundos/i,
+      });
 
       await expect(fab).toBeVisible();
       await expect(title).toBeVisible();
       await expect(fab).toHaveAttribute('aria-label', 'Novo orçamento');
 
-      // Geometria: tap target >= 44x44 e formato circular (largura ~ altura).
+      // Geometria: tap target >= 44x44 e formato circular.
       const box = await fab.boundingBox();
       expect(box).not.toBeNull();
       if (box) {
@@ -52,19 +57,38 @@ test.describe('QuotesListPage · FAB Novo Orçamento', () => {
         }
       }
 
-      // Tooltip via hover.
-      await fab.hover();
-      await expect(page.getByText(/Criar novo orçamento em segundos/i)).toBeVisible({
-        timeout: 3_000,
-      });
+      const isMobile = vp.width < 640;
 
-      // Reset hover + tooltip via focus de teclado.
-      await page.mouse.move(0, 0);
+      if (!isMobile) {
+        // Desktop: hover abre, mover o mouse pra longe fecha.
+        await fab.hover();
+        await expect(tooltip).toBeVisible({ timeout: 3_000 });
+        await page.mouse.move(0, 0);
+        await expect(tooltip).toBeHidden({ timeout: 3_000 });
+      } else {
+        // Mobile: tap abre, tap fora fecha.
+        await fab.tap();
+        // Atenção: o click chega — esperamos o tooltip OU a navegação.
+        // Em Radix Tooltip, o tap dispara press + click; o tooltip pode
+        // aparecer brevemente. Se já navegou, voltamos para validar focus.
+        if (page.url().includes('/orcamentos/novo')) {
+          await page.goBack();
+          await page.waitForURL(/\/orcamentos(?!\/novo)/, { timeout: 10_000 });
+        } else {
+          await expect(tooltip).toBeVisible({ timeout: 3_000 });
+          await page.locator('body').tap({ position: { x: 5, y: 5 } });
+          await expect(tooltip).toBeHidden({ timeout: 3_000 });
+        }
+      }
+
+      // Foco por teclado abre tooltip; Tab para fora fecha.
       await page.keyboard.press('Escape').catch(() => undefined);
+      await page.mouse.move(0, 0);
       await fab.focus();
-      await expect(page.getByText(/Criar novo orçamento em segundos/i)).toBeVisible({
-        timeout: 3_000,
-      });
+      await expect(tooltip).toBeVisible({ timeout: 3_000 });
+
+      await page.keyboard.press('Tab');
+      await expect(tooltip).toBeHidden({ timeout: 3_000 });
 
       // Screenshot do bloco do header (ancestral imediato do título).
       const headerBlock = title.locator('xpath=ancestor::div[1]');

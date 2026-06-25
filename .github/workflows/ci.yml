@@ -32,7 +32,10 @@ jobs:
         
       - name: Build check
         run: npm run build
-        
+
+      - name: FAB accessibility static gate
+        run: npm run check:fab-a11y
+
       - name: Run Unit & Integration Tests
         run: npm run test:quality
         
