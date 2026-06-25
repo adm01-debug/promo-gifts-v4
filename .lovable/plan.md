@@ -1,50 +1,37 @@
-## Objetivo
+Plano de implementação
 
-Garantir que o badge de pendentes no `MyDiscountRequestsWidget` reflita a verdade do banco assim que (a) o vendedor envia/retenta uma solicitação ou (b) o admin aprova/rejeita, sem refresh manual.
+1. Preservar e validar a invalidação imediata no hook
+- Manter `useQueryClient` e o helper `invalidateWidget()` em `src/hooks/quotes/useDiscountApproval.ts`.
+- Confirmar que `invalidateWidget()` é chamado nos quatro caminhos de sucesso exigidos:
+  - INSERT novo em `requestApproval`.
+  - Dedup `samePct` com pending já existente.
+  - Fallback idempotente `23505`.
+  - `respondToApproval` após approve/reject.
+- Manter `invalidateWidget` nas dependências dos `useCallback`.
+- Não alterar schema, RLS, funções ou edge functions.
 
-## Mudanças
-
-### 1) `src/hooks/quotes/useDiscountApproval.ts`
-- Importar `useQueryClient` de `@tanstack/react-query`.
-- Criar helper `invalidateWidget()` que chama:
-  ```ts
-  queryClient.invalidateQueries({
-    queryKey: ['my-discount-requests-widget'],
-    refetchType: 'active',
-  });
-  ```
-- Chamar em todos os caminhos de sucesso:
-  - `requestApproval` → INSERT novo
-  - `requestApproval` → dedup samePct (já existe pending igual)
-  - `requestApproval` → fallback 23505 idempotente
-  - `respondToApproval` → após approve/reject do admin
-- Adicionar `invalidateWidget` às deps dos `useCallback` correspondentes.
-
-### 2) `src/components/dashboard/MyDiscountRequestsWidget.tsx`
-- `const totalPending = useMemo(() => all.filter(r => r.status === 'pending').length, [all]);`
-- Renderizar `Badge` no header (ao lado do título), só quando `totalPending > 0`, com:
+2. Preservar e validar o badge total no widget
+- Manter `totalPending` derivado de `all` em `src/components/dashboard/MyDiscountRequestsWidget.tsx`.
+- Manter o badge de header com:
   - `data-testid="discount-widget-pending-total"`
   - `data-count={totalPending}`
-- No `useEffect` do realtime, trocar a invalidação atual para incluir `refetchType: 'active'`, garantindo refetch de todas as páginas do `useInfiniteQuery`.
-- Manter `pendingDupCounts` e badge `×N` por linha inalterados.
+  - renderização apenas quando `totalPending > 0`.
+- Manter o badge diagnóstico `×N` por linha baseado em `pendingDupCounts` sem alterações.
+- Manter a invalidação do realtime com `refetchType: 'active'` para refetch ativo da query do widget.
 
-### 3) Criar `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`
-- Login como vendedor; navega ao dashboard.
-- Lê count inicial em `[data-testid="discount-widget-pending-total"]` (0 se ausente).
-- POST REST autenticado criando 1 `discount_approval_requests` pending para um quote do próprio vendedor (`seller_id = auth.uid()`), seguindo o padrão de `04cb`.
-- Aguarda `data-count` incrementar em até 25s (realtime) sem refresh manual.
-- PATCH REST mudando o pending para `approved` → `data-count` decrementa em até 25s.
-- Cleanup do registro criado no `afterEach`.
+3. Corrigir o E2E `04ck` para ser determinístico
+- Ajustar `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts` para não pular a validação principal quando o widget ainda não aparece por não haver pendentes iniciais.
+- Usar uma sessão com permissão suficiente para simular a decisão admin via PATCH, seguindo o padrão de specs próximos como `04cd`, evitando que o teste pule a metade de decremento por RLS.
+- Criar/selecionar um quote elegível sem pending ativo, para evitar colisão com o índice único parcial e não transformar `23505` em skip silencioso.
+- Ler o contador como 0 quando o badge estiver ausente e validar:
+  - incremento após POST pending, sem refresh manual, em até 25s;
+  - decremento após PATCH approved, sem refresh manual, em até 25s;
+  - remoção do badge quando a contagem volta para 0.
+- Implementar cleanup no `afterEach` para remover/neutralizar o registro criado pelo teste quando possível.
+- Alinhar seletores à política E2E do projeto usando `TID()`/`TID_PREFIX()` em vez de seletores literais soltos.
 
-## Critérios de aceitação
-
-- Mesma aba após `requestApproval`: badge atualiza em <500ms (invalidate síncrono).
-- Decisão de admin em outra aba: <3s com realtime, <8s no fallback de polling.
-- Badge `×N` por linha continua funcional.
-- Sem impacto em RLS, schema ou edge functions.
-
-## Arquivos afetados
-
-- `src/hooks/quotes/useDiscountApproval.ts` (editar)
-- `src/components/dashboard/MyDiscountRequestsWidget.tsx` (editar)
-- `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts` (criar)
+Critérios de aceite cobertos
+- Mesma aba: invalidação ativa após `requestApproval` continua garantindo atualização rápida.
+- Outra aba/dispositivo: realtime com `refetchType: 'active'` e polling fallback continuam cobrindo atualização sem refresh.
+- Badge total reflete pending do banco; badge `×N` por linha permanece funcional.
+- E2E passa a falhar em regressões reais em vez de pular cenários críticos por ausência inicial do widget, colisão de pending ou permissão insuficiente.

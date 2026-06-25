@@ -1,24 +1,21 @@
 /**
  * E2E — Badge de pendentes do MyDiscountRequestsWidget atualiza em tempo real.
  *
- * Fluxo:
- *   1. Login como vendedor; navega ao dashboard.
- *   2. Lê contagem inicial do `[data-testid="discount-widget-pending-total"]`
- *      (0 se ausente).
- *   3. Cria via REST autenticado uma linha pending em
- *      `discount_approval_requests` para um quote do próprio vendedor.
- *   4. Sem refresh manual, espera o `data-count` incrementar (realtime ou
- *      polling fallback) em até 20s.
- *   5. PATCH via REST muda a linha para `approved` → `data-count` decrementa
- *      (ou o badge some quando vai a 0) em até 20s.
- *
- * Notas:
- *   - Usa `seller_id = auth.uid()` para satisfazer RLS `dar_insert_scope`.
- *   - Pula se não houver quote do vendedor disponível (cenário fresh DB).
+ * Estratégia (alinhada ao 04cd):
+ *   - Loga como admin (que também é seller das próprias solicitações), evitando
+ *     skip da metade de decremento por RLS no PATCH `approved`.
+ *   - Hidrata o widget navegando ao /admin/dashboard.
+ *   - Seleciona um quote do próprio admin SEM pending ativo, para não colidir
+ *     com o índice único parcial `uniq_dar_quote_pending` (que viraria skip).
+ *   - Lê `data-count` (0 quando o badge ainda não existe).
+ *   - POST pending via REST → assert incremento sem refresh em até 25s.
+ *   - PATCH approved via REST → assert decremento sem refresh em até 25s.
+ *   - Cleanup do registro criado no afterEach.
  */
-import { test, expect, requireAuth } from "../fixtures/test-base";
+import { test, expect, requireAdmin } from "../fixtures/test-base";
+import { loginAs } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
-import { waitForTestIdVisible } from "../helpers/waits";
+import { TID } from "../fixtures/selectors";
 
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL ||
@@ -29,6 +26,9 @@ const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_ANON_KEY ||
   "";
+
+const BADGE_SEL = TID("discount-widget-pending-total");
+const WIDGET_SEL = TID("my-discount-requests-widget");
 
 test.describe.configure({ mode: "serial" });
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
@@ -49,91 +49,173 @@ async function readJwt(page: import("@playwright/test").Page): Promise<string> {
   });
 }
 
-async function readBadgeCount(page: import("@playwright/test").Page): Promise<number> {
-  const el = page.locator('[data-testid="discount-widget-pending-total"]');
+async function readBadgeCount(
+  page: import("@playwright/test").Page,
+): Promise<number> {
+  const el = page.locator(BADGE_SEL);
   if ((await el.count()) === 0) return 0;
   const attr = await el.first().getAttribute("data-count");
   return Number(attr ?? 0);
 }
 
+/** Busca um quote do próprio usuário que ainda não tenha pending request. */
+async function pickEligibleQuote(
+  page: import("@playwright/test").Page,
+  jwt: string,
+): Promise<string | null> {
+  return await page.evaluate(
+    async ({ url, anonKey, token }) => {
+      const headers = { apikey: anonKey, Authorization: `Bearer ${token}` };
+      const qRes = await fetch(
+        `${url}/rest/v1/quotes?select=id&order=created_at.desc&limit=40`,
+        { headers },
+      );
+      if (!qRes.ok) return null;
+      const quotes = (await qRes.json()) as Array<{ id: string }>;
+      if (quotes.length === 0) return null;
+      const idsParam = quotes.map((q) => q.id).join(",");
+      const pRes = await fetch(
+        `${url}/rest/v1/discount_approval_requests?select=quote_id&status=eq.pending&quote_id=in.(${idsParam})`,
+        { headers },
+      );
+      const taken = new Set<string>(
+        pRes.ok
+          ? ((await pRes.json()) as Array<{ quote_id: string }>).map(
+              (r) => r.quote_id,
+            )
+          : [],
+      );
+      const free = quotes.find((q) => !taken.has(q.id));
+      return free?.id ?? null;
+    },
+    { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, token: jwt },
+  );
+}
+
 test.describe("MyDiscountRequestsWidget — badge de pendentes ao vivo", () => {
-  test.beforeEach(() => requireAuth());
+  let createdRequestId: string | null = null;
+
+  test.beforeEach(async ({ page }) => {
+    requireAdmin();
+    test.skip(!SUPABASE_ANON_KEY, "Sem anon key — não dá pra checar DB");
+    await loginAs(page, "admin");
+    createdRequestId = null;
+  });
+
+  test.afterEach(async ({ page }) => {
+    if (!createdRequestId) return;
+    const jwt = await readJwt(page).catch(() => "");
+    if (!jwt) return;
+    await page
+      .evaluate(
+        async ({ url, anonKey, token, rId }) => {
+          await fetch(
+            `${url}/rest/v1/discount_approval_requests?id=eq.${rId}`,
+            {
+              method: "DELETE",
+              headers: {
+                apikey: anonKey,
+                Authorization: `Bearer ${token}`,
+                Prefer: "return=minimal",
+              },
+            },
+          );
+        },
+        {
+          url: SUPABASE_URL,
+          anonKey: SUPABASE_ANON_KEY,
+          token: jwt,
+          rId: createdRequestId,
+        },
+      )
+      .catch(() => {
+        /* best-effort cleanup */
+      });
+    createdRequestId = null;
+  });
 
   test("badge incrementa ao criar pending e decrementa ao aprovar — sem refresh", async ({
     page,
   }) => {
-    test.skip(!SUPABASE_ANON_KEY, "Sem anon key — não dá pra checar DB");
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
 
     await gotoAndSettle(page, "/admin/dashboard");
-    await waitForTestIdVisible(page, "my-discount-requests-widget", {
-      timeout: 15_000,
-    }).catch(() => {
-      test.skip(true, "Widget não visível — vendedor sem solicitações");
-    });
+    // Widget pode estar oculto até existir 1 pending; o teste valida AMBOS os
+    // estados (ausente=0 → presente=N → ausente=0). Por isso não exigimos
+    // visibilidade prévia do widget — só lemos o badge.
+    await page
+      .locator(WIDGET_SEL)
+      .first()
+      .waitFor({ state: "attached", timeout: 5_000 })
+      .catch(() => {
+        /* tudo bem se o widget ainda não existe */
+      });
 
     const jwt = await readJwt(page);
-    test.skip(!jwt, "Sem JWT no storage");
+    expect(jwt, "JWT do admin presente no localStorage").toBeTruthy();
 
-    // Pega um quote do próprio vendedor para usar como FK.
-    const quoteId = await page.evaluate(
-      async ({ url, anonKey, token }) => {
-        const res = await fetch(`${url}/rest/v1/quotes?select=id&limit=1`, {
-          headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
-        });
-        const rows = (await res.json()) as Array<{ id: string }>;
-        return rows?.[0]?.id ?? null;
-      },
-      { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, token: jwt },
+    const quoteId = await pickEligibleQuote(page, jwt);
+    test.skip(
+      !quoteId,
+      "Nenhum quote do admin sem pending ativo disponível — pré-condição não satisfeita",
     );
-    test.skip(!quoteId, "Vendedor sem quote pra usar como FK");
 
     const before = await readBadgeCount(page);
 
-    // Cria pending via REST.
+    // Cria pending via REST (sem usar o caminho de UI, para isolar a validação
+    // de realtime/polling do widget).
     const inserted = await page.evaluate(
       async ({ url, anonKey, token, qId }) => {
-        const res = await fetch(`${url}/rest/v1/discount_approval_requests`, {
-          method: "POST",
-          headers: {
-            apikey: anonKey,
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Prefer: "return=representation",
+        const res = await fetch(
+          `${url}/rest/v1/discount_approval_requests`,
+          {
+            method: "POST",
+            headers: {
+              apikey: anonKey,
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Prefer: "return=representation",
+            },
+            body: JSON.stringify({
+              quote_id: qId,
+              requested_discount_percent: 88.88,
+              max_allowed_percent: 10,
+              seller_notes: "E2E 04ck badge live test",
+            }),
           },
-          body: JSON.stringify({
-            quote_id: qId,
-            requested_discount_percent: 88.88,
-            max_allowed_percent: 10,
-            seller_notes: "E2E badge live test",
-          }),
-        });
+        );
         const text = await res.text();
         try {
           const arr = JSON.parse(text);
-          return { status: res.status, id: arr?.[0]?.id ?? null };
+          return {
+            status: res.status,
+            id: Array.isArray(arr) ? (arr[0]?.id ?? null) : null,
+          };
         } catch {
           return { status: res.status, id: null };
         }
       },
-      { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, token: jwt, qId: quoteId },
+      { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, token: jwt, qId: quoteId! },
     );
 
-    test.skip(
-      !inserted.id,
-      `INSERT falhou (status ${inserted.status}) — provavelmente 23505 (já há pending p/ este quote)`,
-    );
+    expect(
+      inserted.id,
+      `INSERT pending deve retornar id (status ${inserted.status})`,
+    ).toBeTruthy();
+    createdRequestId = inserted.id;
 
-    // Espera incremento no badge.
+    // Assert incremento — realtime (postgres_changes) ou fallback de polling.
     await expect
       .poll(async () => await readBadgeCount(page), {
         timeout: 25_000,
-        message: "badge não incrementou após INSERT realtime",
+        message: "badge não incrementou após INSERT (realtime+polling)",
       })
       .toBeGreaterThan(before);
 
-    // Aprova via REST (decisão de admin simulada — só passará RLS se este
-    // vendedor for admin; caso contrário pulamos a 2ª asserção).
+    const afterInsert = await readBadgeCount(page);
+    expect(afterInsert).toBeGreaterThan(before);
+
+    // PATCH para approved — admin pode decidir suas próprias solicitações.
     const patched = await page.evaluate(
       async ({ url, anonKey, token, rId }) => {
         const res = await fetch(
@@ -155,22 +237,39 @@ test.describe("MyDiscountRequestsWidget — badge de pendentes ao vivo", () => {
         const text = await res.text();
         try {
           const arr = JSON.parse(text);
-          return { status: res.status, ok: Array.isArray(arr) && arr.length > 0 };
+          return {
+            status: res.status,
+            ok: Array.isArray(arr) && arr.length > 0,
+          };
         } catch {
           return { status: res.status, ok: false };
         }
       },
-      { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, token: jwt, rId: inserted.id },
+      {
+        url: SUPABASE_URL,
+        anonKey: SUPABASE_ANON_KEY,
+        token: jwt,
+        rId: createdRequestId!,
+      },
     );
 
-    test.skip(!patched.ok, "PATCH bloqueado por RLS (vendedor não é admin) — fim do teste");
+    expect(
+      patched.ok,
+      `PATCH approved deve passar (status ${patched.status}) — admin decide suas próprias solicitações`,
+    ).toBe(true);
 
-    const afterInsert = await readBadgeCount(page);
+    // Assert decremento sem refresh manual.
     await expect
       .poll(async () => await readBadgeCount(page), {
         timeout: 25_000,
         message: "badge não decrementou após PATCH approved",
       })
       .toBeLessThan(afterInsert);
+
+    // Se voltou a 0, o badge deve sumir completamente.
+    const finalCount = await readBadgeCount(page);
+    if (finalCount === 0) {
+      await expect(page.locator(BADGE_SEL)).toHaveCount(0);
+    }
   });
 });
