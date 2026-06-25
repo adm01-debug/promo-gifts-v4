@@ -156,6 +156,21 @@ export function MyDiscountRequestsWidget() {
 
   const all = useMemo<RequestRow[]>(() => data?.pages.flat() ?? [], [data]);
 
+  // Diagnóstico: quantas linhas PENDING existem por (quote_id, requested_pct).
+  // Em condições normais a unique index `uniq_dar_quote_pending` garante 1,
+  // mas se algo escapou (race antiga, dados legados) o vendedor enxerga.
+  const pendingDupCounts = useMemo<Map<string, number>>(() => {
+    const m = new Map<string, number>();
+    for (const r of all) {
+      if (r.status !== 'pending') continue;
+      const k = `${r.quote_id}::${Number(r.requested_discount_percent ?? 0).toFixed(4)}`;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  }, [all]);
+  const dupKey = (r: RequestRow): string =>
+    `${r.quote_id}::${Number(r.requested_discount_percent ?? 0).toFixed(4)}`;
+
   const filtered = useMemo(() => {
     return all.filter(
       (r) =>
