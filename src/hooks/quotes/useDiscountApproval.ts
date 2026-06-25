@@ -37,6 +37,16 @@ export interface DiscountApprovalWithQuote extends DiscountApprovalRequest {
   };
 }
 
+/**
+ * Cache module-level de chamadas in-flight por (quote_id, requested_pct, max_pct).
+ * Garante idempotência local a uma aba mesmo sob double-click acelerado, ANTES
+ * de bater na rede. Cross-tab/cross-device é coberto pelo índice único parcial
+ * `uniq_dar_quote_pending` no banco (SQLSTATE 23505 → tratado como sucesso).
+ */
+const inflightApprovals = new Map<string, Promise<boolean>>();
+const idempotencyKey = (q: string, req: number, max: number): string =>
+  `${q}::${Number(req).toFixed(4)}::${Number(max).toFixed(4)}`;
+
 export function useDiscountApproval() {
   const { user } = useAuth();
   const [pendingRequests, setPendingRequests] = useState<DiscountApprovalWithQuote[]>([]);
@@ -51,6 +61,14 @@ export function useDiscountApproval() {
       sellerNotes?: string,
     ): Promise<boolean> => {
       if (!user) return false;
+      // In-flight dedup: chamada concorrente com mesma chave retorna a mesma Promise.
+      const key = idempotencyKey(quoteId, requestedPercent, maxAllowedPercent);
+      const existing = inflightApprovals.get(key);
+      if (existing) {
+        logger.info('Idempotent: returning in-flight approval promise for key', { key });
+        return existing;
+      }
+      const promise = (async (): Promise<boolean> => {
       try {
         // BUG-040: Dedup guard — idempotent under double-clicks / retries.
         // A pending row for this quote already satisfies the intent; skip the
@@ -250,6 +268,15 @@ export function useDiscountApproval() {
         logger.error('Error requesting approval:', err);
         toast.error('Erro ao solicitar aprovação');
         return false;
+      }
+      })();
+      inflightApprovals.set(key, promise);
+      try {
+        return await promise;
+      } finally {
+        // Libera a chave assim que a Promise resolve (sucesso OU falha),
+        // permitindo retry intencional do usuário sem ficar travado.
+        inflightApprovals.delete(key);
       }
     },
     [user],

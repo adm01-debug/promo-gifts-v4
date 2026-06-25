@@ -21,6 +21,7 @@ import {
   Info,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,12 +73,17 @@ export function MyDiscountRequestsWidget() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<WidgetFiltersValue>(EMPTY_FILTERS);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Estado do canal realtime — quando cair, ativamos polling acelerado.
+  const [realtimeOk, setRealtimeOk] = useState<boolean>(true);
 
   // Realtime: assina INSERT/UPDATE em discount_approval_requests do próprio
   // vendedor e invalida a query para refletir approved/rejected sem refresh.
   // Cleanup do channel é obrigatório p/ não vazar conexão entre renders.
   useEffect(() => {
     if (!userId) return;
+    // toast guards — só notifica a primeira queda e o primeiro reconnect.
+    let warnedOffline = false;
+    let warnedOnline = false;
     const channel = supabase
       .channel(`dar-seller-${userId}`)
       .on(
@@ -94,7 +100,26 @@ export function MyDiscountRequestsWidget() {
           });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeOk(true);
+          if (warnedOffline && !warnedOnline) {
+            toast.success('Conexão restaurada — atualizações em tempo real ativas.', {
+              duration: 3000,
+            });
+            warnedOnline = true;
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+          setRealtimeOk(false);
+          if (!warnedOffline) {
+            toast.warning(
+              'Tempo real indisponível. Atualizando por polling a cada poucos segundos.',
+              { duration: 4000 },
+            );
+            warnedOffline = true;
+          }
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
     };
@@ -103,13 +128,10 @@ export function MyDiscountRequestsWidget() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ['my-discount-requests-widget', userId],
     enabled: !!userId,
-    // Atualização near-realtime: a tabela `discount_approval_requests` foi
-    // intencionalmente removida do `supabase_realtime` (migration 20260419).
-    // Para refletir approved/rejected sem refresh manual usamos polling curto
-    // + refetch ao voltar a foco/janela. ~15s casa com o intervalo das
-    // notifications do workspace e mantém o custo de leitura controlado.
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    // Polling de segurança: 15s quando realtime ok; cai p/ 5s no fallback.
+    // refetchOnWindowFocus garante atualização imediata ao voltar à aba.
+    staleTime: 5_000,
+    refetchInterval: realtimeOk ? 15_000 : 5_000,
     refetchOnWindowFocus: true,
     refetchIntervalInBackground: false,
     initialPageParam: null as string | null,
