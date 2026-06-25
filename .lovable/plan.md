@@ -1,50 +1,41 @@
-## Objetivo
+Plano de implementação
 
-Garantir que o badge de pendentes no `MyDiscountRequestsWidget` reflita a verdade do banco assim que (a) o vendedor envia/retenta uma solicitação ou (b) o admin aprova/rejeita, sem refresh manual.
+1. Preservar a invalidação imediata no hook
+- Manter `useQueryClient` e o helper `invalidateWidget()` em `src/hooks/quotes/useDiscountApproval.ts`.
+- Confirmar `invalidateWidget()` nos quatro caminhos de sucesso:
+  - INSERT novo em `requestApproval`.
+  - Dedup `samePct` com pending já existente.
+  - Fallback idempotente `23505`.
+  - `respondToApproval` após approve/reject.
+- Manter `invalidateWidget` nas deps dos `useCallback`.
+- Sem alterações em schema, RLS, funções ou edge functions.
 
-## Mudanças
-
-### 1) `src/hooks/quotes/useDiscountApproval.ts`
-- Importar `useQueryClient` de `@tanstack/react-query`.
-- Criar helper `invalidateWidget()` que chama:
-  ```ts
-  queryClient.invalidateQueries({
-    queryKey: ['my-discount-requests-widget'],
-    refetchType: 'active',
-  });
-  ```
-- Chamar em todos os caminhos de sucesso:
-  - `requestApproval` → INSERT novo
-  - `requestApproval` → dedup samePct (já existe pending igual)
-  - `requestApproval` → fallback 23505 idempotente
-  - `respondToApproval` → após approve/reject do admin
-- Adicionar `invalidateWidget` às deps dos `useCallback` correspondentes.
-
-### 2) `src/components/dashboard/MyDiscountRequestsWidget.tsx`
-- `const totalPending = useMemo(() => all.filter(r => r.status === 'pending').length, [all]);`
-- Renderizar `Badge` no header (ao lado do título), só quando `totalPending > 0`, com:
+2. Preservar o badge total no widget
+- Manter `totalPending` derivado de `all` em `src/components/dashboard/MyDiscountRequestsWidget.tsx`.
+- Manter badge de header com:
   - `data-testid="discount-widget-pending-total"`
   - `data-count={totalPending}`
-- No `useEffect` do realtime, trocar a invalidação atual para incluir `refetchType: 'active'`, garantindo refetch de todas as páginas do `useInfiniteQuery`.
-- Manter `pendingDupCounts` e badge `×N` por linha inalterados.
+  - renderização apenas quando `totalPending > 0`.
+- Manter badge diagnóstico `×N` por linha (via `pendingDupCounts`) inalterado.
+- Manter invalidação do realtime com `refetchType: 'active'`.
 
-### 3) Criar `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`
-- Login como vendedor; navega ao dashboard.
-- Lê count inicial em `[data-testid="discount-widget-pending-total"]` (0 se ausente).
-- POST REST autenticado criando 1 `discount_approval_requests` pending para um quote do próprio vendedor (`seller_id = auth.uid()`), seguindo o padrão de `04cb`.
-- Aguarda `data-count` incrementar em até 25s (realtime) sem refresh manual.
-- PATCH REST mudando o pending para `approved` → `data-count` decrementa em até 25s.
-- Cleanup do registro criado no `afterEach`.
+3. Tornar o E2E `04ck` determinístico
+- Em `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`:
+  - Não pular quando o widget ainda não está visível (badge ausente = 0 é estado válido).
+  - Logar com sessão admin (padrão do `04cd`) para que o PATCH `approved` passe pela RLS sem skip.
+  - Selecionar um quote do próprio usuário sem pending ativo, para não colidir com o índice único parcial e não esconder `23505` em skip.
+  - Ler `data-count` como 0 quando o badge não existir.
+  - Asserts: incremento <25s após POST pending; decremento <25s após PATCH approved; badge sumir quando contagem volta a 0.
+  - Cleanup `DELETE` do registro criado no `afterEach`.
+  - Seletores via `TID()`/`TID_PREFIX()` do SSOT em `e2e/fixtures/selectors.ts`.
 
-## Critérios de aceitação
-
-- Mesma aba após `requestApproval`: badge atualiza em <500ms (invalidate síncrono).
-- Decisão de admin em outra aba: <3s com realtime, <8s no fallback de polling.
+Critérios de aceite
+- Mesma aba após `requestApproval`: badge atualiza via invalidate síncrono.
+- Decisão admin em outra aba: <3s com realtime, <8s no fallback de polling.
 - Badge `×N` por linha continua funcional.
-- Sem impacto em RLS, schema ou edge functions.
+- Spec falha em regressões reais em vez de pular cenários críticos.
 
-## Arquivos afetados
-
-- `src/hooks/quotes/useDiscountApproval.ts` (editar)
-- `src/components/dashboard/MyDiscountRequestsWidget.tsx` (editar)
-- `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts` (criar)
+Arquivos afetados
+- `src/hooks/quotes/useDiscountApproval.ts` (verificar — sem alteração se já conforme).
+- `src/components/dashboard/MyDiscountRequestsWidget.tsx` (verificar — sem alteração se já conforme).
+- `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts` (editar conforme item 3).
