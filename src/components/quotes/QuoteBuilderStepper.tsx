@@ -67,7 +67,7 @@ export function QuoteBuilderStepper({
             <li
               key={step.id}
               data-testid={`quote-step-${step.id}`}
-              className="flex min-w-0 flex-1 items-start last:justify-end"
+              className="flex min-w-0 flex-1 items-start last:flex-none"
               aria-current={isActive ? 'step' : undefined}
             >
               {/* Step column — circle + label */}
