@@ -143,8 +143,16 @@ export function DiscountApprovalQueue() {
         const apparent = Number(quote?.discount_percent ?? 0);
         const realPct = Number(quote?.real_discount_percent ?? req.requested_discount_percent);
         const hasMarkup = markup > 0;
+        const isHighlighted = highlightedId === req.id;
         return (
-          <Card key={req.id}>
+          <Card
+            key={req.id}
+            ref={isHighlighted ? highlightedRef : undefined}
+            data-testid={`discount-request-card-${req.id}`}
+            className={cn(
+              isHighlighted && 'ring-2 ring-amber-500/60 shadow-lg shadow-amber-500/10',
+            )}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
                 <span>Orçamento {quote?.quote_number ?? '—'}</span>
