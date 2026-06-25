@@ -770,6 +770,25 @@ export default function QuoteBuilderPage() {
         onCancel={cancelLeave}
         message={message}
       />
+
+      <ConfirmDialog
+        open={resetDialogOpen}
+        onOpenChange={setResetDialogOpen}
+        onConfirm={() => {
+          s.resetQuote();
+          setResetDialogOpen(false);
+          setHasUnsavedChanges(false);
+        }}
+        title={s.isEditMode ? 'Sair desta edição?' : 'Limpar orçamento atual?'}
+        description={
+          s.isEditMode
+            ? 'Você será redirecionado para um novo orçamento em branco. Alterações não salvas serão descartadas.'
+            : 'Empresa, contato, produtos e condições inseridos serão removidos. Esta ação não pode ser desfeita.'
+        }
+        confirmText={s.isEditMode ? 'Sair e começar do zero' : 'Sim, limpar tudo'}
+        cancelText="Cancelar"
+        variant="destructive"
+      />
     </>
   );
 }
