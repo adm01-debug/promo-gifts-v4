@@ -12,8 +12,12 @@ import type { ReactNode } from 'react';
 import { setFeatureFlag } from '@/lib/feature-flags';
 
 const limitMock = vi.fn();
-const orderMock = vi.fn(() => ({ limit: limitMock }));
-const eqMock = vi.fn(() => ({ order: orderMock }));
+// Cadeia espelha o hook: from().select().eq().neq().order().order().limit()
+// (o .neq('nivel_alerta','OK') + 2º .order() foram adicionados no fix de 2026-06-22).
+const orderInnerMock = vi.fn(() => ({ limit: limitMock }));
+const orderOuterMock = vi.fn(() => ({ order: orderInnerMock }));
+const neqMock = vi.fn(() => ({ order: orderOuterMock }));
+const eqMock = vi.fn(() => ({ neq: neqMock }));
 const selectMock = vi.fn(() => ({ eq: eqMock }));
 const fromMock = vi.fn(() => ({ select: selectMock }));
 

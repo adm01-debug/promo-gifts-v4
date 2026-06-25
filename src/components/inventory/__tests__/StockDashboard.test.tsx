@@ -51,6 +51,15 @@ vi.mock('../VariantStockTable', () => ({
 
 import { StockDashboard } from '../StockDashboard';
 
+// Mock useRuptureAlerts (hook React-Query da feature EMA). O VariantStockTable
+// monta esse hook quando a flag `useEmaRupture` está ativa (default: on), o que
+// exige QueryClientProvider em produção. Estes testes verificam render/linhas a
+// partir de props, não o fetch de EMA — então mockamos o hook (consistente com
+// a estratégia de mocks do arquivo) e evitamos precisar de um provider.
+vi.mock('@/hooks/stock/useRuptureAlerts', () => ({
+  useRuptureAlerts: () => ({ alerts: [], byVariantId: new Map(), isLoading: false, error: null }),
+}));
+
 beforeAll(() => {
   const proto = Element.prototype as unknown as Record<string, unknown>;
   proto.hasPointerCapture = vi.fn(() => false);
@@ -127,6 +136,7 @@ const futureEntry = (over: Partial<FutureStockEntry> = {}): FutureStockEntry => 
     id: over.id ?? `f-${seq}`,
     productId: over.productId ?? `prod-${seq}`,
     productName: over.productName ?? `Futuro ${seq}`,
+    variantId: over.variantId ?? `var-${seq}`,
     expectedQuantity: over.expectedQuantity ?? 50,
     expectedDate: over.expectedDate ?? '2026-07-01T00:00:00.000Z',
     source: over.source ?? 'purchase_order',
@@ -238,12 +248,12 @@ describe('StockDashboard — render states', () => {
   it('renderiza cartões de KPI e tabela quando carregado', () => {
     renderDashboard();
     // StatCards expose unique aria-labels ("<title>: <value>. <hint>").
-    expect(screen.getByRole('button', { name: /^Total de Produtos:/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Total de Variações:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Em Estoque:/ })).toBeInTheDocument();
-    // "Crítico" replaced the defunct "Estoque Baixo" card (kpi-consistency.test.tsx).
-    expect(screen.getByRole('button', { name: /^Crítico:/ })).toBeInTheDocument();
+    // "Risco de Ruptura" (EMA, Onda 1) replaced the defunct "Estoque Baixo"/"Crítico" card.
+    expect(screen.getByRole('button', { name: /^Risco de Ruptura:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Sem Estoque:/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estoque Futuro:/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Estoque Futuro/ })).toBeInTheDocument();
     expect(screen.getByTestId('variant-stock-table')).toBeInTheDocument();
   });
 
@@ -260,7 +270,7 @@ describe('StockDashboard — stat card filters', () => {
   it('clica em "Total de Produtos" e aplica status=all', async () => {
     const user = userEvent.setup();
     renderDashboard();
-    await user.click(screen.getByRole('button', { name: /^Total de Produtos:/ }));
+    await user.click(screen.getByRole('button', { name: /^Total de Variações:/ }));
     expect(updateFilter).toHaveBeenCalledWith('status', 'all');
   });
 
@@ -287,7 +297,7 @@ describe('StockDashboard — stat card filters', () => {
       buildHookValue({ futureStock: [futureEntry({ productName: 'Reposição X' })] }),
     );
     renderDashboard();
-    await user.click(screen.getByRole('button', { name: /^Estoque Futuro:/ }));
+    await user.click(screen.getByRole('button', { name: /^Estoque Futuro/ }));
     expect(updateFilter).toHaveBeenCalledWith('status', 'incoming');
     // dialog opens with the future entries
     await waitFor(() => expect(screen.getByText('Previsão de Reposição')).toBeInTheDocument());

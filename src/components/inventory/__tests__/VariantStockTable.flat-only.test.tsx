@@ -11,6 +11,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { VariantStockTable } from '@/components/inventory/VariantStockTable';
+
+// Mock useRuptureAlerts (hook React-Query da feature EMA). O VariantStockTable
+// monta esse hook quando a flag `useEmaRupture` está ativa (default: on), o que
+// exige QueryClientProvider em produção. Estes testes verificam render/linhas a
+// partir de props, não o fetch de EMA — então mockamos o hook (consistente com
+// a estratégia de mocks do arquivo) e evitamos precisar de um provider.
+vi.mock('@/hooks/stock/useRuptureAlerts', () => ({
+  useRuptureAlerts: () => ({ alerts: [], byVariantId: new Map(), isLoading: false, error: null }),
+}));
 import type { ProductStockSummary, VariantStock } from '@/types/stock';
 
 // Render all virtual items so the DOM reflects full row state (jsdom has height=0
