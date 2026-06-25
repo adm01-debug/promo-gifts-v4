@@ -16,11 +16,14 @@ import { assertCursorPagination, type PageRow } from "../helpers/pagination-asse
 
 
 test.describe.configure({ mode: "parallel" });
+test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 
 const PAGE_SIZE = 50;
 
 test.describe("Discount approval — paginação cursorada da fila", () => {
   test("carregar mais anexa itens sem duplicar e mantém ordem", async ({ page }, testInfo) => {
+    // Seed de 55+ pending + 2 fetches paginados podem demorar sob carga.
+    test.setTimeout(90_000);
     requireAdmin();
     const { seed } = await setupDiscountAdmin(page, testInfo, {
       minPending: PAGE_SIZE + 5,
