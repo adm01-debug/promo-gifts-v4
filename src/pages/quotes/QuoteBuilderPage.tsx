@@ -35,8 +35,7 @@ import {
   Info,
   MessageSquare,
   ChevronDown,
-
-  
+  RotateCcw,
 } from 'lucide-react';
 // FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
 import { format, addDays, startOfDay } from 'date-fns';
@@ -55,11 +54,13 @@ import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProdu
 import { useQuoteBuilderState } from '@/hooks/quotes';
 import { useUnsavedChangesGuard } from '@/hooks/common';
 import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
   const { conflictInfo, dismissConflict, overwriteAndSave } = s;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
   const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
   const conditionsStorageKey = `quote-builder:conditions-collapsed:${s.quoteId ?? 'new'}`;
@@ -179,7 +180,35 @@ export default function QuoteBuilderPage() {
               </div>
             </div>
 
-            <div className="min-w-0 flex-1">
+            {/* RESET — descarta empresa, contato, itens e condições do orçamento
+                em construção. Em modo edição, redireciona para /orcamentos/novo
+                para não sobrescrever o orçamento persistido. */}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="quote-reset-button"
+                    onClick={() => setResetDialogOpen(true)}
+                    className="shrink-0 gap-1.5 text-muted-foreground hover:text-destructive"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Limpar empresa, contato, itens e condições do orçamento atual
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Spacer empurra o stepper para a direita, criando respiro
+                entre o título e a timeline. */}
+            <div className="hidden flex-1 lg:block" aria-hidden="true" />
+
+            <div className="min-w-0 w-full lg:w-auto lg:max-w-[60%] lg:flex lg:justify-end">
               <QuoteBuilderStepper
                 completedSteps={s.completedSteps}
                 activeStep={s.activeStep}
@@ -740,6 +769,25 @@ export default function QuoteBuilderPage() {
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
         message={message}
+      />
+
+      <ConfirmDialog
+        open={resetDialogOpen}
+        onOpenChange={setResetDialogOpen}
+        onConfirm={() => {
+          s.resetQuote();
+          setResetDialogOpen(false);
+          setHasUnsavedChanges(false);
+        }}
+        title={s.isEditMode ? 'Sair desta edição?' : 'Limpar orçamento atual?'}
+        description={
+          s.isEditMode
+            ? 'Você será redirecionado para um novo orçamento em branco. Alterações não salvas serão descartadas.'
+            : 'Empresa, contato, produtos e condições inseridos serão removidos. Esta ação não pode ser desfeita.'
+        }
+        confirmText={s.isEditMode ? 'Sair e começar do zero' : 'Sim, limpar tudo'}
+        cancelText="Cancelar"
+        variant="destructive"
       />
     </>
   );

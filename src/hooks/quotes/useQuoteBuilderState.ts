@@ -1156,7 +1156,58 @@ export function useQuoteBuilderState() {
 
   const isBuilderBootstrapping = loadingQuote;
 
+  /**
+   * Limpa todos os campos do orçamento em construção (empresa, contato,
+   * itens, condições de pagamento/entrega, frete, desconto, markup, notas)
+   * e descarta o autosave local. Em modo edição, navega para `/orcamentos/novo`
+   * para garantir que o orçamento persistido NÃO seja sobrescrito.
+   */
+  const resetQuote = useCallback(() => {
+    if (isEditMode) {
+      navigate('/orcamentos/novo');
+      return;
+    }
+    clearAutoSave();
+    setClientId('');
+    setContactId('');
+    setCompanyInfo(null);
+    setContactInfo(null);
+    setItems([]);
+    setNotes('');
+    setPaymentMethod('');
+    setPaymentTerms('');
+    setDeliveryTime('');
+    setDeliveryMode('prazo');
+    setDeliveryDate(undefined);
+    setShippingType('');
+    setShippingCost(0);
+    setDiscountType('percent');
+    setDiscountValue(0);
+    setNegotiationMarkup(0);
+    setValidityDays('7');
+    setValidUntil(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
+    setActiveItemIndex(0);
+    setExpandedItems(new Set());
+    setProductSearch('');
+    setProductSearchOpen(false);
+    setSelectedProductForColor(null);
+    setCurrentStep('client');
+    setConflictInfo(null);
+  }, [
+    isEditMode,
+    navigate,
+    clearAutoSave,
+    setClientId,
+    setContactId,
+    setCompanyInfo,
+    setContactInfo,
+    setItems,
+    setExpandedItems,
+    setActiveItemIndex,
+  ]);
+
   return {
+    resetQuote,
     navigate,
     quoteId,
     isEditMode,
