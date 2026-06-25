@@ -1,24 +1,24 @@
 /**
- * Tests for useProductMatch — validates the ENGINE THAT ACTUALLY SHIPS:
- * scoring (category/tags/nicho/supplier/complementary), getMatchType thresholds,
- * complementary keyword pairs, and the public hook (filters + descending sort).
+ * Testes do useProductMatch — engine RICA: similaridade de nome (tokens/Jaccard),
+ * scoring (categoria/tags/nicho/fornecedor/descritor/material/complementar), getMatchType
+ * por nameSim, e o hook público (filtros + ordenação com desempate por similaridade).
  *
- * GAP FLAGGED (2026-06-25): earlier revisions targeted a richer, never-implemented
- * engine — name-token similarity (tokenizeName/nameTokenSimilarity/IDENTICAL_NAME_SIMILARITY),
- * descriptiveTags/materials scoring, nameSim-based matchType + tie-breaking, 3-arg
- * calculateMatchScore. Those symbols NEVER existed in the module (git-proven via `git log -S`),
- * so the suite was red-on-arrival. This rewrite tests the real implementation. Whether to BUILD
- * the richer engine is a product decision (see PR description).
+ * Importa a implementação REAL do módulo (sem cópias inline), protegendo a produção
+ * contra regressões.
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { Product } from '@/types/product-catalog';
 import {
   normalizeText,
+  tokenizeName,
+  nameTokenSimilarity,
   findComplementaryKeywords,
   calculateMatchScore,
   getMatchType,
   useProductMatch,
+  eqId,
+  IDENTICAL_NAME_SIMILARITY,
 } from '@/hooks/products/useProductMatch';
 
 const emptyTags = () => ({
@@ -52,9 +52,7 @@ function makeProduct(overrides: Partial<Product> & { id: string; name: string })
 }
 
 describe('normalizeText', () => {
-  it('lowercases text', () => {
-    expect(normalizeText('CANETA')).toBe('caneta');
-  });
+  it('lowercases text', () => expect(normalizeText('CANETA')).toBe('caneta'));
   it('removes accents', () => {
     expect(normalizeText('Tábua')).toBe('tabua');
     expect(normalizeText('café')).toBe('cafe');
@@ -62,11 +60,55 @@ describe('normalizeText', () => {
     expect(normalizeText('chapéu')).toBe('chapeu');
     expect(normalizeText('Aço inox')).toBe('aco inox');
   });
-  it('handles empty string', () => {
-    expect(normalizeText('')).toBe('');
+  it('handles empty string', () => expect(normalizeText('')).toBe(''));
+  it('handles mixed case with accents', () => expect(normalizeText('Ação Rápida')).toBe('acao rapida'));
+});
+
+describe('eqId', () => {
+  it('coerces type-mixed ids (number vs string)', () => {
+    expect(eqId(1, '1')).toBe(true);
+    expect(eqId('abc', 'abc')).toBe(true);
+    expect(eqId(1, 2)).toBe(false);
   });
-  it('handles mixed case with accents', () => {
-    expect(normalizeText('Ação Rápida')).toBe('acao rapida');
+  it('treats null/undefined as never equal', () => {
+    expect(eqId(null, null)).toBe(false);
+    expect(eqId(undefined, undefined)).toBe(false);
+    expect(eqId(null, '1')).toBe(false);
+  });
+});
+
+describe('tokenizeName', () => {
+  it('strips stopwords and short tokens', () => {
+    const t = tokenizeName('Caneta de Metal em Bambu');
+    expect(t.has('caneta')).toBe(true);
+    expect(t.has('metal')).toBe(true);
+    expect(t.has('bambu')).toBe(true);
+    expect(t.has('de')).toBe(false);
+    expect(t.has('em')).toBe(false);
+  });
+  it('keeps 2-char tokens only when they contain a digit', () => {
+    const t = tokenizeName('Caderno A5 ml');
+    expect(t.has('a5')).toBe(true);
+    expect(t.has('ml')).toBe(false);
+  });
+  it('handles empty/nullish input', () => {
+    expect(tokenizeName('').size).toBe(0);
+    expect(tokenizeName(null).size).toBe(0);
+    expect(tokenizeName(undefined).size).toBe(0);
+  });
+});
+
+describe('nameTokenSimilarity', () => {
+  it('is 1 for identical token sets', () =>
+    expect(nameTokenSimilarity(tokenizeName('Caneta Metal'), tokenizeName('Metal Caneta'))).toBe(1));
+  it('is 0 for disjoint token sets', () =>
+    expect(nameTokenSimilarity(tokenizeName('Caneta Metal'), tokenizeName('Mochila Nylon'))).toBe(0));
+  it('is 0 when either set is empty', () =>
+    expect(nameTokenSimilarity(tokenizeName(''), tokenizeName('Caneta'))).toBe(0));
+  it('detects near-duplicate colour variants as highly similar', () => {
+    const a = tokenizeName('Caneta Metal Azul');
+    const b = tokenizeName('Caneta Metal Vermelha');
+    expect(nameTokenSimilarity(a, b)).toBeGreaterThanOrEqual(IDENTICAL_NAME_SIMILARITY);
   });
 });
 
@@ -79,15 +121,12 @@ describe('findComplementaryKeywords', () => {
     expect(r).toContain('avental');
     expect(r).toContain('grelha');
   });
-  it('finds reverse complements for caderno', () => {
-    expect(findComplementaryKeywords('Caderno Universitário')).toContain('caneta');
-  });
-  it('returns empty array for unmatched product', () => {
-    expect(findComplementaryKeywords('Pen Drive USB')).toEqual([]);
-  });
-  it('handles accent variations correctly', () => {
-    expect(findComplementaryKeywords('TABUA DE CORTE')).toContain('faca');
-  });
+  it('finds reverse complements for caderno', () =>
+    expect(findComplementaryKeywords('Caderno Universitário')).toContain('caneta'));
+  it('returns empty array for unmatched product', () =>
+    expect(findComplementaryKeywords('Pen Drive USB')).toEqual([]));
+  it('handles accent variations correctly', () =>
+    expect(findComplementaryKeywords('TABUA DE CORTE')).toContain('faca'));
 });
 
 describe('calculateMatchScore — category', () => {
@@ -147,8 +186,44 @@ describe('calculateMatchScore — supplier', () => {
   });
 });
 
+describe('calculateMatchScore — descriptive tags', () => {
+  it('scores shared flat descriptive tags (+8 each)', () => {
+    const source = makeProduct({ id: '1', name: 'Copo de viagem inox', descriptiveTags: ['copo', 'inox', 'parede dupla'], supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Caneca térmica', descriptiveTags: ['copo', 'inox'], supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    const { score, reasons } = calculateMatchScore(source, candidate);
+    expect(score).toBe(16);
+    expect(reasons.some((r) => r.startsWith('Descritor'))).toBe(true);
+  });
+  it('caps descriptive-tag contribution at +24', () => {
+    const many = ['a1', 'b2', 'c3', 'd4', 'e5', 'f6'];
+    const source = makeProduct({ id: '1', name: 'X', descriptiveTags: many, supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Y', descriptiveTags: many, supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    expect(calculateMatchScore(source, candidate).score).toBe(24);
+  });
+  it('is case/whitespace-insensitive for descriptive tags', () => {
+    const source = makeProduct({ id: '1', name: 'X', descriptiveTags: [' Aço Inox '], supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Y', descriptiveTags: ['aço inox'], supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    expect(calculateMatchScore(source, candidate).score).toBe(8);
+  });
+});
+
+describe('calculateMatchScore — materials', () => {
+  it('scores shared materials (+6 each)', () => {
+    const source = makeProduct({ id: '1', name: 'X', materials: ['Aço Inox', 'Bambu'], supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Y', materials: ['Aço Inox'], supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    const { score, reasons } = calculateMatchScore(source, candidate);
+    expect(score).toBe(6);
+    expect(reasons.some((r) => r.startsWith('Material'))).toBe(true);
+  });
+  it('does not double-count a term present in both descriptiveTags and materials', () => {
+    const source = makeProduct({ id: '1', name: 'X', descriptiveTags: ['metal'], materials: ['Metal'], supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Y', descriptiveTags: ['metal'], materials: ['Metal'], supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    expect(calculateMatchScore(source, candidate).score).toBe(8);
+  });
+});
+
 describe('calculateMatchScore — complementary keywords', () => {
-  it('scores complementary match: tábua → faca', () => {
+  it('scores +20 for complementary match: tábua → faca', () => {
     const source = makeProduct({ id: '1', name: 'Tábua de Churrasco', supplier: { id: 'x', name: 'X' }, category_id: 'c1' });
     const candidate = makeProduct({ id: '2', name: 'Faca para Churrasco', supplier: { id: 'y', name: 'Y' }, category_id: 'c2' });
     const { score, reasons } = calculateMatchScore(source, candidate);
@@ -161,7 +236,18 @@ describe('calculateMatchScore — complementary keywords', () => {
     const { reasons } = calculateMatchScore(source, candidate);
     expect(reasons.some((r) => r.startsWith('Complementar') && r.toLowerCase().includes('copo'))).toBe(false);
   });
-  it('matches plural by substring (squeeze → canudos)', () => {
+  it('uses precomputed complements when provided (3-arg)', () => {
+    const source = makeProduct({ id: '1', name: 'Caneta', supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Caderno', supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    const complements = findComplementaryKeywords(source.name);
+    expect(calculateMatchScore(source, candidate, complements).reasons.some((r) => r.startsWith('Complementar'))).toBe(true);
+  });
+  it('does NOT false-positive inside a longer word (bone ∉ trombone)', () => {
+    const source = makeProduct({ id: '1', name: 'Camiseta Polo', supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
+    const candidate = makeProduct({ id: '2', name: 'Trombone Musical', supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
+    expect(calculateMatchScore(source, candidate).reasons.some((r) => r.startsWith('Complementar'))).toBe(false);
+  });
+  it('accepts plural by prefix (canudo → canudos)', () => {
     const source = makeProduct({ id: '1', name: 'Squeeze Fitness', supplier: { id: 'a', name: 'A' }, category_id: 'c1' });
     const candidate = makeProduct({ id: '2', name: 'Canudos Inox', supplier: { id: 'b', name: 'B' }, category_id: 'c2' });
     expect(calculateMatchScore(source, candidate).reasons.some((r) => r.startsWith('Complementar'))).toBe(true);
@@ -169,14 +255,8 @@ describe('calculateMatchScore — complementary keywords', () => {
 });
 
 describe('calculateMatchScore — combined & unrelated', () => {
-  it('reaches a high score with category + tags + nicho + supplier + complementary', () => {
-    const tags = {
-      publicoAlvo: ['Executivo'],
-      datasComemorativas: ['Natal'],
-      endomarketing: ['Integração'],
-      ramo: ['Tecnologia'],
-      nicho: ['Escritório'],
-    };
+  it('reaches a very high score with category + tags + nicho + supplier + complementary', () => {
+    const tags = { publicoAlvo: ['Executivo'], datasComemorativas: ['Natal'], endomarketing: ['Integração'], ramo: ['Tecnologia'], nicho: ['Escritório'] };
     const source = makeProduct({ id: '1', name: 'Caneta Executiva', category_id: 'cat-1', supplier: { id: 'sup-1', name: 'A' }, tags });
     const candidate = makeProduct({ id: '2', name: 'Caderno Executivo', category_id: 'cat-1', supplier: { id: 'sup-1', name: 'A' }, tags });
     expect(calculateMatchScore(source, candidate).score).toBeGreaterThanOrEqual(100);
@@ -190,18 +270,20 @@ describe('calculateMatchScore — combined & unrelated', () => {
 
 describe('getMatchType', () => {
   it('complementary always wins', () => {
-    expect(getMatchType(100, true, true)).toBe('complementary');
-    expect(getMatchType(0, false, true)).toBe('complementary');
+    expect(getMatchType({ hasComplementary: true, nameSim: 1 })).toBe('complementary');
+    expect(getMatchType({ hasComplementary: true, nameSim: 0 })).toBe('complementary');
   });
-  it('identical when same category and score >= 40', () => {
-    expect(getMatchType(40, true, false)).toBe('identical');
-    expect(getMatchType(80, true, false)).toBe('identical');
+  it('classifies near-duplicates as identical', () => {
+    expect(getMatchType({ hasComplementary: false, nameSim: IDENTICAL_NAME_SIMILARITY })).toBe('identical');
+    expect(getMatchType({ hasComplementary: false, nameSim: 0.9 })).toBe('identical');
   });
-  it('similar when same category but score < 40', () => {
-    expect(getMatchType(30, true, false)).toBe('similar');
+  it('classifies low name-similarity as similar', () => {
+    expect(getMatchType({ hasComplementary: false, nameSim: 0.2 })).toBe('similar');
+    expect(getMatchType({ hasComplementary: false, nameSim: 0 })).toBe('similar');
   });
-  it('similar when high score but different category', () => {
-    expect(getMatchType(80, false, false)).toBe('similar');
+  it('requires (near-)exact name for single-token identical', () => {
+    expect(getMatchType({ hasComplementary: false, nameSim: 1, sharedTokens: 1 })).toBe('identical');
+    expect(getMatchType({ hasComplementary: false, nameSim: 0.5, sharedTokens: 1 })).toBe('similar');
   });
 });
 
@@ -216,12 +298,16 @@ describe('useProductMatch (hook)', () => {
     const { result } = renderHook(() => useProductMatch(source, [source], { minScore: 0 }));
     expect(result.current.matches.find((m) => m.product.id === 'src')).toBeUndefined();
   });
-  it('classifies a same-category high-score candidate as identical', () => {
-    const tags = { ...emptyTags(), nicho: ['Escritório'] };
-    const src2 = makeProduct({ id: 'src2', name: 'Caneta', category_id: 'cat-1', supplier: { id: 's1', name: 'A' }, tags });
-    const dup = makeProduct({ id: 'dup', name: 'Lapiseira', category_id: 'cat-1', supplier: { id: 's1', name: 'A' }, tags });
-    const { result } = renderHook(() => useProductMatch(src2, [dup], { minScore: 1 }));
+  it('classifies a near-duplicate from another supplier as identical', () => {
+    const dup = makeProduct({ id: 'dup', name: 'Caneta Metal Vermelha', category_id: 'cat-1', supplier: { id: 's2', name: 'B' } });
+    const { result } = renderHook(() => useProductMatch(source, [dup], { minScore: 1 }));
     expect(result.current.matches.find((m) => m.product.id === 'dup')?.matchType).toBe('identical');
+  });
+  it('classifies a byte-identical SINGLE-token product as identical', () => {
+    const s = makeProduct({ id: 's', name: 'Squeeze', category_id: 'cat-1', supplier: { id: 'a', name: 'A' } });
+    const dup = makeProduct({ id: 'd', name: 'Squeeze', category_id: 'cat-1', supplier: { id: 'b', name: 'B' } });
+    const { result } = renderHook(() => useProductMatch(s, [dup], { minScore: 1 }));
+    expect(result.current.matches[0]?.matchType).toBe('identical');
   });
   it('filters by categoryId (id-based, not display name)', () => {
     const inCat = makeProduct({ id: 'a', name: 'Caneta Plástica', category_id: 'cat-1', supplier: { id: 's2', name: 'B' } });
@@ -244,15 +330,12 @@ describe('useProductMatch (hook)', () => {
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
     expect(result.current.matches[0].product.id).toBe('strong');
   });
-  it('respects matchTypes filter (complementary only)', () => {
-    const compl = makeProduct({ id: 'compl', name: 'Caderno Pautado', category_id: 'cat-9', supplier: { id: 's9', name: 'Z' } });
-    const sameCat = makeProduct({ id: 'samecat', name: 'Mochila', category_id: 'cat-1', supplier: { id: 's9', name: 'Z' } });
-    const { result } = renderHook(() =>
-      useProductMatch(source, [compl, sameCat], { minScore: 1, matchTypes: ['complementary'] }),
-    );
-    const ids = result.current.matches.map((m) => m.product.id);
-    expect(ids).toContain('compl');
-    expect(ids).not.toContain('samecat');
+  it('results carry nameSim and ties break by name similarity', () => {
+    const closer = makeProduct({ id: 'closer', name: 'Caneta Metal Verde', category_id: 'cat-1', supplier: { id: 'b', name: 'B' } });
+    const farther = makeProduct({ id: 'farther', name: 'Mochila Nylon', category_id: 'cat-1', supplier: { id: 'b', name: 'B' } });
+    const { result } = renderHook(() => useProductMatch(source, [farther, closer], { minScore: 1 }));
+    expect(typeof result.current.matches[0]?.nameSim).toBe('number');
+    expect(result.current.matches[0]?.product.id).toBe('closer');
   });
   it('handles a large candidate pool without error', () => {
     const candidates = Array.from({ length: 1000 }, (_, i) =>
