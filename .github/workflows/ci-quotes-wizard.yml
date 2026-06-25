@@ -8,6 +8,8 @@ on:
       - 'src/hooks/quotes/**'
       - 'src/logic/quotes/**'
       - 'src/components/quotes/**'
+      - 'e2e/quotes/**'
+      - '.github/workflows/ci-quotes-wizard.yml'
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +17,8 @@ on:
       - 'src/hooks/quotes/**'
       - 'src/logic/quotes/**'
       - 'src/components/quotes/**'
+      - 'e2e/quotes/**'
+      - '.github/workflows/ci-quotes-wizard.yml'
   workflow_dispatch:
 
 env:
@@ -28,15 +32,61 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-      
+
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run logic and wizard tests
         run: npx vitest run src/logic/quotes/__tests__/calculations.test.ts src/pages/quotes/QuoteBuilder.e2e.test.tsx --reporter=verbose
-        # continue-on-error é false por padrão, então falhará o build se os testes falharem
+
+  # Job dedicado ao spec do popover de campos pendentes. Bloqueia merge em
+  # falha de layout/snapshot. Sobe artefatos (HTML report + actual/expected/diff
+  # PNGs + trace) quando falha para revisão rápida do baseline no PR.
+  quote-missing-fields-popover-e2e:
+    name: E2E Popover Campos Pendentes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+      - name: Run Playwright — quote-missing-fields-popover
+        run: npx playwright test e2e/quotes/quote-missing-fields-popover.spec.ts --project=chromium-authed --retries=2
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-missing-fields
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-missing-fields-snapshot-diffs
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+            test-results/**/*.webm
+          retention-days: 14
+          if-no-files-found: ignore
