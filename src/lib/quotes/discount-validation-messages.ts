@@ -106,10 +106,11 @@ export function getDiscountValidationMessage(
 
   // 3) Acima do limite do vendedor → dispara alçada.
   if (maxDiscountPercent !== null && realDiscountPercent > maxDiscountPercent) {
+    const excedente = realDiscountPercent - maxDiscountPercent;
     const description = hasMarkup
-      ? `Desconto real ${fmt(realDiscountPercent)}% ultrapassa seu limite de ${fmt(maxDiscountPercent)}%. ` +
+      ? `Desconto real ${fmt(realDiscountPercent)}% ultrapassa seu limite de ${fmt(maxDiscountPercent)}% (excedente de ${fmt(excedente)}%). ` +
         `A Margem de Negociação (${fmt(markupPercent)}%) já foi considerada.`
-      : `Desconto real ${fmt(realDiscountPercent)}% ultrapassa seu limite de ${fmt(maxDiscountPercent)}%.`;
+      : `Desconto real ${fmt(realDiscountPercent)}% ultrapassa seu limite de ${fmt(maxDiscountPercent)}% (excedente de ${fmt(excedente)}%). Valor máximo permitido sem aprovação: ${fmt(maxDiscountPercent)}%.`;
 
     return {
       kind: 'exceeds_limit',
@@ -117,9 +118,10 @@ export function getDiscountValidationMessage(
       title: 'Acima do seu limite — requer aprovação do gestor',
       description,
       callToAction:
-        'Clique em “Solicitar Aprovação”, justifique (mín. 10 caracteres) e envie ao gestor comercial.',
+        'Clique em “Solicitar Aprovação”, preencha a justificativa (mín. 10 caracteres) e envie ao gestor comercial.',
     };
   }
+
 
   // 4) Dica: vendedor poderia reduzir o desconto real ligando a margem.
   if (
