@@ -9,6 +9,7 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -1192,25 +1193,58 @@ export function QuoteBuilderSummaryColumn({
               </span>
             </div>
 
-            {!isFormValid && (
-              <div className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
-                <p className="flex items-center gap-1 text-xs font-semibold text-destructive">
-                  <AlertTriangle className="h-3 w-3" /> Campos obrigatórios pendentes:
-                </p>
-                <ul className="list-inside list-disc space-y-0.5 text-xs text-destructive/80">
-                  {validationErrors.includes('empresa') && <li>Empresa</li>}
-                  {validationErrors.includes('contato') && <li>Contato</li>}
-                  {validationErrors.includes('forma_pagamento') && <li>Forma de Pagamento</li>}
-                  {validationErrors.includes('prazo_pagamento') && <li>Prazo de Pagamento</li>}
-                  {validationErrors.includes('prazo_entrega') && <li>Prazo de Entrega</li>}
-                  {validationErrors.includes('frete') && <li>Frete</li>}
-                  {validationErrors.includes('valor_frete') && <li>Valor do Frete</li>}
-                  {validationErrors.includes('itens') && <li>Itens do Orçamento</li>}
-                </ul>
-              </div>
-            )}
+            {(() => {
+              const missingLabels = !isFormValid
+                ? ([
+                    ['empresa', 'Empresa'],
+                    ['contato', 'Contato'],
+                    ['forma_pagamento', 'Forma de Pagamento'],
+                    ['prazo_pagamento', 'Prazo de Pagamento'],
+                    ['prazo_entrega', 'Prazo de Entrega'],
+                    ['frete', 'Frete'],
+                    ['valor_frete', 'Valor do Frete'],
+                    ['itens', 'Itens do Orçamento'],
+                  ] as const)
+                    .filter(([key]) => validationErrors.includes(key))
+                    .map(([, label]) => label)
+                : [];
 
+              return (
             <div className="flex w-full items-stretch gap-2">
+              {missingLabels.length > 0 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      aria-label={`${missingLabels.length} campo(s) obrigatório(s) pendente(s)`}
+                      data-testid="quote-missing-fields-trigger"
+                      className="relative h-12 w-12 shrink-0 border-destructive/40 bg-destructive/5 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
+                        {missingLabels.length}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="start"
+                    className="w-64 border-destructive/30 bg-destructive/5 p-3"
+                    data-testid="quote-missing-fields-popover"
+                  >
+                    <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" /> Campos obrigatórios pendentes
+                    </p>
+                    <ul className="list-inside list-disc space-y-0.5 text-xs text-destructive/90">
+                      {missingLabels.map((label) => (
+                        <li key={label}>{label}</li>
+                      ))}
+                    </ul>
+                  </PopoverContent>
+                </Popover>
+              )}
               {isDiscountExceeded ? (
                 <Button
                   size="lg"
@@ -1258,6 +1292,10 @@ export function QuoteBuilderSummaryColumn({
                 {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
               </Button>
             </div>
+              );
+            })()}
+
+
 
           </div>
         </div>
