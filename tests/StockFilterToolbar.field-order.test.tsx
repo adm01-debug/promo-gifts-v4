@@ -32,13 +32,14 @@ describe('StockFilterToolbar — ordem dos campos', () => {
     expect(pos & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('mantém ordem estável em re-renders repetidos (sanidade)', () => {
-    for (let i = 0; i < 30; i++) {
+  it('mantém ordem estável em 200 re-renders (sanidade)', () => {
+    for (let i = 0; i < 200; i++) {
       const { unmount } = render(<StockFilterToolbar {...baseProps} />);
       const qty = screen.getAllByPlaceholderText(/Preciso de X un/i).pop()!;
       const search = screen.getAllByPlaceholderText(/Buscar no Estoque/i).pop()!;
       expect(qty.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       unmount();
     }
-  }, 15000);
+    // timeout generoso: 200 render+unmount estouram 5s sob carga do run completo (ok isolado).
+  }, 20000);
 });

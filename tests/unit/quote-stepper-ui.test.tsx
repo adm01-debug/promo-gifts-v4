@@ -19,9 +19,11 @@ describe('QuoteBuilderStepper (UI Unit Tests)', () => {
       const activeContainer = stepLabel.parentElement;
       const activeCircle = activeContainer?.querySelector('.rounded-full');
       expect(activeCircle).toHaveClass('bg-primary');
-      // Padronização (2026-06-25): a etapa ativa é destacada por border-primary + bg-primary
-      // + shadow-md, SEM ring-4 (o anel inflava o círculo ativo; todos os círculos são h-10 w-10).
+      // O destaque da etapa ativa neste stepper é shadow-md + bg-primary (border-primary).
+      // Padronização (ver QuoteBuilderStepper.test.tsx): o ativo NÃO usa ring-4 — ele deixava
+      // o círculo maior que os demais. scale-110 pertence ao HorizontalStepper.
       expect(activeCircle).toHaveClass('shadow-md');
+      expect(activeCircle?.className).not.toContain('ring-4');
     });
 
     it('deve mostrar o ícone de Check em etapas completadas que não são a ativa', () => {
