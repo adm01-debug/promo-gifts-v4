@@ -81,6 +81,11 @@ export const adminRoutes = (
         element={<Navigate to="/admin/usuarios?tab=discounts" replace />}
       />
       <Route
+        path="/admin/aprovacoes-desconto/:id"
+        element={<DiscountRequestDetailPage />}
+      />
+
+      <Route
         path="/admin/performance"
         element={
           <DeprecatedRoute
