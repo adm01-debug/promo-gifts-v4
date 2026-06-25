@@ -16,9 +16,9 @@ describe('quote-number · inputs adversariais', () => {
     // não-whitespace (zero-width, BOM, NBSP em alguns runtimes) devem cair no
     // fallback `null`, sem crash.
     it.each([
-      ['\u00A0\u00A010010/26\u00A0', null], // NBSP (não bate \s no JS): rejeitado
-      ['\u200B10010/26', null], // zero-width space
-      ['\uFEFF10010/26', null], // BOM
+      ['\u00A0\u00A010010/26\u00A0', '10010/26'], // NBSP (JS \s o cobre): saneia
+      ['\uFEFF10010/26', '10010/26'], // BOM (\s o cobre): saneia
+      ['\u200B10010/26', null], // zero-width space: NÃO é \s → rejeita
       ['\u202E10010/26', null], // RTL override
       ['10010/26\u0000', null], // NUL
       ['  \r\n\t  10010/26  \r\n\t  ', '10010/26'], // whitespace clássico OK
