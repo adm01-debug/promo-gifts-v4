@@ -67,7 +67,7 @@ export function QuoteBuilderStepper({
             <li
               key={step.id}
               data-testid={`quote-step-${step.id}`}
-              className="flex min-w-0 flex-1 items-start last:justify-end"
+              className="flex min-w-0 flex-1 items-start last:flex-none"
               aria-current={isActive ? 'step' : undefined}
             >
               {/* Step column — circle + label */}
@@ -87,7 +87,7 @@ export function QuoteBuilderStepper({
                     'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                     isCompleted && !isActive && 'border-primary bg-primary/20 text-primary',
                     isActive &&
-                      'border-primary bg-primary text-primary-foreground shadow-md ring-4 ring-primary/20',
+                      'border-primary bg-primary text-primary-foreground shadow-md',
                     !isCompleted && !isActive && 'border-border bg-muted/50 text-muted-foreground',
                   )}
                 >
