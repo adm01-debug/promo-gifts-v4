@@ -197,3 +197,53 @@ jobs:
               body,
             });
 
+
+  # Job dedicado ao spec visual do subtítulo de quote_number. Bloqueia merge
+  # em qualquer regressão visual nos 4 breakpoints (mobile/tablet/desktop/wide).
+  # NUNCA roda com --update-snapshots aqui (use o workflow manual
+  # `update-quote-reset-snapshots.yml` para regenerar baselines).
+  quote-number-subtitle-e2e:
+    name: E2E Subtítulo quote_number (visual)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e:install
+      - name: Run Playwright — quote-number-subtitle (sem --update-snapshots)
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-number-subtitle.spec.ts \
+            --project=chromium-authed \
+            --retries=1 \
+            --reporter=list
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-number-subtitle
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-number-subtitle-failure-bundle
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+          retention-days: 14
+          if-no-files-found: ignore
