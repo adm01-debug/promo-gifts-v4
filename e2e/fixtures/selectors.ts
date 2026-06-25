@@ -234,6 +234,17 @@ export const Sel = {
     /** Wizard nav. */
     next: TID("wizard-next-button"),
     prev: TID("wizard-prev-button"),
+    /**
+     * QuoteViewPage (desktop) — abre o dialog de preview/export do PDF.
+     * Antes era `export-pdf-button`, renomeado para evitar colisão com
+     * o botão "Gerar PDF" dentro do dialog e com o mobile action bar.
+     */
+    pdfPreviewTrigger: TID("pdf-preview-trigger"),
+    /**
+     * Botão final que dispara o download do PDF (confirm dentro do
+     * `PdfGenerationDialog` no desktop e ação direta no mobile action bar).
+     */
+    exportPdfButton: TID("export-pdf-button"),
   },
 
   // ---------- Estoque (Stock Dashboard) ----------
