@@ -221,6 +221,17 @@ export function MyDiscountRequestsWidget() {
                 realtimeOk ? 'Tempo real conectado' : 'Polling de fallback ativo'
               }
             />
+            {totalPending > 0 && (
+              <Badge
+                variant="secondary"
+                className="px-1.5 py-0 text-[10px]"
+                data-testid="discount-widget-pending-total"
+                data-count={totalPending}
+                title="Solicitações pendentes (atualiza em tempo real)"
+              >
+                {totalPending} pendente{totalPending > 1 ? 's' : ''}
+              </Badge>
+            )}
           </CardTitle>
           <Button
             variant="ghost"
