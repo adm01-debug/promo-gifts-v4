@@ -266,7 +266,35 @@ export function useDiscountApproval() {
         return true;
       } catch (err) {
         logger.error('Error requesting approval:', err);
-        toast.error('Erro ao solicitar aprovação');
+        // Mensagens específicas por tipo de erro com ação sugerida.
+        const e = err as { code?: string; status?: number; message?: string; name?: string };
+        const status = Number(e?.status ?? 0);
+        const code = String(e?.code ?? '');
+        const msg = String(e?.message ?? '');
+        const isTimeout =
+          e?.name === 'AbortError' ||
+          /timeout|timed out|fetch failed|network/i.test(msg);
+        if (code === '23505' || status === 409) {
+          toast.warning(
+            'Já existe uma solicitação pendente para este orçamento. Verifique o widget "Minhas Solicitações" antes de tentar novamente.',
+            { duration: 8000 },
+          );
+        } else if (isTimeout) {
+          toast.error(
+            'Tempo esgotado ao enviar a solicitação. Verifique sua conexão e tente novamente.',
+            {
+              duration: 8000,
+              action: { label: 'Tentar novamente', onClick: () => void 0 },
+            },
+          );
+        } else if (status >= 500) {
+          toast.error(
+            'Falha temporária do servidor (5xx). Aguarde alguns segundos e tente novamente.',
+            { duration: 8000 },
+          );
+        } else {
+          toast.error('Erro ao solicitar aprovação. Tente novamente em instantes.');
+        }
         return false;
       }
       })();
