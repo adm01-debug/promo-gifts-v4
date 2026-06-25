@@ -97,6 +97,15 @@ export function DiscountApprovalQueue() {
     onSettled: () => setProcessingId(null),
   });
 
+  // Deep-link: ao chegar com ?request=<id>, rola para o card destacado.
+  useEffect(() => {
+    if (!highlightedId || !data) return;
+    const t = window.setTimeout(() => {
+      highlightedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [highlightedId, data]);
+
   if (isLoading) {
     return (
       <div className="space-y-3">
