@@ -271,6 +271,17 @@ export function MyDiscountRequestsWidget() {
                         >
                           {STATUS_LABELS[r.status] ?? r.status}
                         </Badge>
+                        {r.status === 'pending' && (pendingDupCounts.get(dupKey(r)) ?? 0) > 1 && (
+                          <Badge
+                            variant="destructive"
+                            className="px-1.5 py-0 text-[10px]"
+                            data-testid={`discount-request-dup-count-${r.id}`}
+                            data-dup-count={pendingDupCounts.get(dupKey(r))}
+                            title="Há múltiplas solicitações pendentes para este orçamento com o mesmo percentual"
+                          >
+                            ×{pendingDupCounts.get(dupKey(r))}
+                          </Badge>
+                        )}
                         <span className="flex items-center gap-0.5">
                           <Clock className="h-2.5 w-2.5" />
                           {formatDistanceToNow(new Date(r.created_at), {
