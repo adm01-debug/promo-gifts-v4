@@ -10,9 +10,9 @@
  * seedDiscountApprovalRequestsFromPage; se RLS impedir, faz skip claro.
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
-import { gotoAndSettle } from "../helpers/nav";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 import { assertCursorPagination, type PageRow } from "../helpers/pagination-asserts";
+import { DiscountApprovalPO } from "../helpers/discount-approval-po";
 
 
 test.describe.configure({ mode: "parallel" });
@@ -22,7 +22,6 @@ const PAGE_SIZE = 50;
 
 test.describe("Discount approval — paginação cursorada da fila", () => {
   test("carregar mais anexa itens sem duplicar e mantém ordem", async ({ page }, testInfo) => {
-    // Seed de 55+ pending + 2 fetches paginados podem demorar sob carga.
     test.setTimeout(90_000);
     requireAdmin();
     const { seed } = await setupDiscountAdmin(page, testInfo, {
@@ -32,18 +31,19 @@ test.describe("Discount approval — paginação cursorada da fila", () => {
       // eslint-disable-next-line no-console
       console.warn(`[04c5] seed skipped: ${seed.skipped}`);
     }
-    await gotoAndSettle(page, "/admin/usuarios?tab=discounts");
+
+    const po = new DiscountApprovalPO(page);
+    await po.openQueue();
 
     const cards = page.locator('[data-testid^="discount-request-card-"]');
     await expect(async () => {
-      const c = await cards.count();
-      expect(c).toBeGreaterThan(0);
+      expect(await cards.count()).toBeGreaterThan(0);
     }).toPass({ timeout: 10_000 });
 
     const initialCount = await cards.count();
     test.skip(
       initialCount < PAGE_SIZE,
-      `Fila tem ${initialCount} item(ns); seed retornou ${seed.skipped ?? "ok"} — sem dados suficientes`,
+      `Fila tem ${initialCount} item(ns); seed: ${seed.skipped ?? "ok"}`,
     );
 
     const readRows = async (): Promise<PageRow[]> =>
@@ -57,19 +57,16 @@ test.describe("Discount approval — paginação cursorada da fila", () => {
     const before = await readRows();
     const cursor = before[before.length - 1].created_at;
 
-    const loadMore = page.getByTestId("discount-queue-load-more");
-    await expect(loadMore).toBeVisible({ timeout: 5_000 });
-    await loadMore.click();
+    await expect(po.loadMore).toBeVisible({ timeout: 5_000 });
+    await po.loadMore.click();
 
     await expect(async () => {
-      const c = await cards.count();
-      expect(c).toBeGreaterThan(before.length);
+      expect(await cards.count()).toBeGreaterThan(before.length);
     }).toPass({ timeout: 10_000 });
 
     const after = await readRows();
     const page2 = after.slice(before.length);
 
-    // Append-only + cursor estável + ordem desc + sem duplicados (helper SSOT).
     expect(after.slice(0, before.length)).toEqual(before);
     assertCursorPagination(before, page2, cursor, "desc");
   });

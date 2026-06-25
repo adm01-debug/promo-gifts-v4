@@ -1,7 +1,7 @@
 /**
  * E2E — Deep-link de notificação para um request inexistente/inválido.
- * Garante mensagem clara "Solicitação não encontrada" e botão de retorno
- * para a fila — sem depender de toast ou redirect implícito.
+ * Garante mensagem clara "Solicitação não encontrada" e CTA de retorno
+ * — 100% via data-testid/data-status, sem depender de texto.
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
@@ -9,11 +9,12 @@ import { gotoAndSettle } from "../helpers/nav";
 
 
 test.describe.configure({ mode: "parallel" });
+test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 
 const BOGUS_ID = "00000000-0000-0000-0000-000000000000";
 
 test.describe("Discount approval — deep-link inválido", () => {
-  test("admin que abre /admin/aprovacoes-desconto/<bogus> vê mensagem e CTA de volta", async ({
+  test("admin que abre /admin/aprovacoes-desconto/<bogus> vê estado not-found determinístico", async ({
     page,
   }, testInfo) => {
     requireAdmin();
@@ -21,21 +22,21 @@ test.describe("Discount approval — deep-link inválido", () => {
 
     await gotoAndSettle(page, `/admin/aprovacoes-desconto/${BOGUS_ID}`);
 
-    // Container determinístico de detalhe NÃO deve aparecer.
+    // Container de detalhe NÃO deve aparecer.
     await expect(
       page.locator('[data-testid="discount-request-detail"]'),
     ).toHaveCount(0, { timeout: 5_000 });
 
-    // Mensagem exata exibida pelo DiscountRequestDetailPage.
-    await expect(page.getByText(/solicitação não encontrada/i)).toBeVisible({
-      timeout: 5_000,
-    });
+    // Estado not-found com data-status determinístico.
+    const notFound = page.getByTestId("discount-request-not-found");
+    await expect(notFound).toBeVisible({ timeout: 5_000 });
+    await expect(notFound).toHaveAttribute("data-status", "not-found");
 
-    // CTA "Voltar / Fila de aprovações" presente.
-    const backBtn = page.getByRole("button", { name: /voltar|fila de aprovações/i });
-    await expect(backBtn.first()).toBeVisible();
+    // CTA de retorno presente (sem ler texto).
+    await expect(page.getByTestId("discount-request-back")).toBeVisible();
+    await expect(page.getByTestId("discount-request-not-found-message")).toBeVisible();
 
-    // URL permanece no detalhe (sem redirect silencioso).
+    // URL permanece — sem redirect silencioso.
     expect(page.url()).toContain(`/admin/aprovacoes-desconto/${BOGUS_ID}`);
   });
 });

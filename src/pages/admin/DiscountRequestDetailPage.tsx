@@ -124,11 +124,25 @@ export default function DiscountRequestDetailPage() {
 
   if (!data) {
     return (
-      <div className="container mx-auto max-w-3xl p-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+      <div
+        className="container mx-auto max-w-3xl p-6"
+        data-testid="discount-request-not-found"
+        data-status="not-found"
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          data-testid="discount-request-back"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
-        <p className="mt-4 text-sm text-muted-foreground">Solicitação não encontrada.</p>
+        <p
+          className="mt-4 text-sm text-muted-foreground"
+          data-testid="discount-request-not-found-message"
+        >
+          Solicitação não encontrada.
+        </p>
       </div>
     );
   }
