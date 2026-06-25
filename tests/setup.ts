@@ -11,11 +11,16 @@ vi.stubEnv('VITE_SUPABASE_URL', process.env.VITE_SUPABASE_URL || 'http://localho
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature');
 
 import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, expect } from 'vitest';
 import { toHaveNoViolations } from 'jest-axe';
 
 expect.extend(toHaveNoViolations);
+
+// RTL waitFor/findBy default é 1000ms — curto demais p/ portais Radix sob carga paralela
+// da suíte (2 vThreads). Eleva o teto de espera assíncrona globalmente; sem custo p/
+// asserções que já passam (o teto só conta enquanto o waitFor reexecuta).
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();
