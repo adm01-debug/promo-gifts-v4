@@ -9,7 +9,7 @@
  *   - Early return silencioso quando !isAdmin pós-carregamento
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,39 +42,50 @@ export function DiscountApprovalQueue() {
   const highlightedRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState<DiscountApprovalFilters>(EMPTY_FILTERS);
 
-  // Carregamos TODOS os status (até 200 últimos) para permitir busca/histórico.
-  // O filtro `status` da UI é aplicado client-side via `applyDiscountApprovalFilters`.
-  const { data, isLoading: queryLoading } = useQuery({
-    queryKey: ['discount-approval-queue', 'all-status'],
-    queryFn: async () => {
-      const { data: rows, error } = await supabase
-        // rls-allow: admin-only via has_role; RLS filtra
-        .from('discount_approval_requests')
-        .select(
-          '*, quotes:quote_id(quote_number, client_name, client_company, total, subtotal, discount_percent, negotiation_markup_percent, real_subtotal, real_discount_percent), seller:seller_id(full_name, email)',
-        )
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return rows || [];
-    },
-    enabled: rolesLoaded && Boolean(isAdmin),
-    retry: 0,
-    retryOnMount: false,
-  });
+  // Paginação cursorada por created_at: cada página traz `PAGE_SIZE` itens
+  // (evita o hard limit anterior de 200 e mantém performance conforme o volume cresce).
+  const PAGE_SIZE = 50;
+  const { data, isLoading: queryLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ['discount-approval-queue', 'paginated'],
+      initialPageParam: null as string | null,
+      queryFn: async ({ pageParam }) => {
+        let q = supabase
+          // rls-allow: admin-only via has_role; RLS filtra
+          .from('discount_approval_requests')
+          .select(
+            '*, quotes:quote_id(quote_number, client_name, client_company, total, subtotal, discount_percent, negotiation_markup_percent, real_subtotal, real_discount_percent), seller:seller_id(full_name, email)',
+          )
+          .order('created_at', { ascending: false })
+          .limit(PAGE_SIZE);
+        if (pageParam) q = q.lt('created_at', pageParam);
+        const { data: rows, error } = await q;
+        if (error) throw error;
+        return rows || [];
+      },
+      getNextPageParam: (lastPage) =>
+        lastPage.length === PAGE_SIZE
+          ? (lastPage[lastPage.length - 1] as { created_at: string }).created_at
+          : undefined,
+      enabled: rolesLoaded && Boolean(isAdmin),
+      retry: 0,
+      retryOnMount: false,
+    });
+
+  const flat = useMemo(() => (data?.pages ?? []).flat(), [data]);
 
   const sellers = useMemo(() => {
     const map = new Map<string, string>();
-    (data ?? []).forEach((r: { seller_id: string; seller?: { full_name?: string | null; email?: string | null } | null }) => {
+    flat.forEach((r: { seller_id: string; seller?: { full_name?: string | null; email?: string | null } | null }) => {
       const label = r.seller?.full_name || r.seller?.email || r.seller_id.slice(0, 8);
       if (!map.has(r.seller_id)) map.set(r.seller_id, label);
     });
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [data]);
+  }, [flat]);
 
   const filteredData = useMemo(
-    () => (data ? applyDiscountApprovalFilters(data as Parameters<typeof applyDiscountApprovalFilters>[0], filters) : []),
-    [data, filters],
+    () => applyDiscountApprovalFilters(flat as Parameters<typeof applyDiscountApprovalFilters>[0], filters),
+    [flat, filters],
   );
 
 
@@ -143,7 +154,7 @@ export function DiscountApprovalQueue() {
 
   if (!isAdmin) return null;
 
-  const totalCount = data?.length ?? 0;
+  const totalCount = flat.length;
   const filteredCount = filteredData.length;
 
   return (
@@ -285,6 +296,20 @@ export function DiscountApprovalQueue() {
           </Card>
         );
         })
+      )}
+
+      {hasNextPage && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            data-testid="discount-queue-load-more"
+          >
+            {isFetchingNextPage ? 'Carregando…' : 'Carregar mais'}
+          </Button>
+        </div>
       )}
     </div>
   );
