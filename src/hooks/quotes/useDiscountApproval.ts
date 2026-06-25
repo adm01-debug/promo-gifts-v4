@@ -322,7 +322,7 @@ export function useDiscountApproval() {
         inflightApprovals.delete(key);
       }
     },
-    [user],
+    [user, invalidateWidget],
   );
 
   // Respond to approval (admin action)
