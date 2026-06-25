@@ -79,6 +79,12 @@ export default defineConfig({
       },
     },
     retry: 2,
+    // Suíte grande (896 arquivos) em runners de 2 vCPU: o default de 5s estoura sob carga
+    // paralela em testes pesados (fuzz, integração com portal Radix, await import dinâmico).
+    // Timeouts globais generosos eliminam a flakiness sem mascarar lógica (o timeout só conta
+    // enquanto um teste AINDA não passou; testes rápidos não são afetados).
+    testTimeout: 15000,
+    hookTimeout: 15000,
     // Vitest 4 mudou o pipeline de resolve para deps em outras pastas (fora de
     // `src/`/`tests/`). Os schemas em `supabase/functions/_shared/contracts/`
     // usam `import { z } from "https://esm.sh/zod@..."` (Deno-style) e o alias
