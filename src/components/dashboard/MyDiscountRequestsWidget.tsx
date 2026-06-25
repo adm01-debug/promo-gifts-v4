@@ -185,6 +185,22 @@ export function MyDiscountRequestsWidget() {
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <Percent className="h-4 w-4 text-primary" />
             Minhas Solicitações de Desconto
+            <span
+              data-testid="discount-widget-realtime-status"
+              data-realtime={realtimeOk ? 'connected' : 'fallback'}
+              title={
+                realtimeOk
+                  ? 'Tempo real conectado'
+                  : 'Tempo real indisponível — usando polling'
+              }
+              className={cn(
+                'inline-flex h-2 w-2 rounded-full',
+                realtimeOk ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse',
+              )}
+              aria-label={
+                realtimeOk ? 'Tempo real conectado' : 'Polling de fallback ativo'
+              }
+            />
           </CardTitle>
           <Button
             variant="ghost"
