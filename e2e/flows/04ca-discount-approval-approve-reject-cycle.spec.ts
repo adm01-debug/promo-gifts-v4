@@ -30,20 +30,16 @@ test.describe("Discount approval — aprovar/rejeitar via fila e validar timelin
     const po = new DiscountApprovalPO(page);
     await po.openQueue();
 
-    // 1) Aprova o primeiro pending.
+    // 1) Aprova o primeiro pending. PO valida transição (ou remoção via filtro).
     const approveId = await po.firstPendingId();
     expect(approveId).not.toBeNull();
     await po.approveFromQueue(approveId!);
-    await expect(po.card(approveId!)).toHaveAttribute("data-status", "approved");
-    await expect(po.cardStatus(approveId!)).toHaveAttribute("data-status", "approved");
 
     // 2) Rejeita o próximo pending.
     const rejectId = await po.firstPendingId();
     expect(rejectId).not.toBeNull();
     expect(rejectId).not.toBe(approveId);
     await po.rejectFromQueue(rejectId!);
-    await expect(po.card(rejectId!)).toHaveAttribute("data-status", "rejected");
-    await expect(po.cardStatus(rejectId!)).toHaveAttribute("data-status", "rejected");
 
     // 3) Abre detalhe do aprovado — badge reflete status + timeline presente.
     await po.openDetail(approveId!);
