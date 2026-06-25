@@ -8,8 +8,9 @@
  *   - isLoading composto: !rolesLoaded || queryLoading — UX correta durante auth
  *   - Early return silencioso quando !isAdmin pós-carregamento
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,8 @@ import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { logger } from '@/lib/logger';
+import { DiscountApprovalAuditTrail } from './DiscountApprovalAuditTrail';
+import { cn } from '@/lib/utils';
 
 export function DiscountApprovalQueue() {
   const { isAdmin, rolesLoaded } = useAuth();
