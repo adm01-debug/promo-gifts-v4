@@ -2,33 +2,33 @@
 /**
  * stress-quote-number-concurrent
  *
- * Stress de concorrência para validar que o trigger `generate_quote_number`
- * + `UNIQUE INDEX uniq_quotes_quote_number` impedem qualquer colisão de
+ * Stress de concorrência para validar que `generate_quote_number` +
+ * `UNIQUE INDEX uniq_quotes_quote_number` impedem qualquer colisão de
  * `quote_number` mesmo sob centenas de inserts simultâneos no MESMO ano.
  *
- * RODAR APENAS EM STAGING. Insere dados reais na tabela `public.quotes`.
+ * RODAR APENAS EM STAGING — insere e (por padrão) remove linhas reais.
  *
  * Estratégia:
- *  1. Abre N conexões paralelas (default 50) ao banco.
- *  2. Cada conexão insere M quotes (default 20) com `quote_number = NULL`
- *     — o trigger gera o número.
- *  3. Ao final: confere unicidade (zero duplicidade), continuidade da
- *     sequência (gaps ≤ 0) e que o total inserido bate.
- *  4. Faz `DELETE` do que foi inserido (marca via coluna `metadata` ou
- *     prefixo configurável) — opcional via `--keep`.
+ *   - Dispara N processos `psql` em paralelo (default 50).
+ *   - Cada um roda M inserts (default 20) com `quote_number = NULL`
+ *     dentro de transações independentes — o trigger gera o número.
+ *   - Marca cada linha com `metadata->>'stress_tag'` p/ cleanup determinístico.
+ *   - Audita: zero duplicidade, zero gap inesperado, sem erro 23505 não
+ *     compensado.
  *
  * Uso:
  *   node scripts/stress-quote-number-concurrent.mjs \
  *     --connections 50 --per-conn 20 [--keep]
  *
- * Requer: PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE apontando para STAGING.
+ * Requer: PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE apontando para STAGING
+ * e `psql` no PATH. Sem dependências npm extras (usa o cliente do sistema).
  *
  * Exit code:
- *   0 = zero colisões, zero gaps inesperados
- *   1 = qualquer falha (colisão, erro de insert, gap suspeito)
+ *   0 = zero colisões, total inserido == pedido
+ *   1 = qualquer divergência (colisão, erro, cleanup falhou)
  */
-import pg from 'pg';
-import { argv, env, exit } from 'node:process';
+import { spawn } from 'node:child_process';
+import { env, argv, exit } from 'node:process';
 
 const args = Object.fromEntries(
   argv.slice(2).reduce((acc, a, i, arr) => {
@@ -45,139 +45,113 @@ const CONNECTIONS = Number(args.connections ?? 50);
 const PER_CONN = Number(args['per-conn'] ?? 20);
 const KEEP = args.keep === 'true';
 const TAG = `stress-${Date.now()}`;
+const TOTAL = CONNECTIONS * PER_CONN;
 
 if (!env.PGHOST || !env.PGDATABASE) {
   console.error('✘ PGHOST/PGDATABASE ausentes. Aponte para STAGING.');
   exit(1);
 }
 
-// Guarda dura: nunca rodar contra prod canônico.
-const FORBIDDEN_HOSTS = (env.STRESS_FORBIDDEN_HOSTS ?? '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-if (FORBIDDEN_HOSTS.some((h) => env.PGHOST.includes(h))) {
+// Guarda dura: lista de hosts proibidos via env (ex.: o canônico de produção).
+const forbidden = (env.STRESS_FORBIDDEN_HOSTS ?? '')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+if (forbidden.some((h) => env.PGHOST.includes(h))) {
   console.error(`✘ PGHOST=${env.PGHOST} bate com STRESS_FORBIDDEN_HOSTS. Abortando.`);
   exit(1);
 }
 
-const cfg = {
-  host: env.PGHOST,
-  port: Number(env.PGPORT ?? 5432),
-  user: env.PGUSER,
-  password: env.PGPASSWORD,
-  database: env.PGDATABASE,
-  ssl: env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false },
-};
-
-const total = CONNECTIONS * PER_CONN;
-console.log(
-  `▶ stress quote_number: ${CONNECTIONS} conexões × ${PER_CONN} inserts = ${total} quotes (tag=${TAG})`,
-);
+const psql = (sql) =>
+  new Promise((resolve) => {
+    const p = spawn('psql', ['-At', '-F', '|', '-v', 'ON_ERROR_STOP=1', '-c', sql], {
+      env,
+    });
+    let out = '', err = '';
+    p.stdout.on('data', (d) => (out += d));
+    p.stderr.on('data', (d) => (err += d));
+    p.on('close', (code) => resolve({ code, out: out.trim(), err: err.trim() }));
+  });
 
 const yy = String(new Date().getFullYear() % 100).padStart(2, '0');
 
-// Captura MAX antes para validar gaps depois.
-const ctlClient = new pg.Client(cfg);
-await ctlClient.connect();
-const before = await ctlClient.query(
-  `SELECT COALESCE(MAX(split_part(quote_number,'/',1)::int), 10000) AS m
-     FROM public.quotes WHERE quote_number LIKE '%/' || $1`,
-  [yy],
-);
-const baseMax = Number(before.rows[0].m);
-console.log(`  baseline MAX(${yy}) = ${baseMax} → esperado: ${baseMax + 1}..${baseMax + total}`);
+console.log(`▶ stress quote_number — ${CONNECTIONS} conexões × ${PER_CONN} inserts = ${TOTAL} (tag=${TAG})`);
 
-// Descobre colunas obrigatórias mínimas (defensivo: schemas variam).
-const cols = await ctlClient.query(`
-  SELECT column_name, is_nullable, column_default
-    FROM information_schema.columns
+// Descobre colunas NOT NULL sem default (defensivo p/ schemas que variam).
+const colsRes = await psql(`
+  SELECT string_agg(column_name, ',') FROM information_schema.columns
    WHERE table_schema='public' AND table_name='quotes'
+     AND is_nullable='NO' AND column_default IS NULL
+     AND column_name NOT IN ('quote_number','id','created_at','updated_at')
 `);
-const required = cols.rows
-  .filter((c) => c.is_nullable === 'NO' && !c.column_default && c.column_name !== 'quote_number')
-  .map((c) => c.column_name);
+if (colsRes.code !== 0) {
+  console.error('✘ não consegui inspecionar schema:', colsRes.err);
+  exit(1);
+}
+const required = (colsRes.out || '').split(',').filter(Boolean);
 console.log('  colunas NOT NULL sem default:', required.join(', ') || '(nenhuma)');
 
-const insertSql = `INSERT INTO public.quotes (${['quote_number', ...required, 'metadata']
-  .filter((x, i, a) => a.indexOf(x) === i)
-  .join(',')}) VALUES (NULL${required.map((_, i) => `, $${i + 1}`).join('')}, $${required.length + 1}::jsonb) RETURNING id, quote_number`;
+// Baseline MAX do ano corrente.
+const baseRes = await psql(`
+  SELECT COALESCE(MAX(split_part(quote_number,'/',1)::int), 10000)
+    FROM public.quotes WHERE quote_number LIKE '%/${yy}'
+`);
+const baseMax = Number(baseRes.out || 10000);
+console.log(`  baseline MAX(/${yy}) = ${baseMax}`);
 
-// Placeholder values para colunas required (heurística simples).
-const placeholderFor = (name) => {
-  if (name.endsWith('_id') || name === 'id') return '00000000-0000-0000-0000-000000000000';
-  if (name.includes('status')) return 'draft';
-  if (name.includes('total') || name.includes('value') || name.includes('amount')) return 0;
-  return 'stress';
+// Monta INSERT genérico — valores placeholder mínimos.
+const placeholder = (name) => {
+  if (name === 'org_id' || name.endsWith('_id')) return `'00000000-0000-0000-0000-000000000000'::uuid`;
+  if (name.includes('status')) return `'draft'`;
+  if (name.includes('total') || name.includes('amount') || name.includes('value')) return `0`;
+  return `'stress'`;
 };
-const reqValues = required.map(placeholderFor);
+const colList = ['quote_number', ...required, 'metadata'];
+const valList = ['NULL', ...required.map(placeholder), `jsonb_build_object('stress_tag','${TAG}')`];
+const insertSql = `INSERT INTO public.quotes (${colList.join(',')}) VALUES (${valList.join(',')}) RETURNING quote_number;`;
 
-async function worker(workerId) {
-  const c = new pg.Client(cfg);
-  await c.connect();
-  const out = [];
-  for (let i = 0; i < PER_CONN; i++) {
-    try {
-      const r = await c.query(insertSql, [
-        ...reqValues,
-        JSON.stringify({ stress_tag: TAG, worker: workerId, seq: i }),
-      ]);
-      out.push(r.rows[0]);
-    } catch (e) {
-      out.push({ error: e.code || e.message });
-    }
-  }
-  await c.end();
-  return out;
-}
+// Worker: PER_CONN inserts num único processo psql, sem transação envolvente
+// (cada INSERT é sua própria tx → trigger dispara em paralelo real).
+const worker = async (id) => {
+  const batch = Array(PER_CONN).fill(insertSql).join('\n');
+  const r = await psql(batch);
+  if (r.code !== 0) return { id, ok: 0, errs: [r.err.split('\n').slice(0, 2).join(' | ')], nums: [] };
+  const nums = r.out.split('\n').filter((l) => /^\d+\/\d{2}$/.test(l.trim()));
+  const code23505 = (r.err.match(/duplicate key/g) || []).length;
+  return { id, ok: nums.length, errs: code23505 ? [`23505 x${code23505}`] : [], nums };
+};
 
 const t0 = Date.now();
-const results = (await Promise.all(Array.from({ length: CONNECTIONS }, (_, i) => worker(i)))).flat();
+const results = await Promise.all(Array.from({ length: CONNECTIONS }, (_, i) => worker(i)));
 const dt = Date.now() - t0;
 
-const ok = results.filter((r) => !r.error);
-const errs = results.filter((r) => r.error);
-console.log(`  inseridos: ${ok.length}/${total} em ${dt}ms`);
-
-// Análise
-const nums = ok.map((r) => r.quote_number);
+const nums = results.flatMap((r) => r.nums);
+const okN = nums.length;
+const allErrs = results.flatMap((r) => r.errs);
 const unique = new Set(nums);
 const collisions = nums.length - unique.size;
 
-const seqsThisYear = nums
-  .filter((q) => q && q.endsWith(`/${yy}`))
-  .map((q) => Number(q.split('/')[0]))
-  .sort((a, b) => a - b);
+const seqs = nums.filter((q) => q.endsWith(`/${yy}`)).map((q) => Number(q.split('/')[0])).sort((a, b) => a - b);
+const gaps = seqs.length ? seqs[seqs.length - 1] - seqs[0] + 1 - seqs.length : 0;
 
-const gaps = seqsThisYear.length
-  ? seqsThisYear[seqsThisYear.length - 1] - seqsThisYear[0] + 1 - seqsThisYear.length
-  : 0;
-
-const code23505 = errs.filter((e) => e.error === '23505').length;
-
-console.log(`\n━━━ Resultado ━━━`);
-console.log(`  total inserts pedidos: ${total}`);
-console.log(`  sucesso:               ${ok.length}`);
-console.log(`  erros (qualquer):      ${errs.length}`);
-console.log(`    └ 23505 unique_violation: ${code23505}`);
-console.log(`  colisões em quote_number: ${collisions}  ${collisions === 0 ? '✔' : '✘'}`);
-console.log(`  gaps na sequência:      ${gaps}  ${gaps === 0 ? '✔' : '⚠'}`);
+console.log(`\n━━━ Resultado (${dt}ms) ━━━`);
+console.log(`  pedidos:               ${TOTAL}`);
+console.log(`  inseridos:             ${okN}`);
+console.log(`  erros:                 ${allErrs.length}${allErrs.length ? ' → ' + allErrs.slice(0, 3).join(' ; ') : ''}`);
+console.log(`  colisões quote_number: ${collisions}   ${collisions === 0 ? '✔' : '✘'}`);
+console.log(`  gaps na sequência:     ${gaps}   ${gaps === 0 ? '✔' : '⚠'}`);
+console.log(`  range /${yy}:             ${seqs[0] ?? '-'} .. ${seqs[seqs.length - 1] ?? '-'} (esperado ${baseMax + 1}..)`);
 
 if (KEEP) {
-  console.log(`\n(--keep) registros mantidos. Para limpar:`);
+  console.log(`\n(--keep) preservado. Limpar manualmente:`);
   console.log(`  DELETE FROM public.quotes WHERE metadata->>'stress_tag' = '${TAG}';`);
 } else {
-  const del = await ctlClient.query(
-    `DELETE FROM public.quotes WHERE metadata->>'stress_tag' = $1`,
-    [TAG],
-  );
-  console.log(`\n  cleanup: ${del.rowCount} linhas removidas (tag=${TAG})`);
+  const del = await psql(`DELETE FROM public.quotes WHERE metadata->>'stress_tag' = '${TAG}'`);
+  console.log(`\n  cleanup: ${del.code === 0 ? 'OK' : '✘ FALHOU — ' + del.err}`);
+  if (del.code !== 0) exit(1);
 }
-await ctlClient.end();
 
-const fail = collisions > 0 || code23505 > 0 || ok.length !== total;
+const fail = collisions > 0 || okN !== TOTAL;
 if (fail) {
-  console.error(`\n✘ STRESS FALHOU — investigar advisory_lock / UNIQUE INDEX`);
+  console.error(`\n✘ STRESS FALHOU — verificar advisory_xact_lock + UNIQUE INDEX`);
   exit(1);
 }
-console.log(`\n✔ STRESS OK — ${ok.length} quotes sem colisão sob ${CONNECTIONS} conexões paralelas`);
+console.log(`\n✔ STRESS OK — ${okN}/${TOTAL} sem colisão sob ${CONNECTIONS} conexões paralelas`);
