@@ -123,15 +123,22 @@ export default function QuotesListPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                data-testid="quote-new-button"
-                onClick={() => navigate('/orcamentos/novo')}
-                size="sm"
-                className="w-36 px-2 text-xs"
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                Novo Orçamento
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-testid="quote-new-button"
+                    onClick={() => navigate('/orcamentos/novo')}
+                    size="icon"
+                    aria-label="Novo orçamento"
+                    className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 hover:bg-primary/90"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  Criar novo orçamento em segundos
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
