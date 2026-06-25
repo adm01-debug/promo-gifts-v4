@@ -73,6 +73,12 @@ import { cn } from '@/lib/utils';
 import type { QuoteItem } from '@/hooks/quotes';
 import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import {
+  getDiscountValidationMessage,
+  getApprovalChecklist,
+  isApprovalReady,
+  MIN_SELLER_NOTES_LENGTH,
+} from '@/lib/quotes/discount-validation-messages';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatColors, formatArea } from '@/lib/quotes/personalizationSummary';
@@ -1080,20 +1086,58 @@ export function QuoteBuilderSummaryColumn({
                   })()}
                 </TooltipProvider>
               </div>
-              {isDiscountExceeded && (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                  <div>
-                    <p className="text-xs font-semibold text-amber-600">
-                      Desconto acima do autorizado
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-amber-600/80">
-                      O orçamento será enviado para aprovação do administrador antes de poder ser
-                      finalizado.
-                    </p>
+              {(() => {
+                const rawPercent =
+                  discountType === 'percent'
+                    ? discountValue
+                    : presentedSubtotal > 0
+                      ? (discountValue / presentedSubtotal) * 100
+                      : 0;
+                const validation = getDiscountValidationMessage({
+                  rawPercent,
+                  realDiscountPercent,
+                  maxDiscountPercent: maxDiscountPercent ?? null,
+                  hasMarkup: (negotiationMarkup ?? 0) > 0,
+                  markupPercent: negotiationMarkup ?? 0,
+                });
+                if (validation.kind === 'idle' || validation.kind === 'within_limit') return null;
+                const palette =
+                  validation.severity === 'error'
+                    ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                    : validation.severity === 'warning'
+                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
+                      : 'border-border/40 bg-muted/40 text-muted-foreground';
+                const iconClass =
+                  validation.severity === 'error'
+                    ? 'text-destructive'
+                    : validation.severity === 'warning'
+                      ? 'text-amber-500'
+                      : 'text-muted-foreground';
+                return (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    data-testid="quote-discount-validation"
+                    data-kind={validation.kind}
+                    className={cn('flex items-start gap-2 rounded-lg border px-3 py-2', palette)}
+                  >
+                    <AlertTriangle className={cn('mt-0.5 h-4 w-4 shrink-0', iconClass)} />
+                    <div className="space-y-0.5">
+                      {validation.title && (
+                        <p className="text-xs font-semibold leading-tight">{validation.title}</p>
+                      )}
+                      <p className="text-[11px] leading-snug opacity-90">
+                        {validation.description}
+                      </p>
+                      {validation.callToAction && (
+                        <p className="text-[11px] font-medium leading-snug">
+                          → {validation.callToAction}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               {discountAmount > 0 && (
                 <div
                   className={cn(
@@ -1352,7 +1396,7 @@ export function QuoteBuilderSummaryColumn({
 
             <div className="space-y-2">
               <Label>
-                Justificativa <span className="font-normal text-muted-foreground">(opcional)</span>
+                Justificativa <span className="font-normal text-destructive">*</span>
               </Label>
               <Textarea
                 data-testid="quote-approval-justification"
@@ -1362,11 +1406,61 @@ export function QuoteBuilderSummaryColumn({
                 rows={3}
                 autoFocus
                 maxLength={1000}
+                aria-invalid={sellerNotes.trim().length < MIN_SELLER_NOTES_LENGTH}
               />
-              <p className="text-right text-xs text-muted-foreground">
-                {sellerNotes.length}/1000
-              </p>
+              <div className="flex items-center justify-between text-xs">
+                <span
+                  className={cn(
+                    'font-medium',
+                    sellerNotes.trim().length < MIN_SELLER_NOTES_LENGTH
+                      ? 'text-amber-600'
+                      : 'text-emerald-600',
+                  )}
+                >
+                  Mín. {MIN_SELLER_NOTES_LENGTH} caracteres
+                </span>
+                <span className="text-muted-foreground">{sellerNotes.length}/1000</span>
+              </div>
             </div>
+
+            {(() => {
+              const checklist = getApprovalChecklist({
+                hasItems: items.length > 0,
+                hasClient: isFormValid,
+                sellerNotesLength: sellerNotes.trim().length,
+              });
+              return (
+                <div
+                  data-testid="quote-approval-checklist"
+                  className="space-y-1.5 rounded-xl border border-border/40 bg-muted/30 p-3"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    O que falta para enviar
+                  </p>
+                  <ul className="space-y-1">
+                    {checklist.map((c) => (
+                      <li
+                        key={c.key}
+                        data-testid={`quote-approval-check-${c.key}`}
+                        data-ok={c.ok}
+                        className="flex items-start gap-2 text-xs"
+                      >
+                        {c.ok ? (
+                          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        ) : (
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+                        )}
+                        <span
+                          className={c.ok ? 'text-muted-foreground line-through' : 'text-foreground'}
+                        >
+                          {c.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => handleApprovalDialogChange(false)}>
@@ -1376,7 +1470,14 @@ export function QuoteBuilderSummaryColumn({
               data-testid="quote-approval-submit"
               className="gap-1.5 bg-amber-500 text-white hover:bg-amber-600"
               onClick={handleRequestApproval}
-              disabled={quotesLoading}
+              disabled={
+                quotesLoading ||
+                !isApprovalReady({
+                  hasItems: items.length > 0,
+                  hasClient: isFormValid,
+                  sellerNotesLength: sellerNotes.trim().length,
+                })
+              }
             >
               {quotesLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

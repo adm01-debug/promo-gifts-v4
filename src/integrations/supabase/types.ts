@@ -1514,6 +1514,62 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_approval_audit: {
+        Row: {
+          actor_id: string | null
+          actor_role: string
+          admin_notes: string | null
+          created_at: string
+          event: string
+          id: string
+          max_allowed_percent: number | null
+          metadata: Json
+          quote_id: string
+          real_discount_percent: number | null
+          request_id: string
+          requested_discount_percent: number | null
+          seller_notes: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role: string
+          admin_notes?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          max_allowed_percent?: number | null
+          metadata?: Json
+          quote_id: string
+          real_discount_percent?: number | null
+          request_id: string
+          requested_discount_percent?: number | null
+          seller_notes?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string
+          admin_notes?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          max_allowed_percent?: number | null
+          metadata?: Json
+          quote_id?: string
+          real_discount_percent?: number | null
+          request_id?: string
+          requested_discount_percent?: number | null
+          seller_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_approval_audit_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "discount_approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_approval_requests: {
         Row: {
           admin_id: string | null

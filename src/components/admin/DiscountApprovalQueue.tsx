@@ -8,8 +8,9 @@
  *   - isLoading composto: !rolesLoaded || queryLoading — UX correta durante auth
  *   - Early return silencioso quando !isAdmin pós-carregamento
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +22,17 @@ import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { logger } from '@/lib/logger';
+import { DiscountApprovalAuditTrail } from './DiscountApprovalAuditTrail';
+import { cn } from '@/lib/utils';
 
 export function DiscountApprovalQueue() {
   const { isAdmin, rolesLoaded } = useAuth();
   const qc = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const highlightedId = searchParams.get('request');
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading: queryLoading } = useQuery({
     queryKey: ['discount-approval-queue'],
@@ -91,6 +97,15 @@ export function DiscountApprovalQueue() {
     onSettled: () => setProcessingId(null),
   });
 
+  // Deep-link: ao chegar com ?request=<id>, rola para o card destacado.
+  useEffect(() => {
+    if (!highlightedId || !data) return;
+    const t = window.setTimeout(() => {
+      highlightedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [highlightedId, data]);
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -137,8 +152,16 @@ export function DiscountApprovalQueue() {
         const apparent = Number(quote?.discount_percent ?? 0);
         const realPct = Number(quote?.real_discount_percent ?? req.requested_discount_percent);
         const hasMarkup = markup > 0;
+        const isHighlighted = highlightedId === req.id;
         return (
-          <Card key={req.id}>
+          <Card
+            key={req.id}
+            ref={isHighlighted ? highlightedRef : undefined}
+            data-testid={`discount-request-card-${req.id}`}
+            className={cn(
+              isHighlighted && 'ring-2 ring-amber-500/60 shadow-lg shadow-amber-500/10',
+            )}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
                 <span>Orçamento {quote?.quote_number ?? '—'}</span>
@@ -213,6 +236,7 @@ export function DiscountApprovalQueue() {
                   <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                 </Button>
               </div>
+              <DiscountApprovalAuditTrail requestId={req.id} defaultOpen={isHighlighted} />
             </CardContent>
           </Card>
         );

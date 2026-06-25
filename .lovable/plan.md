@@ -1,100 +1,92 @@
-# Global Technical Audit & Hardening Plan
 
-Last updated: 2026-06-20 — post-audit pass (AUDIT_READONLY_2026-06-19).
+# Aprovação de Desconto — 4 frentes
 
-## Status Legend
-- ✅ Done   🔄 In progress   ⏳ Pending   🚫 Blocked
+## 1. Mensagens de validação mais claras (UI)
 
----
+**Arquivo:** `src/components/quotes/QuoteBuilderSummaryColumn.tsx`
 
-## 1. 🛒 Reposição / Replenishment Feature — Ondas 1-4
+- Logo abaixo do `CurrencyInput` de desconto, mostrar uma faixa de status (`role="status"`, `aria-live="polite"`) que muda conforme o estado real:
+  - **Acima de 100% / inválido** (ex.: digitar `1000`): "Valor inválido — o desconto não pode ultrapassar **100%**. Ajuste para um valor entre 0 e 100." (vermelho).
+  - **Acima do limite do vendedor** (`realDiscountPercent > maxDiscountPercent`): "Desconto real **{real}%** ultrapassa seu limite de **{max}%**. Clique em **Solicitar Aprovação** e justifique para enviar ao gestor comercial." (âmbar).
+  - **Margem de Negociação desligada inflando o desconto real**: dica complementar quando `realDiscountPercent ≠ discount_percent` aparente, explicando que ativar a Margem reduz o desconto efetivo.
+  - **Dentro do limite**: silencioso (ou verde discreto).
+- Renomear/atualizar o tooltip `quote-discount-tooltip` para listar exatamente o que falta para habilitar "Solicitar Aprovação": (a) ter ao menos 1 item, (b) cliente selecionado, (c) justificativa preenchida ≥ 10 chars.
+- Botão "Solicitar Aprovação" no `Dialog` passa a ter `disabled` baseado nesses 3 critérios, com lista de checklist visível no dialog.
 
-### Onda 1 — Variants Summary RPC + UI ✅
-- `fn_get_reposicao_variants_summary(uuid[])` live in Gold (v3, 2026-06-19)
-  - TZ: America/Sao_Paulo; boundary: strictly > today
-  - `product_variants` + `variant_supplier_sources` UNION ALL
-  - Permissions: `authenticated` + `service_role`; `anon` blocked
-- `useReposicaoVariantsSummary` hook consumes via `untypedRpc`
-- `ReplenishmentCards`, `ReplenishmentProductGrid`, `VirtualizedReplenishmentGrid/List` built
-- `ReplenishmentToolbar`, `ReplenishmentStatsCards`, `RecentReplenishmentsWidget` built
-- `ReplenishmentsPage` and `ReplenishmentBadge` complete
+**SSOT da mensagem:** novo módulo `src/lib/quotes/discount-validation-messages.ts` exportando `getDiscountValidationMessage({ raw, realPct, maxPct, hasMarkup })` para reuso em testes.
 
-### Onda 2 — Badge "Reposto: X" (restocked today) ⏳
-- Needs: `product_variants.last_restock_at timestamptz` column + trigger
-  (fires when `stock_quantity` transitions 0 → > 0)
-- Migration pending. Options evaluated in VALIDATION.md GAP-F:
-  - **Recommended**: 1 column `last_restock_at` + 1 trigger (lowest schema cost)
-  - Alternative: daily snapshot table (higher infra cost)
-  - Heuristic fallback: fragile, not recommended
+## 2. Testes automatizados do fluxo de alçada
 
-### Onda 3 — Selection mode + bulk actions 🔄
-- `useReplenishmentsSelectionMode` hook built
-- Bulk-action UX pending finalization
+**Arquivo novo:** `src/hooks/quotes/__tests__/discountApprovalFlow.test.ts`
 
-### Onda 4 — Notifications / alerting ⏳
-- `ReplenishmentBadge` stub exists
-- End-to-end notification flow not yet designed
+Cobre 4 cenários, mockando `supabase.from('discount_approval_requests')`:
 
----
+| # | Margem | Desconto digitado | maxPct | Esperado |
+|---|---|---|---|---|
+| 1 | OFF | 30% | 10% | save com `status='pending_approval'` + 1 INSERT em DAR |
+| 2 | ON (markup 20%) | 30% aparente → real ≈ 16% | 10% | mesmo: 1 INSERT |
+| 3 | ON forte (markup 50%) | 30% aparente → real negativo | 10% | NÃO cria DAR; save normal |
+| 4 | OFF | 30% (clicar Salvar 2x rapidamente) | 10% | apenas 1 linha em DAR (dedup guard) |
 
-## 2. 🔐 Database Security & Hardening
+Mais um teste de `discount-validation-messages` para a mensagem do `1000`.
 
-### Security Definer ACL ✅
-- `audit_security_definer_acl()` returns 0 violations (verified 2026-06-20)
-- Drafts reviewed: `2026-06-18_security_definer_acl.sql` and
-  `2026-06-20_revoke_secdef_from_authenticated.sql` — DB already clean
+## 3. Notificação ao gestor comercial
 
-### RLS & Function Grants ✅
-- `search_path = public` set on critical functions
-- REVOKE / GRANT aligned to `authenticated` / `service_role` policy
+**Banco:** sem migration nova — usar tabela `workspace_notifications` já existente.
 
-### Kit Dimensions Backfill 🚫 Blocked
-- 42 kits missing `length_cm`, `width_cm`, or `height_cm`
-- `fn_calculate_kit_dimensions` cannot fill these: 0 components have
-  `is_packaging = true` (no packaging component defined for these kits)
-- Requires: manual data entry or supplier enrichment
+**Trigger novo** em `discount_approval_requests` (migration):
+- `AFTER INSERT` quando `NEW.status = 'pending'`.
+- Para cada usuário com role `admin` ou `comercial_manager` (via `user_roles` + `has_role`), insere uma linha em `workspace_notifications` com:
+  - `type = 'discount_approval_requested'`
+  - `title = 'Novo pedido de aprovação de desconto'`
+  - `body` = "Vendedor {nome} solicitou {req%} (limite {max%})." + primeiras 140 chars de `seller_notes`.
+  - `link = '/admin/usuarios?tab=discounts&request={dar.id}'`
+  - `metadata` JSONB: `{seller_id, quote_id, quote_number, requested_pct, max_pct}`.
 
----
+Como `workspace_notifications` já é consumida por polling (mem `workspace-notification-service-v2`), aparece em até 30s no sino.
 
-## 3. ⚡ Code Quality & Hook Architecture
+**UI:** `DiscountManagementPanel` passa a ler `?request=<id>` e abrir o card destacado/scroll-into-view.
 
-### useNovelties split (< 500 LOC rule) ✅
-- `novelty-core.ts` (338 lines) extracted: types, constants, pure fns
-- `useNovelties.ts` reduced 767 → 472 lines; backward-compat re-exports in place
+## 4. Auditoria detalhada das decisões
 
-### AbortController on raw fetch() calls ✅
-- `useIPValidation.ts` — 5 s timeout on ipify.org fallback
-- `usePasswordBreachCheck.tsx` — 8 s timeout + stale-request cancellation
-- All other hooks in `src/hooks/` already had AbortController
+**Migration:** nova tabela `discount_approval_audit`:
 
-### as any / : any baseline gate ✅
-- `.any-type-baseline.json` frozen at 0 production hits
-- `scripts/check-any-type-baseline.mjs` (Gate 2.3) added to CI
+```
+id uuid pk
+request_id uuid fk → discount_approval_requests on delete cascade
+quote_id uuid
+actor_id uuid (quem agiu: seller/admin)
+actor_role text ('seller' | 'admin' | 'supervisor' | 'system')
+event text CHECK in ('requested','approved','rejected','expired','superseded','cancelled')
+requested_discount_percent numeric
+max_allowed_percent numeric
+real_discount_percent numeric       -- snapshot do efetivo no momento
+admin_notes text
+seller_notes text
+metadata jsonb
+created_at timestamptz default now()
+```
 
-### Event listener cleanup ✅
-- `useFutureStockPreference.ts`, `ShortcutsHelpDialog.tsx`,
-  `DevAccessDeniedPage.tsx` — all have `removeEventListener` in useEffect return
+- Index `(request_id, created_at desc)`, `(quote_id, created_at desc)`.
+- GRANT padrão + RLS: SELECT para `can_view_all_sales()` OR `seller = auth.uid()` (via join); INSERT só via trigger (REVOKE direto).
+- **Trigger** `AFTER INSERT OR UPDATE ON discount_approval_requests` que escreve linha de auditoria correspondente (requested no INSERT; approved/rejected no UPDATE com diff de status).
 
-### useCatalogState test skip ⏳
-- `useCatalogState.unit.test.tsx:100` has `describe.skip` due to memory exhaustion
-- Needs DI refactor to break import chain (Supabase + multi-store deps)
-- Tracked as P1-1; separate PR required
+**UI no painel admin (`DiscountManagementPanel`)**: collapsible "Histórico" por solicitação listando as linhas de auditoria com timestamps, valores e notas.
+
+**UI no orçamento (`QuoteBuilderSummaryColumn` + `QuoteViewPage`)**: badge "Aprovado por {admin} em {data}" quando há decisão final, com tooltip mostrando max/real/notes.
 
 ---
 
-## 4. 🔒 Edge Function Security
+## Ordem de execução
 
-### ASIA ingestion vault ✅
-- `supabase/functions/asia-ingestion/index.ts` uses `resolveCredential()` —
-  no more hardcoded env fallbacks
+1. SSOT de mensagens + UI de validação (1) + testes da mensagem.
+2. Migration: tabela `discount_approval_audit` + trigger de auditoria + trigger de notificação.
+3. UI admin (auditoria + deep-link `?request=`).
+4. UI builder (badge de decisão).
+5. Testes do fluxo de alçada (2).
 
----
+## Pontos a confirmar
 
-## 5. 🎨 Remaining Debt
-
-| Item | File | Priority |
-|------|------|----------|
-| `useCatalogState` DI refactor + unskip test | `src/hooks/useCatalogState.ts` | P1 |
-| `useNovelties` sub-hook further split if grows > 500 LOC | `src/hooks/products/useNovelties.ts` | P2 |
-| Onda 2 `last_restock_at` migration | DB | P1 |
-| Kit packaging enrichment (42 kits) | data ops | P2 |
+- **Role do gestor comercial**: usar `has_role(uid,'admin')` OR `has_role(uid,'supervisor')` OR `can_view_all_sales()`? Memória do projeto não nomeia um role `comercial_manager` — vou usar `can_view_all_sales()` como predicado (mesmo das policies da DAR) salvo objeção sua.
+- **Tempo de retenção da auditoria**: manter indefinida (sem TTL)?
+- Algum desses 4 itens é prioridade absoluta para começarmos primeiro, ou implemento na ordem acima de uma vez?
