@@ -2,6 +2,7 @@
  * useDiscountApproval — Gerencia solicitações de aprovação de desconto
  */
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
