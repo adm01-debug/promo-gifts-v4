@@ -105,6 +105,16 @@ export function useQuotesListPage() {
     }
   };
 
+  /**
+   * True quando todos os orçamentos visíveis estão em `pending` — usado pela
+   * página para exibir banner orientando o usuário a avançar o fluxo (evita
+   * ilusão de "funil vazio" quando o banco só tem status inicial).
+   */
+  const onlyPendingStatuses = useMemo(
+    () => quotes.length > 0 && quotes.every((q) => q.status === 'pending'),
+    [quotes],
+  );
+
   return {
     navigate,
     quotes,
@@ -121,6 +131,7 @@ export function useQuotesListPage() {
     bulkDeleteIds,
     setBulkDeleteIds,
     filteredQuotes,
+    onlyPendingStatuses,
     handleDelete,
     handleBulkDelete,
     handleClearFilters,
