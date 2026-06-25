@@ -43,6 +43,11 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
  * A recursão tem limite de profundidade (maxDepth=8) para evitar percorrer
  * árvores arbitrariamente grandes em componentes com muitos filhos.
  */
+// BUG-A11Y-1 FIX (2026-06-25, fix_version=v4.1443): ANTI-REGRESSÃO — não remover maxDepth.
+// maxDepth=8 permite detectar AlertDialogTitle no NÍVEL 4 (ConfirmDialog.tsx/ui):
+//   AlertDialogContent > AlertDialogHeader > div.flex > div.space-y-2 > AlertDialogTitle
+// Com maxDepth=2 (padrão anterior), hasTitle=false → 2x <h2 id={titleId}> no DOM →
+// IDs duplicados → Radix UI TitleWarning emitia console.error mesmo com fallback presente.
 function childrenHaveType(
   children: React.ReactNode,
   types: Array<React.ElementType | string>,

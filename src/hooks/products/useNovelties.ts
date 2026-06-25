@@ -369,7 +369,11 @@ export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
 
   return useQuery<NoveltyWithDetails[]>({
     queryKey: ['novelties-details', limit ?? 'all', onlyHighlighted],
-    enabled, // BUG-HEAD-1 FIX: propaga guard para react-query
+    // BUG-HEAD-1 FIX (2026-06-25, fix_version=v4.1443): ANTI-REGRESSÃO — não remover.
+    // enabled=false previne GETs antes de rolesLoaded (React Query v5 aborta ao
+    // desmontar → "Falha ao carregar Buscar" no DevTools). Default true preserva
+    // retrocompatibilidade com NoveltiesSection/ExpiringNoveltiesWidget/NoveltyProductGrid.
+    enabled,
     queryFn: async () => {
       const nowIso = new Date().toISOString();
 
