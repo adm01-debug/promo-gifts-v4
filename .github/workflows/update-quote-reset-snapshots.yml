@@ -3,8 +3,9 @@ name: Update Quote Visual Snapshots
 # Workflow manual: regenera as baselines visuais dos specs:
 #   - e2e/quotes/quote-reset-stepper-layout.spec.ts
 #   - e2e/quotes/quote-number-subtitle.spec.ts (todos os breakpoints)
+#   - e2e/quotes/quote-pdf-header-snapshot.spec.ts (768/1024)
 # Use APENAS quando a mudança visual for intencional (refactor de layout,
-# novo step, novo subtítulo de quote_number, etc.).
+# novo step, novo subtítulo de quote_number, novo cabeçalho do PDF, etc.).
 
 on:
   workflow_dispatch:
@@ -55,6 +56,7 @@ jobs:
           npx playwright test \
             e2e/quotes/quote-reset-stepper-layout.spec.ts \
             e2e/quotes/quote-number-subtitle.spec.ts \
+            e2e/quotes/quote-pdf-header-snapshot.spec.ts \
             --project=chromium-authed \
             --update-snapshots \
             --reporter=list
@@ -64,7 +66,8 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add e2e/quotes/quote-reset-stepper-layout.spec.ts-snapshots/ \
-                  e2e/quotes/quote-number-subtitle.spec.ts-snapshots/ || true
+                  e2e/quotes/quote-number-subtitle.spec.ts-snapshots/ \
+                  e2e/quotes/quote-pdf-header-snapshot.spec.ts-snapshots/ || true
           if git diff --cached --quiet; then
             echo "Nenhuma baseline nova/alterada — nada para commitar."
             exit 0

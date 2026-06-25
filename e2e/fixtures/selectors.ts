@@ -235,16 +235,14 @@ export const Sel = {
     next: TID("wizard-next-button"),
     prev: TID("wizard-prev-button"),
     /**
-     * QuoteViewPage (desktop) — abre o dialog de preview/export do PDF.
-     * Antes era `export-pdf-button`, renomeado para evitar colisão com
-     * o botão "Gerar PDF" dentro do dialog e com o mobile action bar.
+     * QuoteViewPage (desktop) — ÚNICO gatilho do fluxo de export de PDF.
+     * Abre o `PdfGenerationDialog` que contém o confirm.
      */
     pdfPreviewTrigger: TID("pdf-preview-trigger"),
-    /**
-     * Botão final que dispara o download do PDF (confirm dentro do
-     * `PdfGenerationDialog` no desktop e ação direta no mobile action bar).
-     */
-    exportPdfButton: TID("export-pdf-button"),
+    /** Confirm dentro do `PdfGenerationDialog` que dispara o download. */
+    pdfGenerateConfirm: TID("pdf-generate-confirm"),
+    /** Mobile action bar — download direto sem dialog. */
+    pdfExportMobile: TID("pdf-export-mobile"),
   },
 
   // ---------- Estoque (Stock Dashboard) ----------

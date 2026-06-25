@@ -52,7 +52,7 @@ export function QuoteMobileActionBar({
         onClick={onDownloadPDF}
         disabled={isGeneratingPDF}
         className="flex-1 gap-2"
-        data-testid="export-pdf-button"
+        data-testid="pdf-export-mobile"
         aria-label="Baixar PDF da proposta"
       >
         {isGeneratingPDF ? (
