@@ -421,7 +421,7 @@ export function useDiscountApproval() {
         return false;
       }
     },
-    [user],
+    [user, invalidateWidget],
   );
 
   // Fetch pending requests (admin)
