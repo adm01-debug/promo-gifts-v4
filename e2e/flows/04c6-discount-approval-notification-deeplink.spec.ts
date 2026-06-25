@@ -5,18 +5,13 @@
  * da fila (o request criado já gera registro na tabela de notificações via trigger).
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
-import { loginAs } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
-import { seedDiscountApprovalRequestsFromPage } from "../helpers/discount-approval-seed-page";
+import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 
 test.describe("Discount approval — notification deep-link mark-as-read", () => {
-  test("clique no link da notificação reduz contador de não lidas", async ({ page }) => {
+  test("clique no link da notificação reduz contador de não lidas", async ({ page }, testInfo) => {
     requireAdmin();
-    await loginAs(page, "admin");
-    await gotoAndSettle(page, "/admin/usuarios?tab=discounts");
-
-    // Seed: garante pelo menos 1 pending para emitir notificação.
-    const seed = await seedDiscountApprovalRequestsFromPage(page, { minPending: 1 });
+    const { seed } = await setupDiscountAdmin(page, testInfo, { minPending: 1 });
     if (seed.skipped && seed.pendingTotal === 0) {
       test.skip(true, `Seed falhou e não há pending: ${seed.skipped}`);
     }
