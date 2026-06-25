@@ -35,7 +35,7 @@ import { QuotesSkeleton } from '@/components/layout/SkeletonLoaders';
 import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractions';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
-import { QuotesFunnelChart } from '@/components/quotes/QuotesFunnelChart';
+
 import { useQuotesListPage, sortOptions, type SortOption } from '@/pages/quotes/useQuotesListPage';
 import type { QuoteStatus } from '@/types/quote';
 
