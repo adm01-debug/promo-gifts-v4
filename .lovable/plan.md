@@ -1,80 +1,103 @@
-## Plano: hardening de status de orçamentos + cobertura de testes
+## Contexto e premissas
 
-### Escopo (4 entregas)
+- O banco canônico do app é o externo `doufsxqlfjyuvxuezpln` (project knowledge — REGRA #1). A ferramenta de migration do Lovable Cloud aponta para `pqpdolkaeqlyzpdpbizo` e não tem os dados nem o CHECK real. Por isso a migration será entregue como **arquivo SQL versionado** em `supabase/migrations/` para ser aplicado pelo PO no projeto Gold — **não vou rodar `supabase--migration`** (que iria contra a regra "NUNCA criar schema novo sem confirmação no Cloud interno").
+- O CHECK atual referenciado nas migrations históricas: `('draft','pending','sent','approved','rejected','expired','converted')` (7). FE tem 10 (faltam `pending_approval`, `viewed`, `cancelled`).
+- Telemetria reaproveita `createClientLogger` já usado em `quoteService.ts`.
 
-#### 1. Validação runtime de `QuoteStatus` (Zod + telemetria)
-- Em `src/types/quote.ts`: adicionar `quoteStatusSchema = z.enum([...QUOTE_STATUSES])` e exportar `QUOTE_STATUSES` como const tuple. `QuoteStatus` passa a ser inferido (`z.infer`). Zero quebra de tipo.
-- Em `src/services/quoteService.ts` (`fetchQuotes`/`getQuote`): validar cada linha vinda do banco com `quoteStatusSchema.safeParse(row.status)`. Se falhar:
-  - log estruturado via `createClientLogger('quotes_service').warn('quote_status_unknown', { quoteId, status })`
-  - fallback do registro para `status = 'pending'` (não derruba UI)
-- O guard cobre o cenário "DB adicionou status novo sem atualizar FE".
+## Entregáveis
 
-#### 2. Banner informativo quando só há `pending`
-- Em `useQuotesListPage`: novo computed `onlyPendingStatuses = quotes.length > 0 && quotes.every(q => q.status === 'pending')`, retornado pelo hook.
-- Em `QuotesListPage.tsx`: quando `onlyPendingStatuses === true`, renderizar `<Alert variant="info">` discreto acima dos filtros: "Todos os orçamentos visíveis estão em status **Pendente**. Avance o fluxo enviando ou aprovando para popular o funil."
-- Chips e sort continuam funcionando exatamente como hoje.
+### 1. Migration SQL alinhando o CHECK (arquivo, não aplicada)
 
-#### 3. Testes unitários
+Arquivo novo: `supabase/migrations/20260625120000_align_quote_status_check.sql`
 
-**3.1 `src/lib/__tests__/quote-status-config.transitions.test.ts`** (acrescentar — já existe)
-- Suite "transições inválidas explícitas": tabela com 12+ pares bloqueados, incluindo `draft→converted`, `pending→converted`, `cancelled→qualquer`, `converted→draft`, `approved→sent`, `approved→cancelled`.
-- Suite "status fora do enum retorna false sem throw" (regressão BUG-016).
+```sql
+-- UP: alinhar CHECK aos 10 status do FE (QUOTE_STATUSES)
+ALTER TABLE public.quotes DROP CONSTRAINT IF EXISTS valid_quote_status;
 
-**3.2 `src/types/__tests__/quote-status-schema.test.ts`** (novo)
-- 10 valores válidos passam; 6 valores inválidos (`'foo'`, `null`, `''`, `'PENDING'`, `'draft '`, `123`) reprovados.
-- `QUOTE_STATUSES` é tuple readonly com 10 itens (snapshot da SSOT).
+-- Pré-saneamento defensivo: nada deve sobrar fora do enum.
+-- Aborta a migration se houver linha incompatível (em vez de silenciosamente coagir).
+DO $$
+DECLARE bad_count int;
+BEGIN
+  SELECT count(*) INTO bad_count FROM public.quotes
+  WHERE status IS NOT NULL
+    AND status NOT IN ('draft','pending','pending_approval','sent','viewed',
+                       'approved','rejected','expired','cancelled','converted');
+  IF bad_count > 0 THEN
+    RAISE EXCEPTION 'align_quote_status_check abortada: % linha(s) com status fora do enum', bad_count;
+  END IF;
+END $$;
 
-**3.3 `src/pages/quotes/__tests__/useQuotesListPage.test.ts`** (novo)
-- Mock `@/hooks/quotes` com `useQuotes` retornando dataset controlado.
-- Cenários (8):
-  - vazio → `filteredQuotes.length === 0`, `onlyPendingStatuses === false`
-  - só pending (3 quotes) → `onlyPendingStatuses === true`
-  - mistos (`pending` + `sent` + `approved`) → `onlyPendingStatuses === false`
-  - filtro `statusFilter='approved'` filtra corretamente
-  - busca `searchTerm` ≥ 2 chars aplica Fuse
-  - sort `highest`/`lowest`/`expiring`/`newest`/`oldest`
-  - `handleClearFilters` zera os 3 controles
-  - `handleMarkApproved` chama `updateQuoteStatus(id, 'approved')`
+ALTER TABLE public.quotes
+  ADD CONSTRAINT valid_quote_status
+  CHECK (status IN (
+    'draft','pending','pending_approval','sent','viewed',
+    'approved','rejected','expired','cancelled','converted'
+  ));
+```
 
-**3.4 `src/pages/quotes/__tests__/QuotesListPage.render.test.tsx`** (novo)
-- Mock do hook + `MemoryRouter`. Cobre:
-  - estado `loading` renderiza `QuotesSkeleton`
-  - estado `error` renderiza banner com texto do erro
-  - dataset vazio renderiza `EmptyState`
-  - dataset só-pending renderiza o banner novo do item 2
-  - dataset com 5 quotes renderiza header com contagem e botão `quote-new-button` (testid preservado)
-  - **regressão chave:** nenhum elemento com texto `Total em Aberto`, `Funil de Vendas`, `Aprovados`, `Conversão` aparece no DOM
+Arquivo de rollback: `supabase/migrations/rollback/20260625120000_align_quote_status_check.down.sql`
 
-#### 4. Documentação do gap DB CHECK
-- Em `src/lib/quote-status-config.ts` (topo), adicionar comentário JSDoc:
-  ```
-  ⚠️ DB CHECK constraint `valid_quote_status` aceita apenas 7 status
-  ('draft','pending','sent','approved','rejected','expired','converted').
-  FE define 10 (faltam pending_approval/viewed/cancelled). Alinhar via
-  migration EXIGE aprovação explícita do PO (regra do projeto).
-  Até lá, transições para os 3 status FE-only só funcionam em-memória.
-  ```
-- Sem migration neste plano (respeita regra "NUNCA criar/alterar schema sem confirmação").
+```sql
+-- DOWN: voltar para 7 status legados (rollback seguro)
+-- Reverte primeiro qualquer registro com status novo para evitar violação.
+UPDATE public.quotes SET status = 'pending'
+ WHERE status IN ('pending_approval','viewed','cancelled');
 
-### Arquivos afetados
-- `src/types/quote.ts` (refactor com Zod, mantendo export type `QuoteStatus`)
-- `src/services/quoteService.ts` (parse + fallback + log)
-- `src/lib/quote-status-config.ts` (comentário JSDoc)
-- `src/pages/quotes/useQuotesListPage.ts` (computed `onlyPendingStatuses`)
-- `src/pages/quotes/QuotesListPage.tsx` (banner condicional)
-- `src/lib/__tests__/quote-status-config.transitions.test.ts` (mais cenários)
-- `src/types/__tests__/quote-status-schema.test.ts` (novo)
-- `src/pages/quotes/__tests__/useQuotesListPage.test.ts` (novo)
-- `src/pages/quotes/__tests__/QuotesListPage.render.test.tsx` (novo)
+ALTER TABLE public.quotes DROP CONSTRAINT IF EXISTS valid_quote_status;
+ALTER TABLE public.quotes
+  ADD CONSTRAINT valid_quote_status
+  CHECK (status IN ('draft','pending','sent','approved','rejected','expired','converted'));
+```
 
-### Critérios de aceitação
-- `vitest run src/types src/lib src/pages/quotes` verde local.
-- Coverage: cada cenário listado acima vira ao menos 1 `expect`.
-- Nenhuma quebra de API pública do hook (mantém os outros campos retornados intactos).
-- Nenhuma alteração de schema/migration neste ciclo.
-- `data-testid="quote-new-button"` preservado (não quebra E2E `04ck`).
+Atualizar o JSDoc em `src/lib/quote-status-config.ts` indicando que o gap está endereçado pela migration `20260625120000` (pendente de aplicação no banco Gold).
 
-### Fora de escopo (explícito)
-- Migration alinhando CHECK do banco — pendente aprovação separada.
-- Refatorar `useQuoteFunnel` (já removido do consumo).
-- Mudar visual dos chips ou layout do header.
+### 2. Telemetria de transições inválidas
+
+Arquivo novo: `src/lib/telemetry/quoteStatusTelemetry.ts`
+
+- Exporta `logInvalidStatusTransition({ quoteId, from, to, reason, source })`.
+- Usa `createClientLogger('quote_status_transition')`; emite evento `quote_status_transition_blocked` com `quoteId`, `from`, `to`, `reason` (`out_of_enum` | `not_allowed_by_config` | `db_check_violation`), `source` (`ui` | `service` | `db`).
+
+Pontos de instrumentação:
+- `src/lib/quote-status-config.ts` → `canTransition(from, to, quoteId?)` passa a chamar `logInvalidStatusTransition` quando retorna `false` (mantém retorno booleano; quoteId opcional para não quebrar testes existentes).
+- `src/services/quoteService.ts` → no `updateQuoteStatus` (ou equivalente), antes do `update`: se `canTransition` falha, loga + lança erro tipado `QuoteTransitionBlockedError`. No `.catch` do Supabase, se o erro vier com `code 23514` e mensagem contendo `valid_quote_status`, loga com `reason: 'db_check_violation'` e relança como erro amigável.
+
+### 3. Teste E2E (Playwright) — transição inválida + fallback UI
+
+Arquivo novo: `e2e/flows/quotes/quote-invalid-status-transition.spec.ts` (segue [E2E Helpers Policy] e [E2E Named Resources]).
+
+Cenário:
+1. `loginAs('seller')` e cria orçamento via API helper já existente (status inicial `draft`), nome via `e2eName('quote-invalid-status')`.
+2. **Caminho UI (bloqueio no FE):** abre `/orcamentos/:id`, tenta acionar a ação que dispararia `draft→converted` via console patch ou via chamada direta a `updateQuoteStatus` (exposto em `window.__e2e` apenas quando `import.meta.env.MODE==='test'`); espera toast saneado padrão e ausência de mudança de status (poll por `Sel.quote.statusBadge`).
+3. **Caminho DB (CHECK violation):** força `supabase.from('quotes').update({ status: 'not_a_status' })` via helper E2E e espera erro 23514; valida que a UI, ao recarregar a lista, mostra o **banner "pending-only"** já implementado quando o seed só tem `pending` (reaproveita fixture). Valida via `Sel.quotes.pendingOnlyBanner` (novo testid a adicionar em `QuotesListPage.tsx`: `data-testid="quotes-pending-only-banner"`).
+4. Cleanup via `e2eName` prefix (helper já padrão).
+
+Ajustes mínimos de produção para suportar o teste:
+- Adicionar `data-testid="quotes-pending-only-banner"` no `<Alert>` do `QuotesListPage.tsx`.
+- Adicionar `data-testid="quote-status-badge"` no badge de status da página de detalhe (se ainda não existir).
+- Expor `window.__e2e.updateQuoteStatus` apenas quando `import.meta.env.MODE === 'test'` em `src/lib/e2e/exposeForTests.ts` (já existe um padrão similar — confirmo ao implementar).
+
+## Arquivos a criar/editar
+
+- **Novo:** `supabase/migrations/20260625120000_align_quote_status_check.sql`
+- **Novo:** `supabase/migrations/rollback/20260625120000_align_quote_status_check.down.sql`
+- **Novo:** `src/lib/telemetry/quoteStatusTelemetry.ts`
+- **Novo:** `e2e/flows/quotes/quote-invalid-status-transition.spec.ts`
+- **Editar:** `src/lib/quote-status-config.ts` (instrumenta `canTransition` + atualiza JSDoc)
+- **Editar:** `src/services/quoteService.ts` (telemetria + tradução do erro 23514)
+- **Editar:** `src/pages/quotes/QuotesListPage.tsx` (testid no banner)
+- **Editar (se necessário):** página de detalhe do orçamento (testid no badge)
+- **Editar (se necessário):** `src/lib/e2e/exposeForTests.ts` para expor helper
+
+## Fora de escopo
+
+- **Aplicar** a migration no banco Gold (REGRA #1 — só o PO aplica; entrego o SQL).
+- Mudanças visuais nos chips/funil.
+- Refatoração do `useQuoteFunnel` (já removido).
+
+## Riscos e mitigação
+
+- Aplicar o CHECK com dados sujos quebraria o `ALTER`. Mitigado pelo `DO $$` de pré-checagem que aborta com mensagem clara.
+- Rollback poderia falhar se houver linhas com status novo; mitigado por `UPDATE … SET status='pending'` antes do `ADD CONSTRAINT` (decisão conservadora — documentar no PR que isso é lossy).
+- Telemetria em `canTransition` pode gerar ruído em testes unitários existentes; uso de `quoteId` opcional + flag `silent` para o uso em testes mantém compatibilidade.
