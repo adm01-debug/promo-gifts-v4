@@ -2,14 +2,18 @@
  * Configuração centralizada de status de orçamentos
  * Fonte única de verdade para labels, cores, estilos e transições válidas.
  *
- * ⚠️ GAP CONHECIDO (2026-06-25): o CHECK constraint `valid_quote_status` no
- * banco aceita apenas 7 status ('draft','pending','sent','approved','rejected',
- * 'expired','converted'). O FE define 10 — faltam `pending_approval`, `viewed`
- * e `cancelled`. Alinhar via migration EXIGE aprovação explícita do PO
- * (regra do projeto: nunca alterar schema sem confirmação). Até lá, esses 3
- * status FE-only só existem em memória; tentativa de persistir resulta em
- * SQLSTATE 23514. `sanitizeQuoteStatus` em `quoteService.ts` faz fallback p/
- * 'pending' se um status desconhecido chegar do banco.
+ * Status (FE × banco) — ALINHADOS em 10 (verificado 2026-06-25): o CHECK
+ * constraint `valid_quote_status` em `public.quotes` aceita EXATAMENTE os
+ * mesmos 10 status do FE: 'draft','pending','pending_approval','sent','viewed',
+ * 'approved','converted','rejected','expired','cancelled'. Não há gap de
+ * valores — escrever qualquer um deles é aceito pelo banco (ex.: o fluxo de
+ * aprovação de desconto em `useDiscountApproval.ts` seta o orçamento para
+ * 'pending_approval' e funciona em produção). O que o banco restringe é o
+ * valor de `valid_until` para status ativos (constraint
+ * `valid_until_not_expired_for_active`), NÃO o conjunto de status.
+ * `sanitizeQuoteStatus` em `quoteService.ts` é defesa-em-profundidade: faz
+ * fallback p/ 'pending' (com log estruturado) caso um valor inesperado chegue
+ * do banco — na prática nunca dispara, pois os conjuntos coincidem.
  */
 import type { QuoteStatus } from '@/types/quote';
 
