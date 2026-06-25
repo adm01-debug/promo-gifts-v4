@@ -19,7 +19,24 @@ import {
   QUOTE_STATUS_CONFIG,
   isValidQuoteTransition,
 } from '@/lib/quote-status-config';
-import type { QuoteStatus } from '@/types/quote';
+import { quoteStatusSchema, type QuoteStatus } from '@/types/quote';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const quoteStatusLogger = createClientLogger('quotes_service');
+
+/**
+ * Sanitiza o `status` vindo do banco: se for um valor desconhecido pelo FE,
+ * loga warn estruturado e faz fallback p/ 'pending' — nunca derruba a UI.
+ */
+function sanitizeQuoteStatus(row: { id?: string; status?: unknown }): QuoteStatus {
+  const parsed = quoteStatusSchema.safeParse(row.status);
+  if (parsed.success) return parsed.data;
+  quoteStatusLogger.warn('quote_status_unknown', {
+    quote_id: row.id ?? null,
+    status: String(row.status),
+  });
+  return 'pending';
+}
 import { sendTransactionalEmail, type EmailEventType } from '@/hooks/common/useTransactionalEmail';
 
 import { logger } from '@/lib/logger';
