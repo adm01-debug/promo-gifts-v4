@@ -35,7 +35,7 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
     const { container } = render(
       <QuoteBuilderStepper completedSteps={['client', 'conditions']} activeStep="items" />,
     );
-    const circles = container.querySelectorAll('li .rounded-full');
+    const circles = container.querySelectorAll('li > button > .rounded-full');
     expect(circles.length).toBe(5);
     circles.forEach((c) => {
       expect(c.className).toContain('h-10');
