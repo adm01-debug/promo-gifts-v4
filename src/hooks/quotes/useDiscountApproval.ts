@@ -269,6 +269,15 @@ export function useDiscountApproval() {
         toast.error('Erro ao solicitar aprovação');
         return false;
       }
+      })();
+      inflightApprovals.set(key, promise);
+      try {
+        return await promise;
+      } finally {
+        // Libera a chave assim que a Promise resolve (sucesso OU falha),
+        // permitindo retry intencional do usuário sem ficar travado.
+        inflightApprovals.delete(key);
+      }
     },
     [user],
   );
