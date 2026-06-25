@@ -49,6 +49,7 @@ import { getGridColsClass, getGridGapClass } from '@/components/replenishments/g
 import { SORT_OPTIONS } from '@/constants/filters';
 
 import { logger } from '@/lib/logger';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CARD_MIN_HEIGHT_PX = 420;
 const SKELETON_GRID_ROWS = 3;
@@ -79,11 +80,20 @@ export function NoveltyProductGrid() {
   // set-state/ref-write após desmontar e leak do timeout).
   const guardTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // BUG-HEAD-3 FIX (2026-06-25): guard de autenticação para evitar GETs abortados.
+  // isPending:isLoading alias cobre enabled=false → skeleton correto em todos os 3 usos:
+  //   L379: if (isLoading && products.length===0) → skeleton grid
+  //   L618: {isLoading && products.length===0 ? <badge loading> : <count>}
+  //   L817: {!isLoading && ... && hasActiveFilters} → filtro ativo
+  // ANTI-REGRESSÃO fix_version=v4.1443b: não remover isReadyToFetch nem o alias.
+  const { user, rolesLoaded } = useAuth();
+  const isReadyToFetch = rolesLoaded && !!user;
+
   // FIX (auditoria Novidades, P1-B): sem teto fixo. Antes `{ limit: 400 }`
   // truncava o grid quando havia mais de 400 novidades ativas (ex.: 550 -> 150
   // produtos, incl. fornecedores inteiros, invisiveis; e o contador divergia do
   // card "Novidades Ativas"). O hook agora pagina o conjunto completo da janela.
-  const { data: novelties, isLoading, isFetching, error } = useNoveltiesWithDetails();
+  const { data: novelties, isPending: isLoading, isFetching, error } = useNoveltiesWithDetails({ enabled: isReadyToFetch });
   const products = useMemo(() => novelties || [], [novelties]);
 
   const [loadingProgress, setLoadingProgress] = useState(0);
