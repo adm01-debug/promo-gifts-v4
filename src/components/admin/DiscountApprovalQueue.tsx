@@ -154,7 +154,7 @@ export function DiscountApprovalQueue() {
 
   if (!isAdmin) return null;
 
-  const totalCount = data?.length ?? 0;
+  const totalCount = flat.length;
   const filteredCount = filteredData.length;
 
   return (
