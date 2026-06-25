@@ -41,13 +41,13 @@ describe('quote-number · rollover de ano (YY)', () => {
   });
 
   it('mistura de anos: usa somente o YY do ano corrente para max', () => {
-    // 2026: maior é 50/26 mesmo havendo 99999/25.
+    // 2026: maior é 150/26 mesmo havendo 99999/25.
     expect(
       computeNextQuoteNumberPreview(
-        ['99999/25', '49/26', '50/26', '10/26'],
+        ['99999/25', '149/26', '150/26', '110/26'],
         2026,
       ),
-    ).toBe('~51/26');
+    ).toBe('~151/26');
   });
 
   it('virada exata: dezembro do ano X gera prévia X; janeiro do ano X+1 zera', () => {
