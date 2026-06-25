@@ -1,30 +1,41 @@
-Plano já implementado nos turnos anteriores — sem mudanças adicionais necessárias.
+Plano
 
-Estado atual verificado
+Sobre o "rode `npx playwright test ... --repeat-each=3`"
+- A execução local do Playwright neste sandbox não tem as secrets E2E (admin/usuário/Supabase URL/anon key), então rodar o spec aqui terminaria todo em `test.skip` e não validaria flakiness. A validação `--repeat-each=3` será feita pelo próprio CI, em um job dedicado que tem as secrets configuradas.
+- Em ambiente local do usuário, basta rodar:
+  - `npx playwright test e2e/flows/04ck --repeat-each=3 --project=chromium-authed`
 
-1. `src/hooks/quotes/useDiscountApproval.ts`
-- `useQueryClient` importado e `invalidateWidget()` helper presente.
-- `invalidateWidget()` chamado nos 4 caminhos de sucesso:
-  - INSERT novo em `requestApproval`.
-  - Dedup `samePct`.
-  - Fallback idempotente `23505`.
-  - `respondToApproval`.
-- `invalidateWidget` nas deps dos `useCallback`.
+Mudança no CI
 
-2. `src/components/dashboard/MyDiscountRequestsWidget.tsx`
-- `totalPending` derivado de `all` via `useMemo`.
-- Badge de header com `data-testid="discount-widget-pending-total"`, `data-count={totalPending}`, renderizado só quando `totalPending > 0`.
-- `pendingDupCounts` e badge `×N` por linha preservados.
-- Realtime com `refetchType: 'active'`.
+Editar `.github/workflows/e2e-discount-approval.yml` (já cobre o glob `04c*`, que inclui `04ck`) adicionando um job dedicado que roda `04ck` com `--repeat-each=3` em cada PR, sem alterar o job atual.
 
-3. `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`
-- Login admin (`loginAs(page, "admin")`).
-- Seleção de quote do próprio admin sem pending ativo.
-- Leitura de `data-count` como 0 quando o badge não existe.
-- Asserts de incremento e decremento <25s sem refresh.
-- Verificação de remoção do badge ao voltar para 0.
-- Cleanup `DELETE` no `afterEach`.
-- Seletores via `TID()` do SSOT em `e2e/fixtures/selectors.ts`.
+Novo job dentro do mesmo workflow:
 
-Próximo passo sugerido
-- Rodar `npx playwright test e2e/flows/04ck --repeat-each=3` para confirmar estabilidade.
+```text
+discount-widget-badge-live:
+  name: Playwright — 04ck (badge pendentes ao vivo) ×3
+  runs-on: ubuntu-latest
+  timeout-minutes: 25
+  env: (mesmas secrets do job atual)
+  steps:
+    - checkout
+    - setup-node 20 + cache npm
+    - npm ci
+    - npx playwright install --with-deps chromium
+    - npm run build
+    - npx playwright test e2e/flows/04ck \
+        --project=chromium-authed \
+        --repeat-each=3 \
+        --retries=0 \
+        --reporter=html,list,github
+    - upload playwright-report-04ck (always)
+    - upload test-results + e2e/.evidence (on failure)
+```
+
+Observações
+- Mantém o job `discount-approval-e2e` existente como está (cobertura de regressão para todos os `04c*`).
+- O novo job só roda quando os mesmos `paths` do workflow são tocados; assim toda mudança em hook/widget/spec relacionados aciona a validação ×3.
+- Sem alterações em código de aplicação, RLS, schema ou edge functions.
+
+Arquivos afetados
+- `.github/workflows/e2e-discount-approval.yml` (editar — adicionar o novo job).
