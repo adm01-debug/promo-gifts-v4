@@ -30,6 +30,9 @@ export function DiscountApprovalQueue() {
   const qc = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const highlightedId = searchParams.get('request');
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading: queryLoading } = useQuery({
     queryKey: ['discount-approval-queue'],
