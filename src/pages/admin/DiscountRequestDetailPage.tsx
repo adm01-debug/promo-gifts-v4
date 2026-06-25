@@ -116,7 +116,11 @@ export default function DiscountRequestDetailPage() {
 
   if (!isAdmin) {
     return (
-      <div className="container mx-auto max-w-3xl p-6">
+      <div
+        className="container mx-auto max-w-3xl p-6"
+        data-testid="app-access-denied"
+        data-status="forbidden"
+      >
         <p className="text-sm text-muted-foreground">Acesso restrito ao gestor comercial.</p>
       </div>
     );
