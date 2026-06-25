@@ -97,6 +97,7 @@ export function MyDiscountRequestsWidget() {
         () => {
           queryClient.invalidateQueries({
             queryKey: ['my-discount-requests-widget', userId],
+            refetchType: 'active',
           });
         },
       )
@@ -168,6 +169,10 @@ export function MyDiscountRequestsWidget() {
     }
     return m;
   }, [all]);
+  const totalPending = useMemo(
+    () => all.reduce((n, r) => (r.status === 'pending' ? n + 1 : n), 0),
+    [all],
+  );
   const dupKey = (r: RequestRow): string =>
     `${r.quote_id}::${Number(r.requested_discount_percent ?? 0).toFixed(4)}`;
 
@@ -216,6 +221,17 @@ export function MyDiscountRequestsWidget() {
                 realtimeOk ? 'Tempo real conectado' : 'Polling de fallback ativo'
               }
             />
+            {totalPending > 0 && (
+              <Badge
+                variant="secondary"
+                className="px-1.5 py-0 text-[10px]"
+                data-testid="discount-widget-pending-total"
+                data-count={totalPending}
+                title="Solicitações pendentes (atualiza em tempo real)"
+              >
+                {totalPending} pendente{totalPending > 1 ? 's' : ''}
+              </Badge>
+            )}
           </CardTitle>
           <Button
             variant="ghost"

@@ -2,6 +2,7 @@
  * useDiscountApproval — Gerencia solicitações de aprovação de desconto
  */
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -49,8 +50,19 @@ const idempotencyKey = (q: string, req: number, max: number): string =>
 
 export function useDiscountApproval() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [pendingRequests, setPendingRequests] = useState<DiscountApprovalWithQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Invalida o widget do vendedor (todas as sessões com a chave parcial)
+  // imediatamente após qualquer mudança em discount_approval_requests —
+  // não depende de realtime/polling para o badge ficar fresco.
+  const invalidateWidget = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ['my-discount-requests-widget'],
+      refetchType: 'active',
+    });
+  }, [queryClient]);
 
   // Request approval (seller action)
   const requestApproval = useCallback(
@@ -108,6 +120,7 @@ export function useDiscountApproval() {
               { duration: 8000 },
             );
           }
+          invalidateWidget();
           return true;
         }
 
@@ -131,6 +144,7 @@ export function useDiscountApproval() {
           if (code === '23505') {
             logger.warn('Duplicate pending approval intercepted by unique index; treating as idempotent success');
             toast.success('Solicitação de aprovação enviada ao admin!');
+            invalidateWidget();
             return true;
           }
           await logRlsDenial(error, {
@@ -263,6 +277,7 @@ export function useDiscountApproval() {
         }
 
         toast.success('Solicitação de aprovação enviada ao admin!');
+        invalidateWidget();
         return true;
       } catch (err) {
         logger.error('Error requesting approval:', err);
@@ -307,7 +322,7 @@ export function useDiscountApproval() {
         inflightApprovals.delete(key);
       }
     },
-    [user],
+    [user, invalidateWidget],
   );
 
   // Respond to approval (admin action)
@@ -398,6 +413,7 @@ export function useDiscountApproval() {
           logger.error('Failed to notify seller of approval decision:', sellerNotifyErr);
 
         toast.success(approved ? 'Desconto aprovado!' : 'Desconto rejeitado');
+        invalidateWidget();
         return true;
       } catch (err) {
         logger.error('Error responding to approval:', err);
@@ -405,7 +421,7 @@ export function useDiscountApproval() {
         return false;
       }
     },
-    [user],
+    [user, invalidateWidget],
   );
 
   // Fetch pending requests (admin)
