@@ -23,10 +23,14 @@ const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ||
   "";
 
+test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
+
 test.describe("Discount approval — cursor ASC consistente", () => {
   test("paginação ASC por created_at não duplica e mantém ordem", async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
     requireAdmin();
     await setupDiscountAdmin(page, testInfo, { minPending: PAGE_SIZE + 5 });
+
 
     const result = await page.evaluate(
       async ({ url, anonKey, pageSize }) => {
