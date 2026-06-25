@@ -120,6 +120,7 @@ export function useDiscountApproval() {
               { duration: 8000 },
             );
           }
+          invalidateWidget();
           return true;
         }
 
