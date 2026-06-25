@@ -8,7 +8,7 @@
  *   - isLoading composto: !rolesLoaded || queryLoading — UX correta durante auth
  *   - Early return silencioso quando !isAdmin pós-carregamento
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +23,14 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { logger } from '@/lib/logger';
 import { DiscountApprovalAuditTrail } from './DiscountApprovalAuditTrail';
+import {
+  DiscountApprovalFilterBar,
+  EMPTY_FILTERS,
+  applyDiscountApprovalFilters,
+  type DiscountApprovalFilters,
+} from './DiscountApprovalFilterBar';
 import { cn } from '@/lib/utils';
+
 
 export function DiscountApprovalQueue() {
   const { isAdmin, rolesLoaded } = useAuth();
