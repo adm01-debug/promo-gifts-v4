@@ -55,8 +55,6 @@ export default function QuotesListPage() {
     setDeleteConfirmId,
     bulkDeleteIds,
     setBulkDeleteIds,
-    kpis,
-    funnelData,
     filteredQuotes,
     handleDelete,
     handleBulkDelete,
