@@ -191,7 +191,7 @@ export default function QuoteViewPage() {
                 quoteNumber={quote.quote_number}
                 quoteStatus={quote.status}
                 trigger={
-                  <Button className="gap-2">
+                  <Button className="gap-2" data-testid="export-pdf-button">
                     <Eye className="h-4 w-4" /> Preview Proposta
                   </Button>
                 }
