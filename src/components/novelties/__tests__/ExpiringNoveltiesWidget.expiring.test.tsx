@@ -17,6 +17,18 @@ const hooks = {
   useNoveltyStats: vi.fn(),
 };
 
+// BUG-HEAD-3 mock: useAuth para silenciar warning 'called outside Provider'
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: 'test-user-uuid' },
+    rolesLoaded: true,
+    isAdmin: false,
+    isDev: false,
+    roles: [],
+    isLoading: false,
+  })),
+}));
+
 vi.mock('@/hooks/products', () => ({
   useNoveltiesWithDetails: (...a: unknown[]) => hooks.useNoveltiesWithDetails(...a),
   useExpiringNovelties: (...a: unknown[]) => hooks.useExpiringNovelties(...a),

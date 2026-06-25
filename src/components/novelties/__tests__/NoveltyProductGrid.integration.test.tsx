@@ -20,6 +20,19 @@ function getByPlaceholderPartial(text: string): HTMLInputElement {
   return match as HTMLInputElement;
 }
 
+// BUG-HEAD-3 mock: useAuth para silenciar warning 'called outside Provider'
+// Retorna estado autenticado (rolesLoaded=true) — isReadyToFetch=true.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: 'test-user-uuid' },
+    rolesLoaded: true,
+    isAdmin: false,
+    isDev: false,
+    roles: [],
+    isLoading: false,
+  })),
+}));
+
 // Mock dependencies
 vi.mock('@/hooks/products', () => ({
   useNoveltiesWithDetails: vi.fn(() => ({

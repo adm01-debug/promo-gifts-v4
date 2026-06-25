@@ -49,6 +49,18 @@ const PRODUCTS: NoveltyWithDetails[] = Array.from({ length: 45 }, (_, i) => ({
   stock_status: 'in-stock',
 }));
 
+// BUG-HEAD-3 mock: useAuth para silenciar warning 'called outside Provider'
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    user: { id: 'test-user-uuid' },
+    rolesLoaded: true,
+    isAdmin: false,
+    isDev: false,
+    roles: [],
+    isLoading: false,
+  })),
+}));
+
 vi.mock('@/hooks/products', () => ({
   useNoveltiesWithDetails: vi.fn(() => ({
     data: PRODUCTS,
