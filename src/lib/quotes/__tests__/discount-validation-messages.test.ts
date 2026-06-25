@@ -109,7 +109,31 @@ describe('getDiscountValidationMessage', () => {
     });
     expect(msg.kind).toBe('idle');
   });
+
+  it('exibe excedente exato e valor máximo permitido quando ultrapassa o limite', () => {
+    const msg = getDiscountValidationMessage({
+      rawPercent: 25,
+      realDiscountPercent: 25,
+      maxDiscountPercent: 10,
+      hasMarkup: false,
+    });
+    expect(msg.kind).toBe('exceeds_limit');
+    expect(msg.description).toMatch(/excedente de 15%/);
+    expect(msg.description).toMatch(/Valor máximo permitido sem aprovação: 10%/);
+  });
+
+  it('exibe "faltam X% para o teto" no estado within_limit', () => {
+    const msg = getDiscountValidationMessage({
+      rawPercent: 4,
+      realDiscountPercent: 4,
+      maxDiscountPercent: 10,
+      hasMarkup: false,
+    });
+    expect(msg.kind).toBe('within_limit');
+    expect(msg.description).toMatch(/Faltam 6% para atingir o teto/);
+  });
 });
+
 
 describe('approval checklist', () => {
   it('lista os 3 critérios e marca cada um corretamente', () => {

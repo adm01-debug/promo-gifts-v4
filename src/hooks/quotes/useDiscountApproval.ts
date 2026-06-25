@@ -72,7 +72,7 @@ export function useDiscountApproval() {
           return true;
         }
 
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
           .insert({
@@ -81,8 +81,19 @@ export function useDiscountApproval() {
             requested_discount_percent: requestedPercent,
             max_allowed_percent: maxAllowedPercent,
             seller_notes: sellerNotes || null,
-          });
+          })
+          .select('id')
+          .maybeSingle();
         if (error) {
+          // Idempotência DB: índice único parcial `uniq_dar_quote_pending`
+          // garante 1 pending por quote_id. SQLSTATE 23505 sob corrida → trata
+          // como sucesso (já existe a solicitação pendente que queríamos criar).
+          const code = (error as { code?: string }).code;
+          if (code === '23505') {
+            logger.warn('Duplicate pending approval intercepted by unique index; treating as idempotent success');
+            toast.success('Solicitação de aprovação enviada ao admin!');
+            return true;
+          }
           await logRlsDenial(error, {
             table: 'discount_approval_requests',
             op: 'INSERT',
@@ -94,6 +105,8 @@ export function useDiscountApproval() {
           });
           throw error;
         }
+        const newRequestId = inserted?.id ?? null;
+
 
         // Set quote status to pending_approval so UI shows correct state.
         // IMPORTANT: throw on failure — a swallowed error here would leave an
@@ -181,6 +194,9 @@ export function useDiscountApproval() {
             markup > 0
               ? `${sellerName} solicitou desconto real de ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
               : `${sellerName} solicitou ${requestedPercent.toFixed(1)}% de desconto (limite: ${maxAllowedPercent}%)`;
+          const deepLink = newRequestId
+            ? `/admin/usuarios?tab=discounts&request=${newRequestId}`
+            : '/admin/usuarios?tab=discounts';
           const { error: notifyErr } = await supabase.from('workspace_notifications').insert(
             adminRoles.map((a) => ({
               user_id: a.user_id,
@@ -188,9 +204,22 @@ export function useDiscountApproval() {
               message: msg,
               type: 'warning',
               category: 'discount',
-              action_url: '/admin/usuarios?tab=discounts',
+              action_url: deepLink,
+              metadata: {
+                request_id: newRequestId,
+                quote_id: quoteId,
+                seller_id: user.id,
+                seller_name: sellerName,
+                requested_discount_percent: requestedPercent,
+                max_allowed_percent: maxAllowedPercent,
+                real_discount_percent: requestedPercent,
+                apparent_discount_percent: apparent,
+                negotiation_markup_percent: markup,
+                seller_notes: sellerNotes || null,
+              },
             })),
           );
+
           if (notifyErr) logger.error('Failed to notify admins of approval request:', notifyErr);
         }
 
