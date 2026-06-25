@@ -86,20 +86,29 @@ function QuoteNumberSubtitle({
     >
       {isEditMode ? (
         formatted ? (
-          <>
+          <span data-testid="quote-number-display-valid">
             Nº <span className="font-semibold text-foreground">{formatted}</span>
             {statusLabel ? <span className="ml-1 opacity-70">· {statusLabel}</span> : null}
-          </>
+          </span>
+        ) : rawQuoteNumber ? (
+          // Existe valor no banco mas fora do formato canônico NNNNN/YY.
+          <span data-testid="quote-number-display-malformed" className="italic">
+            Nº em formato inválido — contate o suporte
+          </span>
         ) : (
-          <span className="italic">Nº indisponível</span>
+          <span data-testid="quote-number-display-missing" className="italic">
+            Nº indisponível
+          </span>
         )
       ) : preview ? (
-        <>
+        <span data-testid="quote-number-display-preview">
           Próx. <span className="font-semibold text-foreground">{preview}</span>{' '}
           <span className="opacity-70">(gerado ao salvar)</span>
-        </>
+        </span>
       ) : (
-        <span className="italic">Nº a ser gerado ao salvar</span>
+        <span data-testid="quote-number-display-fallback" className="italic">
+          Nº a ser gerado ao salvar
+        </span>
       )}
     </p>
   );
