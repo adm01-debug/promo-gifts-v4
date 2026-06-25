@@ -143,21 +143,34 @@ export function DiscountApprovalQueue() {
 
   if (!isAdmin) return null;
 
-  if (!data?.length) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <ShieldAlert className="mx-auto mb-2 h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Nenhuma solicitação pendente.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const totalCount = data?.length ?? 0;
+  const filteredCount = filteredData.length;
 
   return (
     <div className="space-y-3">
-      {data.map((req) => {
+      <DiscountApprovalFilterBar
+        value={filters}
+        onChange={setFilters}
+        sellers={sellers}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+      />
+
+      {filteredCount === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <ShieldAlert className="mx-auto mb-2 h-10 w-10 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              {totalCount === 0
+                ? 'Nenhuma solicitação registrada.'
+                : 'Nenhum resultado para os filtros aplicados.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        filteredData.map((req) => {
         const reqTyped = req as {
+
           quote_id: string;
           quotes?: {
             quote_number?: string;
