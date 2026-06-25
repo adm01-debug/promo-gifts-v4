@@ -10,27 +10,21 @@
  * seedDiscountApprovalRequestsFromPage; se RLS impedir, faz skip claro.
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
-import { loginAs } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
-import { seedDiscountApprovalRequestsFromPage } from "../helpers/discount-approval-seed-page";
+import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 
 const PAGE_SIZE = 50;
 
 test.describe("Discount approval — paginação cursorada da fila", () => {
-  test("carregar mais anexa itens sem duplicar e mantém ordem", async ({ page }) => {
+  test("carregar mais anexa itens sem duplicar e mantém ordem", async ({ page }, testInfo) => {
     requireAdmin();
-    await loginAs(page, "admin");
-
-    // Seed idempotente (no-op se já houver itens suficientes).
-    await gotoAndSettle(page, "/admin/usuarios?tab=discounts");
-    const seed = await seedDiscountApprovalRequestsFromPage(page, {
+    const { seed } = await setupDiscountAdmin(page, testInfo, {
       minPending: PAGE_SIZE + 5,
     });
     if (seed.skipped) {
       // eslint-disable-next-line no-console
       console.warn(`[04c5] seed skipped: ${seed.skipped}`);
     }
-    // Recarrega para refletir o seed.
     await gotoAndSettle(page, "/admin/usuarios?tab=discounts");
 
     const cards = page.locator('[data-testid^="discount-request-card-"]');
