@@ -297,6 +297,20 @@ export function DiscountApprovalQueue() {
         );
         })
       )}
+
+      {hasNextPage && (
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            data-testid="discount-queue-load-more"
+          >
+            {isFetchingNextPage ? 'Carregando…' : 'Carregar mais'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
