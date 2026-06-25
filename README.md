@@ -484,3 +484,61 @@ Projeto proprietário — todos os direitos reservados.
 
 **Desenvolvido por Pink e Cerébro × Promo Brindes** 🚀
 
+
+---
+
+## 🧪 Playwright — Snapshots visuais (quote-number-subtitle)
+
+O spec `e2e/quotes/quote-number-subtitle.spec.ts` valida que o subtítulo do
+`quote_number` substitui a frase legada **"Crie um orçamento com produtos e
+personalizações"** no header de `/orcamentos/novo` em todos os breakpoints
+suportados.
+
+### Breakpoints cobertos
+
+| Nome     | Width × Height | Baseline PNG                                     |
+| -------- | -------------- | ------------------------------------------------ |
+| mobile   | 390 × 844      | `quote-number-subtitle-mobile.png`               |
+| tablet   | 768 × 1024     | `quote-number-subtitle-tablet.png`               |
+| desktop  | 1280 × 800     | `quote-number-subtitle-desktop.png`              |
+| wide     | 1920 × 1080    | `quote-number-subtitle-wide.png`                 |
+
+Todas as baselines vivem em
+`e2e/quotes/quote-number-subtitle.spec.ts-snapshots/` e são versionadas no
+repo (NUNCA editar à mão).
+
+### Rodar localmente
+
+```bash
+# 1) Instalar Chromium pinned do Playwright
+npm run test:e2e:install
+
+# 2) Validar contra as baselines existentes (modo PR — falha em regressão)
+npx playwright test e2e/quotes/quote-number-subtitle.spec.ts \
+  --project=chromium-authed
+
+# 3) Regenerar baselines (APENAS em mudança visual intencional)
+npx playwright test e2e/quotes/quote-number-subtitle.spec.ts \
+  --project=chromium-authed --update-snapshots
+
+# 4) Debug headed com trace
+npx playwright test e2e/quotes/quote-number-subtitle.spec.ts \
+  --project=chromium-authed --headed --trace=on
+```
+
+### Regenerar baselines via GitHub Actions
+
+Workflow manual: **`Update Quote Visual Snapshots`**
+(`.github/workflows/update-quote-reset-snapshots.yml`) — rode em
+`Actions → Run workflow`. Ele executa com `--update-snapshots`, commita os
+PNGs novos no branch escolhido e cobre tanto `quote-reset-stepper-layout`
+quanto `quote-number-subtitle`.
+
+### CI de PR
+
+O job **`E2E Subtítulo quote_number (visual)`** em
+`ci-quotes-wizard.yml` roda automaticamente em PRs que tocam `src/pages/quotes/**`,
+`src/hooks/quotes/**`, `src/components/quotes/**` ou `e2e/quotes/**`,
+sempre **sem** `--update-snapshots` — falha em qualquer regressão visual e
+publica os diffs (`*-actual.png`, `*-expected.png`, `*-diff.png`) como
+artifact `quote-number-subtitle-failure-bundle`.
