@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -82,13 +82,13 @@ export default function QuotesListPage() {
       />
       <TooltipProvider>
         <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-          {/* Header */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Header: título + filtros + ação no mesmo eixo */}
+          <div className="flex flex-wrap items-center gap-3">
             <FadeInView>
-              <div>
+              <div className="flex-shrink-0 min-w-0">
                 <h1
                   data-testid="page-title-orcamentos"
-                  className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
+                  className="flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
                 >
                   <FileText className="h-7 w-7" />
                   Orçamentos
@@ -98,15 +98,47 @@ export default function QuotesListPage() {
                 </p>
               </div>
             </FadeInView>
-            <div className="flex gap-2">
-              <Button
-                data-testid="quote-new-button"
-                onClick={() => navigate('/orcamentos/novo')}
-                className="px-2"
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Novo Orçamento
-              </Button>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-[260px] lg:w-[320px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  aria-label="Buscar orçamentos"
+                  placeholder="Buscar por número, cliente ou empresa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                <SelectTrigger className="w-full sm:w-[170px]">
+                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-testid="quote-new-button"
+                    onClick={() => navigate('/orcamentos/novo')}
+                    size="icon"
+                    aria-label="Novo orçamento"
+                    className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 hover:bg-primary/90"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  Criar novo orçamento em segundos
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -137,31 +169,6 @@ export default function QuotesListPage() {
             </div>
           )}
 
-          {/* Filters + Sort */}
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative max-w-md flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por número, cliente ou empresa..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-[180px]">
-                <ArrowUpDown className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Status chips */}
           <QuotesStatusChips quotes={quotes} value={statusFilter} onChange={setStatusFilter} />

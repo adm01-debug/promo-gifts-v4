@@ -145,7 +145,21 @@ const MATERIAL_POINTS = 6;
 const COMPLEMENTARY_POINTS = 20;
 
 function normalizedList(values: readonly string[] | null | undefined): string[] {
-  return (values ?? []).map((v) => normalizeText(String(v)).trim()).filter((v) => v.length > 0);
+  // Normaliza, remove vazios E DEDUPLICA (preservando ordem). O lado candidato vira Set,
+  // mas o lado source é percorrido como array em .filter() — sem dedup aqui, valores
+  // repetidos no MESMO produto (dados sujos de fornecedor) inflavam o score: tag 'Jovem'
+  // duplicada contava +20; nicho/ramo com o mesmo termo somava 2×; material repetido
+  // inflava SEM teto. Deduplicar normaliza tudo a "1 conceito = 1 contribuição".
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of values ?? []) {
+    const n = normalizeText(String(v)).trim();
+    if (n.length > 0 && !seen.has(n)) {
+      seen.add(n);
+      out.push(n);
+    }
+  }
+  return out;
 }
 
 /**
@@ -156,9 +170,10 @@ export function calculateMatchScore(
   source: Product,
   candidate: Product,
   precomputedComplements?: string[],
-): { score: number; reasons: string[] } {
+): { score: number; reasons: string[]; hasComplementary: boolean } {
   let score = 0;
   const reasons: string[] = [];
+  let hasComplementary = false;
 
   // Mesma categoria
   if (source.category_id && candidate.category_id && source.category_id === candidate.category_id) {
@@ -223,10 +238,11 @@ export function calculateMatchScore(
     if (matched.length > 0) {
       score += COMPLEMENTARY_POINTS * matched.length;
       reasons.push(`Complementar: ${matched.join(', ')}`);
+      hasComplementary = true;
     }
   }
 
-  return { score, reasons };
+  return { score, reasons, hasComplementary };
 }
 
 /** Classifica o tipo do match a partir de complementaridade + similaridade de nome. */
@@ -286,13 +302,12 @@ export function useProductMatch(
       if (mergedFilters.categoryFilter && candidate.category?.name !== mergedFilters.categoryFilter) continue;
       if (mergedFilters.supplierFilter && candidate.supplier?.name !== mergedFilters.supplierFilter) continue;
 
-      const { score, reasons } = calculateMatchScore(sourceProduct, candidate, sourceComplements);
+      const { score, reasons, hasComplementary } = calculateMatchScore(sourceProduct, candidate, sourceComplements);
       if (score < mergedFilters.minScore) continue;
 
       const candTokens = tokenizeName(candidate.name);
       const nameSim = nameTokenSimilarity(sourceTokens, candTokens);
       const sharedTokens = intersectionSize(sourceTokens, candTokens);
-      const hasComplementary = reasons.some((r) => r.startsWith('Complementar'));
       const matchType = getMatchType({ hasComplementary, nameSim, sharedTokens });
 
       if (!mergedFilters.matchTypes.includes(matchType)) continue;
