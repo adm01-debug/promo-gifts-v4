@@ -50,8 +50,19 @@ const idempotencyKey = (q: string, req: number, max: number): string =>
 
 export function useDiscountApproval() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [pendingRequests, setPendingRequests] = useState<DiscountApprovalWithQuote[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Invalida o widget do vendedor (todas as sessões com a chave parcial)
+  // imediatamente após qualquer mudança em discount_approval_requests —
+  // não depende de realtime/polling para o badge ficar fresco.
+  const invalidateWidget = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ['my-discount-requests-widget'],
+      refetchType: 'active',
+    });
+  }, [queryClient]);
 
   // Request approval (seller action)
   const requestApproval = useCallback(
