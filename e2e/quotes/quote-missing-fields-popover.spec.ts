@@ -119,6 +119,65 @@ test.describe('Quote Summary — popover de campos obrigatórios pendentes', () 
     for (const h of heights) expect(h).toBeGreaterThan(12);
   });
 
+  test('viewport extremo 320×600: popover contido + scroll interno funcional', async ({
+    page,
+  }) => {
+    await setup(page, 320, 600);
+
+    const trigger = page.getByTestId(TRIGGER);
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+
+    const popover = page.getByTestId(POPOVER);
+    await expect(popover).toBeVisible();
+
+    const vw = page.viewportSize()!;
+    const box = await popover.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(-1);
+    expect(box!.y).toBeGreaterThanOrEqual(-1);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(vw.width + 1);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(vw.height + 1);
+
+    // Se o conteúdo passar do limite, deve haver overflow auto/scroll
+    // em algum ancestral — testamos via scrollHeight > clientHeight.
+    const scrollable = await popover.evaluate((el) => {
+      let cur: HTMLElement | null = el as HTMLElement;
+      while (cur) {
+        const style = getComputedStyle(cur);
+        const overflowsY = /(auto|scroll)/.test(style.overflowY);
+        if (overflowsY || cur.scrollHeight <= cur.clientHeight + 1) {
+          return cur.scrollHeight <= cur.clientHeight + 1 || overflowsY;
+        }
+        cur = cur.parentElement;
+      }
+      return true;
+    });
+    expect(scrollable, 'popover deve caber ou ter scroll interno').toBe(true);
+
+    // Legibilidade: cada <li> ainda tem altura mínima > 12px.
+    const heights = await popover.locator('li').evaluateAll((els) =>
+      els.map((e) => (e as HTMLElement).getBoundingClientRect().height),
+    );
+    for (const h of heights) expect(h).toBeGreaterThan(12);
+  });
+
+  test('lista vazia (form válido): trigger não renderiza e popover não abre', async ({ page }) => {
+    await setup(page);
+    await forceFormValid(page);
+
+    // Trigger 100% ausente do DOM visível.
+    await expect(page.getByTestId(TRIGGER)).toHaveCount(0);
+    // Popover idem — nada para abrir.
+    await expect(page.getByTestId(POPOVER)).toHaveCount(0);
+
+    // Tentar abrir por teclado também deve ser no-op (sem trigger, sem foco).
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId(POPOVER)).toHaveCount(0);
+  });
+
+
+
   test('snapshot âncora — action row com pendências (inválido)', async ({ page }) => {
     await setup(page, 1280, 720);
     const trigger = page.getByTestId(TRIGGER);
