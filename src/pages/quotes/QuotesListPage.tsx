@@ -3,18 +3,10 @@ import {
   FileText,
   Plus,
   Search,
-  
   ArrowUpDown,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { formatCurrency } from '@/lib/format';
-import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
