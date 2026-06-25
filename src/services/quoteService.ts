@@ -162,6 +162,27 @@ export const quoteService = {
       throw new Error('Não foi possível criar o orçamento: nenhum dado retornado.');
     }
 
+    // Auditoria estruturada — facilita investigar divergência prévia × salvo.
+    // Campos: org_id, seller_id, year_yy, quote_number final e status.
+    // Filtrar `quote_create_ok` por `quote_number` revela colisões (mesmo
+    // número retornado para 2 inserts distintos) — gap conhecido enquanto
+    // o trigger generate_quote_number não tiver advisory_lock+UNIQUE.
+    try {
+      const c = created as Quote;
+      const yy = typeof c.quote_number === 'string' ? c.quote_number.split('/')[1] : null;
+      logger.info('quote_create_ok', {
+        quote_id: c.id,
+        quote_number: c.quote_number,
+        year_yy: yy,
+        status: c.status,
+        seller_id: userId,
+        org_id: orgId,
+        trigger_strategy: 'max_plus_one_no_lock', // SSOT: docs/QUOTE_NUMBERING.md
+      });
+    } catch {
+      // logging nunca pode quebrar a criação
+    }
+
     return { ...(created as Quote), items } as Quote;
   },
 
