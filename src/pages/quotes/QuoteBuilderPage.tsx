@@ -172,10 +172,18 @@ export default function QuoteBuilderPage() {
                 >
                   {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
                 </h1>
-                <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
-                  {s.isEditMode
-                    ? 'Atualize os produtos, condições e personalizações do orçamento'
-                    : 'Crie um orçamento com produtos e personalizações'}
+                <p
+                  data-testid="quote-number-display"
+                  className="truncate font-mono text-[11px] text-muted-foreground sm:text-xs"
+                  title={s.quoteNumber ? `Número do orçamento: ${s.quoteNumber}` : undefined}
+                >
+                  {s.quoteNumber ? (
+                    <>
+                      Nº <span className="font-semibold text-foreground">{s.quoteNumber}</span>
+                    </>
+                  ) : (
+                    <span className="italic">Nº a ser gerado ao salvar</span>
+                  )}
                 </p>
               </div>
             </div>
