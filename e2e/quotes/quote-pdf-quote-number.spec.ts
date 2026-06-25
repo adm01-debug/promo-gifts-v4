@@ -43,9 +43,11 @@ test.describe('PDF exportado · quote_number no topo', () => {
       const quoteNumber = match![0];
 
       const exportBtn = page.getByTestId('export-pdf-button');
-      if ((await exportBtn.count()) === 0) {
-        test.skip(true, 'Botão de export PDF não disponível.');
-      }
+      // Botão de export PDF é OBRIGATÓRIO no desktop — falha se ausente
+      // para não mascarar regressão de testid removido.
+      await expect(exportBtn, 'export-pdf-button ausente no desktop').toHaveCount(1, {
+        timeout: 10_000,
+      });
 
       const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
       await exportBtn.click();
