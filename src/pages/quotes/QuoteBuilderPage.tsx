@@ -55,6 +55,55 @@ import { useQuoteBuilderState } from '@/hooks/quotes';
 import { useUnsavedChangesGuard } from '@/hooks/common';
 import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { getQuoteStatusLabel } from '@/lib/quote-status-config';
+import { formatQuoteNumberLabel } from '@/utils/quote-number';
+import { useNextQuoteNumberPreview } from '@/hooks/quotes/useNextQuoteNumberPreview';
+
+/**
+ * Subtítulo dinâmico do quote_number.
+ * - Modo edição com número válido → "Nº NNNNN/YY · <status>"
+ * - Modo edição sem número (null/malformado) → fallback "Nº indisponível"
+ * - Modo criação → prévia "Próx. ~N/YY" (estimativa client-side)
+ */
+function QuoteNumberSubtitle({
+  rawQuoteNumber,
+  isEditMode,
+  currentStatus,
+}: {
+  rawQuoteNumber: string | null | undefined;
+  isEditMode: boolean;
+  currentStatus: string | null | undefined;
+}) {
+  const formatted = formatQuoteNumberLabel(rawQuoteNumber);
+  const preview = useNextQuoteNumberPreview(!isEditMode);
+  const statusLabel = currentStatus ? getQuoteStatusLabel(currentStatus) : null;
+
+  return (
+    <p
+      data-testid="quote-number-display"
+      className="truncate font-mono text-[11px] text-muted-foreground sm:text-xs"
+      title={formatted ? `Número do orçamento: ${formatted}` : undefined}
+    >
+      {isEditMode ? (
+        formatted ? (
+          <>
+            Nº <span className="font-semibold text-foreground">{formatted}</span>
+            {statusLabel ? <span className="ml-1 opacity-70">· {statusLabel}</span> : null}
+          </>
+        ) : (
+          <span className="italic">Nº indisponível</span>
+        )
+      ) : preview ? (
+        <>
+          Próx. <span className="font-semibold text-foreground">{preview}</span>{' '}
+          <span className="opacity-70">(gerado ao salvar)</span>
+        </>
+      ) : (
+        <span className="italic">Nº a ser gerado ao salvar</span>
+      )}
+    </p>
+  );
+}
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
