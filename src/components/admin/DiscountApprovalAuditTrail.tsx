@@ -114,6 +114,43 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
           </span>
         </AccordionTrigger>
         <AccordionContent className="px-3 pb-3">
+          {data && data.length > 0 && (
+            <div className="mb-2 flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1.5 text-[11px]"
+                data-testid={`discount-audit-export-pdf-${requestId}`}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    await exportDiscountAuditPdf({
+                      requestId,
+                      rows: data.map((r) => ({
+                        event: r.event,
+                        actor_role: r.actor_role,
+                        actor_name: r.actor?.full_name ?? null,
+                        actor_email: r.actor?.email ?? null,
+                        requested_discount_percent: r.requested_discount_percent,
+                        max_allowed_percent: r.max_allowed_percent,
+                        real_discount_percent: r.real_discount_percent,
+                        admin_notes: r.admin_notes,
+                        seller_notes: r.seller_notes,
+                        created_at: r.created_at,
+                      })),
+                    });
+                    toast.success('PDF gerado');
+                  } catch {
+                    toast.error('Não foi possível gerar o PDF');
+                  }
+                }}
+              >
+                <FileDown className="h-3.5 w-3.5" />
+                Exportar PDF
+              </Button>
+            </div>
+          )}
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-8 w-full" />
@@ -121,6 +158,7 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
             </div>
           ) : !data || data.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nenhum evento registrado ainda.</p>
+
           ) : (
             <ol className="space-y-2" data-testid={`discount-audit-list-${requestId}`}>
               {data.map((row) => {
