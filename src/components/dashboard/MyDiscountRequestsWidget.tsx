@@ -97,6 +97,7 @@ export function MyDiscountRequestsWidget() {
         () => {
           queryClient.invalidateQueries({
             queryKey: ['my-discount-requests-widget', userId],
+            refetchType: 'active',
           });
         },
       )
