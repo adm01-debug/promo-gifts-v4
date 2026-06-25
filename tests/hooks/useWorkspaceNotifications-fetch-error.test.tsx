@@ -56,7 +56,7 @@ vi.mock("@/integrations/supabase/client", () => {
 
 const STABLE_USER = { id: "user-fetch-error-1" };
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: STABLE_USER }),
+  useAuth: () => ({ user: STABLE_USER, rolesLoaded: true }),
 }));
 
 const CACHE_KEY = `workspace_notifications_cache:${STABLE_USER.id}`;
