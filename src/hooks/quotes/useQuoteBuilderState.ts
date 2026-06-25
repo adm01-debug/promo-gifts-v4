@@ -1191,7 +1191,7 @@ export function useQuoteBuilderState() {
     setProductSearch('');
     setProductSearchOpen(false);
     setSelectedProductForColor(null);
-    setCurrentStep(0);
+    setCurrentStep('client');
     setConflictInfo(null);
   }, [
     isEditMode,
