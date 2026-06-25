@@ -57,12 +57,14 @@ export function AdminRoute({ children }: AdminRouteProps) {
 
   if (!canManage) {
     return (
-      <EmptyState
-        variant="security"
-        title="Área Administrativa"
-        description="Acesso restrito a gestores e administradores."
-        action={{ label: 'Voltar ao início', onClick: () => (window.location.href = '/') }}
-      />
+      <div data-testid="app-access-denied" data-status="forbidden">
+        <EmptyState
+          variant="security"
+          title="Área Administrativa"
+          description="Acesso restrito a gestores e administradores."
+          action={{ label: 'Voltar ao início', onClick: () => (window.location.href = '/') }}
+        />
+      </div>
     );
   }
 
