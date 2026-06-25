@@ -7,6 +7,7 @@
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
+import { assertCursorPagination } from "../helpers/pagination-asserts";
 
 
 test.describe.configure({ mode: "parallel" });
