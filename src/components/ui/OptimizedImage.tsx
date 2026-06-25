@@ -183,11 +183,25 @@ export function OptimizedImage({
         </div>
       ) : (
         <>
-          {(lqip || localPlaceholder) && !isLoaded && !error && (
+          {/*
+           * BUG-OI-1 FIX (2026-06-25): O localPlaceholder era renderizado SEM guard de
+           * isInView, causando N×thumbnails disparados simultaneamente para TODOS os cards
+           * na grid (incluindo os fora do viewport) → flood de centenas de GET requests.
+           *
+           * Fix: gateamos em `isInView` (mesmo IntersectionObserver do main image) +
+           * adicionamos loading={priority?'eager':'lazy'} como segunda camada de proteção
+           * para browsers que não suportam IntersectionObserver.
+           *
+           * UX trade-off: cards fora do viewport não terão o blur placeholder antecipado,
+           * mas isso é irrelevante pois o usuário não os vê ainda. Quando entram no viewport,
+           * placeholder e main image carregam quase simultaneamente.
+           */}
+          {(lqip || localPlaceholder) && !isLoaded && !error && isInView && (
             <img
               src={lqip ?? localPlaceholder ?? ''}
               alt=""
               aria-hidden="true"
+              loading={priority ? 'eager' : 'lazy'}
               className={cn(
                 'absolute inset-0 h-full w-full object-contain',
                 isLoaded ? 'opacity-0' : 'opacity-100',

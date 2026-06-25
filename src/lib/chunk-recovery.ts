@@ -30,7 +30,8 @@ const MAX_HARD_RELOADS = 2;
 
 /**
  * URLs confirmadas pelo Service Worker como HTTP 404 pós-deploy.
- * Populado por sw-register.ts ao receber mensagens SW_STALE_CHUNK.
+ * Populado por sw-register.ts ao receber mensagens SW_STALE_CHUNK,
+ * e também populado localmente por probeAsset() quando detecta 404.
  *
  * probeAsset() verifica este set antes de emitir o request HEAD.
  * Se a URL estiver aqui, retorna false imediatamente sem rede —
@@ -39,6 +40,19 @@ const MAX_HARD_RELOADS = 2;
  * BUG-CR-2 FIX: elimina HEAD failures visíveis no console do browser.
  */
 export const swConfirmedStaleUrls = new Set<string>();
+
+/**
+ * Regex que detecta assets content-addressed gerados pelo Vite/Rollup:
+ * o filename termina em -{8+ hex chars}.{ext} antes do query string.
+ * Exemplos: index-JOKOWKMb.js, ui-vendor-C6tfXOSX.js, dnd-vendor-BDdjbSgq.js
+ *
+ * Assets com content-hash são imutáveis POR DESIGN — após um deploy, a hash
+ * muda e a URL antiga retorna 404 por definição. Não há valor em sondar
+ * a rede: o 404 é garantido e apenas gera ruído no DevTools.
+ *
+ * BUG-CR-2 FIX (hash-detection): evita o HEAD request antes mesmo de tentá-lo.
+ */
+const CONTENT_HASH_CHUNK_RE = /[-_][0-9a-fA-F]{8,}\.(js|css|mjs)(\?|$)/;
 
 interface RecoveryState {
   attempts: number;
@@ -113,15 +127,29 @@ export function isChunkLoadError(error: unknown): boolean {
  * Sondagem leve: HEAD no mesmo asset que falhou, com cache-bust. Usado para
  * distinguir 502 transitório (servidor voltou) de 502 persistente.
  * Retorna true se o servidor parece OK (status 2xx/3xx), false caso contrário.
+ *
+ * BUG-CR-2 FIX (hash-detection + 404-caching):
+ * Assets Vite com content-hash (ex: index-JOKOWKMb.js) são IMUTÁVEIS — após
+ * um deploy, a URL antiga retorna 404 garantido. Detectamos isso via CONTENT_HASH_CHUNK_RE
+ * e pulamos o probe de rede, prevenindo as mensagens "Falha ao carregar Buscar: HEAD".
+ * Adicionalmente, 404s reais são cacheados em swConfirmedStaleUrls para evitar
+ * rerequests do mesmo URL na mesma sessão de recuperação.
  */
 async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
-  // BUG-CR-2 FIX: se SW confirmou 404, skip do HEAD request.
-  // O chunk foi removido intencionalmente (novo deploy); não há motivo para
-  // sondar a rede — isso apenas gera ruído no DevTools do browser.
+  // BUG-CR-2 FIX (path 1): SW ou chamada anterior confirmou 404 para esta URL.
   if (swConfirmedStaleUrls.has(url)) {
-    logger.log('[chunk-recovery] probe skipped — SW already confirmed stale:', url);
+    logger.log('[chunk-recovery] probe skipped — already confirmed stale:', url);
     return false;
   }
+
+  // BUG-CR-2 FIX (path 2): asset com content-hash → URL post-deploy sempre 404.
+  // Não há valor em fazer o HEAD request: apenas gera ruído no DevTools.
+  if (url && CONTENT_HASH_CHUNK_RE.test(url)) {
+    swConfirmedStaleUrls.add(url); // cache para chamadas futuras na mesma sessão
+    logger.log('[chunk-recovery] probe skipped — content-addressed asset (hash detected):', url);
+    return false;
+  }
+
   if (typeof fetch === 'undefined') return false;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -133,6 +161,10 @@ async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
       credentials: 'same-origin',
       signal: controller.signal,
     });
+    // BUG-CR-2 FIX (path 3): 404 no probe → cachear para evitar rerequests.
+    if (res.status === 404) {
+      swConfirmedStaleUrls.add(url);
+    }
     return res.ok || (res.status >= 300 && res.status < 400);
   } catch {
     return false;
@@ -259,11 +291,11 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
     NProgress.start();
 
     // Sonda: distingue 502 transitório de 404 intencional (novo deploy).
-    // Se SW confirmou stale, pula rede + backoff — reload imediato.
+    // probeAsset() já gerencia os casos de content-hash e SW-confirmado internamente.
     if (url) {
       const isSwConfirmedStale = swConfirmedStaleUrls.has(url);
       if (!isSwConfirmedStale) {
-        // URL sem confirmação SW: probar para distinguir 404 de 502/503.
+        // URL sem confirmação: sondar (com shortcuts para hashes e URLs já conhecidas).
         const ok = await probeAsset(url);
         if (!ok) {
           const backoffMs = 500 * attempts;
