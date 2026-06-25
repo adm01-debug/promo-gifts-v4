@@ -20,9 +20,12 @@ on:
       - '.github/workflows/e2e-carrinhos.yml'
   workflow_dispatch:
 
+# Required check (ver .github/required-checks.json → ruleset "main"/"release"):
+# este job bloqueia merges quando popover-footer-matrix.spec.ts detectar clipping
+# do footer ou regressão visual nos snapshots âncora (375x560/812, 1280x720, 1920x1080).
 jobs:
   carrinhos:
-    timeout-minutes: 20
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     env:
       CI: 'true'
@@ -39,13 +42,32 @@ jobs:
         run: npm ci
       - name: Install Playwright Chromium
         run: npm run test:e2e:install
-      - name: Run E2E — Carrinhos (limite 10)
+
+      # Roda toda a suíte de carrinhos (inclui popover-footer-matrix.spec.ts e
+      # popover-scroll.spec.ts). Falha = merge bloqueado pelo branch protection.
+      - name: Run E2E — Carrinhos (limite 10 + popover footer matrix)
         run: npm run test:e2e:carrinhos -- --retries=2
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-carrinhos
           path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Em falha: sobe snapshots de regressão visual (atual + esperado + diff)
+      # para o revisor decidir se aceita o novo baseline.
+      - name: Upload snapshot diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-popover-snapshot-diffs
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
           retention-days: 14
           if-no-files-found: ignore
