@@ -139,7 +139,7 @@ export const quoteService = {
       }
     }
 
-    return { ...quoteData, items } as Quote;
+    return { ...quoteData, status: sanitizeQuoteStatus(quoteData), items } as Quote;
   },
 
   async createQuote(
