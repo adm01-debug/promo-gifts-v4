@@ -350,6 +350,13 @@ export interface UseNoveltiesOptions {
   limit?: number;
   offset?: number;
   onlyHighlighted?: boolean;
+  /**
+   * BUG-HEAD-1 FIX (2026-06-25): guard de autenticação.
+   * Quando false, a query não dispara — evita GETs abortados antes de
+   * rolesLoaded=true que geram "Falha ao carregar Buscar" no DevTools.
+   * Default true para compatibilidade retroativa.
+   */
+  enabled?: boolean;
 }
 
 /**
@@ -358,10 +365,11 @@ export interface UseNoveltiesOptions {
  * Aplica filtros de qualidade: não stockout, com imagem, com preço.
  */
 export function useNoveltiesWithDetails(options: UseNoveltiesOptions = {}) {
-  const { limit, onlyHighlighted = false } = options;
+  const { limit, onlyHighlighted = false, enabled = true } = options;
 
   return useQuery<NoveltyWithDetails[]>({
     queryKey: ['novelties-details', limit ?? 'all', onlyHighlighted],
+    enabled, // BUG-HEAD-1 FIX: propaga guard para react-query
     queryFn: async () => {
       const nowIso = new Date().toISOString();
 
@@ -483,8 +491,11 @@ export function useNoveltyStats() {
   // Reusa o dataset enriquecido já carregado (cache key ['novelties-details','all',false]).
   // Se o cache estiver vazio, allNovelties será undefined — o breakdown fica [].
   // BUG-HEAD-GUARD FIX (2026-06-23): 2 HEAD requests sem guard de rolesLoaded.
-  const { rolesLoaded } = useAuth();
-  const { data: allNovelties } = useNoveltiesWithDetails();
+  // BUG-HEAD-1 FIX (2026-06-25): passa enabled:rolesLoaded&&!!user para evitar
+  // GETs disparados antes do JWT estar pronto — React Query v5 aborta ao
+  // desmontar, gerando "Falha ao carregar Buscar: GET/HEAD" no DevTools.
+  const { user, rolesLoaded } = useAuth();
+  const { data: allNovelties } = useNoveltiesWithDetails({ enabled: rolesLoaded && !!user });
 
   // GROUP BY supplier_id client-side — O(n) sobre o dataset em memória.
   const supplierBreakdown = useMemo<NoveltySupplierBreakdown[]>(() => {
