@@ -110,6 +110,20 @@ export default function QuotesListPage() {
             </div>
           </div>
 
+          {/* Banner: somente status pending no dataset */}
+          {onlyPendingStatuses && (
+            <Alert
+              data-testid="quotes-only-pending-banner"
+              className="border-info/30 bg-info/10 text-info"
+            >
+              <Info className="h-4 w-4" />
+              <AlertTitle>Todos os orçamentos estão em status Pendente</AlertTitle>
+              <AlertDescription className="text-muted-foreground">
+                Avance o fluxo enviando ou aprovando orçamentos para popular o funil de vendas.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Error banner */}
           {error && (
             <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
