@@ -2229,7 +2229,8 @@ describe('Analise estatica — ProductSearchCombobox.tsx (aria-hidden em icones 
     expect(src).toContain('<Package aria-hidden="true" className="h-4 w-4 text-muted-foreground"');
   });
   it('icone Package no item de lista sem imagem tem aria-hidden', () => {
-    expect(src).toContain('<Package aria-hidden="true" className="h-5 w-5 text-muted-foreground"');
+    // Prettier may wrap multi-attribute JSX across lines; assert tolerant to whitespace.
+    expect(src).toMatch(/<Package\s+aria-hidden="true"\s+className="h-5 w-5 text-muted-foreground"/);
   });
   it('icone X no botao remover produto tem aria-hidden', () => {
     expect(src).toContain('<X aria-hidden="true" className="h-3.5 w-3.5"');

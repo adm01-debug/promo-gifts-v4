@@ -240,10 +240,18 @@ describe('postgrest helper — WRITE routing', () => {
     expect(callArgs('products', 'eq')).toContainEqual(['id', 'p-9']);
   });
 
-  it('fails loud for a write to a non-write-eligible table (no silent SELECT fallback)', async () => {
+  it('routes a write operation to real DML (insert) — no silent SELECT-only no-op', async () => {
+    // Historically dbInvoke only issued SELECTs, so a write silently performed a no-op
+    // read (looked like success, persisted nothing — corruption-class bug). The helper
+    // (which replaced the external-db bridge) now routes ALL writes via performWrite to
+    // genuine DML; the trailing .select() is just the RETURNING clause. There is no longer
+    // a REST_NATIVE_WRITE_TABLES allowlist — writes are gated by the mass-mutation scope
+    // guard, not a per-table allowlist. This test guards against a silent-SELECT regression.
+    nextResult = { data: [{ id: 'ft-1' }], error: null, count: null };
     await expect(
       dbInvoke({ table: 'frontend_telemetry', operation: 'insert', data: { a: 1 } }),
-    ).rejects.toThrow(/not supported|REST_NATIVE_WRITE_TABLES/);
-    expect(recorded.length).toBe(0); // never touched the database
+    ).resolves.toBeDefined();
+    const methods = recorded.flatMap((r) => r.calls.map((c) => c.m));
+    expect(methods).toContain('insert');
   });
 });

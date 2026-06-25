@@ -19,6 +19,12 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// useLoginAttempts é admin-guarded (BUG-HEAD-GUARD FIX 2026-06-23):
+// enabled = rolesLoaded && isAdmin. Sem este mock a query fica gated e nunca resolve.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ rolesLoaded: true, isAdmin: true }),
+}));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
