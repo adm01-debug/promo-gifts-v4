@@ -1,6 +1,15 @@
 /**
  * Configuração centralizada de status de orçamentos
  * Fonte única de verdade para labels, cores, estilos e transições válidas.
+ *
+ * ⚠️ GAP CONHECIDO (2026-06-25): o CHECK constraint `valid_quote_status` no
+ * banco aceita apenas 7 status ('draft','pending','sent','approved','rejected',
+ * 'expired','converted'). O FE define 10 — faltam `pending_approval`, `viewed`
+ * e `cancelled`. Alinhar via migration EXIGE aprovação explícita do PO
+ * (regra do projeto: nunca alterar schema sem confirmação). Até lá, esses 3
+ * status FE-only só existem em memória; tentativa de persistir resulta em
+ * SQLSTATE 23514. `sanitizeQuoteStatus` em `quoteService.ts` faz fallback p/
+ * 'pending' se um status desconhecido chegar do banco.
  */
 import type { QuoteStatus } from '@/types/quote';
 
