@@ -1,0 +1,5 @@
+# Baselines visuais geradas pelo workflow `Update Quote Visual Snapshots`.
+# NUNCA edite estes PNGs à mão. Para regenerar:
+#   - GitHub: rode o workflow `update-quote-reset-snapshots.yml` (workflow_dispatch).
+#   - Local:  npx playwright test e2e/quotes/quote-number-subtitle.spec.ts \
+#               --project=chromium-authed --update-snapshots
