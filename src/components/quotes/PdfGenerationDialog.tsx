@@ -234,7 +234,12 @@ export function PdfGenerationDialog({
                   <p className="text-sm font-semibold">Confira as informações antes de enviar</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="lg" className="gap-2 px-8" onClick={handleGenerate}>
+                  <Button
+                    size="lg"
+                    className="gap-2 px-8"
+                    onClick={handleGenerate}
+                    data-testid="export-pdf-button"
+                  >
                     <FileText className="h-4 w-4" />
                     Gerar PDF
                   </Button>
