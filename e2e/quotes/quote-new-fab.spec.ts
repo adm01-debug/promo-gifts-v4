@@ -90,6 +90,11 @@ test.describe('QuotesListPage · FAB Novo Orçamento', () => {
       await page.keyboard.press('Tab');
       await expect(tooltip).toBeHidden({ timeout: 3_000 });
 
+      // Reset de foco e mouse antes do screenshot para evitar outline residual
+      // (foco em outro elemento após o Tab) e estabilizar a baseline visual.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
+      await page.mouse.move(0, 0);
+
       // Screenshot do bloco do header (ancestral imediato do título).
       const headerBlock = title.locator('xpath=ancestor::div[1]');
       await expect(headerBlock).toHaveScreenshot(`quote-new-fab-header-${vp.name}.png`, {
