@@ -94,6 +94,9 @@ describe('Integridade do Sistema de Skeletons', () => {
       'src/pages/tools/DropboxBrowserPage.tsx',
       'src/pages/kit-builder/KitLibraryPage.tsx',
       'src/components/common/LoadingOverlay.tsx',
+      // Delega ao composite centralizado QuoteBuilderSkeleton (que importa @/components/ui/skeleton);
+      // o heurístico de substring casa o NOME do componente, não um uso de Skeleton cru.
+      'src/pages/quotes/QuoteBuilderPage.tsx',
     ];
 
     const filesToCheck = findFiles('src', ['.tsx'], excludeDirs)
