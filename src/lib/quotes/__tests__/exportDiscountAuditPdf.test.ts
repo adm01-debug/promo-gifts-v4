@@ -86,3 +86,90 @@ describe('buildDiscountAuditPdfPlan', () => {
     expect(plan.fileName).toBe('historico-desconto-ORC-2026-0042.pdf');
   });
 });
+
+describe('buildDiscountAuditPdfPlan — cenários adicionais', () => {
+  it('não vaza "null" no metrics quando seller_notes está vazio', () => {
+    const plan = buildDiscountAuditPdfPlan({
+      requestId: 'req-empty',
+      quoteNumber: 'ORC-1',
+      clientName: 'Cliente',
+      sellerName: 'Vendedor',
+      rows: [
+        {
+          event: 'requested',
+          actor_role: 'seller',
+          actor_name: 'V',
+          actor_email: 'v@p.com',
+          requested_discount_percent: 12,
+          max_allowed_percent: 10,
+          real_discount_percent: 12,
+          seller_notes: null,
+          admin_notes: null,
+          created_at: '2026-06-20T10:00:00.000Z',
+        },
+      ],
+    });
+    expect(plan.events[0].sellerNotes).toBeUndefined();
+    expect(plan.events[0].adminNotes).toBeUndefined();
+    expect(plan.events[0].metrics).not.toMatch(/null|undefined/i);
+  });
+
+  it('renderiza múltiplas decisões em ordem (requested → rejected → requested → approved)', () => {
+    const ts = (h: number) => `2026-06-20T${String(h).padStart(2, '0')}:00:00.000Z`;
+    const plan = buildDiscountAuditPdfPlan({
+      requestId: 'req-multi',
+      quoteNumber: 'ORC-MULTI',
+      clientName: 'Cli',
+      sellerName: 'Sel',
+      rows: [
+        { event: 'requested', actor_role: 'seller', actor_name: 'S', actor_email: null,
+          requested_discount_percent: 15, max_allowed_percent: 10, real_discount_percent: 15,
+          seller_notes: 'Pedido 1', admin_notes: null, created_at: ts(10) },
+        { event: 'rejected', actor_role: 'admin', actor_name: 'G', actor_email: null,
+          requested_discount_percent: 15, max_allowed_percent: 10, real_discount_percent: 15,
+          seller_notes: null, admin_notes: 'Acima do teto', created_at: ts(11) },
+        { event: 'requested', actor_role: 'seller', actor_name: 'S', actor_email: null,
+          requested_discount_percent: 12, max_allowed_percent: 10, real_discount_percent: 12,
+          seller_notes: 'Reduzido', admin_notes: null, created_at: ts(12) },
+        { event: 'approved', actor_role: 'admin', actor_name: 'G', actor_email: null,
+          requested_discount_percent: 12, max_allowed_percent: 10, real_discount_percent: 12,
+          seller_notes: null, admin_notes: 'OK', created_at: ts(13) },
+      ],
+    });
+    expect(plan.events.map((e) => e.title)).toEqual([
+      'Solicitado pelo vendedor',
+      'Rejeitado',
+      'Solicitado pelo vendedor',
+      'Aprovado',
+    ]);
+    expect(plan.events.map((e) => e.index)).toEqual([1, 2, 3, 4]);
+    expect(plan.events[1].adminNotes).toBe('Acima do teto');
+    expect(plan.events[3].adminNotes).toBe('OK');
+  });
+
+  it('formata percentuais próximos ao maxAllowedPercent (boundary 9,99% / 10,00% / 10,01%)', () => {
+    const mkRow = (pct: number): AuditRowForPdf => ({
+      event: 'requested',
+      actor_role: 'seller',
+      actor_name: 'S',
+      actor_email: null,
+      requested_discount_percent: pct,
+      max_allowed_percent: 10,
+      real_discount_percent: pct,
+      seller_notes: null,
+      admin_notes: null,
+      created_at: '2026-06-20T10:00:00.000Z',
+    });
+    const plan = buildDiscountAuditPdfPlan({
+      requestId: 'req-boundary',
+      quoteNumber: 'ORC-B',
+      clientName: 'C',
+      sellerName: 'S',
+      rows: [mkRow(9.99), mkRow(10), mkRow(10.01)],
+    });
+    expect(plan.events[0].metrics).toMatch(/Solicitado:\s*9,99%/);
+    expect(plan.events[0].metrics).toMatch(/Limite:\s*10,00%/);
+    expect(plan.events[1].metrics).toMatch(/Solicitado:\s*10,00%/);
+    expect(plan.events[2].metrics).toMatch(/Solicitado:\s*10,01%/);
+  });
+});
