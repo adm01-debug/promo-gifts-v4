@@ -59,15 +59,31 @@ export function useDiscountApproval() {
         // An RLS denial or network error returned { data: null, error } but the error
         // was silently swallowed — existing stayed null and we always proceeded to INSERT,
         // defeating the dedup guard and flooding the admin approval queue.
+        // Dedup: 1 pending por (quote_id, requested_pct, max_pct). Mesmo clique
+        // duplicado / retry de rede → curto-circuito idempotente. Pending com
+        // percentuais DIFERENTES ainda é tratado como sucesso (o índice único
+        // parcial `uniq_dar_quote_pending` impede o segundo INSERT de qualquer
+        // forma), apenas com warn explícito para diagnóstico.
         const { data: existing, error: dupCheckErr } = await supabase
           // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
           .from('discount_approval_requests')
-          .select('id')
+          .select('id, requested_discount_percent, max_allowed_percent')
           .eq('quote_id', quoteId)
           .eq('status', 'pending')
           .maybeSingle();
         if (dupCheckErr) logger.warn('Dedup check failed, proceeding with INSERT:', dupCheckErr);
         if (existing) {
+          const samePct =
+            Number(existing.requested_discount_percent) === Number(requestedPercent) &&
+            Number(existing.max_allowed_percent) === Number(maxAllowedPercent);
+          if (samePct) {
+            logger.info('Idempotent: pending approval already exists with identical pcts; skipping INSERT');
+          } else {
+            logger.warn(
+              'Pending approval exists with different pcts; skipping INSERT to avoid 23505 on uniq_dar_quote_pending',
+              { existingPct: existing.requested_discount_percent, newPct: requestedPercent },
+            );
+          }
           toast.success('Solicitação de aprovação enviada ao admin!');
           return true;
         }
