@@ -139,17 +139,20 @@ export function getDiscountValidationMessage(
   }
 
   // 5) Tudo certo.
+  const remaining =
+    maxDiscountPercent !== null ? Math.max(0, maxDiscountPercent - realDiscountPercent) : null;
   return {
     kind: 'within_limit',
     severity: 'success',
     title: '',
     description:
       maxDiscountPercent !== null
-        ? `Dentro do seu limite de ${fmt(maxDiscountPercent)}% (real: ${fmt(realDiscountPercent)}%).`
+        ? `Dentro do seu limite de ${fmt(maxDiscountPercent)}% (real: ${fmt(realDiscountPercent)}%). Faltam ${fmt(remaining ?? 0)}% para atingir o teto.`
         : `Desconto real: ${fmt(realDiscountPercent)}%.`,
     callToAction: null,
   };
 }
+
 
 /**
  * Checklist para habilitar o botão “Solicitar Aprovação”.
