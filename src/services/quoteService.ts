@@ -62,7 +62,8 @@ export const quoteService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data as Quote[];
+    const rows = (data ?? []) as Array<Quote & { status?: unknown }>;
+    return rows.map((r) => ({ ...r, status: sanitizeQuoteStatus(r) })) as Quote[];
   },
 
   async fetchQuote(quoteId: string): Promise<Quote | null> {
