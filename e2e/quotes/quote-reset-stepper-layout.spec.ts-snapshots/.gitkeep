@@ -1,0 +1,16 @@
+# Baselines visuais versionadas
+#
+# Este diretório armazena os PNGs de referência gerados por `toHaveScreenshot`
+# do spec `quote-reset-stepper-layout.spec.ts`. Eles DEVEM ser commitados no
+# repositório para que o diff visual permaneça estável entre ambientes (local,
+# CI runners, máquinas dos devs).
+#
+# Como gerar/atualizar (apenas quando a mudança visual for intencional):
+#   1) Via CI: rode manualmente o workflow `Update Quote Reset Snapshots`
+#      (Actions → workflow_dispatch); ele commita os PNGs aqui.
+#   2) Localmente:
+#      npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts \
+#        --project=chromium-authed --update-snapshots
+#      git add e2e/quotes/quote-reset-stepper-layout.spec.ts-snapshots/
+#
+# Padrão de nomenclatura: quote-reset-header-<W>x<H>-<project>-<platform>.png
