@@ -89,17 +89,36 @@ export class DiscountApprovalPO {
     return tid.replace("discount-request-card-", "") || null;
   }
 
-  /** Clica em aprovar e espera o card refletir `data-status="approved"`. */
+  /**
+   * Espera a resposta REST da mutation PATCH em `discount_approval_requests`
+   * (ok=200/204). Reduz flakiness ao não depender só da invalidação do cache
+   * react-query — confirma que a transição foi persistida no backend.
+   */
+  private waitForMutationResponse(timeout = 20_000) {
+    return this.page.waitForResponse(
+      (res) =>
+        /\/rest\/v1\/discount_approval_requests/.test(res.url()) &&
+        res.request().method() === "PATCH" &&
+        res.ok(),
+      { timeout },
+    );
+  }
+
+  /** Clica em aprovar, espera resposta REST e o card refletir `data-status="approved"`. */
   async approveFromQueue(id: string, timeout = 35_000): Promise<void> {
     await expect(this.approveButton(id)).toBeVisible({ timeout: 10_000 });
+    const responsePromise = this.waitForMutationResponse(timeout);
     await this.approveButton(id).click();
+    await responsePromise;
     await expect(this.card(id)).toHaveAttribute("data-status", "approved", { timeout });
   }
 
-  /** Clica em recusar e espera o card refletir `data-status="rejected"`. */
+  /** Clica em recusar, espera resposta REST e o card refletir `data-status="rejected"`. */
   async rejectFromQueue(id: string, timeout = 35_000): Promise<void> {
     await expect(this.rejectButton(id)).toBeVisible({ timeout: 10_000 });
+    const responsePromise = this.waitForMutationResponse(timeout);
     await this.rejectButton(id).click();
+    await responsePromise;
     await expect(this.card(id)).toHaveAttribute("data-status", "rejected", { timeout });
   }
 
