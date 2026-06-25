@@ -168,6 +168,8 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
                 return (
                   <li
                     key={row.id}
+                    data-testid={`discount-audit-item-${row.id}`}
+                    data-event={row.event}
                     className="flex gap-2.5 rounded border border-border/40 bg-card/40 p-2.5 text-xs"
                   >
                     <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', meta.tone)} />

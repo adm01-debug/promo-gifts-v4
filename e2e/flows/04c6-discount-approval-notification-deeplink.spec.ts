@@ -1,18 +1,28 @@
 /**
- * E2E — Deep-link da notificação de desconto marca como lida e atualiza contador.
- * Modo defensivo: skip se não-admin OU se não houver notificação de desconto.
+ * E2E — Deep-link de notificação de desconto abre detalhe e marca como lida.
+ * Seed idempotente garante pelo menos 1 pending request via
+ * seedDiscountApprovalRequestsFromPage; depois dispara notificação via abertura
+ * da fila (o request criado já gera registro na tabela de notificações via trigger).
  */
 import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { loginAs } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
+import { seedDiscountApprovalRequestsFromPage } from "../helpers/discount-approval-seed-page";
 
 test.describe("Discount approval — notification deep-link mark-as-read", () => {
   test("clique no link da notificação reduz contador de não lidas", async ({ page }) => {
     requireAdmin();
     await loginAs(page, "admin");
+    await gotoAndSettle(page, "/admin/usuarios?tab=discounts");
+
+    // Seed: garante pelo menos 1 pending para emitir notificação.
+    const seed = await seedDiscountApprovalRequestsFromPage(page, { minPending: 1 });
+    if (seed.skipped && seed.pendingTotal === 0) {
+      test.skip(true, `Seed falhou e não há pending: ${seed.skipped}`);
+    }
+
     await gotoAndSettle(page, "/");
 
-    // Abre drawer de notificações
     const bell = page.locator(
       '[data-testid="notification-bell"], [data-testid="open-notifications"]',
     );
@@ -31,15 +41,22 @@ test.describe("Discount approval — notification deep-link mark-as-read", () =>
       .locator('[data-testid^="notification-item-"]')
       .filter({ hasText: /desconto|aprovação/i })
       .first();
-    const hasItem = await discountItem.isVisible({ timeout: 3_000 }).catch(() => false);
+    const hasItem = await discountItem.isVisible({ timeout: 5_000 }).catch(() => false);
     test.skip(!hasItem || initialUnread === 0, "Sem notificações de desconto não lidas");
 
     await discountItem.click();
 
-    // Deve navegar para fila/detalhe com query ?request=...
+    // Deep-link deve abrir fila ou detalhe de aprovação.
     await expect(page).toHaveURL(/discounts|aprovacoes-desconto/i, { timeout: 8_000 });
 
-    // Volta e confere contador decrementado
+    // Se aterrou na rota de detalhe, o container determinístico está presente.
+    if (/aprovacoes-desconto\/[0-9a-f-]+/i.test(page.url())) {
+      await expect(page.locator('[data-testid="discount-request-detail"]')).toBeVisible({
+        timeout: 5_000,
+      });
+      await expect(page.locator('[data-testid="discount-request-status"]')).toBeVisible();
+    }
+
     await gotoAndSettle(page, "/");
     await bell.first().click();
     const after = await unreadBadge

@@ -94,5 +94,18 @@ test.describe("Discount approval — paginação cursorada da fila", () => {
         new Date(datesAfter[i - 1]).getTime(),
       ).toBeGreaterThanOrEqual(new Date(datesAfter[i]).getTime());
     }
+
+    // 5) Cursor-token (created_at do último item da página 1) imutável após o append
+    const cursorTokenBefore = datesBefore[datesBefore.length - 1];
+    const cursorTokenAfterAppend = datesAfter[initialCount - 1];
+    expect(cursorTokenAfterAppend).toBe(cursorTokenBefore);
+
+    // 6) Zero interseção entre IDs da página 1 e IDs da página 2
+    const page1Ids = new Set(idsBefore);
+    const page2Ids = idsAfter.slice(initialCount);
+    for (const id of page2Ids) {
+      expect(page1Ids.has(id), `Item ${id} apareceu em ambas as páginas`).toBe(false);
+    }
   });
 });
+
