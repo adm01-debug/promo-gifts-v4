@@ -1,52 +1,47 @@
 ## Objetivo
 
-Garantir que o badge de pendentes no `MyDiscountRequestsWidget` reflita a verdade do banco assim que (a) o vendedor envia/retenta uma solicitação ou (b) o admin aprova/rejeita, sem precisar de refresh manual.
-
-## Diagnóstico atual
-
-O widget já tem:
-- Realtime em `discount_approval_requests` filtrado por `seller_id` → invalida a query.
-- Polling de 15s (5s no fallback).
-- `pendingDupCounts` derivado de `all` (linhas carregadas via `useInfiniteQuery`).
-
-Pontos cegos que causam o badge "atrasado":
-1. **`requestApproval` não invalida a query do widget.** Após sucesso, 23505 idempotente ou retry bem-sucedido, o widget só atualiza quando o realtime entrega o evento (pode levar 1–3s) ou quando o polling dispara. Em redes lentas o usuário percebe atraso.
-2. **`respondToApproval` (admin) também não invalida** a query do vendedor — depende 100% do realtime, que pode estar em fallback.
-3. **Não existe contador agregado visível** de pending no header — o usuário só vê o badge `×N` quando há duplicidade. Um total claro ajuda a perceber a atualização.
-4. **Realtime usa `invalidateQueries` sem `refetchType: 'active'` explícito** — está OK por padrão, mas vamos reforçar para garantir refetch de todas as páginas do `useInfiniteQuery`.
+Garantir que o badge de pendentes no `MyDiscountRequestsWidget` reflita a verdade do banco assim que (a) o vendedor envia/retenta uma solicitação ou (b) o admin aprova/rejeita, sem refresh manual.
 
 ## Mudanças
 
 ### 1) `src/hooks/quotes/useDiscountApproval.ts`
-- Importar `useQueryClient` do `@tanstack/react-query`.
-- Após sucesso de `requestApproval` (INSERT novo, dedup samePct, 23505 idempotente) E após sucesso de `respondToApproval`, chamar:
+- Importar `useQueryClient` de `@tanstack/react-query`.
+- Criar helper `invalidateWidget()` que chama:
   ```ts
   queryClient.invalidateQueries({
     queryKey: ['my-discount-requests-widget'],
     refetchType: 'active',
   });
   ```
-- Chave parcial (sem `userId`) garante invalidação independente de qual aba/sessão disparou.
+- Chamar em todos os caminhos de sucesso:
+  - `requestApproval` → INSERT novo
+  - `requestApproval` → dedup samePct (já existe pending igual)
+  - `requestApproval` → fallback 23505 idempotente
+  - `respondToApproval` → após approve/reject do admin
+- Adicionar `invalidateWidget` às deps dos `useCallback` correspondentes.
 
 ### 2) `src/components/dashboard/MyDiscountRequestsWidget.tsx`
-- Calcular `totalPending = all.filter(r => r.status === 'pending').length`.
-- Adicionar badge no header (ao lado do título), com `data-testid="discount-widget-pending-total"` e `data-count={totalPending}`, só renderiza quando `totalPending > 0`.
-- Reforçar a invalidação do realtime para `refetchType: 'active'` (sintoma raro de páginas stale).
-- Manter `pendingDupCounts` e o badge `×N` por linha como hoje.
+- `const totalPending = useMemo(() => all.filter(r => r.status === 'pending').length, [all]);`
+- Renderizar `Badge` no header (ao lado do título), só quando `totalPending > 0`, com:
+  - `data-testid="discount-widget-pending-total"`
+  - `data-count={totalPending}`
+- No `useEffect` do realtime, trocar a invalidação atual para incluir `refetchType: 'active'`, garantindo refetch de todas as páginas do `useInfiniteQuery`.
+- Manter `pendingDupCounts` e badge `×N` por linha inalterados.
 
-### 3) Spec E2E (curto) — `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`
+### 3) Criar `e2e/flows/04ck-discount-widget-pending-badge-live.spec.ts`
 - Login como vendedor; navega ao dashboard.
-- Conta inicial via `[data-testid="discount-widget-pending-total"]` (ou 0 se ausente).
-- Faz POST direto via REST autenticado criando 1 pending para um quote do próprio vendedor (cenário já usado em 04cb).
-- Sem refresh, espera o `data-count` incrementar dentro de 20s (realtime) ou 8s (polling fallback).
-- PATCH direto via REST mudando o pending para `approved` → `data-count` decrementa dentro de 20s.
+- Lê count inicial em `[data-testid="discount-widget-pending-total"]` (0 se ausente).
+- POST REST autenticado criando 1 `discount_approval_requests` pending para um quote do próprio vendedor (`seller_id = auth.uid()`), seguindo o padrão de `04cb`.
+- Aguarda `data-count` incrementar em até 25s (realtime) sem refresh manual.
+- PATCH REST mudando o pending para `approved` → `data-count` decrementa em até 25s.
+- Cleanup do registro criado no `afterEach`.
 
 ## Critérios de aceitação
 
-- Após `requestApproval` bem-sucedido na mesma aba, o badge atualiza em <500ms (invalidate síncrono).
-- Após decisão de admin em outra aba/dispositivo, o badge atualiza em <3s com realtime ativo, <8s no fallback.
-- Badge `×N` por linha continua funcional para diagnóstico de duplicidade.
-- Nenhum impacto em RLS, schema ou edge functions.
+- Mesma aba após `requestApproval`: badge atualiza em <500ms (invalidate síncrono).
+- Decisão de admin em outra aba: <3s com realtime, <8s no fallback de polling.
+- Badge `×N` por linha continua funcional.
+- Sem impacto em RLS, schema ou edge functions.
 
 ## Arquivos afetados
 
