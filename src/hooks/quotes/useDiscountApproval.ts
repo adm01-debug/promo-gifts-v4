@@ -78,13 +78,18 @@ export function useDiscountApproval() {
             Number(existing.max_allowed_percent) === Number(maxAllowedPercent);
           if (samePct) {
             logger.info('Idempotent: pending approval already exists with identical pcts; skipping INSERT');
+            toast.success('Solicitação de aprovação enviada ao admin!');
           } else {
             logger.warn(
               'Pending approval exists with different pcts; skipping INSERT to avoid 23505 on uniq_dar_quote_pending',
               { existingPct: existing.requested_discount_percent, newPct: requestedPercent },
             );
+            toast.warning(
+              'Já existe uma solicitação pendente para este orçamento com percentuais diferentes. ' +
+                'Aguarde a decisão do gestor ou ajuste para os mesmos valores.',
+              { duration: 8000 },
+            );
           }
-          toast.success('Solicitação de aprovação enviada ao admin!');
           return true;
         }
 
