@@ -4,7 +4,8 @@ import { z } from 'zod';
 
 /**
  * Tupla canônica de status FE. Mantém ordem alfabética para diffs estáveis.
- * ⚠️ Ver `src/lib/quote-status-config.ts` quanto ao gap com o CHECK do banco.
+ * Os 10 status coincidem com o CHECK `valid_quote_status` do banco
+ * (verificado 2026-06-25). Ver `src/lib/quote-status-config.ts`.
  */
 export const QUOTE_STATUSES = [
   'approved',
