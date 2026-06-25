@@ -264,10 +264,12 @@ export default function AdminUsuariosPage() {
           </TabsContent>
 
           {isAdmin && (
-            <TabsContent value="discounts">
+            <TabsContent value="discounts" className="space-y-4">
+              <DiscountNotificationFilterPanel />
               <DiscountManagementPanel />
             </TabsContent>
           )}
+
 
           {isDev && (
             <TabsContent value="audit">
