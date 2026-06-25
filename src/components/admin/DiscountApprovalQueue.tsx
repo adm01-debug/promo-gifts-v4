@@ -257,28 +257,36 @@ export function DiscountApprovalQueue() {
                 value={notes[req.id] ?? ''}
                 onChange={(e) => setNotes({ ...notes, [req.id]: e.target.value })}
                 rows={2}
+                disabled={req.status !== 'pending'}
               />
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   className="border-destructive/50 text-destructive hover:bg-destructive/10"
                   onClick={() => respond.mutate({ id: req.id, quoteId, approved: false })}
-                  disabled={processingId === req.id}
+                  disabled={processingId === req.id || req.status !== 'pending'}
                 >
                   <XCircle className="mr-2 h-4 w-4" /> Recusar
                 </Button>
                 <Button
                   onClick={() => respond.mutate({ id: req.id, quoteId, approved: true })}
-                  disabled={processingId === req.id}
+                  disabled={processingId === req.id || req.status !== 'pending'}
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" /> Aprovar
                 </Button>
               </div>
+              {req.status !== 'pending' && (
+                <p className="text-xs text-muted-foreground">
+                  Já decidido — status atual: <strong>{req.status}</strong>.
+                </p>
+              )}
               <DiscountApprovalAuditTrail requestId={req.id} defaultOpen={isHighlighted} />
             </CardContent>
           </Card>
         );
-      })}
+        })
+      )}
     </div>
   );
 }
+
