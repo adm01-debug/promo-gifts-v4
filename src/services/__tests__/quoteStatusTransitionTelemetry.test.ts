@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const warnMock = vi.fn();
+const { warnMock } = vi.hoisted(() => ({ warnMock: vi.fn() }));
 
 vi.mock('@/lib/telemetry/structuredLogger', () => ({
   createClientLogger: () => ({
