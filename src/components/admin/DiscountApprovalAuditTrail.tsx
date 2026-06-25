@@ -6,6 +6,7 @@
  * Renderizado dentro de cada card da `DiscountApprovalQueue`. Lazy: só busca
  * quando o usuário expande o accordion (evita N+1 inicial na fila).
  */
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,7 +18,8 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, XCircle, AlertTriangle, History, FileDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CheckCircle2, Clock, XCircle, AlertTriangle, History, FileDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { exportDiscountAuditPdf } from '@/lib/quotes/exportDiscountAuditPdf';
@@ -74,6 +76,7 @@ interface Props {
 }
 
 export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: Props) {
+  const [search, setSearch] = useState('');
   const { data, isLoading } = useQuery({
     queryKey: ['discount-approval-audit', requestId],
     queryFn: async () => {
@@ -90,6 +93,25 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
     },
     staleTime: 30_000,
   });
+
+  const filtered = useMemo<AuditRow[]>(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return data;
+    return data.filter((r) => {
+      const actor = `${r.actor?.full_name ?? ''} ${r.actor?.email ?? ''}`.toLowerCase();
+      const meta = EVENT_META[r.event]?.label.toLowerCase() ?? '';
+      const notes = `${r.admin_notes ?? ''} ${r.seller_notes ?? ''}`.toLowerCase();
+      return (
+        actor.includes(q) ||
+        meta.includes(q) ||
+        notes.includes(q) ||
+        r.event.includes(q) ||
+        r.actor_role.toLowerCase().includes(q)
+      );
+    });
+  }, [data, search]);
+
 
   return (
     <Accordion
@@ -115,7 +137,17 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
         </AccordionTrigger>
         <AccordionContent className="px-3 pb-3">
           {data && data.length > 0 && (
-            <div className="mb-2 flex justify-end">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por decisor, evento ou motivo…"
+                  className="h-7 pl-7 text-[11px]"
+                  data-testid={`discount-audit-search-${requestId}`}
+                />
+              </div>
               <Button
                 type="button"
                 size="sm"
@@ -158,10 +190,16 @@ export function DiscountApprovalAuditTrail({ requestId, defaultOpen = false }: P
             </div>
           ) : !data || data.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nenhum evento registrado ainda.</p>
-
+          ) : filtered.length === 0 ? (
+            <p
+              className="text-xs text-muted-foreground"
+              data-testid={`discount-audit-empty-search-${requestId}`}
+            >
+              Nenhum evento corresponde a "{search}".
+            </p>
           ) : (
             <ol className="space-y-2" data-testid={`discount-audit-list-${requestId}`}>
-              {data.map((row) => {
+              {filtered.map((row) => {
                 const meta = EVENT_META[row.event];
                 const Icon = meta.icon;
                 const actorName = row.actor?.full_name || row.actor?.email || 'Sistema';

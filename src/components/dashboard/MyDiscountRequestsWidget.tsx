@@ -156,6 +156,21 @@ export function MyDiscountRequestsWidget() {
 
   const all = useMemo<RequestRow[]>(() => data?.pages.flat() ?? [], [data]);
 
+  // Diagnóstico: quantas linhas PENDING existem por (quote_id, requested_pct).
+  // Em condições normais a unique index `uniq_dar_quote_pending` garante 1,
+  // mas se algo escapou (race antiga, dados legados) o vendedor enxerga.
+  const pendingDupCounts = useMemo<Map<string, number>>(() => {
+    const m = new Map<string, number>();
+    for (const r of all) {
+      if (r.status !== 'pending') continue;
+      const k = `${r.quote_id}::${Number(r.requested_discount_percent ?? 0).toFixed(4)}`;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return m;
+  }, [all]);
+  const dupKey = (r: RequestRow): string =>
+    `${r.quote_id}::${Number(r.requested_discount_percent ?? 0).toFixed(4)}`;
+
   const filtered = useMemo(() => {
     return all.filter(
       (r) =>
@@ -256,6 +271,17 @@ export function MyDiscountRequestsWidget() {
                         >
                           {STATUS_LABELS[r.status] ?? r.status}
                         </Badge>
+                        {r.status === 'pending' && (pendingDupCounts.get(dupKey(r)) ?? 0) > 1 && (
+                          <Badge
+                            variant="destructive"
+                            className="px-1.5 py-0 text-[10px]"
+                            data-testid={`discount-request-dup-count-${r.id}`}
+                            data-dup-count={pendingDupCounts.get(dupKey(r))}
+                            title="Há múltiplas solicitações pendentes para este orçamento com o mesmo percentual"
+                          >
+                            ×{pendingDupCounts.get(dupKey(r))}
+                          </Badge>
+                        )}
                         <span className="flex items-center gap-0.5">
                           <Clock className="h-2.5 w-2.5" />
                           {formatDistanceToNow(new Date(r.created_at), {
