@@ -49,6 +49,9 @@ import { gotoAndSettle } from "../helpers/nav";
 import { waitForTestIdVisible } from "../helpers/waits";
 import { Sel } from "../fixtures/selectors";
 
+
+test.describe.configure({ mode: "parallel" });
+
 test.describe("Quote discount approval — REAL com persistência", () => {
   test.beforeEach(() => requireAuth());
 

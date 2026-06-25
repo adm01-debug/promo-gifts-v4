@@ -14,6 +14,9 @@
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 
+
+test.describe.configure({ mode: "parallel" });
+
 test.describe("Discount approval — detail page & permissions", () => {
   test.beforeEach(() => requireAuth());
 

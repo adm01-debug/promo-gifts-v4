@@ -13,6 +13,9 @@ import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 
+
+test.describe.configure({ mode: "parallel" });
+
 const PAGE_SIZE = 50;
 
 test.describe("Discount approval — paginação cursorada da fila", () => {

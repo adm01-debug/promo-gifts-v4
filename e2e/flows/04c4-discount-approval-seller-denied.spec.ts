@@ -10,6 +10,9 @@ import { loginAs } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 
+
+test.describe.configure({ mode: "parallel" });
+
 test.describe("Discount approval — vendedor bloqueado em /admin/aprovacoes-desconto/:id", () => {
   test("vendedor não acessa página de detalhe de request", async ({ page }) => {
     test.skip(

@@ -8,6 +8,9 @@
 import { test, expect, requireAdmin } from "../fixtures/test-base";
 import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
 
+
+test.describe.configure({ mode: "parallel" });
+
 const PAGE_SIZE = 50;
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL ||
