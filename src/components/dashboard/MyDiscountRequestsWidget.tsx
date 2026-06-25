@@ -75,7 +75,15 @@ export function MyDiscountRequestsWidget() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ['my-discount-requests-widget', userId],
     enabled: !!userId,
-    staleTime: 30_000,
+    // Atualização near-realtime: a tabela `discount_approval_requests` foi
+    // intencionalmente removida do `supabase_realtime` (migration 20260419).
+    // Para refletir approved/rejected sem refresh manual usamos polling curto
+    // + refetch ao voltar a foco/janela. ~15s casa com o intervalo das
+    // notifications do workspace e mantém o custo de leitura controlado.
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    refetchIntervalInBackground: false,
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
       if (!userId) return [];
