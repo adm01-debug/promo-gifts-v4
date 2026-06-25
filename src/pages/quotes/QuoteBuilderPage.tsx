@@ -204,11 +204,9 @@ export default function QuoteBuilderPage() {
               </Tooltip>
             </TooltipProvider>
 
-            {/* Spacer empurra o stepper para a direita, criando respiro
-                entre o título e a timeline. */}
-            <div className="hidden flex-1 lg:block" aria-hidden="true" />
-
-            <div className="min-w-0 w-full lg:w-auto lg:max-w-[60%] lg:flex lg:justify-end">
+            {/* Stepper ocupa todo o espaço restante após o botão Reset,
+                estendendo a timeline até a borda direita da página. */}
+            <div className="min-w-0 w-full flex-1 lg:flex lg:justify-end">
               <QuoteBuilderStepper
                 completedSteps={s.completedSteps}
                 activeStep={s.activeStep}
