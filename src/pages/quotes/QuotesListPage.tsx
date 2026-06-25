@@ -3,18 +3,10 @@ import {
   FileText,
   Plus,
   Search,
-  
   ArrowUpDown,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
 } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { formatCurrency } from '@/lib/format';
-import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +35,7 @@ import { QuotesSkeleton } from '@/components/layout/SkeletonLoaders';
 import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractions';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
-import { QuotesFunnelChart } from '@/components/quotes/QuotesFunnelChart';
+
 import { useQuotesListPage, sortOptions, type SortOption } from '@/pages/quotes/useQuotesListPage';
 import type { QuoteStatus } from '@/types/quote';
 
@@ -63,8 +55,6 @@ export default function QuotesListPage() {
     setDeleteConfirmId,
     bulkDeleteIds,
     setBulkDeleteIds,
-    kpis,
-    funnelData,
     filteredQuotes,
     handleDelete,
     handleBulkDelete,
@@ -113,74 +103,6 @@ export default function QuotesListPage() {
             </div>
           </div>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-            <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md sm:col-span-2 md:col-span-1">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/20 ring-1 ring-primary/30">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Total em Aberto</p>
-                  <p className="truncate font-display text-lg font-extrabold text-foreground">
-                    {formatCurrency(kpis.totalValue)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50">
-              <CardContent className="flex items-center gap-3 p-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/15">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Aprovados</p>
-                  <p className="text-sm font-bold text-foreground">
-                    {kpis.approved}{' '}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      ({formatCurrency(kpis.approvedValue)})
-                    </span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50">
-              <CardContent className="flex items-center gap-3 p-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/15">
-                  <Clock className="h-4 w-4 text-warning" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Pendentes</p>
-                  <p className="text-sm font-bold text-foreground">{kpis.pending}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50">
-              <CardContent className="flex items-center gap-3 p-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-info/15">
-                  <TrendingUp className="h-4 w-4 text-info" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Conversão</p>
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-bold text-foreground">{kpis.conversionRate}%</p>
-                    {Number(kpis.conversionRate) >= 20 ? (
-                      <span className="flex items-center gap-0.5 text-[10px] font-semibold text-success">
-                        <TrendingUp className="h-3 w-3" /> Bom
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-0.5 text-[10px] font-semibold text-warning">
-                        <TrendingDown className="h-3 w-3" /> Baixa
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Funil de vendas */}
-          {quotes.length > 0 && <QuotesFunnelChart data={funnelData} />}
 
           {/* Error banner */}
           {error && (
