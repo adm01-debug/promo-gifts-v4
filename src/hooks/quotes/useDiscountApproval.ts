@@ -413,6 +413,7 @@ export function useDiscountApproval() {
           logger.error('Failed to notify seller of approval decision:', sellerNotifyErr);
 
         toast.success(approved ? 'Desconto aprovado!' : 'Desconto rejeitado');
+        invalidateWidget();
         return true;
       } catch (err) {
         logger.error('Error responding to approval:', err);
