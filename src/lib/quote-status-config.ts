@@ -5,11 +5,14 @@
  * ⚠️ GAP CONHECIDO (2026-06-25): o CHECK constraint `valid_quote_status` no
  * banco aceita apenas 7 status ('draft','pending','sent','approved','rejected',
  * 'expired','converted'). O FE define 10 — faltam `pending_approval`, `viewed`
- * e `cancelled`. Alinhar via migration EXIGE aprovação explícita do PO
- * (regra do projeto: nunca alterar schema sem confirmação). Até lá, esses 3
- * status FE-only só existem em memória; tentativa de persistir resulta em
- * SQLSTATE 23514. `sanitizeQuoteStatus` em `quoteService.ts` faz fallback p/
- * 'pending' se um status desconhecido chegar do banco.
+ * e `cancelled`. Migration de alinhamento entregue em
+ * `docs/migrations/20260625120000_align_quote_status_check.sql` (pendente de
+ * aplicação manual pelo PO no banco Gold `doufsxqlfjyuvxuezpln`). Até lá,
+ * esses 3 status FE-only só existem em memória; tentativa de persistir resulta
+ * em SQLSTATE 23514 (logado como `quote_status_transition_blocked` com
+ * `reason: 'db_check_violation'` via `quoteStatusTelemetry`).
+ * `sanitizeQuoteStatus` em `quoteService.ts` faz fallback p/ 'pending' se um
+ * status desconhecido chegar do banco.
  */
 import type { QuoteStatus } from '@/types/quote';
 

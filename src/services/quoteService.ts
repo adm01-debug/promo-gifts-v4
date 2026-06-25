@@ -21,6 +21,7 @@ import {
 } from '@/lib/quote-status-config';
 import { quoteStatusSchema, type QuoteStatus } from '@/types/quote';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { logInvalidStatusTransition } from '@/lib/telemetry/quoteStatusTelemetry';
 
 const quoteStatusLogger = createClientLogger('quotes_service');
 
@@ -318,12 +319,46 @@ export const quoteService = {
     if (fromStatus !== toStatus && !isValidQuoteTransition(fromStatus, toStatus)) {
       const fromLabel = QUOTE_STATUS_CONFIG[fromStatus]?.label ?? fromStatus;
       const toLabel = QUOTE_STATUS_CONFIG[toStatus]?.label ?? toStatus;
+      // Telemetria: transição bloqueada pelo FE (QUOTE_VALID_TRANSITIONS).
+      logInvalidStatusTransition({
+        quoteId,
+        from: fromStatus,
+        to: toStatus,
+        reason: 'not_allowed_by_config',
+        source: 'service',
+      });
       throw new Error(`Transição de status inválida: "${fromLabel}" → "${toLabel}"`);
     }
 
     // rls-allow: UPDATE de status por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').update({ status }).eq('id', quoteId);
-    if (error) throw error;
+    if (error) {
+      // PG check_violation (SQLSTATE 23514) na constraint valid_quote_status:
+      // o FE permitiu mas o banco não — gap entre FE (10 status) e DB (7).
+      // Ver docs/migrations/20260625120000_align_quote_status_check.sql.
+      const pgError = error as { code?: string; message?: string; hint?: string | null };
+      const isCheckViolation =
+        pgError.code === '23514' ||
+        /valid_quote_status/i.test(pgError.message ?? '');
+      if (isCheckViolation) {
+        logInvalidStatusTransition({
+          quoteId,
+          from: fromStatus,
+          to: toStatus,
+          reason: 'db_check_violation',
+          source: 'db',
+          dbError: {
+            code: pgError.code,
+            hint: pgError.hint ?? null,
+            constraint: 'valid_quote_status',
+          },
+        });
+        throw new Error(
+          `Status "${toStatus}" ainda não aceito pelo banco. Migration de alinhamento pendente.`,
+        );
+      }
+      throw error;
+    }
 
     // FIX-E01: fire transactional email for status changes that the client cares about.
     // Fire-and-forget — never throw; a broken email must never roll back the status change.
