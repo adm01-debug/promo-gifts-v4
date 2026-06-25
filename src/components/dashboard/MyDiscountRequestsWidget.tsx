@@ -69,8 +69,36 @@ export function MyDiscountRequestsWidget() {
   const { user } = useAuth();
   const userId = user?.id;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<WidgetFiltersValue>(EMPTY_FILTERS);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Realtime: assina INSERT/UPDATE em discount_approval_requests do próprio
+  // vendedor e invalida a query para refletir approved/rejected sem refresh.
+  // Cleanup do channel é obrigatório p/ não vazar conexão entre renders.
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`dar-seller-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discount_approval_requests',
+          filter: `seller_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ['my-discount-requests-widget', userId],
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ['my-discount-requests-widget', userId],
