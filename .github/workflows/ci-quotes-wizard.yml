@@ -90,3 +90,56 @@ jobs:
             test-results/**/*.webm
           retention-days: 14
           if-no-files-found: ignore
+
+  # Job dedicado ao spec de layout do stepper pós-Reset. Bloqueia merge em
+  # falha geométrica (amontoamento/clipping) ou de snapshot visual. Sobe
+  # diffs PNG (actual/expected/diff), trace e vídeos quando falha.
+  quote-reset-stepper-layout-e2e:
+    name: E2E Stepper Layout pós-Reset
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+      # --reporter=html força geração do report; trace/video/screenshot são
+      # configurados em playwright.config.ts (retain-on-failure) — o spec usa
+      # toHaveScreenshot, que já produz *-actual/*-expected/*-diff em falha.
+      - name: Run Playwright — quote-reset-stepper-layout
+        run: npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts --project=chromium-authed --retries=2 --reporter=html
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-reset-stepper
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs + traces + vídeos (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-reset-stepper-failure-bundle
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+            test-results/**/video.webm
+            test-results/**/*.webm
+            test-results/**/*.png
+          retention-days: 14
+          if-no-files-found: ignore
+
