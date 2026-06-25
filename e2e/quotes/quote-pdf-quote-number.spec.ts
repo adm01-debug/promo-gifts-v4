@@ -5,7 +5,7 @@
  *  1. Navega até a tela de visualização do orçamento (cenário Rascunho/Enviada/Novo
  *     quando aplicável — Novo gera "Proposta Comercial" sem numeração).
  *  2. No desktop: abre o dialog via `data-testid="pdf-preview-trigger"` e
- *     dispara o download via `data-testid="export-pdf-button"` (confirm).
+ *     dispara o download via `data-testid="pdf-generate-confirm"` (confirm).
  *  3. Lê o PDF baixado e extrai o texto com `pdf-parse` (já listado em
  *     devDependencies via @types/pdf-parse). Falha o teste se a frase legada
  *     aparecer OU se o quote_number do orçamento atual não constar no PDF.
@@ -59,7 +59,7 @@ test.describe('PDF exportado · quote_number no topo', () => {
       await expect(trigger).toBeFocused();
       await page.keyboard.press('Enter');
 
-      const exportBtn = page.getByTestId('export-pdf-button');
+      const exportBtn = page.getByTestId('pdf-generate-confirm');
       await expect(exportBtn).toHaveCount(1, { timeout: 10_000 });
       await expect(exportBtn).toHaveAttribute('aria-label', /.+/);
 
@@ -88,7 +88,7 @@ test.describe('PDF exportado · quote_number no topo', () => {
     // Cenário: rascunho NOVO ainda não persistido — usuário gera PDF antes de salvar.
     // Garante que o fallback amigável não quebra o layout do PDF.
     await page.goto('/orcamentos/novo');
-    const exportBtn = page.getByTestId('export-pdf-button');
+    const exportBtn = page.getByTestId('pdf-generate-confirm');
     if ((await exportBtn.count()) === 0) test.skip(true, 'Export PDF indisponível em /novo.');
 
     const downloadPromise = page.waitForEvent('download', { timeout: 30_000 }).catch(() => null);
