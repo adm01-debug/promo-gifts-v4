@@ -42,15 +42,29 @@ test.describe('PDF exportado · quote_number no topo', () => {
       if (!match) test.skip(true, `Orçamento ${scenario} sem quote_number — não testável.`);
       const quoteNumber = match![0];
 
-      const exportBtn = page.getByTestId('export-pdf-button');
-      // Botão de export PDF é OBRIGATÓRIO no desktop — falha se ausente
-      // para não mascarar regressão de testid removido.
-      await expect(exportBtn, 'export-pdf-button ausente no desktop').toHaveCount(1, {
+      // Desktop: abre o dialog via `pdf-preview-trigger` e dispara o download
+      // via `export-pdf-button` (confirm dentro do dialog).
+      const trigger = page.getByTestId('pdf-preview-trigger');
+      await expect(trigger, 'pdf-preview-trigger ausente no desktop').toHaveCount(1, {
         timeout: 10_000,
       });
 
+      // a11y: nome acessível obrigatório no trigger.
+      await expect(trigger).toHaveAttribute('aria-label', /.+/);
+
+      // Teclado: foca via Tab e ativa via Enter (em vez de click) para
+      // garantir que o fluxo funciona sem mouse.
+      await trigger.focus();
+      await expect(trigger).toBeFocused();
+      await page.keyboard.press('Enter');
+
+      const exportBtn = page.getByTestId('export-pdf-button');
+      await expect(exportBtn).toHaveCount(1, { timeout: 10_000 });
+      await expect(exportBtn).toHaveAttribute('aria-label', /.+/);
+
       const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
-      await exportBtn.click();
+      await exportBtn.focus();
+      await page.keyboard.press('Enter');
       const download = await downloadPromise;
       const path = await download.path();
       expect(path).toBeTruthy();

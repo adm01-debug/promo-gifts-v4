@@ -239,6 +239,7 @@ export function PdfGenerationDialog({
                     className="gap-2 px-8"
                     onClick={handleGenerate}
                     data-testid="export-pdf-button"
+                    aria-label="Gerar e baixar PDF da proposta"
                   >
                     <FileText className="h-4 w-4" />
                     Gerar PDF

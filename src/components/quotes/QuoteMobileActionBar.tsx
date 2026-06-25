@@ -53,6 +53,7 @@ export function QuoteMobileActionBar({
         disabled={isGeneratingPDF}
         className="flex-1 gap-2"
         data-testid="export-pdf-button"
+        aria-label="Baixar PDF da proposta"
       >
         {isGeneratingPDF ? (
           <Loader2 className="h-4 w-4 animate-spin" />

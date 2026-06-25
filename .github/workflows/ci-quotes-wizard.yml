@@ -369,12 +369,58 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const path = require('path');
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactsUrl = `${runUrl}#artifacts`;
+
+            // Lista arquivos reais sob test-results/ agrupados por tipo,
+            // com link direto para o trace.zip mais recente.
+            const root = 'test-results';
+            const files = { pdf: [], html: [], png: [], trace: [], other: [] };
+            const walk = (dir) => {
+              if (!fs.existsSync(dir)) return;
+              for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, entry.name);
+                if (entry.isDirectory()) { walk(full); continue; }
+                const lower = entry.name.toLowerCase();
+                if (lower.endsWith('.pdf')) files.pdf.push(full);
+                else if (lower.endsWith('.html')) files.html.push(full);
+                else if (lower.endsWith('.png')) files.png.push(full);
+                else if (lower === 'trace.zip' || lower.startsWith('trace')) files.trace.push(full);
+                else files.other.push(full);
+              }
+            };
+            walk(root);
+            // Trace mais recente (mtime) — link direto.
+            let latestTrace = null;
+            if (files.trace.length) {
+              latestTrace = files.trace
+                .map((f) => ({ f, m: fs.statSync(f).mtimeMs }))
+                .sort((a, b) => b.m - a.m)[0].f;
+            }
+            const list = (label, arr) =>
+              arr.length
+                ? `<details><summary>${label} (${arr.length})</summary>\n\n${arr
+                    .slice(0, 30)
+                    .map((f) => `- \`${f}\``)
+                    .join('\n')}\n\n</details>`
+                : `- ${label}: _nenhum_`;
+
             const body = [
               '### ❌ `quote-pdf-quote-number.spec.ts` falhou',
               '',
               `- 📊 Playwright HTML report: [run #${context.runId}](${runUrl}) → artifact \`playwright-report-quote-pdf\``,
-              '- 📎 PDF baixado + HTML do preview + traces + diffs: artifact `quote-pdf-failure-bundle`',
+              `- 📦 Todos os artifacts deste run: [abrir lista](${artifactsUrl})`,
+              latestTrace
+                ? `- 🔎 Último trace: \`${latestTrace}\` — baixe em \`quote-pdf-failure-bundle\` e abra com \`npx playwright show-trace <arquivo>\``
+                : '- 🔎 Último trace: _não gerado_',
+              '',
+              '#### Artefatos coletados',
+              list('📄 PDFs', files.pdf),
+              list('🌐 HTML do preview', files.html),
+              list('🖼️ Screenshots (PNG)', files.png),
+              list('🧵 Traces', files.trace),
               '',
               '<details><summary>Reproduzir localmente</summary>',
               '',
