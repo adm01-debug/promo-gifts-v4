@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Shield } from 'lucide-react';
+import { CircleDollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -83,7 +83,7 @@ export function DiscountApprovalHeaderBadge() {
           onClick={() => navigate('/admin/usuarios?tab=discounts')}
           aria-label={`${count} aprovações de desconto pendentes`}
         >
-          <Shield className="h-4 w-4 text-amber-500" />
+          <CircleDollarSign className="h-4 w-4 text-amber-500" />
           <Badge
             className={cn(
               'absolute -right-0.5 -top-0.5 h-4 min-w-4 px-1 text-[10px] font-bold',
