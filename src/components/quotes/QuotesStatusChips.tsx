@@ -137,7 +137,19 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
           {visibleChips.map(({ key, label }, idx) => {
             const isActive = value === key;
             const count = counts[key] || 0;
-            const isSynced = key === 'synced';
+            const isApproved = key === 'discount_approved';
+            const isRejected = key === 'discount_rejected';
+            const isPendingApproval = key === 'pending_approval';
+            const accentBorder = isApproved
+              ? 'border-emerald-500/40'
+              : isRejected
+                ? 'border-destructive/40'
+                : isPendingApproval
+                  ? 'border-amber-500/40'
+                  : 'border-border/60';
+            const ariaLabel = isPendingApproval
+              ? `${label} (aguardando aprovação de desconto), ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`
+              : `${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`;
 
             return (
               <button
@@ -147,7 +159,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
                 onClick={() => onChange(key)}
                 onKeyDown={(e) => handleKeyDown(e, idx)}
                 aria-pressed={isActive}
-                aria-label={`${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`}
+                aria-label={ariaLabel}
                 className={cn(
                   'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
                   'whitespace-nowrap border outline-none',
@@ -156,7 +168,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                     : cn(
                         'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                        isSynced ? 'border-emerald-500/40' : 'border-border/60',
+                        accentBorder,
                       ),
                 )}
               >
