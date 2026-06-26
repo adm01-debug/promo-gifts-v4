@@ -104,7 +104,7 @@ export function renderQuoteCell(
     }
 
     case 'items': {
-      const count = itemCountById?.[quote.id] ?? 0;
+      const count = (quote.id && itemCountById?.[quote.id]) ?? 0;
       return (
         <div className="flex items-center justify-center">
           <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-muted/60 px-2 text-[11px] font-medium tabular-nums text-foreground/80 ring-1 ring-border/50">
