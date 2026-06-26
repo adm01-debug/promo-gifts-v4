@@ -68,7 +68,7 @@ test.describe("Quotes — Status badges", () => {
     const list = page.getByTestId("quote-badge-legend-list");
     await expect(list).toBeVisible();
     const items = list.locator('[data-testid^="quote-badge-legend-item-"]');
-    await expect(items).toHaveCount(13);
+    await expect(items).toHaveCount(14);
   });
 
   test("visual regression — legenda em modo claro", async ({ page }) => {
