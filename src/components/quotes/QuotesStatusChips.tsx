@@ -103,6 +103,13 @@ export const QUOTE_ROW_BADGE_STYLES = {
     className: 'border-muted-foreground/30 bg-muted text-muted-foreground',
     description: 'Validade do orçamento vencida.',
   },
+  expired_discount: {
+    label: 'Desconto Expirado',
+    className:
+      'border-amber-600/40 bg-amber-600/10 text-amber-700 dark:text-amber-300',
+    description:
+      'Aprovação de desconto venceu (DAR=expired) — precisa de nova aprovação antes de seguir.',
+  },
   sent: {
     label: 'Enviado',
     className: 'border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300',
