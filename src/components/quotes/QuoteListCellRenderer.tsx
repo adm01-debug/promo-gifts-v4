@@ -20,11 +20,13 @@ export function renderQuoteCell(
   columnId: string,
   navigate: (path: string) => void,
   logoByCnpj?: LogoByCnpj,
+  isLogosLoading?: boolean,
 ) {
   const hasClient = !!quote.client_name || !!quote.client_company;
   const clientDisplay = quote.client_company || quote.client_name || '';
   const cnpjKey = normalizeCnpj(quote.client_cnpj);
   const logoUrl = cnpjKey && logoByCnpj ? logoByCnpj[cnpjKey] ?? null : null;
+  const logoLoading = !!isLogosLoading && !!cnpjKey && !logoByCnpj;
 
   switch (columnId) {
     case 'quote_number':
