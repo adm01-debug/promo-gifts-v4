@@ -56,6 +56,64 @@ export const hasDiscountWorkflow = (q: Quote): boolean =>
   q.status === 'pending_approval' ||
   (q.status === 'pending' && q.discount_approval_status != null);
 
+/**
+ * Badge canônico de status da LINHA da tabela de orçamentos.
+ * Deriva 7 status visuais a partir de `status` + `synced_to_bitrix` + `discount_approval_status`.
+ * Retorna `null` para status que devem cair no fallback de `QUOTE_STATUS_CONFIG`
+ * (sent/viewed/approved/converted/cancelled/rejected/pending_approval puro).
+ */
+export function getQuoteRowBadge(
+  q: Quote,
+): { label: string; className: string } | null {
+  if (q.status === 'draft') {
+    return {
+      label: 'Rascunho',
+      className:
+        'border-dashed border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-300',
+    };
+  }
+  if (q.status === 'expired') {
+    return {
+      label: 'Expirado',
+      className: 'border-muted-foreground/30 bg-muted text-muted-foreground',
+    };
+  }
+  if (isAwaitingDiscountApproval(q)) {
+    return {
+      label: 'Aguardando Aprovação',
+      className:
+        'border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-300',
+    };
+  }
+  if (isDiscountApproved(q)) {
+    return {
+      label: 'Desconto Aprovado',
+      className:
+        'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+    };
+  }
+  if (isDiscountRejected(q)) {
+    return {
+      label: 'Desconto Rejeitado',
+      className: 'border-destructive/40 bg-destructive/10 text-destructive',
+    };
+  }
+  if (q.status === 'pending' && !hasDiscountWorkflow(q)) {
+    if (isSyncedToBitrix(q)) {
+      return {
+        label: 'Criado/Sincronizado',
+        className: 'border-primary/40 bg-primary/10 text-primary',
+      };
+    }
+    return {
+      label: 'Criado (Não Sincronizado)',
+      className:
+        'border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
+    };
+  }
+  return null;
+}
+
 const CHIPS: ChipDef[] = [
   { key: 'all', label: 'Todos', match: () => true },
   { key: 'draft', label: 'Rascunho', match: (q) => q.status === 'draft' },
