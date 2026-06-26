@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import {
   FileText,
@@ -67,6 +68,20 @@ export default function QuotesListPage() {
     duplicateQuote,
     updateQuoteStatus,
   } = useQuotesListPage();
+
+  // Espelha a contagem de seleção emitida por QuotesConfigurableList
+  // para alternar o label/feedback visual do botão "Selecionar".
+  const [selectedCount, setSelectedCount] = useState(0);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ count?: number }>).detail;
+      setSelectedCount(detail?.count ?? 0);
+    };
+    window.addEventListener('quotes:selection-changed', handler);
+    return () => window.removeEventListener('quotes:selection-changed', handler);
+  }, []);
+  const hasSelection = selectedCount > 0;
+
 
   if (isLoading) {
     return <QuotesSkeleton />;
@@ -184,18 +199,26 @@ export default function QuotesListPage() {
             rightSlot={
               <Button
                 type="button"
-                variant="outline"
+                variant={hasSelection ? 'default' : 'outline'}
                 size="sm"
+                data-testid="quotes-select-toggle"
+                data-selected={hasSelection ? 'true' : 'false'}
+                aria-pressed={hasSelection}
                 className="h-7 gap-1.5 rounded-full px-3 text-xs"
                 onClick={() =>
                   window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))
                 }
-                aria-label="Selecionar orçamentos visíveis"
+                aria-label={
+                  hasSelection
+                    ? `Cancelar seleção (${selectedCount} ${selectedCount === 1 ? 'orçamento' : 'orçamentos'})`
+                    : 'Selecionar orçamentos visíveis'
+                }
               >
                 <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                Selecionar
+                {hasSelection ? `Cancelar seleção (${selectedCount})` : 'Selecionar'}
               </Button>
             }
+
           />
 
 
