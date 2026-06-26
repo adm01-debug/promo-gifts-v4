@@ -142,4 +142,33 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
       { numRuns: 100 },
     );
   });
+
+  it('filtro "synced" retorna apenas quotes com synced_to_bitrix === true (fallback null/undefined)', () => {
+    fc.assert(
+      fc.property(fc.array(quoteArb, { minLength: 1, maxLength: 25 }), (quotes) => {
+        mockQuotes = quotes;
+        const { result } = renderHook(() => useQuotesListPage());
+        act(() => result.current.setStatusFilter('synced'));
+        for (const q of result.current.filteredQuotes) {
+          expect(q.synced_to_bitrix).toBe(true);
+        }
+      }),
+      { numRuns: 100 },
+    );
+  });
+
+  it('filtro "unsynced" retorna apenas pending && synced_to_bitrix !== true (null/undefined contam como não sinc.)', () => {
+    fc.assert(
+      fc.property(fc.array(quoteArb, { minLength: 1, maxLength: 25 }), (quotes) => {
+        mockQuotes = quotes;
+        const { result } = renderHook(() => useQuotesListPage());
+        act(() => result.current.setStatusFilter('unsynced'));
+        for (const q of result.current.filteredQuotes) {
+          expect(q.status).toBe('pending');
+          expect(q.synced_to_bitrix === true).toBe(false);
+        }
+      }),
+      { numRuns: 100 },
+    );
+  });
 });
