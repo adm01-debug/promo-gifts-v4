@@ -6,7 +6,7 @@
  * via `focus-visible:ring-*`, `aria-label` com label + contagem para leitores
  * de tela (evita o "Sincronizado1" colado).
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { Quote } from '@/hooks/quotes';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
@@ -15,6 +15,8 @@ interface QuotesStatusChipsProps {
   quotes: Quote[];
   value: string;
   onChange: (status: string) => void;
+  /** Slot opcional renderizado à direita da barra (ex.: botão "Selecionar"). */
+  rightSlot?: ReactNode;
 }
 
 type ChipDef = {
