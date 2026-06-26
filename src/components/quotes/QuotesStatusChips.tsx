@@ -166,6 +166,7 @@ export function getQuoteRowBadge(q: Quote): QuoteRowBadge {
   if (isAwaitingDiscountApproval(q)) return withKey('awaiting');
   if (isDiscountApproved(q)) return withKey('approved');
   if (isDiscountRejected(q)) return withKey('rejected');
+  if (isDiscountExpired(q)) return withKey('expired_discount');
 
   switch (q.status) {
     case 'draft':
