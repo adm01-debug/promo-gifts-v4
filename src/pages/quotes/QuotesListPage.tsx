@@ -69,6 +69,20 @@ export default function QuotesListPage() {
     updateQuoteStatus,
   } = useQuotesListPage();
 
+  // Espelha a contagem de seleção emitida por QuotesConfigurableList
+  // para alternar o label/feedback visual do botão "Selecionar".
+  const [selectedCount, setSelectedCount] = useState(0);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ count?: number }>).detail;
+      setSelectedCount(detail?.count ?? 0);
+    };
+    window.addEventListener('quotes:selection-changed', handler);
+    return () => window.removeEventListener('quotes:selection-changed', handler);
+  }, []);
+  const hasSelection = selectedCount > 0;
+
+
   if (isLoading) {
     return <QuotesSkeleton />;
   }
