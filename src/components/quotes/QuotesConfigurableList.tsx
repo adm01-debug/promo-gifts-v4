@@ -30,7 +30,6 @@ import {
   Trash2,
   Copy,
   Edit,
-  GripVertical,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -40,23 +39,6 @@ import type { Quote } from '@/hooks/quotes';
 
 import { useBulkSelection } from '@/hooks/common';
 import { QuoteRowQuickActions } from './QuoteRowQuickActions';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 
 // ── Column definitions ──
@@ -69,46 +51,16 @@ export interface ColumnDef {
 }
 
 const ALL_COLUMNS: ColumnDef[] = [
-  { id: 'status', label: 'Status', width: '110px' },
-  { id: 'client', label: 'Empresa', width: 'minmax(120px, 0.7fr)', required: true },
-  { id: 'contact', label: 'Contato', width: '120px' },
-  { id: 'date', label: 'Data', width: '110px' },
+  { id: 'client', label: 'Empresa', width: 'minmax(220px, 1.4fr)', required: true },
+  { id: 'contact', label: 'Contato', width: 'minmax(140px, 0.9fr)' },
+  { id: 'date', label: 'Data', width: '120px' },
   { id: 'items', label: 'Itens', width: '80px', align: 'center' },
   { id: 'value', label: 'Valor', width: '140px', align: 'right' },
-  { id: 'delivery', label: 'Entrega', width: '150px' },
-  { id: 'quote_number', label: 'Nº Orçamento', width: '200px' },
+  { id: 'delivery', label: 'Entrega', width: '90px' },
+  { id: 'status', label: 'Status', width: '150px' },
+  { id: 'quote_number', label: 'Nº Orçamento', width: '120px', align: 'right' },
 ];
-// Module-level Map — built once at load time, O(1) lookup in visibleColumns useMemo.
-const ALL_COLUMNS_BY_ID = new Map(ALL_COLUMNS.map((c) => [c.id, c]));
 
-// ── Sortable Header Cell ──
-function SortableHeaderCell({ column }: { column: ColumnDef }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: column.id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      data-testid={`quotes-col-header-${column.id}`}
-      className={`flex cursor-grab select-none items-center gap-1 active:cursor-grabbing ${
-        column.align === 'right' ? 'justify-end' : ''
-      }`}
-      {...attributes}
-      {...listeners}
-    >
-      <GripVertical className="h-3 w-3 shrink-0 opacity-50" />
-      <span>{column.label}</span>
-    </div>
-  );
-}
 
 // ── Props ──
 interface QuotesConfigurableListProps {
@@ -269,56 +221,33 @@ export function QuotesConfigurableList({
 
 
   // ── Column state ──
-  // Todas as colunas são SEMPRE visíveis. Apenas a ordem é configurável (DnD).
-  const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map((c) => c.id));
+  // Ordem das colunas é FIXA (sem DnD): definida em ALL_COLUMNS.
+  const visibleColumns = ALL_COLUMNS;
 
-  // Migração defensiva: limpa chaves legadas de visibilidade de colunas.
+  // Migração defensiva: limpa chaves legadas de visibilidade/ordem de colunas.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       localStorage.removeItem('quotes-hidden-columns');
       localStorage.removeItem('quotes-column-visibility');
       localStorage.removeItem('quotes:hidden-columns');
+      localStorage.removeItem('quotes:column-order');
       sessionStorage.removeItem('quotes-hidden-columns');
     } catch {
       /* ignora */
     }
   }, []);
 
-  const visibleColumns = useMemo(
-    () =>
-      columnOrder
-        .map((id) => ALL_COLUMNS_BY_ID.get(id))
-        .filter((column): column is ColumnDef => Boolean(column)),
-    [columnOrder],
-  );
-
   const gridTemplate = useMemo(
     () =>
       [
         ...(selectionMode ? ['40px'] : []),
         ...visibleColumns.map((c) => c.width),
-        '180px',
+        '110px',
       ].join(' '),
     [visibleColumns, selectionMode],
   );
 
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setColumnOrder((prev) => {
-        const oldIndex = prev.indexOf(active.id as string);
-        const newIndex = prev.indexOf(over.id as string);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    }
-  }, []);
 
   // Reset page when pageSize changes
   const handlePageSizeChange = (value: string) => {
@@ -363,32 +292,36 @@ export function QuotesConfigurableList({
       {/* Table */}
       <div className="max-h-[calc(100vh-420px)] overflow-y-auto overflow-x-hidden rounded-lg border border-border pb-16">
         {/* Header */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div
-            className="sticky top-0 z-10 grid gap-4 border-b border-primary/80 bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
-            style={{ gridTemplateColumns: gridTemplate }}
-          >
-            {selectionMode && (
-              <div className="flex items-center justify-center">
-                <Checkbox
-                  checked={isAllSelected}
-                  onCheckedChange={handleToggleAll}
-                  aria-label="Selecionar todos da página"
-                  className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-                />
-              </div>
-            )}
-            <SortableContext
-              items={visibleColumns.map((c) => c.id)}
-              strategy={horizontalListSortingStrategy}
+        <div
+          className="sticky top-0 z-10 grid gap-5 border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
+          style={{ gridTemplateColumns: gridTemplate }}
+        >
+          {selectionMode && (
+            <div className="flex items-center justify-center">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={handleToggleAll}
+                aria-label="Selecionar todos da página"
+                className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+              />
+            </div>
+          )}
+          {visibleColumns.map((col) => (
+            <div
+              key={col.id}
+              data-testid={`quotes-col-header-${col.id}`}
+              className={cn(
+                'select-none truncate',
+                col.align === 'right' && 'text-right',
+                col.align === 'center' && 'text-center',
+              )}
             >
-              {visibleColumns.map((col) => (
-                <SortableHeaderCell key={col.id} column={col} />
-              ))}
-            </SortableContext>
-            <span />
-          </div>
-        </DndContext>
+              {col.label}
+            </div>
+          ))}
+          <span />
+        </div>
+
 
         {/* Rows */}
         {paginatedQuotes.map((quote) => {
@@ -398,9 +331,10 @@ export function QuotesConfigurableList({
           return (
             <div
               key={quoteId ?? quote.quote_number}
-              className={`group grid cursor-pointer items-center gap-4 border-b border-border/40 px-4 py-3 transition-all duration-150 hover:border-l-2 hover:border-l-primary/60 hover:bg-muted/40 ${
-                selected ? 'border-l-2 border-l-primary bg-primary/5' : ''
-              }`}
+              className={cn(
+                'group grid cursor-pointer items-center gap-5 border-b border-border/30 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/30',
+                selected && 'bg-primary/5',
+              )}
               style={{ gridTemplateColumns: gridTemplate }}
               onClick={() => navigate(`/orcamentos/${quote.id}`)}
             >
@@ -427,7 +361,14 @@ export function QuotesConfigurableList({
                 </div>
               )}
               {visibleColumns.map((col) => (
-                <div key={col.id} className={cn('min-w-0', col.align === 'right' && 'text-right')}>
+                <div
+                  key={col.id}
+                  className={cn(
+                    'min-w-0',
+                    col.align === 'right' && 'text-right',
+                    col.align === 'center' && 'text-center',
+                  )}
+                >
                   {col.id === 'client' ? (
                     <div className="flex min-w-0 items-center gap-2">
                       <div className="min-w-0 flex-1">{renderCell(quote, col.id)}</div>
@@ -437,7 +378,7 @@ export function QuotesConfigurableList({
                   )}
                 </div>
               ))}
-              <div className="flex items-center justify-end gap-0.5">
+              <div className="flex items-center justify-end gap-0">
                 <QuoteRowQuickActions
                   quote={quote}
                   onDuplicate={onDuplicate}
@@ -448,12 +389,13 @@ export function QuotesConfigurableList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground"
                       aria-label="Mais opções"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreVertical className="h-3.5 w-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}`)}>
                       <Eye className="mr-2 h-4 w-4" /> Visualizar
