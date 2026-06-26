@@ -59,12 +59,13 @@ describe('QuotesStatusChips', () => {
     q({ id: 'e', status: 'pending', synced_to_bitrix: null }),
   ];
 
-  it('renderiza 6 chips com contagem correta (com fallback null)', () => {
+  it('renderiza 7 chips com contagem correta (com fallback null)', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
     expect(screen.getByRole('button', { name: /Todos/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Rascunho/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sincronizado/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Criado \(Sincronizado\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Sincronizado,/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Pendente/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Expirado/ })).toBeInTheDocument();
   });
@@ -75,7 +76,8 @@ describe('QuotesStatusChips', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Rascunho/ }));
     fireEvent.click(screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Sincronizado/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Criado \(Sincronizado\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Sincronizado,/ }));
     fireEvent.click(screen.getByRole('button', { name: /Pendente/ }));
     fireEvent.click(screen.getByRole('button', { name: /Expirado/ }));
     fireEvent.click(screen.getByRole('button', { name: /Todos/ }));
@@ -83,6 +85,7 @@ describe('QuotesStatusChips', () => {
     expect(onChange.mock.calls.map((c) => c[0])).toEqual([
       'draft',
       'unsynced',
+      'created_synced',
       'synced',
       'pending',
       'expired',
@@ -114,11 +117,18 @@ describe('QuotesStatusChips', () => {
   it('contagem de "Sincronizado" ignora null/undefined (fallback de dados legados)', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
     // Apenas 'c' tem synced_to_bitrix === true
-    const syncedBtn = screen.getByRole('button', { name: /Sincronizado/ });
+    const syncedBtn = screen.getByRole('button', { name: /^Sincronizado,/ });
     expect(syncedBtn.textContent).toBe('Sincronizado1');
 
     // 'Criado (Não Sinc.)' = pending && !synced → b + e = 2
     const unsyncedBtn = screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ });
     expect(unsyncedBtn.textContent).toBe('Criado (Não Sinc.)2');
+
+    // 'Criado (Sincronizado)' = pending && synced → c = 1
+    const createdSyncedBtn = screen.getByRole('button', { name: /Criado \(Sincronizado\)/ });
+    expect(createdSyncedBtn.textContent).toBe('Criado (Sincronizado)1');
+
+    // ARIA label inclui contagem pluralizada
+    expect(createdSyncedBtn).toHaveAttribute('aria-label', 'Criado (Sincronizado), 1 orçamento');
   });
 });
