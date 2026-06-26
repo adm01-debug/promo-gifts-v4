@@ -90,6 +90,12 @@ const COLUMN_MAP: Record<string, Record<string, string>> = {
     usa_faixa_dimensional: 'usa_faixa_dimensional',
     nome: 'nome',
     id: 'id',
+    // ANTI-REGRESSION (fix 2026-06-26, migration 20260626120000): ordem_exibicao now exists on
+    // tabela_preco_gravacao_oficial. Callers reach this table via the 'tecnica_gravacao' bridge
+    // alias and ORDER BY ordem_exibicao (useTecnicasList / fetchPromobrindTechniques). Before the
+    // column existed only on tecnicas_gravacao -> PostgREST 400 (42703). Keep this passthrough.
+    ordem_exibicao: 'ordem_exibicao',
+    display_order: 'ordem_exibicao',
     // EN -> PT translations (what callers send)
     is_active: 'ativo',
     active: 'ativo',
@@ -207,6 +213,8 @@ function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
         price_by_color: row.cobra_por_cor,
         price_by_area: row.usa_faixa_dimensional,
         name: row.nome,
+        // fix 2026-06-26: mirror tecnicas_gravacao mapRows so EN-named callers also get display_order.
+        display_order: row.ordem_exibicao,
       } as T;
     });
   }
