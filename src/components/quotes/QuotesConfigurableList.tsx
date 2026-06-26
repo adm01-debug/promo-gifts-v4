@@ -243,16 +243,24 @@ export function QuotesConfigurableList({
   }, [selectionMode, selectedIds]);
 
   // Listener: botão "Excluir" no topo (rightSlot dos chips) dispara este evento.
-  // Executa exclusão em massa dos itens efetivamente selecionados e limpa estado.
+  // ATENÇÃO: NÃO limpa a seleção aqui — o dialog de confirmação pode ser
+  // cancelado pelo usuário e ele espera reencontrar os itens marcados.
+  // A limpeza acontece apenas após `quotes:bulk-delete-confirmed`.
   useEffect(() => {
     const handler = () => {
       if (effectiveSelectedCount === 0) return;
       onBulkDelete([...effectiveSelectedIds]);
-      handleClearSelection();
     };
     window.addEventListener('quotes:bulk-delete-request', handler);
     return () => window.removeEventListener('quotes:bulk-delete-request', handler);
-  }, [effectiveSelectedCount, effectiveSelectedIds, onBulkDelete, handleClearSelection]);
+  }, [effectiveSelectedCount, effectiveSelectedIds, onBulkDelete]);
+
+  // Limpa a seleção visual apenas DEPOIS que a página confirma a exclusão.
+  useEffect(() => {
+    const handler = () => handleClearSelection();
+    window.addEventListener('quotes:bulk-delete-confirmed', handler);
+    return () => window.removeEventListener('quotes:bulk-delete-confirmed', handler);
+  }, [handleClearSelection]);
 
 
 
