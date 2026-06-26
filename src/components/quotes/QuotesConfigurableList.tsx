@@ -186,6 +186,16 @@ export function QuotesConfigurableList({
     toggleAll();
   };
 
+  // Botão "Selecionar" da barra de chips dispara este evento global.
+  useEffect(() => {
+    const handler = () => handleToggleAll();
+    window.addEventListener('quotes:toggle-select-all', handler);
+    return () => window.removeEventListener('quotes:toggle-select-all', handler);
+    // handleToggleAll é estável o suficiente (depende só de toggleAll do hook)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toggleAll]);
+
+
   // ── Column state ──
   const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map((c) => c.id));
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
