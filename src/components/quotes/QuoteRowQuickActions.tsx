@@ -78,7 +78,7 @@ export function QuoteRowQuickActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-foreground"
+            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             onClick={handleDuplicate}
             aria-label="Duplicar orçamento"
           >
@@ -93,7 +93,7 @@ export function QuoteRowQuickActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-foreground"
+            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             onClick={handleCopyLink}
             aria-label="Copiar link do orçamento"
           >
@@ -108,7 +108,7 @@ export function QuoteRowQuickActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-success"
+            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-success focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             onClick={handleWhatsapp}
             aria-label="Enviar por WhatsApp"
           >
@@ -124,7 +124,7 @@ export function QuoteRowQuickActions({
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-success"
+              className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-success focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               onClick={handleApprove}
               aria-label="Marcar como ganho"
             >

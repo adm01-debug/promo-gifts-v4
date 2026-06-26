@@ -1,6 +1,7 @@
 /**
- * QuotesConfigurableList - Lista de orçamentos com colunas reordenáveis, paginação e seleção em massa
+ * QuotesConfigurableList - Lista de orçamentos com colunas fixas, paginação e seleção em massa.
  */
+
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
@@ -290,7 +291,9 @@ export function QuotesConfigurableList({
 
 
       {/* Table */}
-      <div className="max-h-[calc(100vh-420px)] overflow-y-auto overflow-x-hidden rounded-lg border border-border pb-16">
+      <div className="max-h-[calc(100vh-420px)] overflow-x-auto overflow-y-auto rounded-lg border border-border pb-16">
+        <div className="min-w-[1100px]">
+
         {/* Header */}
         <div
           className="sticky top-0 z-10 grid gap-5 border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
@@ -389,11 +392,12 @@ export function QuotesConfigurableList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground"
-                      aria-label="Mais opções"
+                      className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                      aria-label={`Mais opções para o orçamento ${quote.quote_number ?? ''}`.trim()}
                     >
-                      <MoreVertical className="h-3.5 w-3.5" />
+                      <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
+
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
@@ -423,7 +427,9 @@ export function QuotesConfigurableList({
             </div>
           );
         })}
+        </div>
       </div>
+
 
       {/* Pagination Footer */}
       <div className="flex items-center justify-between px-2 py-2">
