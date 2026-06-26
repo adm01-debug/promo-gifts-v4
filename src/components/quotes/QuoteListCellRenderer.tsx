@@ -21,6 +21,8 @@ export function renderQuoteCell(
   navigate: (path: string) => void,
   logoByCnpj?: LogoByCnpj,
   isLogosLoading?: boolean,
+  itemCountById?: Record<string, number>,
+  _isItemCountsLoading?: boolean,
 ) {
   const hasClient = !!quote.client_name || !!quote.client_company;
   const clientDisplay = quote.client_company || quote.client_name || '';
