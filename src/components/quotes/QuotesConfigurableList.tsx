@@ -331,9 +331,10 @@ export function QuotesConfigurableList({
           return (
             <div
               key={quoteId ?? quote.quote_number}
-              className={`group grid cursor-pointer items-center gap-4 border-b border-border/40 px-4 py-3 transition-all duration-150 hover:border-l-2 hover:border-l-primary/60 hover:bg-muted/40 ${
-                selected ? 'border-l-2 border-l-primary bg-primary/5' : ''
-              }`}
+              className={cn(
+                'group grid cursor-pointer items-center gap-5 border-b border-border/30 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/30',
+                selected && 'bg-primary/5',
+              )}
               style={{ gridTemplateColumns: gridTemplate }}
               onClick={() => navigate(`/orcamentos/${quote.id}`)}
             >
@@ -360,7 +361,14 @@ export function QuotesConfigurableList({
                 </div>
               )}
               {visibleColumns.map((col) => (
-                <div key={col.id} className={cn('min-w-0', col.align === 'right' && 'text-right')}>
+                <div
+                  key={col.id}
+                  className={cn(
+                    'min-w-0',
+                    col.align === 'right' && 'text-right',
+                    col.align === 'center' && 'text-center',
+                  )}
+                >
                   {col.id === 'client' ? (
                     <div className="flex min-w-0 items-center gap-2">
                       <div className="min-w-0 flex-1">{renderCell(quote, col.id)}</div>
@@ -370,7 +378,7 @@ export function QuotesConfigurableList({
                   )}
                 </div>
               ))}
-              <div className="flex items-center justify-end gap-0.5">
+              <div className="flex items-center justify-end gap-0">
                 <QuoteRowQuickActions
                   quote={quote}
                   onDuplicate={onDuplicate}
@@ -381,12 +389,13 @@ export function QuotesConfigurableList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground"
                       aria-label="Mais opções"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreVertical className="h-3.5 w-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}`)}>
                       <Eye className="mr-2 h-4 w-4" /> Visualizar
