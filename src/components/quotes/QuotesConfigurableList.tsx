@@ -151,6 +151,22 @@ export function QuotesConfigurableList({
     [paginatedQuotes],
   );
 
+  // ── Persistência (sessionStorage) ──
+  // Mantém modo de seleção + IDs marcados ao trocar de página/rota dentro
+  // do app. Limpa-se ao fechar a aba (sessionStorage por design).
+  const STORAGE_KEY = 'quotes:selection-state:v1';
+  const persisted = useMemo(() => {
+    if (typeof window === 'undefined') return { mode: false, ids: [] as string[] };
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return { mode: false, ids: [] as string[] };
+      const parsed = JSON.parse(raw) as { mode?: boolean; ids?: string[] };
+      return { mode: Boolean(parsed.mode), ids: Array.isArray(parsed.ids) ? parsed.ids : [] };
+    } catch {
+      return { mode: false, ids: [] as string[] };
+    }
+  }, []);
+
   // ── Bulk selection (operates on paginated items) ──
   const {
     selectedIds,
@@ -160,11 +176,11 @@ export function QuotesConfigurableList({
     clearSelection,
     isSelected,
     isAllSelected,
-  } = useBulkSelection(selectablePaginatedQuotes);
+  } = useBulkSelection(selectablePaginatedQuotes, persisted.ids);
 
   // Modo de seleção: quando OFF, checkboxes ficam ocultos e nada está marcado.
   // Ligado pelo botão "Selecionar" da barra de chips (evento global).
-  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(persisted.mode);
 
   // "Select ALL across all pages" state
   const [allPagesSelected, setAllPagesSelected] = useState(false);
@@ -214,6 +230,20 @@ export function QuotesConfigurableList({
       }),
     );
   }, [effectiveSelectedCount, selectionMode]);
+
+  // Persiste modo + IDs ao mudarem.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ mode: selectionMode, ids: selectedIds }),
+      );
+    } catch {
+      /* quota/SSR — ignora */
+    }
+  }, [selectionMode, selectedIds]);
+
 
 
 
@@ -277,6 +307,17 @@ export function QuotesConfigurableList({
 
   return (
     <div className="space-y-2">
+      {/* Dica visível apenas no modo Selecionar quando nenhum item está marcado */}
+      {selectionMode && effectiveSelectedCount === 0 && (
+        <div
+          data-testid="quotes-selection-hint"
+          role="status"
+          className="rounded-md border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+        >
+          Modo de seleção ativo — marque manualmente os orçamentos desejados nos círculos à esquerda.
+        </div>
+      )}
+
       {/* Bulk action bar */}
       <BulkActionsBar
         selectedCount={effectiveSelectedCount}
