@@ -67,5 +67,36 @@ test.describe("Fluxo: chips de status de orçamentos", () => {
       "aria-pressed",
       "true",
     );
+
+    // ── Contrato do botão "Selecionar" ──
+    // Checkboxes/círculos de seleção NÃO podem existir antes do clique.
+    const selectToggle = page.getByTestId("quotes-select-toggle");
+    await expect(selectToggle).toBeVisible();
+    await expect(selectToggle).toHaveAttribute("aria-pressed", "false");
+    await expect(selectToggle).toHaveText(/Selecionar/);
+
+    const rowCheckboxesBefore = page.getByRole("checkbox", {
+      name: /selecionar orçamento/i,
+    });
+    await expect(rowCheckboxesBefore).toHaveCount(0);
+
+    // Liga o modo: checkboxes aparecem mas NADA é marcado automaticamente.
+    await selectToggle.click();
+    await expect(selectToggle).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("quotes-selection-hint")).toBeVisible();
+    const rowCheckboxesAfter = page.getByRole("checkbox", {
+      name: /selecionar orçamento/i,
+    });
+    await expect(rowCheckboxesAfter.first()).toBeVisible();
+    // Nenhum checkbox de linha pode estar marcado após apenas ligar o modo.
+    const checked = page.locator(
+      'input[type="checkbox"][aria-label*="Selecionar orçamento"][data-state="checked"]',
+    );
+    await expect(checked).toHaveCount(0);
+
+    // Desliga: checkboxes somem novamente.
+    await selectToggle.click();
+    await expect(selectToggle).toHaveAttribute("aria-pressed", "false");
+    await expect(rowCheckboxesBefore).toHaveCount(0);
   });
 });
