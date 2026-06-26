@@ -365,13 +365,16 @@ export function QuotesConfigurableList({
             className="sticky top-0 z-10 grid gap-4 border-b border-primary/80 bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
             style={{ gridTemplateColumns: gridTemplate }}
           >
-            <div className="flex items-center justify-center">
-              <Checkbox
-                checked={isAllSelected}
-                onCheckedChange={handleToggleAll}
-                className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-              />
-            </div>
+            {selectionMode && (
+              <div className="flex items-center justify-center">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={handleToggleAll}
+                  aria-label="Selecionar todos da página"
+                  className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+                />
+              </div>
+            )}
             <SortableContext
               items={visibleColumns.map((c) => c.id)}
               strategy={horizontalListSortingStrategy}
