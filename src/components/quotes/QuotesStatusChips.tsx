@@ -27,29 +27,53 @@ type ChipDef = {
 
 /**
  * Normaliza `synced_to_bitrix` — em dados legados o campo pode vir `null`/`undefined`.
- * Tratamos qualquer valor não-`true` como NÃO sincronizado para manter os filtros
- * consistentes (evita orçamentos "fantasmas" no chip Sincronizado).
+ * Tratamos qualquer valor não-`true` como NÃO sincronizado.
  */
 export const isSyncedToBitrix = (q: Pick<Quote, 'synced_to_bitrix'>): boolean =>
   q.synced_to_bitrix === true;
+
+export const isAwaitingDiscountApproval = (q: Quote): boolean =>
+  q.status === 'pending_approval' || q.discount_approval_status === 'pending';
+
+export const isDiscountApproved = (q: Quote): boolean =>
+  q.discount_approval_status === 'approved';
+
+export const isDiscountRejected = (q: Quote): boolean =>
+  q.discount_approval_status === 'rejected';
+
+/** True se o orçamento entrou no fluxo de aprovação de desconto (em qualquer estado). */
+export const hasDiscountWorkflow = (q: Quote): boolean =>
+  q.status === 'pending_approval' || q.discount_approval_status != null;
 
 const CHIPS: ChipDef[] = [
   { key: 'all', label: 'Todos', match: () => true },
   { key: 'draft', label: 'Rascunho', match: (q) => q.status === 'draft' },
   {
     key: 'unsynced',
-    label: 'Criado (Não Sinc.)',
-    match: (q) => q.status === 'pending' && !isSyncedToBitrix(q),
+    label: 'Criado (Não Sincronizado)',
+    match: (q) =>
+      q.status === 'pending' && !isSyncedToBitrix(q) && !hasDiscountWorkflow(q),
   },
   {
-    key: 'created_synced',
-    label: 'Criado (Sincronizado)',
-    match: (q) => q.status === 'pending' && isSyncedToBitrix(q),
+    key: 'pending_approval',
+    label: 'Pendente Aprovação',
+    match: isAwaitingDiscountApproval,
   },
-  { key: 'synced', label: 'Sincronizado', match: (q) => isSyncedToBitrix(q) },
-  { key: 'pending', label: 'Pendente', match: (q) => q.status === 'pending' },
+  {
+    key: 'discount_approved',
+    label: 'Desconto Aprovado',
+    match: isDiscountApproved,
+  },
+  {
+    key: 'discount_rejected',
+    label: 'Desconto Rejeitado',
+    match: isDiscountRejected,
+  },
   { key: 'expired', label: 'Expirado', match: (q) => q.status === 'expired' },
 ];
+
+export const QUOTE_CHIP_MATCHERS: Record<string, (q: Quote) => boolean> =
+  Object.fromEntries(CHIPS.map((c) => [c.key, c.match]));
 
 const log = createClientLogger('quotes.chips');
 // Reporta no máximo uma vez por sessão para evitar spam de logs.

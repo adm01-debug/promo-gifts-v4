@@ -98,6 +98,13 @@ export interface Quote {
   /** Versão de concorrência — incrementado pelo trigger em cada UPDATE. Usado pelo optimistic lock server-side. */
   version?: number;
   items?: QuoteItem[];
+  /**
+   * Status derivado da última `discount_approval_requests` deste orçamento.
+   * Populado client-side em `useQuotes` (sem coluna no DB).
+   */
+  discount_approval_status?: 'pending' | 'approved' | 'rejected' | null;
+  /** ISO timestamp da última resposta de aprovação de desconto. */
+  discount_approved_at?: string | null;
 }
 
 export interface PersonalizationTechnique {
