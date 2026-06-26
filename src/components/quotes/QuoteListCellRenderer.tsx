@@ -7,16 +7,8 @@ import { UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
-import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
 import type { Quote } from '@/hooks/quotes';
-
-const statusConfig = Object.fromEntries(
-  Object.entries(QUOTE_STATUS_CONFIG).map(([k, v]) => [
-    k,
-    { label: v.label, className: v.badgeClassName },
-  ]),
-) as Record<Quote['status'], { label: string; className?: string }>;
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
