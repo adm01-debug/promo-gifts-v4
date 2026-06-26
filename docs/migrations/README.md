@@ -1,43 +1,42 @@
-# Migration pendente — alinhar CHECK `valid_quote_status` (10 status)
+# docs/migrations — histórico
 
-**Status:** entregue (SQL pronto), **NÃO aplicada** no banco Gold.
-**Banco alvo:** `doufsxqlfjyuvxuezpln` (Supabase Gold do PO — fonte da verdade).
-**NÃO aplicar** no `pqpdolkaeqlyzpdpbizo` (projeto Lovable Cloud interno).
+## 20260625120000_align_quote_status_check — RESOLVIDO (não aplicar)
 
-## Arquivos
+**Status:** RESOLVIDO em 2026-06-25. Nenhuma migration necessária.
+**Banco verificado:** `doufsxqlfjyuvxuezpln` (Supabase Gold do PO — fonte da verdade).
 
-- `20260625120000_align_quote_status_check.sql` — UP (alinha aos 10 status).
-- `20260625120000_align_quote_status_check.down.sql` — DOWN (rollback lossy).
+### Resumo
 
-## Por quê
+Foi proposta uma migration `align_quote_status_check.{sql,down.sql}` sob a
+premissa de que o CHECK `valid_quote_status` em `public.quotes` aceitava apenas
+7 status, faltando `pending_approval`, `viewed` e `cancelled`.
 
-O FE (`src/types/quote.ts → QUOTE_STATUSES`) define **10** status, mas o
-CHECK constraint no banco aceita apenas **7**. Tentativas de persistir
-`pending_approval`, `viewed` ou `cancelled` falham com SQLSTATE `23514`.
+**Essa premissa era FALSA.** Verificação direta via `pg_constraint` em
+2026-06-25 mostrou que o CHECK já aceita EXATAMENTE os 10 status do FE
+(`src/types/quote.ts -> QUOTE_STATUSES`):
 
-O `sanitizeQuoteStatus` em `src/services/quoteService.ts` evita crash
-fazendo fallback p/ `pending` em leitura, mas o gap de **escrita**
-continua aberto e gera telemetria `quote_status_transition_blocked`
-com `reason: 'db_check_violation'`.
+    draft, pending, pending_approval, sent, viewed,
+    approved, converted, rejected, expired, cancelled
 
-## Aplicação (PO)
+Prova reproduzível:
 
-```bash
-# 1. Conectado ao projeto Gold:
-psql "$GOLD_DB_URL" -f docs/migrations/20260625120000_align_quote_status_check.sql
+    SELECT pg_get_constraintdef(oid)
+    FROM pg_constraint
+    WHERE conrelid = 'public.quotes'::regclass
+      AND conname  = 'valid_quote_status';
 
-# 2. Confirmar:
-psql "$GOLD_DB_URL" -c "\d+ public.quotes" | grep valid_quote_status
-```
+FE e DB estão ALINHADOS. O fluxo de aprovação de desconto persiste
+`pending_approval` em produção sem erro, confirmando o alinhamento na prática.
 
-A migration **aborta automaticamente** se houver linha com status fora
-do enum esperado (não coage silenciosamente).
+### Por que os arquivos foram removidos
 
-## Rollback
+- O `*.sql` (UP) apenas recriava a constraint IDÊNTICA -> no-op desnecessário.
+- O `*.down.sql` (DOWN) era **LOSSY e perigoso**: coagia
+  `pending_approval`/`viewed` -> `pending` e `cancelled` -> `rejected` antes de
+  reduzir a constraint para 7. Executá-lo destruiria dados reais (inclusive os
+  orçamentos em aprovação de desconto). Mantê-lo no repositório era um risco
+  latente de perda de dados.
 
-```bash
-psql "$GOLD_DB_URL" -f docs/migrations/20260625120000_align_quote_status_check.down.sql
-```
-
-**Operação lossy** — `pending_approval`/`viewed` → `pending`, `cancelled` → `rejected`.
-Faça backup do recorte afetado antes (snippet COPY no header do `.down.sql`).
+`src/services/quoteService.ts` mantém um tratamento defensivo de SQLSTATE 23514
+na `valid_quote_status` como defesa-em-profundidade (para flagrar um futuro 11º
+status adicionado no FE sem migration), mas hoje esse ramo não dispara.

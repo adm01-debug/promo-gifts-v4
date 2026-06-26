@@ -103,7 +103,7 @@ describe('quoteService.updateQuoteStatus — telemetria de transições inválid
     await expect(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       quoteService.updateQuoteStatus('q-2', 'pending' as any),
-    ).rejects.toThrow(/Migration de alinhamento pendente/);
+    ).rejects.toThrow(/rejeitado pela constraint valid_quote_status/);
 
     expect(warnMock).toHaveBeenCalledWith(
       'quote_status_transition_blocked',

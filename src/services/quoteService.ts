@@ -333,9 +333,11 @@ export const quoteService = {
     // rls-allow: UPDATE de status por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').update({ status }).eq('id', quoteId);
     if (error) {
-      // PG check_violation (SQLSTATE 23514) na constraint valid_quote_status:
-      // o FE permitiu mas o banco não — gap entre FE (10 status) e DB (7).
-      // Ver docs/migrations/20260625120000_align_quote_status_check.sql.
+      // Defesa-em-profundidade: se o banco rejeitar o status via CHECK
+      // `valid_quote_status` (SQLSTATE 23514), emite telemetria e devolve erro
+      // claro. FE e DB estão ALINHADOS nos 10 status (verificado 2026-06-25 via
+      // pg_constraint), então este ramo NÃO dispara hoje — existe apenas para
+      // flagrar um futuro 11º status adicionado no FE sem a migration par.
       const pgError = error as { code?: string; message?: string; hint?: string | null };
       const isCheckViolation =
         pgError.code === '23514' ||
@@ -354,7 +356,7 @@ export const quoteService = {
           },
         });
         throw new Error(
-          `Status "${toStatus}" ainda não aceito pelo banco. Migration de alinhamento pendente.`,
+          `Status "${toStatus}" rejeitado pela constraint valid_quote_status do banco.`,
         );
       }
       throw error;
