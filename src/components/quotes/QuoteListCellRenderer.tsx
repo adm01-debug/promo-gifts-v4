@@ -20,11 +20,13 @@ export function renderQuoteCell(
   columnId: string,
   navigate: (path: string) => void,
   logoByCnpj?: LogoByCnpj,
+  isLogosLoading?: boolean,
 ) {
   const hasClient = !!quote.client_name || !!quote.client_company;
   const clientDisplay = quote.client_company || quote.client_name || '';
   const cnpjKey = normalizeCnpj(quote.client_cnpj);
   const logoUrl = cnpjKey && logoByCnpj ? logoByCnpj[cnpjKey] ?? null : null;
+  const logoLoading = !!isLogosLoading && !!cnpjKey && !logoByCnpj;
 
   switch (columnId) {
     case 'quote_number':
@@ -36,12 +38,13 @@ export function renderQuoteCell(
 
     case 'client':
       return hasClient ? (
-        <div className="flex min-w-0 items-center gap-3">
+        <div data-testid="quote-client-cell" className="flex min-w-0 items-center gap-3">
           <AvatarLogo
             name={clientDisplay}
             logoUrl={logoUrl}
             size="md"
             className="ring-1 ring-border"
+            isLoading={logoLoading}
           />
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-sm font-semibold text-foreground">
