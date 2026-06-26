@@ -250,6 +250,12 @@ export default function QuotesListPage() {
 
           />
 
+          <div className="mt-2">
+            <QuoteBadgeLegend />
+          </div>
+
+
+
 
           {/* Quotes List */}
           <ScrollArea className="h-[calc(100vh-360px)] min-h-[400px]">
