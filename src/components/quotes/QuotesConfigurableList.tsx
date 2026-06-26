@@ -30,7 +30,6 @@ import {
   Trash2,
   Copy,
   Edit,
-  GripVertical,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -40,23 +39,6 @@ import type { Quote } from '@/hooks/quotes';
 
 import { useBulkSelection } from '@/hooks/common';
 import { QuoteRowQuickActions } from './QuoteRowQuickActions';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 
 // ── Column definitions ──
@@ -69,46 +51,16 @@ export interface ColumnDef {
 }
 
 const ALL_COLUMNS: ColumnDef[] = [
-  { id: 'status', label: 'Status', width: '110px' },
-  { id: 'client', label: 'Empresa', width: 'minmax(120px, 0.7fr)', required: true },
-  { id: 'contact', label: 'Contato', width: '120px' },
-  { id: 'date', label: 'Data', width: '110px' },
+  { id: 'client', label: 'Empresa', width: 'minmax(220px, 1.4fr)', required: true },
+  { id: 'contact', label: 'Contato', width: 'minmax(140px, 0.9fr)' },
+  { id: 'date', label: 'Data', width: '120px' },
   { id: 'items', label: 'Itens', width: '80px', align: 'center' },
   { id: 'value', label: 'Valor', width: '140px', align: 'right' },
-  { id: 'delivery', label: 'Entrega', width: '150px' },
-  { id: 'quote_number', label: 'Nº Orçamento', width: '200px' },
+  { id: 'delivery', label: 'Entrega', width: '90px' },
+  { id: 'status', label: 'Status', width: '150px' },
+  { id: 'quote_number', label: 'Nº Orçamento', width: '120px', align: 'right' },
 ];
-// Module-level Map — built once at load time, O(1) lookup in visibleColumns useMemo.
-const ALL_COLUMNS_BY_ID = new Map(ALL_COLUMNS.map((c) => [c.id, c]));
 
-// ── Sortable Header Cell ──
-function SortableHeaderCell({ column }: { column: ColumnDef }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: column.id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      data-testid={`quotes-col-header-${column.id}`}
-      className={`flex cursor-grab select-none items-center gap-1 active:cursor-grabbing ${
-        column.align === 'right' ? 'justify-end' : ''
-      }`}
-      {...attributes}
-      {...listeners}
-    >
-      <GripVertical className="h-3 w-3 shrink-0 opacity-50" />
-      <span>{column.label}</span>
-    </div>
-  );
-}
 
 // ── Props ──
 interface QuotesConfigurableListProps {
