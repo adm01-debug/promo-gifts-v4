@@ -56,14 +56,27 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
       );
 
     case 'status': {
-      const { label, className } = getQuoteRowBadge(quote);
+      const { key, label, className, description } = getQuoteRowBadge(quote);
       return (
-        <Badge
-          variant="outline"
-          className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${className}`}
-        >
-          {label}
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              variant="outline"
+              data-testid={`quote-status-badge-${key}`}
+              data-status-key={key}
+              className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${className}`}
+            >
+              {label}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            data-testid={`quote-status-badge-tooltip-${key}`}
+            className="max-w-[260px] text-xs"
+          >
+            {description}
+          </TooltipContent>
+        </Tooltip>
       );
     }
 
