@@ -219,6 +219,17 @@ export function QuotesConfigurableList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionMode, handleClearSelection]);
 
+  // Botão "Excluir" da barra de chips (topo): dispara exclusão dos selecionados.
+  useEffect(() => {
+    const handler = () => {
+      if (effectiveSelectedIds.length === 0) return;
+      onBulkDelete([...effectiveSelectedIds]);
+      handleClearSelection();
+    };
+    window.addEventListener('quotes:bulk-delete-request', handler);
+    return () => window.removeEventListener('quotes:bulk-delete-request', handler);
+  }, [effectiveSelectedIds, onBulkDelete, handleClearSelection]);
+
   // Notifica a página (botão "Selecionar"/"Cancelar seleção") quando o modo
   // ou a contagem efetiva muda — mantém o label/estado visual em sincronia.
   useEffect(() => {
