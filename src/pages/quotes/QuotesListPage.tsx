@@ -6,6 +6,7 @@ import {
   ArrowUpDown,
   AlertTriangle,
   Info,
+  CheckSquare,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageSEO } from '@/components/seo/PageSEO';
