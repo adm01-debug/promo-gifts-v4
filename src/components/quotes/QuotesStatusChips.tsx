@@ -204,6 +204,7 @@ export const QUOTE_BADGE_LEGEND: ReadonlyArray<QuoteRowBadge> = (
     'awaiting',
     'approved',
     'rejected',
+    'expired_discount',
     'sent',
     'viewed',
     'quote_approved',
