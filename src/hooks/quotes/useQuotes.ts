@@ -1,7 +1,7 @@
 /**
  * useQuotes — Hook de orçamentos (Refatorado para usar React Query e quoteService)
  */
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
@@ -48,6 +48,12 @@ export function useQuotes() {
   // BUG-NEW-02: Adiciona assinatura Realtime para orçamentos.
   // Garante que mudanças feitas em outras abas ou por outros usuários (em escopos compartilhados)
   // reflitam imediatamente na lista sem necessidade de refresh manual.
+  //
+  // Aprovação/rejeição/expiração de desconto também chega por este canal: o trigger
+  // `trg_sync_quote_dar` espelha `discount_approval_requests` → colunas reais em `quotes`
+  // (`discount_approval_status` / `discount_approved_at`), de modo que cada mudança no DAR
+  // dispara um UPDATE em `quotes` e, com ele, este mesmo postgres_changes. Não é mais
+  // necessário assinar `discount_approval_requests` separadamente no FE.
   useEffect(() => {
     if (!userId) return;
 
@@ -61,7 +67,6 @@ export function useQuotes() {
     const channelTopic = `quotes-realtime-${userId}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
     const invalidateAll = () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
     };
     const channel = supabase
       .channel(channelTopic)
@@ -77,20 +82,6 @@ export function useQuotes() {
           invalidateAll();
         },
       )
-      // GAP-2 FIX: assina `discount_approval_requests` para refletir aprovação/rejeição
-      // do admin em tempo real (vendedor não precisa de F5).
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'discount_approval_requests',
-          filter: scope === 'self' ? `seller_id=eq.${userId}` : undefined,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
-        },
-      )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           logger.warn('[useQuotes] realtime channel error — falling back to poll', { status, err });
@@ -103,12 +94,15 @@ export function useQuotes() {
     };
   }, [userId, scope, queryClient]);
 
+  // `discount_approval_status` / `discount_approved_at` são colunas reais de `quotes`
+  // (materializadas pelo trigger trg_sync_quote_dar) e já vêm no SELECT * de fetchQuotes —
+  // sem necessidade da antiga 2ª query derivada em `discount_approval_requests`.
   const {
-    data: rawQuotes = [],
+    data: quotes = [],
     isLoading,
     error,
     refetch: fetchQuotes,
-  } = useQuery({
+  } = useQuery<Quote[]>({
     queryKey: ['quotes', userId, scope],
     queryFn: () => {
       if (!userId) return Promise.resolve([]);
@@ -119,55 +113,6 @@ export function useQuotes() {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
     staleTime: 30_000,
   });
-
-  // Busca a última `discount_approval_request` por orçamento para derivar
-  // `discount_approval_status` / `discount_approved_at` (sem coluna no DB).
-  const quoteIdsKey = useMemo(
-    () => rawQuotes.map((q) => q.id).filter(Boolean).sort().join(','),
-    [rawQuotes],
-  );
-
-  const { data: approvalMap } = useQuery({
-    queryKey: ['quotes-discount-approvals', userId, quoteIdsKey],
-    enabled: !!userId && rawQuotes.length > 0,
-    staleTime: 30_000,
-    queryFn: async () => {
-      const ids = rawQuotes.map((q) => q.id).filter((id): id is string => Boolean(id));
-      if (ids.length === 0) return new Map<string, { status: string; respondedAt: string | null }>();
-      const { data, error: darErr } = await supabase
-        .from('discount_approval_requests')
-        .select('quote_id,status,responded_at,created_at')
-        .in('quote_id', ids)
-        .order('created_at', { ascending: false });
-      if (darErr) {
-        logger.warn('[useQuotes] failed to fetch discount_approval_requests', darErr);
-        return new Map<string, { status: string; respondedAt: string | null }>();
-      }
-      const map = new Map<string, { status: string; respondedAt: string | null }>();
-      for (const row of data ?? []) {
-        if (!row.quote_id || map.has(row.quote_id)) continue;
-        map.set(row.quote_id, { status: row.status, respondedAt: row.responded_at });
-      }
-      return map;
-    },
-  });
-
-  const quotes = useMemo<Quote[]>(() => {
-    if (!approvalMap || approvalMap.size === 0) return rawQuotes;
-    return rawQuotes.map((q) => {
-      const dar = q.id ? approvalMap.get(q.id) : undefined;
-      if (!dar) return q;
-      const status = dar.status === 'pending' || dar.status === 'approved' || dar.status === 'rejected'
-        ? (dar.status as 'pending' | 'approved' | 'rejected')
-        : null;
-      return {
-        ...q,
-        discount_approval_status: status,
-        discount_approved_at: status === 'approved' ? dar.respondedAt : null,
-      };
-    });
-  }, [rawQuotes, approvalMap]);
-
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({
     queryKey: ['techniques'],
@@ -183,7 +128,6 @@ export function useQuotes() {
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento criado!', { description: `Número: ${newQuote.quote_number}` });
     },
     onError: (err: unknown) => {
@@ -210,7 +154,6 @@ export function useQuotes() {
     }) => quoteService.updateQuote(quoteId, quote, items, expectedVersion),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento atualizado!');
     },
     onError: (err: unknown) => {
@@ -223,7 +166,6 @@ export function useQuotes() {
       quoteService.updateQuoteStatus(quoteId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Status atualizado');
     },
     onError: () => {
@@ -235,7 +177,6 @@ export function useQuotes() {
     mutationFn: (quoteId: string) => quoteService.deleteQuote(quoteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento exluído');
     },
     onError: () => {
@@ -379,7 +320,6 @@ export function useQuotes() {
         description: `Deal ID: ${syncData?.bitrix_deal_id || 'N/A'}`,
       });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       return true;
     } catch (err: unknown) {
       toast.error('Erro ao sincronizar', { description: getErrorMessage(err) });
