@@ -345,26 +345,103 @@ export default function QuotesListPage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Bulk Delete Dialog */}
-        <AlertDialog open={bulkDeleteIds.length > 0} onOpenChange={() => setBulkDeleteIds([])}>
-          <AlertDialogContent>
+        {/* Bulk Delete Dialog — preview de IDs, loading com progresso, cancelar preserva seleção */}
+        <AlertDialog
+          open={bulkDeleteIds.length > 0}
+          onOpenChange={(open) => {
+            // Bloqueia fechamento durante exclusão para evitar perda de feedback.
+            if (isBulkDeleting) return;
+            // "Fechar" no overlay/ESC é tratado como cancelar (preserva seleção).
+            if (!open) cancelBulkDelete();
+          }}
+        >
+          <AlertDialogContent data-testid="quotes-bulk-delete-dialog">
             <AlertDialogHeader>
-              <AlertDialogTitle>Excluir {bulkDeleteIds.length} orçamentos?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Você está prestes a excluir vários orçamentos de uma vez. Esta ação é irreversível.
+              <AlertDialogTitle>
+                {isBulkDeleting
+                  ? `Excluindo ${bulkDeleteProgress.done}/${bulkDeleteProgress.total}…`
+                  : `Excluir ${bulkDeleteIds.length} orçamento${bulkDeleteIds.length === 1 ? '' : 's'}?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2 text-sm">
+                  {isBulkDeleting ? (
+                    <>
+                      <p>Aguarde — não feche esta janela.</p>
+                      <div
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={bulkDeleteProgress.total}
+                        aria-valuenow={bulkDeleteProgress.done}
+                        data-testid="quotes-bulk-delete-progress"
+                        className="h-2 w-full overflow-hidden rounded-full bg-muted"
+                      >
+                        <div
+                          className="h-full bg-destructive transition-all"
+                          style={{
+                            width: `${
+                              bulkDeleteProgress.total > 0
+                                ? Math.round((bulkDeleteProgress.done / bulkDeleteProgress.total) * 100)
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        Esta ação é destrutiva, mas você poderá <strong>Desfazer</strong> por
+                        alguns segundos após confirmar.
+                      </p>
+                      {(() => {
+                        const preview = filteredQuotes
+                          .filter((q) => q.id && bulkDeleteIds.includes(q.id))
+                          .map((q) => q.quote_number)
+                          .filter(Boolean);
+                        if (preview.length === 0) return null;
+                        const shown = preview.slice(0, 5);
+                        const extra = preview.length - shown.length;
+                        return (
+                          <div
+                            data-testid="quotes-bulk-delete-preview"
+                            className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs"
+                          >
+                            <p className="mb-1 font-medium text-foreground">
+                              Identificadores:
+                            </p>
+                            <p className="text-muted-foreground">
+                              {shown.join(', ')}
+                              {extra > 0 ? ` e mais ${extra}` : ''}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={isBulkDeleting} onClick={cancelBulkDelete}>
+                Cancelar
+              </AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleBulkDelete}
+                data-testid="quotes-bulk-delete-confirm"
+                disabled={isBulkDeleting}
+                onClick={(e) => {
+                  e.preventDefault(); // impede o fechamento automático do Radix antes do await
+                  void handleBulkDelete();
+                }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Excluir Todos
+                {isBulkDeleting
+                  ? `Excluindo… (${bulkDeleteProgress.done}/${bulkDeleteProgress.total})`
+                  : `Excluir ${bulkDeleteIds.length}`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
       </TooltipProvider>
     </>
   );
