@@ -254,4 +254,36 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     act(() => result.current.setStatusFilter('unsynced'));
     expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
   });
+
+  it('filtro "created_synced" retorna apenas pending && synced_to_bitrix === true', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'b', status: 'pending', synced_to_bitrix: false }),
+      quote({ id: 'c', status: 'approved', synced_to_bitrix: true }),
+      quote({ id: 'd', status: 'pending', synced_to_bitrix: null }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+    act(() => result.current.setStatusFilter('created_synced'));
+    expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['a']);
+  });
+
+  it('sobreposição: created_synced ⊂ pending e ⊂ synced', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'b', status: 'pending', synced_to_bitrix: false }),
+      quote({ id: 'c', status: 'approved', synced_to_bitrix: true }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+
+    act(() => result.current.setStatusFilter('created_synced'));
+    const cs = result.current.filteredQuotes.map((q) => q.id).sort();
+    act(() => result.current.setStatusFilter('pending'));
+    const p = result.current.filteredQuotes.map((q) => q.id).sort();
+    act(() => result.current.setStatusFilter('synced'));
+    const s = result.current.filteredQuotes.map((q) => q.id).sort();
+
+    expect(cs).toEqual(['a']);
+    expect(p).toEqual(expect.arrayContaining(cs));
+    expect(s).toEqual(expect.arrayContaining(cs));
+  });
 });
