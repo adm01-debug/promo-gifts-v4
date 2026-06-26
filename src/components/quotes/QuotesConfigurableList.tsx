@@ -325,12 +325,12 @@ export function QuotesConfigurableList({
     handleClearSelection();
   };
 
-  const { data: logoByCnpj } = useQuoteClientLogos(
+  const { data: logoByCnpj, isLoading: isLogosLoading } = useQuoteClientLogos(
     paginatedQuotes.map((q) => q.client_cnpj),
   );
 
   const renderCell = (quote: Quote, columnId: string) =>
-    renderQuoteCell(quote, columnId, navigate, logoByCnpj);
+    renderQuoteCell(quote, columnId, navigate, logoByCnpj, isLogosLoading);
 
   return (
     <div className="space-y-2">
