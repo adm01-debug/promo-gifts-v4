@@ -102,12 +102,11 @@ describe('getQuoteRowBadge — fuzz matriz completa (150 combinações)', () => 
   // isDiscountExpired existe mas getQuoteRowBadge não o trata.
   // Este teste documenta o bug — passa hoje exibindo synced/unsynced,
   // mas o ideal seria badge específico "Desconto Expirado".
-  it('GAP: pending + DAR=expired hoje cai em synced/unsynced (deveria ter badge próprio)', () => {
-    const q = make('pending', true, 'expired');
-    expect(isDiscountExpired(q)).toBe(true);
-    // Comportamento ATUAL (bug aceito):
-    expect(getQuoteRowBadge(q).key).toBe('synced');
-    // Quando o badge "expired-discount" for adicionado, trocar para:
-    //   expect(getQuoteRowBadge(q).key).toBe('expired_discount');
+  it('FIX: pending + DAR=expired → expired_discount (badge dedicado, vence synced)', () => {
+    for (const sync of SYNCED) {
+      const q = make('pending', sync, 'expired');
+      expect(isDiscountExpired(q)).toBe(true);
+      expect(getQuoteRowBadge(q).key).toBe('expired_discount');
+    }
   });
 });
