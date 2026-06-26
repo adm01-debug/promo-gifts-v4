@@ -56,10 +56,6 @@ export function BulkActionsBar({
               </Button>
             ))}
 
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onClear}>
-              <X className="h-3.5 w-3.5" />
-              Limpar
-            </Button>
           </div>
 
           {showSelectAllBanner && totalCount && onSelectAll && (
