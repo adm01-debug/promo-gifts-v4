@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Info,
   CheckSquare,
+  Trash2,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageSEO } from '@/components/seo/PageSEO';
