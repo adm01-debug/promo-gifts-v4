@@ -72,6 +72,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { id: 'client', label: 'Empresa', width: 'minmax(120px, 0.7fr)', required: true },
   { id: 'contact', label: 'Contato', width: '120px' },
   { id: 'date', label: 'Data', width: '110px' },
+  { id: 'items', label: 'Itens', width: '80px', align: 'center' },
   { id: 'value', label: 'Valor', width: '140px', align: 'right' },
   { id: 'delivery', label: 'Entrega', width: '150px' },
   { id: 'quote_number', label: 'Nº Orçamento', width: '200px' },
