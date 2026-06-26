@@ -36,6 +36,9 @@ jobs:
       - name: FAB accessibility static gate
         run: npm run check:fab-a11y
 
+      - name: Banned phrases gate
+        run: npm run check:removed-phrases
+
       - name: Run Unit & Integration Tests
         run: npm run test:quality
         
