@@ -387,20 +387,22 @@ export function QuotesConfigurableList({
                       size="icon"
                       className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                       aria-label={`Mais opções para o orçamento ${quote.quote_number ?? ''}`.trim()}
+                      data-testid={`quote-row-more-${quote.id}`}
                     >
                       <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
 
                   </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}`)}>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()} data-testid={`quote-row-menu-${quote.id}`}>
+                    <DropdownMenuItem data-testid={`quote-row-menu-view-${quote.id}`} onClick={() => navigate(`/orcamentos/${quote.id}`)}>
                       <Eye className="mr-2 h-4 w-4" /> Visualizar
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}/editar`)}>
+                    <DropdownMenuItem data-testid={`quote-row-menu-edit-${quote.id}`} onClick={() => navigate(`/orcamentos/${quote.id}/editar`)}>
                       <Edit className="mr-2 h-4 w-4" /> Editar
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      data-testid={`quote-row-menu-duplicate-${quote.id}`}
                       disabled={!quoteId}
                       onClick={() => quoteId && onDuplicate(quoteId)}
                     >
@@ -408,6 +410,7 @@ export function QuotesConfigurableList({
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      data-testid={`quote-row-menu-delete-${quote.id}`}
                       className="text-destructive"
                       disabled={!quoteId}
                       onClick={() => quoteId && onDelete(quoteId)}
@@ -416,6 +419,7 @@ export function QuotesConfigurableList({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
               </div>
             </div>
           );
