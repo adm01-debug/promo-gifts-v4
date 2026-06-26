@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 import {
   Select,
   SelectContent,
@@ -28,7 +28,6 @@ import {
   Trash2,
   Copy,
   Edit,
-  Settings2,
   GripVertical,
   ChevronLeft,
   ChevronRight,
@@ -266,16 +265,28 @@ export function QuotesConfigurableList({
 
 
   // ── Column state ──
+  // Todas as colunas são SEMPRE visíveis. Apenas a ordem é configurável (DnD).
   const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map((c) => c.id));
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+
+  // Migração defensiva: limpa chaves legadas de visibilidade de colunas.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem('quotes-hidden-columns');
+      localStorage.removeItem('quotes-column-visibility');
+      localStorage.removeItem('quotes:hidden-columns');
+      sessionStorage.removeItem('quotes-hidden-columns');
+    } catch {
+      /* ignora */
+    }
+  }, []);
 
   const visibleColumns = useMemo(
     () =>
       columnOrder
-        .filter((id) => !hiddenColumns.has(id))
         .map((id) => ALL_COLUMNS_BY_ID.get(id))
         .filter((column): column is ColumnDef => Boolean(column)),
-    [columnOrder, hiddenColumns],
+    [columnOrder],
   );
 
   const gridTemplate = useMemo(
@@ -303,15 +314,6 @@ export function QuotesConfigurableList({
         return arrayMove(prev, oldIndex, newIndex);
       });
     }
-  }, []);
-
-  const toggleColumn = useCallback((colId: string) => {
-    setHiddenColumns((prev) => {
-      const next = new Set(prev);
-      if (next.has(colId)) next.delete(colId);
-      else next.add(colId);
-      return next;
-    });
   }, []);
 
   // Reset page when pageSize changes
@@ -346,36 +348,6 @@ export function QuotesConfigurableList({
         </div>
       )}
 
-
-      {/* Column settings button */}
-      <div className="flex justify-end">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground">
-              <Settings2 className="h-3.5 w-3.5" />
-              Colunas
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-56 p-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Exibir colunas</p>
-            <div className="space-y-2">
-              {ALL_COLUMNS.map((col) => (
-                <label key={col.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={!hiddenColumns.has(col.id)}
-                    onCheckedChange={() => toggleColumn(col.id)}
-                    disabled={col.required}
-                  />
-                  <span className={col.required ? 'text-muted-foreground' : ''}>{col.label}</span>
-                </label>
-              ))}
-            </div>
-            <p className="mt-3 text-[10px] text-muted-foreground">
-              Arraste os cabeçalhos para reordenar
-            </p>
-          </PopoverContent>
-        </Popover>
-      </div>
 
       {/* Table */}
       <div className="max-h-[calc(100vh-420px)] overflow-y-auto overflow-x-hidden rounded-lg border border-border pb-16">
