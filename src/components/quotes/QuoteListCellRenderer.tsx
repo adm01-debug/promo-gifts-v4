@@ -8,13 +8,23 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
 import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
+import { AvatarLogo } from '@/components/shared/AvatarLogo';
+import { normalizeCnpj, type LogoByCnpj } from '@/hooks/quotes/useQuoteClientLogos';
 import type { Quote } from '@/hooks/quotes';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path: string) => void) {
+export function renderQuoteCell(
+  quote: Quote,
+  columnId: string,
+  navigate: (path: string) => void,
+  logoByCnpj?: LogoByCnpj,
+) {
   const hasClient = !!quote.client_name || !!quote.client_company;
+  const clientDisplay = quote.client_company || quote.client_name || '';
+  const cnpjKey = normalizeCnpj(quote.client_cnpj);
+  const logoUrl = cnpjKey && logoByCnpj ? logoByCnpj[cnpjKey] ?? null : null;
 
   switch (columnId) {
     case 'quote_number':
