@@ -83,7 +83,7 @@ test.describe("Fluxo: chips de status de orçamentos", () => {
     // Liga o modo: checkboxes aparecem mas NADA é marcado automaticamente.
     await selectToggle.click();
     await expect(selectToggle).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByTestId("quotes-selection-hint")).toBeVisible();
+    await expect(page.getByTestId("quotes-selection-hint")).toHaveCount(0);
     const rowCheckboxesAfter = page.getByRole("checkbox", {
       name: /selecionar orçamento/i,
     });
