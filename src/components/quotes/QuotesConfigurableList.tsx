@@ -231,8 +231,13 @@ export function QuotesConfigurableList({
   );
 
   const gridTemplate = useMemo(
-    () => ['40px', ...visibleColumns.map((c) => c.width), '180px'].join(' '),
-    [visibleColumns],
+    () =>
+      [
+        ...(selectionMode ? ['40px'] : []),
+        ...visibleColumns.map((c) => c.width),
+        '180px',
+      ].join(' '),
+    [visibleColumns, selectionMode],
   );
 
   // DnD sensors
