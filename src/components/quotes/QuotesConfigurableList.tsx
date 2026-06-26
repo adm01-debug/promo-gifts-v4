@@ -330,9 +330,20 @@ export function QuotesConfigurableList({
   const { data: logoByCnpj, isLoading: isLogosLoading } = useQuoteClientLogos(
     paginatedQuotes.map((q) => q.client_cnpj),
   );
+  const { data: itemCountById, isLoading: isItemCountsLoading } = useQuoteItemCounts(
+    paginatedQuotes.map((q) => q.id),
+  );
 
   const renderCell = (quote: Quote, columnId: string) =>
-    renderQuoteCell(quote, columnId, navigate, logoByCnpj, isLogosLoading);
+    renderQuoteCell(
+      quote,
+      columnId,
+      navigate,
+      logoByCnpj,
+      isLogosLoading,
+      itemCountById,
+      isItemCountsLoading,
+    );
 
   return (
     <div className="space-y-2">
