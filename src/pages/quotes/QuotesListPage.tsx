@@ -200,30 +200,48 @@ export default function QuotesListPage() {
             value={statusFilter}
             onChange={setStatusFilter}
             rightSlot={
-              <Button
-                type="button"
-                variant={hasSelection ? 'default' : 'outline'}
-                size="sm"
-                data-testid="quotes-select-toggle"
-                data-selected={hasSelection ? 'true' : 'false'}
-                aria-pressed={hasSelection}
-                className="h-7 gap-1.5 rounded-full px-3 text-xs"
-                onClick={() =>
-                  window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))
-                }
-                aria-label={
-                  hasSelection
-                    ? `Cancelar seleção (${selectedCount} ${selectedCount === 1 ? 'orçamento' : 'orçamentos'})`
-                    : 'Selecionar orçamentos visíveis'
-                }
-              >
-                <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                {hasSelection
-                  ? selectedCount > 0
-                    ? `Cancelar seleção (${selectedCount})`
-                    : 'Cancelar seleção'
-                  : 'Selecionar'}
-              </Button>
+              <div className="flex items-center gap-2">
+                {hasSelection && selectedCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    data-testid="quotes-bulk-delete-top"
+                    className="h-7 gap-1.5 rounded-full px-3 text-xs"
+                    onClick={() =>
+                      window.dispatchEvent(new CustomEvent('quotes:bulk-delete-request'))
+                    }
+                    aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'orçamento selecionado' : 'orçamentos selecionados'}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Excluir ({selectedCount})
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant={hasSelection ? 'default' : 'outline'}
+                  size="sm"
+                  data-testid="quotes-select-toggle"
+                  data-selected={hasSelection ? 'true' : 'false'}
+                  aria-pressed={hasSelection}
+                  className="h-7 gap-1.5 rounded-full px-3 text-xs"
+                  onClick={() =>
+                    window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))
+                  }
+                  aria-label={
+                    hasSelection
+                      ? `Cancelar seleção (${selectedCount} ${selectedCount === 1 ? 'orçamento' : 'orçamentos'})`
+                      : 'Selecionar orçamentos visíveis'
+                  }
+                >
+                  <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                  {hasSelection
+                    ? selectedCount > 0
+                      ? `Cancelar seleção (${selectedCount})`
+                      : 'Cancelar seleção'
+                    : 'Selecionar'}
+                </Button>
+              </div>
             }
 
           />
