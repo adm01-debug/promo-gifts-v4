@@ -33,17 +33,19 @@ export const isSyncedToBitrix = (q: Pick<Quote, 'synced_to_bitrix'>): boolean =>
   q.synced_to_bitrix === true;
 
 export const isAwaitingDiscountApproval = (q: Quote): boolean =>
-  q.status === 'pending_approval' || q.discount_approval_status === 'pending';
+  q.status === 'pending_approval' ||
+  (q.status === 'pending' && q.discount_approval_status === 'pending');
 
 export const isDiscountApproved = (q: Quote): boolean =>
-  q.discount_approval_status === 'approved';
+  q.status === 'pending' && q.discount_approval_status === 'approved';
 
 export const isDiscountRejected = (q: Quote): boolean =>
-  q.discount_approval_status === 'rejected';
+  q.status === 'pending' && q.discount_approval_status === 'rejected';
 
-/** True se o orçamento entrou no fluxo de aprovação de desconto (em qualquer estado). */
+/** True se o orçamento está em fluxo ativo de aprovação de desconto. */
 export const hasDiscountWorkflow = (q: Quote): boolean =>
-  q.status === 'pending_approval' || q.discount_approval_status != null;
+  q.status === 'pending_approval' ||
+  (q.status === 'pending' && q.discount_approval_status != null);
 
 const CHIPS: ChipDef[] = [
   { key: 'all', label: 'Todos', match: () => true },
