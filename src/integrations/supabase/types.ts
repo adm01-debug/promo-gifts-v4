@@ -5291,7 +5291,7 @@ export type Database = {
           status: string
           subtotal: number
           synced_at: string | null
-          synced_to_bitrix: boolean | null
+          synced_to_bitrix: boolean
           tags: Json | null
           tax_amount: number | null
           total: number
@@ -5350,7 +5350,7 @@ export type Database = {
           status?: string
           subtotal?: number
           synced_at?: string | null
-          synced_to_bitrix?: boolean | null
+          synced_to_bitrix?: boolean
           tags?: Json | null
           tax_amount?: number | null
           total?: number
@@ -5409,7 +5409,7 @@ export type Database = {
           status?: string
           subtotal?: number
           synced_at?: string | null
-          synced_to_bitrix?: boolean | null
+          synced_to_bitrix?: boolean
           tags?: Json | null
           tax_amount?: number | null
           total?: number
