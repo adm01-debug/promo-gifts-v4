@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -12,9 +13,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: () => ({
-      select: () => ({
-        eq: () => Promise.resolve({ count: 3, error: null }),
-      }),
+      select: () => ({ eq: () => Promise.resolve({ count: 0, error: null }) }),
     }),
     channel: () => ({
       on: function () { return this; },
@@ -24,11 +23,12 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+const mockCount = vi.hoisted(() => ({ value: 3 }));
 vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-query')>();
   return {
     ...actual,
-    useQuery: () => ({ data: 3 }),
+    useQuery: () => ({ data: mockCount.value }),
     useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   };
 });
@@ -38,7 +38,7 @@ function renderBadge() {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <TooltipProvider>
+        <TooltipProvider delayDuration={0}>
           <DiscountApprovalHeaderBadge />
         </TooltipProvider>
       </MemoryRouter>
@@ -47,16 +47,52 @@ function renderBadge() {
 }
 
 describe('DiscountApprovalHeaderBadge', () => {
+  beforeEach(() => {
+    mockCount.value = 3;
+  });
+
   it('renderiza ícone CircleDollarSign (lucide-circle-dollar-sign) e não Shield', () => {
     const { container } = renderBadge();
     expect(container.querySelector('.lucide-circle-dollar-sign')).toBeTruthy();
     expect(container.querySelector('.lucide-shield')).toBeNull();
   });
 
-  it('mantém aria-label acessível com contagem pendente', () => {
+  it('não renderiza nada quando contagem é 0', () => {
+    mockCount.value = 0;
+    const { container } = renderBadge();
+    expect(container.querySelector('button')).toBeNull();
+  });
+
+  it('aria-label no singular para 1 aprovação pendente', () => {
+    mockCount.value = 1;
     renderBadge();
     expect(
-      screen.getByRole('button', { name: /3 aprovações de desconto pendentes/i }),
+      screen.getByRole('button', { name: '1 aprovações de desconto pendentes' }),
     ).toBeInTheDocument();
+  });
+
+  it('aria-label no plural para múltiplas aprovações pendentes', () => {
+    mockCount.value = 5;
+    renderBadge();
+    expect(
+      screen.getByRole('button', { name: '5 aprovações de desconto pendentes' }),
+    ).toBeInTheDocument();
+  });
+
+  it('exibe "9+" quando contagem é maior que 9', () => {
+    mockCount.value = 12;
+    renderBadge();
+    expect(screen.getByText('9+')).toBeInTheDocument();
+  });
+
+  it('exibe tooltip ao focar o badge', async () => {
+    const user = userEvent.setup();
+    renderBadge();
+    await user.tab();
+    await waitFor(() => {
+      expect(
+        screen.getAllByText(/aguardando aprovação/i).length,
+      ).toBeGreaterThan(0);
+    });
   });
 });
