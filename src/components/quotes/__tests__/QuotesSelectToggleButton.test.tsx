@@ -66,7 +66,7 @@ describe('Botão "Selecionar" — payload { count, mode } + alternância sem sel
     expect(listener).toHaveBeenCalledTimes(1);
     const ev = listener.mock.calls[0][0] as CustomEvent;
     // Não envia payload — quem decide o próximo modo é o List (toggle).
-    expect(ev.detail).toBeUndefined();
+    expect(ev.detail ?? null).toBeNull();
     window.removeEventListener('quotes:toggle-select-all', listener);
   });
 
