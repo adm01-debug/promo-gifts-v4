@@ -328,28 +328,16 @@ export function QuotesConfigurableList({
         </div>
       )}
 
-      {/* Bulk action bar */}
-      <BulkActionsBar
-        selectedCount={effectiveSelectedCount}
-        selectedIds={effectiveSelectedIds}
-        entityLabel="orçamento"
-        onClear={handleClearSelection}
-        showSelectAllBanner={showSelectAllBanner}
-        totalCount={quotes.length}
-        onSelectAll={handleSelectAllPages}
-        actions={[
-          {
-            id: 'delete',
-            label: 'Excluir',
-            icon: <Trash2 className="h-3.5 w-3.5" />,
-            variant: 'destructive' as const,
-            onClick: (ids: string[]) => {
-              onBulkDelete([...ids]);
-              handleClearSelection();
-            },
-          },
-        ]}
-      />
+      {/* Banner "Selecionar todos das próximas páginas" — ações em massa ficam no topo (rightSlot dos chips) */}
+      {showSelectAllBanner && (
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
+          <span>Todos desta página estão selecionados.</span>
+          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleSelectAllPages}>
+            Selecionar todos os {quotes.length}
+          </Button>
+        </div>
+      )}
+
 
       {/* Column settings button */}
       <div className="flex justify-end">
