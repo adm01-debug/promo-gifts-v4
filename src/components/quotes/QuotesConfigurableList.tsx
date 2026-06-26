@@ -328,33 +328,6 @@ export function QuotesConfigurableList({
         totalCount={quotes.length}
         onSelectAll={handleSelectAllPages}
         actions={[
-          ...(onBulkStatusChange
-            ? [
-                {
-                  id: 'mark-pending',
-                  label: 'Marcar Pendente',
-                  icon: <RefreshCw className="h-3.5 w-3.5" />,
-                  variant: 'outline' as const,
-                  onClick: (ids: string[]) => {
-                    onBulkStatusChange(ids, 'pending');
-                    handleClearSelection();
-                  },
-                },
-              ]
-            : []),
-          ...(onBulkExport
-            ? [
-                {
-                  id: 'export',
-                  label: 'Exportar',
-                  icon: <Download className="h-3.5 w-3.5" />,
-                  variant: 'outline' as const,
-                  onClick: (ids: string[]) => {
-                    onBulkExport(ids);
-                  },
-                },
-              ]
-            : []),
           {
             id: 'delete',
             label: 'Excluir',
