@@ -39,5 +39,10 @@ test.describe("Cotações · todas as colunas sempre visíveis", () => {
     // 3) Nenhum botão/texto "Colunas" ou "Exibir colunas" no toolbar de cotações.
     await expect(page.getByRole("button", { name: /^Colunas$/i })).toHaveCount(0);
     await expect(page.getByText(/Exibir colunas/i)).toHaveCount(0);
+
+    // 4) Frase de dica de seleção removida da UI.
+    await expect(page.getByTestId("quotes-selection-hint")).toHaveCount(0);
+    await expect(page.getByText(/Modo de seleção ativo/i)).toHaveCount(0);
+    await expect(page.getByText(/marque manualmente os orçamentos/i)).toHaveCount(0);
   });
 });

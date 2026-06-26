@@ -63,7 +63,7 @@ describe('QuotesConfigurableList — seleção manual', () => {
     expect(screen.queryByTestId('quotes-selection-hint')).toBeNull();
   });
 
-  it('ativar modo via evento mostra checkboxes + dica, sem marcar nada', () => {
+  it('ativar modo via evento mostra checkboxes sem marcar nada e sem dica', () => {
     renderList();
     act(() => {
       window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'));
@@ -74,11 +74,11 @@ describe('QuotesConfigurableList — seleção manual', () => {
     expect(boxes.length).toBeGreaterThanOrEqual(3);
     // nenhum marcado
     boxes.forEach((b) => expect(b).not.toBeChecked());
-    // dica visível
-    expect(screen.getByTestId('quotes-selection-hint')).toBeInTheDocument();
+    // dica REMOVIDA — nunca deve aparecer
+    expect(screen.queryByTestId('quotes-selection-hint')).toBeNull();
   });
 
-  it('clique manual em uma linha emite count=1, mode=true e esconde a dica', async () => {
+  it('clique manual em uma linha emite count=1, mode=true', async () => {
     const user = userEvent.setup();
     const events: Array<{ count?: number; mode?: boolean }> = [];
     const listener = (e: Event) => {
