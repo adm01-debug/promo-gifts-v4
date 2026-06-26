@@ -42,6 +42,7 @@ function quote(
     valid_until: string | null;
     quote_number: string;
     client_name: string;
+    synced_to_bitrix: boolean | null;
   }> = {},
 ) {
   return {
@@ -53,6 +54,7 @@ function quote(
     total: overrides.total ?? 100,
     created_at: overrides.created_at ?? '2026-06-01T12:00:00Z',
     valid_until: overrides.valid_until ?? null,
+    synced_to_bitrix: overrides.synced_to_bitrix ?? false,
     notes: '',
   };
 }
@@ -163,5 +165,76 @@ describe('useQuotesListPage — handleMarkApproved', () => {
       await result.current.handleMarkApproved('q1');
     });
     expect(updateQuoteStatus).toHaveBeenCalledWith('q1', 'approved');
+  });
+});
+
+describe('useQuotesListPage — chips de sync (Bitrix)', () => {
+  it('filtro "unsynced" retorna apenas pending && !synced_to_bitrix', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: false }),
+      quote({ id: 'b', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'c', status: 'draft', synced_to_bitrix: false }),
+      quote({ id: 'd', status: 'expired', synced_to_bitrix: false }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+    act(() => result.current.setStatusFilter('unsynced'));
+    expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['a']);
+  });
+
+  it('filtro "synced" retorna apenas synced_to_bitrix === true (qualquer status)', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'b', status: 'approved', synced_to_bitrix: true }),
+      quote({ id: 'c', status: 'pending', synced_to_bitrix: false }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+    act(() => result.current.setStatusFilter('synced'));
+    expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
+  });
+
+  it('filtro "pending" inclui sincronizados e não sincronizados', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'b', status: 'pending', synced_to_bitrix: false }),
+      quote({ id: 'c', status: 'draft' }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+    act(() => result.current.setStatusFilter('pending'));
+    expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
+  });
+
+  it('reset volta para "all" e mostra todos os orçamentos', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'b', status: 'draft' }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+    act(() => result.current.setStatusFilter('synced'));
+    expect(result.current.filteredQuotes).toHaveLength(1);
+    act(() => result.current.handleClearFilters());
+    expect(result.current.statusFilter).toBe('all');
+    expect(result.current.filteredQuotes).toHaveLength(2);
+  });
+
+  it('sobreposição: pending sincronizado conta em "pending" E "synced" (soma > total)', () => {
+    mockQuotes = [
+      quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'b', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'c', status: 'pending', synced_to_bitrix: false }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+
+    act(() => result.current.setStatusFilter('pending'));
+    const pendingIds = result.current.filteredQuotes.map((q) => q.id).sort();
+
+    act(() => result.current.setStatusFilter('synced'));
+    const syncedIds = result.current.filteredQuotes.map((q) => q.id).sort();
+
+    expect(pendingIds).toEqual(['a', 'b', 'c']);
+    expect(syncedIds).toEqual(['a', 'b']);
+    // 'a' e 'b' aparecem em ambos → sobreposição confirmada
+    expect(pendingIds).toEqual(expect.arrayContaining(syncedIds));
+    // Soma das contagens dos chips > total real
+    expect(pendingIds.length + syncedIds.length).toBeGreaterThan(mockQuotes.length);
   });
 });

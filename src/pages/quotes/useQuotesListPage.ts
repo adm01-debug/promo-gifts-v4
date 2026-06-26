@@ -46,7 +46,11 @@ export function useQuotesListPage() {
       results = fuseResults.map((r) => r.item);
     }
 
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'unsynced') {
+      results = results.filter((q) => q.status === 'pending' && !q.synced_to_bitrix);
+    } else if (statusFilter === 'synced') {
+      results = results.filter((q) => q.synced_to_bitrix === true);
+    } else if (statusFilter !== 'all') {
       results = results.filter((quote) => quote.status === statusFilter);
     }
 
