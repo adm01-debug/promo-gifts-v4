@@ -11,6 +11,7 @@
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
+import { seedQuotesForStatusChips } from "../helpers/quotes-status-seed";
 
 const CHIP_KEYS = [
   "all",
@@ -26,10 +27,19 @@ test.describe("Fluxo: chips de status de orçamentos", () => {
   test.beforeEach(() => requireAuth());
 
   test("clicar em cada chip aplica o filtro correspondente", async ({ page }) => {
+    // Hidrata sessão para o seed ler o JWT do localStorage.
+    await gotoAndSettle(page, "/orcamentos");
+
+    // Seed determinístico: garante ≥1 quote em cada chip alvo.
+    const seed = await seedQuotesForStatusChips(page);
+    expect(seed.skipped, `seed falhou: ${seed.skipped}`).toBeNull();
+
+    // Recarrega para a lista refletir os recém-criados.
     await gotoAndSettle(page, "/orcamentos");
     await expect(page.locator(Sel.page.title("orcamentos")).first()).toBeVisible({
       timeout: 10_000,
     });
+
 
     // Toolbar dos chips precisa renderizar antes de qualquer clique.
     const toolbar = page.getByRole("toolbar", {
