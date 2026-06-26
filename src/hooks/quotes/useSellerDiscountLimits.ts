@@ -57,6 +57,14 @@ export function useSellerDiscountLimits() {
   const setLimit = useCallback(
     async (userId: string, maxPercent: number, notes?: string): Promise<boolean> => {
       if (!user) return false;
+      // GUARD (hardening): bloqueia o upsert quando o vendedor nao possui vinculo de conta
+      // (user_id ausente/vazio). O banco ja rejeita user_id nulo (NOT NULL + FK -> profiles),
+      // mas este guard evita o erro 23502 e entrega feedback claro em vez de um toast generico.
+      if (!userId) {
+        logger.error('setLimit: userId ausente - vendedor sem vinculo de conta (user_id)');
+        toast.error('Vendedor invalido: conta sem vinculo. Atualize o cadastro do vendedor.');
+        return false;
+      }
       try {
         const { error } = await supabase.from('seller_discount_limits').upsert(
           {
