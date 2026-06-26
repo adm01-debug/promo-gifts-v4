@@ -34,8 +34,6 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Download,
-  RefreshCw,
 } from 'lucide-react';
 import type { Quote } from '@/hooks/quotes';
 import { BulkActionsBar } from '@/components/common/BulkActionsBar';
