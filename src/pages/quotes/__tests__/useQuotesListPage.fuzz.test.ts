@@ -47,6 +47,13 @@ const quoteArb = fc.record({
       .map((ts) => new Date(ts).toISOString()),
     { nil: null },
   ),
+  // Cobre dados legados: pode vir true, false, null ou indefinido
+  synced_to_bitrix: fc.oneof(
+    fc.constant(true),
+    fc.constant(false),
+    fc.constant(null),
+    fc.constant(undefined),
+  ),
   notes: fc.string({ maxLength: 50 }),
 });
 
