@@ -5,6 +5,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
 import { useQuoteClientLogos } from '@/hooks/quotes/useQuoteClientLogos';
+import { useQuoteItemCounts } from '@/hooks/quotes/useQuoteItemCounts';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
