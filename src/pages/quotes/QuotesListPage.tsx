@@ -177,7 +177,27 @@ export default function QuotesListPage() {
 
 
           {/* Status chips */}
-          <QuotesStatusChips quotes={quotes} value={statusFilter} onChange={setStatusFilter} />
+          <QuotesStatusChips
+            quotes={quotes}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            rightSlot={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 rounded-full px-3 text-xs"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))
+                }
+                aria-label="Selecionar orçamentos visíveis"
+              >
+                <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                Selecionar
+              </Button>
+            }
+          />
+
 
           {/* Quotes List */}
           <ScrollArea className="h-[calc(100vh-360px)] min-h-[400px]">
