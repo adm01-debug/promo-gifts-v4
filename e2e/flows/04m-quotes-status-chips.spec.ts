@@ -11,6 +11,7 @@
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
+import { seedQuotesForStatusChips } from "../helpers/quotes-status-seed";
 
 const CHIP_KEYS = [
   "all",
@@ -26,10 +27,19 @@ test.describe("Fluxo: chips de status de orçamentos", () => {
   test.beforeEach(() => requireAuth());
 
   test("clicar em cada chip aplica o filtro correspondente", async ({ page }) => {
+    // Hidrata sessão para o seed ler o JWT do localStorage.
+    await gotoAndSettle(page, "/orcamentos");
+
+    // Seed determinístico: garante ≥1 quote em cada chip alvo.
+    const seed = await seedQuotesForStatusChips(page);
+    expect(seed.skipped, `seed falhou: ${seed.skipped}`).toBeNull();
+
+    // Recarrega para a lista refletir os recém-criados.
     await gotoAndSettle(page, "/orcamentos");
     await expect(page.locator(Sel.page.title("orcamentos")).first()).toBeVisible({
       timeout: 10_000,
     });
+
 
     // Toolbar dos chips precisa renderizar antes de qualquer clique.
     const toolbar = page.getByRole("toolbar", {
@@ -37,28 +47,19 @@ test.describe("Fluxo: chips de status de orçamentos", () => {
     });
     await expect(toolbar).toBeVisible({ timeout: 10_000 });
 
-    // "Todos" e "Criado (Sincronizado)" sempre devem ser alcançáveis:
-    // - "all" é sempre renderizado;
-    // - "created_synced" pode estar oculto se contagem=0 e inativo, então
-    //   forçamos via clique no botão quando presente OU pulamos com soft assert.
+    // Com o seed determinístico, TODOS os 7 chips devem estar visíveis.
     for (const key of CHIP_KEYS) {
       const chip = page.locator(`button[data-chip-key="${key}"]`);
-      const count = await chip.count();
+      await expect(chip, `chip ${key} deveria estar visível após seed`).toHaveCount(1);
 
-      if (count === 0) {
-        // Chips com contagem 0 são ocultados (exceto "all") — comportamento esperado.
-        // Validamos que pelo menos "all" e os com dados estejam acessíveis.
-        expect(key).not.toBe("all");
-        continue;
-      }
+      await chip.click();
+      await expect(chip).toHaveAttribute("aria-pressed", "true");
 
-      await chip.first().click();
-      await expect(chip.first()).toHaveAttribute("aria-pressed", "true");
-
-      // Garante que nenhum outro chip permanece pressionado.
+      // Exclusividade: apenas o chip clicado fica pressionado.
       const pressed = page.locator('button[data-chip-key][aria-pressed="true"]');
       await expect(pressed).toHaveCount(1);
     }
+
 
     // Reset final: voltar para "Todos" deixa o estado limpo para o próximo teste.
     await page.locator('button[data-chip-key="all"]').click();
