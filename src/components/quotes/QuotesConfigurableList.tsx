@@ -5,6 +5,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
 import { useQuoteClientLogos } from '@/hooks/quotes/useQuoteClientLogos';
+import { useQuoteItemCounts } from '@/hooks/quotes/useQuoteItemCounts';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -72,6 +73,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { id: 'client', label: 'Empresa', width: 'minmax(120px, 0.7fr)', required: true },
   { id: 'contact', label: 'Contato', width: '120px' },
   { id: 'date', label: 'Data', width: '110px' },
+  { id: 'items', label: 'Itens', width: '80px', align: 'center' },
   { id: 'value', label: 'Valor', width: '140px', align: 'right' },
   { id: 'delivery', label: 'Entrega', width: '150px' },
   { id: 'quote_number', label: 'Nº Orçamento', width: '200px' },
@@ -328,9 +330,20 @@ export function QuotesConfigurableList({
   const { data: logoByCnpj, isLoading: isLogosLoading } = useQuoteClientLogos(
     paginatedQuotes.map((q) => q.client_cnpj),
   );
+  const { data: itemCountById, isLoading: isItemCountsLoading } = useQuoteItemCounts(
+    paginatedQuotes.map((q) => q.id),
+  );
 
   const renderCell = (quote: Quote, columnId: string) =>
-    renderQuoteCell(quote, columnId, navigate, logoByCnpj, isLogosLoading);
+    renderQuoteCell(
+      quote,
+      columnId,
+      navigate,
+      logoByCnpj,
+      isLogosLoading,
+      itemCountById,
+      isItemCountsLoading,
+    );
 
   return (
     <div className="space-y-2">

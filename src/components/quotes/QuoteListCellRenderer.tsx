@@ -21,6 +21,8 @@ export function renderQuoteCell(
   navigate: (path: string) => void,
   logoByCnpj?: LogoByCnpj,
   isLogosLoading?: boolean,
+  itemCountById?: Record<string, number>,
+  _isItemCountsLoading?: boolean,
 ) {
   const hasClient = !!quote.client_name || !!quote.client_company;
   const clientDisplay = quote.client_company || quote.client_name || '';
@@ -98,6 +100,17 @@ export function renderQuoteCell(
             {description}
           </TooltipContent>
         </Tooltip>
+      );
+    }
+
+    case 'items': {
+      const count = itemCountById?.[quote.id] ?? 0;
+      return (
+        <div className="flex items-center justify-center">
+          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-semibold text-primary ring-1 ring-primary/20">
+            {count}
+          </span>
+        </div>
       );
     }
 
