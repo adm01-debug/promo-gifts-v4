@@ -40,12 +40,14 @@ const quotes: Quote[] = [
 function renderList() {
   return render(
     <MemoryRouter>
-      <QuotesConfigurableList
-        quotes={quotes}
-        onDelete={vi.fn()}
-        onBulkDelete={vi.fn()}
-        onDuplicate={vi.fn()}
-      />
+      <TooltipProvider>
+        <QuotesConfigurableList
+          quotes={quotes}
+          onDelete={vi.fn()}
+          onBulkDelete={vi.fn()}
+          onDuplicate={vi.fn()}
+        />
+      </TooltipProvider>
     </MemoryRouter>,
   );
 }
