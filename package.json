@@ -44,6 +44,7 @@
     "test:e2e:install": "npx playwright install --with-deps chromium",
     "test:theme-validation": "npx playwright test e2e/theme-validation.spec.ts && node scripts/generate-theme-report.mjs",
     "test:e2e:tooltips": "npx playwright test e2e/tooltips-a11y.spec.ts",
+    "check:removed-phrases": "node scripts/check-removed-phrases.mjs",
     "check:seller-scope": "node scripts/check-seller-scope.mjs",
     "check:route-error-element": "node scripts/check-route-error-element.mjs",
     "check:aschild-nesting": "node scripts/check-aschild-nesting.mjs",
