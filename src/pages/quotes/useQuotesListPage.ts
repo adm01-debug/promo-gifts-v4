@@ -18,13 +18,26 @@ export const sortOptions: { value: SortOption; label: string }[] = [
 
 export function useQuotesListPage() {
   const navigate = useNavigate();
-  const { quotes, isLoading, error, deleteQuote, duplicateQuote, updateQuoteStatus } = useQuotes();
+  const {
+    quotes,
+    isLoading,
+    error,
+    deleteQuote,
+    duplicateQuote,
+    updateQuoteStatus,
+    createQuote,
+    fetchQuote,
+  } = useQuotes();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{ done: number; total: number }>(
+    { done: 0, total: 0 },
+  );
 
   // Search
   const quoteFuse = useMemo(() => {
