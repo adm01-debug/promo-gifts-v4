@@ -64,7 +64,7 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
               variant="outline"
               data-testid={`quote-status-badge-${key}`}
               data-status-key={key}
-              className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${className}`}
+              className={`inline-flex h-5 max-w-full items-center gap-1 truncate whitespace-nowrap px-1.5 py-0 text-[10px] leading-none ${className}`}
             >
               {label}
             </Badge>
