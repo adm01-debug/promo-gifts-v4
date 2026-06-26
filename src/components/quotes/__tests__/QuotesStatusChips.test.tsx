@@ -76,7 +76,8 @@ describe('QuotesStatusChips', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Rascunho/ }));
     fireEvent.click(screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Sincronizado/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Criado \(Sincronizado\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Sincronizado,/ }));
     fireEvent.click(screen.getByRole('button', { name: /Pendente/ }));
     fireEvent.click(screen.getByRole('button', { name: /Expirado/ }));
     fireEvent.click(screen.getByRole('button', { name: /Todos/ }));
@@ -84,6 +85,7 @@ describe('QuotesStatusChips', () => {
     expect(onChange.mock.calls.map((c) => c[0])).toEqual([
       'draft',
       'unsynced',
+      'created_synced',
       'synced',
       'pending',
       'expired',
