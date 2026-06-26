@@ -242,6 +242,18 @@ export function QuotesConfigurableList({
     }
   }, [selectionMode, selectedIds]);
 
+  // Listener: botão "Excluir" no topo (rightSlot dos chips) dispara este evento.
+  // Executa exclusão em massa dos itens efetivamente selecionados e limpa estado.
+  useEffect(() => {
+    const handler = () => {
+      if (effectiveSelectedCount === 0) return;
+      onBulkDelete([...effectiveSelectedIds]);
+      handleClearSelection();
+    };
+    window.addEventListener('quotes:bulk-delete-request', handler);
+    return () => window.removeEventListener('quotes:bulk-delete-request', handler);
+  }, [effectiveSelectedCount, effectiveSelectedIds, onBulkDelete, handleClearSelection]);
+
 
 
 
