@@ -162,46 +162,58 @@ export function QuotesConfigurableList({
     isAllSelected,
   } = useBulkSelection(selectablePaginatedQuotes);
 
+  // Modo de seleção: quando OFF, checkboxes ficam ocultos e nada está marcado.
+  // Ligado pelo botão "Selecionar" da barra de chips (evento global).
+  const [selectionMode, setSelectionMode] = useState(false);
+
   // "Select ALL across all pages" state
   const [allPagesSelected, setAllPagesSelected] = useState(false);
-  const showSelectAllBanner = isAllSelected && quotes.length > 0 && !allPagesSelected;
+  const showSelectAllBanner =
+    selectionMode && isAllSelected && quotes.length > 0 && !allPagesSelected;
 
   const handleSelectAllPages = () => {
     setAllPagesSelected(true);
   };
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     clearSelection();
     setAllPagesSelected(false);
-  };
+  }, [clearSelection]);
 
   const effectiveSelectedCount = allPagesSelected ? quotes.length : selectedCount;
   const effectiveSelectedIds = allPagesSelected
     ? quotes.map((q) => q.id).filter((id): id is string => Boolean(id))
     : selectedIds;
 
-  // Reset allPagesSelected when page/selection changes
+  // Toggle do header (select-all visível) — não confundir com o botão da barra de chips.
   const handleToggleAll = () => {
     setAllPagesSelected(false);
     toggleAll();
   };
 
-  // Botão "Selecionar" da barra de chips dispara este evento global.
+  // Botão "Selecionar" da barra de chips: alterna o MODO de seleção.
+  // Liga = mostra os checkboxes (nenhum marcado). Desliga = limpa e oculta.
   useEffect(() => {
-    const handler = () => handleToggleAll();
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ enabled?: boolean }>).detail;
+      const next = typeof detail?.enabled === 'boolean' ? detail.enabled : !selectionMode;
+      setSelectionMode(next);
+      if (!next) handleClearSelection();
+    };
     window.addEventListener('quotes:toggle-select-all', handler);
     return () => window.removeEventListener('quotes:toggle-select-all', handler);
-    // handleToggleAll é estável o suficiente (depende só de toggleAll do hook)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toggleAll]);
+  }, [selectionMode, handleClearSelection]);
 
-  // Notifica a página (botão "Selecionar"/"Cancelar seleção") quando a
-  // contagem efetiva muda — mantém o label/estado visual em sincronia.
+  // Notifica a página (botão "Selecionar"/"Cancelar seleção") quando o modo
+  // ou a contagem efetiva muda — mantém o label/estado visual em sincronia.
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent('quotes:selection-changed', { detail: { count: effectiveSelectedCount } }),
+      new CustomEvent('quotes:selection-changed', {
+        detail: { count: effectiveSelectedCount, mode: selectionMode },
+      }),
     );
-  }, [effectiveSelectedCount]);
+  }, [effectiveSelectedCount, selectionMode]);
 
 
 
