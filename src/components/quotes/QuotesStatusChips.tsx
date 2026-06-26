@@ -18,15 +18,23 @@ type ChipDef = {
   match: (q: Quote) => boolean;
 };
 
+/**
+ * Normaliza `synced_to_bitrix` — em dados legados o campo pode vir `null`/`undefined`.
+ * Tratamos qualquer valor não-`true` como NÃO sincronizado para manter os filtros
+ * consistentes (evita orçamentos "fantasmas" no chip Sincronizado).
+ */
+export const isSyncedToBitrix = (q: Pick<Quote, 'synced_to_bitrix'>): boolean =>
+  q.synced_to_bitrix === true;
+
 const CHIPS: ChipDef[] = [
   { key: 'all', label: 'Todos', match: () => true },
   { key: 'draft', label: 'Rascunho', match: (q) => q.status === 'draft' },
   {
     key: 'unsynced',
     label: 'Criado (Não Sinc.)',
-    match: (q) => q.status === 'pending' && !q.synced_to_bitrix,
+    match: (q) => q.status === 'pending' && !isSyncedToBitrix(q),
   },
-  { key: 'synced', label: 'Sincronizado', match: (q) => q.synced_to_bitrix === true },
+  { key: 'synced', label: 'Sincronizado', match: (q) => isSyncedToBitrix(q) },
   { key: 'pending', label: 'Pendente', match: (q) => q.status === 'pending' },
   { key: 'expired', label: 'Expirado', match: (q) => q.status === 'expired' },
 ];

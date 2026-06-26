@@ -237,4 +237,21 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     // Soma das contagens dos chips > total real
     expect(pendingIds.length + syncedIds.length).toBeGreaterThan(mockQuotes.length);
   });
+
+  it('fallback: synced_to_bitrix null/undefined é tratado como NÃO sincronizado', () => {
+    mockQuotes = [
+      // legado: campo ausente/indefinido
+      { ...quote({ id: 'a', status: 'pending' }), synced_to_bitrix: undefined },
+      // legado: campo null
+      { ...quote({ id: 'b', status: 'pending' }), synced_to_bitrix: null },
+      quote({ id: 'c', status: 'pending', synced_to_bitrix: true }),
+    ];
+    const { result } = renderHook(() => useQuotesListPage());
+
+    act(() => result.current.setStatusFilter('synced'));
+    expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['c']);
+
+    act(() => result.current.setStatusFilter('unsynced'));
+    expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
+  });
 });

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuotes } from '@/hooks/quotes';
+import { isSyncedToBitrix } from '@/components/quotes/QuotesStatusChips';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
@@ -47,9 +48,9 @@ export function useQuotesListPage() {
     }
 
     if (statusFilter === 'unsynced') {
-      results = results.filter((q) => q.status === 'pending' && !q.synced_to_bitrix);
+      results = results.filter((q) => q.status === 'pending' && !isSyncedToBitrix(q));
     } else if (statusFilter === 'synced') {
-      results = results.filter((q) => q.synced_to_bitrix === true);
+      results = results.filter((q) => isSyncedToBitrix(q));
     } else if (statusFilter !== 'all') {
       results = results.filter((quote) => quote.status === statusFilter);
     }
