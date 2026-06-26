@@ -55,7 +55,7 @@ const log = createClientLogger('quotes.chips');
 // Reporta no máximo uma vez por sessão para evitar spam de logs.
 let reportedLegacySync = false;
 
-export function QuotesStatusChips({ quotes, value, onChange }: QuotesStatusChipsProps) {
+export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: QuotesStatusChipsProps) {
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const chip of CHIPS) {
