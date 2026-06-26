@@ -292,32 +292,36 @@ export function QuotesConfigurableList({
       {/* Table */}
       <div className="max-h-[calc(100vh-420px)] overflow-y-auto overflow-x-hidden rounded-lg border border-border pb-16">
         {/* Header */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div
-            className="sticky top-0 z-10 grid gap-4 border-b border-primary/80 bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
-            style={{ gridTemplateColumns: gridTemplate }}
-          >
-            {selectionMode && (
-              <div className="flex items-center justify-center">
-                <Checkbox
-                  checked={isAllSelected}
-                  onCheckedChange={handleToggleAll}
-                  aria-label="Selecionar todos da página"
-                  className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-                />
-              </div>
-            )}
-            <SortableContext
-              items={visibleColumns.map((c) => c.id)}
-              strategy={horizontalListSortingStrategy}
+        <div
+          className="sticky top-0 z-10 grid gap-5 border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
+          style={{ gridTemplateColumns: gridTemplate }}
+        >
+          {selectionMode && (
+            <div className="flex items-center justify-center">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={handleToggleAll}
+                aria-label="Selecionar todos da página"
+                className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+              />
+            </div>
+          )}
+          {visibleColumns.map((col) => (
+            <div
+              key={col.id}
+              data-testid={`quotes-col-header-${col.id}`}
+              className={cn(
+                'select-none truncate',
+                col.align === 'right' && 'text-right',
+                col.align === 'center' && 'text-center',
+              )}
             >
-              {visibleColumns.map((col) => (
-                <SortableHeaderCell key={col.id} column={col} />
-              ))}
-            </SortableContext>
-            <span />
-          </div>
-        </DndContext>
+              {col.label}
+            </div>
+          ))}
+          <span />
+        </div>
+
 
         {/* Rows */}
         {paginatedQuotes.map((quote) => {
