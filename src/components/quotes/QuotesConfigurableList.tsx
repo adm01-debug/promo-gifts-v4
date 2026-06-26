@@ -221,56 +221,33 @@ export function QuotesConfigurableList({
 
 
   // ── Column state ──
-  // Todas as colunas são SEMPRE visíveis. Apenas a ordem é configurável (DnD).
-  const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map((c) => c.id));
+  // Ordem das colunas é FIXA (sem DnD): definida em ALL_COLUMNS.
+  const visibleColumns = ALL_COLUMNS;
 
-  // Migração defensiva: limpa chaves legadas de visibilidade de colunas.
+  // Migração defensiva: limpa chaves legadas de visibilidade/ordem de colunas.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       localStorage.removeItem('quotes-hidden-columns');
       localStorage.removeItem('quotes-column-visibility');
       localStorage.removeItem('quotes:hidden-columns');
+      localStorage.removeItem('quotes:column-order');
       sessionStorage.removeItem('quotes-hidden-columns');
     } catch {
       /* ignora */
     }
   }, []);
 
-  const visibleColumns = useMemo(
-    () =>
-      columnOrder
-        .map((id) => ALL_COLUMNS_BY_ID.get(id))
-        .filter((column): column is ColumnDef => Boolean(column)),
-    [columnOrder],
-  );
-
   const gridTemplate = useMemo(
     () =>
       [
         ...(selectionMode ? ['40px'] : []),
         ...visibleColumns.map((c) => c.width),
-        '180px',
+        '110px',
       ].join(' '),
     [visibleColumns, selectionMode],
   );
 
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setColumnOrder((prev) => {
-        const oldIndex = prev.indexOf(active.id as string);
-        const newIndex = prev.indexOf(over.id as string);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    }
-  }, []);
 
   // Reset page when pageSize changes
   const handlePageSizeChange = (value: string) => {
