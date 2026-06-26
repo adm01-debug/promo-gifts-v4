@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
-import { useQuotes } from '@/hooks/quotes';
+import { useQuotes, type Quote, type QuoteItem } from '@/hooks/quotes';
 import { isSyncedToBitrix } from '@/components/quotes/QuotesStatusChips';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
