@@ -199,18 +199,26 @@ export default function QuotesListPage() {
             rightSlot={
               <Button
                 type="button"
-                variant="outline"
+                variant={hasSelection ? 'default' : 'outline'}
                 size="sm"
+                data-testid="quotes-select-toggle"
+                data-selected={hasSelection ? 'true' : 'false'}
+                aria-pressed={hasSelection}
                 className="h-7 gap-1.5 rounded-full px-3 text-xs"
                 onClick={() =>
                   window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))
                 }
-                aria-label="Selecionar orçamentos visíveis"
+                aria-label={
+                  hasSelection
+                    ? `Cancelar seleção (${selectedCount} ${selectedCount === 1 ? 'orçamento' : 'orçamentos'})`
+                    : 'Selecionar orçamentos visíveis'
+                }
               >
                 <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                Selecionar
+                {hasSelection ? `Cancelar seleção (${selectedCount})` : 'Selecionar'}
               </Button>
             }
+
           />
 
 
