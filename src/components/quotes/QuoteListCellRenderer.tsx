@@ -44,6 +44,7 @@ export function renderQuoteCell(
             logoUrl={logoUrl}
             size="md"
             className="ring-1 ring-border"
+            isLoading={logoLoading}
           />
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-sm font-semibold text-foreground">
