@@ -69,18 +69,20 @@ export default function QuotesListPage() {
     updateQuoteStatus,
   } = useQuotesListPage();
 
-  // Espelha a contagem de seleção emitida por QuotesConfigurableList
+  // Espelha modo de seleção + contagem emitidos por QuotesConfigurableList
   // para alternar o label/feedback visual do botão "Selecionar".
   const [selectedCount, setSelectedCount] = useState(0);
+  const [selectionMode, setSelectionMode] = useState(false);
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ count?: number }>).detail;
+      const detail = (e as CustomEvent<{ count?: number; mode?: boolean }>).detail;
       setSelectedCount(detail?.count ?? 0);
+      if (typeof detail?.mode === 'boolean') setSelectionMode(detail.mode);
     };
     window.addEventListener('quotes:selection-changed', handler);
     return () => window.removeEventListener('quotes:selection-changed', handler);
   }, []);
-  const hasSelection = selectedCount > 0;
+  const hasSelection = selectionMode;
 
 
   if (isLoading) {
@@ -215,7 +217,11 @@ export default function QuotesListPage() {
                 }
               >
                 <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                {hasSelection ? `Cancelar seleção (${selectedCount})` : 'Selecionar'}
+                {hasSelection
+                  ? selectedCount > 0
+                    ? `Cancelar seleção (${selectedCount})`
+                    : 'Cancelar seleção'
+                  : 'Selecionar'}
               </Button>
             }
 
