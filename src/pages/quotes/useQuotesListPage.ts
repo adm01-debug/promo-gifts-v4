@@ -101,12 +101,113 @@ export function useQuotesListPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    for (const id of bulkDeleteIds) {
-      await deleteQuote(id);
+  /**
+   * Exclusão em lote com:
+   *  - snapshot pré-delete (para suportar "Desfazer" via toast por 8s);
+   *  - progresso done/total (UI mostra feedback enquanto roda);
+   *  - tolerância a falhas parciais (cada delete é independente);
+   *  - se TUDO falhar, mantém `bulkDeleteIds` e seleção visual (não emite
+   *    `quotes:bulk-delete-confirmed`) para o usuário tentar de novo;
+   *  - se ≥1 sucesso, emite `quotes:bulk-delete-confirmed` que limpa a
+   *    seleção visual no QuotesConfigurableList.
+   */
+  const handleBulkDelete = useCallback(async () => {
+    const ids = [...bulkDeleteIds];
+    if (ids.length === 0) return;
+
+    setIsBulkDeleting(true);
+    setBulkDeleteProgress({ done: 0, total: ids.length });
+
+    // 1) snapshot completo (quote + items) ANTES do delete — necessário p/ Desfazer.
+    const snapshots: Quote[] = [];
+    for (const id of ids) {
+      try {
+        const full = await fetchQuote(id);
+        if (full) snapshots.push(full);
+      } catch {
+        /* segue mesmo sem snapshot daquele id — undo só vai conseguir restaurar o que pegou */
+      }
     }
+
+    // 2) delete sequencial com contagem.
+    const failed: string[] = [];
+    let done = 0;
+    for (const id of ids) {
+      const ok = await deleteQuote(id);
+      done += 1;
+      setBulkDeleteProgress({ done, total: ids.length });
+      if (!ok) failed.push(id);
+    }
+
+    setIsBulkDeleting(false);
+    const successCount = ids.length - failed.length;
+
+    if (successCount === 0) {
+      // Tudo falhou: preserva bulkDeleteIds e seleção visual para retry.
+      toast.error(
+        `Não foi possível excluir os ${ids.length} orçamentos. Tente novamente.`,
+      );
+      setBulkDeleteProgress({ done: 0, total: 0 });
+      return;
+    }
+
+    // Limpa estado de confirmação + libera seleção visual.
     setBulkDeleteIds([]);
-  };
+    setBulkDeleteProgress({ done: 0, total: 0 });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('quotes:bulk-delete-confirmed'));
+    }
+
+    if (failed.length > 0) {
+      toast.warning(
+        `${successCount} excluído(s), ${failed.length} falhou(aram). Tente novamente para os pendentes.`,
+      );
+    }
+
+    // 3) toast com "Desfazer" — restaura via createQuote.
+    const restorable = snapshots.filter((s) => !failed.includes(s.id ?? ''));
+    if (restorable.length === 0) return;
+
+    toast.success(`${successCount} orçamento(s) excluído(s).`, {
+      duration: 8000,
+      action: {
+        label: 'Desfazer',
+        onClick: async () => {
+          let restored = 0;
+          for (const snap of restorable) {
+            try {
+              const items: QuoteItem[] = (snap.items ?? []).map((it) => ({
+                ...it,
+              })) as QuoteItem[];
+              // remove campos gerados para evitar conflito de PK/timestamps no INSERT
+              const { id: _omitId, created_at: _c, updated_at: _u, quote_number: _qn, ...rest } =
+                snap as Quote & { id?: string };
+              void _omitId; void _c; void _u; void _qn;
+              const created = await createQuote(rest as Partial<Quote>, items);
+              if (created) restored += 1;
+            } catch {
+              /* segue restaurando os demais */
+            }
+          }
+          if (restored === restorable.length) {
+            toast.success(`${restored} orçamento(s) restaurado(s).`);
+          } else if (restored > 0) {
+            toast.warning(
+              `${restored}/${restorable.length} orçamentos restaurados. Alguns não puderam ser recriados.`,
+            );
+          } else {
+            toast.error('Não foi possível restaurar os orçamentos.');
+          }
+        },
+      },
+    });
+  }, [bulkDeleteIds, deleteQuote, fetchQuote, createQuote]);
+
+  /** Fecha o dialog SEM limpar a seleção visual — atende ao requisito do PO. */
+  const cancelBulkDelete = useCallback(() => {
+    setBulkDeleteIds([]);
+  }, []);
+
 
   const handleClearFilters = () => {
     setSearchTerm('');
