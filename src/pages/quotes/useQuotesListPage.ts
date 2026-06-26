@@ -49,6 +49,8 @@ export function useQuotesListPage() {
 
     if (statusFilter === 'unsynced') {
       results = results.filter((q) => q.status === 'pending' && !isSyncedToBitrix(q));
+    } else if (statusFilter === 'created_synced') {
+      results = results.filter((q) => q.status === 'pending' && isSyncedToBitrix(q));
     } else if (statusFilter === 'synced') {
       results = results.filter((q) => isSyncedToBitrix(q));
     } else if (statusFilter !== 'all') {
