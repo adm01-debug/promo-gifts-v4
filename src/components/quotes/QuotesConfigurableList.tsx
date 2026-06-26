@@ -2,7 +2,7 @@
  * QuotesConfigurableList - Lista de orçamentos com colunas reordenáveis, paginação e seleção em massa
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
