@@ -117,11 +117,18 @@ describe('QuotesStatusChips', () => {
   it('contagem de "Sincronizado" ignora null/undefined (fallback de dados legados)', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
     // Apenas 'c' tem synced_to_bitrix === true
-    const syncedBtn = screen.getByRole('button', { name: /Sincronizado/ });
+    const syncedBtn = screen.getByRole('button', { name: /^Sincronizado,/ });
     expect(syncedBtn.textContent).toBe('Sincronizado1');
 
     // 'Criado (Não Sinc.)' = pending && !synced → b + e = 2
     const unsyncedBtn = screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ });
     expect(unsyncedBtn.textContent).toBe('Criado (Não Sinc.)2');
+
+    // 'Criado (Sincronizado)' = pending && synced → c = 1
+    const createdSyncedBtn = screen.getByRole('button', { name: /Criado \(Sincronizado\)/ });
+    expect(createdSyncedBtn.textContent).toBe('Criado (Sincronizado)1');
+
+    // ARIA label inclui contagem pluralizada
+    expect(createdSyncedBtn).toHaveAttribute('aria-label', 'Criado (Sincronizado), 1 orçamento');
   });
 });
