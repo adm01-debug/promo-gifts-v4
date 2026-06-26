@@ -55,6 +55,12 @@ const CHIPS: ChipDef[] = [
       q.status === 'pending' && !isSyncedToBitrix(q) && !hasDiscountWorkflow(q),
   },
   {
+    key: 'created_synced',
+    label: 'Criado/Sincronizado',
+    match: (q) =>
+      q.status === 'pending' && isSyncedToBitrix(q) && !hasDiscountWorkflow(q),
+  },
+  {
     key: 'pending_approval',
     label: 'Pendente Aprovação',
     match: isAwaitingDiscountApproval,
