@@ -70,7 +70,7 @@ export function QuoteRowQuickActions({
 
   return (
     <div
-      className="flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+      className="flex items-center gap-0 opacity-40 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       onClick={(e) => e.stopPropagation()}
     >
       <Tooltip>
@@ -78,11 +78,11 @@ export function QuoteRowQuickActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-foreground"
             onClick={handleDuplicate}
             aria-label="Duplicar orçamento"
           >
-            <Copy className="h-3.5 w-3.5" />
+            <Copy className="h-3 w-3" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Duplicar</TooltipContent>
@@ -93,11 +93,11 @@ export function QuoteRowQuickActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-foreground"
             onClick={handleCopyLink}
             aria-label="Copiar link do orçamento"
           >
-            <Share2 className="h-3.5 w-3.5" />
+            <Share2 className="h-3 w-3" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Copiar link</TooltipContent>
@@ -108,11 +108,11 @@ export function QuoteRowQuickActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-success"
+            className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-success"
             onClick={handleWhatsapp}
             aria-label="Enviar por WhatsApp"
           >
-            <MessageCircle className="h-3.5 w-3.5" />
+            <MessageCircle className="h-3 w-3" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Enviar por WhatsApp</TooltipContent>
@@ -124,11 +124,11 @@ export function QuoteRowQuickActions({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-success"
+              className="h-6 w-6 text-muted-foreground/50 hover:bg-muted/40 hover:text-success"
               onClick={handleApprove}
               aria-label="Marcar como ganho"
             >
-              <Trophy className="h-3.5 w-3.5" />
+              <Trophy className="h-3 w-3" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Marcar como ganho</TooltipContent>
@@ -137,3 +137,4 @@ export function QuoteRowQuickActions({
     </div>
   );
 }
+
