@@ -7,16 +7,8 @@ import { UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
-import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
 import type { Quote } from '@/hooks/quotes';
-
-const statusConfig = Object.fromEntries(
-  Object.entries(QUOTE_STATUS_CONFIG).map(([k, v]) => [
-    k,
-    { label: v.label, className: v.badgeClassName },
-  ]),
-) as Record<Quote['status'], { label: string; className?: string }>;
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -64,21 +56,12 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
       );
 
     case 'status': {
-      const rowBadge = getQuoteRowBadge(quote);
-      const label = rowBadge?.label ?? statusConfig[quote.status]?.label;
-      const className = rowBadge?.className ?? statusConfig[quote.status]?.className ?? '';
-      const showPing = !rowBadge && quote.status === 'pending';
+      const { label, className } = getQuoteRowBadge(quote);
       return (
         <Badge
           variant="outline"
           className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${className}`}
         >
-          {showPing && (
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-info" />
-            </span>
-          )}
           {label}
         </Badge>
       );
