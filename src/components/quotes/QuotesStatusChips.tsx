@@ -65,101 +65,122 @@ export const QUOTE_ROW_BADGE_STYLES = {
     label: 'Rascunho',
     className:
       'border-dashed border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-300',
+    description: 'Em edição, ainda não enviado.',
   },
   unsynced: {
     label: 'Criado (Não Sincronizado)',
     className:
       'border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
+    description:
+      'Status pending sem sincronização com o CRM (synced_to_bitrix=false e sem fluxo de desconto).',
   },
   synced: {
     label: 'Criado/Sincronizado',
     className: 'border-primary/40 bg-primary/10 text-primary',
+    description:
+      'Status pending já sincronizado com o CRM (synced_to_bitrix=true e sem fluxo de desconto).',
   },
   awaiting: {
     label: 'Aguardando Aprovação',
     className:
       'border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-300',
+    description:
+      'Aguardando aprovação de desconto pela alçada (DAR=pending sobrepõe synced).',
   },
   approved: {
     label: 'Desconto Aprovado',
     className:
       'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
+    description: 'Desconto aprovado pela alçada — pronto para enviar (DAR=approved).',
   },
   rejected: {
     label: 'Desconto Rejeitado',
     className: 'border-destructive/40 bg-destructive/10 text-destructive',
+    description: 'Desconto rejeitado pela alçada (DAR=rejected).',
   },
   expired: {
     label: 'Expirado',
     className: 'border-muted-foreground/30 bg-muted text-muted-foreground',
+    description: 'Validade do orçamento vencida.',
   },
   sent: {
     label: 'Enviado',
     className: 'border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300',
+    description: 'Enviado ao cliente.',
   },
   viewed: {
     label: 'Visualizado',
     className: 'border-info/40 bg-info/10 text-info',
+    description: 'Visualizado pelo cliente.',
   },
   quote_approved: {
     label: 'Aprovado',
     className: 'border-success/40 bg-success/10 text-success',
+    description: 'Aprovado pelo cliente.',
   },
   converted: {
     label: 'Convertido em Pedido',
     className: 'border-success/50 bg-success/15 text-success',
+    description: 'Convertido em pedido.',
   },
   cancelled: {
     label: 'Cancelado',
     className:
       'border-muted-foreground/30 bg-muted/50 text-muted-foreground line-through',
+    description: 'Cancelado pelo vendedor.',
   },
   quote_rejected: {
     label: 'Rejeitado',
     className: 'border-destructive/40 bg-destructive/10 text-destructive',
+    description: 'Rejeitado pelo cliente.',
   },
 } as const;
 
 export type QuoteRowBadgeKey = keyof typeof QUOTE_ROW_BADGE_STYLES;
+
+export interface QuoteRowBadge {
+  key: QuoteRowBadgeKey;
+  label: string;
+  className: string;
+  description: string;
+}
+
+const withKey = (key: QuoteRowBadgeKey): QuoteRowBadge => ({
+  key,
+  ...QUOTE_ROW_BADGE_STYLES[key],
+});
 
 /**
  * Badge canônico de status da LINHA da tabela de orçamentos.
  * Cobre TODOS os 10 status canônicos + 3 derivações de desconto (DAR).
  * Nunca retorna null — sempre há um badge consistente.
  */
-export function getQuoteRowBadge(
-  q: Quote,
-): { label: string; className: string } {
-  // 1. Desconto (DAR) tem prioridade sobre status base 'pending'/'pending_approval'.
-  if (isAwaitingDiscountApproval(q)) return QUOTE_ROW_BADGE_STYLES.awaiting;
-  if (isDiscountApproved(q)) return QUOTE_ROW_BADGE_STYLES.approved;
-  if (isDiscountRejected(q)) return QUOTE_ROW_BADGE_STYLES.rejected;
+export function getQuoteRowBadge(q: Quote): QuoteRowBadge {
+  if (isAwaitingDiscountApproval(q)) return withKey('awaiting');
+  if (isDiscountApproved(q)) return withKey('approved');
+  if (isDiscountRejected(q)) return withKey('rejected');
 
-  // 2. Status base.
   switch (q.status) {
     case 'draft':
-      return QUOTE_ROW_BADGE_STYLES.draft;
+      return withKey('draft');
     case 'pending':
-      return isSyncedToBitrix(q)
-        ? QUOTE_ROW_BADGE_STYLES.synced
-        : QUOTE_ROW_BADGE_STYLES.unsynced;
+      return isSyncedToBitrix(q) ? withKey('synced') : withKey('unsynced');
     case 'sent':
-      return QUOTE_ROW_BADGE_STYLES.sent;
+      return withKey('sent');
     case 'viewed':
-      return QUOTE_ROW_BADGE_STYLES.viewed;
+      return withKey('viewed');
     case 'approved':
-      return QUOTE_ROW_BADGE_STYLES.quote_approved;
+      return withKey('quote_approved');
     case 'converted':
-      return QUOTE_ROW_BADGE_STYLES.converted;
+      return withKey('converted');
     case 'rejected':
-      return QUOTE_ROW_BADGE_STYLES.quote_rejected;
+      return withKey('quote_rejected');
     case 'cancelled':
-      return QUOTE_ROW_BADGE_STYLES.cancelled;
+      return withKey('cancelled');
     case 'expired':
-      return QUOTE_ROW_BADGE_STYLES.expired;
+      return withKey('expired');
     default:
-      // 'pending_approval' sem DAR já foi tratado por isAwaitingDiscountApproval.
-      return QUOTE_ROW_BADGE_STYLES.awaiting;
+      return withKey('awaiting');
   }
 }
 
@@ -167,26 +188,23 @@ export function getQuoteRowBadge(
  * Itens da legenda visual exibida na página de orçamentos.
  * Ordem é a sequência canônica do ciclo de vida.
  */
-export const QUOTE_BADGE_LEGEND: ReadonlyArray<{
-  key: QuoteRowBadgeKey;
-  label: string;
-  className: string;
-  description: string;
-}> = [
-  { ...QUOTE_ROW_BADGE_STYLES.draft, key: 'draft', description: 'Em edição, ainda não enviado.' },
-  { ...QUOTE_ROW_BADGE_STYLES.unsynced, key: 'unsynced', description: 'Criado, mas ainda não sincronizado com o CRM.' },
-  { ...QUOTE_ROW_BADGE_STYLES.synced, key: 'synced', description: 'Criado e sincronizado com o CRM.' },
-  { ...QUOTE_ROW_BADGE_STYLES.awaiting, key: 'awaiting', description: 'Aguardando aprovação de desconto pela alçada.' },
-  { ...QUOTE_ROW_BADGE_STYLES.approved, key: 'approved', description: 'Desconto aprovado — pronto para enviar.' },
-  { ...QUOTE_ROW_BADGE_STYLES.rejected, key: 'rejected', description: 'Desconto rejeitado pela alçada.' },
-  { ...QUOTE_ROW_BADGE_STYLES.sent, key: 'sent', description: 'Enviado ao cliente.' },
-  { ...QUOTE_ROW_BADGE_STYLES.viewed, key: 'viewed', description: 'Visualizado pelo cliente.' },
-  { ...QUOTE_ROW_BADGE_STYLES.quote_approved, key: 'quote_approved', description: 'Aprovado pelo cliente.' },
-  { ...QUOTE_ROW_BADGE_STYLES.converted, key: 'converted', description: 'Convertido em pedido.' },
-  { ...QUOTE_ROW_BADGE_STYLES.quote_rejected, key: 'quote_rejected', description: 'Rejeitado pelo cliente.' },
-  { ...QUOTE_ROW_BADGE_STYLES.expired, key: 'expired', description: 'Validade vencida.' },
-  { ...QUOTE_ROW_BADGE_STYLES.cancelled, key: 'cancelled', description: 'Cancelado pelo vendedor.' },
-];
+export const QUOTE_BADGE_LEGEND: ReadonlyArray<QuoteRowBadge> = (
+  [
+    'draft',
+    'unsynced',
+    'synced',
+    'awaiting',
+    'approved',
+    'rejected',
+    'sent',
+    'viewed',
+    'quote_approved',
+    'converted',
+    'quote_rejected',
+    'expired',
+    'cancelled',
+  ] as const
+).map(withKey);
 
 const CHIPS: ChipDef[] = [
   { key: 'all', label: 'Todos', match: () => true },
