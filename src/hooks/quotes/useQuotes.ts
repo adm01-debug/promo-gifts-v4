@@ -59,6 +59,10 @@ export function useQuotes() {
     // subscribe()" de forma síncrona dentro do useEffect e derrubando o render
     // (GlobalErrorBoundary / ProtectedRoute). Um tópico único garante sempre um canal novo.
     const channelTopic = `quotes-realtime-${userId}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+    const invalidateAll = () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
+    };
     const channel = supabase
       .channel(channelTopic)
       .on(
@@ -67,18 +71,30 @@ export function useQuotes() {
           event: '*',
           schema: 'public',
           table: 'quotes',
-          // O filtro simplificado garante que qualquer mudança no escopo do usuário invalide o cache
           filter: scope === 'self' ? `seller_id=eq.${userId}` : undefined,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+          invalidateAll();
+        },
+      )
+      // GAP-2 FIX: assina `discount_approval_requests` para refletir aprovação/rejeição
+      // do admin em tempo real (vendedor não precisa de F5).
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discount_approval_requests',
+          filter: scope === 'self' ? `seller_id=eq.${userId}` : undefined,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
         },
       )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           logger.warn('[useQuotes] realtime channel error — falling back to poll', { status, err });
-          // Invalidate once so stale data is refreshed immediately on reconnect
-          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+          invalidateAll();
         }
       });
 
@@ -167,6 +183,7 @@ export function useQuotes() {
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento criado!', { description: `Número: ${newQuote.quote_number}` });
     },
     onError: (err: unknown) => {
@@ -193,6 +210,7 @@ export function useQuotes() {
     }) => quoteService.updateQuote(quoteId, quote, items, expectedVersion),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento atualizado!');
     },
     onError: (err: unknown) => {
@@ -205,6 +223,7 @@ export function useQuotes() {
       quoteService.updateQuoteStatus(quoteId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Status atualizado');
     },
     onError: () => {
@@ -216,6 +235,7 @@ export function useQuotes() {
     mutationFn: (quoteId: string) => quoteService.deleteQuote(quoteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento exluído');
     },
     onError: () => {
@@ -359,6 +379,7 @@ export function useQuotes() {
         description: `Deal ID: ${syncData?.bitrix_deal_id || 'N/A'}`,
       });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       return true;
     } catch (err: unknown) {
       toast.error('Erro ao sincronizar', { description: getErrorMessage(err) });
