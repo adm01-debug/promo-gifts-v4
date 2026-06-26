@@ -84,7 +84,9 @@ export function TechniqueSLACard({
         table: 'personalization_techniques',
         operation: 'select',
         filters: { is_active: true },
-        orderBy: { column: 'estimated_days', ascending: true },
+        // FIX 2026-06-26: 'estimated_days' nao existe em personalization_techniques (PostgREST 400/42703);
+        // ordena por 'name' (coluna real). SLA/custo continuam reordenados client-side abaixo.
+        orderBy: { column: 'name', ascending: true },
         limit: 100,
       });
       return result.records.map((t) => {
