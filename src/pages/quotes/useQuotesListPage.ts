@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuotes, type Quote, type QuoteItem } from '@/hooks/quotes';
-import { isSyncedToBitrix } from '@/components/quotes/QuotesStatusChips';
+import { QUOTE_CHIP_MATCHERS } from '@/components/quotes/QuotesStatusChips';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
@@ -61,14 +61,14 @@ export function useQuotesListPage() {
       results = fuseResults.map((r) => r.item);
     }
 
-    if (statusFilter === 'unsynced') {
-      results = results.filter((q) => q.status === 'pending' && !isSyncedToBitrix(q));
-    } else if (statusFilter === 'created_synced') {
-      results = results.filter((q) => q.status === 'pending' && isSyncedToBitrix(q));
-    } else if (statusFilter === 'synced') {
-      results = results.filter((q) => isSyncedToBitrix(q));
-    } else if (statusFilter !== 'all') {
-      results = results.filter((quote) => quote.status === statusFilter);
+    if (statusFilter !== 'all') {
+      const matcher = QUOTE_CHIP_MATCHERS[statusFilter];
+      if (matcher) {
+        results = results.filter(matcher);
+      } else {
+        // Fallback defensivo p/ filtros legados salvos em localStorage.
+        results = results.filter((quote) => quote.status === statusFilter);
+      }
     }
 
     results = [...results].sort((a, b) => {

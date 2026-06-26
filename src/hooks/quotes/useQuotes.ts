@@ -1,7 +1,7 @@
 /**
  * useQuotes — Hook de orçamentos (Refatorado para usar React Query e quoteService)
  */
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
@@ -88,7 +88,7 @@ export function useQuotes() {
   }, [userId, scope, queryClient]);
 
   const {
-    data: quotes = [],
+    data: rawQuotes = [],
     isLoading,
     error,
     refetch: fetchQuotes,
@@ -103,6 +103,55 @@ export function useQuotes() {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
     staleTime: 30_000,
   });
+
+  // Busca a última `discount_approval_request` por orçamento para derivar
+  // `discount_approval_status` / `discount_approved_at` (sem coluna no DB).
+  const quoteIdsKey = useMemo(
+    () => rawQuotes.map((q) => q.id).filter(Boolean).sort().join(','),
+    [rawQuotes],
+  );
+
+  const { data: approvalMap } = useQuery({
+    queryKey: ['quotes-discount-approvals', userId, quoteIdsKey],
+    enabled: !!userId && rawQuotes.length > 0,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const ids = rawQuotes.map((q) => q.id).filter((id): id is string => Boolean(id));
+      if (ids.length === 0) return new Map<string, { status: string; respondedAt: string | null }>();
+      const { data, error: darErr } = await supabase
+        .from('discount_approval_requests')
+        .select('quote_id,status,responded_at,created_at')
+        .in('quote_id', ids)
+        .order('created_at', { ascending: false });
+      if (darErr) {
+        logger.warn('[useQuotes] failed to fetch discount_approval_requests', darErr);
+        return new Map<string, { status: string; respondedAt: string | null }>();
+      }
+      const map = new Map<string, { status: string; respondedAt: string | null }>();
+      for (const row of data ?? []) {
+        if (!row.quote_id || map.has(row.quote_id)) continue;
+        map.set(row.quote_id, { status: row.status, respondedAt: row.responded_at });
+      }
+      return map;
+    },
+  });
+
+  const quotes = useMemo<Quote[]>(() => {
+    if (!approvalMap || approvalMap.size === 0) return rawQuotes;
+    return rawQuotes.map((q) => {
+      const dar = q.id ? approvalMap.get(q.id) : undefined;
+      if (!dar) return q;
+      const status = dar.status === 'pending' || dar.status === 'approved' || dar.status === 'rejected'
+        ? (dar.status as 'pending' | 'approved' | 'rejected')
+        : null;
+      return {
+        ...q,
+        discount_approval_status: status,
+        discount_approved_at: status === 'approved' ? dar.respondedAt : null,
+      };
+    });
+  }, [rawQuotes, approvalMap]);
+
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({
     queryKey: ['techniques'],
