@@ -42,6 +42,15 @@ export const isDiscountApproved = (q: Quote): boolean =>
 export const isDiscountRejected = (q: Quote): boolean =>
   q.status === 'pending' && q.discount_approval_status === 'rejected';
 
+/**
+ * Desconto que JÁ fora aprovado mas cuja validade expirou (DAR → 'expired',
+ * espelhado em `quotes.discount_approval_status`). Orçamento volta a precisar
+ * de re-aprovação. Antes da coluna materializada este estado sumia de todos os
+ * filtros exceto "Todos".
+ */
+export const isDiscountExpired = (q: Quote): boolean =>
+  q.status === 'pending' && q.discount_approval_status === 'expired';
+
 /** True se o orçamento está em fluxo ativo de aprovação de desconto. */
 export const hasDiscountWorkflow = (q: Quote): boolean =>
   q.status === 'pending_approval' ||
@@ -76,6 +85,11 @@ const CHIPS: ChipDef[] = [
     key: 'discount_rejected',
     label: 'Desconto Rejeitado',
     match: isDiscountRejected,
+  },
+  {
+    key: 'discount_expired',
+    label: 'Aprovação Expirada',
+    match: isDiscountExpired,
   },
   { key: 'expired', label: 'Expirado', match: (q) => q.status === 'expired' },
 ];
@@ -148,13 +162,16 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
             const isApproved = key === 'discount_approved';
             const isRejected = key === 'discount_rejected';
             const isPendingApproval = key === 'pending_approval';
+            const isDiscountExpiredChip = key === 'discount_expired';
             const accentBorder = isApproved
               ? 'border-emerald-500/40'
               : isRejected
                 ? 'border-destructive/40'
                 : isPendingApproval
                   ? 'border-amber-500/40'
-                  : 'border-border/60';
+                  : isDiscountExpiredChip
+                    ? 'border-amber-500/30'
+                    : 'border-border/60';
             const ariaLabel = isPendingApproval
               ? `${label} (aguardando aprovação de desconto), ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`
               : `${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`;
