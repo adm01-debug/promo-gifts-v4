@@ -115,10 +115,10 @@ describe('QuotesStatusChips', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
     // Apenas 'c' tem synced_to_bitrix === true
     const syncedBtn = screen.getByRole('button', { name: /Sincronizado/ });
-    expect(syncedBtn.textContent).toMatch(/\b1\b/);
+    expect(syncedBtn.textContent).toBe('Sincronizado1');
 
     // 'Criado (Não Sinc.)' = pending && !synced → b + e = 2
     const unsyncedBtn = screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ });
-    expect(unsyncedBtn.textContent).toMatch(/\b2\b/);
+    expect(unsyncedBtn.textContent).toBe('Criado (Não Sinc.)2');
   });
 });
