@@ -427,7 +427,9 @@ export function QuotesConfigurableList({
             </div>
           );
         })}
+        </div>
       </div>
+
 
       {/* Pagination Footer */}
       <div className="flex items-center justify-between px-2 py-2">
