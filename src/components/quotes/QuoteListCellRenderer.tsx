@@ -33,7 +33,7 @@ export function renderQuoteCell(
   switch (columnId) {
     case 'quote_number':
       return (
-        <span className="truncate font-mono text-xs text-muted-foreground">
+        <span className="block truncate text-right font-mono text-[11px] tabular-nums text-muted-foreground/70">
           {quote.quote_number}
         </span>
       );
@@ -49,11 +49,11 @@ export function renderQuoteCell(
             isLoading={logoLoading}
           />
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-semibold text-foreground">
+            <span className="truncate text-[13px] font-medium tracking-tight text-foreground">
               {clientDisplay}
             </span>
             {quote.client_cnpj && (
-              <span className="truncate font-mono text-[10px] text-muted-foreground/70">
+              <span className="truncate font-mono text-[10px] tabular-nums text-muted-foreground/60">
                 {quote.client_cnpj}
               </span>
             )}
@@ -73,7 +73,7 @@ export function renderQuoteCell(
 
     case 'contact':
       return quote.client_name && quote.client_company ? (
-        <span className="truncate text-[0.975rem] text-muted-foreground">{quote.client_name}</span>
+        <span className="truncate text-[13px] text-foreground/80">{quote.client_name}</span>
       ) : (
         <span className="text-xs text-muted-foreground/50">—</span>
       );
@@ -107,7 +107,7 @@ export function renderQuoteCell(
       const count = itemCountById?.[quote.id] ?? 0;
       return (
         <div className="flex items-center justify-center">
-          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-semibold text-primary ring-1 ring-primary/20">
+          <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-muted/60 px-2 text-[11px] font-medium tabular-nums text-foreground/80 ring-1 ring-border/50">
             {count}
           </span>
         </div>
@@ -116,22 +116,20 @@ export function renderQuoteCell(
 
     case 'value':
       return (
-        <div className="flex items-center justify-end gap-2">
-          <span className="text-sm font-bold text-foreground">
-            {formatCurrency(quote.total || 0)}
-          </span>
-        </div>
+        <span className="block text-right text-[13px] font-semibold tabular-nums text-foreground">
+          {formatCurrency(quote.total || 0)}
+        </span>
       );
 
     case 'date':
       return (
         <div className="space-y-0.5">
-          <span className="block text-sm text-foreground">
+          <span className="block text-[12px] tabular-nums text-foreground/90">
             {quote.created_at
               ? format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: ptBR })
               : '—'}
           </span>
-          <span className="block text-[11px] text-muted-foreground">
+          <span className="block text-[10.5px] tabular-nums text-muted-foreground/70">
             {quote.created_at ? format(new Date(quote.created_at), 'HH:mm', { locale: ptBR }) : ''}
           </span>
         </div>
@@ -147,7 +145,7 @@ export function renderQuoteCell(
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="block cursor-default truncate text-xs text-muted-foreground">
+            <span className="block cursor-default truncate text-[11.5px] text-muted-foreground/80">
               {compact}
             </span>
           </TooltipTrigger>
@@ -155,6 +153,7 @@ export function renderQuoteCell(
         </Tooltip>
       );
     }
+
 
     default:
       return null;
