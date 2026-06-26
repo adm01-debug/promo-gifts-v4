@@ -217,7 +217,11 @@ export default function QuotesListPage() {
                 }
               >
                 <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                {hasSelection ? `Cancelar seleção (${selectedCount})` : 'Selecionar'}
+                {hasSelection
+                  ? selectedCount > 0
+                    ? `Cancelar seleção (${selectedCount})`
+                    : 'Cancelar seleção'
+                  : 'Selecionar'}
               </Button>
             }
 
