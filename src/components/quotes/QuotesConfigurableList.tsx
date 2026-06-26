@@ -390,11 +390,12 @@ export function QuotesConfigurableList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground"
-                      aria-label="Mais opções"
+                      className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                      aria-label={`Mais opções para o orçamento ${quote.quote_number ?? ''}`.trim()}
                     >
-                      <MoreVertical className="h-3.5 w-3.5" />
+                      <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
+
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
