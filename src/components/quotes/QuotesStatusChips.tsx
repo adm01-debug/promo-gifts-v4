@@ -102,54 +102,57 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
 
   return (
     <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-1 border-b border-border/40 bg-background/85 px-1 py-2 backdrop-blur-md">
-      <div
-        ref={containerRef}
-        role="toolbar"
-        aria-label="Filtrar orçamentos por status e sincronização"
-        aria-orientation="horizontal"
-        className="scrollbar-thin flex items-center gap-1.5 overflow-x-auto"
-      >
-        {visibleChips.map(({ key, label }, idx) => {
-          const isActive = value === key;
-          const count = counts[key] || 0;
-          const isSynced = key === 'synced';
+      <div className="flex items-center gap-2">
+        <div
+          ref={containerRef}
+          role="toolbar"
+          aria-label="Filtrar orçamentos por status e sincronização"
+          aria-orientation="horizontal"
+          className="scrollbar-thin flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto"
+        >
+          {visibleChips.map(({ key, label }, idx) => {
+            const isActive = value === key;
+            const count = counts[key] || 0;
+            const isSynced = key === 'synced';
 
-          return (
-            <button
-              key={key}
-              type="button"
-              data-chip-key={key}
-              onClick={() => onChange(key)}
-              onKeyDown={(e) => handleKeyDown(e, idx)}
-              aria-pressed={isActive}
-              aria-label={`${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`}
-              className={cn(
-                'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
-                'whitespace-nowrap border outline-none',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                isActive
-                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                  : cn(
-                      'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                      isSynced ? 'border-emerald-500/40' : 'border-border/60',
-                    ),
-              )}
-            >
-              <span aria-hidden="true">{label}</span>
-              <span
-                aria-hidden="true"
+            return (
+              <button
+                key={key}
+                type="button"
+                data-chip-key={key}
+                onClick={() => onChange(key)}
+                onKeyDown={(e) => handleKeyDown(e, idx)}
+                aria-pressed={isActive}
+                aria-label={`${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`}
                 className={cn(
-                  'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
+                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
+                  'whitespace-nowrap border outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   isActive
-                    ? 'bg-primary-foreground/20 text-primary-foreground'
-                    : 'bg-muted text-foreground/70',
+                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                    : cn(
+                        'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                        isSynced ? 'border-emerald-500/40' : 'border-border/60',
+                      ),
                 )}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+                <span aria-hidden="true">{label}</span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
+                    isActive
+                      ? 'bg-primary-foreground/20 text-primary-foreground'
+                      : 'bg-muted text-foreground/70',
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
       </div>
     </div>
   );
