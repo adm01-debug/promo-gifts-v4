@@ -94,6 +94,7 @@ function SortableHeaderCell({ column }: { column: ColumnDef }) {
     <div
       ref={setNodeRef}
       style={style}
+      data-testid={`quotes-col-header-${column.id}`}
       className={`flex cursor-grab select-none items-center gap-1 active:cursor-grabbing ${
         column.align === 'right' ? 'justify-end' : ''
       }`}
