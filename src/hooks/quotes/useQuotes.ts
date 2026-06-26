@@ -183,6 +183,7 @@ export function useQuotes() {
     },
     onSuccess: (newQuote) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento criado!', { description: `Número: ${newQuote.quote_number}` });
     },
     onError: (err: unknown) => {
@@ -209,6 +210,7 @@ export function useQuotes() {
     }) => quoteService.updateQuote(quoteId, quote, items, expectedVersion),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento atualizado!');
     },
     onError: (err: unknown) => {
@@ -221,6 +223,7 @@ export function useQuotes() {
       quoteService.updateQuoteStatus(quoteId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Status atualizado');
     },
     onError: () => {
@@ -232,6 +235,7 @@ export function useQuotes() {
     mutationFn: (quoteId: string) => quoteService.deleteQuote(quoteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       toast.success('Orçamento exluído');
     },
     onError: () => {
@@ -375,6 +379,7 @@ export function useQuotes() {
         description: `Deal ID: ${syncData?.bitrix_deal_id || 'N/A'}`,
       });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quotes-discount-approvals'] });
       return true;
     } catch (err: unknown) {
       toast.error('Erro ao sincronizar', { description: getErrorMessage(err) });
