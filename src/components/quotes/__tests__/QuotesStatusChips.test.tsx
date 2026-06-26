@@ -131,4 +131,29 @@ describe('QuotesStatusChips', () => {
     // ARIA label inclui contagem pluralizada
     expect(createdSyncedBtn).toHaveAttribute('aria-label', 'Criado (Sincronizado), 1 orçamento');
   });
+
+  it('renderiza rightSlot à direita da barra (fora do toolbar de chips)', () => {
+    render(
+      <QuotesStatusChips
+        quotes={sample}
+        value="all"
+        onChange={() => {}}
+        rightSlot={<button data-testid="my-right-slot">Selecionar</button>}
+      />,
+    );
+    const slot = screen.getByTestId('my-right-slot');
+    expect(slot).toBeInTheDocument();
+    const toolbar = screen.getByRole('toolbar', {
+      name: /Filtrar orçamentos por status/i,
+    });
+    expect(toolbar.contains(slot)).toBe(false);
+  });
+
+  it('não renderiza container do rightSlot quando prop não é passada', () => {
+    const { container } = render(
+      <QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />,
+    );
+    const flexRow = container.querySelector('.flex.items-center.gap-2');
+    expect(flexRow?.children.length).toBe(1);
+  });
 });
