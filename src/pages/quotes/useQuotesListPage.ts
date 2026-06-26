@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuotes } from '@/hooks/quotes';
+import { isSyncedToBitrix } from '@/components/quotes/QuotesStatusChips';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
