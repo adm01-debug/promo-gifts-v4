@@ -214,7 +214,7 @@ export default function QuotesListPage() {
                     aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'orçamento selecionado' : 'orçamentos selecionados'}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    Excluir{selectedCount > 0 ? ` (${selectedCount})` : ''}
+                    Excluir ({selectedCount})
                   </Button>
                 )}
                 <Button
@@ -243,7 +243,6 @@ export default function QuotesListPage() {
                 </Button>
               </div>
             }
-
 
           />
 

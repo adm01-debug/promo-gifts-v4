@@ -120,6 +120,66 @@ describe('QuotesConfigurableList — seleção manual', () => {
     renderList();
     expect(screen.getAllByRole('checkbox').length).toBeGreaterThanOrEqual(3);
   });
+
+  it('NÃO renderiza BulkActionsBar (ações ficam no topo, em rightSlot dos chips)', () => {
+    renderList();
+    act(() => {
+      window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'));
+    });
+    // Sem botão "Excluir" inferior — a única ação de exclusão em massa vive no
+    // topo, dentro do QuotesListPage (quotes-bulk-delete-top).
+    expect(screen.queryByRole('button', { name: /^Excluir$/i })).toBeNull();
+  });
+
+  it('evento quotes:bulk-delete-request dispara onBulkDelete com IDs selecionados e limpa seleção', async () => {
+    const user = userEvent.setup();
+    const onBulkDelete = vi.fn();
+    render(
+      <MemoryRouter>
+        <TooltipProvider>
+          <QuotesConfigurableList
+            quotes={quotes}
+            onDelete={vi.fn()}
+            onBulkDelete={onBulkDelete}
+            onDuplicate={vi.fn()}
+          />
+        </TooltipProvider>
+      </MemoryRouter>,
+    );
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'));
+    });
+    const rowCheckbox = screen.getAllByRole('checkbox', { name: /selecionar orçamento/i })[0];
+    await user.click(rowCheckbox);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('quotes:bulk-delete-request'));
+    });
+
+    expect(onBulkDelete).toHaveBeenCalledTimes(1);
+    expect(onBulkDelete).toHaveBeenCalledWith(['q-1']);
+  });
+
+  it('quotes:bulk-delete-request sem seleção é no-op', () => {
+    const onBulkDelete = vi.fn();
+    render(
+      <MemoryRouter>
+        <TooltipProvider>
+          <QuotesConfigurableList
+            quotes={quotes}
+            onDelete={vi.fn()}
+            onBulkDelete={onBulkDelete}
+            onDuplicate={vi.fn()}
+          />
+        </TooltipProvider>
+      </MemoryRouter>,
+    );
+    act(() => {
+      window.dispatchEvent(new CustomEvent('quotes:bulk-delete-request'));
+    });
+    expect(onBulkDelete).not.toHaveBeenCalled();
+  });
 });
 
 // Suprimi warning sobre `within` não usado mantendo o import: removo se lint reclamar.

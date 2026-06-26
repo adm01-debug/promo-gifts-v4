@@ -182,8 +182,12 @@ export function QuotesConfigurableList({
 
   // "Select ALL across all pages" state
   const [allPagesSelected, setAllPagesSelected] = useState(false);
+  const showSelectAllBanner =
+    selectionMode && isAllSelected && quotes.length > 0 && !allPagesSelected;
 
-
+  const handleSelectAllPages = () => {
+    setAllPagesSelected(true);
+  };
 
   const handleClearSelection = useCallback(() => {
     clearSelection();
@@ -215,17 +219,6 @@ export function QuotesConfigurableList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionMode, handleClearSelection]);
 
-  // Botão "Excluir" da barra de chips (topo): dispara exclusão dos selecionados.
-  useEffect(() => {
-    const handler = () => {
-      if (effectiveSelectedIds.length === 0) return;
-      onBulkDelete([...effectiveSelectedIds]);
-      handleClearSelection();
-    };
-    window.addEventListener('quotes:bulk-delete-request', handler);
-    return () => window.removeEventListener('quotes:bulk-delete-request', handler);
-  }, [effectiveSelectedIds, onBulkDelete, handleClearSelection]);
-
   // Notifica a página (botão "Selecionar"/"Cancelar seleção") quando o modo
   // ou a contagem efetiva muda — mantém o label/estado visual em sincronia.
   useEffect(() => {
@@ -248,6 +241,18 @@ export function QuotesConfigurableList({
       /* quota/SSR — ignora */
     }
   }, [selectionMode, selectedIds]);
+
+  // Listener: botão "Excluir" no topo (rightSlot dos chips) dispara este evento.
+  // Executa exclusão em massa dos itens efetivamente selecionados e limpa estado.
+  useEffect(() => {
+    const handler = () => {
+      if (effectiveSelectedCount === 0) return;
+      onBulkDelete([...effectiveSelectedIds]);
+      handleClearSelection();
+    };
+    window.addEventListener('quotes:bulk-delete-request', handler);
+    return () => window.removeEventListener('quotes:bulk-delete-request', handler);
+  }, [effectiveSelectedCount, effectiveSelectedIds, onBulkDelete, handleClearSelection]);
 
 
 
@@ -323,7 +328,15 @@ export function QuotesConfigurableList({
         </div>
       )}
 
-      {/* Bulk delete agora vem do botão "Excluir" no topo (rightSlot dos chips). */}
+      {/* Banner "Selecionar todos das próximas páginas" — ações em massa ficam no topo (rightSlot dos chips) */}
+      {showSelectAllBanner && (
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
+          <span>Todos desta página estão selecionados.</span>
+          <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleSelectAllPages}>
+            Selecionar todos os {quotes.length}
+          </Button>
+        </div>
+      )}
 
 
       {/* Column settings button */}

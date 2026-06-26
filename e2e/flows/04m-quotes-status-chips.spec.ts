@@ -94,6 +94,24 @@ test.describe("Fluxo: chips de status de orçamentos", () => {
     );
     await expect(checked).toHaveCount(0);
 
+    // Sem seleção, o botão "Excluir" do topo NÃO existe.
+    await expect(page.getByTestId("quotes-bulk-delete-top")).toHaveCount(0);
+
+    // Marca o primeiro item manualmente → "Excluir" aparece no topo, ao lado
+    // do toggle, e a barra inferior (BulkActionsBar) permanece ausente.
+    await rowCheckboxesAfter.first().click();
+    const bulkDeleteTop = page.getByTestId("quotes-bulk-delete-top");
+    await expect(bulkDeleteTop).toBeVisible();
+    await expect(bulkDeleteTop).toContainText(/Excluir/);
+    // Garante que não existe BulkActionsBar antigo embaixo da lista.
+    await expect(
+      page.locator('text=/^\\d+\\s+orçamento(s)?\\s+selecionado/i'),
+    ).toHaveCount(0);
+
+    // Desmarca para o teardown do toggle abaixo.
+    await rowCheckboxesAfter.first().click();
+
+
     // Desliga: checkboxes somem novamente.
     await selectToggle.click();
     await expect(selectToggle).toHaveAttribute("aria-pressed", "false");
