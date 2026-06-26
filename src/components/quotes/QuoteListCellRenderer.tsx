@@ -36,15 +36,23 @@ export function renderQuoteCell(
 
     case 'client':
       return hasClient ? (
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-semibold text-foreground">
-            {quote.client_company || quote.client_name}
-          </span>
-          {quote.client_cnpj && (
-            <span className="truncate font-mono text-[10px] text-muted-foreground/70">
-              {quote.client_cnpj}
+        <div className="flex min-w-0 items-center gap-3">
+          <AvatarLogo
+            name={clientDisplay}
+            logoUrl={logoUrl}
+            size="md"
+            className="ring-1 ring-border"
+          />
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-semibold text-foreground">
+              {clientDisplay}
             </span>
-          )}
+            {quote.client_cnpj && (
+              <span className="truncate font-mono text-[10px] text-muted-foreground/70">
+                {quote.client_cnpj}
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <button
