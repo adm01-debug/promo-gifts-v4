@@ -182,12 +182,8 @@ export function QuotesConfigurableList({
 
   // "Select ALL across all pages" state
   const [allPagesSelected, setAllPagesSelected] = useState(false);
-  const showSelectAllBanner =
-    selectionMode && isAllSelected && quotes.length > 0 && !allPagesSelected;
 
-  const handleSelectAllPages = () => {
-    setAllPagesSelected(true);
-  };
+
 
   const handleClearSelection = useCallback(() => {
     clearSelection();
