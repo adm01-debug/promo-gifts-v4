@@ -40,9 +40,37 @@ test.describe("Cotações · todas as colunas sempre visíveis", () => {
     await expect(page.getByRole("button", { name: /^Colunas$/i })).toHaveCount(0);
     await expect(page.getByText(/Exibir colunas/i)).toHaveCount(0);
 
-    // 4) Frase de dica de seleção removida da UI.
-    await expect(page.getByTestId("quotes-selection-hint")).toHaveCount(0);
-    await expect(page.getByText(/Modo de seleção ativo/i)).toHaveCount(0);
-    await expect(page.getByText(/marque manualmente os orçamentos/i)).toHaveCount(0);
+    // 4) Frase removida nunca pode aparecer no HTML — antes E depois de filtrar,
+    //    ligar o modo de seleção e marcar itens. Asserção via conteúdo bruto
+    //    do <body> para cobrir qualquer estado/render.
+    const assertPhraseAbsent = async (label: string) => {
+      const html = await page.locator("body").innerHTML();
+      expect(html, `frase deve estar ausente em: ${label}`).not.toMatch(/Modo de seleção ativo/i);
+      expect(html, `frase deve estar ausente em: ${label}`).not.toMatch(/marque manualmente os orçamentos/i);
+      await expect(page.getByTestId("quotes-selection-hint")).toHaveCount(0);
+    };
+
+    // 4a) Estado inicial.
+    await assertPhraseAbsent("estado inicial");
+
+    // 4b) Após filtrar por chip de status.
+    const draftChip = page.locator('[data-chip-key="draft"]').first();
+    if (await draftChip.count()) {
+      await draftChip.click();
+      await page.waitForLoadState("domcontentloaded");
+      await assertPhraseAbsent("após filtrar por 'draft'");
+    }
+
+    // 4c) Após ligar o modo de seleção (sem nenhum item marcado).
+    const selectToggle = page.getByRole("button", { name: /Selecionar/i }).first();
+    if (await selectToggle.count()) {
+      await selectToggle.click();
+      await assertPhraseAbsent("modo de seleção ligado, 0 itens");
+    }
+
+    // 4d) Após navegar para fora e voltar.
+    await gotoAndSettle(page, "/");
+    await gotoAndSettle(page, "/orcamentos");
+    await assertPhraseAbsent("após navegação fora→volta");
   });
 });
