@@ -195,6 +195,15 @@ export function QuotesConfigurableList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toggleAll]);
 
+  // Notifica a página (botão "Selecionar"/"Cancelar seleção") quando a
+  // contagem efetiva muda — mantém o label/estado visual em sincronia.
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('quotes:selection-changed', { detail: { count: effectiveSelectedCount } }),
+    );
+  }, [effectiveSelectedCount]);
+
+
 
   // ── Column state ──
   const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map((c) => c.id));
