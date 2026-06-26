@@ -46,5 +46,3 @@ test.describe("Cotações · todas as colunas sempre visíveis", () => {
     await expect(page.getByText(/marque manualmente os orçamentos/i)).toHaveCount(0);
   });
 });
-  });
-});
