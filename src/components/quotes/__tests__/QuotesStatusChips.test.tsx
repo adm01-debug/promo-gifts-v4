@@ -59,12 +59,13 @@ describe('QuotesStatusChips', () => {
     q({ id: 'e', status: 'pending', synced_to_bitrix: null }),
   ];
 
-  it('renderiza 6 chips com contagem correta (com fallback null)', () => {
+  it('renderiza 7 chips com contagem correta (com fallback null)', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
     expect(screen.getByRole('button', { name: /Todos/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Rascunho/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sincronizado/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Criado \(Sincronizado\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Sincronizado,/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Pendente/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Expirado/ })).toBeInTheDocument();
   });
