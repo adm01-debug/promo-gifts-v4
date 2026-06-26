@@ -99,11 +99,12 @@ export interface Quote {
   version?: number;
   items?: QuoteItem[];
   /**
-   * Status derivado da última `discount_approval_requests` deste orçamento.
-   * Populado client-side em `useQuotes` (sem coluna no DB).
+   * Espelho da última `discount_approval_requests` deste orçamento.
+   * Coluna real em `quotes`, mantida pelo trigger `trg_sync_quote_dar` (DAR → quotes).
+   * Domínio idêntico ao CHECK de `discount_approval_requests.status`.
    */
-  discount_approval_status?: 'pending' | 'approved' | 'rejected' | null;
-  /** ISO timestamp da última resposta de aprovação de desconto. */
+  discount_approval_status?: 'pending' | 'approved' | 'rejected' | 'expired' | null;
+  /** ISO timestamp da última resposta de aprovação de desconto (espelho do DAR). */
   discount_approved_at?: string | null;
 }
 
