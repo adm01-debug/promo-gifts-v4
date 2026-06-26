@@ -401,25 +401,28 @@ export function QuotesConfigurableList({
               style={{ gridTemplateColumns: gridTemplate }}
               onClick={() => navigate(`/orcamentos/${quote.id}`)}
             >
-              <div
-                className="flex items-center justify-center"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Checkbox
-                  checked={selected}
-                  disabled={!quoteId}
-                  onCheckedChange={() => {
-                    if (!quoteId) return;
-                    if (allPagesSelected) {
-                      setAllPagesSelected(false);
-                      toggleAll();
-                      toggleItem(quoteId);
-                    } else {
-                      toggleItem(quoteId);
-                    }
-                  }}
-                />
-              </div>
+              {selectionMode && (
+                <div
+                  className="flex items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Checkbox
+                    checked={selected}
+                    disabled={!quoteId}
+                    aria-label="Selecionar orçamento"
+                    onCheckedChange={() => {
+                      if (!quoteId) return;
+                      if (allPagesSelected) {
+                        setAllPagesSelected(false);
+                        toggleAll();
+                        toggleItem(quoteId);
+                      } else {
+                        toggleItem(quoteId);
+                      }
+                    }}
+                  />
+                </div>
+              )}
               {visibleColumns.map((col) => (
                 <div key={col.id} className={cn('min-w-0', col.align === 'right' && 'text-right')}>
                   {col.id === 'client' ? (
