@@ -39,6 +39,11 @@ const CHIPS: ChipDef[] = [
     label: 'Criado (Não Sinc.)',
     match: (q) => q.status === 'pending' && !isSyncedToBitrix(q),
   },
+  {
+    key: 'created_synced',
+    label: 'Criado (Sincronizado)',
+    match: (q) => q.status === 'pending' && isSyncedToBitrix(q),
+  },
   { key: 'synced', label: 'Sincronizado', match: (q) => isSyncedToBitrix(q) },
   { key: 'pending', label: 'Pendente', match: (q) => q.status === 'pending' },
   { key: 'expired', label: 'Expirado', match: (q) => q.status === 'expired' },
