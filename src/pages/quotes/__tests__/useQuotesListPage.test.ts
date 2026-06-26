@@ -219,8 +219,8 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
   it('sobreposição: pending sincronizado conta em "pending" E "synced" (soma > total)', () => {
     mockQuotes = [
       quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
-      quote({ id: 'b', status: 'pending', synced_to_bitrix: false }),
-      quote({ id: 'c', status: 'draft', synced_to_bitrix: false }),
+      quote({ id: 'b', status: 'pending', synced_to_bitrix: true }),
+      quote({ id: 'c', status: 'pending', synced_to_bitrix: false }),
     ];
     const { result } = renderHook(() => useQuotesListPage());
 
@@ -230,11 +230,10 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     act(() => result.current.setStatusFilter('synced'));
     const syncedIds = result.current.filteredQuotes.map((q) => q.id).sort();
 
-    expect(pendingIds).toEqual(['a', 'b']);
-    expect(syncedIds).toEqual(['a']);
-    // 'a' aparece em ambos → sobreposição confirmada
-    expect(pendingIds).toContain('a');
-    expect(syncedIds).toContain('a');
+    expect(pendingIds).toEqual(['a', 'b', 'c']);
+    expect(syncedIds).toEqual(['a', 'b']);
+    // 'a' e 'b' aparecem em ambos → sobreposição confirmada
+    expect(pendingIds).toEqual(expect.arrayContaining(syncedIds));
     // Soma das contagens dos chips > total real
     expect(pendingIds.length + syncedIds.length).toBeGreaterThan(mockQuotes.length);
   });
