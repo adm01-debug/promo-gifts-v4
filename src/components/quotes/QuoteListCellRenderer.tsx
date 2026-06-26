@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
+import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
 import type { Quote } from '@/hooks/quotes';
 
 const statusConfig = Object.fromEntries(
