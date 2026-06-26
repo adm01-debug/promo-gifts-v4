@@ -64,21 +64,12 @@ export function renderQuoteCell(quote: Quote, columnId: string, navigate: (path:
       );
 
     case 'status': {
-      const rowBadge = getQuoteRowBadge(quote);
-      const label = rowBadge?.label ?? statusConfig[quote.status]?.label;
-      const className = rowBadge?.className ?? statusConfig[quote.status]?.className ?? '';
-      const showPing = !rowBadge && quote.status === 'pending';
+      const { label, className } = getQuoteRowBadge(quote);
       return (
         <Badge
           variant="outline"
           className={`h-5 gap-1 px-1.5 py-0 text-[10px] ${className}`}
         >
-          {showPing && (
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-info" />
-            </span>
-          )}
           {label}
         </Badge>
       );
