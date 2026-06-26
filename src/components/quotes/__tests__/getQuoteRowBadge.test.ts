@@ -128,8 +128,8 @@ describe('getQuoteRowBadge', () => {
 });
 
 describe('QUOTE_BADGE_LEGEND', () => {
-  it('contém entradas para os 13 estados visuais', () => {
-    expect(QUOTE_BADGE_LEGEND).toHaveLength(13);
+  it('contém entradas para os 14 estados visuais (inclui expired_discount)', () => {
+    expect(QUOTE_BADGE_LEGEND).toHaveLength(14);
   });
 
   it('toda entrada tem label, className e description não-vazios', () => {
