@@ -307,6 +307,17 @@ export function QuotesConfigurableList({
 
   return (
     <div className="space-y-2">
+      {/* Dica visível apenas no modo Selecionar quando nenhum item está marcado */}
+      {selectionMode && effectiveSelectedCount === 0 && (
+        <div
+          data-testid="quotes-selection-hint"
+          role="status"
+          className="rounded-md border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+        >
+          Modo de seleção ativo — marque manualmente os orçamentos desejados nos círculos à esquerda.
+        </div>
+      )}
+
       {/* Bulk action bar */}
       <BulkActionsBar
         selectedCount={effectiveSelectedCount}
