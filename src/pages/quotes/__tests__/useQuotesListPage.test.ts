@@ -42,6 +42,7 @@ function quote(
     valid_until: string | null;
     quote_number: string;
     client_name: string;
+    synced_to_bitrix: boolean | null;
   }> = {},
 ) {
   return {
@@ -53,6 +54,7 @@ function quote(
     total: overrides.total ?? 100,
     created_at: overrides.created_at ?? '2026-06-01T12:00:00Z',
     valid_until: overrides.valid_until ?? null,
+    synced_to_bitrix: overrides.synced_to_bitrix ?? false,
     notes: '',
   };
 }
