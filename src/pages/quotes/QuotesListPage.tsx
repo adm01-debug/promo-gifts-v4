@@ -325,7 +325,6 @@ export default function QuotesListPage() {
                   });
                 }}
                 onDuplicate={(id) => duplicateQuote(id)}
-                onMarkApproved={(id) => handleMarkApproved(id)}
               />
             )}
           </ScrollArea>

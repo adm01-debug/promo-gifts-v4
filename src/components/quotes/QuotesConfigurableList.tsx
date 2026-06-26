@@ -39,7 +39,7 @@ import {
 import type { Quote } from '@/hooks/quotes';
 
 import { useBulkSelection } from '@/hooks/common';
-import { QuoteRowQuickActions } from './QuoteRowQuickActions';
+
 import { cn } from '@/lib/utils';
 
 // ── Column definitions ──
@@ -71,7 +71,6 @@ interface QuotesConfigurableListProps {
   onBulkStatusChange?: (ids: string[], status: string) => void;
   onBulkExport?: (ids: string[]) => void;
   onDuplicate: (id: string) => void;
-  onMarkApproved?: (id: string) => void;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -83,7 +82,6 @@ export function QuotesConfigurableList({
   onBulkStatusChange,
   onBulkExport,
   onDuplicate,
-  onMarkApproved,
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
@@ -244,7 +242,7 @@ export function QuotesConfigurableList({
       [
         ...(selectionMode ? ['40px'] : []),
         ...visibleColumns.map((c) => c.width),
-        '110px',
+        '56px',
       ].join(' '),
     [visibleColumns, selectionMode],
   );
@@ -381,12 +379,7 @@ export function QuotesConfigurableList({
                   )}
                 </div>
               ))}
-              <div className="flex items-center justify-end gap-0">
-                <QuoteRowQuickActions
-                  quote={quote}
-                  onDuplicate={onDuplicate}
-                  onMarkApproved={(id) => onMarkApproved?.(id)}
-                />
+              <div className="flex items-center justify-end">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button
