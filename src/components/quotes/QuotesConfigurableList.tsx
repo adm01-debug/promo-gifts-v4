@@ -316,28 +316,8 @@ export function QuotesConfigurableList({
         </div>
       )}
 
-      {/* Bulk action bar */}
-      <BulkActionsBar
-        selectedCount={effectiveSelectedCount}
-        selectedIds={effectiveSelectedIds}
-        entityLabel="orçamento"
-        onClear={handleClearSelection}
-        showSelectAllBanner={showSelectAllBanner}
-        totalCount={quotes.length}
-        onSelectAll={handleSelectAllPages}
-        actions={[
-          {
-            id: 'delete',
-            label: 'Excluir',
-            icon: <Trash2 className="h-3.5 w-3.5" />,
-            variant: 'destructive' as const,
-            onClick: (ids: string[]) => {
-              onBulkDelete([...ids]);
-              handleClearSelection();
-            },
-          },
-        ]}
-      />
+      {/* Bulk delete agora vem do botão "Excluir" no topo (rightSlot dos chips). */}
+
 
       {/* Column settings button */}
       <div className="flex justify-end">
