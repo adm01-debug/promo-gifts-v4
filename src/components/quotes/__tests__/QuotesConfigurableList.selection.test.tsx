@@ -164,24 +164,14 @@ describe('QuotesConfigurableList — seleção manual', () => {
 
   it('quotes:bulk-delete-request sem seleção é no-op', () => {
     const onBulkDelete = vi.fn();
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <QuotesConfigurableList
-            quotes={quotes}
-            onDelete={vi.fn()}
-            onBulkDelete={onBulkDelete}
-            onDuplicate={vi.fn()}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
-    );
+    renderList({ onBulkDelete });
     act(() => {
       window.dispatchEvent(new CustomEvent('quotes:bulk-delete-request'));
     });
     expect(onBulkDelete).not.toHaveBeenCalled();
   });
 });
+
 
 // Suprimi warning sobre `within` não usado mantendo o import: removo se lint reclamar.
 void within;
