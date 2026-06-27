@@ -1,25 +1,17 @@
 /**
  * Dev-only visual harness for the Preview button.
  *
- * Renderiza APENAS o botão Preview de QuoteViewPage em isolamento total
- * para regressão visual via Playwright `toHaveScreenshot` + contraste via
- * `@axe-core/playwright`. Sem auth, sem providers, sem dependências externas.
- *
  * Rota: `/__visual/preview-button` (somente em `import.meta.env.DEV`).
- *
- * Estados:
- *   - default: nada de hover/focus, breath ativo
- *   - hover:   simulado via Playwright `page.hover()`
- *   - focus:   simulado via Playwright `page.focus()` / `Tab`
- *   - reduced-motion: emulado via Playwright `emulateMedia({ reducedMotion: 'reduce' })`
- *
  * Tema: `?theme=dark` adiciona `.dark` no `<html>`; default = light.
+ *
+ * Marcação 1:1 com QuoteViewPage.tsx — se uma mudar, a outra DEVE mudar junto.
+ * A duplicação é intencional: isolar o botão de auth/providers/router permite
+ * snapshots determinísticos via Playwright sem fixtures pesadas.
  */
 import { useEffect } from "react";
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Marcação 1:1 com QuoteViewPage.tsx — se uma mudar, a outra DEVE mudar junto.
 const PREVIEW_CLASS = `group relative h-6 min-w-[78px] justify-center gap-1.5 overflow-hidden rounded-full border-primary/40 px-2.5 text-[11px]
   animate-[preview-breath_6s_ease-in-out_infinite] motion-reduce:animate-none
   shadow-[0_0_6px_hsl(var(--primary)/0.2)] transition-all duration-500
@@ -35,7 +27,6 @@ const PREVIEW_CLASS = `group relative h-6 min-w-[78px] justify-center gap-1.5 ov
   focus-visible:shadow-[0_0_14px_hsl(var(--primary)/0.5)]`;
 
 export default function PreviewButtonHarness() {
-  // Tema via querystring para o Playwright alternar light/dark sem interagir com UI.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const theme = params.get("theme");
@@ -55,7 +46,6 @@ export default function PreviewButtonHarness() {
       <div className="flex flex-col items-center gap-8">
         <h1 className="sr-only">Preview Button Visual Harness</h1>
 
-        {/* Botão sob teste — único alvo dos screenshots */}
         <Button
           variant="outline"
           data-testid="pdf-preview-trigger"
@@ -66,7 +56,7 @@ export default function PreviewButtonHarness() {
           <span className="relative z-10 tracking-wide">Preview</span>
         </Button>
 
-        {/* Botão "âncora" para Tab-navigation no spec de focus-visible */}
+        {/* Âncora para Tab-navigation no spec de focus-visible */}
         <button
           data-testid="anchor-before"
           className="rounded border border-border bg-card px-3 py-1 text-sm text-foreground"
