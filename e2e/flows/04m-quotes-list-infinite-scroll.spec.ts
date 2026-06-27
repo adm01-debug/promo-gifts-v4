@@ -82,15 +82,26 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
     await assertNoDuplicateRows(page);
 
     // 2.2) Infinite scroll: enquanto houver sentinel, força intersecção rolando-o
-    // até o viewport do container scrollável. Limitamos para evitar loop infinito.
+    // até o viewport do container scrollável. Cada iteração espera o footer
+    // mudar (= IO disparou e re-renderizou) antes da próxima.
     const MAX_ITERATIONS = 50;
     let iter = 0;
+    let lastShown = (await readFooter(page)).shown;
     while (iter < MAX_ITERATIONS) {
       const sentinel = page.locator(Sel.quotesList.infiniteSentinel);
       if ((await sentinel.count()) === 0) break;
       await sentinel.scrollIntoViewIfNeeded();
-      // pequeno yield para o IntersectionObserver disparar e React reconciliar
-      await page.waitForTimeout(120);
+      await pollUntil(
+        async () => {
+          const f = await readFooter(page);
+          // avançou OU sentinel sumiu (chegou ao fim)
+          return f.shown > lastShown || f.isEnd
+            ? { shown: f.shown }
+            : null;
+        },
+        { timeout: 5_000, intervalMs: 100, message: "infinite scroll não avançou" },
+      );
+      lastShown = (await readFooter(page)).shown;
       iter += 1;
     }
     expect(iter).toBeLessThan(MAX_ITERATIONS);
