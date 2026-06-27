@@ -237,7 +237,10 @@ export default function QuoteViewPage() {
                   <MoreHorizontal className="h-4 w-4 text-primary" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[10rem] text-[12px] tracking-tight [&_svg]:h-3.5 [&_svg]:w-3.5 [&_[role=menuitem]]:py-1.5">
+              <DropdownMenuContent
+                align="end"
+                className="min-w-[11rem] rounded-lg p-1 text-[12px] leading-tight tracking-tight sm:text-[13px] [&_svg]:h-3.5 [&_svg]:w-3.5 [&_[role=menuitem]]:gap-2 [&_[role=menuitem]]:rounded-md [&_[role=menuitem]]:px-2 [&_[role=menuitem]]:py-1.5"
+              >
                 {quote.status === 'sent' && (
                   <DropdownMenuItem
                     onClick={async () => {
