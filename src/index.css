@@ -2598,3 +2598,11 @@ body[data-offline='true'] button[type='submit']::after {
 }
 
 /* NOTE: prefers-reduced-data block removed — hid ALL lazy images (= product catalog) */
+
+/* Hide Lovable badge (PRO plan) */
+#lovable-badge,
+#lovable-badge-v2,
+[id^="lovable-badge"],
+a[href*="lovable.dev"][target="_blank"] {
+  display: none !important;
+}
