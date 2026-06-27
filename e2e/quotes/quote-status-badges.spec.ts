@@ -61,35 +61,22 @@ test.describe("Quotes — Status badges", () => {
     });
   }
 
-  test("legenda colapsável abre e lista os 13 estados", async ({ page }) => {
-    const summary = page.getByTestId("quote-badge-legend-summary");
-    await expect(summary).toBeVisible();
-    await summary.click();
-    const list = page.getByTestId("quote-badge-legend-list");
-    await expect(list).toBeVisible();
-    const items = list.locator('[data-testid^="quote-badge-legend-item-"]');
-    await expect(items).toHaveCount(14);
-  });
-
-  test("visual regression — legenda em modo claro", async ({ page }) => {
-    await page.evaluate(() => document.documentElement.classList.remove("dark"));
-    const summary = page.getByTestId("quote-badge-legend-summary");
-    await summary.click();
-    const legend = page.getByTestId("quote-badge-legend");
-    await expect(legend).toBeVisible();
-    await expect(legend).toHaveScreenshot("quote-badge-legend-light.png", {
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("visual regression — legenda em modo escuro", async ({ page }) => {
-    await page.evaluate(() => document.documentElement.classList.add("dark"));
-    const summary = page.getByTestId("quote-badge-legend-summary");
-    await summary.click();
-    const legend = page.getByTestId("quote-badge-legend");
-    await expect(legend).toBeVisible();
-    await expect(legend).toHaveScreenshot("quote-badge-legend-dark.png", {
-      maxDiffPixelRatio: 0.02,
-    });
+  test("regressão: legenda de status foi removida em todos os viewports", async ({ page }) => {
+    for (const size of [
+      { width: 1440, height: 900 },
+      { width: 1024, height: 720 },
+      { width: 768, height: 1024 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(size);
+      await gotoAndSettle(page, "/orcamentos");
+      await expect(page.locator('[data-testid="quote-badge-legend"]')).toHaveCount(0);
+      await expect(page.locator('[data-testid="quote-badge-legend-summary"]')).toHaveCount(0);
+      await expect(page.locator('[data-testid="quote-badge-legend-list"]')).toHaveCount(0);
+      // Header das colunas continua presente e alinhado.
+      await expect(
+        page.locator('[data-testid="quotes-col-header-client"]').first(),
+      ).toBeVisible();
+    }
   });
 });
