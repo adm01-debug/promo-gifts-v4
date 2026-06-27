@@ -348,7 +348,7 @@ export function QuotesConfigurableList({
 
         {/* Header */}
         <div
-          className="sticky top-0 z-10 grid gap-5 border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
+          className="sticky top-0 z-10 grid gap-5 rounded-t-lg border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
           style={{ gridTemplateColumns: gridTemplate }}
         >
           {selectionMode && (
