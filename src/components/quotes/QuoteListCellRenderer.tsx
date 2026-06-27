@@ -197,7 +197,10 @@ export function renderQuoteCell(
           <TooltipTrigger asChild>
             <span
               data-testid="quote-expiration-cell"
-              className={`block cursor-default text-center text-[11.5px] font-medium tabular-nums ${tone}`}
+              tabIndex={0}
+              role="status"
+              aria-label={`${label}. Válido até ${fullDate}`}
+              className={`block cursor-default text-center text-[11.5px] font-medium tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-sm ${tone}`}
             >
               {label}
             </span>
