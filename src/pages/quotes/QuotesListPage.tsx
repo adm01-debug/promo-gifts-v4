@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -104,7 +104,7 @@ export default function QuotesListPage() {
         path="/orcamentos"
       />
       <TooltipProvider>
-        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-[1920px] animate-fade-in flex-col gap-3 px-3 py-3 pb-6 sm:gap-4 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
           {/* Header: título + filtros + ação no mesmo eixo */}
           <div className="flex flex-wrap items-center gap-3">
             <FadeInView>
@@ -255,7 +255,8 @@ export default function QuotesListPage() {
 
 
           {/* Quotes List */}
-          <ScrollArea className="h-[calc(100vh-360px)] min-h-[400px]">
+          <div className="flex min-h-0 flex-1 flex-col">
+
             {filteredQuotes.length === 0 ? (
               <EmptyState
                 variant="quotes"
@@ -324,7 +325,7 @@ export default function QuotesListPage() {
                 onDuplicate={(id) => duplicateQuote(id)}
               />
             )}
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Delete Confirmation Dialog */}
