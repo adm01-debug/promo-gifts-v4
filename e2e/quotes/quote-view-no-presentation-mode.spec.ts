@@ -142,6 +142,57 @@ for (const theme of ['light', 'dark'] as const) {
     expect(await readDeleteCalls(page)).toEqual([]);
     expect(new URL(page.url()).pathname).toBe('/__visual/quote-view-order');
   });
+
+  test(`"Excluir" exibe toast de erro saneado quando deleteQuote falha — ${theme}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __deleteQuoteCalls: string[] }).__deleteQuoteCalls = [];
+      (window as unknown as { __deleteQuoteSpy: (id: string) => Promise<void> }).__deleteQuoteSpy =
+        async () => {
+          throw new Error('TECH_BOOM: connection refused at 10.0.0.1:5432');
+        };
+    });
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openHarness(page, theme);
+    await openMenuViaClick(page);
+    await page.getByTestId('quote-actions-delete').click();
+    await page.getByTestId('quote-delete-confirm').click();
+
+    // Copy esperado, sem vazar mensagem técnica.
+    await expect(
+      page.getByText(/Não foi possível excluir o orçamento\. Tente novamente\./i).first(),
+    ).toBeVisible();
+    await expect(page.getByText(/TECH_BOOM|10\.0\.0\.1|connection refused|undefined/i)).toHaveCount(0);
+
+    // Permanece no harness (sem redirecionar em caso de falha).
+    expect(new URL(page.url()).pathname).toBe('/__visual/quote-view-order');
+  });
+
+  test(`"Excluir" — duplo clique rápido chama deleteQuote 1x e desabilita botões — ${theme}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __deleteQuoteCalls: string[] }).__deleteQuoteCalls = [];
+      (window as unknown as { __deleteQuoteSpy: (id: string) => Promise<void> }).__deleteQuoteSpy =
+        () => new Promise((resolve) => setTimeout(resolve, 400));
+    });
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openHarness(page, theme);
+    await openMenuViaClick(page);
+    await page.getByTestId('quote-actions-delete').click();
+
+    const confirm = page.getByTestId('quote-delete-confirm');
+    const cancel = page.getByTestId('quote-delete-cancel');
+
+    // Dois cliques quase simultâneos.
+    await Promise.all([confirm.click(), confirm.click().catch(() => {})]);
+
+    // Botões devem ficar desabilitados durante o loading.
+    await expect(confirm).toBeDisabled();
+    await expect(cancel).toBeDisabled();
+
+    // Aguarda conclusão e valida chamada única.
+    await expect.poll(() => readDeleteCalls(page), { timeout: 3000 }).toEqual([
+      await page.getByTestId('quote-view-order-harness').getAttribute('data-quote-id'),
+    ]);
+  });
 }
 
 
