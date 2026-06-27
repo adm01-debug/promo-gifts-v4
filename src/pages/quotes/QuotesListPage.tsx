@@ -250,9 +250,6 @@ export default function QuotesListPage() {
 
           />
 
-          <div className="mt-2">
-            <QuoteBadgeLegend />
-          </div>
 
 
 
