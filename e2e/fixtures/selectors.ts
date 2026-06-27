@@ -268,6 +268,11 @@ export const Sel = {
     sortTrigger: TID("quotes-sort-trigger"),
     sortItem: (value: string) => TID(`quotes-sort-item-${value}`),
     chip: (key: string) => TID(`quotes-chip-${key}`),
+    /** Tooltip Radix emitido ao hover/focus no chip de status. */
+    chipTooltip: (key: string) => TID(`quotes-chip-tooltip-${key}`),
+    /** Badge de status dentro da linha da tabela + seu tooltip. */
+    statusBadge: (key: string) => TID(`quote-status-badge-${key}`),
+    statusBadgeTooltip: (key: string) => TID(`quote-status-badge-tooltip-${key}`),
   },
 
 
