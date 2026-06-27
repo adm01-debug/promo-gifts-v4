@@ -1,13 +1,27 @@
 /**
  * QuoteItemsTable — Items table with kit grouping for QuoteViewPage
+ *
+ * FIX 2026-06-27: Graceful fallback para itens com product_id = NULL.
+ * A FK quote_items.product_id -> products.id usa ON DELETE SET NULL, portanto
+ * quando um produto é deletado os itens ficam com product_id=NULL mas mantêm
+ * product_name/quantity/unit_price. O componente agora exibe um badge
+ * "Produto removido do catálogo" nesses casos, evitando confusão visual e
+ * prevenindo que o vendedor envie orçamentos com itens fantasma sem perceber.
+ * fix_version: quote_items_null_product_graceful_20260627
  */
 import React from 'react';
-import { Package } from 'lucide-react';
+import { Package, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -24,7 +38,7 @@ export interface QuotePersonalization {
 
 export interface QuoteItem {
   id?: string;
-  product_id?: string;
+  product_id?: string | null;
   product_name: string;
   product_sku?: string | null;
   product_image_url?: string | null;
@@ -34,9 +48,7 @@ export interface QuoteItem {
   unit_price: number;
   kit_group_id?: string | null;
   kit_name?: string | null;
-  /** Optional: ISO timestamp from the external catalog (SSOT) for freshness badge. */
   price_updated_at?: string | null;
-  /** Optional: per-product threshold (days) for the stale-price warning. */
   price_freshness_threshold_days?: number | null;
   notes?: string | null;
   personalizations?: QuotePersonalization[];
@@ -46,12 +58,35 @@ interface QuoteItemsTableProps {
   items: QuoteItem[];
 }
 
+function RemovedProductBadge() {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge
+            variant="outline"
+            className="gap-1 border-destructive/40 bg-destructive/8 text-xs text-destructive"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            Produto removido do catálogo
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <p className="text-xs">
+            Este produto foi removido do catálogo após o orçamento ser criado.
+            Os valores foram preservados para referência histórica.
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const hasPersonalizations = items.some(
     (item) => item.personalizations && item.personalizations.length > 0,
   );
 
-  // Group items: kit groups first, then loose items
   const kitGroups = new Map<string, { name: string; items: QuoteItem[] }>();
   const looseItems: QuoteItem[] = [];
 
@@ -69,12 +104,14 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
-    // BUG-048b: use p.total_cost directly — avoids round(round(x/n)*n) ≠ x
     const personalizationCost = allPersonalizations.reduce(
       (acc: number, p: QuotePersonalization) => acc + (p.total_cost ?? 0),
       0,
     );
     const itemTotal = round2(item.quantity * item.unit_price + personalizationCost);
+    // FIX: product_id == null indica produto removido (FK ON DELETE SET NULL)
+    // fix_version: quote_items_null_product_graceful_20260627
+    const isProductRemoved = item.product_id === null || item.product_id === undefined;
 
     return (
       <tr
@@ -82,11 +119,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         className={cn(
           'border-b border-border/50 transition-colors hover:bg-muted/40',
           index % 2 === 1 && 'bg-muted/20',
+          isProductRemoved && 'bg-destructive/5 hover:bg-destructive/8',
         )}
       >
         <td className="p-3">
           <div className="flex items-center gap-3">
-            {item.product_image_url && (
+            {item.product_image_url ? (
               <img
                 src={item.product_image_url}
                 alt={item.product_name}
@@ -96,8 +134,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
-            )}
-            <div>
+            ) : isProductRemoved ? (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded border border-destructive/30 bg-destructive/8 print:hidden">
+                <AlertTriangle className="h-6 w-6 text-destructive/60" />
+              </div>
+            ) : null}
+            <div className="min-w-0">
               {item.product_sku && (
                 <span
                   className="mb-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs font-semibold"
@@ -117,7 +159,14 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
-              <p className="font-medium">{item.product_name}</p>
+              <p className={cn('font-medium', isProductRemoved && 'text-muted-foreground')}>
+                {item.product_name}
+              </p>
+              {isProductRemoved && (
+                <div className="mt-1">
+                  <RemovedProductBadge />
+                </div>
+              )}
             </div>
           </div>
         </td>
@@ -178,11 +227,13 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   }, 0),
               )}
             </span>
-            <PriceFreshnessBadge
-              priceUpdatedAt={item.price_updated_at}
-              thresholdDays={item.price_freshness_threshold_days}
-              variant="compact"
-            />
+            {!isProductRemoved && (
+              <PriceFreshnessBadge
+                priceUpdatedAt={item.price_updated_at}
+                thresholdDays={item.price_freshness_threshold_days}
+                variant="compact"
+              />
+            )}
           </div>
         </td>
         <td className="w-32 p-3 text-left text-base font-bold tabular-nums">
