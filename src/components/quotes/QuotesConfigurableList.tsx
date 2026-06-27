@@ -385,17 +385,12 @@ export function QuotesConfigurableList({
           ref={scrollRef}
           data-testid="quotes-scroll-container"
           style={{
-            // SSOT da altura da linha — usada por min-h e por testes de regressão visual.
-            ['--quotes-row-h' as string]: '80px',
-            // Reserva real do chrome (header app + título + filtros + rodapé) por breakpoint:
-            //  - mobile (<640px):  ~420px de chrome
-            //  - tablet (≥640px):  ~360px
-            //  - desktop (≥1024px):~320px
-            maxHeight:
-              'min(calc(100dvh - var(--quotes-chrome-h, 320px)), calc(12 * var(--quotes-row-h)))',
-            minHeight: 'calc(5 * var(--quotes-row-h))',
+            // SSOT: src/lib/quotes/quotesLayout.ts
+            ['--quotes-row-h' as string]: `${QUOTES_ROW_H}px`,
+            maxHeight: `min(calc(100dvh - var(--quotes-chrome-h, ${QUOTES_CHROME_BY_BREAKPOINT.desktop}px)), calc(${QUOTES_MAX_VISIBLE_ROWS} * var(--quotes-row-h)))`,
+            minHeight: `calc(${QUOTES_MIN_VISIBLE_ROWS} * var(--quotes-row-h))`,
           }}
-          className="overflow-y-auto [--quotes-chrome-h:420px] sm:[--quotes-chrome-h:360px] lg:[--quotes-chrome-h:320px]"
+          className={`overflow-y-auto [--quotes-chrome-h:${QUOTES_CHROME_BY_BREAKPOINT.mobile}px] sm:[--quotes-chrome-h:${QUOTES_CHROME_BY_BREAKPOINT.tablet}px] lg:[--quotes-chrome-h:${QUOTES_CHROME_BY_BREAKPOINT.desktop}px]`}
         >
 
         {/* Empty state */}
