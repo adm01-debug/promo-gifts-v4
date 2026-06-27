@@ -354,11 +354,11 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     act(() => {
       screen.getByTestId('apply-filter').click();
     });
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 40/);
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 40/);
 
-    // Avança até o fim novamente
+    // Avança até o fim novamente → rodapé vazio
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/40 de 40/);
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
     // Nenhuma key duplicada: número de linhas renderizadas == 40
     expect(
       screen.getAllByTestId(/^quote-row-more-/).length,
