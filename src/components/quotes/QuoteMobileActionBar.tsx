@@ -37,7 +37,7 @@ export function QuoteMobileActionBar({
           size="sm"
           onClick={onSync}
           disabled={isSyncing}
-          className="flex-1 shrink-0 gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="flex-[0.85] shrink-0 gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {isSyncing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
