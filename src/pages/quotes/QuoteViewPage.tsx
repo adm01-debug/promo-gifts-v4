@@ -43,7 +43,7 @@ import { toast } from 'sonner';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 import { QuoteValidityBanner } from '@/components/quotes/QuoteValidityBanner';
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
-import { QuoteCommentsSection } from '@/components/quotes/QuoteCommentsSection';
+
 import { QuoteVersionHistory } from '@/components/quotes/QuoteVersionHistory';
 import { PresentationMode } from '@/components/presentation/PresentationMode';
 import { QuoteClientInfo } from '@/components/quotes/QuoteClientInfo';
@@ -400,7 +400,7 @@ export default function QuoteViewPage() {
         </Card>
 
         {id && <QuoteVersionHistory quoteId={id} currentQuoteId={id} />}
-        {id && <QuoteCommentsSection quoteId={id} />}
+        
 
         {proposalData && (
           <div className="hidden print:block print:p-0">
