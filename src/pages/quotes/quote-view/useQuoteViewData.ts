@@ -260,5 +260,6 @@ export function useQuoteViewData(id: string | undefined) {
     fetchQuote,
     logQuoteHistory,
     duplicateQuote,
+    deleteQuote,
   };
 }
