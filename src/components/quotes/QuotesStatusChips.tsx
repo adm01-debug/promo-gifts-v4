@@ -10,6 +10,12 @@ import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { Quote } from '@/hooks/quotes';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface QuotesStatusChipsProps {
   quotes: Quote[];
@@ -330,6 +336,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
   };
 
   return (
+    <TooltipProvider delayDuration={250}>
     <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-1 border-b border-border/40 bg-background/85 px-1 py-2 backdrop-blur-md">
       <div className="flex items-center gap-2">
         <div
@@ -360,46 +367,56 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
               : `${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`;
 
             return (
-              <button
-                key={key}
-                type="button"
-                data-chip-key={key}
-                data-testid={`quotes-chip-${key}`}
-                onClick={() => onChange(key)}
-                onKeyDown={(e) => handleKeyDown(e, idx)}
-                aria-pressed={isActive}
-                aria-label={ariaLabel}
-                title={CHIP_TOOLTIPS[key]}
-                className={cn(
-                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
-                  'whitespace-nowrap border outline-none',
-                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                  isActive
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : cn(
-                        'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                        accentBorder,
-                      ),
-                )}
-              >
-                <span aria-hidden="true">{label}</span>
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
-                    isActive
-                      ? 'bg-primary-foreground/20 text-primary-foreground'
-                      : 'bg-muted text-foreground/70',
-                  )}
+              <Tooltip key={key} delayDuration={250}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    data-chip-key={key}
+                    data-testid={`quotes-chip-${key}`}
+                    onClick={() => onChange(key)}
+                    onKeyDown={(e) => handleKeyDown(e, idx)}
+                    aria-pressed={isActive}
+                    aria-label={ariaLabel}
+                    className={cn(
+                      'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
+                      'whitespace-nowrap border outline-none',
+                      'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                        : cn(
+                            'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                            accentBorder,
+                          ),
+                    )}
+                  >
+                    <span aria-hidden="true">{label}</span>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
+                        isActive
+                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          : 'bg-muted text-foreground/70',
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  data-testid={`quotes-chip-tooltip-${key}`}
+                  className="max-w-[260px] text-xs"
                 >
-                  {count}
-                </span>
-              </button>
+                  {CHIP_TOOLTIPS[key]}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
         {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
