@@ -211,3 +211,54 @@ test.describe('snapshot visual — DropdownMenu mobile 375x667', () => {
     });
   }
 });
+
+/**
+ * Tipografia/espaçamento do menu — consistência cross-viewport.
+ * Garante que, ao reduzirmos a fonte (12→13px responsivo) e os ícones (h-3.5),
+ * o item "Excluir" permanece legível e o padding/gap dos itens fica estável.
+ */
+const TYPO_VIEWPORTS = [
+  { name: 'mobile-sm', width: 360, height: 720, expectedFontPx: 12 },
+  { name: 'mobile', width: 375, height: 667, expectedFontPx: 12 },
+  { name: 'tablet', width: 768, height: 1024, expectedFontPx: 13 },
+  { name: 'desktop', width: 1280, height: 800, expectedFontPx: 13 },
+  { name: 'desktop-xl', width: 1920, height: 1080, expectedFontPx: 13 },
+] as const;
+
+test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
+  for (const vp of TYPO_VIEWPORTS) {
+    test(`fonte/padding estáveis em ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await openHarness(page, 'light');
+      await openMenuViaClick(page);
+
+      const excluir = page.getByRole('menuitem', { name: /^excluir$/i });
+      await expect(excluir).toBeVisible();
+
+      const metrics = await excluir.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return {
+          fontPx: parseFloat(cs.fontSize),
+          paddingTop: parseFloat(cs.paddingTop),
+          paddingBottom: parseFloat(cs.paddingBottom),
+          paddingLeft: parseFloat(cs.paddingLeft),
+          gap: parseFloat(cs.columnGap || cs.gap || '0'),
+          height: r.height,
+        };
+      });
+
+      // Fonte conforme breakpoint sm (≥640px → 13px, abaixo → 12px).
+      expect(metrics.fontPx).toBeCloseTo(vp.expectedFontPx, 0);
+      // Padding/gap estáveis em qualquer largura.
+      expect(metrics.paddingTop).toBeCloseTo(6, 0); // py-1.5
+      expect(metrics.paddingBottom).toBeCloseTo(6, 0);
+      expect(metrics.paddingLeft).toBeCloseTo(8, 0); // px-2
+      expect(metrics.gap).toBeCloseTo(8, 0); // gap-2
+      // Touch target mínimo razoável para item de menu compacto.
+      expect(metrics.height).toBeGreaterThanOrEqual(24);
+      expect(metrics.height).toBeLessThanOrEqual(36);
+    });
+  }
+});
+
