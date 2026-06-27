@@ -249,8 +249,6 @@ export function useQuoteViewData(id: string | undefined) {
     bitrixCompanyId,
     isGeneratingPDF,
     isSyncing,
-    showPresentation,
-    setShowPresentation,
     proposalData,
     approvalLink,
     // Actions
