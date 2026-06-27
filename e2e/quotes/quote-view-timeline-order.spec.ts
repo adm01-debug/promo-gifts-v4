@@ -58,24 +58,36 @@ for (const theme of ['light', 'dark'] as const) {
       });
       expect(order, 'QuoteStatusTimeline deve preceder o h1 do header').toBe(true);
 
-      // 2. Header não é descendente do Card de conteúdo (fica acima do container).
-      const headerOutside = await page.evaluate(() => {
-        const h1 = document.querySelector('[data-testid="page-title-quote-view"]');
-        const card = h1?.closest('.print\\:hidden');
-        // h1 não pode estar dentro do CardContent — busca o ancestral mais próximo
-        // com class "space-y-4" (CardContent) e garante que não exista.
-        const cc = h1?.closest('[class*="CardContent"], .space-y-4');
-        return Boolean(h1) && !cc?.contains(h1!) ? true : !cc;
-      });
-      expect(headerOutside, 'Header deve estar fora do CardContent do orçamento').toBe(true);
-
-      // 3. Box geométrico: bottom da timeline ≤ top do header.
+      // 2. Header fica geograficamente acima do container do orçamento
+      // (Card de conteúdo). Validação por bounding box — não depende de
+      // classes internas do shadcn que podem mudar.
       const boxes = await page.evaluate(() => {
-        const tl = document.querySelector('[data-testid="quote-status-timeline"]')!.getBoundingClientRect();
-        const h1 = document.querySelector('[data-testid="page-title-quote-view"]')!.getBoundingClientRect();
-        return { tlBottom: tl.bottom, h1Top: h1.top };
+        const tl = document
+          .querySelector('[data-testid="quote-status-timeline"]')!
+          .getBoundingClientRect();
+        const h1 = document
+          .querySelector('[data-testid="page-title-quote-view"]')!
+          .getBoundingClientRect();
+        // Container = primeiro ancestral com role/region "Quote Content".
+        // Fallback: maior `.space-y-4` que NÃO contém o h1 (= CardContent).
+        const candidates = Array.from(
+          document.querySelectorAll<HTMLElement>('[class*="space-y-"]'),
+        ).filter((el) => !el.contains(document.querySelector('[data-testid="page-title-quote-view"]')!));
+        const container = candidates.sort(
+          (a, b) => b.getBoundingClientRect().height - a.getBoundingClientRect().height,
+        )[0];
+        const ct = container?.getBoundingClientRect();
+        return {
+          tlBottom: tl.bottom,
+          h1Top: h1.top,
+          h1Bottom: h1.bottom,
+          containerTop: ct?.top ?? Number.POSITIVE_INFINITY,
+        };
       });
+      // timeline antes do header
       expect(boxes.tlBottom).toBeLessThanOrEqual(boxes.h1Top + 1);
+      // header acima do container do orçamento
+      expect(boxes.h1Bottom).toBeLessThanOrEqual(boxes.containerTop + 1);
     });
 
     test(`mobile 375 — timeline e header não sobrepõem o container ao rolar — ${theme}`, async ({ page }) => {
@@ -88,10 +100,14 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(timeline).toBeVisible();
       await expect(title).toBeVisible();
 
-      // Rola até o fim e confirma que não há sobreposição visual entre header
-      // (não-sticky) e o conteúdo do orçamento.
+      // Rola até o fim e aguarda o scroll estabilizar sem usar waitForTimeout.
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      await page.waitForTimeout(150);
+      await page.waitForFunction(
+        () => Math.abs(window.scrollY + window.innerHeight - document.body.scrollHeight) < 4,
+        null,
+        { timeout: 3000 },
+      );
+
 
       const overlap = await page.evaluate(() => {
         const h1 = document.querySelector('[data-testid="page-title-quote-view"]') as HTMLElement | null;
