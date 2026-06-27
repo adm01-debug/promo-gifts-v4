@@ -8,7 +8,8 @@
  *    `quotes:selection-changed` com { count: 1, mode: true }.
  *  - A dica orientativa some quando há ao menos 1 selecionado.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useState } from 'react';
 import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
