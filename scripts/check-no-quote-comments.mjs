@@ -12,13 +12,13 @@
  *  - Próprio arquivo do gate.
  *  - Migrations SQL (histórico imutável).
  */
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { relative } from "node:path";
 
 const PATTERNS = [
   "QuoteCommentsSection",
   "useQuoteComments",
-  "from\\(['\"]quote_comments['\"]\\)",
+  String.raw`from\((['"])quote_comments\1\)`,
 ];
 
 const ALLOW = [
@@ -30,26 +30,42 @@ const ALLOW = [
 ];
 
 const cwd = process.cwd();
-let violations = [];
+const violations = [];
 
 for (const pattern of PATTERNS) {
-  let out = "";
-  try {
-    out = execSync(
-      `rg -n --no-heading --glob '!node_modules' --glob '!dist' --glob '!coverage' --glob '!.git' "${pattern}" src/ scripts/ e2e/ tests/`,
-      { encoding: "utf8" },
-    );
-  } catch (err) {
-    if (err.status === 1) continue; // rg = 1 quando não acha nada
-    throw err;
+  const res = spawnSync(
+    "rg",
+    [
+      "-n",
+      "--no-heading",
+      "--glob",
+      "!node_modules",
+      "--glob",
+      "!dist",
+      "--glob",
+      "!coverage",
+      "--glob",
+      "!.git",
+      pattern,
+      "src",
+      "scripts",
+      "e2e",
+      "tests",
+    ],
+    { encoding: "utf8" },
+  );
+  if (res.status !== 0 && res.status !== 1) {
+    console.error("rg falhou:", res.stderr);
+    process.exit(2);
   }
-  for (const line of out.split("\n").filter(Boolean)) {
+  for (const line of (res.stdout || "").split("\n").filter(Boolean)) {
     const [file] = line.split(":");
     const rel = relative(cwd, file);
     if (ALLOW.some((re) => re.test(rel))) continue;
     violations.push(`  ${line}`);
   }
 }
+
 
 if (violations.length > 0) {
   console.error(
