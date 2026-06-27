@@ -3,7 +3,7 @@
  */
 
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
 import { useQuoteClientLogos } from '@/hooks/quotes/useQuoteClientLogos';
 import { useQuoteItemCounts } from '@/hooks/quotes/useQuoteItemCounts';
@@ -74,8 +74,32 @@ export function QuotesConfigurableList({
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
-  // ── Pagination (UI removida; mantém slice por performance) ──
-  const paginatedQuotes = useMemo(() => quotes.slice(0, PAGE_SIZE), [quotes]);
+  // ── Infinite scroll: começa com PAGE_SIZE e cresce conforme o usuário rola ──
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset quando a lista de quotes muda (filtro, busca, etc.)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [quotes]);
+
+  const paginatedQuotes = useMemo(
+    () => quotes.slice(0, visibleCount),
+    [quotes, visibleCount],
+  );
+
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const el = e.currentTarget;
+      // ~200px antes do fim → carrega próxima página
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+        setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
+      }
+    },
+    [quotes.length],
+  );
+
 
 
   // ── Visualizações pelo cliente (apenas página atual, performance) ──
@@ -265,7 +289,12 @@ export function QuotesConfigurableList({
 
 
       {/* Table */}
-      <div className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border"
+      >
+
         <div className="min-w-[1100px]">
 
         {/* Header */}
@@ -407,8 +436,11 @@ export function QuotesConfigurableList({
       {/* Pagination Footer */}
       <div className="flex items-center justify-between px-2 py-2">
         <div className="text-sm text-muted-foreground">
-          {quotes.length} resultado(s)
+          {quotes.length > paginatedQuotes.length
+            ? `Exibindo ${paginatedQuotes.length} de ${quotes.length} resultado(s) — role para carregar mais`
+            : `${quotes.length} resultado(s)`}
         </div>
+
 
 
       </div>

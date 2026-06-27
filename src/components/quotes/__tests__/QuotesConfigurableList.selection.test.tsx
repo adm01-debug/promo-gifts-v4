@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import type { Quote } from '@/hooks/quotes';
@@ -37,20 +38,30 @@ const quotes: Quote[] = [
   } as Quote,
 ];
 
-function renderList() {
+function renderList(
+  props: Partial<React.ComponentProps<typeof QuotesConfigurableList>> = {},
+) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   return render(
-    <MemoryRouter>
-      <TooltipProvider>
-        <QuotesConfigurableList
-          quotes={quotes}
-          onDelete={vi.fn()}
-          onBulkDelete={vi.fn()}
-          onDuplicate={vi.fn()}
-        />
-      </TooltipProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <TooltipProvider>
+          <QuotesConfigurableList
+            quotes={quotes}
+            onDelete={vi.fn()}
+            onBulkDelete={vi.fn()}
+            onDuplicate={vi.fn()}
+            {...props}
+          />
+        </TooltipProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
+
+
 
 describe('QuotesConfigurableList — seleção manual', () => {
   beforeEach(() => {
@@ -134,22 +145,12 @@ describe('QuotesConfigurableList — seleção manual', () => {
   it('evento quotes:bulk-delete-request dispara onBulkDelete com IDs selecionados e limpa seleção', async () => {
     const user = userEvent.setup();
     const onBulkDelete = vi.fn();
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <QuotesConfigurableList
-            quotes={quotes}
-            onDelete={vi.fn()}
-            onBulkDelete={onBulkDelete}
-            onDuplicate={vi.fn()}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
-    );
+    renderList({ onBulkDelete });
 
     act(() => {
       window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'));
     });
+
     const rowCheckbox = screen.getAllByRole('checkbox', { name: /selecionar orçamento/i })[0];
     await user.click(rowCheckbox);
 
@@ -163,24 +164,14 @@ describe('QuotesConfigurableList — seleção manual', () => {
 
   it('quotes:bulk-delete-request sem seleção é no-op', () => {
     const onBulkDelete = vi.fn();
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <QuotesConfigurableList
-            quotes={quotes}
-            onDelete={vi.fn()}
-            onBulkDelete={onBulkDelete}
-            onDuplicate={vi.fn()}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
-    );
+    renderList({ onBulkDelete });
     act(() => {
       window.dispatchEvent(new CustomEvent('quotes:bulk-delete-request'));
     });
     expect(onBulkDelete).not.toHaveBeenCalled();
   });
 });
+
 
 // Suprimi warning sobre `within` não usado mantendo o import: removo se lint reclamar.
 void within;
