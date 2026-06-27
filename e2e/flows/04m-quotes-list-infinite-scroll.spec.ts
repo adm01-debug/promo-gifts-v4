@@ -128,6 +128,8 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
     }
 
     // 2.5) Mudança de busca → reseta a janela e não pode duplicar.
+    // Busca sintética client-side; não cria recurso → e2eName() não se aplica.
+    // eslint-disable-next-line no-restricted-syntax
     await page.locator(Sel.quotesList.searchInput).fill("zzz-no-match-xyz");
     await expect(page.locator(Sel.quotesList.footerCount)).toBeVisible();
     await assertNoDuplicateRows(page);
