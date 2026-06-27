@@ -12,10 +12,11 @@ const QK = ['admin', 'product_badge_definitions'] as const;
 
 async function fetchBadges(): Promise<BadgeDefinition[]> {
   const { data, error } = await supabase
-    .from('product_badge_definitions')
+    .from('product_badge_definitions' as never)
     .select('*')
     .order('sort_order', { ascending: true })
-    .order('priority', { ascending: false });
+    .order('priority', { ascending: false })
+    .returns<BadgeDefinition[]>();
   if (error) throw error;
   return data ?? [];
 }
@@ -30,7 +31,10 @@ export function useBadgesManager() {
 
   const updateBadge = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: BadgeDefinitionUpdate }) => {
-      const { error } = await supabase.from('product_badge_definitions').update(patch).eq('id', id);
+      const { error } = await supabase
+        .from('product_badge_definitions' as never)
+        .update(patch as never)
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -44,8 +48,8 @@ export function useBadgesManager() {
   const toggleBadge = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
       const { error } = await supabase
-        .from('product_badge_definitions')
-        .update({ is_enabled: enabled })
+        .from('product_badge_definitions' as never)
+        .update({ is_enabled: enabled } as never)
         .eq('id', id);
       if (error) throw error;
     },
@@ -57,8 +61,8 @@ export function useBadgesManager() {
   const createBadge = useMutation({
     mutationFn: async (payload: BadgeDefinitionInsert) => {
       const { error } = await supabase
-        .from('product_badge_definitions')
-        .insert({ ...payload, is_system: false });
+        .from('product_badge_definitions' as never)
+        .insert({ ...payload, is_system: false } as never);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -70,7 +74,10 @@ export function useBadgesManager() {
 
   const deleteBadge = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('product_badge_definitions').delete().eq('id', id);
+      const { error } = await supabase
+        .from('product_badge_definitions' as never)
+        .delete()
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
