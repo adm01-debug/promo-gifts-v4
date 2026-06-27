@@ -12,10 +12,11 @@ const EXPECTED_ORDER = [
   "client",
   "contact",
   "date",
+  "delivery",
   "items",
   "value",
-  "delivery",
   "status",
+  "expiration",
   "quote_number",
 ] as const;
 
