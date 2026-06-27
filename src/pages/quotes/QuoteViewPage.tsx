@@ -41,7 +41,7 @@ import {
 import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
 import { toast } from 'sonner';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
-import { QuoteValidityBanner } from '@/components/quotes/QuoteValidityBanner';
+
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
 
 import { QuoteVersionHistory } from '@/components/quotes/QuoteVersionHistory';
@@ -305,7 +305,7 @@ export default function QuoteViewPage() {
               isSyncing={isSyncing}
             />
           </div>
-          <QuoteValidityBanner validUntil={quote.valid_until} status={quote.status} />
+          
         </div>
 
 
