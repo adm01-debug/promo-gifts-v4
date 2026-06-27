@@ -272,9 +272,9 @@ export const QUOTE_CHIP_MATCHERS: Record<string, (q: Quote) => boolean> =
 /**
  * Texto amigável (voltado para vendedor) exibido como tooltip ao passar
  * o mouse / focar nos chips de filtro do topo. Espelha o tom das
- * `description` de `QUOTE_ROW_BADGE_STYLES`.
+ * `description` de `QUOTE_ROW_BADGE_STYLES` (SSOT compartilhado).
  */
-const CHIP_TOOLTIPS: Record<string, string> = {
+export const CHIP_TOOLTIPS: Record<string, string> = {
   all: 'Mostra todos os seus orçamentos, em qualquer fase.',
   draft: QUOTE_ROW_BADGE_STYLES.draft.description,
   unsynced: QUOTE_ROW_BADGE_STYLES.unsynced.description,
@@ -285,6 +285,17 @@ const CHIP_TOOLTIPS: Record<string, string> = {
   discount_expired: QUOTE_ROW_BADGE_STYLES.expired_discount.description,
   expired: QUOTE_ROW_BADGE_STYLES.expired.description,
 };
+
+/**
+ * Copy de fallback exibida quando uma chave de chip/badge não tiver
+ * tooltip mapeado. Garante que o `TooltipContent` nunca renderize vazio.
+ */
+export const TOOLTIP_FALLBACK_COPY =
+  'Status sem descrição cadastrada. Avise o time se este aviso aparecer.';
+
+/** Lookup seguro: nunca retorna string vazia. */
+export const getChipTooltip = (key: string): string =>
+  CHIP_TOOLTIPS[key]?.trim() || TOOLTIP_FALLBACK_COPY;
 
 const log = createClientLogger('quotes.chips');
 // Reporta no máximo uma vez por sessão para evitar spam de logs.
