@@ -38,6 +38,7 @@
     "test:e2e:auth-baseline": "npx playwright test e2e/flows/99-auth-ui-baseline.spec.ts",
     "visual:preview": "bash scripts/visual-preview-local.sh",
     "visual:preview:update": "bash scripts/visual-preview-local.sh --update",
+    "visual:preview:all": "bash scripts/visual-preview-local.sh --update && bash scripts/visual-preview-local.sh",
     "check:visual-preview-suite": "node scripts/check-visual-preview-suite.mjs",
     "test:e2e:auth-baseline:update": "npx playwright test e2e/flows/99-auth-ui-baseline.spec.ts --update-snapshots",
     "test:e2e:ui": "npx playwright test --grep-invert @smoke --ui",
