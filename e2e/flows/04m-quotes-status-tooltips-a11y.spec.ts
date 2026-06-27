@@ -4,11 +4,12 @@
  *   - `aria-describedby` é injetado pelo Radix quando o tooltip abre
  *   - o elemento referenciado contém EXATAMENTE a copy do SSOT
  *
- * Itera também os chips do topo (subset reachable via seed).
+ * Itera também os chips do topo.
  *
- * Limite documentado: o badge `cancelled` não é alcançável via INSERT
- * direto (CHECK do BD bloqueia `quotes.status='cancelled'`). O spec
- * registra o motivo via `perTarget` em vez de falhar.
+ * No banco canônico todos os 14 badges são alcançáveis: `cancelled` é aceito
+ * pelo CHECK `valid_quote_status` e inserido normalmente — o seed resolve
+ * `organization_id` para satisfazer a RLS de `quotes`. `perTarget` continua
+ * disponível para diagnosticar qualquer alvo que eventualmente falhe.
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
@@ -34,11 +35,11 @@ test.describe("A11y: tooltips de status (aria-describedby + teclado)", () => {
     });
 
     const unreachable = seed.perTarget.filter((t) => !t.seeded).map((t) => t.badge_key);
-    // Sanity: só 'cancelled' pode estar fora (CHECK do BD).
-    expect(unreachable.sort()).toEqual(["cancelled"]);
+    // Sanity: no BD canônico todos os 14 são semeáveis (cancelled liberado).
+    expect(unreachable.sort()).toEqual([]);
 
-    const reachable = ALL_BADGE_KEYS.filter((k) => k !== "cancelled");
-    expect(reachable).toHaveLength(13);
+    const reachable = [...ALL_BADGE_KEYS];
+    expect(reachable).toHaveLength(14);
 
     for (const key of reachable) {
       const badge = page.locator(Sel.quotesList.statusBadge(key)).first();

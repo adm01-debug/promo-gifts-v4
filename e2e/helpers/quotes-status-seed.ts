@@ -2,12 +2,17 @@
  * Seed determinístico para /orcamentos — cobre TODOS os 14 status canônicos
  * do SSOT `QUOTE_ROW_BADGE_STYLES` (chips do topo + badges da linha).
  *
- * ⚠️  Limite documentado de BD: o CHECK atual de `quotes.status` aceita
- *     `draft, pending, sent, approved, rejected, expired, revision,
- *      pending_approval, converted, viewed`. NÃO aceita `cancelled` —
- *     esse badge fica como caminho defensivo de UI. O seed marca a chave
- *     `cancelled` como `skipped_reason='db-check-blocks'` para o spec
- *     tratar explicitamente (em vez de falhar silenciosamente).
+ * Status no banco canônico `doufsxqlfjyuvxuezpln`: o CHECK `valid_quote_status`
+ * aceita os 10 status do enum FE — incluindo `cancelled`. Verificado
+ * empiricamente em 2026-06-27: INSERT autenticado de status `cancelled` passa
+ * por CHECK + RLS + todos os triggers. Portanto TODOS os 14 badges são
+ * semeáveis e não há mais `unseedable_reason`.
+ *
+ * RLS: `quotes` exige `organization_id` (NOT NULL) e a policy
+ * `org_members_create_quotes` valida `user_is_org_member(organization_id)`. O
+ * seed resolve o org do próprio usuário autenticado via `user_organizations`
+ * (a fonte que a RLS checa), com fallback em `profiles.organization_id`. Sem
+ * isso o INSERT falha com 42501 (RLS) para QUALQUER status.
  *
  * Reusa o JWT do admin no `localStorage`. Idempotente: se já houver um quote
  * E2E com o tuple alvo, pula a inserção. Nomes seguem `e2eName(...)` para o
@@ -72,14 +77,7 @@ const TARGETS: QuoteSeedTarget[] = [
   { badge_key: "viewed", label: "viewed", status: "viewed", synced_to_bitrix: true, discount_approval_status: null },
   { badge_key: "quote_approved", label: "quote-approved", status: "approved", synced_to_bitrix: true, discount_approval_status: null },
   { badge_key: "converted", label: "converted", status: "converted", synced_to_bitrix: true, discount_approval_status: null },
-  {
-    badge_key: "cancelled",
-    label: "cancelled",
-    status: "cancelled",
-    synced_to_bitrix: false,
-    discount_approval_status: null,
-    unseedable_reason: "db-check-blocks-cancelled-for-quotes",
-  },
+  { badge_key: "cancelled", label: "cancelled", status: "cancelled", synced_to_bitrix: false, discount_approval_status: null },
   { badge_key: "quote_rejected", label: "quote-rejected", status: "rejected", synced_to_bitrix: true, discount_approval_status: null },
 ];
 
@@ -140,6 +138,41 @@ export async function seedQuotesForStatusChips(
         Prefer: "return=representation",
       };
 
+      // Resolve a organização do próprio usuário autenticado. A RLS de `quotes`
+      // exige organization_id (NOT NULL) e valida user_is_org_member(). Fonte
+      // primária: user_organizations (o que a policy checa); fallback: profiles.
+      let organizationId = "";
+      try {
+        const uoResp = await fetch(
+          `${url}/rest/v1/user_organizations?user_id=eq.${sellerId}&select=organization_id&limit=1`,
+          { headers },
+        );
+        if (uoResp.ok) {
+          const uoRows = (await uoResp.json()) as Array<{ organization_id: string }>;
+          organizationId = uoRows[0]?.organization_id ?? "";
+        }
+        if (!organizationId) {
+          const profResp = await fetch(
+            `${url}/rest/v1/profiles?id=eq.${sellerId}&select=organization_id&limit=1`,
+            { headers },
+          );
+          if (profResp.ok) {
+            const profRows = (await profResp.json()) as Array<{ organization_id: string | null }>;
+            organizationId = profRows[0]?.organization_id ?? "";
+          }
+        }
+      } catch {
+        /* noop */
+      }
+      if (!organizationId) {
+        return {
+          created: 0,
+          skipped: "no-org",
+          names: [] as string[],
+          perTarget: [] as QuotesStatusSeedTargetResult[],
+        };
+      }
+
       let created = 0;
       const names: string[] = [];
       const perTarget: QuotesStatusSeedTargetResult[] = [];
@@ -182,6 +215,7 @@ export async function seedQuotesForStatusChips(
 
         const body: Record<string, unknown> = {
           seller_id: sellerId,
+          organization_id: organizationId,
           client_name: t.name,
           status: t.status,
           synced_to_bitrix: t.synced_to_bitrix,
