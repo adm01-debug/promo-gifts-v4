@@ -176,7 +176,7 @@ export default function QuoteViewPage() {
                   variant="outline"
                   onClick={handleSyncBitrix}
                   disabled={isSyncing}
-                  className="h-7 min-w-[71px] justify-center gap-1.5 rounded-full border-primary/40 px-2.5 text-[11px] hover:border-primary hover:bg-primary/10"
+                  className="h-6 min-w-[78px] justify-center gap-1.5 rounded-full border-primary/40 px-2.5 text-[11px] hover:border-primary hover:bg-primary/10"
                 >
                   {isSyncing ? (
                     <Loader2 className="h-3 w-3 animate-spin text-primary" />
