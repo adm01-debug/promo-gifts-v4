@@ -395,8 +395,9 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-2 font-display font-semibold">Observações</h3>
-                  <p className="whitespace-pre-line text-muted-foreground">{quote.notes}</p>
+                  <h3 className="mb-1.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações</h3>
+                  <p className="whitespace-pre-line text-sm text-muted-foreground">{quote.notes}</p>
+
                 </div>
               </>
             )}
