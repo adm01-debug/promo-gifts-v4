@@ -11,8 +11,10 @@
  * junto. A duplicação é intencional: permite snapshots determinísticos sem
  * Supabase/router/auth e sem seed de orçamentos.
  */
-import { useEffect } from 'react';
-import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
