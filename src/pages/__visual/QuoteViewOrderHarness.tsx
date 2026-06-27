@@ -2,16 +2,17 @@
  * Dev-only visual harness para validar a disposição do QuoteViewPage:
  *   1) QuoteStatusTimeline renderiza ANTES do cabeçalho.
  *   2) Cabeçalho (h1 + botões) fica ACIMA do container do orçamento.
+ *   3) DropdownMenu inclui "Excluir" entre "Duplicar" e "Histórico" com
+ *      confirmação acessível (AlertDialog) e stub determinístico do delete.
  *
  * Rota: `/__visual/quote-view-order` (somente em `import.meta.env.DEV`).
  * Tema: `?theme=dark` adiciona `.dark` no `<html>`; default = light.
  *
- * Espelha a marcação real de `src/pages/quotes/QuoteViewPage.tsx` (wrapper +
- * timeline + header + Card). Marcação 1:1 — se uma mudar, a outra DEVE mudar
- * junto. A duplicação é intencional: permite snapshots determinísticos sem
- * Supabase/router/auth e sem seed de orçamentos.
+ * Stub do delete: a função real fica em `window.__deleteQuoteSpy` (definida
+ * pela spec via `addInitScript`) — se ausente, registra em
+ * `window.__deleteQuoteCalls` para inspeção determinística no E2E.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal, Trash2 } from 'lucide-react';
@@ -25,11 +26,31 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
+
+const HARNESS_QUOTE_ID = 'harness-quote-id-0042';
+
+declare global {
+  interface Window {
+    __deleteQuoteSpy?: (id: string) => Promise<void> | void;
+    __deleteQuoteCalls?: string[];
+  }
+}
 
 export default function QuoteViewOrderHarness() {
   const navigate = useNavigate();
-  const [deleted, setDeleted] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -37,26 +58,29 @@ export default function QuoteViewOrderHarness() {
     const root = document.documentElement;
     if (theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
+    window.__deleteQuoteCalls = window.__deleteQuoteCalls ?? [];
     return () => {
       root.classList.remove('dark');
     };
   }, []);
 
-  const handleDelete = () => {
-    const ok = window.confirm(
-      'Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.',
-    );
-    if (!ok) return;
-    // Stub determinístico: simula sucesso de delete e roteamento.
-    setDeleted(true);
-    toast.success('Orçamento excluído');
-    navigate('/orcamentos');
+  const handleConfirmDelete = async () => {
+    window.__deleteQuoteCalls?.push(HARNESS_QUOTE_ID);
+    try {
+      await window.__deleteQuoteSpy?.(HARNESS_QUOTE_ID);
+      setConfirmOpen(false);
+      toast.success('Orçamento excluído');
+      navigate('/orcamentos');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro';
+      toast.error('Erro ao excluir', { description: msg });
+    }
   };
 
   return (
     <main
       data-testid="quote-view-order-harness"
-      data-deleted={deleted ? 'true' : 'false'}
+      data-quote-id={HARNESS_QUOTE_ID}
       className="min-h-dvh bg-background"
     >
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2.5 px-3 py-2.5 pb-24 sm:space-y-3 sm:px-4 sm:py-3 md:pb-5 lg:px-6 xl:px-8">
@@ -129,7 +153,7 @@ export default function QuoteViewOrderHarness() {
                   data-testid="quote-actions-delete"
                   onSelect={(e) => {
                     e.preventDefault();
-                    handleDelete();
+                    setConfirmOpen(true);
                   }}
                   className="text-destructive focus:text-destructive"
                 >
@@ -143,6 +167,37 @@ export default function QuoteViewOrderHarness() {
           </div>
         </div>
 
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent
+            data-testid="quote-delete-dialog"
+            onOpenAutoFocus={(e) => {
+              // Foco inicial no Cancelar (escolha mais segura para ações destrutivas).
+              e.preventDefault();
+              cancelRef.current?.focus();
+            }}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle data-testid="quote-delete-dialog-title">
+                Excluir orçamento?
+              </AlertDialogTitle>
+              <AlertDialogDescription data-testid="quote-delete-dialog-description">
+                Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel ref={cancelRef} data-testid="quote-delete-cancel">
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                data-testid="quote-delete-confirm"
+                onClick={handleConfirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* 3) Container do orçamento — sem moldura (paridade com QuoteViewPage) */}
         <Card
