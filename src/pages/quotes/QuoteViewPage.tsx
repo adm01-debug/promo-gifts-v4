@@ -140,6 +140,17 @@ export default function QuoteViewPage() {
         noIndex
       />
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2.5 px-3 py-2.5 pb-24 sm:space-y-3 sm:px-4 sm:py-3 md:pb-5 lg:px-6 xl:px-8 print:max-w-none print:px-0 print:py-0">
+        {/* Status Timeline (topo da página, sem moldura) */}
+        <div className="w-full print:hidden">
+          <QuoteStatusTimeline
+            status={quote.status}
+            createdAt={quote.created_at}
+            updatedAt={quote.updated_at}
+            clientResponseAt={quote.client_response_at}
+            isSyncing={isSyncing}
+          />
+        </div>
+
         {/* Header */}
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center print:hidden">
           <div className="flex items-center gap-2.5">
