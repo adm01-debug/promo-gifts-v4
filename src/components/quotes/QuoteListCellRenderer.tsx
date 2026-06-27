@@ -34,7 +34,7 @@ export function renderQuoteCell(
   switch (columnId) {
     case 'quote_number':
       return (
-        <span className="block truncate text-right font-mono text-[11px] tabular-nums text-muted-foreground/70">
+        <span className="block truncate text-left font-mono text-[11px] tabular-nums text-muted-foreground/70">
           {quote.quote_number}
         </span>
       );
@@ -117,7 +117,7 @@ export function renderQuoteCell(
 
     case 'value':
       return (
-        <span className="block text-right text-[13px] font-semibold tabular-nums text-foreground">
+        <span className="block text-left text-[13px] font-semibold tabular-nums text-foreground">
           {formatCurrency(quote.total || 0)}
         </span>
       );
