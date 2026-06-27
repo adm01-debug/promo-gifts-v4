@@ -417,6 +417,7 @@ export function QuotesConfigurableList({
           return (
             <div
               key={quoteId ?? quote.quote_number}
+              data-testid={quoteId ? `quote-row-${quoteId}` : undefined}
               className={cn(
                 'group grid cursor-pointer items-center gap-5 border-b border-border/30 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/30',
                 selected && 'bg-primary/5',

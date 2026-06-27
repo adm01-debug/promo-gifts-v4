@@ -11,6 +11,7 @@ import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
 import { AvatarLogo } from '@/components/shared/AvatarLogo';
 import { normalizeCnpj, type LogoByCnpj } from '@/hooks/quotes/useQuoteClientLogos';
 import type { Quote } from '@/hooks/quotes';
+import { computeExpiration } from '@/lib/quotes/expiration';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -155,58 +156,26 @@ export function renderQuoteCell(
     }
 
     case 'expiration': {
-      if (!quote.valid_until) {
+      const { diffDays, label, tone, formattedDate } = computeExpiration(quote.valid_until);
+      if (diffDays === null || !tone || !formattedDate) {
         return <span className="block text-center text-[11.5px] text-muted-foreground/50">—</span>;
       }
-      const validUntil = new Date(quote.valid_until);
-      if (Number.isNaN(validUntil.getTime())) {
-        return <span className="block text-center text-[11.5px] text-muted-foreground/50">—</span>;
-      }
-      // Diferença em dias considerando início do dia (UTC-agnostic via floor de ms/dia).
-      const MS_PER_DAY = 86_400_000;
-      const today = new Date();
-      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-      const targetMidnight = new Date(
-        validUntil.getFullYear(),
-        validUntil.getMonth(),
-        validUntil.getDate(),
-      ).getTime();
-      const diffDays = Math.round((targetMidnight - todayMidnight) / MS_PER_DAY);
-
-      let label: string;
-      let tone: string;
-      if (diffDays < 0) {
-        label = `Expirado há ${Math.abs(diffDays)}d`;
-        tone = 'text-destructive';
-      } else if (diffDays === 0) {
-        label = 'Expira hoje';
-        tone = 'text-destructive';
-      } else if (diffDays <= 3) {
-        label = `${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
-        tone = 'text-amber-500';
-      } else if (diffDays <= 7) {
-        label = `${diffDays} dias`;
-        tone = 'text-amber-400';
-      } else {
-        label = `${diffDays} dias`;
-        tone = 'text-muted-foreground/80';
-      }
-      const fullDate = format(validUntil, "dd/MM/yyyy", { locale: ptBR });
       return (
         <Tooltip>
           <TooltipTrigger asChild>
             <span
               data-testid="quote-expiration-cell"
+              data-expiration-days={diffDays}
               tabIndex={0}
               role="status"
-              aria-label={`${label}. Válido até ${fullDate}`}
+              aria-label={`${label}. Válido até ${formattedDate}`}
               className={`block cursor-default text-center text-[11.5px] font-medium tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-sm ${tone}`}
             >
               {label}
             </span>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
-            Válido até {fullDate}
+            Válido até {formattedDate}
           </TooltipContent>
         </Tooltip>
       );

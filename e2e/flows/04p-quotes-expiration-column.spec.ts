@@ -42,39 +42,20 @@ interface ExpirationSeed {
 
 function buildTargets(): ExpirationSeed[] {
   const today = new Date();
-  const atMidnight = (d: number) => {
+  // CRÍTICO: construímos a string "YYYY-MM-DD" a partir dos COMPONENTES locais
+  // (getFullYear/getMonth/getDate) e nunca via toISOString, que devolveria o
+  // dia UTC e quebraria em fusos positivos com horário local 00:00 (ex.: Lisbon
+  // verão UTC+1 — local 00:00 = 23:00 UTC do dia anterior).
+  const atOffset = (d: number) => {
     const x = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
-    return x.toISOString().slice(0, 10); // YYYY-MM-DD (date column)
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
   };
   return [
-    {
-      name: e2eName("exp-minus1"),
-      daysFromToday: -1,
-      expectedText: /Expirado há 1d/i,
-      expectedToneClass: /text-destructive/,
-      iso: atMidnight(-1),
-    },
-    {
-      name: e2eName("exp-today"),
-      daysFromToday: 0,
-      expectedText: /Expira hoje/i,
-      expectedToneClass: /text-destructive/,
-      iso: atMidnight(0),
-    },
-    {
-      name: e2eName("exp-plus1"),
-      daysFromToday: 1,
-      expectedText: /^1 dia$/,
-      expectedToneClass: /text-amber-500/,
-      iso: atMidnight(1),
-    },
-    {
-      name: e2eName("exp-plus7"),
-      daysFromToday: 7,
-      expectedText: /^7 dias$/,
-      expectedToneClass: /text-amber-400/,
-      iso: atMidnight(7),
-    },
+    { name: e2eName("exp-minus1"), daysFromToday: -1, expectedText: /^Expirado há 1d$/, expectedToneClass: /text-destructive/, iso: atOffset(-1) },
+    { name: e2eName("exp-today"),  daysFromToday:  0, expectedText: /^Expira hoje$/,    expectedToneClass: /text-destructive/, iso: atOffset(0)  },
+    { name: e2eName("exp-plus1"),  daysFromToday:  1, expectedText: /^1 dia$/,           expectedToneClass: /text-amber-500/,   iso: atOffset(1)  },
+    { name: e2eName("exp-plus7"),  daysFromToday:  7, expectedText: /^7 dias$/,          expectedToneClass: /text-amber-400/,   iso: atOffset(7)  },
   ];
 }
 
@@ -141,7 +122,7 @@ for (const tz of TIMEZONES) {
       await expect(page.getByTestId("quotes-col-header-expiration")).toBeVisible({ timeout: 10_000 });
 
       for (const t of targets) {
-        const row = page.locator(`text="${t.name}"`).first().locator("xpath=ancestor::*[@data-testid][1]");
+        const row = page.locator('[data-testid^="quote-row-"]').filter({ hasText: t.name }).first();
         const cell = row.locator('[data-testid="quote-expiration-cell"]').first();
         await expect(cell, `texto ${t.daysFromToday}d @${tz}`).toHaveText(t.expectedText);
         await expect(cell, `tom ${t.daysFromToday}d @${tz}`).toHaveClass(t.expectedToneClass);
