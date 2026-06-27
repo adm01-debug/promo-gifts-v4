@@ -20,6 +20,10 @@ import { OptimizedImageDemo } from './lazy-pages';
 const PreviewButtonHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/PreviewButtonHarness'))
   : null;
+const QuoteViewOrderHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteViewOrderHarness'))
+  : null;
+
 
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 250, minimum: 0.2, trickleSpeed: 100 });
@@ -111,6 +115,10 @@ export function AppRoutes() {
         {PreviewButtonHarness && (
           <Route path="/__visual/preview-button" element={<PreviewButtonHarness />} />
         )}
+        {QuoteViewOrderHarness && (
+          <Route path="/__visual/quote-view-order" element={<QuoteViewOrderHarness />} />
+        )}
+
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
