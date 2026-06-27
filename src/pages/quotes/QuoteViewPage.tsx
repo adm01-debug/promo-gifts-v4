@@ -78,8 +78,6 @@ export default function QuoteViewPage() {
     clientCnpj,
     isGeneratingPDF,
     isSyncing,
-    showPresentation,
-    setShowPresentation,
     proposalData,
     handleDownloadPDF,
     handleWhatsAppShare,
