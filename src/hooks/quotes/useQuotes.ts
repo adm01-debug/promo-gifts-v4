@@ -100,6 +100,7 @@ export function useQuotes() {
   const {
     data: quotes = [],
     isLoading,
+    isFetching,
     error,
     refetch: fetchQuotes,
   } = useQuery<Quote[]>({
@@ -113,6 +114,7 @@ export function useQuotes() {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
     staleTime: 30_000,
   });
+
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({
     queryKey: ['techniques'],
@@ -364,6 +366,7 @@ export function useQuotes() {
     quotes,
     techniques,
     isLoading: isLoading || createMutation.isPending || updateMutation.isPending,
+    isFetching,
     error: error ? getErrorMessage(error) : null,
     fetchQuotes,
     fetchQuote,

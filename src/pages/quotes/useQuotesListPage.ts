@@ -21,12 +21,14 @@ export function useQuotesListPage() {
   const {
     quotes,
     isLoading,
+    isFetching,
     error,
     deleteQuote,
     duplicateQuote,
     updateQuoteStatus,
     createQuote,
     fetchQuote,
+    fetchQuotes,
   } = useQuotes();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -241,7 +243,9 @@ export function useQuotesListPage() {
     navigate,
     quotes,
     isLoading,
+    isFetching,
     error,
+    fetchQuotes,
     searchTerm,
     setSearchTerm,
     statusFilter,

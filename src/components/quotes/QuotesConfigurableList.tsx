@@ -26,6 +26,8 @@ import {
   Edit,
   Inbox,
   RefreshCw,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 
 import type { Quote } from '@/hooks/quotes';
@@ -62,6 +64,12 @@ interface QuotesConfigurableListProps {
   onBulkStatusChange?: (ids: string[], status: string) => void;
   onBulkExport?: (ids: string[]) => void;
   onDuplicate: (id: string) => void;
+  /** Background refetch em andamento — usado para "Carregando mais..." */
+  isFetching?: boolean;
+  /** Mensagem de erro vinda do hook pai; renderiza banner com retry */
+  loadError?: string | null;
+  /** Callback do botão "Tentar novamente" */
+  onRetry?: () => void;
 }
 
 const PAGE_SIZE = 25;
@@ -73,57 +81,72 @@ export function QuotesConfigurableList({
   onBulkStatusChange,
   onBulkExport,
   onDuplicate,
+  isFetching = false,
+  loadError = null,
+  onRetry,
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
-  // ── Infinite scroll: começa com PAGE_SIZE e cresce conforme o usuário rola ──
+  // ── Infinite scroll via IntersectionObserver ──
+  // Sentinel logo após a última linha; quando entra no viewport do container,
+  // incrementamos `visibleCount`. Substitui o handler de scroll (mais eficiente
+  // pois o browser despacha apenas em mudanças de intersecção).
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scrollRafRef = useRef<number | null>(null);
-  const scrollScheduledRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset quando a lista de quotes muda (filtro, busca, ordenação, etc.)
-  // Reseta tanto a janela visível quanto o scroll para evitar duplicação
-  // visual e estados inconsistentes quando o array de quotes é trocado.
+  // Identidade da lista (referência) — usada para resetar quando o array
+  // mudar (filtro/busca/ordenação produzem novo array do hook pai).
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [quotes]);
 
-  // Cancela rAF pendente ao desmontar.
-  useEffect(() => {
-    return () => {
-      if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
-    };
-  }, []);
+  // Dedup defensivo por id — garante que combinar páginas nunca cause
+  // chaves duplicadas no React mesmo se o backend devolver repetidos.
+  const uniqueQuotes = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Quote[] = [];
+    for (const q of quotes) {
+      const key = q.id ?? q.quote_number ?? '';
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(q);
+    }
+    return out;
+  }, [quotes]);
 
   const paginatedQuotes = useMemo(
-    () => quotes.slice(0, visibleCount),
-    [quotes, visibleCount],
+    () => uniqueQuotes.slice(0, visibleCount),
+    [uniqueQuotes, visibleCount],
   );
 
-  const hasMore = paginatedQuotes.length < quotes.length;
+  const hasMore = paginatedQuotes.length < uniqueQuotes.length;
 
-  // Throttle via rAF: garante no máximo 1 cálculo por frame, mesmo em
-  // listas muito longas com onScroll disparando dezenas de vezes/segundo.
-  // Usamos uma flag booleana (não o ID do rAF) para evitar race quando
-  // o ambiente executa o callback sincronamente (testes).
-  const handleScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
-      const el = e.currentTarget;
-      if (scrollScheduledRef.current) return;
-      scrollScheduledRef.current = true;
-      scrollRafRef.current = requestAnimationFrame(() => {
-        scrollScheduledRef.current = false;
-        scrollRafRef.current = null;
-        // ~200px antes do fim → carrega próxima página
-        if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
-          setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
+  // IntersectionObserver: dispara quando o sentinel encosta no viewport
+  // do container scrollável. `rootMargin` antecipa em 200px o gatilho.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) {
+          setVisibleCount((c) =>
+            c < uniqueQuotes.length ? Math.min(c + PAGE_SIZE, uniqueQuotes.length) : c,
+          );
         }
-      });
-    },
-    [quotes.length],
-  );
+      },
+      { root, rootMargin: '200px 0px', threshold: 0 },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [uniqueQuotes.length, hasMore]);
+
+
 
 
 
@@ -317,7 +340,6 @@ export function QuotesConfigurableList({
       {/* Table */}
       <div
         ref={scrollRef}
-        onScroll={handleScroll}
         data-testid="quotes-scroll-container"
         className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border"
       >
@@ -357,7 +379,7 @@ export function QuotesConfigurableList({
 
 
         {/* Empty state */}
-        {quotes.length === 0 ? (
+        {uniqueQuotes.length === 0 ? (
           <div
             data-testid="quotes-empty-state"
             className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
@@ -482,21 +504,65 @@ export function QuotesConfigurableList({
           );
           })
         )}
+
+        {/* Sentinel para IntersectionObserver — invisível, mas observável */}
+        {hasMore && (
+          <div
+            ref={sentinelRef}
+            data-testid="quotes-infinite-sentinel"
+            aria-hidden="true"
+            className="h-4 w-full"
+          />
+        )}
         </div>
       </div>
 
 
-      {/* Footer: contagem precisa + estado de "fim da lista" */}
-      <div className="flex items-center justify-between px-2 py-2">
+      {/* Footer: contagem, loading mais, erro com retry */}
+      <div className="flex items-center justify-between gap-3 px-2 py-2">
         <div className="text-sm text-muted-foreground" data-testid="quotes-footer-count">
-          {quotes.length === 0
+          {uniqueQuotes.length === 0
             ? 'Nenhum resultado'
             : hasMore
-              ? `Exibindo ${paginatedQuotes.length} de ${quotes.length} — role para carregar mais`
-              : quotes.length === 1
+              ? `Exibindo ${paginatedQuotes.length} de ${uniqueQuotes.length} — role para carregar mais`
+              : uniqueQuotes.length === 1
                 ? '1 de 1 — fim da lista'
-                : `${paginatedQuotes.length} de ${quotes.length} — fim da lista`}
+                : `${paginatedQuotes.length} de ${uniqueQuotes.length} — fim da lista`}
         </div>
+
+        {/* Indicador de "carregando mais" durante refetch em background */}
+        {isFetching && uniqueQuotes.length > 0 && !loadError && (
+          <div
+            data-testid="quotes-footer-loading-more"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            Carregando mais…
+          </div>
+        )}
+
+        {/* Erro de carregamento com botão de retry */}
+        {loadError && (
+          <div
+            data-testid="quotes-footer-load-error"
+            className="flex items-center gap-2 text-xs text-destructive"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Falha ao carregar.</span>
+            {onRetry && (
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs"
+                data-testid="quotes-footer-retry"
+                onClick={onRetry}
+              >
+                Tentar novamente
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

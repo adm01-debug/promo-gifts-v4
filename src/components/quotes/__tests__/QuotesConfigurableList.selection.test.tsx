@@ -8,7 +8,8 @@
  *    `quotes:selection-changed` com { count: 1, mode: true }.
  *  - A dica orientativa some quando há ao menos 1 selecionado.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useState } from 'react';
 import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -210,42 +211,70 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     );
   }
 
-  it('mostra apenas 25 inicialmente e carrega mais ao rolar até o fim', async () => {
-    // rAF síncrono p/ throttle determinístico no teste
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      cb(0);
-      return 0 as unknown as number;
-    });
+  // ── IntersectionObserver mock — captura observers ativos para acionar manualmente ──
+  type IOMockEntry = {
+    observer: IntersectionObserver;
+    callback: IntersectionObserverCallback;
+    target: Element;
+  };
+  let ioEntries: IOMockEntry[] = [];
 
+  beforeEach(() => {
+    ioEntries = [];
+    class MockIO {
+      callback: IntersectionObserverCallback;
+      constructor(cb: IntersectionObserverCallback) {
+        this.callback = cb;
+      }
+      observe(target: Element) {
+        ioEntries.push({ observer: this as unknown as IntersectionObserver, callback: this.callback, target });
+      }
+      disconnect() {
+        ioEntries = ioEntries.filter((e) => e.observer !== (this as unknown as IntersectionObserver));
+      }
+      unobserve() {/* noop */}
+      takeRecords() { return []; }
+      root: Element | null = null;
+      rootMargin = '';
+      thresholds: ReadonlyArray<number> = [];
+    }
+    (globalThis as unknown as { IntersectionObserver: typeof IntersectionObserver }).IntersectionObserver =
+      MockIO as unknown as typeof IntersectionObserver;
+  });
+
+  afterEach(() => {
+    ioEntries = [];
+  });
+
+  function triggerIntersection() {
+    act(() => {
+      ioEntries.forEach(({ callback, observer, target }) => {
+        callback(
+          [{ isIntersecting: true, target } as unknown as IntersectionObserverEntry],
+          observer,
+        );
+      });
+    });
+  }
+
+  it('mostra apenas 25 inicialmente e carrega mais quando o sentinel intersecta', () => {
     const qs = makeQuotes(60);
     renderWith(qs);
 
-    // footer reflete 25 de 60
     expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(
       /Exibindo 25 de 60/,
     );
+    expect(screen.getByTestId('quotes-infinite-sentinel')).toBeInTheDocument();
 
-    const container = screen.getByTestId('quotes-scroll-container') as HTMLDivElement;
-
-    // Simula container scrollável próximo ao fim
-    Object.defineProperty(container, 'scrollHeight', { configurable: true, value: 2000 });
-    Object.defineProperty(container, 'clientHeight', { configurable: true, value: 600 });
-    Object.defineProperty(container, 'scrollTop', { configurable: true, writable: true, value: 1500 });
-
-    act(() => {
-      container.dispatchEvent(new Event('scroll', { bubbles: true }));
-    });
-
+    triggerIntersection();
     expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(
       /Exibindo 50 de 60/,
     );
 
-    // Rola novamente para puxar o restante
-    act(() => {
-      container.dispatchEvent(new Event('scroll', { bubbles: true }));
-    });
-
+    triggerIntersection();
     expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/fim da lista/);
+    // Sentinel removido quando não há mais o que carregar
+    expect(screen.queryByTestId('quotes-infinite-sentinel')).toBeNull();
   });
 
   it('renderiza estado vazio com botão de atualizar', () => {
@@ -257,6 +286,140 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     screen.getByTestId('quotes-empty-refresh').click();
     expect(refreshSpy).toHaveBeenCalledTimes(1);
     window.removeEventListener('quotes:refresh-request', refreshSpy);
+  });
+
+  it('deduplica orçamentos repetidos por id (combinação de páginas)', () => {
+    const base = makeQuotes(5);
+    // Duplica os 2 primeiros para simular concatenação repetida do backend
+    const withDups = [...base, base[0], base[1]];
+    renderWith(withDups);
+
+    // Deve refletir 5 únicos (não 7) — sem chaves duplicadas no React
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/5 de 5/);
+  });
+
+  it('reseta para 25 ao alterar filtro/busca/ordenação sem repetir resultados', () => {
+    // Wrapper que troca a lista externa (simula filtros/busca/sort do hook pai)
+    function Harness() {
+      const [filtered, setFiltered] = useState<Quote[]>(makeQuotes(60));
+      return (
+        <>
+          <button
+            data-testid="apply-filter"
+            onClick={() => setFiltered(makeQuotes(40))}
+          >
+            filtrar
+          </button>
+          <button
+            data-testid="apply-sort"
+            onClick={() => setFiltered((prev) => [...prev].reverse())}
+          >
+            ordenar
+          </button>
+          <QuotesConfigurableList
+            quotes={filtered}
+            onDelete={vi.fn()}
+            onBulkDelete={vi.fn()}
+            onDuplicate={vi.fn()}
+          />
+        </>
+      );
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TooltipProvider>
+            <Harness />
+          </TooltipProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    // Estado inicial: 25 de 60
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 60/);
+
+    // Avança o infinite scroll até o fim
+    triggerIntersection();
+    triggerIntersection();
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/60 de 60/);
+
+    // Troca de filtro → deve resetar para 25 do novo total (40)
+    act(() => {
+      screen.getByTestId('apply-filter').click();
+    });
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 40/);
+
+    // Avança até o fim novamente
+    triggerIntersection();
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/40 de 40/);
+    // Nenhuma key duplicada: número de linhas renderizadas == 40
+    expect(
+      screen.getAllByTestId(/^quote-row-more-/).length,
+    ).toBe(40);
+
+    // Troca de ordenação → reseta para 25 sem repetir
+    act(() => {
+      screen.getByTestId('apply-sort').click();
+    });
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 40/);
+    expect(
+      screen.getAllByTestId(/^quote-row-more-/).length,
+    ).toBe(25);
+  });
+
+  it('exibe indicador de "Carregando mais…" quando isFetching=true e há itens', () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TooltipProvider>
+            <QuotesConfigurableList
+              quotes={makeQuotes(30)}
+              isFetching
+              onDelete={vi.fn()}
+              onBulkDelete={vi.fn()}
+              onDuplicate={vi.fn()}
+            />
+          </TooltipProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('quotes-footer-loading-more')).toBeInTheDocument();
+  });
+
+  it('exibe erro com botão "Tentar novamente" e dispara onRetry', async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TooltipProvider>
+            <QuotesConfigurableList
+              quotes={makeQuotes(3)}
+              loadError="Falha de rede"
+              onRetry={onRetry}
+              onDelete={vi.fn()}
+              onBulkDelete={vi.fn()}
+              onDuplicate={vi.fn()}
+            />
+          </TooltipProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('quotes-footer-load-error')).toBeInTheDocument();
+    await user.click(screen.getByTestId('quotes-footer-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
 
