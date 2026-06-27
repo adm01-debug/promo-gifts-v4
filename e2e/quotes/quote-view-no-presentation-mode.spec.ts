@@ -176,6 +176,9 @@ for (const theme of ['light', 'dark'] as const) {
     await page.setViewportSize({ width: 375, height: 667 });
     await openHarness(page, theme);
     await openMenuViaClick(page);
+    const expectedId = await page
+      .getByTestId('quote-view-order-harness')
+      .getAttribute('data-quote-id');
     await page.getByTestId('quote-actions-delete').click();
 
     const confirm = page.getByTestId('quote-delete-confirm');
@@ -188,10 +191,8 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(confirm).toBeDisabled();
     await expect(cancel).toBeDisabled();
 
-    // Aguarda conclusão e valida chamada única.
-    await expect.poll(() => readDeleteCalls(page), { timeout: 3000 }).toEqual([
-      await page.getByTestId('quote-view-order-harness').getAttribute('data-quote-id'),
-    ]);
+    // Aguarda conclusão e valida chamada única (sem duplicidade).
+    await expect.poll(() => readDeleteCalls(page), { timeout: 3000 }).toEqual([expectedId]);
   });
 }
 
