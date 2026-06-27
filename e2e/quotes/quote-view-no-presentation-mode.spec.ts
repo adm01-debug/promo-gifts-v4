@@ -126,7 +126,7 @@ for (const theme of ['light', 'dark'] as const) {
     const collected: string[] = [];
     collected.push(await readFocused());
 
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       const prev = collected[collected.length - 1];
       await page.keyboard.press('ArrowDown');
       // Aguarda o foco realmente migrar antes de ler o próximo nome.
