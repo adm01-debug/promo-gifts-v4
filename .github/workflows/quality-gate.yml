@@ -60,6 +60,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+      # GATE 2.6: QuotesConfigurableList — invariantes de layout + a11y + unit (expiração)
+      # Previne regressão de ordem/alinhamento/testids/aria-label e da lógica determinística de expiração.
+      - name: Gate 2.6 — Quotes list validation (bloqueante)
+        run: node scripts/validate-quotes-list.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
 
       # GATE 3: Build (zero build errors)
       - name: Build check

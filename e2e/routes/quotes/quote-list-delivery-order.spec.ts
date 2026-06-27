@@ -81,4 +81,58 @@ test.describe("[module:quotes] [component:quotes-list] [owner:team-growth] @regr
       }
     });
   }
+
+  test("a11y: headers expõem role=columnheader, aria-label e data-col-id consistentes", async ({
+    page,
+  }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, "/orcamentos");
+    const meta = await page
+      .locator('[data-testid^="quotes-col-header-"]')
+      .evaluateAll((els) =>
+        els.map((el) => ({
+          testid: el.getAttribute("data-testid"),
+          colId: el.getAttribute("data-col-id"),
+          role: el.getAttribute("role"),
+          aria: el.getAttribute("aria-label"),
+          label: el.textContent?.trim() ?? "",
+        })),
+      );
+    expect(meta.length).toBeGreaterThan(0);
+    for (const h of meta) {
+      expect(h.testid).toBe(`quotes-col-header-${h.colId}`);
+      expect(h.role).toBe("columnheader");
+      expect(h.aria).toBe(`Coluna ${h.label}`);
+      expect(h.colId).toMatch(/^[a-z_]+$/);
+    }
+    // Paridade célula x header: mesmo conjunto de col-ids na primeira linha.
+    const firstRow = page.locator('[data-testid^="quote-row-"]').first();
+    if ((await firstRow.count()) === 0) return;
+    const cellIds = await firstRow
+      .locator('[data-testid^="quotes-col-cell-"]')
+      .evaluateAll((els) => els.map((el) => el.getAttribute("data-col-id")));
+    expect(cellIds).toEqual(meta.map((h) => h.colId));
+  });
+
+  test("ordem preservada em múltiplas larguras + scroll horizontal", async ({ page }) => {
+    await loginAs(page);
+    await gotoAndSettle(page, "/orcamentos");
+    for (const size of [
+      { width: 1920, height: 1080 },
+      { width: 1280, height: 800 },
+      { width: 1024, height: 720 },
+      { width: 768, height: 1024 },
+      { width: 390, height: 844 },
+    ]) {
+      await page.setViewportSize(size);
+      await assertDeliveryBetween(page);
+    }
+    // Scroll horizontal no container — não pode reordenar.
+    await page.setViewportSize({ width: 600, height: 800 });
+    const scroller = page.locator(".overflow-x-auto").first();
+    if ((await scroller.count()) > 0) {
+      await scroller.evaluate((el) => el.scrollTo({ left: 9999 }));
+      await assertDeliveryBetween(page);
+    }
+  });
 });
