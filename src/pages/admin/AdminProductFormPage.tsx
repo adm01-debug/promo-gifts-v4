@@ -190,7 +190,7 @@ export default function AdminProductFormPage() {
       packaging_material: p.packaging_material ?? '',
       packaging_color: p.packaging_color ?? '',
       packaging_finish: p.packaging_finish ?? '',
-      is_active: p.is_active ?? p.active ?? true,
+      is_active: p.is_active ?? true, // p.active foi dropado do schema (é dead-code)
       is_featured: p.is_featured ?? false,
       is_bestseller: p.is_bestseller ?? false,
       is_new: p.is_new ?? false,
@@ -283,8 +283,13 @@ export default function AdminProductFormPage() {
         return v.length > 0 ? v : null;
       };
       const safeSlug = slugify(data.slug) ?? slugify(data.name);
-      const safeCostPrice =
-        typeof data.cost_price === 'number' && data.cost_price > 0 ? data.cost_price : null;
+      // Arredondamento para 2 casas decimais ANTES de verificar > 0:
+      // sem isso, cost_price=0.001 passa na validação JS mas o banco arredonda
+      // para 0.00 (numeric(10,2)) e falha o CHECK chk_cost_price_not_zero.
+      // fix_version: safecostprice-round-20260627
+      const roundedCostPrice =
+        typeof data.cost_price === 'number' ? Math.round(data.cost_price * 100) / 100 : null;
+      const safeCostPrice = roundedCostPrice !== null && roundedCostPrice > 0 ? roundedCostPrice : null;
       const fitLen = (s: string | null | undefined, min: number, max: number): string | null => {
         const v = (s ?? '').toString().trim();
         return v.length >= min && v.length <= max ? v : null;
