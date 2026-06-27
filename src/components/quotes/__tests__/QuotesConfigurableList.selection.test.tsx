@@ -368,7 +368,7 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     act(() => {
       screen.getByTestId('apply-sort').click();
     });
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 40/);
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 40/);
     expect(
       screen.getAllByTestId(/^quote-row-more-/).length,
     ).toBe(25);
