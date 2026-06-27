@@ -125,6 +125,16 @@ export default function QuoteViewOrderHarness() {
                 <DropdownMenuItem>
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-testid="quote-actions-delete"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    handleDelete();
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <History className="mr-2 h-4 w-4" /> Histórico
                 </DropdownMenuItem>
