@@ -121,8 +121,8 @@ export default function QuoteViewPage() {
           <p className="mt-2 text-muted-foreground">
             O orçamento solicitado não existe ou foi removido.
           </p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/orcamentos')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Orçamentos
+          <Button variant="outline" className="mt-4 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10" onClick={() => navigate('/orcamentos')}>
+            <ArrowLeft className="mr-2 h-4 w-4 text-primary" /> Voltar para Orçamentos
           </Button>
         </div>
       </div>
@@ -144,13 +144,13 @@ export default function QuoteViewPage() {
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center print:hidden">
           <div className="flex items-center gap-2.5">
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               aria-label="Voltar"
               onClick={() => navigate('/orcamentos')}
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 text-primary" />
             </Button>
             <div>
               <div className="flex items-center gap-2">
@@ -173,14 +173,15 @@ export default function QuoteViewPage() {
             {quote.status !== 'pending_approval' && (
               <div className="hidden items-center gap-2 md:flex">
                 <Button
+                  variant="outline"
                   onClick={handleSyncBitrix}
                   disabled={isSyncing}
-                  className="h-8 min-w-[84px] justify-center gap-2 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="h-8 min-w-[84px] justify-center gap-2 rounded-full border-primary/40 px-3 text-xs hover:border-primary hover:bg-primary/10"
                 >
                   {isSyncing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                   ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-3.5 w-3.5 text-primary" />
                   )}
                   {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
                 </Button>
@@ -193,8 +194,8 @@ export default function QuoteViewPage() {
                 quoteNumber={quote.quote_number}
                 quoteStatus={quote.status}
                 trigger={
-                  <Button className="h-8 min-w-[84px] justify-center gap-2 px-3 text-xs" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
-                    <Eye className="h-3.5 w-3.5" /> Preview
+                  <Button variant="outline" className="h-8 min-w-[84px] justify-center gap-2 rounded-full border-primary/40 px-3 text-xs hover:border-primary hover:bg-primary/10" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
+                    <Eye className="h-3.5 w-3.5 text-primary" /> Preview
                   </Button>
                 }
               />
@@ -202,8 +203,8 @@ export default function QuoteViewPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Mais opções">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10" aria-label="Mais opções">
+                  <MoreHorizontal className="h-4 w-4 text-primary" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
