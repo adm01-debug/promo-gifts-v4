@@ -26,6 +26,8 @@ import {
   Edit,
   Inbox,
   RefreshCw,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 
 import type { Quote } from '@/hooks/quotes';
