@@ -40,6 +40,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
