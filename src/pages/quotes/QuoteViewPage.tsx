@@ -203,7 +203,7 @@ export default function QuoteViewPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10" aria-label="Mais opções">
+                <Button variant="outline" size="icon" className="h-7 w-7 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10" aria-label="Mais opções">
                   <MoreHorizontal className="h-4 w-4 text-primary" />
                 </Button>
               </DropdownMenuTrigger>
