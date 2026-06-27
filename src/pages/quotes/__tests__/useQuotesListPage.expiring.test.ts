@@ -229,3 +229,75 @@ describe('useQuotesListPage — fuzz exaustivo (300 runs) do filtro expiring', (
     );
   });
 });
+
+describe('useQuotesListPage — bordas de data/timezone do filtro expiring', () => {
+  it('expira HOJE às 23:59:59Z → mantém (ainda futuro vs now=12:00Z)', () => {
+    mockQuotes = [
+      q({ id: 'today-late', status: 'pending', valid_until: '2026-06-27T23:59:59.000Z' }),
+      q({ id: 'today-early', status: 'pending', valid_until: '2026-06-27T00:00:00.000Z' }),
+    ];
+    const h = renderHook(() => useQuotesListPage());
+    setExpiring(h);
+    expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['today-late']);
+  });
+
+  it('timezone -03:00 cujo instante UTC é futuro → mantém', () => {
+    // 2026-06-28T10:00-03:00 == 2026-06-28T13:00Z (futuro)
+    mockQuotes = [q({ id: 'brt-future', valid_until: '2026-06-28T10:00:00-03:00' })];
+    const h = renderHook(() => useQuotesListPage());
+    setExpiring(h);
+    expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['brt-future']);
+  });
+
+  it('timezone +09:00 cujo instante UTC é passado → exclui', () => {
+    // 2026-06-27T20:00+09:00 == 2026-06-27T11:00Z (passado vs 12:00Z)
+    mockQuotes = [q({ id: 'jp-past', valid_until: '2026-06-27T20:00:00+09:00' })];
+    const h = renderHook(() => useQuotesListPage());
+    setExpiring(h);
+    expect(h.result.current.filteredQuotes).toEqual([]);
+  });
+
+  it('formato date-only (YYYY-MM-DD) é interpretado como meia-noite UTC', () => {
+    mockQuotes = [
+      q({ id: 'today', valid_until: '2026-06-27' }), // 00:00Z → passado
+      q({ id: 'tomorrow', valid_until: '2026-06-28' }), // 00:00Z → futuro
+    ];
+    const h = renderHook(() => useQuotesListPage());
+    setExpiring(h);
+    expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['tomorrow']);
+  });
+
+  it('valid_until com espaços / null-string / objeto → exclui defensivamente', () => {
+    mockQuotes = [
+      q({ id: 'spaces', valid_until: '   ' }),
+      q({ id: 'null-str', valid_until: 'null' }),
+      q({ id: 'obj', valid_until: {} as unknown as string }),
+      q({ id: 'ok', valid_until: iso(DAY) }),
+    ];
+    const h = renderHook(() => useQuotesListPage());
+    setExpiring(h);
+    expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['ok']);
+  });
+});
+
+describe('useQuotesListPage — performance do filtro expiring', () => {
+  it('filtra 10.000 orçamentos em < 500ms', () => {
+    mockQuotes = Array.from({ length: 10_000 }, (_, i) =>
+      q({
+        id: `big-${i}`,
+        status: i % 11 === 0 ? 'expired' : 'pending',
+        valid_until: i % 13 === 0 ? null : iso((i - 5000) * 60_000),
+      }),
+    );
+    const t0 = performance.now();
+    const h = renderHook(() => useQuotesListPage());
+    setExpiring(h);
+    const out = h.result.current.filteredQuotes;
+    const elapsed = performance.now() - t0;
+    // sanity: a maioria deve ter sido filtrada
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.length).toBeLessThan(10_000);
+    expect(elapsed).toBeLessThan(500);
+  });
+});
+
