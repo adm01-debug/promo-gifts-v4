@@ -17,7 +17,10 @@ import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { e2eName } from "../helpers/e2e-resources";
 
-test.use({ timezoneId: "America/Sao_Paulo", locale: "pt-BR" });
+// Matriz de fusos: a contagem regressiva usa `new Date(y,m,d)` local, então
+// validamos em 3 fusos distintos para garantir que 0/1/7/-1 dia continuam
+// determinísticos e que o dd/MM/yyyy do tooltip não muda com o fuso.
+const TIMEZONES = ["America/Sao_Paulo", "UTC", "Europe/Lisbon"] as const;
 
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL ||
