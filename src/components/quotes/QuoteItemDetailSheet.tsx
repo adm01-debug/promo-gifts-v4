@@ -142,103 +142,113 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle className="text-left">Detalhes do Item</SheetTitle>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+            Detalhes do Item
+          </p>
+          <SheetTitle className="sr-only">Detalhes do Item</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
-          {/* Product Info */}
-          <div className="flex items-start gap-3">
-            {item.product_image_url && (
+        <div className="mt-5 space-y-6">
+          {/* Product hero */}
+          <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+            {item.product_image_url ? (
               <img
                 src={item.product_image_url}
                 alt={item.product_name}
-                className="h-16 w-16 rounded-lg border border-border object-cover"
+                className="h-20 w-20 shrink-0 rounded-lg border border-border/60 bg-background object-cover"
                 loading="lazy"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
+            ) : (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background">
+                <Package className="h-7 w-7 text-muted-foreground/50" strokeWidth={1.5} />
+              </div>
             )}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 space-y-1.5">
               {item.product_sku && (
-                <span
-                  className="mb-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-xs"
-                  style={{
-                    backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
-                    borderColor: item.color_hex || 'hsl(var(--border))',
-                    color: item.color_hex || 'hsl(var(--foreground))',
-                  }}
-                >
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {item.color_hex && (
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-border/50"
+                      className="h-2 w-2 rounded-full ring-1 ring-border/60"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
                   {item.product_sku}
-                  {item.color_name ? `-${item.color_name}` : ''}
+                  {item.color_name ? ` · ${item.color_name}` : ''}
                 </span>
               )}
-              <p className="font-semibold text-foreground">{item.product_name}</p>
+              <p className="font-display text-[16px] font-semibold leading-snug text-foreground">
+                {item.product_name}
+              </p>
               {!item.product_sku && item.color_name && (
-                <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
                   {item.color_hex && (
                     <span
-                      className="h-3.5 w-3.5 rounded-full border border-border"
+                      className="h-3 w-3 rounded-full ring-1 ring-border/60"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
-                  <span className="text-sm text-muted-foreground">{item.color_name}</span>
+                  <span className="text-[12px] text-muted-foreground">{item.color_name}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <Separator />
-
-          {/* Pricing Summary */}
+          {/* Pricing — bloco editorial com destaque no all-in */}
           <div>
-            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <DollarSign className="h-4 w-4 text-primary" />
+            <h4 className="mb-3 flex items-center gap-2 font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+              <DollarSign className="h-3.5 w-3.5" strokeWidth={1.75} />
               Preços
             </h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Preço unitário (produto)</span>
-                <span className="font-medium">{fmt(item.unit_price)}</span>
-              </div>
-              {personalizations.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Preço unitário (gravação)</span>
-                  <span className="font-medium">
-                    {fmt(
-                      personalizations.reduce((sum, p) => {
-                        const pTotal = p.total_cost || 0;
-                        return (
-                          sum +
-                          (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
-                        );
-                      }, 0),
-                    )}
+            <div className="overflow-hidden rounded-xl border border-border/60">
+              <div className="space-y-2 px-4 py-3 text-[13px]">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-muted-foreground">Preço unitário (produto)</span>
+                  <span className="tabular-nums text-foreground">{fmt(item.unit_price)}</span>
+                </div>
+                {personalizations.length > 0 && (
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-muted-foreground">Preço unitário (gravação)</span>
+                    <span className="tabular-nums text-foreground">
+                      {fmt(
+                        personalizations.reduce((sum, p) => {
+                          const pTotal = p.total_cost || 0;
+                          return (
+                            sum +
+                            (item.quantity > 0
+                              ? Math.round((pTotal / item.quantity) * 100) / 100
+                              : 0)
+                          );
+                        }, 0),
+                      )}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-baseline justify-between border-t border-border/50 pt-2">
+                  <span className="font-medium text-foreground">Unitário all-in</span>
+                  <span className="font-display text-[16px] font-semibold tabular-nums text-primary">
+                    {fmt(allInUnit)}
                   </span>
                 </div>
-              )}
-              <div className="flex justify-between border-t border-border/50 pt-2 font-semibold">
-                <span className="text-foreground">Unitário all-in</span>
-                <span className="text-primary">{fmt(allInUnit)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Quantidade</span>
-                <span className="font-medium">
-                  {item.quantity}
-                  <span className="ml-1.5 text-xs text-muted-foreground">
-                    (faixa {getCurrentTierLabel(item.quantity)} un)
+                <div className="flex items-baseline justify-between">
+                  <span className="text-muted-foreground">Quantidade</span>
+                  <span className="text-foreground">
+                    <span className="font-medium tabular-nums">{item.quantity}</span>
+                    <span className="ml-2 text-[11px] text-muted-foreground">
+                      faixa {getCurrentTierLabel(item.quantity)} un
+                    </span>
                   </span>
-                </span>
+                </div>
               </div>
-              <div className="flex justify-between border-t border-border/50 pt-2 font-semibold">
-                <span className="text-foreground">Total do item</span>
-                <span className="text-foreground">{fmt(itemTotalCanonical)}</span>
+              <div className="flex items-baseline justify-between border-t border-border/60 bg-muted/30 px-4 py-3">
+                <span className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Total do item
+                </span>
+                <span className="font-display text-[18px] font-semibold tabular-nums text-foreground">
+                  {fmt(itemTotalCanonical)}
+                </span>
               </div>
             </div>
           </div>
