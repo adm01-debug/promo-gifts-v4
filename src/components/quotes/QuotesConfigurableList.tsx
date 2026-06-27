@@ -365,6 +365,9 @@ export function QuotesConfigurableList({
             <div
               key={col.id}
               data-testid={`quotes-col-header-${col.id}`}
+              data-col-id={col.id}
+              role="columnheader"
+              aria-label={`Coluna ${col.label}`}
               className={cn(
                 'select-none truncate',
                 col.align === 'right' && 'text-right',
