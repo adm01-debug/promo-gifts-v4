@@ -482,16 +482,15 @@ export default function QuoteViewPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async (e) => {
                 e.preventDefault();
-                if (!quote?.id) return;
+                if (!quote?.id || isDeleting) return;
                 setIsDeleting(true);
                 try {
                   await deleteQuote(quote.id);
                   toast.success('Orçamento excluído');
                   setDeleteOpen(false);
                   navigate('/orcamentos');
-                } catch (err: unknown) {
-                  const msg = err instanceof Error ? err.message : 'Erro';
-                  toast.error('Não foi possível excluir', { description: msg });
+                } catch {
+                  toast.error('Não foi possível excluir o orçamento. Tente novamente.');
                 } finally {
                   setIsDeleting(false);
                 }
