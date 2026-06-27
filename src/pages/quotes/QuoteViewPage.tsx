@@ -194,8 +194,8 @@ export default function QuoteViewPage() {
                 quoteNumber={quote.quote_number}
                 quoteStatus={quote.status}
                 trigger={
-                  <Button variant="outline" className="h-8 min-w-[84px] justify-center gap-2 rounded-full border-primary/40 px-3 text-xs hover:border-primary hover:bg-primary/10" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
-                    <Eye className="h-3.5 w-3.5 text-primary" /> Preview
+                  <Button variant="outline" className="h-7 min-w-[71px] justify-center gap-1.5 rounded-full border-primary/40 px-2.5 text-[11px] hover:border-primary hover:bg-primary/10" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
+                    <Eye className="h-3 w-3 text-primary" /> Preview
                   </Button>
                 }
               />
