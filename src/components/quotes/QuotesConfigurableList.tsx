@@ -543,9 +543,7 @@ export function QuotesConfigurableList({
             ? 'Nenhum resultado'
             : hasMore
               ? `Exibindo ${paginatedQuotes.length} de ${uniqueQuotes.length} — role para carregar mais`
-              : uniqueQuotes.length === 1
-                ? '1 de 1 — fim da lista'
-                : `${paginatedQuotes.length} de ${uniqueQuotes.length} — fim da lista`}
+              : null}
         </div>
 
         {/* Indicador de "carregando mais" durante refetch em background */}
