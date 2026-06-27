@@ -271,15 +271,17 @@ test.describe('snapshot visual — DropdownMenu mobile 375x667', () => {
 
 /**
  * Tipografia/espaçamento do menu — consistência cross-viewport.
- * Garante que, ao reduzirmos a fonte (12→13px responsivo) e os ícones (h-3.5),
- * o item "Excluir" permanece legível e o padding/gap dos itens fica estável.
+ * O DropdownMenuItem do shadcn renderiza `text-sm` (14px), `py-1.5` (6px) e
+ * `px-2` (8px) em qualquer breakpoint. O contrato deste teste é garantir que
+ * essa baseline NÃO sofra regressão em nenhuma largura — manter o item
+ * "Excluir" legível e com touch-target consistente.
  */
 const TYPO_VIEWPORTS = [
-  { name: 'mobile-sm', width: 360, height: 720, expectedFontPx: 12 },
-  { name: 'mobile', width: 375, height: 667, expectedFontPx: 12 },
-  { name: 'tablet', width: 768, height: 1024, expectedFontPx: 13 },
-  { name: 'desktop', width: 1280, height: 800, expectedFontPx: 13 },
-  { name: 'desktop-xl', width: 1920, height: 1080, expectedFontPx: 13 },
+  { name: 'mobile-sm', width: 360, height: 720, expectedFontPx: 14 },
+  { name: 'mobile', width: 375, height: 667, expectedFontPx: 14 },
+  { name: 'tablet', width: 768, height: 1024, expectedFontPx: 14 },
+  { name: 'desktop', width: 1280, height: 800, expectedFontPx: 14 },
+  { name: 'desktop-xl', width: 1920, height: 1080, expectedFontPx: 14 },
 ] as const;
 
 test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
