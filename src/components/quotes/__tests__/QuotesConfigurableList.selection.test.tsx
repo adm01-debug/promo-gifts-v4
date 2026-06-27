@@ -335,8 +335,8 @@ describe('QuotesConfigurableList — infinite scroll', () => {
           <TooltipProvider>
             <Harness />
           </TooltipProvider>
-        </QueryClientProvider>
-      </MemoryRouter>,
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     // Estado inicial: 25 de 60
