@@ -338,19 +338,16 @@ export function QuotesConfigurableList({
 
 
       {/* Table */}
-      <div
-        ref={scrollRef}
-        data-testid="quotes-scroll-container"
-        className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border"
-      >
-
+      <div className="rounded-lg border border-border overflow-hidden">
+      <div className="overflow-x-auto">
         <div className="min-w-[1100px] w-max" style={{ minWidth: 'max(100%, 1100px)' }}>
 
         {/* Header */}
         <div
-          className="sticky top-0 z-10 grid gap-5 rounded-t-lg border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
+          className="grid gap-5 border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
           style={{ gridTemplateColumns: gridTemplate }}
         >
+
           {selectionMode && (
             <div className="flex items-center justify-center">
               <Checkbox
