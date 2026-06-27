@@ -64,22 +64,33 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('quote-actions-menu')).toBeVisible();
 
     // Radix auto-foca o primeiro item ao abrir via teclado. Capturamos o
-    // item focado inicial e depois percorremos os demais com ArrowDown.
-    const collected: string[] = [];
+    // item focado inicial e depois percorremos os demais com ArrowDown,
+    // aguardando o foco mudar entre as teclas (evita race com Radix).
     const readFocused = () =>
       page.evaluate(() => (document.activeElement?.textContent ?? '').trim());
 
+    const collected: string[] = [];
     collected.push(await readFocused());
+
     for (let i = 0; i < 3; i += 1) {
+      const prev = collected[collected.length - 1];
       await page.keyboard.press('ArrowDown');
+      // Aguarda o foco realmente migrar antes de ler o próximo nome.
+      await page
+        .waitForFunction(
+          (previous) => (document.activeElement?.textContent ?? '').trim() !== previous,
+          prev,
+          { timeout: 2000 },
+        )
+        .catch(() => {
+          /* último item: foco não muda; segue para a leitura final. */
+        });
       collected.push(await readFocused());
     }
 
-    // Nenhum item destacado pode ser "Modo Apresentação".
     for (const name of collected) {
       expect(name).not.toMatch(/Modo Apresentação/i);
     }
-    // Sanidade: os 3 itens esperados aparecem na varredura.
     const joined = collected.join(' | ');
     expect(joined).toMatch(/Editar/);
     expect(joined).toMatch(/Duplicar/);
