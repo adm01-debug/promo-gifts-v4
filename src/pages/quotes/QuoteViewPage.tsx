@@ -175,7 +175,7 @@ export default function QuoteViewPage() {
                 <Button
                   onClick={handleSyncBitrix}
                   disabled={isSyncing}
-                  className="min-w-[105px] justify-center gap-2 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="h-8 min-w-[84px] justify-center gap-2 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {isSyncing ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
