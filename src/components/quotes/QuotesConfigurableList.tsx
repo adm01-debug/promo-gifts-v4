@@ -80,6 +80,7 @@ export function QuotesConfigurableList({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
+  const scrollScheduledRef = useRef(false);
 
   // Reset quando a lista de quotes muda (filtro, busca, ordenação, etc.)
   // Reseta tanto a janela visível quanto o scroll para evitar duplicação
@@ -105,11 +106,15 @@ export function QuotesConfigurableList({
 
   // Throttle via rAF: garante no máximo 1 cálculo por frame, mesmo em
   // listas muito longas com onScroll disparando dezenas de vezes/segundo.
+  // Usamos uma flag booleana (não o ID do rAF) para evitar race quando
+  // o ambiente executa o callback sincronamente (testes).
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const el = e.currentTarget;
-      if (scrollRafRef.current != null) return;
+      if (scrollScheduledRef.current) return;
+      scrollScheduledRef.current = true;
       scrollRafRef.current = requestAnimationFrame(() => {
+        scrollScheduledRef.current = false;
         scrollRafRef.current = null;
         // ~200px antes do fim → carrega próxima página
         if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
