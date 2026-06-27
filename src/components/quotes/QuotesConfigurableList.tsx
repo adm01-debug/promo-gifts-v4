@@ -229,12 +229,6 @@ export function QuotesConfigurableList({
   );
 
 
-  // Reset page when pageSize changes
-  const handlePageSizeChange = (value: string) => {
-    setPageSize(Number(value));
-    setCurrentPage(1);
-    handleClearSelection();
-  };
 
   const { data: logoByCnpj, isLoading: isLogosLoading } = useQuoteClientLogos(
     paginatedQuotes.map((q) => q.client_cnpj),
