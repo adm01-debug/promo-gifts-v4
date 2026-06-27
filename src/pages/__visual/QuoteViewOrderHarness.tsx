@@ -50,6 +50,7 @@ declare global {
 export default function QuoteViewOrderHarness() {
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -65,15 +66,18 @@ export default function QuoteViewOrderHarness() {
   }, []);
 
   const handleConfirmDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
     window.__deleteQuoteCalls?.push(HARNESS_QUOTE_ID);
     try {
       await window.__deleteQuoteSpy?.(HARNESS_QUOTE_ID);
       setConfirmOpen(false);
       toast.success('Orçamento excluído');
       navigate('/orcamentos');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro';
-      toast.error('Erro ao excluir', { description: msg });
+    } catch {
+      toast.error('Não foi possível excluir o orçamento. Tente novamente.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -185,15 +189,16 @@ export default function QuoteViewOrderHarness() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel ref={cancelRef} data-testid="quote-delete-cancel">
+              <AlertDialogCancel ref={cancelRef} disabled={isDeleting} data-testid="quote-delete-cancel">
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
                 data-testid="quote-delete-confirm"
+                disabled={isDeleting}
                 onClick={handleConfirmDelete}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Excluir
+                {isDeleting ? 'Excluindo…' : 'Excluir'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
