@@ -65,81 +65,88 @@ export const QUOTE_ROW_BADGE_STYLES = {
     label: 'Rascunho',
     className:
       'border-dashed border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-300',
-    description: 'Em edição, ainda não enviado.',
+    description:
+      'Você ainda está montando este orçamento. Ele salva sozinho, mas o cliente ainda não vê nada.',
   },
   unsynced: {
     label: 'Criado (Não Sincronizado)',
     className:
       'border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
     description:
-      'Status pending sem sincronização com o CRM (synced_to_bitrix=false e sem fluxo de desconto).',
+      'Orçamento pronto, mas ainda não foi para o CRM. Sincronize para o time comercial conseguir acompanhar.',
   },
   synced: {
     label: 'Criado/Sincronizado',
     className: 'border-primary/40 bg-primary/10 text-primary',
     description:
-      'Status pending já sincronizado com o CRM (synced_to_bitrix=true e sem fluxo de desconto).',
+      'Tudo certo! Já está no CRM e o time comercial consegue ver. Pode seguir para o envio ao cliente.',
   },
   awaiting: {
     label: 'Aguardando Aprovação',
     className:
       'border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-300',
     description:
-      'Aguardando aprovação de desconto pela alçada (DAR=pending sobrepõe synced).',
+      'Tem desconto acima da sua alçada. Está esperando o gerente liberar para você seguir.',
   },
   approved: {
     label: 'Desconto Aprovado',
     className:
       'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300',
-    description: 'Desconto aprovado pela alçada — pronto para enviar (DAR=approved).',
+    description:
+      'Seu desconto foi liberado pelo gerente. Pode mandar o orçamento para o cliente!',
   },
   rejected: {
     label: 'Desconto Rejeitado',
     className: 'border-destructive/40 bg-destructive/10 text-destructive',
-    description: 'Desconto rejeitado pela alçada (DAR=rejected).',
+    description:
+      'O desconto não foi aprovado. Ajuste o valor ou alinhe com o gerente antes de enviar.',
   },
   expired: {
     label: 'Expirado',
     className: 'border-muted-foreground/30 bg-muted text-muted-foreground',
-    description: 'Validade do orçamento vencida.',
+    description:
+      'Passou da data de validade. Se o cliente ainda tiver interesse, renove ou faça um novo orçamento.',
   },
   expired_discount: {
     label: 'Desconto Expirado',
     className:
       'border-amber-600/40 bg-amber-600/10 text-amber-700 dark:text-amber-300',
     description:
-      'Aprovação de desconto venceu (DAR=expired) — precisa de nova aprovação antes de seguir.',
+      'A aprovação do desconto venceu. Peça uma nova liberação para o gerente antes de mandar para o cliente.',
   },
   sent: {
     label: 'Enviado',
     className: 'border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300',
-    description: 'Enviado ao cliente.',
+    description: 'Orçamento já foi para o cliente. Agora é acompanhar e fazer follow-up.',
   },
   viewed: {
     label: 'Visualizado',
     className: 'border-info/40 bg-info/10 text-info',
-    description: 'Visualizado pelo cliente.',
+    description:
+      'O cliente abriu seu orçamento. Bom momento para dar um toque e tirar dúvidas.',
   },
   quote_approved: {
     label: 'Aprovado',
     className: 'border-success/40 bg-success/10 text-success',
-    description: 'Aprovado pelo cliente.',
+    description: 'O cliente aprovou o orçamento. Hora de fechar e transformar em pedido!',
   },
   converted: {
     label: 'Convertido em Pedido',
     className: 'border-success/50 bg-success/15 text-success',
-    description: 'Convertido em pedido.',
+    description: 'Virou pedido! Venda fechada — parabéns pelo resultado.',
   },
   cancelled: {
     label: 'Cancelado',
     className:
       'border-muted-foreground/30 bg-muted/50 text-muted-foreground line-through',
-    description: 'Cancelado pelo vendedor.',
+    description:
+      'Você cancelou este orçamento. Ele não aparece mais no fluxo ativo de vendas.',
   },
   quote_rejected: {
     label: 'Rejeitado',
     className: 'border-destructive/40 bg-destructive/10 text-destructive',
-    description: 'Rejeitado pelo cliente.',
+    description:
+      'O cliente recusou o orçamento. Vale entender o motivo para acertar na próxima.',
   },
 } as const;
 
@@ -256,6 +263,23 @@ const CHIPS: ChipDef[] = [
 export const QUOTE_CHIP_MATCHERS: Record<string, (q: Quote) => boolean> =
   Object.fromEntries(CHIPS.map((c) => [c.key, c.match]));
 
+/**
+ * Texto amigável (voltado para vendedor) exibido como tooltip ao passar
+ * o mouse / focar nos chips de filtro do topo. Espelha o tom das
+ * `description` de `QUOTE_ROW_BADGE_STYLES`.
+ */
+const CHIP_TOOLTIPS: Record<string, string> = {
+  all: 'Mostra todos os seus orçamentos, em qualquer fase.',
+  draft: QUOTE_ROW_BADGE_STYLES.draft.description,
+  unsynced: QUOTE_ROW_BADGE_STYLES.unsynced.description,
+  created_synced: QUOTE_ROW_BADGE_STYLES.synced.description,
+  pending_approval: QUOTE_ROW_BADGE_STYLES.awaiting.description,
+  discount_approved: QUOTE_ROW_BADGE_STYLES.approved.description,
+  discount_rejected: QUOTE_ROW_BADGE_STYLES.rejected.description,
+  discount_expired: QUOTE_ROW_BADGE_STYLES.expired_discount.description,
+  expired: QUOTE_ROW_BADGE_STYLES.expired.description,
+};
+
 const log = createClientLogger('quotes.chips');
 // Reporta no máximo uma vez por sessão para evitar spam de logs.
 let reportedLegacySync = false;
@@ -345,6 +369,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
                 onKeyDown={(e) => handleKeyDown(e, idx)}
                 aria-pressed={isActive}
                 aria-label={ariaLabel}
+                title={CHIP_TOOLTIPS[key]}
                 className={cn(
                   'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
                   'whitespace-nowrap border outline-none',
