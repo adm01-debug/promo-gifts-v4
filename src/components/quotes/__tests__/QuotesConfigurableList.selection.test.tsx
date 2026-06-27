@@ -272,7 +272,8 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     );
 
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/fim da lista/);
+    // No fim da lista, o rodapé não exibe mais contagem ("X de Y — fim da lista" removido).
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
     // Sentinel removido quando não há mais o que carregar
     expect(screen.queryByTestId('quotes-infinite-sentinel')).toBeNull();
   });
