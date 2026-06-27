@@ -148,6 +148,7 @@ for (const theme of ['light', 'dark'] as const) {
     const joined = collected.join(' | ');
     expect(joined).toMatch(/Editar/);
     expect(joined).toMatch(/Duplicar/);
+    expect(joined).toMatch(/Excluir/);
     expect(joined).toMatch(/Histórico/);
 
     // Escape fecha o menu sem efeitos colaterais.
