@@ -204,7 +204,6 @@ export default function QuoteViewPage() {
                       after:animate-[preview-breath-border_6s_ease-in-out_infinite] after:motion-reduce:animate-none
                       hover:after:animate-none focus-visible:after:animate-none hover:after:border-primary/0
                       focus-visible:shadow-[0_0_14px_hsl(var(--primary)/0.5)]"
-                    data-preview-breath="true"
                   >
                     <Eye className="relative z-10 h-3 w-3 text-primary transition-transform duration-300 group-hover:scale-125 group-hover:drop-shadow-[0_0_4px_hsl(var(--primary))]" />
                     <span className="relative z-10 tracking-wide">Preview</span>
