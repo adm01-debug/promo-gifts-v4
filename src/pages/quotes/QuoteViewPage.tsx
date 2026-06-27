@@ -274,8 +274,8 @@ export default function QuoteViewPage() {
         </div>
 
         {/* Status Timeline + Validity Banner */}
-        <div className="flex flex-col items-start gap-4 md:flex-row print:hidden">
-          <div className="flex-1 rounded-lg border bg-card p-4">
+        <div className="flex flex-col items-start gap-2.5 md:flex-row print:hidden">
+          <div className="flex-1 rounded-lg border bg-card px-3 py-2.5">
             <QuoteStatusTimeline
               status={quote.status}
               createdAt={quote.created_at}
@@ -286,6 +286,7 @@ export default function QuoteViewPage() {
           </div>
           <QuoteValidityBanner validUntil={quote.valid_until} status={quote.status} />
         </div>
+
 
         {/* Discount Approval Banner */}
         {quote.status === 'pending_approval' && (
