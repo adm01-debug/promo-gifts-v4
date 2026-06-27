@@ -504,21 +504,65 @@ export function QuotesConfigurableList({
           );
           })
         )}
+
+        {/* Sentinel para IntersectionObserver — invisível, mas observável */}
+        {hasMore && (
+          <div
+            ref={sentinelRef}
+            data-testid="quotes-infinite-sentinel"
+            aria-hidden="true"
+            className="h-4 w-full"
+          />
+        )}
         </div>
       </div>
 
 
-      {/* Footer: contagem precisa + estado de "fim da lista" */}
-      <div className="flex items-center justify-between px-2 py-2">
+      {/* Footer: contagem, loading mais, erro com retry */}
+      <div className="flex items-center justify-between gap-3 px-2 py-2">
         <div className="text-sm text-muted-foreground" data-testid="quotes-footer-count">
-          {quotes.length === 0
+          {uniqueQuotes.length === 0
             ? 'Nenhum resultado'
             : hasMore
-              ? `Exibindo ${paginatedQuotes.length} de ${quotes.length} — role para carregar mais`
-              : quotes.length === 1
+              ? `Exibindo ${paginatedQuotes.length} de ${uniqueQuotes.length} — role para carregar mais`
+              : uniqueQuotes.length === 1
                 ? '1 de 1 — fim da lista'
-                : `${paginatedQuotes.length} de ${quotes.length} — fim da lista`}
+                : `${paginatedQuotes.length} de ${uniqueQuotes.length} — fim da lista`}
         </div>
+
+        {/* Indicador de "carregando mais" durante refetch em background */}
+        {isFetching && uniqueQuotes.length > 0 && !loadError && (
+          <div
+            data-testid="quotes-footer-loading-more"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            Carregando mais…
+          </div>
+        )}
+
+        {/* Erro de carregamento com botão de retry */}
+        {loadError && (
+          <div
+            data-testid="quotes-footer-load-error"
+            className="flex items-center gap-2 text-xs text-destructive"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Falha ao carregar.</span>
+            {onRetry && (
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs"
+                data-testid="quotes-footer-retry"
+                onClick={onRetry}
+              >
+                Tentar novamente
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
