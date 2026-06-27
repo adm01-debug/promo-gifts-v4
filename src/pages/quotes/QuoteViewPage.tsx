@@ -139,26 +139,27 @@ export default function QuoteViewPage() {
         path={`/orcamentos/${id}`}
         noIndex
       />
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8 print:max-w-none print:px-0 print:py-0">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2.5 px-3 py-2.5 pb-24 sm:space-y-3 sm:px-4 sm:py-3 md:pb-5 lg:px-6 xl:px-8 print:max-w-none print:px-0 print:py-0">
         {/* Header */}
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center print:hidden">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center print:hidden">
+          <div className="flex items-center gap-2.5">
             <Button
               variant="ghost"
               size="icon"
               aria-label="Voltar"
               onClick={() => navigate('/orcamentos')}
+              className="h-8 w-8"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 data-testid="page-title-quote-view" className="font-display text-2xl font-bold">
+              <div className="flex items-center gap-2">
+                <h1 data-testid="page-title-quote-view" className="font-display text-base font-semibold leading-tight tracking-tight">
                   Orçamento {quote.quote_number}
                 </h1>
-                <Badge variant={status.variant}>{status.label}</Badge>
+                <Badge variant={status.variant} className="h-5 px-1.5 text-[10px]">{status.label}</Badge>
               </div>
-              <p className="text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Criado em{' '}
                 {quote.created_at
                   ? format(new Date(quote.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
@@ -166,6 +167,7 @@ export default function QuoteViewPage() {
               </p>
             </div>
           </div>
+
 
           <div className="flex items-center gap-2">
             {quote.status !== 'pending_approval' && (
