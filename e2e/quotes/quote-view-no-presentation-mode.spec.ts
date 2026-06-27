@@ -39,11 +39,22 @@ for (const vp of VIEWPORTS) {
       await openHarness(page, theme);
       await openMenuViaClick(page);
 
-      for (const label of ['Editar', 'Duplicar', 'Histórico'] as const) {
+      for (const label of ['Editar', 'Duplicar', 'Excluir', 'Histórico'] as const) {
         const item = page.getByRole('menuitem', { name: new RegExp(`^${label}$`, 'i') });
         await expect(item).toBeVisible();
         await expect(item).toHaveAccessibleName(new RegExp(label, 'i'));
       }
+
+      // Ordem: Editar → Duplicar → Excluir → Histórico.
+      const itemTexts = await page
+        .getByTestId('quote-actions-menu')
+        .getByRole('menuitem')
+        .allInnerTexts();
+      const order = itemTexts.map((t) => t.trim());
+      const idx = (label: string) => order.findIndex((t) => new RegExp(label, 'i').test(t));
+      expect(idx('Editar')).toBeLessThan(idx('Duplicar'));
+      expect(idx('Duplicar')).toBeLessThan(idx('Excluir'));
+      expect(idx('Excluir')).toBeLessThan(idx('Histórico'));
 
       await expect(page.getByText(/Modo Apresentação/i)).toHaveCount(0);
       await expect(
@@ -52,6 +63,49 @@ for (const vp of VIEWPORTS) {
     });
   }
 }
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`"Excluir" abre confirmação, dispara toast e redireciona — ${theme}`, async ({ page }) => {
+    await openHarness(page, theme);
+    await openMenuViaClick(page);
+
+    // Stub determinístico: aceita o window.confirm exibido pelo harness.
+    const dialogs: string[] = [];
+    page.on('dialog', async (dialog) => {
+      dialogs.push(dialog.message());
+      expect(dialog.type()).toBe('confirm');
+      await dialog.accept();
+    });
+
+    await page.getByTestId('quote-actions-delete').click();
+
+    // Confirmação foi exibida com a copy esperada.
+    await expect.poll(() => dialogs.length).toBeGreaterThan(0);
+    expect(dialogs[0]).toMatch(/excluir este orçamento/i);
+
+    // Toast de sucesso renderizado por sonner.
+    await expect(page.getByText(/Orçamento excluído/i).first()).toBeVisible();
+
+    // Redirecionamento para /orcamentos.
+    await page.waitForURL(/\/orcamentos(\?|$|\/)/, { timeout: 5000 });
+    expect(new URL(page.url()).pathname).toMatch(/^\/orcamentos\/?$/);
+  });
+
+  test(`"Excluir" com cancelamento mantém usuário na rota — ${theme}`, async ({ page }) => {
+    await openHarness(page, theme);
+    await openMenuViaClick(page);
+
+    page.on('dialog', async (dialog) => {
+      await dialog.dismiss();
+    });
+
+    await page.getByTestId('quote-actions-delete').click();
+    await page.waitForTimeout(200);
+
+    // Permanece no harness, sem toast.
+    await expect(page.getByTestId('quote-view-order-harness')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe('/__visual/quote-view-order');
+  });
 
 for (const theme of ['light', 'dark'] as const) {
   test(`navegação por teclado (Enter + setas) não expõe "Modo Apresentação" — ${theme}`, async ({ page }) => {
