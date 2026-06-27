@@ -64,24 +64,53 @@ for (const vp of VIEWPORTS) {
   }
 }
 
+async function installDeleteSpy(page: Page) {
+  await page.addInitScript(() => {
+    (window as unknown as { __deleteQuoteCalls: string[] }).__deleteQuoteCalls = [];
+    (window as unknown as { __deleteQuoteSpy: (id: string) => Promise<void> }).__deleteQuoteSpy =
+      async () => {
+        // Resolve assíncrono para exercitar o caminho `await` do harness.
+        await Promise.resolve();
+      };
+  });
+}
+
+const readDeleteCalls = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __deleteQuoteCalls?: string[] }).__deleteQuoteCalls ?? []);
+
 for (const theme of ['light', 'dark'] as const) {
-  test(`"Excluir" abre confirmação, dispara toast e redireciona — ${theme}`, async ({ page }) => {
+  test(`"Excluir" abre confirmação acessível, chama deleteQuote(id) 1x, dispara toast e redireciona — ${theme}`, async ({
+    page,
+  }) => {
+    await installDeleteSpy(page);
+    await page.setViewportSize({ width: 375, height: 667 });
     await openHarness(page, theme);
+
+    const expectedId = await page
+      .getByTestId('quote-view-order-harness')
+      .getAttribute('data-quote-id');
+    expect(expectedId).toBeTruthy();
+
     await openMenuViaClick(page);
-
-    // Stub determinístico: aceita o window.confirm exibido pelo harness.
-    const dialogs: string[] = [];
-    page.on('dialog', async (dialog) => {
-      dialogs.push(dialog.message());
-      expect(dialog.type()).toBe('confirm');
-      await dialog.accept();
-    });
-
     await page.getByTestId('quote-actions-delete').click();
 
-    // Confirmação foi exibida com a copy esperada.
-    await expect.poll(() => dialogs.length).toBeGreaterThan(0);
-    expect(dialogs[0]).toMatch(/excluir este orçamento/i);
+    // A11y: AlertDialog com nome e descrição acessíveis.
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAccessibleName(/excluir orçamento\?/i);
+    await expect(dialog).toHaveAccessibleDescription(/excluir este orçamento/i);
+
+    // Foco inicial vai para "Cancelar" (escolha segura em ação destrutiva).
+    const cancel = page.getByTestId('quote-delete-cancel');
+    const confirm = page.getByTestId('quote-delete-confirm');
+    await expect(cancel).toBeFocused();
+    await expect(cancel).toHaveAccessibleName(/cancelar/i);
+    await expect(confirm).toHaveAccessibleName(/excluir/i);
+
+    await confirm.click();
+
+    // Spy: deleteQuote chamado exatamente 1x com o id correto.
+    await expect.poll(() => readDeleteCalls(page)).toEqual([expectedId]);
 
     // Toast de sucesso renderizado por sonner.
     await expect(page.getByText(/Orçamento excluído/i).first()).toBeVisible();
@@ -91,21 +120,22 @@ for (const theme of ['light', 'dark'] as const) {
     expect(new URL(page.url()).pathname).toMatch(/^\/orcamentos\/?$/);
   });
 
-  test(`"Excluir" com cancelamento mantém usuário na rota — ${theme}`, async ({ page }) => {
+  test(`"Excluir" com Cancelar não chama deleteQuote e mantém rota — ${theme}`, async ({ page }) => {
+    await installDeleteSpy(page);
+    await page.setViewportSize({ width: 375, height: 667 });
     await openHarness(page, theme);
     await openMenuViaClick(page);
 
-    page.on('dialog', async (dialog) => {
-      await dialog.dismiss();
-    });
-
     await page.getByTestId('quote-actions-delete').click();
-    await page.waitForTimeout(200);
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+    await page.getByTestId('quote-delete-cancel').click();
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
 
-    // Permanece no harness, sem toast.
-    await expect(page.getByTestId('quote-view-order-harness')).toBeVisible();
+    expect(await readDeleteCalls(page)).toEqual([]);
     expect(new URL(page.url()).pathname).toBe('/__visual/quote-view-order');
   });
+}
+
 
 for (const theme of ['light', 'dark'] as const) {
   test(`navegação por teclado (Enter + setas) não expõe "Modo Apresentação" — ${theme}`, async ({ page }) => {
