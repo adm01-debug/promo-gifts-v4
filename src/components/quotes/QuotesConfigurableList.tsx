@@ -344,7 +344,7 @@ export function QuotesConfigurableList({
         className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border"
       >
 
-        <div className="inline-block min-w-full min-w-[1100px] align-top">
+        <div className="min-w-[1100px] w-max" style={{ minWidth: 'max(100%, 1100px)' }}>
 
         {/* Header */}
         <div
