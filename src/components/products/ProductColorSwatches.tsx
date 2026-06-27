@@ -77,6 +77,15 @@ const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string>
   md: 'h-[var(--swatch-size,var(--swatch-size-md))] w-[var(--swatch-size,var(--swatch-size-md))]',
 };
 
+// Chip "+N": escala em ALTURA junto com os dots, mas usa min-width (não largura
+// fixa) para nunca cortar o texto — vira pílula em 2+ dígitos (ex.: "+12") nos
+// tamanhos pequenos (tabela/lista/grid denso). Mantém círculo p/ 1 dígito.
+const CHIP_SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
+  xs: 'h-[var(--swatch-size,var(--swatch-size-xs))] min-w-[var(--swatch-size,var(--swatch-size-xs))]',
+  sm: 'h-[var(--swatch-size,var(--swatch-size-sm))] min-w-[var(--swatch-size,var(--swatch-size-sm))]',
+  md: 'h-[var(--swatch-size,var(--swatch-size-md))] min-w-[var(--swatch-size,var(--swatch-size-md))]',
+};
+
 export const ProductColorSwatches = memo(
   ({
     colors,
@@ -281,7 +290,7 @@ export const ProductColorSwatches = memo(
           <span
             className={cn(
               'inline-flex shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-semibold leading-none text-muted-foreground',
-              SIZE_CLASS[size],
+              CHIP_SIZE_CLASS[size],
             )}
             aria-label={`Mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
             data-testid="color-swatches-overflow"
