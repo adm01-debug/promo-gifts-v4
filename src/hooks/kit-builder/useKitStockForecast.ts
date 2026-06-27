@@ -43,7 +43,9 @@ export function useKitStockForecast(items: KitItem[], kitQuantity: number) {
         next_entry_date: string | null;
         next_entry_quantity: number | null;
       }>({
-        table: 'variant_supplier_sources',
+        // FIX 2026-06-26: product_id/stock_quantity/next_entry_date/next_entry_quantity vivem em product_variants,
+        // nao em variant_supplier_sources (gerava 42703 engolido pelo .catch -> forecast de kit sempre vazio).
+        table: 'product_variants',
         operation: 'select',
         select: 'product_id, stock_quantity, next_entry_date, next_entry_quantity',
         filters: { product_id: productIds, is_active: true },
