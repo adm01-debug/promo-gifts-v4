@@ -98,12 +98,15 @@ const tsOk = step('Type-check (tsgo)', () => {
 
 // ─── 3. Vitest — expiração ──────────────────────────────────────────────────
 const vitestOk = step('Vitest · src/lib/quotes/__tests__/expiration.test.ts', () => {
-  const out = execSync(
+  const raw = execSync(
     'npx vitest run src/lib/quotes/__tests__/expiration.test.ts --reporter=dot 2>&1',
     { encoding: 'utf8', stdio: 'pipe' },
   );
+  // Remove códigos ANSI de cor antes de fazer match.
+  const out = raw.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
   const m = out.match(/Tests\s+(\d+)\s+passed/);
-  if (!m || /failed/i.test(out)) throw new Error(out.split('\n').slice(-12).join('\n'));
+  const failed = /\bfailed\b/i.test(out) && !/0\s+failed/i.test(out);
+  if (!m || failed) throw new Error(out.split('\n').slice(-15).join('\n'));
   return { passed: Number(m[1]) };
 });
 
