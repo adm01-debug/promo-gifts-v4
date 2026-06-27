@@ -342,13 +342,13 @@ describe('QuotesConfigurableList — infinite scroll', () => {
       </QueryClientProvider>,
     );
 
-    // Estado inicial: 25 de 60
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 60/);
+    // Estado inicial: Exibindo 25 de 60
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 60/);
 
-    // Avança o infinite scroll até o fim
+    // Avança o infinite scroll até o fim → rodapé fica vazio.
     triggerIntersection();
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/60 de 60/);
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
 
     // Troca de filtro → deve resetar para 25 do novo total (40)
     act(() => {
