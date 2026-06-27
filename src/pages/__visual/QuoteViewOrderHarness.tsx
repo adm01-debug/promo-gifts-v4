@@ -65,7 +65,10 @@ export default function QuoteViewOrderHarness() {
     };
   }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (e?: React.MouseEvent) => {
+    // Radix fecha o AlertDialog ao clicar na Action — bloqueamos para manter
+    // o estado de loading visível (botões disabled) durante o await.
+    e?.preventDefault();
     if (isDeleting) return;
     setIsDeleting(true);
     window.__deleteQuoteCalls?.push(HARNESS_QUOTE_ID);
