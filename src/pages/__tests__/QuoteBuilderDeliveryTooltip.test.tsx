@@ -13,7 +13,7 @@ vi.mock('@/hooks/quotes', () => ({
   useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
   useAutoSaveQuote: vi.fn(() => ({ saving: false })),
   useQuoteItems: vi.fn(() => ({ items: [], setItems: vi.fn() })),
-  useQuoteComments: vi.fn(() => ({ comments: [], addComment: vi.fn() })),
+  
   useQuoteVersions: vi.fn(() => ({ versions: [], isLoading: false })),
   useProdutoPersonalizacao: vi.fn(() => ({})),
   useSellerDiscountLimits: vi.fn(() => ({ limit: 0, isLoading: false })),
