@@ -13,6 +13,7 @@ const ALL_COLUMN_IDS = [
   "date",
   "value",
   "delivery",
+  "expiration",
   "quote_number",
 ] as const;
 
