@@ -72,9 +72,9 @@ interface ProductColorSwatchesProps {
 }
 
 const SIZE_CLASS: Record<NonNullable<ProductColorSwatchesProps['size']>, string> = {
-  xs: 'h-[var(--swatch-size-xs)] w-[var(--swatch-size-xs)]',
-  sm: 'h-[var(--swatch-size-sm)] w-[var(--swatch-size-sm)]',
-  md: 'h-[var(--swatch-size-md)] w-[var(--swatch-size-md)]',
+  xs: 'h-[var(--swatch-size,var(--swatch-size-xs))] w-[var(--swatch-size,var(--swatch-size-xs))]',
+  sm: 'h-[var(--swatch-size,var(--swatch-size-sm))] w-[var(--swatch-size,var(--swatch-size-sm))]',
+  md: 'h-[var(--swatch-size,var(--swatch-size-md))] w-[var(--swatch-size,var(--swatch-size-md))]',
 };
 
 export const ProductColorSwatches = memo(
@@ -104,7 +104,7 @@ export const ProductColorSwatches = memo(
       return (
         <div
           className={cn(
-            'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] py-[var(--swatch-container-py)]',
+            'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] py-[var(--swatch-container-py)]',
             className,
           )}
           aria-busy="true"
@@ -127,7 +127,7 @@ export const ProductColorSwatches = memo(
         return (
           <div
             className={cn(
-              'min-h-[var(--swatch-size-sm)] py-[var(--swatch-container-py)]',
+              'min-h-[var(--swatch-size,var(--swatch-size-sm))] py-[var(--swatch-container-py)]',
               className,
             )}
             data-testid="colors-empty-hidden"
@@ -136,7 +136,7 @@ export const ProductColorSwatches = memo(
       }
       return (
         <div
-          className="flex min-h-[var(--swatch-size-sm)] items-center gap-1 py-[var(--swatch-container-py)] opacity-40"
+          className="flex min-h-[var(--swatch-size,var(--swatch-size-sm))] items-center gap-1 py-[var(--swatch-container-py)] opacity-40"
           role="status"
           aria-live="polite"
           data-testid="colors-unavailable"
@@ -161,9 +161,9 @@ export const ProductColorSwatches = memo(
           wrap
             ? // Modo wrap: múltiplas linhas, altura automática, sem clipping nas bordas.
               //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
-              'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
-              'flex h-[var(--swatch-size-sm)] max-h-[var(--swatch-size-sm)] min-h-[var(--swatch-size-sm)] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
+              'flex h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[var(--swatch-size,var(--swatch-size-sm))] min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
         role="radiogroup"
