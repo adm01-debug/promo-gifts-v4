@@ -296,7 +296,7 @@ export default function QuoteViewPage() {
 
         {/* Status Timeline + Validity Banner */}
         <div className="flex flex-col items-start gap-2.5 md:flex-row print:hidden">
-          <div className="flex-1 rounded-lg border bg-card px-3 py-2.5">
+          <div className="flex-1 px-1 py-1">
             <QuoteStatusTimeline
               status={quote.status}
               createdAt={quote.created_at}
@@ -305,7 +305,6 @@ export default function QuoteViewPage() {
               isSyncing={isSyncing}
             />
           </div>
-          
         </div>
 
 
