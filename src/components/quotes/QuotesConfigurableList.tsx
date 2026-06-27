@@ -379,7 +379,7 @@ export function QuotesConfigurableList({
 
 
         {/* Empty state */}
-        {quotes.length === 0 ? (
+        {uniqueQuotes.length === 0 ? (
           <div
             data-testid="quotes-empty-state"
             className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
