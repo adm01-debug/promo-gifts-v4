@@ -64,8 +64,8 @@ test.describe('Preview button — visual regression', () => {
     await expect(btn).toHaveScreenshot('preview-focus-light.png', opts('VISUAL_THRESHOLD_PREVIEW_FOCUS_LIGHT'));
   });
 
-  test('reduced-motion — breath desativado (computed-style, sem tautologia)', async ({ page, context }) => {
-    await context.emulateMedia({ reducedMotion: 'reduce' });
+  test('reduced-motion — breath desativado (computed-style, sem tautologia)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(ROUTE);
     const btn = page.locator(BUTTON);
     await expect(btn).toBeVisible();
@@ -77,7 +77,7 @@ test.describe('Preview button — visual regression', () => {
     expect(reduced.root, 'breath na raiz deve estar desativado').toBe('none');
     expect(reduced.after, 'breath no ::after deve estar desativado').toBe('none');
 
-    await context.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.reload();
     const active = await btn.evaluate((el) => ({
       root: getComputedStyle(el).animationName,
