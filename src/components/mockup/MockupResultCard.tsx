@@ -299,7 +299,7 @@ export const MockupResultCard = memo(
                       onClick={() => setIsClientMode(true)}
                       className="gap-1.5 shadow-md"
                     >
-                      <Maximize2 className="h-4 w-4" aria-hidden="true" /> Modo Apresentação
+                      <Maximize2 className="h-4 w-4" aria-hidden="true" /> Tela cheia
                     </Button>
                     <Button
                       size="sm"
