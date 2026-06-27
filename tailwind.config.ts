@@ -283,6 +283,14 @@ export default {
           "0%, 100%": { borderColor: "hsl(var(--primary) / 0.3)" },
           "50%": { borderColor: "hsl(var(--primary) / 0.8)" },
         },
+        "preview-breath": {
+          "0%, 100%": { boxShadow: "0 0 4px hsl(var(--primary) / 0.18)" },
+          "50%": { boxShadow: "0 0 10px hsl(var(--primary) / 0.32)" },
+        },
+        "preview-breath-border": {
+          "0%, 100%": { borderColor: "hsl(var(--primary) / 0.25)" },
+          "50%": { borderColor: "hsl(var(--primary) / 0.45)" },
+        },
         wiggle: {
           "0%, 100%": { transform: "rotate(-3deg)" },
           "50%": { transform: "rotate(3deg)" },
