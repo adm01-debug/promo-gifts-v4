@@ -45,7 +45,7 @@ import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
 
 import { QuoteVersionHistory } from '@/components/quotes/QuoteVersionHistory';
-import { PresentationMode } from '@/components/presentation/PresentationMode';
+
 import { QuoteClientInfo } from '@/components/quotes/QuoteClientInfo';
 import { QuoteItemsTable } from '@/components/quotes/QuoteItemsTable';
 import { QuoteTotalsSummary } from '@/components/quotes/QuoteTotalsSummary';
