@@ -50,6 +50,7 @@ declare global {
 export default function QuoteViewOrderHarness() {
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
