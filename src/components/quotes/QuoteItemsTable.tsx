@@ -152,9 +152,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             )}
           </td>
         )}
-        <td className="w-20 p-3 text-center text-sm font-semibold">{item.quantity}</td>
-        <td className="w-28 p-3 text-left tabular-nums text-muted-foreground">
-          <div className="flex flex-col gap-0.5">
+        <td className="w-16 p-4 text-center align-middle text-[14px] font-semibold tabular-nums text-foreground">
+          {item.quantity}
+        </td>
+        <td className="w-28 p-4 text-right align-middle tabular-nums text-[13px] text-muted-foreground">
+          <div className="flex flex-col items-end gap-0.5">
             <span>
               {formatCurrency(
                 item.unit_price +
@@ -174,10 +176,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             />
           </div>
         </td>
-        <td className="w-32 p-3 text-left text-base font-bold tabular-nums">
+        <td className="w-32 p-4 text-right align-middle text-[15px] font-semibold tabular-nums text-foreground">
           {formatCurrency(itemTotal)}
         </td>
-        <td className="p-3 text-center print:hidden">
+        <td className="w-20 p-4 text-right align-middle print:hidden">
           <QuoteItemDetailSheet
             item={{
               product_name: item.product_name,
@@ -206,31 +208,53 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   };
 
   return (
-    <div>
-      <h3 className="mb-2.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Itens do Orçamento</h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
+    <section>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+          Itens do Orçamento
+        </h3>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {items.length} {items.length === 1 ? 'item' : 'itens'}
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-border/60 bg-card/30">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-primary/15">
-              <th className="p-3 text-left text-sm font-semibold text-primary">Produto</th>
+            <tr className="border-b border-border/60 bg-muted/40">
+              <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Produto
+              </th>
               {hasPersonalizations && (
-                <th className="p-3 text-left text-sm font-semibold text-primary">Personalização</th>
+                <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Personalização
+                </th>
               )}
-              <th className="w-20 p-3 text-center text-sm font-semibold text-primary">Qtd</th>
-              <th className="w-28 p-3 text-left text-sm font-semibold text-primary">Unitário</th>
-              <th className="w-32 p-3 text-left text-sm font-semibold text-primary">Total</th>
-              <th className="w-24 p-3 text-center text-sm font-semibold text-primary print:hidden" />
+              <th className="w-16 p-4 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Qtd
+              </th>
+              <th className="w-28 p-4 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Unitário
+              </th>
+              <th className="w-32 p-4 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Total
+              </th>
+              <th className="w-20 p-4 print:hidden" />
             </tr>
           </thead>
           <tbody>
             {Array.from(kitGroups.entries()).map(([groupId, group]) => (
               <React.Fragment key={groupId}>
-                <tr className="border-b border-border bg-accent/60">
-                  <td colSpan={colCount} className="p-3">
+                <tr className="border-b border-border/50 bg-primary/[0.04]">
+                  <td colSpan={colCount} className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-bold text-primary">Kit: {group.name}</span>
-                      <Badge variant="outline" className="ml-1 text-xs">
+                      <Package className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+                      <span className="font-display text-[12px] font-semibold tracking-wide text-foreground">
+                        Kit · {group.name}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="ml-1 border-border/60 px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
+                      >
                         {group.items.length} itens
                       </Badge>
                     </div>
@@ -240,9 +264,9 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               </React.Fragment>
             ))}
             {kitGroups.size > 0 && looseItems.length > 0 && (
-              <tr className="border-b border-border bg-muted/30">
-                <td colSpan={colCount} className="p-2 px-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-border/50 bg-muted/30">
+                <td colSpan={colCount} className="px-4 py-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Itens Avulsos
                   </span>
                 </td>
@@ -252,6 +276,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }
