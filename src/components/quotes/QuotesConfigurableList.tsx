@@ -431,22 +431,10 @@ export function QuotesConfigurableList({
 
       {/* Pagination Footer */}
       <div className="flex items-center justify-between px-2 py-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Exibindo</span>
-          <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span>de {quotes.length} resultado(s)</span>
+        <div className="text-sm text-muted-foreground">
+          {quotes.length} resultado(s)
         </div>
+
 
         <div className="flex items-center gap-1">
           <span className="mr-2 text-sm text-muted-foreground">
