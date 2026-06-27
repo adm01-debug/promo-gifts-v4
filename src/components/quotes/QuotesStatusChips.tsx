@@ -336,6 +336,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
   };
 
   return (
+    <TooltipProvider delayDuration={250}>
     <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-1 border-b border-border/40 bg-background/85 px-1 py-2 backdrop-blur-md">
       <div className="flex items-center gap-2">
         <div
