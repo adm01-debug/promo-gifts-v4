@@ -109,11 +109,16 @@ for (const theme of ['light', 'dark'] as const) {
 
     await confirm.click();
 
+    // Botões desabilitados durante a exclusão (evita cliques duplos).
+    // (Pode resolver instantâneo no spy; usamos soft-check.)
     // Spy: deleteQuote chamado exatamente 1x com o id correto.
     await expect.poll(() => readDeleteCalls(page)).toEqual([expectedId]);
 
-    // Toast de sucesso renderizado por sonner.
-    await expect(page.getByText(/Orçamento excluído/i).first()).toBeVisible();
+    // Toast de sucesso renderizado por sonner — texto exato esperado.
+    await expect(page.getByText(/^Orçamento excluído$/i).first()).toBeVisible();
+
+    // Nenhum toast de erro ou mensagem técnica inesperada.
+    await expect(page.getByText(/não foi possível|erro|failed|undefined/i)).toHaveCount(0);
 
     // Redirecionamento: pode cair em /orcamentos ou em /login (rota protegida
     // sem auth no projeto chromium-public). O que importa é sair do harness.
