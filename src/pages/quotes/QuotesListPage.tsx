@@ -280,21 +280,28 @@ export default function QuotesListPage() {
               <EmptyState
                 variant="quotes"
                 title={
-                  hasActiveFilters
+                  sortBy === 'expiring'
+                    ? 'Nenhum orçamento próximo do vencimento'
+                    : hasActiveFilters
                     ? 'Nenhum resultado para esses filtros'
                     : 'Nenhum orçamento encontrado'
                 }
                 description={
-                  hasActiveFilters
+                  sortBy === 'expiring'
+                    ? 'Orçamentos já expirados ou sem data de validade não aparecem neste filtro. Troque o ordenamento para ver todos.'
+                    : hasActiveFilters
                     ? 'Ajuste a busca ou os chips de status, ou limpe todos os filtros.'
                     : 'Crie seu primeiro orçamento e comece a vender.'
                 }
                 action={
-                  hasActiveFilters
+                  sortBy === 'expiring'
+                    ? { label: 'Ver todos (mais recentes)', onClick: () => setSortBy('newest') }
+                    : hasActiveFilters
                     ? { label: 'Limpar filtros', onClick: handleClearFilters }
                     : { label: 'Criar Orçamento', onClick: () => navigate('/orcamentos/novo') }
                 }
               />
+
             ) : (
               <QuotesConfigurableList
                 quotes={filteredQuotes}
