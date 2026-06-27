@@ -14,6 +14,11 @@ import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 import { OptimizedImageDemo } from './lazy-pages';
 
+// Dev-only visual harness (não inclui em build de produção)
+const PreviewButtonHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/PreviewButtonHarness'))
+  : null;
+
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 250, minimum: 0.2, trickleSpeed: 100 });
 
