@@ -122,7 +122,7 @@ for (const tz of TIMEZONES) {
       await expect(page.getByTestId("quotes-col-header-expiration")).toBeVisible({ timeout: 10_000 });
 
       for (const t of targets) {
-        const row = page.locator(`text="${t.name}"`).first().locator("xpath=ancestor::*[@data-testid][1]");
+        const row = page.locator('[data-testid^="quote-row-"]').filter({ hasText: t.name }).first();
         const cell = row.locator('[data-testid="quote-expiration-cell"]').first();
         await expect(cell, `texto ${t.daysFromToday}d @${tz}`).toHaveText(t.expectedText);
         await expect(cell, `tom ${t.daysFromToday}d @${tz}`).toHaveClass(t.expectedToneClass);
