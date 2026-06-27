@@ -365,6 +365,9 @@ export function QuotesConfigurableList({
             <div
               key={col.id}
               data-testid={`quotes-col-header-${col.id}`}
+              data-col-id={col.id}
+              role="columnheader"
+              aria-label={`Coluna ${col.label}`}
               className={cn(
                 'select-none truncate',
                 col.align === 'right' && 'text-right',
@@ -452,6 +455,9 @@ export function QuotesConfigurableList({
                 <div
                   key={col.id}
                   data-testid={`quotes-col-cell-${col.id}`}
+                  data-col-id={col.id}
+                  role="cell"
+                  aria-label={`${col.label}`}
                   className={cn(
                     'min-w-0',
                     col.align === 'right' && 'text-right',

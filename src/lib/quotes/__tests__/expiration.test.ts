@@ -145,3 +145,41 @@ describe('computeExpiration — singular vs plural', () => {
     expect(computeExpiration('2026-06-26', today).label).toBe('Expirado há 1d');
   });
 });
+
+describe('computeExpiration — formato dd/MM/yyyy + datas extremas', () => {
+  it.each([
+    // [valid_until, today, expected formattedDate, expected diffDays]
+    // Ano bissexto: 2024-02-29 existe.
+    ['2024-02-29', at(2024, 2, 28), '29/02/2024', 1],
+    ['2024-03-01', at(2024, 2, 29), '01/03/2024', 1],
+    // Ano NÃO bissexto: 2025-02-29 é inválido → null.
+    // Fim de mês com 31 dias → 1 dia.
+    ['2026-02-01', at(2026, 1, 31), '01/02/2026', 1],
+    ['2026-04-01', at(2026, 3, 31), '01/04/2026', 1],
+    // Virada de ano.
+    ['2027-01-01', at(2026, 12, 31), '01/01/2027', 1],
+    ['2026-12-31', at(2027, 1, 1),   '31/12/2026', -1],
+    // Padding de zero à esquerda em dia/mês de um dígito.
+    ['2026-01-05', at(2026, 1, 4),   '05/01/2026', 1],
+    ['2026-09-09', at(2026, 9, 8),   '09/09/2026', 1],
+  ])('valid_until=%s today=%s → %s (%i dias)', (vu, today, fmt, diff) => {
+    const r = computeExpiration(vu, today as Date);
+    expect(r.formattedDate).toBe(fmt);
+    expect(r.diffDays).toBe(diff);
+    // Regex canônica dd/MM/yyyy.
+    expect(r.formattedDate).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
+  });
+
+  it('29/02 em ano não bissexto retorna null', () => {
+    expect(computeExpiration('2025-02-29', at(2025, 2, 28)).formattedDate).toBeNull();
+    expect(computeExpiration('2023-02-29', at(2023, 2, 27)).diffDays).toBeNull();
+  });
+
+  it('31 em meses de 30 dias retorna null (não normaliza)', () => {
+    for (const mes of [4, 6, 9, 11]) {
+      const raw = `2026-${String(mes).padStart(2, '0')}-31`;
+      expect(computeExpiration(raw, at(2026, mes, 1)).formattedDate).toBeNull();
+    }
+  });
+});
+
