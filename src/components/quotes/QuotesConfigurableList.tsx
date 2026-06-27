@@ -274,7 +274,8 @@ export function QuotesConfigurableList({
     );
 
   return (
-    <div className="space-y-2">
+    <div className="flex h-full min-h-0 flex-1 flex-col space-y-2">
+
       {/* Dica visível apenas no modo Selecionar quando nenhum item está marcado */}
 
       {/* Banner "Selecionar todos das próximas páginas" — ações em massa ficam no topo (rightSlot dos chips) */}
