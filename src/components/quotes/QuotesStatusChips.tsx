@@ -417,5 +417,6 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
         {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
