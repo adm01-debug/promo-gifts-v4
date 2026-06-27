@@ -100,7 +100,7 @@ export function QuoteStatusTimeline({
   });
 
   return (
-    <div className="flex w-full items-center gap-0">
+    <div data-testid="quote-status-timeline" className="flex w-full items-center gap-0">
       {displaySteps.map((step, idx) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
