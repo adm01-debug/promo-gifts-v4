@@ -7,7 +7,7 @@
  *  a variável `let itemIndex` acumulava o dobro dos índices na segunda passagem,
  *  causando numeração errada das linhas na tabela do PDF.
  */
-import { forwardRef } from 'react';
+import { forwardRef, useEffect } from 'react';
 import type { ProposalTemplateData, ProposalItem } from './ProposalHtmlTemplate';
 import { ProposalHeader } from './proposal/ProposalHeader';
 import { ProposalClientBar } from './proposal/ProposalClientBar';
@@ -160,6 +160,25 @@ export const PropostaComercialTailwind = forwardRef<
     return acc;
   }, []);
 
+  // ── Fontes do PDF (Montserrat / Roboto / Sacramento) ───────────────────────
+  // BUGFIX: antes carregadas via `@import url(...)` dentro de um <style> JSX.
+  // Um @import só é válido no TOPO de um stylesheet; num <style> injetado em
+  // runtime o navegador o IGNORA ("@import rule was ignored…") e as fontes nunca
+  // carregavam → preview e PDF (html2canvas) caíam em fallback (Segoe/Helvetica).
+  // Correção canônica: injetar um <link rel="stylesheet"> no <head> (mesmo padrão
+  // do index.html). Idempotente por id, não removido no cleanup (fontes devem
+  // persistir; remover quebraria gerações de PDF concorrentes e causaria flash).
+  useEffect(() => {
+    const LINK_ID = 'pdf-proposal-fonts';
+    if (document.getElementById(LINK_ID)) return;
+    const link = document.createElement('link');
+    link.id = LINK_ID;
+    link.rel = 'stylesheet';
+    link.href =
+      'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&family=Sacramento&display=swap';
+    document.head.appendChild(link);
+  }, []);
+
   return (
     <div ref={ref} style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
       {pages.map((pageItems, pageIdx) => {
@@ -249,7 +268,6 @@ export const PropostaComercialTailwind = forwardRef<
 
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&family=Sacramento&display=swap');
           @media print {
             body { background: white; }
             button { display: none; }
