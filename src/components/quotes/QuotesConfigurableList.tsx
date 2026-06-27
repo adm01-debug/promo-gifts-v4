@@ -374,8 +374,14 @@ export function QuotesConfigurableList({
           <span />
         </div>
 
+        <div
+          ref={scrollRef}
+          data-testid="quotes-scroll-container"
+          className="max-h-[calc(8*64px)] overflow-y-auto"
+        >
 
         {/* Empty state */}
+
         {uniqueQuotes.length === 0 ? (
           <div
             data-testid="quotes-empty-state"
