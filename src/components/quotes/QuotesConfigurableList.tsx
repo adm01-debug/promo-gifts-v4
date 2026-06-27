@@ -518,7 +518,10 @@ export function QuotesConfigurableList({
           />
         )}
         </div>
+        </div>
       </div>
+      </div>
+
 
 
       {/* Footer: contagem, loading mais, erro com retry */}
