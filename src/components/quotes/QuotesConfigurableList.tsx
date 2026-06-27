@@ -436,51 +436,6 @@ export function QuotesConfigurableList({
         </div>
 
 
-        <div className="flex items-center gap-1">
-          <span className="mr-2 text-sm text-muted-foreground">
-            Página {safePage} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="ChevronsLeft"
-            className="h-8 w-8"
-            disabled={safePage <= 1}
-            onClick={() => setCurrentPage(1)}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Voltar"
-            className="h-8 w-8"
-            disabled={safePage <= 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Avançar"
-            className="h-8 w-8"
-            disabled={safePage >= totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="ChevronsRight"
-            className="h-8 w-8"
-            disabled={safePage >= totalPages}
-            onClick={() => setCurrentPage(totalPages)}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );
