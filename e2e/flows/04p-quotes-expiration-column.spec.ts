@@ -17,7 +17,10 @@ import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { e2eName } from "../helpers/e2e-resources";
 
-test.use({ timezoneId: "America/Sao_Paulo", locale: "pt-BR" });
+// Matriz de fusos: a contagem regressiva usa `new Date(y,m,d)` local, então
+// validamos em 3 fusos distintos para garantir que 0/1/7/-1 dia continuam
+// determinísticos e que o dd/MM/yyyy do tooltip não muda com o fuso.
+const TIMEZONES = ["America/Sao_Paulo", "UTC", "Europe/Lisbon"] as const;
 
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL ||
@@ -80,84 +83,115 @@ function formatLocal(iso: string): string {
   return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 }
 
-test.describe("Cotações · coluna Expiração (seed determinístico)", () => {
+for (const tz of TIMEZONES) {
+  test.describe(`Cotações · coluna Expiração [tz=${tz}]`, () => {
+    test.use({ timezoneId: tz, locale: "pt-BR" });
+    test.beforeEach(() => requireAuth());
+
+    test(`renderiza dias restantes, tom e tooltip por caso-limite [${tz}]`, async ({ page }) => {
+      const targets = buildTargets();
+      await gotoAndSettle(page, "/orcamentos");
+
+      const seed = await page.evaluate(
+        async ({ url, anonKey, targets }) => {
+          let jwt = "";
+          let sellerId = "";
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)!;
+            if (!k.startsWith("sb-") || !k.endsWith("-auth-token")) continue;
+            const raw = localStorage.getItem(k);
+            if (!raw) continue;
+            const parsed = JSON.parse(raw);
+            jwt = parsed?.access_token ?? "";
+            sellerId = parsed?.user?.id ?? "";
+            if (jwt) break;
+          }
+          if (!jwt || !sellerId) return { skipped: "no-jwt" as const, created: 0 };
+          const headers = {
+            apikey: anonKey,
+            Authorization: `Bearer ${jwt}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          };
+          let created = 0;
+          for (const t of targets) {
+            const r = await fetch(`${url}/rest/v1/quotes`, {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                seller_id: sellerId,
+                client_name: t.name,
+                status: "draft",
+                total: 100,
+                valid_until: t.iso,
+                notes: "e2e-seed-expiration",
+              }),
+            });
+            if (r.ok) created += 1;
+          }
+          return { skipped: null as null, created };
+        },
+        { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, targets },
+      );
+
+      test.skip(seed.skipped === "no-jwt", "Sem JWT no localStorage para seed.");
+      expect(seed.created).toBeGreaterThan(0);
+
+      await gotoAndSettle(page, "/orcamentos");
+      await expect(page.getByTestId("quotes-col-header-expiration")).toBeVisible({ timeout: 10_000 });
+
+      for (const t of targets) {
+        const row = page.locator(`text="${t.name}"`).first().locator("xpath=ancestor::*[@data-testid][1]");
+        const cell = row.locator('[data-testid="quote-expiration-cell"]').first();
+        await expect(cell, `texto ${t.daysFromToday}d @${tz}`).toHaveText(t.expectedText);
+        await expect(cell, `tom ${t.daysFromToday}d @${tz}`).toHaveClass(t.expectedToneClass);
+
+        const expectedDate = formatLocal(t.iso);
+        // Tooltip DEVE ser exatamente "Válido até dd/MM/yyyy" — não pode variar por locale do navegador.
+        await expect(cell).toHaveAttribute("aria-label", new RegExp(`Válido até ${expectedDate}$`));
+
+        await cell.focus();
+        const tip = page.getByRole("tooltip", { name: new RegExp(`^Válido até ${expectedDate}$`) }).first();
+        await expect(tip, `tooltip exato @${tz}`).toBeVisible({ timeout: 3_000 });
+        await page.keyboard.press("Escape");
+      }
+    });
+  });
+}
+
+// Regressão de layout: coluna continua no lugar correto após reload e
+// navegação fora→volta. Posição é validada via ordem dos headers.
+test.describe("Cotações · coluna Expiração — regressão de layout", () => {
+  test.use({ timezoneId: "America/Sao_Paulo", locale: "pt-BR" });
   test.beforeEach(() => requireAuth());
 
-  test("renderiza dias restantes, tom de cor e tooltip por caso-limite", async ({ page }) => {
-    const targets = buildTargets();
+  test("ordem Status → Expiração → Nº Orçamento sobrevive a reload e navegação", async ({ page }) => {
     await gotoAndSettle(page, "/orcamentos");
 
-    // Seed via REST com JWT do localStorage.
-    const seed = await page.evaluate(
-      async ({ url, anonKey, targets }) => {
-        let jwt = "";
-        let sellerId = "";
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i)!;
-          if (!k.startsWith("sb-") || !k.endsWith("-auth-token")) continue;
-          const raw = localStorage.getItem(k);
-          if (!raw) continue;
-          const parsed = JSON.parse(raw);
-          jwt = parsed?.access_token ?? "";
-          sellerId = parsed?.user?.id ?? "";
-          if (jwt) break;
-        }
-        if (!jwt || !sellerId) return { skipped: "no-jwt" as const, created: 0 };
-        const headers = {
-          apikey: anonKey,
-          Authorization: `Bearer ${jwt}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation",
-        };
-        let created = 0;
-        for (const t of targets) {
-          const r = await fetch(`${url}/rest/v1/quotes`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              seller_id: sellerId,
-              client_name: t.name,
-              status: "draft",
-              total: 100,
-              valid_until: t.iso,
-              notes: "e2e-seed-expiration",
-            }),
-          });
-          if (r.ok) created += 1;
-        }
-        return { skipped: null as null, created };
-      },
-      { url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, targets },
-    );
+    const expectOrder = async (label: string) => {
+      const ids = await page
+        .locator('[data-testid^="quotes-col-header-"]')
+        .evaluateAll((els) =>
+          els.map((el) => el.getAttribute("data-testid")?.replace("quotes-col-header-", "") ?? ""),
+        );
+      const iStatus = ids.indexOf("status");
+      const iExp = ids.indexOf("expiration");
+      const iNum = ids.indexOf("quote_number");
+      expect(iStatus, `status presente em ${label}`).toBeGreaterThanOrEqual(0);
+      expect(iExp, `expiration presente em ${label}`).toBeGreaterThan(iStatus);
+      expect(iNum, `quote_number presente em ${label}`).toBeGreaterThan(iExp);
+    };
 
-    test.skip(seed.skipped === "no-jwt", "Sem JWT no localStorage para seed.");
-    expect(seed.created).toBeGreaterThan(0);
+    await expectOrder("primeiro acesso");
 
-    await gotoAndSettle(page, "/orcamentos");
-
-    // Coluna presente (smoke).
-    await expect(page.getByTestId("quotes-col-header-expiration")).toBeVisible({ timeout: 10_000 });
-
-    for (const t of targets) {
-      const row = page.locator(`text="${t.name}"`).first().locator("xpath=ancestor::*[@data-testid][1]");
-      const cell = row.locator('[data-testid="quote-expiration-cell"]').first();
-      await expect(cell, `texto ${t.daysFromToday}d`).toHaveText(t.expectedText);
-      await expect(cell, `tom ${t.daysFromToday}d`).toHaveClass(t.expectedToneClass);
-
-      // a11y: aria-label contém "Válido até dd/MM/yyyy".
-      const expectedDate = formatLocal(t.iso);
-      await expect(cell).toHaveAttribute("aria-label", new RegExp(`Válido até ${expectedDate}`));
-
-      // Tooltip via teclado (focus) — Radix exibe TooltipContent.
-      await cell.focus();
-      await expect(
-        page.getByRole("tooltip", { name: new RegExp(`Válido até ${expectedDate}`) }).first(),
-      ).toBeVisible({ timeout: 3_000 });
-      await page.keyboard.press("Escape");
-    }
-
-    // Persistência mínima: coluna continua visível após reload.
     await page.reload();
     await expect(page.getByTestId("quotes-col-header-expiration")).toBeVisible({ timeout: 10_000 });
+    await expectOrder("após reload");
+
+    await gotoAndSettle(page, "/");
+    await gotoAndSettle(page, "/orcamentos");
+    await expect(page.getByTestId("quotes-col-header-expiration")).toBeVisible({ timeout: 10_000 });
+    await expectOrder("após navegação fora→volta");
   });
 });
+
