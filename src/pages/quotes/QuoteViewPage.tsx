@@ -121,8 +121,8 @@ export default function QuoteViewPage() {
           <p className="mt-2 text-muted-foreground">
             O orçamento solicitado não existe ou foi removido.
           </p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/orcamentos')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Orçamentos
+          <Button variant="outline" className="mt-4 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10" onClick={() => navigate('/orcamentos')}>
+            <ArrowLeft className="mr-2 h-4 w-4 text-primary" /> Voltar para Orçamentos
           </Button>
         </div>
       </div>
