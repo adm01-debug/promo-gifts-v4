@@ -34,15 +34,27 @@ export interface ExpirationInfo {
 const MS_PER_DAY = 86_400_000;
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/** Constrói uma Date local a partir de "YYYY-MM-DD" sem passar pela rota UTC. */
+/** Constrói uma Date local a partir de "YYYY-MM-DD" sem passar pela rota UTC.
+ *  Valida que os componentes voltam idênticos (Date é tolerante e normaliza
+ *  "2026-13-45" para 14/02/2027 silenciosamente — rejeitamos). */
 function parseValidUntil(raw: string): Date | null {
   const m = DATE_ONLY_RE.exec(raw.trim());
   if (m) {
-    const [, y, mo, d] = m;
-    const dt = new Date(Number(y), Number(mo) - 1, Number(d));
-    return Number.isNaN(dt.getTime()) ? null : dt;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    const dt = new Date(y, mo - 1, d);
+    if (
+      Number.isNaN(dt.getTime()) ||
+      dt.getFullYear() !== y ||
+      dt.getMonth() !== mo - 1 ||
+      dt.getDate() !== d
+    ) {
+      return null;
+    }
+    return dt;
   }
-  // Timestamp ISO (com hora) — confia no parser do JS, depois normaliza p/ Y/M/D local.
   const dt = new Date(raw);
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
