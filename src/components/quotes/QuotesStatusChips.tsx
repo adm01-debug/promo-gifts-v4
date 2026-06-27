@@ -369,6 +369,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
                 onKeyDown={(e) => handleKeyDown(e, idx)}
                 aria-pressed={isActive}
                 aria-label={ariaLabel}
+                title={CHIP_TOOLTIPS[key]}
                 className={cn(
                   'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
                   'whitespace-nowrap border outline-none',
