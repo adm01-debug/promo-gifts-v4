@@ -11,7 +11,7 @@ import {
   FileText,
   History,
   Loader2,
-  Monitor,
+  
   MoreHorizontal,
   Package,
   RefreshCw,
@@ -45,7 +45,7 @@ import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
 
 import { QuoteVersionHistory } from '@/components/quotes/QuoteVersionHistory';
-import { PresentationMode } from '@/components/presentation/PresentationMode';
+
 import { QuoteClientInfo } from '@/components/quotes/QuoteClientInfo';
 import { QuoteItemsTable } from '@/components/quotes/QuoteItemsTable';
 import { QuoteTotalsSummary } from '@/components/quotes/QuoteTotalsSummary';
@@ -78,8 +78,6 @@ export default function QuoteViewPage() {
     clientCnpj,
     isGeneratingPDF,
     isSyncing,
-    showPresentation,
-    setShowPresentation,
     proposalData,
     handleDownloadPDF,
     handleWhatsAppShare,
@@ -281,9 +279,6 @@ export default function QuoteViewPage() {
                 >
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowPresentation(true)}>
-                  <Monitor className="mr-2 h-4 w-4" /> Modo Apresentação
-                </DropdownMenuItem>
                 <Sheet>
                   <SheetTrigger asChild>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -440,38 +435,6 @@ export default function QuoteViewPage() {
         onShare={handleShareLink}
         isGeneratingPDF={isGeneratingPDF}
       />
-
-      {showPresentation && displayItems.length > 0 && (
-        <PresentationMode
-          title={`Proposta ${quote.quote_number || ''}`}
-          subtitle={quote.client_company || quote.client_name || undefined}
-          brandName="Promo Brindes"
-          onClose={() => setShowPresentation(false)}
-          slides={displayItems.map((item) => ({
-            id: item.id || item.product_id,
-            title: item.product_name,
-            subtitle: item.product_sku ? `SKU: ${item.product_sku}` : undefined,
-            imageUrl: item.product_image_url || null,
-            badge: item.kit_name || item.color_name || null,
-            details: [
-              ...(item.quantity ? [{ label: 'Quantidade', value: String(item.quantity) }] : []),
-              ...(item.color_name ? [{ label: 'Cor', value: item.color_name }] : []),
-              ...(item.personalizations?.length
-                ? [
-                    {
-                      label: 'Personalização',
-                      value:
-                        item.personalizations
-                          .map((p) => p.technique_name)
-                          .filter(Boolean)
-                          .join(', ') || 'Sim',
-                    },
-                  ]
-                : []),
-            ],
-          }))}
-        />
-      )}
     </>
   );
 }
