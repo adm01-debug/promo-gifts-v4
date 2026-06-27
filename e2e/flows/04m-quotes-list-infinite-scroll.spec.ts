@@ -28,18 +28,25 @@ async function assertNoDuplicateRows(page: import("@playwright/test").Page) {
   ).toBe(ids.length);
 }
 
-/** Lê os números "Exibindo N de M" / "N de M — fim da lista" do rodapé. */
+/**
+ * Lê o rodapé. Estados possíveis:
+ *   - vazio total: "Nenhum resultado"           → isEmpty
+ *   - há mais:    "Exibindo N de M — role…"    → shown/total preenchidos
+ *   - fim:        texto vazio (sem contagem)   → isEnd
+ */
 async function readFooter(page: import("@playwright/test").Page) {
-  const text = (await page.locator(Sel.quotesList.footerCount).textContent()) ?? "";
-  const match = text.match(/(\d+)\s+de\s+(\d+)/);
+  const text = ((await page.locator(Sel.quotesList.footerCount).textContent()) ?? "").trim();
+  const match = text.match(/Exibindo\s+(\d+)\s+de\s+(\d+)/);
+  const isEmpty = /Nenhum resultado/i.test(text);
   return {
     text,
     shown: match ? Number(match[1]) : 0,
     total: match ? Number(match[2]) : 0,
-    isEnd: /fim da lista/.test(text),
-    isEmpty: /Nenhum resultado/i.test(text),
+    isEnd: !isEmpty && !match, // sem "Exibindo …" e sem "Nenhum resultado" → fim
+    isEmpty,
   };
 }
+
 
 test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () => {
   test.beforeEach(() => requireAuth());
