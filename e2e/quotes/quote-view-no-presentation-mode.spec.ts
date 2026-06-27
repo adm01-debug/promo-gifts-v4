@@ -307,7 +307,7 @@ test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
         };
       });
 
-      // Fonte conforme breakpoint sm (≥640px → 13px, abaixo → 12px).
+      // Fonte do shadcn DropdownMenuItem (text-sm = 14px) — estável em todas as larguras.
       expect(metrics.fontPx).toBeCloseTo(vp.expectedFontPx, 0);
       // Padding/gap estáveis em qualquer largura.
       expect(metrics.paddingTop).toBeCloseTo(6, 0); // py-1.5
