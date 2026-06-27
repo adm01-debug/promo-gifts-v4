@@ -295,8 +295,10 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     const withDups = [...base, base[0], base[1]];
     renderWith(withDups);
 
-    // Deve refletir 5 únicos (não 7) — sem chaves duplicadas no React
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/5 de 5/);
+    // Deve refletir 5 únicos (não 7) — sem chaves duplicadas no React.
+    // Lista ≤25 já chega no fim → rodapé vazio; validamos pelas linhas renderizadas.
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
+    expect(screen.getAllByTestId(/^quote-row-more-/).length).toBe(5);
   });
 
   it('reseta para 25 ao alterar filtro/busca/ordenação sem repetir resultados', () => {
