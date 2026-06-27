@@ -264,6 +264,46 @@ export default function AdminProductFormPage() {
         }
       }
 
+      // ── Auditoria Cadastro de Produtos (2026-06-27): sanitização anti-CHECK/NOT NULL ──
+      // Evita PGRST204/23502/23514 que tornavam o formulário 100% inoperante.
+      if (!data.category_id) {
+        toast.error('Selecione uma categoria antes de salvar o produto.');
+        setIsSaving(false);
+        return;
+      }
+      const slugify = (s?: string | null): string | null => {
+        const v = (s ?? '')
+          .toString()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        return v.length > 0 ? v : null;
+      };
+      const safeSlug = slugify(data.slug) ?? slugify(data.name);
+      const safeCostPrice =
+        typeof data.cost_price === 'number' && data.cost_price > 0 ? data.cost_price : null;
+      const fitLen = (s: string | null | undefined, min: number, max: number): string | null => {
+        const v = (s ?? '').toString().trim();
+        return v.length >= min && v.length <= max ? v : null;
+      };
+      const safeMetaTitle = fitLen(data.meta_title, 10, 70);
+      const safeMetaDescription = fitLen(data.meta_description, 50, 170);
+      if (data.meta_title && !safeMetaTitle) {
+        toast.warning('Meta título ignorado: precisa ter entre 10 e 70 caracteres.');
+      }
+      if (data.meta_description && !safeMetaDescription) {
+        toast.warning('Meta descrição ignorada: precisa ter entre 50 e 170 caracteres.');
+      }
+      const in30Days = (): string => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const safeFeaturedExpires = data.is_featured
+        ? data.is_featured_expires_at || in30Days()
+        : data.is_featured_expires_at || null;
+      const safeBestsellerExpires = data.is_bestseller
+        ? data.is_bestseller_expires_at || in30Days()
+        : data.is_bestseller_expires_at || null;
       const productData: Record<string, unknown> = {
         sku: data.sku,
         name: data.name,
@@ -273,13 +313,13 @@ export default function AdminProductFormPage() {
         organization_id: ORGANIZATION_ID,
         description: data.description || null,
         short_description: data.short_description || null,
-        meta_description: data.meta_description || null,
+        meta_description: safeMetaDescription,
         brand: data.brand || null,
-        category_id: data.category_id || null,
+        category_id: data.category_id,
         supplier_id: data.supplier_id || null,
         supplier_reference: data.supplier_reference || null,
         sale_price: data.sale_price ?? 0,
-        cost_price: data.cost_price ?? null,
+        cost_price: safeCostPrice,
         suggested_price: data.suggested_price ?? null,
         stock_quantity: data.stock_quantity ?? 0,
         product_type: data.product_type || 'product',
@@ -288,13 +328,12 @@ export default function AdminProductFormPage() {
         min_order_quantity: data.min_order_quantity ?? null,
         price_freshness_threshold_days: data.price_freshness_threshold_days ?? 60,
         is_active: data.is_active,
-        active: data.is_active,
         is_featured: data.is_featured,
         is_bestseller: data.is_bestseller,
         is_new: data.is_new,
         is_on_sale: data.is_on_sale,
-        is_featured_expires_at: data.is_featured_expires_at || null,
-        is_bestseller_expires_at: data.is_bestseller_expires_at || null,
+        is_featured_expires_at: safeFeaturedExpires,
+        is_bestseller_expires_at: safeBestsellerExpires,
         is_new_expires_at: data.is_new_expires_at || null,
         is_on_sale_expires_at: data.is_on_sale_expires_at || null,
         has_commercial_packaging: data.has_commercial_packaging,
@@ -332,16 +371,35 @@ export default function AdminProductFormPage() {
         supplier_product_url: data.supplier_product_url || null,
         supply_mode: data.supply_mode || null,
         ipi_rate: data.ipi_rate ?? null,
+        // Auditoria 2026-06-27: campos fiscais/logísticos coletados mas nunca enviados
+        // (perda silenciosa). Colunas criadas na migração aditiva desta auditoria.
+        icms_rate: data.icms_rate ?? null,
+        pis_rate: data.pis_rate ?? null,
+        cofins_rate: data.cofins_rate ?? null,
+        cfop: data.cfop || null,
+        csosn: data.csosn || null,
+        cest: data.cest || null,
+        tax_regime: data.tax_regime || null,
+        warranty_months: data.warranty_months ?? null,
+        freight_class: data.freight_class || null,
+        default_carrier: data.default_carrier || null,
+        shipping_weight_kg: data.shipping_weight_kg ?? null,
+        shipping_width_cm: data.shipping_width_cm ?? null,
+        shipping_height_cm: data.shipping_height_cm ?? null,
+        shipping_length_cm: data.shipping_length_cm ?? null,
+        cubic_weight: data.cubic_weight ?? null,
+        requires_special_shipping: data.requires_special_shipping ?? false,
+        shipping_notes: data.shipping_notes || null,
         lead_time_days: data.lead_time_days ?? null,
         gender: data.gender || null,
-        meta_title: data.meta_title || null,
+        meta_title: safeMetaTitle,
         meta_keywords: data.meta_keywords
           ? data.meta_keywords
               .split(',')
               .map((k: string) => k.trim())
               .filter(Boolean)
           : null,
-        slug: data.slug || null,
+        slug: safeSlug,
         canonical_url: data.canonical_url || null,
         videos: data.video_url ? [data.video_url] : [],
         key_benefits: splitLines(data.key_benefits),
