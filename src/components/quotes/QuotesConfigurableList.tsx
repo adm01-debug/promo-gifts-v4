@@ -52,7 +52,6 @@ const ALL_COLUMNS: ColumnDef[] = [
   { id: 'quote_number', label: 'Nº Orçamento', width: '120px', align: 'right' },
 ];
 
-
 // ── Props ──
 interface QuotesConfigurableListProps {
   quotes: Quote[];
@@ -63,7 +62,7 @@ interface QuotesConfigurableListProps {
   onDuplicate: (id: string) => void;
 }
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE = 25;
 
 export function QuotesConfigurableList({
   quotes,
@@ -75,17 +74,9 @@ export function QuotesConfigurableList({
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
-  // ── Pagination ──
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  // ── Pagination (UI removida; mantém slice por performance) ──
+  const paginatedQuotes = useMemo(() => quotes.slice(0, PAGE_SIZE), [quotes]);
 
-  const totalPages = Math.max(1, Math.ceil(quotes.length / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-
-  const paginatedQuotes = useMemo(() => {
-    const start = (safePage - 1) * pageSize;
-    return quotes.slice(start, start + pageSize);
-  }, [quotes, safePage, pageSize]);
 
   // ── Visualizações pelo cliente (apenas página atual, performance) ──
   const selectablePaginatedQuotes = useMemo(
