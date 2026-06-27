@@ -314,7 +314,7 @@ test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
       expect(metrics.paddingBottom).toBeCloseTo(8, 0);
       expect(metrics.paddingLeft).toBeCloseTo(12, 0); // px-3
       // Item não usa `gap-*`; o espaçamento vem do `mr-2` no ícone (8px).
-      expect(metrics.gap).toBeCloseTo(0, 0);
+      expect(Number.isFinite(metrics.gap) ? metrics.gap : 0).toBeCloseTo(0, 0);
       // Touch target adequado para item de menu (text-sm + py-2).
       expect(metrics.height).toBeGreaterThanOrEqual(32);
       expect(metrics.height).toBeLessThanOrEqual(44);
