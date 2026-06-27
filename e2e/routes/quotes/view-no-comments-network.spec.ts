@@ -23,8 +23,11 @@ test.describe("/orcamentos/:id — sem network em quote_comments", () => {
     await gotoAndSettle(page, "/orcamentos/q-001");
     await waitForRouteIdle(page);
 
-    // Pequeno settle adicional p/ capturar requests assíncronos pós-mount
-    await page.waitForTimeout(1500);
+    // Settle adicional p/ capturar requests assíncronos pós-mount sem usar waitForTimeout
+    await page.waitForLoadState("domcontentloaded");
+    await page.evaluate(
+      () => new Promise<void>((r) => setTimeout(r, 1500)),
+    );
 
     page.off("request", onRequest);
 
