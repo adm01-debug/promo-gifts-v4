@@ -55,8 +55,8 @@ describe('computeExpiration — timestamps ISO com hora (não DATE-only)', () =>
   const today = at(2026, 6, 27);
   it('aceita ISO completo e ainda calcula por dia civil', () => {
     const r = computeExpiration('2026-06-29T15:30:00.000Z', today);
-    // Em qualquer fuso razoável, 29/06 15:30 UTC continua dia 29 ou 28/29 local.
-    expect([1, 2]).toContain(r.diffDays);
+    // Em qualquer fuso, 29/06 15:30 UTC cai em [28/06, 30/06] local → diff ∈ {1,2,3}.
+    expect([1, 2, 3]).toContain(r.diffDays);
   });
 });
 
