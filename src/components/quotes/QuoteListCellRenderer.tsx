@@ -146,7 +146,7 @@ export function renderQuoteCell(
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="block cursor-default truncate text-[11.5px] text-muted-foreground/80">
+            <span className="block cursor-default truncate pl-4 text-[11.5px] text-muted-foreground/80">
               {compact}
             </span>
           </TooltipTrigger>
