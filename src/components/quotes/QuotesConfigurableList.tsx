@@ -19,23 +19,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   MoreVertical,
   Eye,
   Trash2,
   Copy,
   Edit,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from 'lucide-react';
+
 import type { Quote } from '@/hooks/quotes';
 
 import { useBulkSelection } from '@/hooks/common';
