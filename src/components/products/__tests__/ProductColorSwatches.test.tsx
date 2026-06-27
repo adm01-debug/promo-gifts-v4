@@ -173,7 +173,7 @@ describe('ProductColorSwatches', () => {
       },
     ];
 
-    it('marca swatch sem estoque com data-stock-state="out" e visual atenuado', () => {
+    it('marca swatch sem estoque com data-stock-state="out" e MANTÉM a cor (apenas risco diagonal)', () => {
       render(
         <TooltipProvider>
           <ProductColorSwatches colors={stockColors} />
@@ -181,8 +181,10 @@ describe('ProductColorSwatches', () => {
       );
       const oos = screen.getByLabelText(/Preto.*esgotada/);
       expect(oos.getAttribute('data-stock-state')).toBe('out');
-      expect(oos.className).toContain('opacity-40');
-      expect(oos.className).toContain('grayscale');
+      // MANTÉM a cor: sem dessaturação/atenuação — o ÚNICO indicador é o risco diagonal (::before)
+      expect(oos.className).not.toContain('grayscale');
+      expect(oos.className).not.toContain('opacity-40');
+      expect(oos.className).toContain('before:rounded-full');
     });
 
     it('marca swatch com reposição prevista como "upcoming" e exibe badge', () => {

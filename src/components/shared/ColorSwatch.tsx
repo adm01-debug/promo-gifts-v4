@@ -6,7 +6,7 @@
  * Centralizar aqui:
  *  (a) o fundo (hex sólido OU gradiente conic para cores "mistas"/"sortidas"),
  *  (b) o border + shadow base,
- *  (c) a marcação visual de ESGOTADO (slash diagonal + grayscale + opacity),
+ *  (c) a marcação visual de ESGOTADO (apenas risco diagonal — MANTÉM a cor da bolinha),
  *  (d) a marcação de ATIVO/SELECIONADO (ring primary).
  *
  * Consumidores controlam o elemento (button para catálogo, span para estoque)
@@ -56,9 +56,10 @@ export function getColorSwatchClasses({
     isActive && 'z-10 ring-2 ring-primary ring-offset-1',
     // Sem cor definida — borda tracejada de placeholder
     !hasBg && 'border-dashed border-muted-foreground/40',
-    // Esgotado — slash diagonal + grayscale + opacity (SSOT visual)
+    // Esgotado — MANTÉM a cor da bolinha; o ÚNICO indicador é o risco diagonal.
+    // Núcleo claro + bordas escuras garantem legibilidade em qualquer cor (branco, amarelo, preto…) e tema. SSOT visual.
     isOutOfStock &&
-      'opacity-40 grayscale before:absolute before:inset-0 before:rounded-full before:bg-[linear-gradient(45deg,transparent_calc(50%-1px),hsl(var(--foreground)/0.7)_50%,transparent_calc(50%+1px))] before:content-[""]',
+      'before:absolute before:inset-0 before:rounded-full before:content-[""] before:bg-[linear-gradient(45deg,transparent_calc(50%_-_2px),hsl(0_0%_0%/0.55)_calc(50%_-_2px),hsl(0_0%_0%/0.55)_calc(50%_-_1px),hsl(0_0%_100%/0.95)_calc(50%_-_1px),hsl(0_0%_100%/0.95)_calc(50%_+_1px),hsl(0_0%_0%/0.55)_calc(50%_+_1px),hsl(0_0%_0%/0.55)_calc(50%_+_2px),transparent_calc(50%_+_2px))]',
   );
 }
 
