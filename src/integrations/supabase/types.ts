@@ -4893,36 +4893,6 @@ export type Database = {
         }
         Relationships: []
       }
-      quote_comments: {
-        Row: {
-          comment: string
-          created_at: string
-          id: string
-          is_internal: boolean
-          quote_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          comment: string
-          created_at?: string
-          id?: string
-          is_internal?: boolean
-          quote_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          comment?: string
-          created_at?: string
-          id?: string
-          is_internal?: boolean
-          quote_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       quote_drafts: {
         Row: {
           data: Json
