@@ -28,6 +28,9 @@ import {
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 export default function QuoteViewOrderHarness() {
+  const navigate = useNavigate();
+  const [deleted, setDeleted] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const theme = params.get('theme');
@@ -39,9 +42,21 @@ export default function QuoteViewOrderHarness() {
     };
   }, []);
 
+  const handleDelete = () => {
+    const ok = window.confirm(
+      'Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.',
+    );
+    if (!ok) return;
+    // Stub determinístico: simula sucesso de delete e roteamento.
+    setDeleted(true);
+    toast.success('Orçamento excluído');
+    navigate('/orcamentos');
+  };
+
   return (
     <main
       data-testid="quote-view-order-harness"
+      data-deleted={deleted ? 'true' : 'false'}
       className="min-h-dvh bg-background"
     >
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2.5 px-3 py-2.5 pb-24 sm:space-y-3 sm:px-4 sm:py-3 md:pb-5 lg:px-6 xl:px-8">
