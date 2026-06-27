@@ -175,7 +175,7 @@ export default function QuoteViewPage() {
                 <Button
                   onClick={handleSyncBitrix}
                   disabled={isSyncing}
-                  className="min-w-[105px] justify-center gap-2 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="h-8 min-w-[84px] justify-center gap-2 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {isSyncing ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -193,7 +193,7 @@ export default function QuoteViewPage() {
                 quoteNumber={quote.quote_number}
                 quoteStatus={quote.status}
                 trigger={
-                  <Button className="min-w-[105px] justify-center gap-2 px-3 text-xs" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
+                  <Button className="h-8 min-w-[84px] justify-center gap-2 px-3 text-xs" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
                     <Eye className="h-3.5 w-3.5" /> Preview
                   </Button>
                 }
@@ -202,7 +202,7 @@ export default function QuoteViewPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Mais opções">
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Mais opções">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
