@@ -12,11 +12,17 @@
  * Supabase/router/auth e sem seed de orçamentos.
  */
 import { useEffect } from 'react';
-import { ArrowLeft, Eye, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 export default function QuoteViewOrderHarness() {
