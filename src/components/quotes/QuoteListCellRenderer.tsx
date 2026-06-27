@@ -117,7 +117,7 @@ export function renderQuoteCell(
 
     case 'value':
       return (
-        <span className="block text-right text-[13px] font-semibold tabular-nums text-foreground">
+        <span className="block text-left text-[13px] font-semibold tabular-nums text-foreground">
           {formatCurrency(quote.total || 0)}
         </span>
       );
