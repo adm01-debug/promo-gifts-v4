@@ -263,6 +263,11 @@ export const Sel = {
     emptyRefresh: TID("quotes-empty-refresh"),
     /** Linhas: cada `quote-row-more-<id>` é único por orçamento. */
     rowMorePrefix: TID_PREFIX("quote-row-more-"),
+    /** Busca / ordenação / chips de status na header da página de orçamentos. */
+    searchInput: TID("quotes-search-input"),
+    sortTrigger: TID("quotes-sort-trigger"),
+    sortItem: (value: string) => TID(`quotes-sort-item-${value}`),
+    chip: (key: string) => TID(`quotes-chip-${key}`),
   },
 
 
