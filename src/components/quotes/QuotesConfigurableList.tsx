@@ -24,6 +24,8 @@ import {
   Trash2,
   Copy,
   Edit,
+  Inbox,
+  RefreshCw,
 } from 'lucide-react';
 
 import type { Quote } from '@/hooks/quotes';
@@ -77,28 +79,52 @@ export function QuotesConfigurableList({
   // ── Infinite scroll: começa com PAGE_SIZE e cresce conforme o usuário rola ──
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const scrollScheduledRef = useRef(false);
 
-  // Reset quando a lista de quotes muda (filtro, busca, etc.)
+  // Reset quando a lista de quotes muda (filtro, busca, ordenação, etc.)
+  // Reseta tanto a janela visível quanto o scroll para evitar duplicação
+  // visual e estados inconsistentes quando o array de quotes é trocado.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [quotes]);
+
+  // Cancela rAF pendente ao desmontar.
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, []);
 
   const paginatedQuotes = useMemo(
     () => quotes.slice(0, visibleCount),
     [quotes, visibleCount],
   );
 
+  const hasMore = paginatedQuotes.length < quotes.length;
+
+  // Throttle via rAF: garante no máximo 1 cálculo por frame, mesmo em
+  // listas muito longas com onScroll disparando dezenas de vezes/segundo.
+  // Usamos uma flag booleana (não o ID do rAF) para evitar race quando
+  // o ambiente executa o callback sincronamente (testes).
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const el = e.currentTarget;
-      // ~200px antes do fim → carrega próxima página
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
-        setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
-      }
+      if (scrollScheduledRef.current) return;
+      scrollScheduledRef.current = true;
+      scrollRafRef.current = requestAnimationFrame(() => {
+        scrollScheduledRef.current = false;
+        scrollRafRef.current = null;
+        // ~200px antes do fim → carrega próxima página
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+          setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
+        }
+      });
     },
     [quotes.length],
   );
+
 
 
 
@@ -292,6 +318,7 @@ export function QuotesConfigurableList({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
+        data-testid="quotes-scroll-container"
         className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border"
       >
 
@@ -329,8 +356,33 @@ export function QuotesConfigurableList({
         </div>
 
 
-        {/* Rows */}
-        {paginatedQuotes.map((quote) => {
+        {/* Empty state */}
+        {quotes.length === 0 ? (
+          <div
+            data-testid="quotes-empty-state"
+            className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
+          >
+            <Inbox className="h-10 w-10 text-muted-foreground/60" aria-hidden="true" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                Nenhum orçamento por aqui
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Ajuste os filtros ou atualize a lista para sincronizar com o servidor.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="quotes-empty-refresh"
+              onClick={() => window.dispatchEvent(new CustomEvent('quotes:refresh-request'))}
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+              Atualizar lista
+            </Button>
+          </div>
+        ) : (
+          paginatedQuotes.map((quote) => {
           const quoteId = quote.id;
           const selected = Boolean(quoteId && isSelected(quoteId)) || allPagesSelected;
 
@@ -428,22 +480,25 @@ export function QuotesConfigurableList({
               </div>
             </div>
           );
-        })}
+          })
+        )}
         </div>
       </div>
 
 
-      {/* Pagination Footer */}
+      {/* Footer: contagem precisa + estado de "fim da lista" */}
       <div className="flex items-center justify-between px-2 py-2">
-        <div className="text-sm text-muted-foreground">
-          {quotes.length > paginatedQuotes.length
-            ? `Exibindo ${paginatedQuotes.length} de ${quotes.length} resultado(s) — role para carregar mais`
-            : `${quotes.length} resultado(s)`}
+        <div className="text-sm text-muted-foreground" data-testid="quotes-footer-count">
+          {quotes.length === 0
+            ? 'Nenhum resultado'
+            : hasMore
+              ? `Exibindo ${paginatedQuotes.length} de ${quotes.length} — role para carregar mais`
+              : quotes.length === 1
+                ? '1 de 1 — fim da lista'
+                : `${paginatedQuotes.length} de ${quotes.length} — fim da lista`}
         </div>
-
-
-
       </div>
     </div>
   );
 }
+

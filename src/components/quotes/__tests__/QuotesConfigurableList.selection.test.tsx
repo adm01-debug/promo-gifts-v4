@@ -173,5 +173,94 @@ describe('QuotesConfigurableList — seleção manual', () => {
 });
 
 
+describe('QuotesConfigurableList — infinite scroll', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  function makeQuotes(n: number): Quote[] {
+    return Array.from({ length: n }, (_, i) => ({
+      id: `q-${i + 1}`,
+      quote_number: `ORC-${String(i + 1).padStart(3, '0')}`,
+      client_name: `Cliente ${i + 1}`,
+      client_company: `Empresa ${i + 1}`,
+      status: 'pending',
+      total: 100 + i,
+      created_at: '2026-01-01T00:00:00Z',
+    }) as Quote);
+  }
+
+  function renderWith(qs: Quote[]) {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TooltipProvider>
+            <QuotesConfigurableList
+              quotes={qs}
+              onDelete={vi.fn()}
+              onBulkDelete={vi.fn()}
+              onDuplicate={vi.fn()}
+            />
+          </TooltipProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+  }
+
+  it('mostra apenas 25 inicialmente e carrega mais ao rolar até o fim', async () => {
+    // rAF síncrono p/ throttle determinístico no teste
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      cb(0);
+      return 0 as unknown as number;
+    });
+
+    const qs = makeQuotes(60);
+    renderWith(qs);
+
+    // footer reflete 25 de 60
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(
+      /Exibindo 25 de 60/,
+    );
+
+    const container = screen.getByTestId('quotes-scroll-container') as HTMLDivElement;
+
+    // Simula container scrollável próximo ao fim
+    Object.defineProperty(container, 'scrollHeight', { configurable: true, value: 2000 });
+    Object.defineProperty(container, 'clientHeight', { configurable: true, value: 600 });
+    Object.defineProperty(container, 'scrollTop', { configurable: true, writable: true, value: 1500 });
+
+    act(() => {
+      container.dispatchEvent(new Event('scroll', { bubbles: true }));
+    });
+
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(
+      /Exibindo 50 de 60/,
+    );
+
+    // Rola novamente para puxar o restante
+    act(() => {
+      container.dispatchEvent(new Event('scroll', { bubbles: true }));
+    });
+
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/fim da lista/);
+  });
+
+  it('renderiza estado vazio com botão de atualizar', () => {
+    renderWith([]);
+    expect(screen.getByTestId('quotes-empty-state')).toBeInTheDocument();
+
+    const refreshSpy = vi.fn();
+    window.addEventListener('quotes:refresh-request', refreshSpy);
+    screen.getByTestId('quotes-empty-refresh').click();
+    expect(refreshSpy).toHaveBeenCalledTimes(1);
+    window.removeEventListener('quotes:refresh-request', refreshSpy);
+  });
+});
+
+
 // Suprimi warning sobre `within` não usado mantendo o import: removo se lint reclamar.
 void within;
+
