@@ -181,7 +181,7 @@ export default function QuoteViewPage() {
                     data-testid="pdf-preview-trigger"
                     aria-label="Abrir preview da proposta para exportar PDF"
                     className="group relative h-6 min-w-[78px] justify-center gap-1.5 overflow-hidden rounded-full border-primary/40 px-2.5 text-[11px]
-                      animate-[pulse_4.5s_ease-in-out_infinite]
+                      animate-[glow-pulse_5s_ease-in-out_infinite]
                       shadow-[0_0_8px_hsl(var(--primary)/0.25)] transition-all duration-300
                       hover:animate-none
                       hover:border-primary hover:bg-primary/10 hover:shadow-[0_0_18px_hsl(var(--primary)/0.6)]
@@ -189,8 +189,8 @@ export default function QuoteViewPage() {
                       before:bg-[linear-gradient(110deg,transparent_30%,hsl(var(--primary)/0.35)_50%,transparent_70%)]
                       before:translate-x-[-120%] before:transition-transform before:duration-700 before:ease-out
                       hover:before:translate-x-[120%]
-                      after:absolute after:inset-0 after:rounded-full after:border-2 after:border-primary/40
-                      after:animate-[ping_4.5s_cubic-bezier(0,0,0.2,1)_infinite]
+                      after:absolute after:inset-0 after:rounded-full after:border after:border-primary/30
+                      after:animate-[border-glow_5s_ease-in-out_infinite]
                       hover:after:animate-none hover:after:border-primary/0
                       focus-visible:shadow-[0_0_18px_hsl(var(--primary)/0.6)]"
                   >
