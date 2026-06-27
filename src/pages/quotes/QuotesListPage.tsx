@@ -144,6 +144,7 @@ export default function QuotesListPage() {
               <div className="relative w-full sm:w-[260px] lg:w-[320px]">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  data-testid="quotes-search-input"
                   aria-label="Buscar orçamentos"
                   placeholder="Buscar por número, cliente ou empresa..."
                   value={searchTerm}
@@ -152,13 +153,13 @@ export default function QuotesListPage() {
                 />
               </div>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                <SelectTrigger className="w-full sm:w-[170px]">
+                <SelectTrigger data-testid="quotes-sort-trigger" className="w-full sm:w-[170px]">
                   <ArrowUpDown className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Ordenar" />
                 </SelectTrigger>
                 <SelectContent>
                   {sortOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
+                    <SelectItem key={opt.value} value={opt.value} data-testid={`quotes-sort-item-${opt.value}`}>
                       {opt.label}
                     </SelectItem>
                   ))}

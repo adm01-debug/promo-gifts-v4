@@ -245,6 +245,32 @@ export const Sel = {
     pdfExportMobile: TID("pdf-export-mobile"),
   },
 
+  // ---------- Lista de orçamentos (QuotesConfigurableList) ----------
+  quotesList: {
+    /** Container scrollável (root do IntersectionObserver). */
+    scrollContainer: TID("quotes-scroll-container"),
+    /** Sentinel observado pelo IO — só existe quando há mais itens. */
+    infiniteSentinel: TID("quotes-infinite-sentinel"),
+    /** Footer com "Exibindo N de M …" ou "fim da lista". */
+    footerCount: TID("quotes-footer-count"),
+    /** Indicador "Carregando mais…" durante refetch em background. */
+    footerLoadingMore: TID("quotes-footer-loading-more"),
+    /** Banner de erro no rodapé + botão de retry. */
+    footerLoadError: TID("quotes-footer-load-error"),
+    footerRetry: TID("quotes-footer-retry"),
+    /** Estado vazio (sem orçamentos) + botão "Atualizar lista". */
+    emptyState: TID("quotes-empty-state"),
+    emptyRefresh: TID("quotes-empty-refresh"),
+    /** Linhas: cada `quote-row-more-<id>` é único por orçamento. */
+    rowMorePrefix: TID_PREFIX("quote-row-more-"),
+    /** Busca / ordenação / chips de status na header da página de orçamentos. */
+    searchInput: TID("quotes-search-input"),
+    sortTrigger: TID("quotes-sort-trigger"),
+    sortItem: (value: string) => TID(`quotes-sort-item-${value}`),
+    chip: (key: string) => TID(`quotes-chip-${key}`),
+  },
+
+
   // ---------- Estoque (Stock Dashboard) ----------
   stock: {
     /** Botão dedicado "Em Estoque / Estoque Futuro" no toolbar. */
