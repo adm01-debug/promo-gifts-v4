@@ -10,6 +10,12 @@ import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { Quote } from '@/hooks/quotes';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface QuotesStatusChipsProps {
   quotes: Quote[];
