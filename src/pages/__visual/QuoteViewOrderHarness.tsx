@@ -189,15 +189,16 @@ export default function QuoteViewOrderHarness() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel ref={cancelRef} data-testid="quote-delete-cancel">
+              <AlertDialogCancel ref={cancelRef} disabled={isDeleting} data-testid="quote-delete-cancel">
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
                 data-testid="quote-delete-confirm"
+                disabled={isDeleting}
                 onClick={handleConfirmDelete}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Excluir
+                {isDeleting ? 'Excluindo…' : 'Excluir'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
