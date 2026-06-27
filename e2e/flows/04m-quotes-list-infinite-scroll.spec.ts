@@ -13,6 +13,7 @@
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
+import { pollUntil } from "../helpers/waits";
 import { Sel } from "../fixtures/selectors";
 
 /** Conta linhas únicas; falha imediatamente se houver `data-testid` duplicado. */
