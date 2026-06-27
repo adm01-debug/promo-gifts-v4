@@ -38,7 +38,9 @@ const quotes: Quote[] = [
   } as Quote,
 ];
 
-function renderList() {
+function renderList(
+  props: Partial<React.ComponentProps<typeof QuotesConfigurableList>> = {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -51,12 +53,14 @@ function renderList() {
             onDelete={vi.fn()}
             onBulkDelete={vi.fn()}
             onDuplicate={vi.fn()}
+            {...props}
           />
         </TooltipProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
+
 
 
 describe('QuotesConfigurableList — seleção manual', () => {
