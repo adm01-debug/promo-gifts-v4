@@ -78,7 +78,8 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
     }
 
     // ── Caminho 2: há orçamentos ──
-    expect(initial.total).toBeGreaterThan(0);
+    const rowCount = await page.locator(Sel.quotesList.rowMorePrefix).count();
+    expect(initial.total || rowCount).toBeGreaterThan(0);
     await assertNoDuplicateRows(page);
 
     // 2.1) refresh-request via window event → não deve duplicar nem quebrar a UI.
@@ -101,7 +102,7 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
       await pollUntil(
         async () => {
           const f = await readFooter(page);
-          // avançou OU sentinel sumiu (chegou ao fim)
+          // avançou OU sentinel sumiu (chegou ao fim → footer fica vazio)
           return f.shown > lastShown || f.isEnd
             ? { shown: f.shown }
             : null;
@@ -113,10 +114,12 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
     }
     expect(iter).toBeLessThan(MAX_ITERATIONS);
 
+    // Ao chegar no fim: sentinel some e rodapé não exibe mais "Exibindo …".
+    await expect(page.locator(Sel.quotesList.infiniteSentinel)).toHaveCount(0);
     const afterScroll = await readFooter(page);
     expect(afterScroll.isEnd).toBe(true);
-    expect(afterScroll.shown).toBe(afterScroll.total);
     await assertNoDuplicateRows(page);
+
 
     // 2.3) Mudança de ordenação → footer reseta para no máximo 25 (ou total se menor)
     await page.locator(Sel.quotesList.sortTrigger).click();
