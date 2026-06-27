@@ -145,22 +145,12 @@ describe('QuotesConfigurableList — seleção manual', () => {
   it('evento quotes:bulk-delete-request dispara onBulkDelete com IDs selecionados e limpa seleção', async () => {
     const user = userEvent.setup();
     const onBulkDelete = vi.fn();
-    render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <QuotesConfigurableList
-            quotes={quotes}
-            onDelete={vi.fn()}
-            onBulkDelete={onBulkDelete}
-            onDuplicate={vi.fn()}
-          />
-        </TooltipProvider>
-      </MemoryRouter>,
-    );
+    renderList({ onBulkDelete });
 
     act(() => {
       window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'));
     });
+
     const rowCheckbox = screen.getAllByRole('checkbox', { name: /selecionar orçamento/i })[0];
     await user.click(rowCheckbox);
 
