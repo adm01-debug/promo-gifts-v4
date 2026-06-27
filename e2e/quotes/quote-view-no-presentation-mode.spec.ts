@@ -63,15 +63,16 @@ for (const theme of ['light', 'dark'] as const) {
     await page.keyboard.press('Enter');
     await expect(page.getByTestId('quote-actions-menu')).toBeVisible();
 
-    // Percorre TODOS os itens com ↓ e coleta o accessible name do item focado.
+    // Radix auto-foca o primeiro item ao abrir via teclado. Capturamos o
+    // item focado inicial e depois percorremos os demais com ArrowDown.
     const collected: string[] = [];
-    for (let i = 0; i < 4; i += 1) {
+    const readFocused = () =>
+      page.evaluate(() => (document.activeElement?.textContent ?? '').trim());
+
+    collected.push(await readFocused());
+    for (let i = 0; i < 3; i += 1) {
       await page.keyboard.press('ArrowDown');
-      const focusedName = await page.evaluate(() => {
-        const el = document.activeElement as HTMLElement | null;
-        return (el?.textContent ?? '').trim();
-      });
-      if (focusedName) collected.push(focusedName);
+      collected.push(await readFocused());
     }
 
     // Nenhum item destacado pode ser "Modo Apresentação".
@@ -79,9 +80,10 @@ for (const theme of ['light', 'dark'] as const) {
       expect(name).not.toMatch(/Modo Apresentação/i);
     }
     // Sanidade: os 3 itens esperados aparecem na varredura.
-    expect(collected.join(' | ')).toMatch(/Editar/);
-    expect(collected.join(' | ')).toMatch(/Duplicar/);
-    expect(collected.join(' | ')).toMatch(/Histórico/);
+    const joined = collected.join(' | ');
+    expect(joined).toMatch(/Editar/);
+    expect(joined).toMatch(/Duplicar/);
+    expect(joined).toMatch(/Histórico/);
 
     // Escape fecha o menu sem efeitos colaterais.
     await page.keyboard.press('Escape');
