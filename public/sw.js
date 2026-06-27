@@ -1,6 +1,6 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.8.0
+// Versão: 3.8.1
 //
 // CHANGELOG v3.8.0 (2026-06-27 — fix/sw-base64url-hashed-asset-routing):
 //   [contexto] Após cada deploy, chunks lazy versionados (ex:
@@ -232,7 +232,7 @@ function handleStaleChunk(chunkUrl) {
   caches.open(CACHE_NAME).then((c) => {
     c.delete('/index.html');
     c.delete('/');
-  });
+  }).catch(() => {}); // Guard: não deixar rejeição sem handler
   self.clients
     .matchAll({ includeUncontrolled: true, type: 'window' })
     .then((clients) =>
@@ -252,7 +252,10 @@ async function handleHashedAsset(request, url) {
   const { pathname } = url;
   const isModule = isModuleAssetPath(pathname);
 
-  const cached = await caches.match(request);
+  // Guard: Cache API pode falhar (quota excedida, IndexedDB bloqueada em
+  // private-browsing restrito). Se lançar, prosseguimos direto para network.
+  let cached = null;
+  try { cached = await caches.match(request); } catch (_e) { /* sem cache */ }
   if (cached) return cached;
 
   const looksStale = (res) => {
