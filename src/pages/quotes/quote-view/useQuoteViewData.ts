@@ -24,7 +24,7 @@ type QuoteClientCompany = {
 };
 
 export function useQuoteViewData(id: string | undefined) {
-  const { fetchQuote, logQuoteHistory, duplicateQuote } = useQuotes();
+  const { fetchQuote, logQuoteHistory, duplicateQuote, deleteQuote } = useQuotes();
   const { user, profile } = useAuth();
 
   const [quote, setQuote] = useState<Quote | null>(null);
