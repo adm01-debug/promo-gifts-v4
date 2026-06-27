@@ -255,7 +255,8 @@ export default function QuotesListPage() {
 
 
           {/* Quotes List */}
-          <ScrollArea className="h-[calc(100vh-360px)] min-h-[400px]">
+          <div className="flex min-h-0 flex-1 flex-col">
+
             {filteredQuotes.length === 0 ? (
               <EmptyState
                 variant="quotes"
