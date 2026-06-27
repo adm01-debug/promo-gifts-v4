@@ -303,7 +303,9 @@ export async function fetchPromobrindProductById(
       table: 'product_kit_components',
       operation: 'select',
       select:
-        'id, component_name, component_code, component_product_id, component_sku, component_description, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, personalization_notes, material, color, primary_image_url, images, height_mm, width_mm, length_mm, diameter_mm, circumference_mm, weight_g, capacity_ml, supplier_component_code, component_type_code, notes',
+        // FIX 2026-06-27: capacity_ml não existe em product_kit_components (42703) → removido do select.
+        // Se a coluna for adicionada no futuro via migration, incluí-la novamente aqui e em KIT_AUDITED_FIELDS.
+        'id, component_name, component_code, component_product_id, component_sku, component_description, quantity, display_order, is_optional, is_packaging, is_replaceable, allows_personalization, personalization_notes, material, color, primary_image_url, images, height_mm, width_mm, length_mm, diameter_mm, circumference_mm, weight_g, supplier_component_code, component_type_code, notes',
       filters: { kit_product_id: productId },
       orderBy: { column: 'display_order', ascending: true },
       limit: 200,

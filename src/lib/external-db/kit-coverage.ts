@@ -17,7 +17,7 @@ export const KIT_AUDITED_FIELDS = [
   'diameter_mm',
   'circumference_mm',
   'weight_g',
-  'capacity_ml',
+  // 'capacity_ml',  // FIX 2026-06-27: coluna não existe em product_kit_components (PostgREST 400/42703)
   'component_type_code',
   'supplier_component_code',
   'personalization_notes',
