@@ -11,6 +11,7 @@ import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
 import { AvatarLogo } from '@/components/shared/AvatarLogo';
 import { normalizeCnpj, type LogoByCnpj } from '@/hooks/quotes/useQuoteClientLogos';
 import type { Quote } from '@/hooks/quotes';
+import { computeExpiration } from '@/lib/quotes/expiration';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
