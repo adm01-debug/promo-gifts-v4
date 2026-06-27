@@ -34,7 +34,7 @@ function dumpAxe(name: string, payload: unknown) {
 }
 
 async function go(page: Page, theme: 'light' | 'dark') {
-  await page.goto(theme === 'dark' ? `${ROUTE}?theme=dark` : ROUTE);
+  await gotoAndSettle(page, theme === 'dark' ? `${ROUTE}?theme=dark` : ROUTE);
   await expect(page.getByTestId('quote-view-order-harness')).toBeVisible();
   await expect(page.getByTestId('quote-status-timeline')).toBeVisible();
   await expect(page.getByTestId('page-title-quote-view')).toBeVisible();
