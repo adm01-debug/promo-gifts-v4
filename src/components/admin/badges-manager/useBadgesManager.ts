@@ -1,24 +1,28 @@
 /**
  * Hook de dados do módulo de Gestão de Badges.
  * CRUD + toggle sobre public.product_badge_definitions (RLS: escrita admin+).
+ *
+ * FIX 2026-06-27: Substituídos todos os casts 'as never' por untypedFrom().
+ * product_badge_definitions não está no types.ts gerado (o bot de regeneração
+ * remove a tabela periodicamente). untypedFrom() é a API canônica para tabelas
+ * fora do schema gerado — type-safe via generic, sem 'as never' silenciosos.
+ * fix_version: badges_manager_untyped_from_20260627
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { BadgeDefinition, BadgeDefinitionInsert, BadgeDefinitionUpdate } from './types';
 
 const QK = ['admin', 'product_badge_definitions'] as const;
 
 async function fetchBadges(): Promise<BadgeDefinition[]> {
-  const { data, error } = await supabase
-    .from('product_badge_definitions' as never)
+  const { data, error } = await untypedFrom<BadgeDefinition>('product_badge_definitions')
     .select('*')
     .order('sort_order', { ascending: true })
-    .order('priority', { ascending: false })
-    .returns<BadgeDefinition[]>();
+    .order('priority', { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return (data as BadgeDefinition[] | null) ?? [];
 }
 
 export function useBadgesManager() {
@@ -31,9 +35,8 @@ export function useBadgesManager() {
 
   const updateBadge = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: BadgeDefinitionUpdate }) => {
-      const { error } = await supabase
-        .from('product_badge_definitions' as never)
-        .update(patch as never)
+      const { error } = await untypedFrom<BadgeDefinition>('product_badge_definitions')
+        .update(patch as Record<string, unknown>)
         .eq('id', id);
       if (error) throw error;
     },
@@ -47,9 +50,8 @@ export function useBadgesManager() {
 
   const toggleBadge = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      const { error } = await supabase
-        .from('product_badge_definitions' as never)
-        .update({ is_enabled: enabled } as never)
+      const { error } = await untypedFrom<BadgeDefinition>('product_badge_definitions')
+        .update({ is_enabled: enabled } as Record<string, unknown>)
         .eq('id', id);
       if (error) throw error;
     },
@@ -60,9 +62,8 @@ export function useBadgesManager() {
 
   const createBadge = useMutation({
     mutationFn: async (payload: BadgeDefinitionInsert) => {
-      const { error } = await supabase
-        .from('product_badge_definitions' as never)
-        .insert({ ...payload, is_system: false } as never);
+      const { error } = await untypedFrom<BadgeDefinition>('product_badge_definitions')
+        .insert({ ...payload, is_system: false } as Record<string, unknown>);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -74,8 +75,7 @@ export function useBadgesManager() {
 
   const deleteBadge = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('product_badge_definitions' as never)
+      const { error } = await untypedFrom<BadgeDefinition>('product_badge_definitions')
         .delete()
         .eq('id', id);
       if (error) throw error;
