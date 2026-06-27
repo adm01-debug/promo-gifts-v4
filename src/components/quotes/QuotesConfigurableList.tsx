@@ -338,15 +338,17 @@ export function QuotesConfigurableList({
 
 
       {/* Table */}
-      <div className="rounded-lg border border-border overflow-hidden">
-      <div className="overflow-x-auto">
-        <div className="min-w-[1100px] w-max" style={{ minWidth: 'max(100%, 1100px)' }}>
+      <div data-testid="quotes-table-shell" className="overflow-hidden rounded-lg border border-border">
+        <div data-testid="quotes-table-hscroll" className="overflow-x-auto overflow-y-hidden">
+          <div className="min-w-[1100px] w-max" style={{ minWidth: 'max(100%, 1100px)' }}>
 
-        {/* Header */}
+        {/* Header — fica fora do scroll vertical (sticky efetivo) */}
         <div
-          className="grid gap-5 border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
+          data-testid="quotes-table-banner"
+          className="grid gap-5 overflow-hidden border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
           style={{ gridTemplateColumns: gridTemplate }}
         >
+
 
           {selectionMode && (
             <div className="flex items-center justify-center">
