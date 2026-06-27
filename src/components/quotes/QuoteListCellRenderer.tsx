@@ -34,7 +34,7 @@ export function renderQuoteCell(
   switch (columnId) {
     case 'quote_number':
       return (
-        <span className="block truncate pl-8 text-left font-mono text-[11px] tabular-nums text-muted-foreground/70">
+        <span className="block truncate pl-8 text-left font-mono text-[13px] tabular-nums text-muted-foreground/70">
           {quote.quote_number}
         </span>
       );
