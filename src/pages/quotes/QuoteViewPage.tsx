@@ -316,7 +316,7 @@ export default function QuoteViewPage() {
         {/* Quote Content */}
         <Card className="print:hidden">
           <Separator />
-          <CardContent className="space-y-6 pt-6">
+          <CardContent className="space-y-4 pt-4">
             <QuoteClientInfo
               clientCompany={quote.client_company}
               clientName={quote.client_name}
@@ -338,7 +338,8 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-4 font-display font-semibold">Condições Comerciais</h3>
+                  <h3 className="mb-2.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Condições Comerciais</h3>
+
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     {quote.payment_terms && (
                       <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
