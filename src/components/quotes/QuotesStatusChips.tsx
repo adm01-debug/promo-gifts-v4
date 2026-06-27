@@ -366,41 +366,50 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
               : `${label}, ${count} ${count === 1 ? 'orçamento' : 'orçamentos'}`;
 
             return (
-              <button
-                key={key}
-                type="button"
-                data-chip-key={key}
-                data-testid={`quotes-chip-${key}`}
-                onClick={() => onChange(key)}
-                onKeyDown={(e) => handleKeyDown(e, idx)}
-                aria-pressed={isActive}
-                aria-label={ariaLabel}
-                title={CHIP_TOOLTIPS[key]}
-                className={cn(
-                  'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
-                  'whitespace-nowrap border outline-none',
-                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                  isActive
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : cn(
-                        'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
-                        accentBorder,
-                      ),
-                )}
-              >
-                <span aria-hidden="true">{label}</span>
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
-                    isActive
-                      ? 'bg-primary-foreground/20 text-primary-foreground'
-                      : 'bg-muted text-foreground/70',
-                  )}
+              <Tooltip key={key} delayDuration={250}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    data-chip-key={key}
+                    data-testid={`quotes-chip-${key}`}
+                    onClick={() => onChange(key)}
+                    onKeyDown={(e) => handleKeyDown(e, idx)}
+                    aria-pressed={isActive}
+                    aria-label={ariaLabel}
+                    className={cn(
+                      'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all',
+                      'whitespace-nowrap border outline-none',
+                      'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                        : cn(
+                            'bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                            accentBorder,
+                          ),
+                    )}
+                  >
+                    <span aria-hidden="true">{label}</span>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
+                        isActive
+                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          : 'bg-muted text-foreground/70',
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  data-testid={`quotes-chip-tooltip-${key}`}
+                  className="max-w-[260px] text-xs"
                 >
-                  {count}
-                </span>
-              </button>
+                  {CHIP_TOOLTIPS[key]}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
