@@ -58,9 +58,15 @@ export function QuoteStatusTimeline({
   isSyncing = false,
 }: QuoteStatusTimelineProps) {
   const isPendingApproval = status === 'pending_approval';
-  // Compute current index based on filtered steps
-  const activeSteps = isPendingApproval ? steps : steps.filter((s) => s.key !== 'pending_approval');
-  const stepIdx = activeSteps.findIndex((s) => s.key === status);
+
+  // stepsPool: fonte única de verdade para índices E renderização.
+  // Anteriormente existiam duas arrays idênticas (activeSteps + relevantSteps)
+  // com a mesma lógica de filtro — vetor de divergência futura eliminado.
+  const stepsPool = isPendingApproval
+    ? steps
+    : steps.filter((s) => s.key !== 'pending_approval');
+
+  const stepIdx = stepsPool.findIndex((s) => s.key === status);
   const mappedOrder = statusOrder[status];
   const baseIdx =
     stepIdx >= 0
@@ -70,9 +76,9 @@ export function QuoteStatusTimeline({
         // but there are only 4 visible steps, and Math.min(5, length) would be out of bounds,
         // leaving the final step perpetually "completed" and never "current".
         mappedOrder !== undefined
-        ? Math.min(mappedOrder, activeSteps.length - 1)
+        ? Math.min(mappedOrder, stepsPool.length - 1)
         : 0;
-  const syncIdx = activeSteps.findIndex((s) => s.key === 'syncing');
+  const syncIdx = stepsPool.findIndex((s) => s.key === 'syncing');
   const currentIdx = isSyncing && syncIdx >= 0 ? syncIdx : baseIdx;
 
   const isRejected = status === 'rejected';
@@ -80,20 +86,14 @@ export function QuoteStatusTimeline({
   const isCancelled = status === 'cancelled';
   const isFinalNegative = isRejected || isExpired || isCancelled;
 
-  // Filter out pending_approval step if not relevant to this quote
-  const relevantSteps =
-    isPendingApproval || status === 'pending_approval'
-      ? steps
-      : steps.filter((s) => s.key !== 'pending_approval');
-
-  const displaySteps = relevantSteps.map((step, idx) => {
-    if (idx === relevantSteps.length - 1 && isRejected) {
+  const displaySteps = stepsPool.map((step, idx) => {
+    if (idx === stepsPool.length - 1 && isRejected) {
       return { key: 'rejected', label: 'Rejeitado', icon: ThumbsDown };
     }
-    if (idx === relevantSteps.length - 1 && isExpired) {
+    if (idx === stepsPool.length - 1 && isExpired) {
       return { key: 'expired', label: 'Expirado', icon: AlertTriangle };
     }
-    if (idx === relevantSteps.length - 1 && isCancelled) {
+    if (idx === stepsPool.length - 1 && isCancelled) {
       return { key: 'cancelled', label: 'Cancelado', icon: AlertTriangle };
     }
     return step;
