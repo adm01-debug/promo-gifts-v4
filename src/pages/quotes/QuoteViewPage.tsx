@@ -144,13 +144,13 @@ export default function QuoteViewPage() {
         <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center print:hidden">
           <div className="flex items-center gap-2.5">
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               aria-label="Voltar"
               onClick={() => navigate('/orcamentos')}
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-full border-primary/40 hover:border-primary hover:bg-primary/10"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 text-primary" />
             </Button>
             <div>
               <div className="flex items-center gap-2">
