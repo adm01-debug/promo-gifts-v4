@@ -332,8 +332,7 @@ export default function QuoteViewPage() {
         )}
 
         {/* Quote Content */}
-        <Card className="print:hidden">
-          <Separator />
+        <Card className="border-0 bg-transparent shadow-none print:hidden">
           <CardContent className="space-y-4 pt-4">
             <QuoteClientInfo
               clientCompany={quote.client_company}
