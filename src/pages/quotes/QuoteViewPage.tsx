@@ -194,7 +194,7 @@ export default function QuoteViewPage() {
                 quoteStatus={quote.status}
                 trigger={
                   <Button className="min-w-[150px] justify-center gap-2" data-testid="pdf-preview-trigger" aria-label="Abrir preview da proposta para exportar PDF">
-                    <Eye className="h-4 w-4" /> Preview Proposta
+                    <Eye className="h-4 w-4" /> Preview
                   </Button>
                 }
               />
