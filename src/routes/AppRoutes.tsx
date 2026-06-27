@@ -14,7 +14,9 @@ import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 import { OptimizedImageDemo } from './lazy-pages';
 
-// Dev-only visual harness (não inclui em build de produção)
+// Dev-only visual harness — não monta em build de produção.
+// Suíte versionada em e2e/visual/preview-button.spec.ts e protegida
+// pelo gate scripts/check-visual-preview-suite.mjs.
 const PreviewButtonHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/PreviewButtonHarness'))
   : null;
@@ -105,7 +107,7 @@ export function AppRoutes() {
             which caused E2E specs to fail with auth redirect. */}
         <Route path="/debug/images" element={<OptimizedImageDemo />} />
 
-        {/* Dev-only visual regression harness — não monta em build de produção */}
+        {/* Dev-only visual regression harness — não monta em produção */}
         {PreviewButtonHarness && (
           <Route path="/__visual/preview-button" element={<PreviewButtonHarness />} />
         )}

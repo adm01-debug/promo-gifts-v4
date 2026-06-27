@@ -1,12 +1,11 @@
 name: E2E — Visual Regression (Preview button)
 
-# Snapshot visual + contraste do botão Preview da QuoteViewPage usando a
-# rota dev-only /__visual/preview-button. Sem auth, sem fixtures.
+# Snapshot visual + contraste do botão Preview da QuoteViewPage.
 #
 # Atualização de baselines:
-#  - Commit com tag `[update-visual-baselines]` na mensagem, OU
-#  - workflow_dispatch com input `update_baselines=true`.
-# Quando aprovado, o job re-roda com `--update-snapshots` e commita
+#  - Commit com `[update-visual-baselines]` na mensagem, OU
+#  - workflow_dispatch com input update_baselines=true
+# Quando aprovado, o job re-roda com --update-snapshots e commita
 # os PNGs sob e2e/visual/preview-button.spec.ts-snapshots/.
 
 on:
@@ -15,15 +14,18 @@ on:
     paths:
       - 'src/pages/__visual/**'
       - 'src/pages/quotes/QuoteViewPage.tsx'
+      - 'src/routes/AppRoutes.tsx'
       - 'tailwind.config.ts'
       - 'src/index.css'
       - 'e2e/visual/**'
       - '.github/workflows/e2e-visual-preview-button.yml'
+      - 'scripts/check-visual-preview-suite.mjs'
   pull_request:
     branches: [main]
     paths:
       - 'src/pages/__visual/**'
       - 'src/pages/quotes/QuoteViewPage.tsx'
+      - 'src/routes/AppRoutes.tsx'
       - 'tailwind.config.ts'
       - 'src/index.css'
       - 'e2e/visual/**'
@@ -52,12 +54,11 @@ jobs:
     timeout-minutes: 15
 
     permissions:
-      contents: write # para commit de baselines quando solicitado
+      contents: write
 
     steps:
       - uses: actions/checkout@v5
         with:
-          # token write para commitar baselines atualizadas
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v6
@@ -67,6 +68,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+
+      # Falha cedo se a suíte foi revertida (harness/spec/workflow/rota).
+      - name: 🛡️ Guarda de presença da suíte visual
+        run: node scripts/check-visual-preview-suite.mjs
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -137,10 +142,21 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      - name: Upload baseline diffs
+      - name: Upload baseline diffs (screenshots actual/diff/expected)
         if: failure()
         uses: actions/upload-artifact@v5
         with:
           name: visual-preview-diffs-${{ github.run_id }}
-          path: test-results/
+          path: |
+            test-results/
+            !test-results/axe/
+          retention-days: 7
+
+      - name: Upload axe contrast logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: visual-preview-axe-${{ github.run_id }}
+          path: test-results/axe/
+          if-no-files-found: ignore
           retention-days: 7

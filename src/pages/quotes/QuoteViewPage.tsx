@@ -41,7 +41,7 @@ import {
 import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
 import { toast } from 'sonner';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
-import { QuoteValidityBanner } from '@/components/quotes/QuoteValidityBanner';
+
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
 
 import { QuoteVersionHistory } from '@/components/quotes/QuoteVersionHistory';
@@ -294,18 +294,15 @@ export default function QuoteViewPage() {
           </div>
         </div>
 
-        {/* Status Timeline + Validity Banner */}
-        <div className="flex flex-col items-start gap-2.5 md:flex-row print:hidden">
-          <div className="flex-1 rounded-lg border bg-card px-3 py-2.5">
-            <QuoteStatusTimeline
-              status={quote.status}
-              createdAt={quote.created_at}
-              updatedAt={quote.updated_at}
-              clientResponseAt={quote.client_response_at}
-              isSyncing={isSyncing}
-            />
-          </div>
-          <QuoteValidityBanner validUntil={quote.valid_until} status={quote.status} />
+        {/* Status Timeline (sem moldura, flutuando sobre o fundo da página) */}
+        <div className="w-full print:hidden">
+          <QuoteStatusTimeline
+            status={quote.status}
+            createdAt={quote.created_at}
+            updatedAt={quote.updated_at}
+            clientResponseAt={quote.client_response_at}
+            isSyncing={isSyncing}
+          />
         </div>
 
 
