@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import type { Quote } from '@/hooks/quotes';
@@ -38,19 +39,25 @@ const quotes: Quote[] = [
 ];
 
 function renderList() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   return render(
-    <MemoryRouter>
-      <TooltipProvider>
-        <QuotesConfigurableList
-          quotes={quotes}
-          onDelete={vi.fn()}
-          onBulkDelete={vi.fn()}
-          onDuplicate={vi.fn()}
-        />
-      </TooltipProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <TooltipProvider>
+          <QuotesConfigurableList
+            quotes={quotes}
+            onDelete={vi.fn()}
+            onBulkDelete={vi.fn()}
+            onDuplicate={vi.fn()}
+          />
+        </TooltipProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
+
 
 describe('QuotesConfigurableList — seleção manual', () => {
   beforeEach(() => {
