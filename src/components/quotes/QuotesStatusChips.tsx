@@ -419,7 +419,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
                   data-testid={`quotes-chip-tooltip-${key}`}
                   className="max-w-[260px] text-xs"
                 >
-                  {CHIP_TOOLTIPS[key]}
+                  {getChipTooltip(key)}
                 </TooltipContent>
               </Tooltip>
             );
