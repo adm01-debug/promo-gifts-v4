@@ -3,9 +3,9 @@
 Última atualização: 2026-06-27.
 
 Esta página documenta o mapeamento **status ↔ tooltip** usado em todo o módulo
-`/orcamentos` (chips do topo, badges da tabela, página de detalhe) e o motivo
-pelo qual o status `cancelled` ainda não é alcançável via INSERT direto no
-banco canônico.
+`/orcamentos` (chips do topo, badges da tabela, página de detalhe) e como o
+status `cancelled` é semeado no banco canônico — aceito pelo CHECK e inserível
+desde que o INSERT inclua `organization_id` (exigência da RLS).
 
 ## 1. Fontes da verdade
 
@@ -39,7 +39,7 @@ banco canônico.
 | `viewed` | `status='viewed'` | ✅ |
 | `quote_approved` | `status='approved'` | ✅ |
 | `converted` | `status='converted'` | ✅ |
-| `cancelled` | `status='cancelled'` | ❌ **bloqueado por CHECK** (ver §3) |
+| `cancelled` | `status='cancelled'` | ✅ (requer `organization_id`; ver §3) |
 | `quote_rejected` | `status='rejected'` | ✅ |
 
 ### Chips do topo (`CHIP_TOOLTIPS`)
@@ -56,51 +56,52 @@ banco canônico.
 | `discount_expired` | `QUOTE_ROW_BADGE_STYLES.expired_discount.description` |
 | `expired` | `QUOTE_ROW_BADGE_STYLES.expired.description` |
 
-## 3. Por que `cancelled` está bloqueado hoje
+## 3. Por que `cancelled` é inserível no banco canônico
 
-A migration original do schema define:
+O CHECK de `quotes.status` no projeto canônico `doufsxqlfjyuvxuezpln` **já
+aceita** `cancelled`. Verificado em 2026-06-27 via `pg_get_constraintdef`:
 
 ```sql
 CONSTRAINT valid_quote_status CHECK (
-  status IN ('draft','pending','sent','approved','rejected','expired','converted')
+  status = ANY (ARRAY[
+    'draft','pending','pending_approval','sent','viewed',
+    'approved','converted','rejected','expired','cancelled'
+  ])
 )
 ```
 
-Apesar de funções recentes (`notify_quote_status_change`,
-`fix_audit_novo_orcamento_batch2`) já tratarem `cancelled`, o CHECK acima
-ainda não foi ampliado **no banco canônico** `doufsxqlfjyuvxuezpln`. Consequências:
+Consequências:
 
-- INSERT/UPDATE com `status='cancelled'` falha em produção.
-- O seed E2E `seedQuotesForStatusChips` marca essa chave com
-  `unseedable_reason='db-check-blocks-cancelled-for-quotes'` para não falhar
-  silenciosamente.
-- O spec `04m-quotes-status-tooltips-a11y.spec.ts` valida 13 status reachable
-  e asserta `unreachable === ['cancelled']` como invariante até a migration.
+- INSERT/UPDATE com `status='cancelled'` passa no CHECK (testado por escrita em
+  `session_replication_role='replica'`, com ROLLBACK; valor inválido cai com
+  `23514`, `cancelled` é aceito).
+- O único requisito extra para semear é o mesmo de qualquer quote: a coluna
+  `organization_id` (NOT NULL) precisa satisfazer a policy de INSERT
+  `org_members_create_quotes`, que valida `user_is_org_member(organization_id)`.
+  Sem org, o INSERT falha com `42501` (RLS) — para QUALQUER status, não só
+  `cancelled`. O seed resolve o org via `user_organizations` (a fonte que a RLS
+  checa), com fallback em `profiles.organization_id`.
+- Nuance de contexto de auth: `is_admin_or_above` / `is_coord_or_above` levantam
+  exceção ao consultar o papel de **outro** usuário; no uso normal o vendedor
+  age sobre o próprio quote (`auth.uid() = seller_id`), então não há bloqueio.
 
-## 4. Como liberar `cancelled` (checklist)
+> A ideia de que o CHECK bloqueava `cancelled` vinha do projeto **Lovable Cloud**
+> `pqpdolkaeqlyzpdpbizo` — não do canônico. Nenhuma migration de status é
+> necessária em `doufsxqlfjyuvxuezpln`.
 
-1. Aplicar `qa/migrations-draft/2026-06-27_quotes_status_allow_cancelled.sql`
-   **no projeto canônico** (`doufsxqlfjyuvxuezpln`). Nunca rodar no
-   Lovable Cloud `pqpdolkaeqlyzpdpbizo`.
-2. Conferir no SQL:
-   ```sql
-   SELECT pg_get_constraintdef(oid)
-   FROM pg_constraint
-   WHERE conrelid='public.quotes'::regclass
-     AND conname='valid_quote_status';
-   ```
-3. Em `e2e/helpers/quotes-status-seed.ts`, remover o bloco
-   `unseedable_reason` do alvo `cancelled`.
-4. Em `e2e/flows/04m-quotes-status-tooltips-a11y.spec.ts`, trocar:
-   - `expect(unreachable).toEqual(['cancelled'])` → `expect(unreachable).toEqual([])`
-   - `expect(reachable).toHaveLength(13)` → `…toHaveLength(14)`
-5. Atualizar a tabela acima marcando `cancelled` como ✅.
-6. Rodar localmente:
-   ```bash
-   bunx playwright test e2e/flows/04m-quotes-status-tooltip
-   ```
-   Os 14 badges precisam aparecer com `aria-describedby` apontando para o
-   `TooltipContent` correto.
+## 4. Estado atual (cancelled já liberado)
+
+1. **Banco**: nada a aplicar no canônico — o CHECK já contempla `cancelled`. O
+   draft `qa/migrations-draft/2026-06-27_quotes_status_allow_cancelled.sql` seria
+   um no-op aqui e **nunca** deve rodar no Lovable Cloud `pqpdolkaeqlyzpdpbizo`.
+2. **Seed** (`e2e/helpers/quotes-status-seed.ts`): `unseedable_reason` removido do
+   alvo `cancelled`; o seed resolve `organization_id` e insere os 14 alvos.
+3. **Spec** (`e2e/flows/04m-quotes-status-tooltips-a11y.spec.ts`):
+   `expect(unreachable).toEqual([])` e `reachable` cobre os 14 (`toHaveLength(14)`).
+4. **Validação ponta-a-ponta**: roda no CI via
+   `.github/workflows/e2e-quotes-tooltips.yml` (precisa de app + auth reais). Os
+   14 badges aparecem com `aria-describedby` apontando para o `TooltipContent`
+   correto.
 
 ## 5. Gates automáticos
 
@@ -109,6 +110,6 @@ ainda não foi ampliado **no banco canônico** `doufsxqlfjyuvxuezpln`. Consequê
 | `src/components/quotes/__tests__/QuotesStatusChips.tooltips.test.ts` | Toda chave de chip tem tooltip; toda chave de badge tem `description` não vazia; fallback funciona; sem termos técnicos |
 | `src/components/quotes/__tests__/QuotesStatusChips.ssot-parity.test.ts` | Paridade entre `QUOTE_STATUSES` (enum BD) e `QUOTE_ROW_BADGE_STYLES`; seed E2E retorna exatamente o conjunto canônico |
 | `e2e/flows/04m-quotes-status-tooltips.spec.ts` | Hover e focus em chips + badge mostram a copy SSOT |
-| `e2e/flows/04m-quotes-status-tooltips-a11y.spec.ts` | `aria-describedby` + texto do tooltip via teclado em todos os 13 (→ 14) status |
+| `e2e/flows/04m-quotes-status-tooltips-a11y.spec.ts` | `aria-describedby` + texto do tooltip via teclado em todos os 14 status |
 | `e2e/flows/04m-quotes-status-tooltip-fallback.spec.ts` | `TOOLTIP_FALLBACK_COPY` aparece para chave inválida |
 | `.github/workflows/e2e-quotes-tooltips.yml` | Roda os 3 specs `04m-quotes-status-tooltip*` no CI |
