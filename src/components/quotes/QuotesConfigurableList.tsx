@@ -24,6 +24,8 @@ import {
   Trash2,
   Copy,
   Edit,
+  Inbox,
+  RefreshCw,
 } from 'lucide-react';
 
 import type { Quote } from '@/hooks/quotes';
