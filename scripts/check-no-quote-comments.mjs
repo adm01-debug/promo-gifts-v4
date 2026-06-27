@@ -18,7 +18,8 @@ import { relative } from "node:path";
 const PATTERNS = [
   "QuoteCommentsSection",
   "useQuoteComments",
-  String.raw`from\((['"])quote_comments\1\)`,
+  String.raw`from\(['"]quote_comments['"]\)`,
+
 ];
 
 const ALLOW = [
