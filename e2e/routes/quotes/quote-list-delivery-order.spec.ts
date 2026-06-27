@@ -18,27 +18,32 @@ async function headerOrder(page: Page): Promise<string[]> {
     );
 }
 
+async function cellOrderInFirstRow(page: Page): Promise<string[]> {
+  const row = page.locator('[data-testid^="quote-row-"]').first();
+  if ((await row.count()) === 0) return [];
+  return row
+    .locator('[data-testid^="quotes-col-cell-"]')
+    .evaluateAll((els) =>
+      els.map((el) => (el.getAttribute("data-testid") ?? "").replace("quotes-col-cell-", "")),
+    );
+}
+
 async function assertDeliveryBetween(page: Page) {
-  const order = await headerOrder(page);
-  const idx = TRIPLET.map((id) => order.indexOf(id));
-  for (const i of idx) expect(i).toBeGreaterThanOrEqual(0);
-  expect(idx).toEqual([...idx].sort((a, b) => a - b));
-  // Sequência contígua date → delivery → items.
-  expect(order.slice(idx[0], idx[0] + 3)).toEqual([...TRIPLET]);
+  // (1) Header: date → delivery → items contíguos.
+  const header = await headerOrder(page);
+  const hIdx = TRIPLET.map((id) => header.indexOf(id));
+  for (const i of hIdx) expect(i).toBeGreaterThanOrEqual(0);
+  expect(header.slice(hIdx[0], hIdx[0] + 3)).toEqual([...TRIPLET]);
 
-  // Header x células: largura/centro X de cada header deve casar com a
-  // ordem horizontal das células correspondentes na primeira linha.
-  const firstRow = page.locator('[data-testid^="quote-row-"]').first();
-  if ((await firstRow.count()) === 0) return;
+  // (2) Células da primeira linha: mesma ordem relativa por testid (sem depender de X).
+  const cells = await cellOrderInFirstRow(page);
+  if (cells.length === 0) return;
+  const cIdx = TRIPLET.map((id) => cells.indexOf(id));
+  for (const i of cIdx) expect(i).toBeGreaterThanOrEqual(0);
+  expect(cells.slice(cIdx[0], cIdx[0] + 3)).toEqual([...TRIPLET]);
 
-  const headerCenters: Record<string, number> = {};
-  for (const id of TRIPLET) {
-    const box = await page.locator(`[data-testid="quotes-col-header-${id}"]`).boundingBox();
-    expect(box).toBeTruthy();
-    headerCenters[id] = (box!.x + box!.width / 2);
-  }
-  expect(headerCenters.date).toBeLessThan(headerCenters.delivery);
-  expect(headerCenters.delivery).toBeLessThan(headerCenters.items);
+  // (3) Paridade: ordem do header == ordem das células.
+  expect(cells).toEqual(header);
 }
 
 test.describe("[module:quotes] [component:quotes-list] [owner:team-growth] @regression route:/orcamentos", () => {

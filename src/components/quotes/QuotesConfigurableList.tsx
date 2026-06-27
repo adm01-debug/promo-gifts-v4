@@ -450,6 +450,7 @@ export function QuotesConfigurableList({
               {visibleColumns.map((col) => (
                 <div
                   key={col.id}
+                  data-testid={`quotes-col-cell-${col.id}`}
                   className={cn(
                     'min-w-0',
                     col.align === 'right' && 'text-right',
