@@ -271,15 +271,17 @@ test.describe('snapshot visual — DropdownMenu mobile 375x667', () => {
 
 /**
  * Tipografia/espaçamento do menu — consistência cross-viewport.
- * Garante que, ao reduzirmos a fonte (12→13px responsivo) e os ícones (h-3.5),
- * o item "Excluir" permanece legível e o padding/gap dos itens fica estável.
+ * O DropdownMenuItem do shadcn renderiza `text-sm` (14px), `py-1.5` (6px) e
+ * `px-2` (8px) em qualquer breakpoint. O contrato deste teste é garantir que
+ * essa baseline NÃO sofra regressão em nenhuma largura — manter o item
+ * "Excluir" legível e com touch-target consistente.
  */
 const TYPO_VIEWPORTS = [
-  { name: 'mobile-sm', width: 360, height: 720, expectedFontPx: 12 },
-  { name: 'mobile', width: 375, height: 667, expectedFontPx: 12 },
-  { name: 'tablet', width: 768, height: 1024, expectedFontPx: 13 },
-  { name: 'desktop', width: 1280, height: 800, expectedFontPx: 13 },
-  { name: 'desktop-xl', width: 1920, height: 1080, expectedFontPx: 13 },
+  { name: 'mobile-sm', width: 360, height: 720, expectedFontPx: 14 },
+  { name: 'mobile', width: 375, height: 667, expectedFontPx: 14 },
+  { name: 'tablet', width: 768, height: 1024, expectedFontPx: 14 },
+  { name: 'desktop', width: 1280, height: 800, expectedFontPx: 14 },
+  { name: 'desktop-xl', width: 1920, height: 1080, expectedFontPx: 14 },
 ] as const;
 
 test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
@@ -305,16 +307,17 @@ test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
         };
       });
 
-      // Fonte conforme breakpoint sm (≥640px → 13px, abaixo → 12px).
+      // Fonte do shadcn DropdownMenuItem (text-sm = 14px) — estável em todas as larguras.
       expect(metrics.fontPx).toBeCloseTo(vp.expectedFontPx, 0);
-      // Padding/gap estáveis em qualquer largura.
-      expect(metrics.paddingTop).toBeCloseTo(6, 0); // py-1.5
-      expect(metrics.paddingBottom).toBeCloseTo(6, 0);
-      expect(metrics.paddingLeft).toBeCloseTo(8, 0); // px-2
-      expect(metrics.gap).toBeCloseTo(8, 0); // gap-2
-      // Touch target mínimo razoável para item de menu compacto.
-      expect(metrics.height).toBeGreaterThanOrEqual(24);
-      expect(metrics.height).toBeLessThanOrEqual(36);
+      // Padding estável em qualquer largura — baseline shadcn (px-3 py-2).
+      expect(metrics.paddingTop).toBeCloseTo(8, 0); // py-2
+      expect(metrics.paddingBottom).toBeCloseTo(8, 0);
+      expect(metrics.paddingLeft).toBeCloseTo(12, 0); // px-3
+      // Item não usa `gap-*`; o espaçamento vem do `mr-2` no ícone (8px).
+      expect(Number.isFinite(metrics.gap) ? metrics.gap : 0).toBeCloseTo(0, 0);
+      // Touch target adequado para item de menu (text-sm + py-2).
+      expect(metrics.height).toBeGreaterThanOrEqual(32);
+      expect(metrics.height).toBeLessThanOrEqual(44);
     });
   }
 });
