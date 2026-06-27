@@ -297,21 +297,13 @@ export default function QuoteViewPage() {
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onSelect={async (e) => {
+                  onSelect={(e) => {
                     e.preventDefault();
                     if (!quote?.id) return;
-                    const ok = window.confirm('Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.');
-                    if (!ok) return;
-                    try {
-                      await deleteQuote(quote.id);
-                      toast.success('Orçamento excluído');
-                      navigate('/orcamentos');
-                    } catch (err: unknown) {
-                      const msg = err instanceof Error ? err.message : 'Erro';
-                      toast.error('Erro ao excluir', { description: msg });
-                    }
+                    setDeleteOpen(true);
                   }}
                   className="text-destructive focus:text-destructive"
+                  data-testid="quote-actions-delete"
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Excluir
                 </DropdownMenuItem>
