@@ -1,92 +1,46 @@
-# robots.txt — Promo Gifts (promogifts.com.br)
-# Gerado em: 2026-06-22
-#
-# Esta é uma plataforma B2B SaaS com autenticação obrigatória.
-# Apenas as rotas públicas (login, termos, privacidade) devem ser indexadas.
-# Rotas protegidas (catálogo, orçamentos, admin, etc.) redirecionam para /auth
-# quando acessadas sem sessão — indexar essas URLs seria inútil.
+# robots.txt — Promo Brindes (promogifts.com.br)
+# Atualizado: 2026-06-27 — SEO módulo ativo, sitemap dinâmico via Vercel
 
-# ── Googlebot ──────────────────────────────────────────────────────────────────
+# ── Googlebot e crawlers principais ──────────────────────────────────────────
 User-agent: Googlebot
-Allow: /$
-Allow: /auth
-Allow: /login
-Allow: /reset-password
-Allow: /forgot-password-confirmation
-Allow: /termos
-Allow: /privacidade
-Allow: /favicon.ico
-Allow: /favicon.svg
-Allow: /og-image.png
-Allow: /manifest.json
-# Bloquear tudo mais (rotas protegidas + admin + dev)
-Disallow: /admin
-Disallow: /produtos
-Disallow: /filtros
-Disallow: /novidades
-Disallow: /reposicao
-Disallow: /favoritos
-Disallow: /carrinhos
-Disallow: /comparar
-Disallow: /colecoes
-Disallow: /orcamentos
-Disallow: /simulador
-Disallow: /simulador-precos
-Disallow: /mockup-generator
-Disallow: /magic-up
-Disallow: /montar-kit
-Disallow: /meus-kits
-Disallow: /clientes
-Disallow: /tendencias
-Disallow: /busca-preco
-Disallow: /inteligencia-comercial
-Disallow: /estoque
-Disallow: /dashboard
-Disallow: /debug
-Disallow: /__test
-Disallow: /produto/
-
-# ── Outros crawlers ────────────────────────────────────────────────────────────
 User-agent: Bingbot
+User-agent: Applebot
 Allow: /
-Disallow: /admin
+Allow: /produto/
+Allow: /categoria/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
 Disallow: /debug
 Disallow: /__test
+Disallow: /orcamentos/
+Disallow: /simulador-precos/
 
-# Social media scrapers (apenas og:image e meta tags)
+# ── Social media crawlers (OG meta tags via CF Worker) ───────────────────────
 User-agent: Twitterbot
-Allow: /
-Disallow: /admin
-Disallow: /debug
-
 User-agent: facebookexternalhit
+User-agent: LinkedInBot
+User-agent: WhatsApp
+User-agent: Slackbot
 Allow: /
-Disallow: /admin
-Disallow: /debug
 
-# Bloquear crawlers agressivos/SEO scrapers conhecidos
+# ── Crawlers SEO agressivos ──────────────────────────────────────────────────
 User-agent: AhrefsBot
-Disallow: /
-
 User-agent: SemrushBot
-Disallow: /
-
 User-agent: DotBot
-Disallow: /
-
 User-agent: MJ12bot
+User-agent: BLEXBot
 Disallow: /
 
-# ── Fallback: demais crawlers ──────────────────────────────────────────────────
+# ── Fallback ─────────────────────────────────────────────────────────────────
 User-agent: *
-Allow: /$
-Allow: /auth
-Allow: /login
-Allow: /termos
-Allow: /privacidade
-Disallow: /admin
+Allow: /
+Allow: /produto/
+Allow: /categoria/
+Disallow: /admin/
+Disallow: /api/
 Disallow: /debug
 Disallow: /__test
 
-# ── Sitemap ────────────────────────────────────────────────────────────────────
+# ── Sitemap dinâmico (api/sitemap.ts → vw_sitemap_all no Supabase) ───────────
 Sitemap: https://www.promogifts.com.br/sitemap.xml

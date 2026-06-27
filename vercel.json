@@ -2,11 +2,28 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
       "source": "/((?!.*\\.[a-zA-Z0-9]{1,8}$).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=43200, stale-while-revalidate=86400"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=UTF-8"
+        }
+      ]
+    },
     {
       "source": "/manifest.json",
       "headers": [
