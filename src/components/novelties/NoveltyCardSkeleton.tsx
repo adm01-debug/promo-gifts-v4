@@ -65,7 +65,7 @@ export const NoveltyCardSkeleton = memo(({ className }: NoveltyCardSkeletonProps
 
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-4 rounded-full" />
+              <Skeleton key={i} className="h-[var(--swatch-size-sm)] w-[var(--swatch-size-sm)] rounded-full" />
             ))}
           </div>
         </div>

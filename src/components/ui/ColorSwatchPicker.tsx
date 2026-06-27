@@ -1,5 +1,35 @@
-import React from 'react';
+/**
+ * ColorSwatchPicker — picker INTERATIVO de bolinhas de cor para o caminho V2
+ * (flag `useColorSwatchesV2`), alimentado por `products.color_swatches` JSONB.
+ * Renderizado por ProductCard (grid de Catálogo/Super Filtro), ProductListItem
+ * (lista) e ProductTableRow (tabela) quando o produto possui swatches V2.
+ *
+ * ──────────────────────────────────────────────────────────────────────────────
+ *  fix_version=swatch-ssot-v2-20260627  •  ANTI-REGRESSÃO (NÃO REMOVER)
+ * ──────────────────────────────────────────────────────────────────────────────
+ *  REGRESSÃO CORRIGIDA: este componente HARD-CODAVA o diâmetro do dot em pixels
+ *  (`const dotPx = size === 'sm' ? 16 : 20`), renderizando bolinhas de 16px
+ *  enquanto TODO o resto do sistema (ProductColorSwatches) usa o token SSOT
+ *  `--swatch-size-sm` (24,2px). Resultado: produtos COM swatches V2 apareciam com
+ *  bolinhas visivelmente menores que produtos no fallback V1 — quebrando o padrão
+ *  visual em Catálogo, Super Filtro, Novidades e Reposição.
+ *
+ *  CORREÇÃO: o tamanho, o gap, o border/shadow, os estados ATIVO e ESGOTADO e o
+ *  hover passam a vir EXCLUSIVAMENTE da SSOT compartilhada:
+ *    • tamanho/gap  → CSS tokens `--swatch-size-*` / `--swatch-gap-*` (src/index.css)
+ *    • aparência    → `getColorSwatchClasses()` + `resolveSwatchBackground()`
+ *      (src/components/shared/ColorSwatch.tsx) — MESMA fonte do ProductColorSwatches.
+ *
+ *  PROIBIDO reintroduzir tamanhos numéricos em px (dotPx/width:16/h-4 w-4) aqui.
+ *  Para ajustar o tamanho do swatch em TODO o sistema, edite os tokens em
+ *  src/index.css — nunca este arquivo isoladamente.
+ * ──────────────────────────────────────────────────────────────────────────────
+ */
 import { cn } from '@/lib/utils';
+import {
+  getColorSwatchClasses,
+  resolveSwatchBackground,
+} from '@/components/shared/ColorSwatch';
 import type { ColorSwatch } from '@/hooks/useProductColorSwatch';
 
 interface ColorSwatchPickerProps {
@@ -8,9 +38,15 @@ interface ColorSwatchPickerProps {
   onSelect: (variantId: string) => void;
   onReset: () => void;
   maxVisible?: number;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
   className?: string;
 }
+
+/** Diâmetro do dot por preset — sempre via token SSOT (ver index.css). */
+const SIZE_VAR: Record<NonNullable<ColorSwatchPickerProps['size']>, string> = {
+  sm: 'var(--swatch-size-sm)',
+  md: 'var(--swatch-size-md)',
+};
 
 export function ColorSwatchPicker({
   swatches,
@@ -23,40 +59,43 @@ export function ColorSwatchPicker({
 }: ColorSwatchPickerProps) {
   if (!swatches || swatches.length === 0) return null;
 
-  const dotPx = size === 'sm' ? 16 : 20;
+  const sizeVar = SIZE_VAR[size];
   const visible = swatches.slice(0, maxVisible);
   const overflow = swatches.length - maxVisible;
 
   return (
-    <div className={cn('flex items-center gap-1.5 flex-wrap', className)}>
-      {/* Botão Todos — aparece apenas quando há seleção ativa */}
-      {activeVariantId !== null && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onReset(); }}
-          className="text-xs font-medium px-2 py-0.5 rounded-full border border-border bg-background text-muted-foreground hover:bg-secondary transition-colors"
-          aria-label="Ver todas as cores"
-        >
-          Todos
-        </button>
+    <div
+      className={cn(
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]',
+        className,
       )}
-
+    >
       {visible.map((swatch) => {
         const isActive = activeVariantId === swatch.variant_id;
         const isOut = !swatch.is_in_stock;
+        const bg = resolveSwatchBackground(swatch.color_hex, swatch.color_name);
         return (
           <button
             key={swatch.variant_id}
             type="button"
-            onClick={(e) => { e.stopPropagation(); onSelect(swatch.variant_id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(swatch.variant_id);
+            }}
             className={cn(
-              'rounded-full border-2 transition-all duration-150 cursor-pointer relative flex-shrink-0',
+              // SSOT visual: base + estados out-of-stock/active (igual ao ProductColorSwatches)
+              getColorSwatchClasses({ isActive, isOutOfStock: isOut, hasBg: bg.hasBg }),
+              'cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               isActive
-                ? 'border-primary scale-110 shadow-sm ring-1 ring-primary ring-offset-1'
-                : 'border-transparent hover:border-muted-foreground/40 hover:scale-105',
-              isOut && 'opacity-40'
+                ? 'scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
+                : !isOut &&
+                    'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
             )}
-            style={{ backgroundColor: swatch.color_hex ?? '#e5e5e5', width: dotPx, height: dotPx }}
+            style={{
+              width: sizeVar,
+              height: sizeVar,
+              backgroundColor: bg.background ?? 'transparent',
+            }}
             title={`${swatch.color_name}${
               isOut
                 ? ' (sem estoque)'
@@ -64,22 +103,34 @@ export function ColorSwatchPicker({
             }`}
             aria-label={swatch.color_name}
             aria-pressed={isActive}
-          >
-            {isOut && (
-              <span
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background:
-                    'linear-gradient(135deg,transparent 45%,rgba(200,200,200,0.75) 45%,rgba(200,200,200,0.75) 55%,transparent 55%)',
-                }}
-              />
-            )}
-          </button>
+          />
         );
       })}
 
       {overflow > 0 && (
-        <span className="text-xs text-muted-foreground font-medium">+{overflow}</span>
+        <span
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-semibold leading-none text-muted-foreground"
+          style={{ height: sizeVar, minWidth: sizeVar }}
+          aria-label={`Mais ${overflow} cor${overflow === 1 ? '' : 'es'}`}
+          title={`+${overflow}`}
+        >
+          +{overflow}
+        </span>
+      )}
+
+      {/* Botão Todos — aparece apenas quando há seleção ativa (mesmo estilo do ProductColorSwatches) */}
+      {activeVariantId !== null && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onReset();
+          }}
+          aria-label="Ver todas as cores"
+          className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/50 bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          Todos
+        </button>
       )}
     </div>
   );
