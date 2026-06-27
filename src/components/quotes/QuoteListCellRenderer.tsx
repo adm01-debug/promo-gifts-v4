@@ -154,6 +154,60 @@ export function renderQuoteCell(
       );
     }
 
+    case 'expiration': {
+      if (!quote.valid_until) {
+        return <span className="block text-center text-[11.5px] text-muted-foreground/50">—</span>;
+      }
+      const validUntil = new Date(quote.valid_until);
+      if (Number.isNaN(validUntil.getTime())) {
+        return <span className="block text-center text-[11.5px] text-muted-foreground/50">—</span>;
+      }
+      // Diferença em dias considerando início do dia (UTC-agnostic via floor de ms/dia).
+      const MS_PER_DAY = 86_400_000;
+      const today = new Date();
+      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+      const targetMidnight = new Date(
+        validUntil.getFullYear(),
+        validUntil.getMonth(),
+        validUntil.getDate(),
+      ).getTime();
+      const diffDays = Math.round((targetMidnight - todayMidnight) / MS_PER_DAY);
+
+      let label: string;
+      let tone: string;
+      if (diffDays < 0) {
+        label = `Expirado há ${Math.abs(diffDays)}d`;
+        tone = 'text-destructive';
+      } else if (diffDays === 0) {
+        label = 'Expira hoje';
+        tone = 'text-destructive';
+      } else if (diffDays <= 3) {
+        label = `${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+        tone = 'text-amber-500';
+      } else if (diffDays <= 7) {
+        label = `${diffDays} dias`;
+        tone = 'text-amber-400';
+      } else {
+        label = `${diffDays} dias`;
+        tone = 'text-muted-foreground/80';
+      }
+      const fullDate = format(validUntil, "dd/MM/yyyy", { locale: ptBR });
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              data-testid="quote-expiration-cell"
+              className={`block cursor-default text-center text-[11.5px] font-medium tabular-nums ${tone}`}
+            >
+              {label}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            Válido até {fullDate}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
 
     default:
       return null;

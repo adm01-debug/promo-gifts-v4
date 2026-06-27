@@ -53,6 +53,7 @@ const ALL_COLUMNS: ColumnDef[] = [
   { id: 'value', label: 'Valor', width: '140px', align: 'right' },
   { id: 'delivery', label: 'Entrega', width: '90px' },
   { id: 'status', label: 'Status', width: '150px' },
+  { id: 'expiration', label: 'Expiração', width: '110px', align: 'center' },
   { id: 'quote_number', label: 'Nº Orçamento', width: '120px', align: 'right' },
 ];
 
