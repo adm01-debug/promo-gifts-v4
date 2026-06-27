@@ -1,6 +1,40 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.7.1
+// Versão: 3.8.0
+//
+// CHANGELOG v3.8.0 (2026-06-27 — fix/sw-base64url-hashed-asset-routing):
+//   [contexto] Após cada deploy, chunks lazy versionados (ex:
+//     /assets/CloudStatusBanner-Dkobv_wg.js) falhavam com
+//     "Failed to load module script: ... MIME type text/html".
+//
+//   BUG-SW-9 FIX [CRÍTICO]: hashes do Vite/Rollup usam o alfabeto base64url
+//     [A-Za-z0-9_-], NÃO base62. O regex antigo de isHashedAsset exigia
+//     [a-zA-Z0-9] logo após o separador, então qualquer chunk cujo hash
+//     contivesse '_' ou '-' (Dkobv_wg tem '_' na posição 6) NÃO era
+//     reconhecido como asset e caía na Seção E (Stale-While-Revalidate),
+//     que devolvia offlineFallback() (HTML, status 200). O browser então
+//     tentava parsear HTML como módulo ES → erro de MIME. Pior: a Seção E
+//     nunca chamava handleStaleChunk(), então o recovery (postMessage
+//     SW_STALE_CHUNK → reload) NUNCA disparava para esses chunks — o erro
+//     era permanente até hard-refresh manual.
+//     Fix: isHashedAsset passa a identificar asset versionado por estar em
+//     /assets/ + extensão estática (HASHED_ASSET_EXT_RE), independente do
+//     alfabeto do hash.
+//
+//   BUG-SW-10 FIX [ALTO]: a recuperação da Seção C só tratava "chunk
+//     ausente" como status 404. Porém o Vercel devolve a própria página 404
+//     em HTML (e o rewrite do vercel.json corretamente NÃO reescreve .js →
+//     index.html, mas um CDN/edge em propagação pode devolver HTML mesmo
+//     assim). Agora handleHashedAsset detecta obsolescência por status 404
+//     OU corpo HTML numa requisição de módulo (isModuleAssetPath +
+//     responseLooksLikeHtml).
+//
+//   BUG-SW-11 FIX [ALTO]: respostas de erro/fallback de sub-resource eram
+//     HTML (offlineFallback, ou withCorrectMimeType forçando JS sobre um
+//     corpo HTML). Agora: chunk obsoleto → staleChunkResponse() (503,
+//     Content-Type correto por extensão, JAMAIS text/html) e sub-resource
+//     genérico → genericResourceFallback() (504, não-HTML). offlineFallback
+//     (HTML) fica restrito a navigate / documentos de rota SPA.
 //
 // CHANGELOG v3.7.1 (2026-06-23 — fix/sw-isspapath-api-edge-case):
 //   BUG-SW-8 FIX [BAIXO]: isSpaPath('/api') (sem trailing slash) retornava
@@ -29,7 +63,7 @@
 //   Supabase API (.supabase.co)        → Network Only (dados dinâmicos)
 //   Resto                              → Stale-While-Revalidate + fallback     ← v3.3.0
 
-const CACHE_VERSION = 'v14'; // v3.7.x — SPA routes fix
+const CACHE_VERSION = 'v15'; // v3.8.0 — base64url hashed-asset routing fix
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -78,8 +112,59 @@ function withCorrectMimeType(res, pathname) {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
+// BUG-SW-9 FIX [CRÍTICO]: identifica asset versionado por /assets/ + extensão
+//   estática — JAMAIS por padrão do hash. Hashes do Vite/Rollup são base64url
+//   ([A-Za-z0-9_-]); o regex antigo /[-.][a-zA-Z0-9]{8,}/ ignorava '_' e '-',
+//   então chunks como CloudStatusBanner-Dkobv_wg.js escapavam desta seção.
+const HASHED_ASSET_EXT_RE = /\.(?:js|mjs|css|woff2?|ttf|otf|map)$/i;
+
+// Apenas tipos que o browser carrega como módulo/stylesheet — usados na
+// detecção de "HTML servido no lugar de um módulo".
+function isModuleAssetPath(pathname) {
+  return /\.(?:js|mjs|css)$/i.test(pathname);
+}
+
+function responseLooksLikeHtml(res) {
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  return ct.includes('text/html');
+}
+
 function isHashedAsset(pathname) {
-  return pathname.startsWith('/assets/') && /[-.][a-zA-Z0-9]{8,}\.\w+$/.test(pathname);
+  return pathname.startsWith('/assets/') && HASHED_ASSET_EXT_RE.test(pathname);
+}
+
+// Resposta para chunk obsoleto/ausente: status 503 + Content-Type correto para
+// a extensão (NUNCA text/html). Assim o browser recebe um erro limpo de
+// carregamento de módulo e o recovery (SW_STALE_CHUNK → reload) assume,
+// em vez de tentar parsear HTML como JavaScript.
+function staleChunkResponse(pathname) {
+  const ext = (pathname.split('.').pop() || '').toLowerCase();
+  const ctMap = {
+    js: 'application/javascript; charset=utf-8',
+    mjs: 'application/javascript; charset=utf-8',
+    css: 'text/css; charset=utf-8',
+    woff2: 'font/woff2',
+    woff: 'font/woff',
+    ttf: 'font/ttf',
+    otf: 'font/otf',
+    map: 'application/json; charset=utf-8',
+  };
+  const ct = ctMap[ext] || 'application/octet-stream';
+  return new Response('/* stale chunk reloading: ' + pathname + ' */', {
+    status: 503,
+    statusText: 'Stale Chunk',
+    headers: { 'Content-Type': ct, 'Cache-Control': 'no-store' },
+  });
+}
+
+// Fallback genérico de sub-resource (não-navegação): 504 + corpo vazio,
+// nunca HTML, para não envenenar consumidores que esperam JS/JSON.
+function genericResourceFallback() {
+  return new Response('', {
+    status: 504,
+    statusText: 'Offline',
+    headers: { 'Cache-Control': 'no-store' },
+  });
 }
 
 /**
@@ -156,6 +241,62 @@ function handleStaleChunk(chunkUrl) {
       ),
     );
 }
+// ── Roteamento de asset versionado (/assets/*) ────────────────────────────────
+// BUG-SW-9/10/11 FIX: Cache-first (imutável por hash). Trata deploy/CDN em
+//   propagação e detecta chunk obsoleto por status 404 OU corpo HTML numa
+//   requisição de módulo. Uma tentativa de retry; se ainda obsoleto, dispara
+//   handleStaleChunk() (limpa index.html + postMessage SW_STALE_CHUNK → reload
+//   em ~300ms via sw-register.ts) e devolve staleChunkResponse() (503,
+//   Content-Type correto, JAMAIS text/html). Nunca cacheia nem devolve HTML.
+async function handleHashedAsset(request, url) {
+  const { pathname } = url;
+  const isModule = isModuleAssetPath(pathname);
+
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  const looksStale = (res) => {
+    if (!res) return true;
+    if (res.status === 404) return true;
+    if (isModule && responseLooksLikeHtml(res)) return true;
+    return false;
+  };
+
+  const acceptable = (res) =>
+    res && res.ok && !(isModule && responseLooksLikeHtml(res));
+
+  try {
+    const res = await fetch(request);
+
+    if (acceptable(res)) {
+      const fixed = withCorrectMimeType(res, pathname);
+      const clone = fixed.clone();
+      caches.open(CACHE_NAME).then((c) => c.put(request, clone)).catch(() => {});
+      return fixed;
+    }
+
+    if (looksStale(res)) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const retry = await fetch(request).catch(() => null);
+      if (acceptable(retry)) {
+        const fixed = withCorrectMimeType(retry, pathname);
+        const clone = fixed.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(request, clone)).catch(() => {});
+        return fixed;
+      }
+      handleStaleChunk(request.url);
+      return staleChunkResponse(pathname);
+    }
+
+    // Resposta não-ok porém não-obsoleta (ex: 500/403): repassa sem cachear,
+    // garantindo Content-Type correto se for um módulo.
+    return isModule ? withCorrectMimeType(res, pathname) : res;
+  } catch (_err) {
+    // Falha de rede (provável offline): erro limpo, sem forçar reload em loop.
+    return staleChunkResponse(pathname);
+  }
+}
+
 
 // ─── Install ──────────────────────────────────────────────────────────────────
 
@@ -259,42 +400,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── C) Assets com hash → Cache First (imutáveis) + 404 recovery ───────────
+  // ── C) Assets versionados → Cache First + recovery + MIME guard ───────────
   if (isHashedAsset(url.pathname)) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return (async () => {
-          try {
-            let res = await fetch(request);
-            if (res && res.ok) {
-              res = withCorrectMimeType(res, url.pathname);
-              const clone = res.clone();
-              caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-              return res;
-            }
-            if (res && res.status === 404) {
-              await new Promise((r) => setTimeout(r, 1000));
-              let retryRes = await fetch(request).catch(() => null);
-              if (retryRes && retryRes.ok) {
-                retryRes = withCorrectMimeType(retryRes, url.pathname);
-                const clone = retryRes.clone();
-                caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-                return retryRes;
-              }
-              handleStaleChunk(request.url);
-              return retryRes || res;
-            }
-            return res;
-          } catch (_err) {
-            return new Response(
-              JSON.stringify({ error: 'Network error fetching chunk', url: request.url }),
-              { status: 503, headers: { 'Content-Type': 'application/json' } },
-            );
-          }
-        })();
-      }),
-    );
+    event.respondWith(handleHashedAsset(request, url));
     return;
   }
 
@@ -349,7 +457,7 @@ self.addEventListener('fetch', (event) => {
             return res;
           })
           .catch(() => null);
-        return cached || networkFetch.then((res) => (res && res.ok ? res : null) || offlineFallback());
+        return cached || networkFetch.then((res) => (res && res.ok ? res : null) || genericResourceFallback());
       }),
     );
   }
