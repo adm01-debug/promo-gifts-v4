@@ -384,7 +384,18 @@ export function QuotesConfigurableList({
         <div
           ref={scrollRef}
           data-testid="quotes-scroll-container"
-          className="max-h-[calc(100dvh-340px)] min-h-[calc(5*80px)] overflow-y-auto"
+          style={{
+            // SSOT da altura da linha — usada por min-h e por testes de regressão visual.
+            ['--quotes-row-h' as string]: '80px',
+            // Reserva real do chrome (header app + título + filtros + rodapé) por breakpoint:
+            //  - mobile (<640px):  ~420px de chrome
+            //  - tablet (≥640px):  ~360px
+            //  - desktop (≥1024px):~320px
+            maxHeight:
+              'min(calc(100dvh - var(--quotes-chrome-h, 320px)), calc(12 * var(--quotes-row-h)))',
+            minHeight: 'calc(5 * var(--quotes-row-h))',
+          }}
+          className="overflow-y-auto [--quotes-chrome-h:420px] sm:[--quotes-chrome-h:360px] lg:[--quotes-chrome-h:320px]"
         >
 
         {/* Empty state */}
