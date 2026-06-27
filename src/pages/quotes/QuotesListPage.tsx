@@ -50,7 +50,9 @@ export default function QuotesListPage() {
     navigate,
     quotes,
     isLoading,
+    isFetching,
     error,
+    fetchQuotes,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -73,6 +75,22 @@ export default function QuotesListPage() {
     duplicateQuote,
     updateQuoteStatus,
   } = useQuotesListPage();
+
+  // Listener: botão "Atualizar lista" no estado vazio do QuotesConfigurableList
+  // dispara este evento — refetch silencioso + feedback discreto.
+  useEffect(() => {
+    const handler = async () => {
+      const result = await fetchQuotes();
+      if (result.isError) {
+        toast.error('Não foi possível recarregar os orçamentos. Tente novamente.');
+      } else {
+        toast.success('Lista atualizada.');
+      }
+    };
+    window.addEventListener('quotes:refresh-request', handler);
+    return () => window.removeEventListener('quotes:refresh-request', handler);
+  }, [fetchQuotes]);
+
 
   // Espelha modo de seleção + contagem emitidos por QuotesConfigurableList
   // para alternar o label/feedback visual do botão "Selecionar".
