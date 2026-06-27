@@ -463,6 +463,45 @@ export default function QuoteViewPage() {
         onShare={handleShareLink}
         isGeneratingPDF={isGeneratingPDF}
       />
+
+      <AlertDialog open={deleteOpen} onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}>
+        <AlertDialogContent data-testid="quote-delete-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O orçamento será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} data-testid="quote-delete-cancel">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              data-testid="quote-delete-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!quote?.id) return;
+                setIsDeleting(true);
+                try {
+                  await deleteQuote(quote.id);
+                  toast.success('Orçamento excluído');
+                  setDeleteOpen(false);
+                  navigate('/orcamentos');
+                } catch (err: unknown) {
+                  const msg = err instanceof Error ? err.message : 'Erro';
+                  toast.error('Não foi possível excluir', { description: msg });
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? 'Excluindo…' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
