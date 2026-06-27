@@ -297,6 +297,11 @@ export default function QuotesListPage() {
             ) : (
               <QuotesConfigurableList
                 quotes={filteredQuotes}
+                isFetching={isFetching}
+                loadError={error}
+                onRetry={() => {
+                  void fetchQuotes();
+                }}
                 onDelete={(id) => setDeleteConfirmId(id)}
                 onBulkDelete={(ids) => setBulkDeleteIds(ids)}
                 onBulkStatusChange={async (ids, status) => {
