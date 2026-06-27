@@ -366,6 +366,7 @@ export function useQuotes() {
     quotes,
     techniques,
     isLoading: isLoading || createMutation.isPending || updateMutation.isPending,
+    isFetching,
     error: error ? getErrorMessage(error) : null,
     fetchQuotes,
     fetchQuote,
