@@ -11,8 +11,10 @@
  * junto. A duplicação é intencional: permite snapshots determinísticos sem
  * Supabase/router/auth e sem seed de orçamentos.
  */
-import { useEffect } from 'react';
-import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +28,9 @@ import {
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 export default function QuoteViewOrderHarness() {
+  const navigate = useNavigate();
+  const [deleted, setDeleted] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const theme = params.get('theme');
@@ -37,9 +42,21 @@ export default function QuoteViewOrderHarness() {
     };
   }, []);
 
+  const handleDelete = () => {
+    const ok = window.confirm(
+      'Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.',
+    );
+    if (!ok) return;
+    // Stub determinístico: simula sucesso de delete e roteamento.
+    setDeleted(true);
+    toast.success('Orçamento excluído');
+    navigate('/orcamentos');
+  };
+
   return (
     <main
       data-testid="quote-view-order-harness"
+      data-deleted={deleted ? 'true' : 'false'}
       className="min-h-dvh bg-background"
     >
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2.5 px-3 py-2.5 pb-24 sm:space-y-3 sm:px-4 sm:py-3 md:pb-5 lg:px-6 xl:px-8">
@@ -107,6 +124,16 @@ export default function QuoteViewOrderHarness() {
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-testid="quote-actions-delete"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    handleDelete();
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <History className="mr-2 h-4 w-4" /> Histórico
