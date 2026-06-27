@@ -35,6 +35,12 @@ import type { Quote } from '@/hooks/quotes';
 import { useBulkSelection } from '@/hooks/common';
 
 import { cn } from '@/lib/utils';
+import {
+  QUOTES_ROW_H,
+  QUOTES_MIN_VISIBLE_ROWS,
+  QUOTES_MAX_VISIBLE_ROWS,
+  QUOTES_CHROME_BY_BREAKPOINT,
+} from '@/lib/quotes/quotesLayout';
 
 // ── Column definitions ──
 export interface ColumnDef {
