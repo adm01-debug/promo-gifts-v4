@@ -176,12 +176,12 @@ export default function QuoteViewPage() {
                   variant="outline"
                   onClick={handleSyncBitrix}
                   disabled={isSyncing}
-                  className="h-8 min-w-[84px] justify-center gap-2 rounded-full border-primary/40 px-3 text-xs hover:border-primary hover:bg-primary/10"
+                  className="h-7 min-w-[71px] justify-center gap-1.5 rounded-full border-primary/40 px-2.5 text-[11px] hover:border-primary hover:bg-primary/10"
                 >
                   {isSyncing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
                   ) : (
-                    <RefreshCw className="h-3.5 w-3.5 text-primary" />
+                    <RefreshCw className="h-3 w-3 text-primary" />
                   )}
                   {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
                 </Button>
