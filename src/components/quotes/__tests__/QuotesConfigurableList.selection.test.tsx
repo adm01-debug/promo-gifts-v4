@@ -272,7 +272,8 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     );
 
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/fim da lista/);
+    // No fim da lista, o rodapé não exibe mais contagem ("X de Y — fim da lista" removido).
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
     // Sentinel removido quando não há mais o que carregar
     expect(screen.queryByTestId('quotes-infinite-sentinel')).toBeNull();
   });
@@ -294,8 +295,10 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     const withDups = [...base, base[0], base[1]];
     renderWith(withDups);
 
-    // Deve refletir 5 únicos (não 7) — sem chaves duplicadas no React
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/5 de 5/);
+    // Deve refletir 5 únicos (não 7) — sem chaves duplicadas no React.
+    // Lista ≤25 já chega no fim → rodapé vazio; validamos pelas linhas renderizadas.
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
+    expect(screen.getAllByTestId(/^quote-row-more-/).length).toBe(5);
   });
 
   it('reseta para 25 ao alterar filtro/busca/ordenação sem repetir resultados', () => {
@@ -339,23 +342,23 @@ describe('QuotesConfigurableList — infinite scroll', () => {
       </QueryClientProvider>,
     );
 
-    // Estado inicial: 25 de 60
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 60/);
+    // Estado inicial: Exibindo 25 de 60
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 60/);
 
-    // Avança o infinite scroll até o fim
+    // Avança o infinite scroll até o fim → rodapé fica vazio.
     triggerIntersection();
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/60 de 60/);
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
 
     // Troca de filtro → deve resetar para 25 do novo total (40)
     act(() => {
       screen.getByTestId('apply-filter').click();
     });
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 40/);
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 40/);
 
-    // Avança até o fim novamente
+    // Avança até o fim novamente → rodapé vazio
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/40 de 40/);
+    expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
     // Nenhuma key duplicada: número de linhas renderizadas == 40
     expect(
       screen.getAllByTestId(/^quote-row-more-/).length,
@@ -365,7 +368,7 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     act(() => {
       screen.getByTestId('apply-sort').click();
     });
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/25 de 40/);
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 40/);
     expect(
       screen.getAllByTestId(/^quote-row-more-/).length,
     ).toBe(25);

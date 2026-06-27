@@ -251,7 +251,7 @@ export const Sel = {
     scrollContainer: TID("quotes-scroll-container"),
     /** Sentinel observado pelo IO — só existe quando há mais itens. */
     infiniteSentinel: TID("quotes-infinite-sentinel"),
-    /** Footer com "Exibindo N de M …" ou "fim da lista". */
+    /** Footer com "Exibindo N de M …" (vazio quando chega ao fim). */
     footerCount: TID("quotes-footer-count"),
     /** Indicador "Carregando mais…" durante refetch em background. */
     footerLoadingMore: TID("quotes-footer-loading-more"),

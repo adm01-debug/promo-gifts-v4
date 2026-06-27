@@ -28,18 +28,25 @@ async function assertNoDuplicateRows(page: import("@playwright/test").Page) {
   ).toBe(ids.length);
 }
 
-/** Lê os números "Exibindo N de M" / "N de M — fim da lista" do rodapé. */
+/**
+ * Lê o rodapé. Estados possíveis:
+ *   - vazio total: "Nenhum resultado"           → isEmpty
+ *   - há mais:    "Exibindo N de M — role…"    → shown/total preenchidos
+ *   - fim:        texto vazio (sem contagem)   → isEnd
+ */
 async function readFooter(page: import("@playwright/test").Page) {
-  const text = (await page.locator(Sel.quotesList.footerCount).textContent()) ?? "";
-  const match = text.match(/(\d+)\s+de\s+(\d+)/);
+  const text = ((await page.locator(Sel.quotesList.footerCount).textContent()) ?? "").trim();
+  const match = text.match(/Exibindo\s+(\d+)\s+de\s+(\d+)/);
+  const isEmpty = /Nenhum resultado/i.test(text);
   return {
     text,
     shown: match ? Number(match[1]) : 0,
     total: match ? Number(match[2]) : 0,
-    isEnd: /fim da lista/.test(text),
-    isEmpty: /Nenhum resultado/i.test(text),
+    isEnd: !isEmpty && !match, // sem "Exibindo …" e sem "Nenhum resultado" → fim
+    isEmpty,
   };
 }
+
 
 test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () => {
   test.beforeEach(() => requireAuth());
@@ -71,7 +78,8 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
     }
 
     // ── Caminho 2: há orçamentos ──
-    expect(initial.total).toBeGreaterThan(0);
+    const rowCount = await page.locator(Sel.quotesList.rowMorePrefix).count();
+    expect(initial.total || rowCount).toBeGreaterThan(0);
     await assertNoDuplicateRows(page);
 
     // 2.1) refresh-request via window event → não deve duplicar nem quebrar a UI.
@@ -94,7 +102,7 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
       await pollUntil(
         async () => {
           const f = await readFooter(page);
-          // avançou OU sentinel sumiu (chegou ao fim)
+          // avançou OU sentinel sumiu (chegou ao fim → footer fica vazio)
           return f.shown > lastShown || f.isEnd
             ? { shown: f.shown }
             : null;
@@ -106,10 +114,12 @@ test.describe("Lista de orçamentos — infinite scroll + refresh + dedup", () =
     }
     expect(iter).toBeLessThan(MAX_ITERATIONS);
 
+    // Ao chegar no fim: sentinel some e rodapé não exibe mais "Exibindo …".
+    await expect(page.locator(Sel.quotesList.infiniteSentinel)).toHaveCount(0);
     const afterScroll = await readFooter(page);
     expect(afterScroll.isEnd).toBe(true);
-    expect(afterScroll.shown).toBe(afterScroll.total);
     await assertNoDuplicateRows(page);
+
 
     // 2.3) Mudança de ordenação → footer reseta para no máximo 25 (ou total se menor)
     await page.locator(Sel.quotesList.sortTrigger).click();
