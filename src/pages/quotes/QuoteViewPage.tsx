@@ -86,6 +86,7 @@ export default function QuoteViewPage() {
     handleSyncBitrix,
     logQuoteHistory,
     duplicateQuote,
+    deleteQuote,
   } = useQuoteViewData(id);
 
   // Itens com a margem de negociação já aplicada (espelha o PDF). Os componentes
