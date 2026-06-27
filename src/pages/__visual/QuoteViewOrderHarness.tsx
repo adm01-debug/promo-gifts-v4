@@ -12,11 +12,17 @@
  * Supabase/router/auth e sem seed de orçamentos.
  */
 import { useEffect } from 'react';
-import { ArrowLeft, Eye, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 export default function QuoteViewOrderHarness() {
@@ -83,16 +89,33 @@ export default function QuoteViewOrderHarness() {
               <Eye className="mr-1 h-3 w-3 text-primary" />
               Preview
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Mais opções"
-              className="h-7 w-7 rounded-full border-primary/40"
-            >
-              <MoreHorizontal className="h-4 w-4 text-primary" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Mais opções"
+                  data-testid="quote-actions-trigger"
+                  className="h-7 w-7 rounded-full border-primary/40"
+                >
+                  <MoreHorizontal className="h-4 w-4 text-primary" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" data-testid="quote-actions-menu">
+                <DropdownMenuItem>
+                  <Edit2 className="mr-2 h-4 w-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Copy className="mr-2 h-4 w-4" /> Duplicar
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <History className="mr-2 h-4 w-4" /> Histórico
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
+
 
         {/* 3) Container do orçamento — sem moldura (paridade com QuoteViewPage) */}
         <Card
