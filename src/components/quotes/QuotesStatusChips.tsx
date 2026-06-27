@@ -92,7 +92,7 @@ export const QUOTE_ROW_BADGE_STYLES = {
     className:
       'border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-300',
     description:
-      'Tem desconto acima da sua alçada. Está esperando o gerente liberar para você seguir.',
+      'Orçamento com desconto acima do limite padrão da empresa, enviado para autorização do Gestor Comercial.',
   },
   approved: {
     label: 'Desconto Aprovado',
