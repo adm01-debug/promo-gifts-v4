@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Shield,
   Truck,
+  Trash2,
   Undo2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
