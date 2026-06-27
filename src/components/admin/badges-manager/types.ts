@@ -30,13 +30,48 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
+import type { Json } from '@/integrations/supabase/types';
+/**
+ * Forma explícita da row de public.product_badge_definitions.
+ * Definida standalone (NÃO derivada do Database gerado) de propósito: o arquivo
+ * src/integrations/supabase/types.ts é regenerado/sobrescrito automaticamente e
+ * nem sempre contém esta tabela — derivar dele reintroduz a regressão de tipos
+ * (a tabela foi removida do Database por commits automáticos, quebrando o gate de TS).
+ */
+export interface BadgeDefinition {
+  id: string;
+  badge_key: string;
+  name: string;
+  short_label: string | null;
+  description: string;
+  business_rule: string;
+  category: string;
+  source_kind: string;
+  data_source: string;
+  placements: string[];
+  surfaces: string[];
+  icon_lucide: string | null;
+  icon_emoji: string | null;
+  color_token: string;
+  class_bg: string | null;
+  class_text: string | null;
+  class_border: string | null;
+  priority: number;
+  sort_order: number;
+  config: Json;
+  supports_expiration: boolean;
+  is_enabled: boolean;
+  is_system: boolean;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+}
 
-export type BadgeDefinition = Database['public']['Tables']['product_badge_definitions']['Row'];
-export type BadgeDefinitionInsert =
-  Database['public']['Tables']['product_badge_definitions']['Insert'];
-export type BadgeDefinitionUpdate =
-  Database['public']['Tables']['product_badge_definitions']['Update'];
+export type BadgeDefinitionInsert = Partial<BadgeDefinition> &
+  Pick<BadgeDefinition, 'badge_key' | 'category' | 'name' | 'source_kind'>;
+export type BadgeDefinitionUpdate = Partial<BadgeDefinition>;
 
 export const BADGE_CATEGORIES = [
   'status_estoque',
