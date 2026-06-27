@@ -79,28 +79,47 @@ export function QuotesConfigurableList({
   // ── Infinite scroll: começa com PAGE_SIZE e cresce conforme o usuário rola ──
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
 
-  // Reset quando a lista de quotes muda (filtro, busca, etc.)
+  // Reset quando a lista de quotes muda (filtro, busca, ordenação, etc.)
+  // Reseta tanto a janela visível quanto o scroll para evitar duplicação
+  // visual e estados inconsistentes quando o array de quotes é trocado.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [quotes]);
+
+  // Cancela rAF pendente ao desmontar.
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, []);
 
   const paginatedQuotes = useMemo(
     () => quotes.slice(0, visibleCount),
     [quotes, visibleCount],
   );
 
+  const hasMore = paginatedQuotes.length < quotes.length;
+
+  // Throttle via rAF: garante no máximo 1 cálculo por frame, mesmo em
+  // listas muito longas com onScroll disparando dezenas de vezes/segundo.
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const el = e.currentTarget;
-      // ~200px antes do fim → carrega próxima página
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
-        setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
-      }
+      if (scrollRafRef.current != null) return;
+      scrollRafRef.current = requestAnimationFrame(() => {
+        scrollRafRef.current = null;
+        // ~200px antes do fim → carrega próxima página
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+          setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
+        }
+      });
     },
     [quotes.length],
   );
+
 
 
 
