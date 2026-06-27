@@ -79,7 +79,7 @@ export const QUOTE_ROW_BADGE_STYLES = {
     className:
       'border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
     description:
-      'Orçamento pronto, mas ainda não foi para o CRM. Sincronize para o time comercial conseguir acompanhar.',
+      'Orçamento pronto, mas ainda não foi sincronizado com o Bitrix24.',
   },
   synced: {
     label: 'Criado/Sincronizado',
