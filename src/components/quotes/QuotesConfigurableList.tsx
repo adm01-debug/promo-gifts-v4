@@ -290,7 +290,7 @@ export function QuotesConfigurableList({
 
 
       {/* Table */}
-      <div className="min-h-0 max-h-[calc(8.5*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border">
+      <div className="min-h-0 max-h-[calc(8*64px+44px)] flex-1 overflow-x-auto overflow-y-auto rounded-lg border border-border">
         <div className="min-w-[1100px]">
 
         {/* Header */}
