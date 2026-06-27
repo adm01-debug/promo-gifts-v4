@@ -325,7 +325,7 @@ export default function QuotesListPage() {
                 onDuplicate={(id) => duplicateQuote(id)}
               />
             )}
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Delete Confirmation Dialog */}
