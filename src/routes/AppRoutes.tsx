@@ -115,6 +115,10 @@ export function AppRoutes() {
         {PreviewButtonHarness && (
           <Route path="/__visual/preview-button" element={<PreviewButtonHarness />} />
         )}
+        {QuoteViewOrderHarness && (
+          <Route path="/__visual/quote-view-order" element={<QuoteViewOrderHarness />} />
+        )}
+
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
