@@ -104,7 +104,7 @@ export default function QuotesListPage() {
         path="/orcamentos"
       />
       <TooltipProvider>
-        <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="mx-auto flex min-h-[calc(100vh-80px)] w-full max-w-[1920px] animate-fade-in flex-col gap-3 px-3 py-3 pb-6 sm:gap-4 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
           {/* Header: título + filtros + ação no mesmo eixo */}
           <div className="flex flex-wrap items-center gap-3">
             <FadeInView>
