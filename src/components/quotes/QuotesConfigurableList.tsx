@@ -64,6 +64,12 @@ interface QuotesConfigurableListProps {
   onBulkStatusChange?: (ids: string[], status: string) => void;
   onBulkExport?: (ids: string[]) => void;
   onDuplicate: (id: string) => void;
+  /** Background refetch em andamento — usado para "Carregando mais..." */
+  isFetching?: boolean;
+  /** Mensagem de erro vinda do hook pai; renderiza banner com retry */
+  loadError?: string | null;
+  /** Callback do botão "Tentar novamente" */
+  onRetry?: () => void;
 }
 
 const PAGE_SIZE = 25;
@@ -75,57 +81,72 @@ export function QuotesConfigurableList({
   onBulkStatusChange,
   onBulkExport,
   onDuplicate,
+  isFetching = false,
+  loadError = null,
+  onRetry,
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
-  // ── Infinite scroll: começa com PAGE_SIZE e cresce conforme o usuário rola ──
+  // ── Infinite scroll via IntersectionObserver ──
+  // Sentinel logo após a última linha; quando entra no viewport do container,
+  // incrementamos `visibleCount`. Substitui o handler de scroll (mais eficiente
+  // pois o browser despacha apenas em mudanças de intersecção).
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scrollRafRef = useRef<number | null>(null);
-  const scrollScheduledRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset quando a lista de quotes muda (filtro, busca, ordenação, etc.)
-  // Reseta tanto a janela visível quanto o scroll para evitar duplicação
-  // visual e estados inconsistentes quando o array de quotes é trocado.
+  // Identidade da lista (referência) — usada para resetar quando o array
+  // mudar (filtro/busca/ordenação produzem novo array do hook pai).
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [quotes]);
 
-  // Cancela rAF pendente ao desmontar.
-  useEffect(() => {
-    return () => {
-      if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
-    };
-  }, []);
+  // Dedup defensivo por id — garante que combinar páginas nunca cause
+  // chaves duplicadas no React mesmo se o backend devolver repetidos.
+  const uniqueQuotes = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Quote[] = [];
+    for (const q of quotes) {
+      const key = q.id ?? q.quote_number ?? '';
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(q);
+    }
+    return out;
+  }, [quotes]);
 
   const paginatedQuotes = useMemo(
-    () => quotes.slice(0, visibleCount),
-    [quotes, visibleCount],
+    () => uniqueQuotes.slice(0, visibleCount),
+    [uniqueQuotes, visibleCount],
   );
 
-  const hasMore = paginatedQuotes.length < quotes.length;
+  const hasMore = paginatedQuotes.length < uniqueQuotes.length;
 
-  // Throttle via rAF: garante no máximo 1 cálculo por frame, mesmo em
-  // listas muito longas com onScroll disparando dezenas de vezes/segundo.
-  // Usamos uma flag booleana (não o ID do rAF) para evitar race quando
-  // o ambiente executa o callback sincronamente (testes).
-  const handleScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
-      const el = e.currentTarget;
-      if (scrollScheduledRef.current) return;
-      scrollScheduledRef.current = true;
-      scrollRafRef.current = requestAnimationFrame(() => {
-        scrollScheduledRef.current = false;
-        scrollRafRef.current = null;
-        // ~200px antes do fim → carrega próxima página
-        if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
-          setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
+  // IntersectionObserver: dispara quando o sentinel encosta no viewport
+  // do container scrollável. `rootMargin` antecipa em 200px o gatilho.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) {
+          setVisibleCount((c) =>
+            c < uniqueQuotes.length ? Math.min(c + PAGE_SIZE, uniqueQuotes.length) : c,
+          );
         }
-      });
-    },
-    [quotes.length],
-  );
+      },
+      { root, rootMargin: '200px 0px', threshold: 0 },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [uniqueQuotes.length, hasMore]);
+
+
 
 
 
