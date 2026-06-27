@@ -379,43 +379,51 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-2.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Condições Comerciais</h3>
+                  <h3 className="mb-3 font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+                    Condições Comerciais
+                  </h3>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-3">
                     {quote.payment_terms && (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
-                        <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/[0.06]">
+                          <CreditCard className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             Pagamento
                           </p>
-                          <p className="mt-0.5 text-sm font-medium">
+                          <p className="mt-1 text-[13px] font-medium leading-snug text-foreground">
                             {formatPaymentTerms(quote.payment_terms) || quote.payment_terms}
                           </p>
                         </div>
                       </div>
                     )}
                     {quote.delivery_time && (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
-                        <Package className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/[0.06]">
+                          <Package className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             Prazo de Entrega
                           </p>
-                          <p className="mt-0.5 text-sm font-medium">
+                          <p className="mt-1 text-[13px] font-medium leading-snug text-foreground">
                             {formatDeliveryTime(quote.delivery_time) || quote.delivery_time}
                           </p>
                         </div>
                       </div>
                     )}
                     {quote.shipping_type && (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-muted/30 p-3">
-                        <Truck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/[0.06]">
+                          <Truck className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             Frete
                           </p>
-                          <p className="mt-0.5 text-sm font-medium">
+                          <p className="mt-1 text-[13px] font-medium leading-snug text-foreground">
                             {quote.shipping_type === 'cif'
                               ? 'CIF — Cortesia'
                               : quote.shipping_type === 'fob'

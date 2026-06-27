@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
-import { cn } from '@/lib/utils';
+
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -79,53 +79,45 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     return (
       <tr
         key={item.id || `item-${index}`}
-        className={cn(
-          'border-b border-border/50 transition-colors hover:bg-muted/40',
-          index % 2 === 1 && 'bg-muted/20',
-        )}
+        className="border-b border-border/40 transition-colors last:border-b-0 hover:bg-muted/30"
       >
-        <td className="p-3">
-          <div className="flex items-center gap-3">
+        <td className="p-4">
+          <div className="flex items-center gap-4">
             {item.product_image_url && (
               <img
                 src={item.product_image_url}
                 alt={item.product_name}
-                className="h-16 w-16 rounded border border-border object-cover print:hidden"
+                className="h-16 w-16 shrink-0 rounded-lg border border-border/50 bg-muted/30 object-cover print:hidden"
                 loading="lazy"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
             )}
-            <div>
+            <div className="min-w-0">
               {item.product_sku && (
-                <span
-                  className="mb-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs font-semibold"
-                  style={{
-                    backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
-                    borderColor: item.color_hex || 'hsl(var(--border))',
-                    color: item.color_hex || 'hsl(var(--foreground))',
-                  }}
-                >
+                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {item.color_hex && (
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-border/50"
+                      className="h-2 w-2 rounded-full ring-1 ring-border/60"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
                   {item.product_sku}
-                  {item.color_name ? `-${item.color_name}` : ''}
+                  {item.color_name ? ` · ${item.color_name}` : ''}
                 </span>
               )}
-              <p className="font-medium">{item.product_name}</p>
+              <p className="font-display text-[14px] font-medium leading-snug text-foreground">
+                {item.product_name}
+              </p>
             </div>
           </div>
         </td>
 
         {hasPersonalizations && (
-          <td className="p-3">
+          <td className="p-4 align-top">
             {allPersonalizations.length > 0 ? (
-              <div className="space-y-1.5">
+              <div className="flex flex-col gap-2">
                 {allPersonalizations.map((p, pIdx) => {
                   const notesRaw = p.notes || '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
@@ -137,35 +129,34 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     dimLabel = `${p.width_cm} × ${p.height_cm} cm`;
                   }
                   return (
-                    <div key={pIdx} className={cn(pIdx > 0 && 'border-t border-border/30 pt-1.5')}>
-                      <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1.5">
-                        <span className="flex items-center gap-1 text-xs font-semibold text-primary">
-                          ✦ {p.technique_name}
+                    <div
+                      key={pIdx}
+                      className="inline-flex flex-col gap-0.5 rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5"
+                    >
+                      <span className="text-[11px] font-semibold tracking-wide text-foreground">
+                        <span className="text-primary">✦</span> {p.technique_name}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                        {locationLabel && <span>{locationLabel}</span>}
+                        {dimLabel && <span className="tabular-nums">{dimLabel}</span>}
+                        <span className="tabular-nums">
+                          {p.colors_count || 1} {(p.colors_count || 1) > 1 ? 'cores' : 'cor'}
                         </span>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          {locationLabel && (
-                            <span className="font-medium text-foreground/70">{locationLabel}</span>
-                          )}
-                          {dimLabel && (
-                            <span className="font-medium text-foreground/80">{dimLabel}</span>
-                          )}
-                          <span>
-                            {p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? 'es' : ''}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground">—</span>
+              <span className="text-sm text-muted-foreground/60">—</span>
             )}
           </td>
         )}
-        <td className="w-20 p-3 text-center text-sm font-semibold">{item.quantity}</td>
-        <td className="w-28 p-3 text-left tabular-nums text-muted-foreground">
-          <div className="flex flex-col gap-0.5">
+        <td className="w-16 p-4 text-center align-middle text-[14px] font-semibold tabular-nums text-foreground">
+          {item.quantity}
+        </td>
+        <td className="w-28 p-4 text-right align-middle tabular-nums text-[13px] text-muted-foreground">
+          <div className="flex flex-col items-end gap-0.5">
             <span>
               {formatCurrency(
                 item.unit_price +
@@ -185,10 +176,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             />
           </div>
         </td>
-        <td className="w-32 p-3 text-left text-base font-bold tabular-nums">
+        <td className="w-32 p-4 text-right align-middle text-[15px] font-semibold tabular-nums text-foreground">
           {formatCurrency(itemTotal)}
         </td>
-        <td className="p-3 text-center print:hidden">
+        <td className="w-20 p-4 text-right align-middle print:hidden">
           <QuoteItemDetailSheet
             item={{
               product_name: item.product_name,
@@ -217,31 +208,53 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   };
 
   return (
-    <div>
-      <h3 className="mb-2.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Itens do Orçamento</h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
+    <section>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
+          Itens do Orçamento
+        </h3>
+        <span className="text-[11px] tabular-nums text-muted-foreground">
+          {items.length} {items.length === 1 ? 'item' : 'itens'}
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-border/60 bg-card/30">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-primary/15">
-              <th className="p-3 text-left text-sm font-semibold text-primary">Produto</th>
+            <tr className="border-b border-border/60 bg-muted/40">
+              <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Produto
+              </th>
               {hasPersonalizations && (
-                <th className="p-3 text-left text-sm font-semibold text-primary">Personalização</th>
+                <th className="p-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Personalização
+                </th>
               )}
-              <th className="w-20 p-3 text-center text-sm font-semibold text-primary">Qtd</th>
-              <th className="w-28 p-3 text-left text-sm font-semibold text-primary">Unitário</th>
-              <th className="w-32 p-3 text-left text-sm font-semibold text-primary">Total</th>
-              <th className="w-24 p-3 text-center text-sm font-semibold text-primary print:hidden" />
+              <th className="w-16 p-4 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Qtd
+              </th>
+              <th className="w-28 p-4 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Unitário
+              </th>
+              <th className="w-32 p-4 text-right text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Total
+              </th>
+              <th className="w-20 p-4 print:hidden" />
             </tr>
           </thead>
           <tbody>
             {Array.from(kitGroups.entries()).map(([groupId, group]) => (
               <React.Fragment key={groupId}>
-                <tr className="border-b border-border bg-accent/60">
-                  <td colSpan={colCount} className="p-3">
+                <tr className="border-b border-border/50 bg-primary/[0.04]">
+                  <td colSpan={colCount} className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-bold text-primary">Kit: {group.name}</span>
-                      <Badge variant="outline" className="ml-1 text-xs">
+                      <Package className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
+                      <span className="font-display text-[12px] font-semibold tracking-wide text-foreground">
+                        Kit · {group.name}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="ml-1 border-border/60 px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
+                      >
                         {group.items.length} itens
                       </Badge>
                     </div>
@@ -251,9 +264,9 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               </React.Fragment>
             ))}
             {kitGroups.size > 0 && looseItems.length > 0 && (
-              <tr className="border-b border-border bg-muted/30">
-                <td colSpan={colCount} className="p-2 px-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-border/50 bg-muted/30">
+                <td colSpan={colCount} className="px-4 py-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Itens Avulsos
                   </span>
                 </td>
@@ -263,6 +276,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }
