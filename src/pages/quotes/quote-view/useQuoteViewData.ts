@@ -33,7 +33,6 @@ export function useQuoteViewData(id: string | undefined) {
   const [bitrixCompanyId, setBitrixCompanyId] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  
 
   const loadQuote = useCallback(async () => {
     if (!id) return;
