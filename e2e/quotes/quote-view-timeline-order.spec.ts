@@ -1,66 +1,57 @@
 /**
- * Garante a nova disposição do QuoteViewPage:
- *   1. <QuoteStatusTimeline> renderiza ANTES do cabeçalho (h1 + botões).
- *   2. O cabeçalho fica fora do container do conteúdo (Card do orçamento).
- *   3. Em mobile (375px) timeline e header não sobrepõem o container ao rolar.
+ * QuoteViewPage · disposição timeline → header → container.
  *
- * Roda em light e dark — alterna via `localStorage.theme` antes de navegar.
- *
- * Estratégia: navega para `/orcamentos`, abre o primeiro orçamento da lista.
- * Se a lista estiver vazia (ambiente sem seed), o teste é pulado com mensagem
- * clara — evita falso negativo em CIs sem dados.
+ * Roda sobre o harness `/__visual/quote-view-order` (espelho 1:1 do
+ * `QuoteViewPage`), eliminando dependência de seed/auth. Cobre:
+ *   1. Ordem DOM (timeline antes do h1).
+ *   2. Geometria: timeline.bottom ≤ h1.top; h1.bottom ≤ container.top.
+ *   3. Mobile 375 — sem sobreposição header×container ao rolar.
+ *   4. Snapshots visuais light/dark.
+ *   5. axe-core no dark sobre a QuoteStatusTimeline (contraste real).
  */
 import { test, expect, type Page } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
-import { gotoAndSettle } from '../helpers/nav';
+import AxeBuilder from '@axe-core/playwright';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
-async function openFirstQuote(page: Page): Promise<boolean> {
-  await gotoAndSettle(page, '/orcamentos');
-  const row = page.locator('a[href^="/orcamentos/"]').first();
-  if ((await row.count()) === 0) return false;
-  await row.click();
-  await page.waitForURL(/\/orcamentos\/[a-f0-9-]{36}/, { timeout: 10_000 });
+const ROUTE = '/__visual/quote-view-order';
+
+const DEFAULT_RATIO = Number(process.env.VISUAL_THRESHOLD_DEFAULT ?? '0.02');
+function ratio(envKey: string): number {
+  const v = process.env[envKey];
+  return v === undefined || v === '' ? DEFAULT_RATIO : Number(v);
+}
+const snapOpts = (envKey: string) => ({
+  animations: 'disabled' as const,
+  maxDiffPixelRatio: ratio(envKey),
+});
+
+function dumpAxe(name: string, payload: unknown) {
+  const path = `test-results/axe/${name}.json`;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(payload, null, 2));
+}
+
+async function go(page: Page, theme: 'light' | 'dark') {
+  await page.goto(theme === 'dark' ? `${ROUTE}?theme=dark` : ROUTE);
+  await expect(page.getByTestId('quote-view-order-harness')).toBeVisible();
+  await expect(page.getByTestId('quote-status-timeline')).toBeVisible();
   await expect(page.getByTestId('page-title-quote-view')).toBeVisible();
-  return true;
 }
 
 for (const theme of ['light', 'dark'] as const) {
   test.describe(`QuoteViewPage · disposição (${theme})`, () => {
-    test.beforeEach(async ({ page }) => {
-      await loginAs(page, 'user');
-      await page.addInitScript((t) => {
-        try {
-          window.localStorage.setItem('theme', t);
-          document.documentElement.classList.toggle('dark', t === 'dark');
-        } catch {
-          /* ignore */
-        }
-      }, theme);
-    });
+    test(`ordem DOM e geometria — ${theme}`, async ({ page }) => {
+      await go(page, theme);
 
-    test(`timeline renderiza antes do header e botões ficam acima do container — ${theme}`, async ({ page }) => {
-      const opened = await openFirstQuote(page);
-      test.skip(!opened, 'Sem orçamentos no ambiente — seed necessário.');
-
-      const timeline = page.getByTestId('quote-status-timeline');
-      const title = page.getByTestId('page-title-quote-view');
-      await expect(timeline).toBeVisible();
-      await expect(title).toBeVisible();
-
-      // 1. Ordem no DOM: timeline precede h1 do header.
       const order = await page.evaluate(() => {
         const tl = document.querySelector('[data-testid="quote-status-timeline"]');
         const h1 = document.querySelector('[data-testid="page-title-quote-view"]');
-        if (!tl || !h1) return null;
-        const pos = tl.compareDocumentPosition(h1);
-        // 0x04 = DOCUMENT_POSITION_FOLLOWING → h1 segue a timeline.
-        return Boolean(pos & Node.DOCUMENT_POSITION_FOLLOWING);
+        if (!tl || !h1) return false;
+        return Boolean(tl.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_FOLLOWING);
       });
       expect(order, 'QuoteStatusTimeline deve preceder o h1 do header').toBe(true);
 
-      // 2. Header fica geograficamente acima do container do orçamento
-      // (Card de conteúdo). Validação por bounding box — não depende de
-      // classes internas do shadcn que podem mudar.
       const boxes = await page.evaluate(() => {
         const tl = document
           .querySelector('[data-testid="quote-status-timeline"]')!
@@ -68,58 +59,72 @@ for (const theme of ['light', 'dark'] as const) {
         const h1 = document
           .querySelector('[data-testid="page-title-quote-view"]')!
           .getBoundingClientRect();
-        // Container = primeiro ancestral com role/region "Quote Content".
-        // Fallback: maior `.space-y-4` que NÃO contém o h1 (= CardContent).
-        const candidates = Array.from(
-          document.querySelectorAll<HTMLElement>('[class*="space-y-"]'),
-        ).filter((el) => !el.contains(document.querySelector('[data-testid="page-title-quote-view"]')!));
-        const container = candidates.sort(
-          (a, b) => b.getBoundingClientRect().height - a.getBoundingClientRect().height,
-        )[0];
-        const ct = container?.getBoundingClientRect();
+        const card = document
+          .querySelector('[data-testid="quote-content-card"]')!
+          .getBoundingClientRect();
         return {
           tlBottom: tl.bottom,
           h1Top: h1.top,
           h1Bottom: h1.bottom,
-          containerTop: ct?.top ?? Number.POSITIVE_INFINITY,
+          cardTop: card.top,
         };
       });
-      // timeline antes do header
       expect(boxes.tlBottom).toBeLessThanOrEqual(boxes.h1Top + 1);
-      // header acima do container do orçamento
-      expect(boxes.h1Bottom).toBeLessThanOrEqual(boxes.containerTop + 1);
+      expect(boxes.h1Bottom).toBeLessThanOrEqual(boxes.cardTop + 1);
     });
 
-    test(`mobile 375 — timeline e header não sobrepõem o container ao rolar — ${theme}`, async ({ page }) => {
+    test(`mobile 375 — sem sobreposição ao rolar — ${theme}`, async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 720 });
-      const opened = await openFirstQuote(page);
-      test.skip(!opened, 'Sem orçamentos no ambiente — seed necessário.');
+      await go(page, theme);
 
-      const timeline = page.getByTestId('quote-status-timeline');
-      const title = page.getByTestId('page-title-quote-view');
-      await expect(timeline).toBeVisible();
-      await expect(title).toBeVisible();
-
-      // Rola até o fim e aguarda o scroll estabilizar sem usar waitForTimeout.
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await page.waitForFunction(
-        () => Math.abs(window.scrollY + window.innerHeight - document.body.scrollHeight) < 4,
+        () =>
+          Math.abs(window.scrollY + window.innerHeight - document.body.scrollHeight) < 4,
         null,
         { timeout: 3000 },
       );
 
-
       const overlap = await page.evaluate(() => {
-        const h1 = document.querySelector('[data-testid="page-title-quote-view"]') as HTMLElement | null;
-        const content = document.querySelector('[class*="CardContent"], .space-y-4') as HTMLElement | null;
-        if (!h1 || !content) return false;
-        const a = h1.getBoundingClientRect();
-        const b = content.getBoundingClientRect();
-        const horizontalOverlap = a.left < b.right && a.right > b.left;
-        const verticalOverlap = a.top < b.bottom && a.bottom > b.top;
-        return horizontalOverlap && verticalOverlap;
+        const h1 = document
+          .querySelector('[data-testid="page-title-quote-view"]')!
+          .getBoundingClientRect();
+        const card = document
+          .querySelector('[data-testid="quote-content-card"]')!
+          .getBoundingClientRect();
+        const horiz = h1.left < card.right && h1.right > card.left;
+        const vert = h1.top < card.bottom && h1.bottom > card.top;
+        return horiz && vert;
       });
       expect(overlap, 'Header não deve sobrepor o container do orçamento').toBe(false);
     });
+
+    test(`snapshot visual — ${theme}`, async ({ page }) => {
+      await go(page, theme);
+      await page.mouse.move(0, 0);
+      await expect(page.getByTestId('quote-view-order-harness')).toHaveScreenshot(
+        `quote-view-order-${theme}.png`,
+        snapOpts(`VISUAL_THRESHOLD_QUOTE_VIEW_ORDER_${theme.toUpperCase()}`),
+      );
+    });
   });
 }
+
+test.describe('QuoteStatusTimeline · acessibilidade (dark)', () => {
+  test('axe-core WCAG 2.1 AA — contraste em fundo preto', async ({ page }) => {
+    await go(page, 'dark');
+
+    const results = await new AxeBuilder({ page })
+      .include('[data-testid="quote-status-timeline"]')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .withRules(['color-contrast'])
+      .analyze();
+
+    dumpAxe('quote-status-timeline-dark', results);
+
+    expect(
+      results.violations,
+      `Violações em QuoteStatusTimeline (dark): ${JSON.stringify(results.violations, null, 2)}`,
+    ).toEqual([]);
+  });
+});
