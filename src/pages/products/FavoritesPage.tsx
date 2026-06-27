@@ -13,6 +13,7 @@ import { useProductsContext } from '@/contexts/ProductsContext';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductListItem } from '@/components/products/ProductListItem';
 import { ProductTableView } from '@/components/products/ProductTableView';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
@@ -557,7 +558,7 @@ export default function FavoritesPage() {
         <div className="flex gap-4 lg:gap-6">
           <div className="hidden lg:block">{sidebarNode}</div>
 
-          <div className="min-w-0 flex-1 space-y-4">
+          <div className="min-w-0 flex-1 space-y-4" style={swatchSizeStyle(viewMode, gridColumns)}>
             {showTrash ? (
               <>
                 <div className="flex items-center gap-2 px-1">

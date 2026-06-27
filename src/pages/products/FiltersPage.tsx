@@ -9,6 +9,7 @@ import { FilterPanel } from '@/components/filters/FilterPanel';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { PresetsBar } from '@/components/filters/PresetsBar';
 import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { ColumnSelector } from '@/components/products/ColumnSelector';
@@ -183,7 +184,7 @@ export default function FiltersPage() {
           </aside>
 
           {/* Content */}
-          <div className="min-w-0 flex-1 space-y-6">
+          <div className="min-w-0 flex-1 space-y-6" style={swatchSizeStyle(state.viewMode, state.gridColumns)}>
             <div
               className="sticky z-20 flex flex-col gap-4 bg-background/90 pb-3 pt-1 backdrop-blur-sm"
               style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 0px))' }}
