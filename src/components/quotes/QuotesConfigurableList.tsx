@@ -369,6 +369,7 @@ export function QuotesConfigurableList({
                 'select-none truncate',
                 col.align === 'right' && 'text-right',
                 col.align === 'center' && 'text-center',
+                col.id === 'items' && 'pr-4',
               )}
             >
               {col.label}
