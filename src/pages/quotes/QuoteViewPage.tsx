@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Shield,
   Truck,
+  Trash2,
   Undo2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,6 +86,7 @@ export default function QuoteViewPage() {
     handleSyncBitrix,
     logQuoteHistory,
     duplicateQuote,
+    deleteQuote,
   } = useQuoteViewData(id);
 
   // Itens com a margem de negociação já aplicada (espelha o PDF). Os componentes
@@ -278,6 +280,25 @@ export default function QuoteViewPage() {
                   }}
                 >
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={async (e) => {
+                    e.preventDefault();
+                    if (!quote?.id) return;
+                    const ok = window.confirm('Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.');
+                    if (!ok) return;
+                    try {
+                      await deleteQuote(quote.id);
+                      toast.success('Orçamento excluído');
+                      navigate('/orcamentos');
+                    } catch (err: unknown) {
+                      const msg = err instanceof Error ? err.message : 'Erro';
+                      toast.error('Erro ao excluir', { description: msg });
+                    }
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
                 </DropdownMenuItem>
                 <Sheet>
                   <SheetTrigger asChild>
