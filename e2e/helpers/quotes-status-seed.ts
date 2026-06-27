@@ -196,8 +196,14 @@ export async function seedQuotesForStatusChips(
           client_name: "like.[E2E%",
           limit: "1",
         });
+        // Precisão de idempotência: alvos com DAR nulo precisam casar APENAS
+        // quotes com discount_approval_status NULL. Sem o `is.null`, alvos
+        // pending+synced (ex.: `synced`) casariam quotes pending+synced com DAR
+        // não-nulo (approved/rejected/expired) e seriam pulados por engano.
         if (t.discount_approval_status !== null) {
           q.set("discount_approval_status", `eq.${t.discount_approval_status}`);
+        } else {
+          q.set("discount_approval_status", "is.null");
         }
         const existsResp = await fetch(`${url}/rest/v1/quotes?${q}`, { headers });
         if (existsResp.ok) {
