@@ -400,7 +400,7 @@ export default function QuoteViewPage() {
         </Card>
 
         {id && <QuoteVersionHistory quoteId={id} currentQuoteId={id} />}
-        {id && <QuoteCommentsSection quoteId={id} />}
+        
 
         {proposalData && (
           <div className="hidden print:block print:p-0">
