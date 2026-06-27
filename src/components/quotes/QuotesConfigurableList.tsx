@@ -390,7 +390,9 @@ export function QuotesConfigurableList({
             maxHeight: `min(calc(100dvh - var(--quotes-chrome-h, ${QUOTES_CHROME_BY_BREAKPOINT.desktop}px)), calc(${QUOTES_MAX_VISIBLE_ROWS} * var(--quotes-row-h)))`,
             minHeight: `calc(${QUOTES_MIN_VISIBLE_ROWS} * var(--quotes-row-h))`,
           }}
-          className={`overflow-y-auto [--quotes-chrome-h:${QUOTES_CHROME_BY_BREAKPOINT.mobile}px] sm:[--quotes-chrome-h:${QUOTES_CHROME_BY_BREAKPOINT.tablet}px] lg:[--quotes-chrome-h:${QUOTES_CHROME_BY_BREAKPOINT.desktop}px]`}
+          // Classes literais (Tailwind JIT só detecta strings estáticas) —
+          // valores em sync com QUOTES_CHROME_BY_BREAKPOINT na SSOT.
+          className="overflow-y-auto [--quotes-chrome-h:420px] sm:[--quotes-chrome-h:360px] lg:[--quotes-chrome-h:320px]"
         >
 
         {/* Empty state */}
