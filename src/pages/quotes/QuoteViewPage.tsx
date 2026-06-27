@@ -81,6 +81,8 @@ export default function QuoteViewPage() {
   const navigate = useNavigate();
   const { getApprovalStatus } = useDiscountApproval();
   const [approvalRequest, setApprovalRequest] = useState<DiscountApprovalRequest | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     quote,
