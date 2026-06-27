@@ -73,6 +73,18 @@ export function useQuotesListPage() {
       }
     }
 
+    // Sort "Vencimento próximo" implica filtrar fora os já expirados:
+    // só faz sentido listar orçamentos que ainda PODEM vencer em breve.
+    if (sortBy === 'expiring') {
+      const now = Date.now();
+      results = results.filter((q) => {
+        if (q.status === 'expired') return false;
+        if (!q.valid_until) return false; // sem data não há "vencimento próximo"
+        const t = new Date(q.valid_until).getTime();
+        return Number.isFinite(t) && t >= now;
+      });
+    }
+
     results = [...results].sort((a, b) => {
       switch (sortBy) {
         case 'newest':
