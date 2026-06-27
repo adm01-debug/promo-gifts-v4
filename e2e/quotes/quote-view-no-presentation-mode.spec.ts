@@ -309,14 +309,15 @@ test.describe('DropdownMenu — tipografia e espaçamento consistentes', () => {
 
       // Fonte do shadcn DropdownMenuItem (text-sm = 14px) — estável em todas as larguras.
       expect(metrics.fontPx).toBeCloseTo(vp.expectedFontPx, 0);
-      // Padding/gap estáveis em qualquer largura.
-      expect(metrics.paddingTop).toBeCloseTo(6, 0); // py-1.5
-      expect(metrics.paddingBottom).toBeCloseTo(6, 0);
-      expect(metrics.paddingLeft).toBeCloseTo(8, 0); // px-2
-      expect(metrics.gap).toBeCloseTo(8, 0); // gap-2
-      // Touch target mínimo razoável para item de menu compacto.
-      expect(metrics.height).toBeGreaterThanOrEqual(24);
-      expect(metrics.height).toBeLessThanOrEqual(36);
+      // Padding estável em qualquer largura — baseline shadcn (px-3 py-2).
+      expect(metrics.paddingTop).toBeCloseTo(8, 0); // py-2
+      expect(metrics.paddingBottom).toBeCloseTo(8, 0);
+      expect(metrics.paddingLeft).toBeCloseTo(12, 0); // px-3
+      // Item não usa `gap-*`; o espaçamento vem do `mr-2` no ícone (8px).
+      expect(metrics.gap).toBeCloseTo(0, 0);
+      // Touch target adequado para item de menu (text-sm + py-2).
+      expect(metrics.height).toBeGreaterThanOrEqual(32);
+      expect(metrics.height).toBeLessThanOrEqual(44);
     });
   }
 });
