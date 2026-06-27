@@ -384,7 +384,7 @@ export function QuotesConfigurableList({
         <div
           ref={scrollRef}
           data-testid="quotes-scroll-container"
-          className="max-h-[calc(8*64px)] overflow-y-auto"
+          className="max-h-[calc(8*80px)] overflow-y-auto"
         >
 
         {/* Empty state */}
