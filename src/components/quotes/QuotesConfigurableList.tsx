@@ -50,11 +50,11 @@ const ALL_COLUMNS: ColumnDef[] = [
   { id: 'contact', label: 'Contato', width: 'minmax(140px, 0.9fr)' },
   { id: 'date', label: 'Data', width: '120px' },
   { id: 'items', label: 'Itens', width: '80px', align: 'center' },
-  { id: 'value', label: 'Valor', width: '140px', align: 'right' },
+  { id: 'value', label: 'Valor', width: '140px' },
   { id: 'delivery', label: 'Entrega', width: '90px' },
   { id: 'status', label: 'Status', width: '150px' },
   { id: 'expiration', label: 'Expiração', width: '110px', align: 'center' },
-  { id: 'quote_number', label: 'Nº Orçamento', width: '120px', align: 'right' },
+  { id: 'quote_number', label: 'Nº Orçamento', width: '120px' },
 ];
 
 // ── Props ──
