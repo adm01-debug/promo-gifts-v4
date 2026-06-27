@@ -115,9 +115,9 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         </td>
 
         {hasPersonalizations && (
-          <td className="p-3">
+          <td className="p-4 align-top">
             {allPersonalizations.length > 0 ? (
-              <div className="space-y-1.5">
+              <div className="flex flex-col gap-2">
                 {allPersonalizations.map((p, pIdx) => {
                   const notesRaw = p.notes || '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
@@ -129,29 +129,26 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     dimLabel = `${p.width_cm} × ${p.height_cm} cm`;
                   }
                   return (
-                    <div key={pIdx} className={cn(pIdx > 0 && 'border-t border-border/30 pt-1.5')}>
-                      <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1.5">
-                        <span className="flex items-center gap-1 text-xs font-semibold text-primary">
-                          ✦ {p.technique_name}
+                    <div
+                      key={pIdx}
+                      className="inline-flex flex-col gap-0.5 rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5"
+                    >
+                      <span className="text-[11px] font-semibold tracking-wide text-foreground">
+                        <span className="text-primary">✦</span> {p.technique_name}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                        {locationLabel && <span>{locationLabel}</span>}
+                        {dimLabel && <span className="tabular-nums">{dimLabel}</span>}
+                        <span className="tabular-nums">
+                          {p.colors_count || 1} {(p.colors_count || 1) > 1 ? 'cores' : 'cor'}
                         </span>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          {locationLabel && (
-                            <span className="font-medium text-foreground/70">{locationLabel}</span>
-                          )}
-                          {dimLabel && (
-                            <span className="font-medium text-foreground/80">{dimLabel}</span>
-                          )}
-                          <span>
-                            {p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? 'es' : ''}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground">—</span>
+              <span className="text-sm text-muted-foreground/60">—</span>
             )}
           </td>
         )}
