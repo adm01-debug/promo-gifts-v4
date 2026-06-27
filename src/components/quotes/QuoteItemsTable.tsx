@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
-import { cn } from '@/lib/utils';
+
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
