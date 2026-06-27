@@ -1,18 +1,25 @@
 /**
- * Lista de orçamentos — layout responsivo do container de rolagem.
+ * Lista de orçamentos — layout responsivo + regressão visual.
  *
- * Valida que `quotes-scroll-container`:
- *   1) cresce/encolhe com o viewport (mobile < tablet < desktop);
- *   2) ocupa o espaço útil real (sem grande "área vazia" entre o container
- *      e o rodapé/viewport bottom);
- *   3) respeita a SSOT de altura da linha (--quotes-row-h = 80px), de modo que
- *      a altura visível seja múltipla aproximada de 80px (±1 linha).
+ * Cobre 4 frentes:
+ *  1) SSOT em sync (helper vs src/lib/quotes/quotesLayout.ts)
+ *  2) Container preenche o viewport sem áreas vazias significativas
+ *  3) Conteúdo (linhas) ≥ altura do container OU sentinel ausente
+ *     (detecta gap "fantasma" onde o container é grande mas vazio)
+ *  4) Snapshots visuais do container e do rodapé por viewport
  *
  * Política de seletores: somente Sel.* (TID).
  */
 import { test, expect, requireAuth } from "../../fixtures/test-base";
 import { gotoAndSettle } from "../../helpers/nav";
 import { Sel } from "../../fixtures/selectors";
+import {
+  QUOTES_ROW_H,
+  QUOTES_MIN_VISIBLE_ROWS,
+  chromeHeight,
+  containerMaxHeight,
+  assertMirrorInSyncWithSSOT,
+} from "../../helpers/quotes-layout";
 
 type Vp = { name: "mobile" | "tablet" | "desktop"; w: number; h: number };
 const VIEWPORTS: Vp[] = [
@@ -20,16 +27,18 @@ const VIEWPORTS: Vp[] = [
   { name: "tablet", w: 834, h: 1112 },
   { name: "desktop", w: 1440, h: 900 },
 ];
-const ROW_H = 80; // SSOT --quotes-row-h
-const MAX_BOTTOM_GAP = 64; // px tolerados entre fim do container e o rodapé
+const MAX_BOTTOM_GAP = 64; // px tolerados entre container e rodapé/viewport
+const SNAPSHOT_OPTS = { maxDiffPixelRatio: 0.02, animations: "disabled" as const };
 
-test.describe("Lista de orçamentos — responsivo (sem áreas vazias)", () => {
+test.describe("Lista de orçamentos — responsivo + regressão visual", () => {
   test.beforeEach(() => requireAuth());
 
+  test("mirror E2E está em sync com o SSOT de layout", () => {
+    expect(() => assertMirrorInSyncWithSSOT()).not.toThrow();
+  });
+
   for (const vp of VIEWPORTS) {
-    test(`container preenche viewport ${vp.name} (${vp.w}x${vp.h}) sem espaço em branco`, async ({
-      page,
-    }) => {
+    test(`${vp.name} (${vp.w}x${vp.h}): container sem áreas vazias + snapshot`, async ({ page }) => {
       await page.setViewportSize({ width: vp.w, height: vp.h });
       await gotoAndSettle(page, "/orcamentos");
       await expect(page.locator(Sel.page.title("orcamentos")).first()).toBeVisible({
@@ -43,11 +52,15 @@ test.describe("Lista de orçamentos — responsivo (sem áreas vazias)", () => {
       expect(box, `bounding box do container em ${vp.name}`).not.toBeNull();
       if (!box) return;
 
-      // (1) altura cresce com o viewport (vs piso de 5 linhas)
-      const MIN_H = 5 * ROW_H;
-      expect(box.height).toBeGreaterThanOrEqual(MIN_H - 1);
+      // (1) altura entre piso e teto calculados pelo SSOT
+      const expected = containerMaxHeight(vp.w, vp.h);
+      expect(box.height).toBeGreaterThanOrEqual(QUOTES_MIN_VISIBLE_ROWS * QUOTES_ROW_H - 1);
+      expect(
+        Math.abs(box.height - expected),
+        `altura container vs SSOT(${expected}px) divergiu em ${vp.name}`,
+      ).toBeLessThanOrEqual(2);
 
-      // (2) sem grande área vazia entre o container e o rodapé (ou o fim do viewport)
+      // (2) gap container→rodapé pequeno
       const footer = page.locator(Sel.quotesList.footerCount);
       const footerBox = (await footer.count()) > 0 ? await footer.boundingBox() : null;
       const bottomRef = footerBox ? footerBox.y : vp.h;
@@ -57,11 +70,44 @@ test.describe("Lista de orçamentos — responsivo (sem áreas vazias)", () => {
         `gap container→rodapé deveria ser ≤ ${MAX_BOTTOM_GAP}px em ${vp.name} (foi ${gap}px)`,
       ).toBeLessThanOrEqual(MAX_BOTTOM_GAP);
 
-      // (3) SSOT --quotes-row-h disponível e == 80px
-      const rowVar = await container.evaluate(
-        (el) => getComputedStyle(el).getPropertyValue("--quotes-row-h").trim(),
+      // (3) chrome consumido bate com o SSOT por breakpoint
+      expect(chromeHeight(vp.w)).toBeGreaterThan(0);
+
+      // (4) Detecção de área vazia DENTRO do container:
+      // conteúdo (scrollHeight) deve preencher o container OU sentinel deve
+      // estar ausente (lista terminou). scrollHeight < clientHeight ∧ sentinel
+      // presente == container grande demais com pouco conteúdo.
+      const metrics = await container.evaluate((el) => ({
+        scrollH: (el as HTMLElement).scrollHeight,
+        clientH: (el as HTMLElement).clientHeight,
+      }));
+      const sentinelCount = await page.locator(Sel.quotesList.infiniteSentinel).count();
+      const isEmptyState = (await page.locator(Sel.quotesList.emptyState).count()) > 0;
+      if (!isEmptyState) {
+        const hasGapInside = metrics.scrollH < metrics.clientH - 8 && sentinelCount > 0;
+        expect(
+          hasGapInside,
+          `área vazia detectada em ${vp.name}: scrollH=${metrics.scrollH} < clientH=${metrics.clientH} com sentinel presente`,
+        ).toBe(false);
+      }
+
+      // (5) SSOT --quotes-row-h disponível
+      const rowVar = await container.evaluate((el) =>
+        getComputedStyle(el).getPropertyValue("--quotes-row-h").trim(),
       );
-      expect(rowVar).toBe(`${ROW_H}px`);
+      expect(rowVar).toBe(`${QUOTES_ROW_H}px`);
+
+      // (6) Snapshots visuais (baseline gerado no 1º run / `--update-snapshots`).
+      await expect(container).toHaveScreenshot(
+        `quotes-container-${vp.name}.png`,
+        SNAPSHOT_OPTS,
+      );
+      if (footerBox) {
+        await expect(footer).toHaveScreenshot(
+          `quotes-footer-${vp.name}.png`,
+          SNAPSHOT_OPTS,
+        );
+      }
     });
   }
 
