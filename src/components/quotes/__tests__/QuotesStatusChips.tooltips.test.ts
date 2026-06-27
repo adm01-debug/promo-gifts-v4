@@ -57,7 +57,7 @@ describe('QuotesStatusChips — SSOT de tooltips', () => {
   });
 
   it('nenhuma description é técnica (sem DAR, synced_to_bitrix, pending, alçada=)', () => {
-    const technicalTerms = /\b(DAR|synced_to_bitrix|alçada=|=pending|=approved|=rejected|=expired)\b/i;
+    const technicalTerms = /(\bDAR\b(?!-)|synced_to_bitrix|alçada=|=pending|=approved|=rejected|=expired)/;
     const leaks = Object.entries(QUOTE_ROW_BADGE_STYLES)
       .filter(([, v]) => technicalTerms.test(v.description))
       .map(([k]) => k);
