@@ -340,6 +340,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
                 key={key}
                 type="button"
                 data-chip-key={key}
+                data-testid={`quotes-chip-${key}`}
                 onClick={() => onChange(key)}
                 onKeyDown={(e) => handleKeyDown(e, idx)}
                 aria-pressed={isActive}
