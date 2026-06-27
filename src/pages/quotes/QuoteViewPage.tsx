@@ -294,16 +294,7 @@ export default function QuoteViewPage() {
           </div>
         </div>
 
-        {/* Status Timeline (sem moldura, flutuando sobre o fundo da página) */}
-        <div className="w-full print:hidden">
-          <QuoteStatusTimeline
-            status={quote.status}
-            createdAt={quote.created_at}
-            updatedAt={quote.updated_at}
-            clientResponseAt={quote.client_response_at}
-            isSyncing={isSyncing}
-          />
-        </div>
+
 
 
         {/* Discount Approval Banner */}
