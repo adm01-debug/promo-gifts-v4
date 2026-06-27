@@ -74,8 +74,32 @@ export function QuotesConfigurableList({
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
-  // ── Pagination (UI removida; mantém slice por performance) ──
-  const paginatedQuotes = useMemo(() => quotes.slice(0, PAGE_SIZE), [quotes]);
+  // ── Infinite scroll: começa com PAGE_SIZE e cresce conforme o usuário rola ──
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset quando a lista de quotes muda (filtro, busca, etc.)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [quotes]);
+
+  const paginatedQuotes = useMemo(
+    () => quotes.slice(0, visibleCount),
+    [quotes, visibleCount],
+  );
+
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const el = e.currentTarget;
+      // ~200px antes do fim → carrega próxima página
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+        setVisibleCount((c) => (c < quotes.length ? Math.min(c + PAGE_SIZE, quotes.length) : c));
+      }
+    },
+    [quotes.length],
+  );
+
 
 
   // ── Visualizações pelo cliente (apenas página atual, performance) ──
