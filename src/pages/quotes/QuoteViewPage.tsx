@@ -173,14 +173,15 @@ export default function QuoteViewPage() {
             {quote.status !== 'pending_approval' && (
               <div className="hidden items-center gap-2 md:flex">
                 <Button
+                  variant="outline"
                   onClick={handleSyncBitrix}
                   disabled={isSyncing}
-                  className="h-8 min-w-[84px] justify-center gap-2 px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="h-8 min-w-[84px] justify-center gap-2 rounded-full border-primary/40 px-3 text-xs hover:border-primary hover:bg-primary/10"
                 >
                   {isSyncing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
                   ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-3.5 w-3.5 text-primary" />
                   )}
                   {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
                 </Button>
