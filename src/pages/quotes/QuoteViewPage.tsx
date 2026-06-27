@@ -305,7 +305,7 @@ export default function QuoteViewPage() {
               isSyncing={isSyncing}
             />
           </div>
-          <QuoteValidityBanner validUntil={quote.valid_until} status={quote.status} />
+          
         </div>
 
 
