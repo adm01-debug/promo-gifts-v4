@@ -436,8 +436,11 @@ export function QuotesConfigurableList({
       {/* Pagination Footer */}
       <div className="flex items-center justify-between px-2 py-2">
         <div className="text-sm text-muted-foreground">
-          {quotes.length} resultado(s)
+          {quotes.length > paginatedQuotes.length
+            ? `Exibindo ${paginatedQuotes.length} de ${quotes.length} resultado(s) — role para carregar mais`
+            : `${quotes.length} resultado(s)`}
         </div>
+
 
 
       </div>
