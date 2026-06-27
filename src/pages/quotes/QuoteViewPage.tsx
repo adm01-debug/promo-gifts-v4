@@ -40,6 +40,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
@@ -71,6 +81,8 @@ export default function QuoteViewPage() {
   const navigate = useNavigate();
   const { getApprovalStatus } = useDiscountApproval();
   const [approvalRequest, setApprovalRequest] = useState<DiscountApprovalRequest | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     quote,
@@ -285,21 +297,13 @@ export default function QuoteViewPage() {
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onSelect={async (e) => {
+                  onSelect={(e) => {
                     e.preventDefault();
                     if (!quote?.id) return;
-                    const ok = window.confirm('Tem certeza que deseja excluir este orçamento? Esta ação não pode ser desfeita.');
-                    if (!ok) return;
-                    try {
-                      await deleteQuote(quote.id);
-                      toast.success('Orçamento excluído');
-                      navigate('/orcamentos');
-                    } catch (err: unknown) {
-                      const msg = err instanceof Error ? err.message : 'Erro';
-                      toast.error('Erro ao excluir', { description: msg });
-                    }
+                    setDeleteOpen(true);
                   }}
                   className="text-destructive focus:text-destructive"
+                  data-testid="quote-actions-delete"
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Excluir
                 </DropdownMenuItem>
@@ -459,6 +463,45 @@ export default function QuoteViewPage() {
         onShare={handleShareLink}
         isGeneratingPDF={isGeneratingPDF}
       />
+
+      <AlertDialog open={deleteOpen} onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}>
+        <AlertDialogContent data-testid="quote-delete-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O orçamento será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} data-testid="quote-delete-cancel">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              data-testid="quote-delete-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!quote?.id) return;
+                setIsDeleting(true);
+                try {
+                  await deleteQuote(quote.id);
+                  toast.success('Orçamento excluído');
+                  setDeleteOpen(false);
+                  navigate('/orcamentos');
+                } catch (err: unknown) {
+                  const msg = err instanceof Error ? err.message : 'Erro';
+                  toast.error('Não foi possível excluir', { description: msg });
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              {isDeleting ? 'Excluindo…' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
