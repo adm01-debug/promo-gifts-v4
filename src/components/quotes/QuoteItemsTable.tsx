@@ -79,45 +79,37 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     return (
       <tr
         key={item.id || `item-${index}`}
-        className={cn(
-          'border-b border-border/50 transition-colors hover:bg-muted/40',
-          index % 2 === 1 && 'bg-muted/20',
-        )}
+        className="border-b border-border/40 transition-colors last:border-b-0 hover:bg-muted/30"
       >
-        <td className="p-3">
-          <div className="flex items-center gap-3">
+        <td className="p-4">
+          <div className="flex items-center gap-4">
             {item.product_image_url && (
               <img
                 src={item.product_image_url}
                 alt={item.product_name}
-                className="h-16 w-16 rounded border border-border object-cover print:hidden"
+                className="h-16 w-16 shrink-0 rounded-lg border border-border/50 bg-muted/30 object-cover print:hidden"
                 loading="lazy"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
             )}
-            <div>
+            <div className="min-w-0">
               {item.product_sku && (
-                <span
-                  className="mb-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs font-semibold"
-                  style={{
-                    backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
-                    borderColor: item.color_hex || 'hsl(var(--border))',
-                    color: item.color_hex || 'hsl(var(--foreground))',
-                  }}
-                >
+                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {item.color_hex && (
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-border/50"
+                      className="h-2 w-2 rounded-full ring-1 ring-border/60"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
                   {item.product_sku}
-                  {item.color_name ? `-${item.color_name}` : ''}
+                  {item.color_name ? ` · ${item.color_name}` : ''}
                 </span>
               )}
-              <p className="font-medium">{item.product_name}</p>
+              <p className="font-display text-[14px] font-medium leading-snug text-foreground">
+                {item.product_name}
+              </p>
             </div>
           </div>
         </td>
