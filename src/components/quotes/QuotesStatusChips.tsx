@@ -263,6 +263,23 @@ const CHIPS: ChipDef[] = [
 export const QUOTE_CHIP_MATCHERS: Record<string, (q: Quote) => boolean> =
   Object.fromEntries(CHIPS.map((c) => [c.key, c.match]));
 
+/**
+ * Texto amigável (voltado para vendedor) exibido como tooltip ao passar
+ * o mouse / focar nos chips de filtro do topo. Espelha o tom das
+ * `description` de `QUOTE_ROW_BADGE_STYLES`.
+ */
+const CHIP_TOOLTIPS: Record<string, string> = {
+  all: 'Mostra todos os seus orçamentos, em qualquer fase.',
+  draft: QUOTE_ROW_BADGE_STYLES.draft.description,
+  unsynced: QUOTE_ROW_BADGE_STYLES.unsynced.description,
+  created_synced: QUOTE_ROW_BADGE_STYLES.synced.description,
+  pending_approval: QUOTE_ROW_BADGE_STYLES.awaiting.description,
+  discount_approved: QUOTE_ROW_BADGE_STYLES.approved.description,
+  discount_rejected: QUOTE_ROW_BADGE_STYLES.rejected.description,
+  discount_expired: QUOTE_ROW_BADGE_STYLES.expired_discount.description,
+  expired: QUOTE_ROW_BADGE_STYLES.expired.description,
+};
+
 const log = createClientLogger('quotes.chips');
 // Reporta no máximo uma vez por sessão para evitar spam de logs.
 let reportedLegacySync = false;
