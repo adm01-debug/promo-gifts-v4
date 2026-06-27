@@ -218,7 +218,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   return (
     <div>
-      <h3 className="mb-4 font-display font-semibold">Itens do Orçamento</h3>
+      <h3 className="mb-2.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Itens do Orçamento</h3>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full border-collapse">
           <thead>
