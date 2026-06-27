@@ -107,6 +107,11 @@ export function AppRoutes() {
             which caused E2E specs to fail with auth redirect. */}
         <Route path="/debug/images" element={<OptimizedImageDemo />} />
 
+        {/* Dev-only visual regression harness — não monta em produção */}
+        {PreviewButtonHarness && (
+          <Route path="/__visual/preview-button" element={<PreviewButtonHarness />} />
+        )}
+
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>
             {productRoutes}
