@@ -3,6 +3,7 @@ import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { cn } from '@/lib/utils';
 
 import { ProductTableView } from '@/components/products/ProductTableView';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
 import {
   ProductCardSkeleton,
@@ -169,7 +170,7 @@ export const CatalogContent = memo(
       return (
         <SparklineSalesProvider productIds={productIds}>
           <ProductLeafCategoryProvider productIds={productIds}>
-            <div className="h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,0px)-200px)] min-h-[500px] w-full">
+            <div className="h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,0px)-200px)] min-h-[500px] w-full" style={swatchSizeStyle(viewMode, gridColumns)}>
               <VirtualizedProductGrid
                 products={paginatedProducts}
                 isLoading={isLoadingMore}
@@ -214,6 +215,7 @@ export const CatalogContent = memo(
           'relative space-y-8 px-4 pb-12 duration-500 animate-in fade-in sm:px-6',
           isLoadingMore && 'opacity-80 transition-opacity',
         )}
+        style={swatchSizeStyle(viewMode, gridColumns)}
       >
         <SparklineSalesProvider productIds={productIds}>
           <ProductLeafCategoryProvider productIds={productIds}>

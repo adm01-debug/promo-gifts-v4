@@ -15,6 +15,7 @@ import {
   normalizeColorKey,
 } from '@/hooks/products/useReposicaoVariantsSummary';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
@@ -418,7 +419,7 @@ export function ReplenishmentProductGrid() {
         </p>
       )}
 
-      <div className="relative">
+      <div className="relative" style={swatchSizeStyle(viewMode, gridColumns)}>
         {renderContent()}
         <AnimatePresence>
           {isFetching && !isLoading && products.length > 0 && (

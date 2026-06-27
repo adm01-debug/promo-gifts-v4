@@ -312,9 +312,11 @@ html[data-scroll-locked] body {
 
     /* 13. Product Swatches Tokens */
     /* 13. Product Swatches Design Tokens (SSOT) */
+    --swatch-size-xxs: 16px;
     --swatch-size-xs: 20px;
     --swatch-size-sm: 24.2px;
     --swatch-size-md: 28.6px;
+    --swatch-size-lg: 32px;
     --swatch-gap-x: 6px;
     --swatch-gap-y: 6px;
     --swatch-scale-hover: 1.1;

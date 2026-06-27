@@ -33,6 +33,7 @@ import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { NoveltyCardSkeleton } from './NoveltyCardSkeleton';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
@@ -831,7 +832,7 @@ export function NoveltyProductGrid() {
         </p>
       )}
 
-      <div className="relative">
+      <div className="relative" style={swatchSizeStyle(viewMode, gridColumns)}>
         {renderContent()}
         <AnimatePresence>
           {isFetching && products.length > 0 && (
