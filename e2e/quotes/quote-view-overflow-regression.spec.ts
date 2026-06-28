@@ -63,7 +63,7 @@ test('@smoke nenhum ancestral da sidebar quebra sticky via overflow ou containin
   ).toEqual([]);
 });
 
-test('sticky da sidebar sobrevive em múltiplas resoluções', async ({ page }) => {
+test('@smoke sticky da sidebar sobrevive em múltiplas resoluções', async ({ page }) => {
   for (const [w, h] of [
     [1024, 768],
     [1280, 900],
@@ -117,7 +117,7 @@ test('teclado: setas/PageDown/Home/End movem o scroll interno e anunciam estado'
   await expect(scroller).toHaveAttribute('data-scroll-at-top', 'true');
 });
 
-test('thead permanece sticky durante rolagem interna em md e lg', async ({ page }) => {
+test('@smoke thead permanece sticky durante rolagem interna em md e lg', async ({ page }) => {
   for (const [w, h] of [
     [768, 900],
     [1280, 900],
