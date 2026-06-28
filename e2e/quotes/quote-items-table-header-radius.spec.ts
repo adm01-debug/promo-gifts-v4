@@ -52,6 +52,7 @@ for (const vp of VIEWPORTS) {
         br: cs.borderBottomRightRadius,
         overflowX: cs.overflowX,
         overflowY: cs.overflowY,
+        rectLeft: el.getBoundingClientRect().left,
         rectRight: el.getBoundingClientRect().right,
       };
     });
@@ -75,10 +76,13 @@ for (const vp of VIEWPORTS) {
       const documentWidth = document.documentElement.scrollWidth;
       const viewportWidth = window.innerWidth;
       const table = el.querySelector('table');
+      const rect = el.getBoundingClientRect();
       const tableWidth = table?.getBoundingClientRect().width ?? 0;
       return {
         scrollerScrollWidth: el.scrollWidth,
         scrollerClientWidth: el.clientWidth,
+        rectLeft: rect.left,
+        rectRight: rect.right,
         documentWidth,
         viewportWidth,
         tableWidth,
@@ -93,9 +97,13 @@ for (const vp of VIEWPORTS) {
       `scroller deve conter a largura da tabela @${vp.name}`,
     ).toBeGreaterThanOrEqual(Math.round(overflow.tableWidth) - 2);
     expect(
-      overflow.scrollerClientWidth,
-      `scroller visível deve caber no wrapper @${vp.name}`,
-    ).toBeLessThanOrEqual(Math.round(wrapperMetrics.rectRight) + 2);
+      overflow.rectLeft,
+      `scroller não deve vazar à esquerda do wrapper @${vp.name}`,
+    ).toBeGreaterThanOrEqual(wrapperMetrics.rectLeft - 2);
+    expect(
+      overflow.rectRight,
+      `scroller não deve vazar à direita do wrapper @${vp.name}`,
+    ).toBeLessThanOrEqual(wrapperMetrics.rectRight + 2);
 
     // Header: 1ª th com TL>0; última th com TR>0.
     const ths = scroller.locator('thead tr > th');
