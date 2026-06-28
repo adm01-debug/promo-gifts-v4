@@ -194,6 +194,113 @@ for (const theme of ['light', 'dark'] as const) {
     // Aguarda conclusão e valida chamada única (sem duplicidade).
     await expect.poll(() => readDeleteCalls(page), { timeout: 3000 }).toEqual([expectedId]);
   });
+
+  test(`"Excluir" — timeout exibe toast saneado e mantém UI consistente — ${theme}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __deleteQuoteCalls: string[] }).__deleteQuoteCalls = [];
+      (window as unknown as { __deleteQuoteSpy: (id: string) => Promise<void> }).__deleteQuoteSpy =
+        () =>
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('ETIMEDOUT: upstream 504 after 30000ms')), 250),
+          );
+    });
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openHarness(page, theme);
+    await openMenuViaClick(page);
+    await page.getByTestId('quote-actions-delete').click();
+
+    const confirm = page.getByTestId('quote-delete-confirm');
+    await confirm.click();
+
+    // Durante o loading: botão mostra "Excluindo…" e fica desabilitado.
+    await expect(confirm).toBeDisabled();
+    await expect(confirm).toHaveText(/Excluindo/i);
+
+    // Após timeout: copy esperado, sem vazar 504/ETIMEDOUT/upstream.
+    await expect(
+      page.getByText(/Não foi possível excluir o orçamento\. Tente novamente\./i).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/ETIMEDOUT|504|upstream|30000ms|undefined|\[object/i),
+    ).toHaveCount(0);
+
+    // UI volta ao estado consistente: dialog continua aberto, botões reabilitados.
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+    await expect(confirm).toBeEnabled();
+    await expect(page.getByTestId('quote-delete-cancel')).toBeEnabled();
+  });
+
+  test(`"Excluir" — AlertDialog mantém Escape/Cancelar durante loading — ${theme}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __deleteQuoteCalls: string[] }).__deleteQuoteCalls = [];
+      (window as unknown as { __deleteQuoteSpy: (id: string) => Promise<void> }).__deleteQuoteSpy =
+        () => new Promise((resolve) => setTimeout(resolve, 600));
+    });
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openHarness(page, theme);
+    await openMenuViaClick(page);
+    await page.getByTestId('quote-actions-delete').click();
+
+    const dialog = page.getByRole('alertdialog');
+    const confirm = page.getByTestId('quote-delete-confirm');
+    const cancel = page.getByTestId('quote-delete-cancel');
+    await expect(cancel).toBeFocused();
+
+    await confirm.click();
+
+    // Dialog permanece aberto durante o await; ambos botões desabilitados.
+    await expect(dialog).toBeVisible();
+    await expect(confirm).toBeDisabled();
+    await expect(cancel).toBeDisabled();
+
+    // Escape NÃO deve fechar prematuramente (Radix bloqueia quando o focus está
+    // em controles disabled; garantimos que o dialog ainda esteja visível).
+    await page.keyboard.press('Escape').catch(() => {});
+    await expect(dialog).toBeVisible();
+
+    // Conclui o fluxo e valida cleanup.
+    await expect.poll(() => readDeleteCalls(page), { timeout: 3000 }).toHaveLength(1);
+  });
+
+  test(`"Excluir" — múltiplos cliques rápidos (antes e durante loading) processam 1x — ${theme}`, async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __deleteQuoteCalls: string[] }).__deleteQuoteCalls = [];
+      (window as unknown as { __deleteQuoteSpy: (id: string) => Promise<void> }).__deleteQuoteSpy =
+        () => new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openHarness(page, theme);
+    const expectedId = await page
+      .getByTestId('quote-view-order-harness')
+      .getAttribute('data-quote-id');
+    await openMenuViaClick(page);
+    await page.getByTestId('quote-actions-delete').click();
+
+    const confirm = page.getByTestId('quote-delete-confirm');
+
+    // Rajada de 6 cliques: força {trial:true} para ignorar a checagem de
+    // actionability e disparar mesmo após o disabled — simula adversário.
+    const burst: Promise<unknown>[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      burst.push(confirm.click({ force: true, noWaitAfter: true }).catch(() => {}));
+    }
+    await Promise.all(burst);
+
+    // Durante o loading: ainda apenas 1 registro e botão disabled.
+    await expect(confirm).toBeDisabled();
+
+    // Cliques adicionais DURANTE o loading também são absorvidos.
+    for (let i = 0; i < 4; i += 1) {
+      await confirm.click({ force: true, noWaitAfter: true }).catch(() => {});
+    }
+
+    // Aguarda conclusão e valida idempotência total: 1 chamada apenas.
+    await expect.poll(() => readDeleteCalls(page), { timeout: 4000 }).toEqual([expectedId]);
+
+    // Garantia adicional: jamais duplicou ao longo do tempo.
+    await page.waitForTimeout(200);
+    expect(await readDeleteCalls(page)).toEqual([expectedId]);
+  });
 }
 
 
