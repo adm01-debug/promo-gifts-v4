@@ -321,7 +321,7 @@ html[data-scroll-locked] body {
     --swatch-gap-y: 6px;
     --swatch-scale-hover: 1.1;
     --swatch-ring-width: 2px;
-    --swatch-container-px: 4px;
+    --swatch-container-px: 5px;
     /* py do container acomoda ring (2px) + scale 1.1 (+~1.3px) + glow do ::after
        quando o swatch está selecionado. Valores <6px causam clipping vertical
        visível ("bolinha cortada como se estivesse dentro de algo"). */
