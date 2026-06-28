@@ -3,8 +3,8 @@
  *
  * Bug histórico: o container `role=radiogroup` tem `overflow-hidden` (necessário
  * para travar em 2 linhas). Ao selecionar, o swatch ganha scale(1.1) + ring 2px
- * + glow no ::after — se `--swatch-container-py` for menor que ring+scale+glow,
- * o topo/base da bolinha selecionada fica cortado.
+ * + brilho interno — se o container não reservar px/py suficientes, topo/base ou
+ * laterais da bolinha selecionada ficam cortados.
  *
  * Estratégia: para cada card com swatches, clica o primeiro swatch e compara
  * o bounding box do <button> (que já inclui ring + scale aplicados pelo browser)
@@ -66,7 +66,7 @@ test.describe('ProductCard — swatch selecionado não é cortado', () => {
         const swatchCount = await swatches.count();
         if (swatchCount === 0) continue;
 
-        // Clica a primeira bolinha → estado "selecionado" com ring + scale + glow.
+        // Clica a primeira bolinha → estado "selecionado" com ring + scale + brilho.
         const target = swatches.first();
         await target.click({ force: true });
         await expect(target).toHaveAttribute('aria-checked', 'true');

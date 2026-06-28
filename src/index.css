@@ -321,11 +321,14 @@ html[data-scroll-locked] body {
     --swatch-gap-y: 6px;
     --swatch-scale-hover: 1.1;
     --swatch-ring-width: 2px;
+    --swatch-container-px: 4px;
     /* py do container acomoda ring (2px) + scale 1.1 (+~1.3px) + glow do ::after
        quando o swatch está selecionado. Valores <6px causam clipping vertical
        visível ("bolinha cortada como se estivesse dentro de algo"). */
     --swatch-container-py: 6px;
-    --swatch-selected-glow: 0 0 12px 2px hsl(var(--primary) / 0.5);
+    /* Efeito selecionado visível, porém seguro dentro de containers overflow-hidden. */
+    --swatch-selected-glow: inset 0 0 10px 0 hsl(var(--primary) / 0.48);
+    --swatch-selected-inner-highlight: inset 0 0 0 1px hsl(var(--primary-foreground) / 0.88);
   }
 
   .dark {
