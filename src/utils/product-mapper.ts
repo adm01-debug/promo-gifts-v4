@@ -123,11 +123,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
         };
         variations.push({
           id: `${p.id}-${index}`,
-          // fix_version: pdp_sku_badge_v1 — sempre usa p.sku (produto-pai).
-          // co.sku carregava o supplier_sku do fornecedor (ex: ER143B-CIN) que
-          // vazava até o badge ProductInfoBar via selectedVariation?.sku.
-          // O badge exibe o SKU público do produto, nunca o código de variante do fornecedor.
-          sku: p.sku,
+          sku: co.sku || p.sku,
           color: { name: co.name, hex: co.hex || '#CCCCCC' },
           stock: co.stock ?? 0,
           image: co.image || null,
