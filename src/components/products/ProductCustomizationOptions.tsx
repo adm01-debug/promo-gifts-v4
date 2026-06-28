@@ -278,7 +278,7 @@ export function ProductCustomizationOptions({
                     disabled={isDisabled}
                     onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
                     className={cn(
-                      'group relative flex min-w-[120px] snap-start items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-center transition-all md:min-w-0',
+                      'group relative flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-center transition-all md:h-11 md:px-3',
                       isDisabled
                         ? 'cursor-not-allowed border-border bg-muted/30 opacity-40'
                         : isActive
@@ -286,7 +286,7 @@ export function ProductCustomizationOptions({
                           : 'border-border bg-transparent text-foreground hover:border-primary/40 hover:bg-primary/5',
                     )}
                   >
-                    <span className="text-xs font-semibold uppercase tracking-wide">
+                    <span className="truncate text-[10px] font-semibold uppercase tracking-wide md:text-xs">
                       {isCircular ? 'CIRCULAR 360°' : loc.location_name}
                     </span>
                     {hasPrice && <span className="text-[10px] font-bold text-primary">✓</span>}
