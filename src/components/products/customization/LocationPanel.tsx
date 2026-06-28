@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
 import { Pencil, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -488,9 +489,9 @@ export function LocationPanel({
         </div>
       )}
 
-      {/* Picker de técnicas (Estado A ou C) */}
+      {/* Picker de técnicas (Estado A ou C) — motion enter animation */}
       {showPicker && (
-        <div
+        <motion.div
           ref={firstCardRef}
           id={pickerId}
           role="radiogroup"
@@ -500,43 +501,49 @@ export function LocationPanel({
               ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
               : `Escolha a técnica de gravação para ${location.location_name}.`
           }
-          className="space-y-2 rounded-lg border border-border/50 bg-card/40 p-2.5 animate-in fade-in slide-in-from-top-1"
+          className="overflow-hidden rounded-lg border border-border/50 bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           data-testid="customization-technique-picker"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           onKeyDown={(e) => {
             if (e.key === 'Escape' && selectedTechnique) {
               setIsPickerOpen(false);
             }
           }}
         >
-          {selectedTechnique && (
-            <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Escolha a nova técnica
-              <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
-                · atual: {selectedTechnique.tecnica_nome}
-              </span>
-            </p>
-          )}
+          <div className="space-y-2 p-2.5">
+            {selectedTechnique && (
+              <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Escolha a nova técnica
+                <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
+                  · atual: {selectedTechnique.tecnica_nome}
+                </span>
+              </p>
+            )}
 
-          {Object.entries(grouped).map(([grupo, techs]) => (
-            <div key={grupo} className="space-y-1">
-              {Object.keys(grouped).length > 1 && (
-                <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
-                  {grupo.replace('_', ' ')}
-                </p>
-              )}
-              {techs.map((t) => (
-                <TechniqueCard
-                  key={t.technique_id}
-                  technique={t}
-                  isSelected={selectedTechnique?.technique_id === t.technique_id}
-                  onSelect={handleSelectTechnique}
-                />
-              ))}
-            </div>
-          ))}
-
-        </div>
+            {Object.entries(grouped).map(([grupo, techs]) => (
+              <div key={grupo} className="space-y-1">
+                {Object.keys(grouped).length > 1 && (
+                  <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+                    {grupo.replace('_', ' ')}
+                  </p>
+                )}
+                {techs.map((t) => (
+                  <TechniqueCard
+                    key={t.technique_id}
+                    technique={t}
+                    isSelected={selectedTechnique?.technique_id === t.technique_id}
+                    onSelect={handleSelectTechnique}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </motion.div>
       )}
+
+
 
       {/* Configuration panel — permanece MONTADO mesmo com o picker aberto,
           apenas ocultado via `hidden`. Isso preserva o hook reativo de preço
