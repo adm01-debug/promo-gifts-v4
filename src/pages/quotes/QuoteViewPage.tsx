@@ -433,7 +433,7 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-1.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Observações</h3>
+                  <h3 className={`${qvSpacing.eyebrowGap} ${qvType.eyebrow}`}>Observações</h3>
                   <p className="whitespace-pre-line text-sm text-muted-foreground">{quote.notes}</p>
 
                 </div>
