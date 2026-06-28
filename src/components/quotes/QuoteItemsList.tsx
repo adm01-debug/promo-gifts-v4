@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Badge } from '@/components/ui/badge';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
+import { ProductThumb } from './ProductThumb';
 import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
 
