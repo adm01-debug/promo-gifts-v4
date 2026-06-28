@@ -373,8 +373,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <>
               <Separator />
               <div>
-                <h4 className="mb-2 text-sm font-semibold text-foreground">Observações</h4>
-                <p className="text-sm text-muted-foreground">{item.notes}</p>
+                <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                  Observações
+                </h4>
+                <p className="text-xs leading-relaxed text-muted-foreground">{item.notes}</p>
+
               </div>
             </>
           )}
