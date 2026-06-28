@@ -1,11 +1,13 @@
 /**
  * Testes de visibilidade — `ProductStatusBadge` × `useBadgeVisibilityStore`.
  *
- * Garante que:
- *  - `type="urgency"` com `urgencyType="limited-stock"` (badge "Estoque baixo")
- *    RESPEITA o toggle global de badges (igual a out-of-stock/featured/...);
- *  - As demais urgências contextuais (`trending`, `ending-soon`) permanecem
- *    SEMPRE visíveis, mesmo com badges desligadas.
+ * Garante que TODOS os badge types — incluindo urgência contextual (trending,
+ * ending-soon) — são ocultados quando o toggle "Etiquetas dos Produtos" está
+ * desligado.
+ *
+ * fix_version: badge-toggle-v2 — cobertura total de urgency badges
+ * Badges de fornecedor, categoria e cores ficam sempre visíveis (renderizados
+ * por outros componentes, não passam por ProductStatusBadge).
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
@@ -50,27 +52,27 @@ describe('ProductStatusBadge — toggle global de badges', () => {
     expect(screen.queryByText(/Estoque baixo/i)).not.toBeInTheDocument();
   });
 
-  it('mantém urgência "trending" visível mesmo com badges desligadas', () => {
+  it('OCULTA urgência "trending" quando badges desligadas (badge-toggle-v2)', () => {
     setBadgesEnabled(false);
     render(
       <Wrapper>
         <ProductStatusBadge type="urgency" urgencyType="trending" value="Em alta" />
       </Wrapper>,
     );
-    expect(screen.getByText(/Em alta/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Em alta/i)).not.toBeInTheDocument();
   });
 
-  it('mantém urgência "ending-soon" visível mesmo com badges desligadas', () => {
+  it('OCULTA urgência "ending-soon" quando badges desligadas (badge-toggle-v2)', () => {
     setBadgesEnabled(false);
     render(
       <Wrapper>
         <ProductStatusBadge type="urgency" urgencyType="ending-soon" value="Última chance" />
       </Wrapper>,
     );
-    expect(screen.getByText(/Última chance/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Última chance/i)).not.toBeInTheDocument();
   });
 
-  it('OCULTA out-of-stock quando badges desligadas (comportamento já existente)', () => {
+  it('OCULTA out-of-stock quando badges desligadas', () => {
     setBadgesEnabled(false);
     render(
       <Wrapper>
@@ -78,5 +80,35 @@ describe('ProductStatusBadge — toggle global de badges', () => {
       </Wrapper>,
     );
     expect(screen.queryByText(/Estoque zerado/i)).not.toBeInTheDocument();
+  });
+
+  it('OCULTA featured quando badges desligadas', () => {
+    setBadgesEnabled(false);
+    render(
+      <Wrapper>
+        <ProductStatusBadge type="featured" />
+      </Wrapper>,
+    );
+    expect(screen.queryByText(/Destaque/i)).not.toBeInTheDocument();
+  });
+
+  it('OCULTA packaging quando badges desligadas', () => {
+    setBadgesEnabled(false);
+    render(
+      <Wrapper>
+        <ProductStatusBadge type="packaging" value="Embalagem" />
+      </Wrapper>,
+    );
+    expect(screen.queryByText(/Embalagem/i)).not.toBeInTheDocument();
+  });
+
+  it('renderiza featured normalmente quando badges ligadas', () => {
+    setBadgesEnabled(true);
+    render(
+      <Wrapper>
+        <ProductStatusBadge type="featured" />
+      </Wrapper>,
+    );
+    expect(screen.getByText(/Destaque/i)).toBeInTheDocument();
   });
 });

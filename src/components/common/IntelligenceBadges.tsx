@@ -6,6 +6,9 @@ import { Flame, Zap, Rocket, AlertTriangle, Sparkles, Star, Tag } from 'lucide-r
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import type { IntelligenceBadge } from '@/hooks/products';
 
 type IntelligenceBadgeType = IntelligenceBadge['type'];
@@ -72,7 +75,21 @@ export function IntelligenceBadges({
   isDemo,
   className,
 }: IntelligenceBadgesProps) {
-  if (!badges.length) return null;
+  // Respeita o toggle global "Etiquetas dos Produtos" do Header.
+  // Quando desligado, intelligence badges (hot-item, best-seller, etc.)
+  // são ocultados junto com todos os demais badges de status/marketing.
+  // fix_version: badge-toggle-v2 — IntelligenceBadges agora controlado pelo toggle
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) {
+      return actualTheme === 'dark' ? settings.dark : settings.light;
+    }
+    return s.badgesEnabled;
+  });
+
+  if (!badgesEnabled || !badges.length) return null;
 
   return (
     <div className={cn('stagger-children flex flex-wrap items-center gap-2', className)}>
