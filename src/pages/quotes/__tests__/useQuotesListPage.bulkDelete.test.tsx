@@ -115,7 +115,7 @@ describe('useQuotesListPage — handleBulkDelete', () => {
     expect(result.current.bulkDeleteIds).toEqual(['a', 'b']); // preservado
     expect(events.length).toBe(0); // nenhum confirmed emitido
     expect(toastError).toHaveBeenCalled();
-    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(showUndoToast).not.toHaveBeenCalled();
 
     window.removeEventListener('quotes:bulk-delete-confirmed', listener);
   });
