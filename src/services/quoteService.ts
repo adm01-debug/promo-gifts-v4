@@ -140,7 +140,46 @@ export const quoteService = {
       }
     }
 
+    // Hidratação runtime do SKU composto (base-código_cor) a partir de product_variants
+    // quando o item tem variante (color_name) mas product_sku ainda é o base SKU
+    // (itens legados gravados antes do fix de useQuoteItems.ts). Mantém PDF/tela
+    // consistentes mostrando ex. "94297-7.1" em vez de "94297".
+    try {
+      const candidates = items.filter(
+        (it) =>
+          it.product_id &&
+          it.color_name &&
+          (!it.product_sku || !it.product_sku.includes('-')),
+      );
+      if (candidates.length > 0) {
+        const variantProductIds = Array.from(
+          new Set(candidates.map((c) => c.product_id).filter((v): v is string => !!v)),
+        );
+        const { data: variants } = await supabase
+          .from('product_variants')
+          .select('product_id, sku, color_name')
+          .in('product_id', variantProductIds)
+          .eq('is_active', true);
+        if (variants && variants.length > 0) {
+          const norm = (s: string) => s.trim().toLowerCase();
+          const variantMap = new Map<string, string>();
+          for (const v of variants as Array<{ product_id: string; sku: string; color_name: string | null }>) {
+            if (!v.color_name || !v.sku) continue;
+            variantMap.set(`${v.product_id}|${norm(v.color_name)}`, v.sku);
+          }
+          for (const it of candidates) {
+            if (!it.product_id || !it.color_name) continue;
+            const sku = variantMap.get(`${it.product_id}|${norm(it.color_name)}`);
+            if (sku) it.product_sku = sku;
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn('[quoteService.fetchQuote] variant sku hydration failed', err);
+    }
+
     return { ...quoteData, status: sanitizeQuoteStatus(quoteData), items } as Quote;
+
   },
 
   async createQuote(
