@@ -116,7 +116,7 @@ function QuoteItemRow({
                 <div className="min-w-0 flex-1 space-y-1">
                   {/* 1) SKU + gravações */}
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge variant="outline" className="h-5 border-border/60 px-1.5 font-mono text-[10px] font-normal text-muted-foreground">
+                    <Badge variant="outline" className="h-6 border-border/70 bg-muted/40 px-2 font-mono text-[12px] font-semibold tracking-tight text-foreground">
                       {item.product_sku}
                     </Badge>
                     {hasPersonalizations && (
