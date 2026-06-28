@@ -25,6 +25,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { ProductListItem } from '@/components/products/ProductListItem';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { Button } from '@/components/ui/button';
@@ -539,7 +540,7 @@ export default function CollectionDetailPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="products" className="space-y-4">
+            <TabsContent value="products" className="space-y-4" style={swatchSizeStyle(viewMode, gridColumns)}>
               {products.length > 0 ? (
                 filteredProducts.length > 0 ? (
                   manageMode ? (
