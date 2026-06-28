@@ -104,6 +104,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   });
 
   const colCount = hasPersonalizations ? 6 : 5;
+  const headerCellClass = cn(
+    qvSpacing.cell,
+    qvType.tableHead,
+    'bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15',
+  );
 
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
@@ -350,43 +355,47 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
       <div className="relative">
         <div
-          ref={scrollRef}
-          onKeyDown={onScrollerKeyDown}
-          className={cn(
-            'overflow-x-auto rounded-lg border border-border',
-            enableInnerScroll && [
-              'overflow-y-auto',
-              'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
-              'print:max-h-none print:overflow-visible',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-            ],
-          )}
-          data-testid="quote-items-table-scroll"
-          data-inner-scroll={enableInnerScroll ? 'true' : 'false'}
-          data-scroll-at-top={scrollState.top ? 'true' : 'false'}
-          data-scroll-at-bottom={scrollState.bottom ? 'true' : 'false'}
-          data-scroll-progress={enableInnerScroll ? String(scrollState.progress) : '0'}
-          {...(enableInnerScroll && {
-            tabIndex: 0,
-            role: 'region',
-            'aria-label': `Lista rolável de ${totalRows} itens do orçamento. Use setas, PageUp/PageDown, Home e End para navegar.`,
-            'aria-describedby': 'quote-items-scroll-help',
-          })}
+          className="overflow-hidden rounded-lg border border-border bg-background"
+          data-testid="quote-items-table-wrapper"
         >
-          <table className="w-full min-w-[640px] border-collapse">
+          <div
+            ref={scrollRef}
+            onKeyDown={onScrollerKeyDown}
+            className={cn(
+              'overflow-x-auto',
+              enableInnerScroll && [
+                'overflow-y-auto',
+                'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
+                'print:max-h-none print:overflow-visible',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+              ],
+            )}
+            data-testid="quote-items-table-scroll"
+            data-inner-scroll={enableInnerScroll ? 'true' : 'false'}
+            data-scroll-at-top={scrollState.top ? 'true' : 'false'}
+            data-scroll-at-bottom={scrollState.bottom ? 'true' : 'false'}
+            data-scroll-progress={enableInnerScroll ? String(scrollState.progress) : '0'}
+            {...(enableInnerScroll && {
+              tabIndex: 0,
+              role: 'region',
+              'aria-label': `Lista rolável de ${totalRows} itens do orçamento. Use setas, PageUp/PageDown, Home e End para navegar.`,
+              'aria-describedby': 'quote-items-scroll-help',
+            })}
+          >
+          <table className="w-full min-w-[640px] border-separate border-spacing-0">
             <caption className="sr-only">
               Lista de itens do orçamento com quantidade, preço unitário e total.
             </caption>
             <thead className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
-              <tr className="bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15 [&>th:first-child]:rounded-tl-lg [&>th:last-child]:rounded-tr-lg">
-                <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Produto</th>
+              <tr>
+                <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
                 {hasPersonalizations && (
-                  <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Personalização</th>
+                  <th scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
                 )}
-                <th scope="col" className={cn('w-16 text-center', qvSpacing.cell, qvType.tableHead)}>Qtd</th>
-                <th scope="col" className={cn('w-24 text-left', qvSpacing.cell, qvType.tableHead)}>Unitário</th>
-                <th scope="col" className={cn('w-28 text-left', qvSpacing.cell, qvType.tableHead)}>Total</th>
-                <th scope="col" aria-label="Ações" className={cn('w-20 text-center print:hidden', qvSpacing.cell, qvType.tableHead)} />
+                <th scope="col" className={cn('w-16 text-center', headerCellClass)}>Qtd</th>
+                <th scope="col" className={cn('w-24 text-left', headerCellClass)}>Unitário</th>
+                <th scope="col" className={cn('w-28 text-left', headerCellClass)}>Total</th>
+                <th scope="col" aria-label="Ações" className={cn('w-20 rounded-tr-lg text-center print:hidden', headerCellClass)} />
               </tr>
             </thead>
           <tbody>
@@ -417,7 +426,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             )}
             {looseItems.map((item, idx) => renderItemRow(item, idx))}
           </tbody>
-        </table>
+          </table>
+          </div>
         </div>
         {enableInnerScroll && !scrollState.bottom && (
           <div
