@@ -5,15 +5,13 @@
  * Fórmula SSOT (ProductColorSwatches.tsx:179):
  *   max-h = 2*size + gap-y + 2*py
  *
- * Estratégia:
- *  - Resolve os tokens (`--swatch-size-sm`, `--swatch-gap-y`, `--swatch-container-py`)
- *    a partir do próprio container já montado — não duplica valores numéricos.
- *  - Para cada card visível com `role=radiogroup`, mede `clientHeight` e compara
- *    com o limite calculado (tolerância 1px para anti-aliasing/sub-pixel).
- *  - Em cards com overflow (mais cores do que cabem), o container tem que estar
- *    no limite exato (== max-h). Em cards sem overflow, deve estar ≤ max-h.
+ * Cobre:
+ *  1) Altura ≤ 2 linhas em qualquer card visível (todos os breakpoints).
+ *  2) Cards com overflow → chip "+N" aparece e visíveis+ocultas = total.
+ *  3) Estados sem clipping: idle, hover do card, focus do swatch, selected.
+ *  4) Screenshot do container por breakpoint (artefato de revisão).
  */
-import { test, expect, type Page } from '../fixtures/test-base';
+import { test, expect, type Page, type Locator } from '../fixtures/test-base';
 import { gotoAndSettle } from '../helpers/nav';
 
 const VIEWPORTS = [
@@ -39,11 +37,38 @@ function parsePx(v: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+async function measureGroup(group: Locator) {
+  return group.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const size =
+      cs.getPropertyValue('--swatch-size').trim() ||
+      cs.getPropertyValue('--swatch-size-sm').trim();
+    return {
+      sizePx: parseFloat(size) || 0,
+      gapYPx: parseFloat(cs.getPropertyValue('--swatch-gap-y').trim()) || 0,
+      pyPx: parseFloat(cs.getPropertyValue('--swatch-container-py').trim()) || 0,
+      clientHeight: (el as HTMLElement).clientHeight,
+      scrollHeight: (el as HTMLElement).scrollHeight,
+    };
+  });
+}
+
+async function assertSwatchInsideGroup(group: Locator, swatch: Locator, label: string) {
+  const [g, s] = await Promise.all([group.boundingBox(), swatch.boundingBox()]);
+  expect(g, `${label}: radiogroup bbox`).not.toBeNull();
+  expect(s, `${label}: swatch bbox`).not.toBeNull();
+  if (!g || !s) return;
+  expect(s.y, `${label}: top sem clipping`).toBeGreaterThanOrEqual(g.y - TOLERANCE_PX);
+  expect(s.y + s.height, `${label}: bottom sem clipping`).toBeLessThanOrEqual(
+    g.y + g.height + TOLERANCE_PX,
+  );
+}
+
 test.describe('ProductCard — swatches travados em 2 linhas no grid', () => {
   for (const vp of VIEWPORTS) {
-    test(`viewport ${vp.name} (${vp.width}px): container respeita max-h de 2 linhas`, async ({
+    test(`viewport ${vp.name} (${vp.width}px): 2 linhas + chip +N + sem clipping`, async ({
       page,
-    }) => {
+    }, testInfo) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await gotoAndSettle(page, '/catalogo');
       await settleCatalog(page);
@@ -53,7 +78,9 @@ test.describe('ProductCard — swatches travados em 2 linhas no grid', () => {
       test.skip(total === 0, 'Nenhum card com swatches no dataset.');
 
       const sample = Math.min(SAMPLE_CARDS, total);
-      let assertedAtLeastOne = false;
+      let heightAsserted = 0;
+      let overflowAsserted = 0;
+      let firstGroupShot = false;
 
       for (let i = 0; i < sample; i++) {
         const card = cards.nth(i);
@@ -61,45 +88,62 @@ test.describe('ProductCard — swatches travados em 2 linhas no grid', () => {
         const group = card.locator('[role="radiogroup"]').first();
         if (!(await group.isVisible().catch(() => false))) continue;
 
-        const metrics = await group.evaluate((el) => {
-          const cs = getComputedStyle(el);
-          // Tokens podem ser sobrescritos por size local; pega do elemento.
-          const size =
-            cs.getPropertyValue('--swatch-size').trim() ||
-            cs.getPropertyValue('--swatch-size-sm').trim();
-          const gapY = cs.getPropertyValue('--swatch-gap-y').trim();
-          const py = cs.getPropertyValue('--swatch-container-py').trim();
-          return {
-            size,
-            gapY,
-            py,
-            clientHeight: (el as HTMLElement).clientHeight,
-            maxHeight: cs.maxHeight,
-            childCount: el.querySelectorAll('[role="radio"]').length,
-          };
-        });
-
-        const sizePx = parsePx(metrics.size);
-        const gapYPx = parsePx(metrics.gapY);
-        const pyPx = parsePx(metrics.py);
-
-        // Token deve existir — fail-fast em vez de silenciosamente passar.
-        expect.soft(sizePx, `--swatch-size resolvido no card ${i}`).toBeGreaterThan(0);
-        expect.soft(gapYPx, `--swatch-gap-y resolvido no card ${i}`).toBeGreaterThanOrEqual(0);
-        expect.soft(pyPx, `--swatch-container-py resolvido no card ${i}`).toBeGreaterThan(0);
-
-        const twoLineMax = 2 * sizePx + gapYPx + 2 * pyPx;
-
-        // Container nunca pode passar do limite de 2 linhas.
+        // (1) altura nunca passa de 2 linhas
+        const m = await measureGroup(group);
+        expect.soft(m.sizePx, `card ${i}: --swatch-size`).toBeGreaterThan(0);
+        const twoLineMax = 2 * m.sizePx + m.gapYPx + 2 * m.pyPx;
         expect(
-          metrics.clientHeight,
-          `card ${i} @ ${vp.name}: clientHeight ${metrics.clientHeight}px > 2 linhas (${twoLineMax}px)`,
+          m.clientHeight,
+          `card ${i} @ ${vp.name}: ${m.clientHeight}px > 2 linhas (${twoLineMax}px)`,
         ).toBeLessThanOrEqual(twoLineMax + TOLERANCE_PX);
+        heightAsserted++;
 
-        assertedAtLeastOne = true;
+        // Screenshot do primeiro grupo visível em cada breakpoint (revisão visual).
+        if (!firstGroupShot) {
+          const shot = await group.screenshot();
+          await testInfo.attach(`swatches-${vp.name}.png`, {
+            body: shot,
+            contentType: 'image/png',
+          });
+          firstGroupShot = true;
+        }
+
+        // (2) overflow: chip "+N" presente e visíveis + hidden = total
+        const chip = card.locator('[data-testid="color-swatches-overflow"]').first();
+        if (await chip.isVisible().catch(() => false)) {
+          const ariaLabel = (await chip.getAttribute('aria-label')) ?? '';
+          const declaredTotal = Number(ariaLabel.match(/(\d+)\s+cores?/i)?.[1] ?? '0');
+          const hidden = Number(ariaLabel.match(/\+?(\d+)/)?.[1] ?? '0');
+          const visible = await group.locator('[role="radio"]').count();
+          if (declaredTotal > 0) {
+            expect(
+              visible + hidden,
+              `card ${i}: visíveis(${visible}) + ocultas(${hidden}) ≠ total(${declaredTotal})`,
+            ).toBe(declaredTotal);
+            overflowAsserted++;
+          }
+        }
+
+        // (3) estados sem clipping
+        const first = group.locator('[role="radio"]').first();
+        if (!(await first.count())) continue;
+
+        await card.hover();
+        await assertSwatchInsideGroup(group, first, `card ${i} hover`);
+
+        await first.focus();
+        await assertSwatchInsideGroup(group, first, `card ${i} focus`);
+
+        await first.click({ force: true });
+        await expect(first).toHaveAttribute('aria-checked', 'true');
+        await assertSwatchInsideGroup(group, first, `card ${i} selected`);
       }
 
-      expect(assertedAtLeastOne, 'pelo menos um card deveria ter sido validado').toBe(true);
+      expect(heightAsserted, 'pelo menos 1 card validado por altura').toBeGreaterThan(0);
+      testInfo.annotations.push({
+        type: 'coverage',
+        description: `${vp.name}: altura=${heightAsserted}, overflow=${overflowAsserted}`,
+      });
     });
   }
 });
