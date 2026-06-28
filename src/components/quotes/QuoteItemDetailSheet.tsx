@@ -255,11 +255,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <>
               <Separator />
               <div>
-                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Wrench className="h-4 w-4 text-primary" />
+                <h4 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                  <Wrench className="h-3.5 w-3.5 text-primary" />
                   Personalização ({personalizations.length})
                 </h4>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {personalizations.map((p, idx) => {
                     const parsed = parseNotesField(p.notes || '');
                     const unitRounded =
@@ -272,20 +272,20 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                     return (
                       <div
                         key={`${p.technique_id || p.technique_name}-${idx}`}
-                        className="space-y-3"
+                        className="space-y-2"
                       >
-                        <div className="space-y-2.5 rounded-lg border border-border/50 bg-muted/50 p-3">
+                        <div className="space-y-2 rounded-lg border border-border/50 bg-muted/40 p-2.5">
                           {/* Technique */}
                           <div className="flex items-center gap-2">
-                            <Badge className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/10">
+                            <Badge className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary hover:bg-primary/10">
                               ✦ {p.technique_name || 'Gravação'}
                             </Badge>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                             {parsed.location && (
-                              <div className="flex items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Local:</span>
                                 <span className="font-medium text-foreground">
                                   {parsed.location}
@@ -293,8 +293,8 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                               </div>
                             )}
                             {parsed.code && (
-                              <div className="flex items-center gap-1.5">
-                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <Layers className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Código:</span>
                                 <span className="font-mono font-medium text-foreground">
                                   {parsed.code}
@@ -302,24 +302,24 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                               </div>
                             )}
                             {(parsed.dimensions || (p.width_cm && p.height_cm)) && (
-                              <div className="flex items-center gap-1.5">
-                                <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <Ruler className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Tamanho:</span>
                                 <span className="font-medium text-foreground">
                                   {parsed.dimensions || `${p.width_cm}×${p.height_cm} cm`}
                                 </span>
                               </div>
                             )}
-                            <div className="flex items-center gap-1.5">
-                              <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+                            <div className="flex items-center gap-1">
+                              <Palette className="h-3 w-3 text-muted-foreground" />
                               <span className="text-muted-foreground">Cores:</span>
                               <span className="font-medium text-foreground">
                                 {p.colors_count || 1}
                               </span>
                             </div>
                             {p.area_cm2 && (
-                              <div className="flex items-center gap-1.5">
-                                <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <Package className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Área:</span>
                                 <span className="font-medium text-foreground">
                                   {p.area_cm2} cm²
@@ -329,22 +329,28 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                           </div>
 
                           {/* Costs */}
-                          <Separator className="my-1" />
-                          <div className="grid grid-cols-3 gap-2 text-xs">
+                          <Separator className="my-0.5" />
+                          <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
                             <div>
-                              <span className="block text-muted-foreground">Unitário</span>
+                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+                                Unitário
+                              </span>
                               <span className="font-semibold text-foreground">
                                 {fmt(unitRounded)}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-muted-foreground">Setup</span>
+                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+                                Setup
+                              </span>
                               <span className="font-semibold text-foreground">
                                 {fmt(p.setup_cost || 0)}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-muted-foreground">Total</span>
+                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
+                                Total
+                              </span>
                               <span className="font-semibold text-primary">
                                 {fmt(totalRounded)}
                               </span>
@@ -354,6 +360,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                       </div>
                     );
                   })}
+
                   {/* Next Tier Hint rendered once per item, not once per personalization */}
                   {getNextTier(item.quantity) && <NextTierHint currentQty={item.quantity} />}
                 </div>
