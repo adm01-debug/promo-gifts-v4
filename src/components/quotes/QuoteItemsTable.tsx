@@ -456,11 +456,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           </tbody>
           </table>
           </div>
-          {enableInnerScroll && (
+          {enableInnerScroll && needsCornerMask && (
             <div
               aria-hidden="true"
               data-testid="quote-items-table-scrollbar-corner-mask"
-              className="pointer-events-none absolute right-0 top-0 z-20 h-[2.375rem] w-5 rounded-tr-lg bg-primary print:hidden"
+              style={headerHeight ? { height: `${headerHeight}px` } : undefined}
+              className="pointer-events-none absolute right-0 top-0 z-20 w-5 rounded-tr-lg bg-primary print:hidden"
             />
           )}
         </div>
