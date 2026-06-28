@@ -1,6 +1,6 @@
 /**
  * Visual regression do layout com sidebar fixa em múltiplos breakpoints,
- * antes e depois do scroll, em tema light e (quando disponível) dark.
+ * antes e depois do scroll, em tema light e dark.
  *
  * Para gerar baselines (uma vez por project):
  *   npx playwright test e2e/quotes/quote-view-sticky-visual-breakpoints.spec.ts \
