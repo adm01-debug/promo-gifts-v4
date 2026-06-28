@@ -56,6 +56,17 @@ jobs:
             --project=chromium-public \
             --reporter=list
 
+      # Estabilidade: roda a mesma suíte 3x para flagrar flakiness (qualquer
+      # falha em qualquer repetição quebra o job).
+      - name: Stability run (--repeat-each=3)
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-view-no-presentation-mode.spec.ts \
+            --project=chromium-public \
+            --repeat-each=3 \
+            --retries=0 \
+            --reporter=list
+
       - name: Upload report + snapshots em caso de falha
         if: failure()
         uses: actions/upload-artifact@v4
