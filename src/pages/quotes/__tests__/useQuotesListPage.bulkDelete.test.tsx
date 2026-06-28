@@ -52,6 +52,11 @@ vi.mock('sonner', () => ({
   },
 }));
 
+const showUndoToast = vi.fn();
+vi.mock('@/utils/undoToast', () => ({
+  showUndoToast: (...a: unknown[]) => showUndoToast(...a),
+}));
+
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
@@ -85,10 +90,11 @@ describe('useQuotesListPage — handleBulkDelete', () => {
     expect(result.current.bulkDeleteIds).toEqual([]);
     expect(result.current.isBulkDeleting).toBe(false);
     expect(events.length).toBe(1);
-    expect(toastSuccess).toHaveBeenCalled();
-    // 2º arg do toast.success deve ter `action: { label: 'Desfazer', onClick }`
-    const opts = toastSuccess.mock.calls[0][1] as { action?: { label?: string } };
-    expect(opts?.action?.label).toBe('Desfazer');
+    expect(showUndoToast).toHaveBeenCalled();
+    // showUndoToast recebe { title, onUndo, ... } com botão "Desfazer" elegante
+    const opts = showUndoToast.mock.calls[0][0] as { title?: string; onUndo?: () => unknown };
+    expect(opts.title).toMatch(/excluí/i);
+    expect(opts.onUndo).toBeTypeOf('function');
 
     window.removeEventListener('quotes:bulk-delete-confirmed', listener);
   });
@@ -109,7 +115,7 @@ describe('useQuotesListPage — handleBulkDelete', () => {
     expect(result.current.bulkDeleteIds).toEqual(['a', 'b']); // preservado
     expect(events.length).toBe(0); // nenhum confirmed emitido
     expect(toastError).toHaveBeenCalled();
-    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(showUndoToast).not.toHaveBeenCalled();
 
     window.removeEventListener('quotes:bulk-delete-confirmed', listener);
   });
@@ -188,11 +194,11 @@ describe('useQuotesListPage — handleBulkDelete', () => {
       await result.current.handleBulkDelete();
     });
 
-    const opts = toastSuccess.mock.calls[0][1] as { action?: { onClick?: () => Promise<void> } };
-    expect(opts.action?.onClick).toBeTypeOf('function');
+    const opts = showUndoToast.mock.calls[0][0] as { onUndo?: () => Promise<void> };
+    expect(opts.onUndo).toBeTypeOf('function');
 
     await act(async () => {
-      await opts.action?.onClick?.();
+      await opts.onUndo?.();
     });
 
     expect(mockCreateQuote).toHaveBeenCalledTimes(2);
