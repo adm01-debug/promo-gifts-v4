@@ -6,6 +6,7 @@
  * A ordem segue estritamente a fonte de dados (`items`).
  */
 
+import { useEffect, useState } from 'react';
 import { Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -62,6 +63,18 @@ function QuoteItemRow({
     0,
   );
   const itemTotal = item.quantity * item.unit_price + personalizationTotal;
+
+  // Estado local de string para permitir limpar o campo enquanto digita.
+  // O store ignora quantity < 1, então não podemos depender só do valor do item.
+  const [qtyDraft, setQtyDraft] = useState<string>(String(item.quantity ?? 1));
+  useEffect(() => {
+    // Sincroniza quando o item muda externamente (apenas se o usuário não está editando algo diferente).
+    setQtyDraft((prev) => {
+      const parsed = parseInt(prev, 10);
+      if (!Number.isNaN(parsed) && parsed === item.quantity) return prev;
+      return String(item.quantity ?? 1);
+    });
+  }, [item.quantity]);
 
   return (
     <motion.div
@@ -166,23 +179,31 @@ function QuoteItemRow({
                 type="number"
                 min={1}
                 inputMode="numeric"
-                value={item.quantity === 0 ? '' : item.quantity}
+                value={qtyDraft}
                 onFocus={(e) => e.currentTarget.select()}
                 onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
+                  if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === '.' || e.key === ',') {
+                    e.preventDefault();
+                  }
                 }}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const raw = e.target.value;
-                  if (raw === '') {
-                    onUpdateQuantity(0);
-                    return;
+                  // Aceita vazio e dígitos (sem sinais/decimais) durante a edição.
+                  if (raw === '' || /^\d+$/.test(raw)) {
+                    setQtyDraft(raw);
+                    const v = parseInt(raw, 10);
+                    if (!Number.isNaN(v) && v >= 1) onUpdateQuantity(v);
                   }
-                  const v = parseInt(raw, 10);
-                  if (!Number.isNaN(v)) onUpdateQuantity(Math.max(0, v));
                 }}
-                onBlur={(e) => {
-                  const v = parseInt(e.target.value, 10);
-                  onUpdateQuantity(Number.isNaN(v) || v < 1 ? 1 : v);
+                onBlur={() => {
+                  const v = parseInt(qtyDraft, 10);
+                  if (Number.isNaN(v) || v < 1) {
+                    setQtyDraft('1');
+                    onUpdateQuantity(1);
+                  } else {
+                    setQtyDraft(String(v));
+                    onUpdateQuantity(v);
+                  }
                 }}
                 className="h-7 w-16 px-2 text-xs tabular-nums"
               />
