@@ -35,32 +35,50 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
             </tr>
           </tbody>
         </table>
-
-        {/* Desconto Global row — antes do frete */}
+        {/* Economia (desconto global) — enquadrada como GANHO, não perda. */}
+        {/* @fix_version proposal-discount-positive-2026-06 */}
         {data.discount && data.discount > 0 && (
           <div
             style={{
               borderRadius: '6px',
               overflow: 'hidden',
               margin: '6px 0',
-              border: '1px solid #ffcdd2',
+              border: '1px solid #c8e6c9',
             }}
           >
             <table
-              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff5f5' }}
+              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#f1f8e9' }}
             >
               <tbody>
                 <tr>
-                  <td style={{ width: '4px', backgroundColor: '#e53935', padding: 0 }} />
+                  <td style={{ width: '4px', backgroundColor: '#00c853', padding: 0 }} />
                   <td style={{ padding: '7px 16px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#c62828' }}>
-                      Desconto Global:
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#2e7d32' }}>
+                      Você economiza
                     </span>
                   </td>
-                  <td style={{ padding: '7px 16px', textAlign: 'right' }}>
-                    <span style={{ fontWeight: 800, fontSize: '15px', color: '#c62828' }}>
-                      - {fmt(data.discount)}
+                  <td
+                    style={{
+                      padding: '7px 16px',
+                      textAlign: 'right',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <span style={{ fontWeight: 800, fontSize: '15px', color: '#2e7d32' }}>
+                      − {fmt(data.discount)}
                     </span>
+                    {data.subtotal > 0 && (
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          fontSize: '11px',
+                          color: '#43a047',
+                          marginLeft: '6px',
+                        }}
+                      >
+                        ({Math.round((data.discount / data.subtotal) * 100)}%)
+                      </span>
+                    )}
                   </td>
                 </tr>
               </tbody>
