@@ -291,6 +291,33 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   }>({ top: true, bottom: !enableInnerScroll, progress: 0 });
   const [announcement, setAnnouncement] = React.useState('');
   const announceTimer = React.useRef<number | null>(null);
+  const theadRef = React.useRef<HTMLTableSectionElement>(null);
+  const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
+  // Quando o engine suporta `scrollbar-gutter: stable`, o trilho da scrollbar é
+  // reservado dentro do scroller (não sobrepõe o header), tornando a máscara de
+  // canto redundante. Quando NÃO suporta (alguns WebKits antigos), renderizamos
+  // a máscara para evitar canto quadrado no topo-direito.
+  const [needsCornerMask, setNeedsCornerMask] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!enableInnerScroll) return;
+    const supportsGutter =
+      typeof CSS !== 'undefined' &&
+      typeof CSS.supports === 'function' &&
+      CSS.supports('scrollbar-gutter: stable');
+    setNeedsCornerMask(!supportsGutter);
+  }, [enableInnerScroll]);
+
+  React.useEffect(() => {
+    if (!enableInnerScroll) return;
+    const el = theadRef.current;
+    if (!el) return;
+    const measure = () => setHeaderHeight(el.getBoundingClientRect().height);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [enableInnerScroll]);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
@@ -387,7 +414,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             <caption className="sr-only">
               Lista de itens do orçamento com quantidade, preço unitário e total.
             </caption>
-            <thead className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
+            <thead ref={theadRef} className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
               <tr>
                 <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
                 {hasPersonalizations && (
@@ -429,11 +456,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           </tbody>
           </table>
           </div>
-          {enableInnerScroll && (
+          {enableInnerScroll && needsCornerMask && (
             <div
               aria-hidden="true"
               data-testid="quote-items-table-scrollbar-corner-mask"
-              className="pointer-events-none absolute right-0 top-0 z-20 h-[2.375rem] w-5 rounded-tr-lg bg-primary print:hidden"
+              style={headerHeight ? { height: `${headerHeight}px` } : undefined}
+              className="pointer-events-none absolute right-0 top-0 z-20 w-5 rounded-tr-lg bg-primary print:hidden"
             />
           )}
         </div>

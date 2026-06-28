@@ -55,17 +55,20 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: playwright-${{ runner.os }}-
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run responsive spec (${{ matrix.viewport }})
         run: |
           npx playwright test e2e/routes/quotes/quote-list-responsive.spec.ts \
             --grep "${{ matrix.viewport }}|mirror E2E|desktop mostra mais"
 
-      - name: Run header-radius spec (${{ matrix.viewport }})
+      - name: Run header-radius spec (${{ matrix.viewport }}) · Chromium + Firefox + WebKit
         run: |
           npx playwright test e2e/quotes/quote-items-table-header-radius.spec.ts \
+            --project=chromium-public --project=firefox-public --project=webkit-public \
             --grep "\[${{ matrix.viewport }}\]"
+
+
 
       - name: Upload report + snapshots
         if: always()

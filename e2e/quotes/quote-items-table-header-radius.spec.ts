@@ -7,6 +7,11 @@
  *  - Última `th` (visível) tem border-top-right-radius > 0.
  *  - O overflow horizontal, quando existir por causa do min-width da tabela,
  *    fica contido no scroller e não aumenta a largura do documento.
+ *  - Quando o engine suporta `scrollbar-gutter: stable`, a máscara de canto
+ *    pode estar ausente (redundante). Quando presente, sua altura é validada
+ *    contra a altura real do <thead>.
+ *  - scrollLeft/scrollWidth: ao rolar horizontalmente, nenhuma <th> some do
+ *    DOM e o header completo permanece dentro do bounding-box do scroller.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { gotoAndSettle } from '../helpers/nav';
@@ -35,16 +40,14 @@ for (const vp of VIEWPORTS) {
     const fixture = page.getByTestId('quote-items-table-fixture-many');
     const wrapper = fixture.getByTestId('quote-items-table-wrapper');
     const scroller = fixture.getByTestId('quote-items-table-scroll');
-    const cornerMask = fixture.getByTestId('quote-items-table-scrollbar-corner-mask');
     await expect(wrapper).toBeVisible();
     await expect(scroller).toBeVisible();
-    await expect(cornerMask).toBeVisible();
 
-    // Wrapper visual: 4 cantos arredondados e overflow hidden, que é o que recorta
-    // o header azul quando a tabela usa min-width e/ou há scrollbar interna.
+    // ── Wrapper: 4 cantos arredondados e overflow hidden (recorta header azul).
     const MIN_RADIUS_PX = 2;
     const wrapperMetrics = await wrapper.evaluate((el) => {
       const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
       return {
         tl: cs.borderTopLeftRadius,
         tr: cs.borderTopRightRadius,
@@ -52,8 +55,8 @@ for (const vp of VIEWPORTS) {
         br: cs.borderBottomRightRadius,
         overflowX: cs.overflowX,
         overflowY: cs.overflowY,
-        rectLeft: el.getBoundingClientRect().left,
-        rectRight: el.getBoundingClientRect().right,
+        rectLeft: r.left,
+        rectRight: r.right,
       };
     });
     for (const [corner, value] of Object.entries({
@@ -64,86 +67,144 @@ for (const vp of VIEWPORTS) {
     })) {
       expect(
         px(value),
-        `wrapper ${corner} @${vp.name} = "${value}" (esperado >= ${MIN_RADIUS_PX}px)`,
+        `wrapper ${corner} @${vp.name} = "${value}" (>= ${MIN_RADIUS_PX}px)`,
       ).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
     }
-    expect(wrapperMetrics.overflowX, `wrapper overflow-x @${vp.name}`).toBe('hidden');
-    expect(wrapperMetrics.overflowY, `wrapper overflow-y @${vp.name}`).toBe('hidden');
+    expect(wrapperMetrics.overflowX).toBe('hidden');
+    expect(wrapperMetrics.overflowY).toBe('hidden');
 
-    // Overflow: a tabela pode ser maior que o viewport no mobile (min-width),
-    // mas esse excesso precisa ficar contido no scroller, sem alargar o documento.
+    // ── Scroller: scrollbar-gutter:stable garantido (SSOT visual cross-engine).
+    const scrollerCss = await scroller.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        overflowX: cs.overflowX,
+        overflowY: cs.overflowY,
+        gutter: cs.scrollbarGutter || '',
+      };
+    });
+    expect(scrollerCss.overflowX).toBe('auto');
+    expect(scrollerCss.overflowY).toBe('auto');
+
+    // ── Overflow horizontal contido no scroller, sem alargar o documento.
     const overflow = await scroller.evaluate((el) => {
-      const documentWidth = document.documentElement.scrollWidth;
-      const viewportWidth = window.innerWidth;
       const table = el.querySelector('table');
       const rect = el.getBoundingClientRect();
-      const tableWidth = table?.getBoundingClientRect().width ?? 0;
       return {
         scrollerScrollWidth: el.scrollWidth,
         scrollerClientWidth: el.clientWidth,
+        scrollerScrollLeft: el.scrollLeft,
         rectLeft: rect.left,
         rectRight: rect.right,
-        documentWidth,
-        viewportWidth,
-        tableWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: window.innerWidth,
+        tableWidth: table?.getBoundingClientRect().width ?? 0,
       };
     });
     expect(
       overflow.documentWidth,
-      `document width (${overflow.documentWidth}) não deve exceder viewport (${overflow.viewportWidth}) @${vp.name}`,
+      `document (${overflow.documentWidth}) <= viewport (${overflow.viewportWidth}) @${vp.name}`,
     ).toBeLessThanOrEqual(overflow.viewportWidth + 2);
-    expect(
-      overflow.scrollerScrollWidth,
-      `scroller deve conter a largura da tabela @${vp.name}`,
-    ).toBeGreaterThanOrEqual(Math.round(overflow.tableWidth) - 2);
-    expect(
-      overflow.rectLeft,
-      `scroller não deve vazar à esquerda do wrapper @${vp.name}`,
-    ).toBeGreaterThanOrEqual(wrapperMetrics.rectLeft - 2);
-    expect(
-      overflow.rectRight,
-      `scroller não deve vazar à direita do wrapper @${vp.name}`,
-    ).toBeLessThanOrEqual(wrapperMetrics.rectRight + 2);
+    expect(overflow.scrollerScrollWidth).toBeGreaterThanOrEqual(Math.round(overflow.tableWidth) - 2);
+    expect(overflow.rectLeft).toBeGreaterThanOrEqual(wrapperMetrics.rectLeft - 2);
+    expect(overflow.rectRight).toBeLessThanOrEqual(wrapperMetrics.rectRight + 2);
 
-    // Header: 1ª th com TL>0; última th com TR>0.
+    // ── Header: 1ª th TL>0; última th TR>0; pintado nas células (não no <tr>).
     const ths = scroller.locator('thead tr > th');
     const count = await ths.count();
     expect(count).toBeGreaterThan(1);
 
     const firstTl = await ths.first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
     const lastTr = await ths.nth(count - 1).evaluate((el) => getComputedStyle(el).borderTopRightRadius);
-
     expect(px(firstTl), `1ª th TL @${vp.name} = "${firstTl}"`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
     expect(px(lastTr), `última th TR @${vp.name} = "${lastTr}"`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
 
-    // O fundo azul deve estar nas células, não no <tr>; com border-collapse: collapse
-    // + background no <tr>, Chromium/WebKit podem pintar um canto quadrado apesar
-    // do border-radius computado no th.
     const paintModel = await scroller.locator('thead tr').evaluate((el) => {
       const table = el.closest('table');
-      const rowBg = getComputedStyle(el).backgroundColor;
-      const tableCollapse = table ? getComputedStyle(table).borderCollapse : '';
-      return { rowBg, tableCollapse };
-    });
-    expect(paintModel.rowBg, `thead tr não deve pintar fundo próprio @${vp.name}`).toBe('rgba(0, 0, 0, 0)');
-    expect(paintModel.tableCollapse, `table border-collapse @${vp.name}`).toBe('separate');
-
-    const cornerMaskMetrics = await cornerMask.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      const rect = el.getBoundingClientRect();
       return {
-        bg: cs.backgroundColor,
-        radius: cs.borderTopRightRadius,
-        width: rect.width,
-        height: rect.height,
+        rowBg: getComputedStyle(el).backgroundColor,
+        collapse: table ? getComputedStyle(table).borderCollapse : '',
       };
     });
-    expect(
-      px(cornerMaskMetrics.radius),
-      `máscara do canto direito deve manter arredondamento @${vp.name}`,
-    ).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
-    expect(cornerMaskMetrics.width, `máscara cobre trilho da scrollbar @${vp.name}`).toBeGreaterThanOrEqual(12);
-    expect(cornerMaskMetrics.height, `máscara cobre altura do header @${vp.name}`).toBeGreaterThanOrEqual(32);
-    expect(cornerMaskMetrics.bg, `máscara deve usar fundo azul do header @${vp.name}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(paintModel.rowBg).toBe('rgba(0, 0, 0, 0)');
+    expect(paintModel.collapse).toBe('separate');
+
+    // ── Header não fica cortado: cada <th> está dentro do rect do scroller
+    // (considerando scroll horizontal). Nenhuma célula deve ter width 0.
+    const scrollerRect = await scroller.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right, top: r.top };
+    });
+    const theadHeight = await scroller.locator('thead').evaluate((el) => el.getBoundingClientRect().height);
+    expect(theadHeight, `<thead> deve ter altura > 0 @${vp.name}`).toBeGreaterThan(0);
+
+    for (let i = 0; i < count; i++) {
+      const box = await ths.nth(i).evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right, width: r.width, top: r.top, height: r.height };
+      });
+      expect(box.width, `th[${i}] width > 0 @${vp.name}`).toBeGreaterThan(0);
+      expect(box.height, `th[${i}] height > 0 @${vp.name}`).toBeGreaterThan(0);
+      // top do header deve coincidir com top do scroller (sticky) — ±2px.
+      expect(Math.abs(box.top - scrollerRect.top)).toBeLessThanOrEqual(2);
+    }
+
+    // ── scrollLeft: rola horizontalmente até o fim e confirma que a última th
+    // continua visível dentro do scroller (não é cortada por overflow-hidden).
+    if (overflow.scrollerScrollWidth > overflow.scrollerClientWidth + 1) {
+      await scroller.evaluate((el) => {
+        el.scrollLeft = el.scrollWidth;
+      });
+      const after = await scroller.evaluate((el) => ({
+        scrollLeft: el.scrollLeft,
+        clientWidth: el.clientWidth,
+        scrollWidth: el.scrollWidth,
+      }));
+      expect(after.scrollLeft, `scrollLeft progrediu @${vp.name}`).toBeGreaterThan(0);
+      // scrollLeft máximo ≈ scrollWidth - clientWidth (±2px).
+      expect(after.scrollLeft).toBeGreaterThanOrEqual(after.scrollWidth - after.clientWidth - 2);
+
+      const lastThRect = await ths.nth(count - 1).evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right };
+      });
+      const scrollerAfter = await scroller.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right };
+      });
+      expect(lastThRect.right, `última th visível após scrollLeft @${vp.name}`).toBeLessThanOrEqual(
+        scrollerAfter.right + 2,
+      );
+      expect(lastThRect.left).toBeGreaterThanOrEqual(scrollerAfter.left - 2);
+      // Reset
+      await scroller.evaluate((el) => {
+        el.scrollLeft = 0;
+      });
+    }
+
+    // ── Máscara de canto: OPCIONAL — só existe em engines sem `scrollbar-gutter: stable`.
+    // Quando presente, sua altura DEVE bater com a altura real do <thead> (±2px),
+    // garantindo que não dependemos mais da constante h-[2.375rem].
+    const cornerMask = fixture.getByTestId('quote-items-table-scrollbar-corner-mask');
+    const maskCount = await cornerMask.count();
+    if (maskCount > 0) {
+      const m = await cornerMask.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return { bg: cs.backgroundColor, radius: cs.borderTopRightRadius, w: r.width, h: r.height };
+      });
+      expect(px(m.radius)).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+      expect(m.w).toBeGreaterThanOrEqual(12);
+      expect(m.bg).not.toBe('rgba(0, 0, 0, 0)');
+      expect(
+        Math.abs(m.h - theadHeight),
+        `máscara (${m.h}px) deve igualar altura real do thead (${theadHeight}px) @${vp.name}`,
+      ).toBeLessThanOrEqual(2);
+    } else {
+      // Sem máscara: scrollbar-gutter:stable é obrigatório como alternativa.
+      expect(
+        scrollerCss.gutter,
+        `sem máscara, scrollbar-gutter deve ser "stable" @${vp.name} (got "${scrollerCss.gutter}")`,
+      ).toContain('stable');
+    }
   });
 }
