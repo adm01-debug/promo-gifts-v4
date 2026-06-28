@@ -107,7 +107,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const headerCellClass = cn(
     qvSpacing.cell,
     qvType.tableHead,
-    'bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15',
+    'bg-primary print:bg-primary/15',
     'text-primary-foreground',
   );
 
@@ -433,7 +433,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             <div
               aria-hidden="true"
               data-testid="quote-items-table-scrollbar-corner-mask"
-              className="pointer-events-none absolute right-0 top-0 z-20 h-[2.375rem] w-5 rounded-tr-lg bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:hidden"
+              className="pointer-events-none absolute right-0 top-0 z-20 h-[2.375rem] w-5 rounded-tr-lg bg-primary print:hidden"
             />
           )}
         </div>
