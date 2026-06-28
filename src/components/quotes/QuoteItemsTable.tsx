@@ -480,7 +480,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               'aria-describedby': 'quote-items-scroll-help',
             })}
           >
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+            <table
+              aria-label={`Lista de ${totalRows} itens do orçamento`}
+              className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
+            >
+
               <ColGroup />
               <tbody>
                 {Array.from(kitGroups.entries()).map(([groupId, group]) => (
