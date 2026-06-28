@@ -458,10 +458,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               className="pointer-events-none absolute right-0 top-0 z-20 flex w-[18px] items-center justify-center rounded-tr-lg bg-primary print:hidden"
               data-scroll-hint={scrollState.bottom ? 'end' : 'more'}
             >
-              <ArrowUpDown
-                className="h-4 w-4 text-primary-foreground"
-                strokeWidth={2}
-              />
 
             </div>
           )}
