@@ -50,6 +50,7 @@ import { useExternalCollections, useExternalCollectionProducts } from '@/hooks/c
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
