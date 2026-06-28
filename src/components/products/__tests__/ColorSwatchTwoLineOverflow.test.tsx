@@ -341,3 +341,60 @@ describe('A11y — aria-label do chip plural/singular (single-line)', () => {
     expect(screen.getByTestId('color-swatches-overflow').getAttribute('aria-label')).toBe(expected);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A11y — tab order e navegação por teclado entre swatches
+// Contrato: chip "+N" é informacional (span sem tabindex). Foco percorre apenas
+// os swatches focáveis; Tab/Shift+Tab alternam entre eles.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('A11y — navegação por teclado entre swatches', () => {
+  it('V1 wrap com overflow: tab order pula o chip (apenas swatches focáveis)', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches
+          colors={makeColors(20)}
+          max={14}
+          wrap
+          hideWhenEmpty={false}
+          onSelect={() => {}}
+        />
+      </TooltipProvider>,
+    );
+    const radios = screen.getAllByRole('radio') as HTMLButtonElement[];
+    const chip = screen.getByTestId('color-swatches-overflow');
+
+    // Todos os swatches participam do tab order natural (button sem tabindex=-1)
+    radios.forEach((r) => expect(r.getAttribute('tabindex')).not.toBe('-1'));
+    // Chip fora do tab order (span sem tabindex)
+    expect(chip.getAttribute('tabindex')).toBeNull();
+
+    // Alterna foco entre swatches programaticamente (jsdom não dispara Tab nativo)
+    radios[0].focus();
+    expect(document.activeElement).toBe(radios[0]);
+    radios[1].focus();
+    expect(document.activeElement).toBe(radios[1]);
+  });
+
+  it('V1: Enter alterna seleção entre dois swatches diferentes', () => {
+    const onSelect = vi.fn();
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches
+          colors={makeColors(4)}
+          max={14}
+          wrap
+          hideWhenEmpty={false}
+          onSelect={onSelect}
+        />
+      </TooltipProvider>,
+    );
+    const [a, b] = screen.getAllByRole('radio') as HTMLButtonElement[];
+    a.focus();
+    fireEvent.keyDown(a, { key: 'Enter' });
+    b.focus();
+    fireEvent.keyDown(b, { key: 'Enter' });
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(onSelect.mock.calls[0][0].name).toBe('cor-0');
+    expect(onSelect.mock.calls[1][0].name).toBe('cor-1');
+  });
+});
