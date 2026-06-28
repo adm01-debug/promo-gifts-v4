@@ -169,7 +169,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         {hasPersonalizations && (
           <td className={qvSpacing.cell}>
             {allPersonalizations.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
                 {allPersonalizations.map((p, pIdx) => {
                   const notesRaw = p.notes || '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
