@@ -169,7 +169,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         {hasPersonalizations && (
           <td className={qvSpacing.cell}>
             {allPersonalizations.length > 0 ? (
-              <div className="space-y-1.5">
+              <div className="flex flex-wrap gap-1">
                 {allPersonalizations.map((p, pIdx) => {
                   const notesRaw = p.notes || '';
                   const [locationPart, dimPart] = notesRaw.split(' | ');
@@ -180,31 +180,34 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   } else if (p.width_cm && p.height_cm) {
                     dimLabel = `${p.width_cm} × ${p.height_cm} cm`;
                   }
+                  const colorsCount = p.colors_count || 1;
+                  const meta = [
+                    locationLabel,
+                    dimLabel,
+                    `${colorsCount} cor${colorsCount > 1 ? 'es' : ''}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ');
                   return (
-                    <div key={pIdx} className={cn(pIdx > 0 && 'border-t border-border/40 pt-1.5')}>
-                      <div className="inline-flex flex-col gap-0.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-1">
-                        <span className="flex items-center gap-1 text-[11px] font-semibold text-primary">
-                          ✦ {p.technique_name}
-                        </span>
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                          {locationLabel && (
-                            <span className="font-medium text-foreground">{locationLabel}</span>
-                          )}
-                          {dimLabel && (
-                            <span className="font-medium text-foreground">{dimLabel}</span>
-                          )}
-                          <span>
-                            {p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? 'es' : ''}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <span
+                      key={pIdx}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] leading-tight"
+                      title={`${p.technique_name} — ${meta}`}
+                    >
+                      <span className="font-semibold text-primary">
+                        ✦ {p.technique_name}
+                      </span>
+                      {meta && (
+                        <span className="text-muted-foreground">{meta}</span>
+                      )}
+                    </span>
                   );
                 })}
               </div>
             ) : (
               <span className="text-xs text-muted-foreground">—</span>
             )}
+
           </td>
         )}
         <td className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}>{item.quantity}</td>
