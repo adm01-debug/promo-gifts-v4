@@ -416,7 +416,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   const ColGroup = () => (
     <colgroup>
-      <col style={{ width: '28%' }} />
+      <col style={{ width: 'clamp(180px, 26%, 280px)' }} />
       {hasPersonalizations && <col />}
       <col style={{ width: '3.5rem' }} />
       <col style={{ width: '5.5rem' }} />
@@ -424,6 +424,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <col style={{ width: '6rem' }} className="print:hidden" />
     </colgroup>
   );
+
 
 
   return (
