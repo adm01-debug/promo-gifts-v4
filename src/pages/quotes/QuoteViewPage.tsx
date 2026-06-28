@@ -381,9 +381,8 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <section aria-labelledby="quote-terms-heading">
-                  <h3 id="quote-terms-heading" className={`${qvSpacing.eyebrowGap} ${qvType.eyebrow}`}>
-                    Condições Comerciais
-                  </h3>
+                  <SectionEyebrow id="quote-terms-heading">Condições Comerciais</SectionEyebrow>
+
 
                   <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${qvSpacing.termsGrid}`}>
                     {quote.payment_terms && (
