@@ -151,7 +151,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     />
                   )}
                   {item.product_sku}
-                  {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
               <p className={cn(qvType.productName, isProductRemoved && 'text-muted-foreground')}>
