@@ -443,7 +443,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           >
             <table
               aria-label="Cabeçalho da tabela de itens do orçamento"
-              className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
+              className="w-full table-fixed border-separate border-spacing-0"
             >
               <ColGroup />
               <thead ref={theadRef}>
