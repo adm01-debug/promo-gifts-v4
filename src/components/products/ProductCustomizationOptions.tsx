@@ -200,12 +200,8 @@ export function ProductCustomizationOptions({
   const mutuallyExclusive = hasCircularOption && hasFlatOption;
 
   const summaryItems = Array.from(pricesRef.current.values());
-  const summaryTotal = summaryItems.reduce(
-    (acc, it) => acc + (it.price?.total_cobrado ?? 0),
-    0,
-  );
 
-  const summary = summaryItems.length > 0 && (
+  const summary = pricesRef.current.size > 0 && (
     <div
       className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
       data-testid="customization-summary"
