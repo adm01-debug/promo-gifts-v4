@@ -52,13 +52,8 @@ export function getColorSwatchClasses({
   return cn(
     // Base — mesmo border/shadow do catálogo, posicionamento relativo para overlays
     'relative inline-block rounded-full border border-border/40 shadow-sm transition-all',
-    // Ativo/selecionado: aro de ALTO CONTRASTE (foreground) com offset do
-    // background — garante visibilidade em swatches de qualquer cor, inclusive
-    // quando a cor da bolinha coincide com `--primary` (laranja do tema).
-    // Mantém leve scale + halo primary interno como acento.
-    isActive &&
-      'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-foreground ring-offset-2 ring-offset-background shadow-[var(--swatch-selected-glow)] after:pointer-events-none after:absolute after:inset-[2px] after:rounded-full after:shadow-[var(--swatch-selected-inner-highlight)] after:content-[""]',
-
+    // Ativo/selecionado (catálogo + estoque)
+    isActive && 'z-10 ring-2 ring-primary ring-offset-1',
     // Sem cor definida — borda tracejada de placeholder
     !hasBg && 'border-dashed border-muted-foreground/40',
     // Esgotado — MANTÉM a cor da bolinha; o ÚNICO indicador é o risco diagonal.
