@@ -248,7 +248,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             </div>
           </div>
 
-          </div>
+
 
           {/* Personalizations Detail */}
           {personalizations.length > 0 && (
