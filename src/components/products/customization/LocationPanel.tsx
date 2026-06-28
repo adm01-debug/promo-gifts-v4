@@ -489,62 +489,60 @@ export function LocationPanel({
         </div>
       )}
 
-      {/* Picker de técnicas (Estado A ou C) — motion expand/collapse */}
-      <AnimatePresence initial={false}>
-        {showPicker && (
-          <motion.div
-            ref={firstCardRef}
-            id={pickerId}
-            role="radiogroup"
-            tabIndex={0}
-            aria-label={
-              selectedTechnique
-                ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
-                : `Escolha a técnica de gravação para ${location.location_name}.`
+      {/* Picker de técnicas (Estado A ou C) — motion enter animation */}
+      {showPicker && (
+        <motion.div
+          ref={firstCardRef}
+          id={pickerId}
+          role="radiogroup"
+          tabIndex={0}
+          aria-label={
+            selectedTechnique
+              ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
+              : `Escolha a técnica de gravação para ${location.location_name}.`
+          }
+          className="overflow-hidden rounded-lg border border-border/50 bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          data-testid="customization-technique-picker"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && selectedTechnique) {
+              setIsPickerOpen(false);
             }
-            className="overflow-hidden rounded-lg border border-border/50 bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            data-testid="customization-technique-picker"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape' && selectedTechnique) {
-                setIsPickerOpen(false);
-              }
-            }}
-          >
-            <div className="space-y-2 p-2.5">
-              {selectedTechnique && (
-                <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Escolha a nova técnica
-                  <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
-                    · atual: {selectedTechnique.tecnica_nome}
-                  </span>
-                </p>
-              )}
+          }}
+        >
+          <div className="space-y-2 p-2.5">
+            {selectedTechnique && (
+              <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Escolha a nova técnica
+                <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
+                  · atual: {selectedTechnique.tecnica_nome}
+                </span>
+              </p>
+            )}
 
-              {Object.entries(grouped).map(([grupo, techs]) => (
-                <div key={grupo} className="space-y-1">
-                  {Object.keys(grouped).length > 1 && (
-                    <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
-                      {grupo.replace('_', ' ')}
-                    </p>
-                  )}
-                  {techs.map((t) => (
-                    <TechniqueCard
-                      key={t.technique_id}
-                      technique={t}
-                      isSelected={selectedTechnique?.technique_id === t.technique_id}
-                      onSelect={handleSelectTechnique}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {Object.entries(grouped).map(([grupo, techs]) => (
+              <div key={grupo} className="space-y-1">
+                {Object.keys(grouped).length > 1 && (
+                  <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+                    {grupo.replace('_', ' ')}
+                  </p>
+                )}
+                {techs.map((t) => (
+                  <TechniqueCard
+                    key={t.technique_id}
+                    technique={t}
+                    isSelected={selectedTechnique?.technique_id === t.technique_id}
+                    onSelect={handleSelectTechnique}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
 
 
       {/* Configuration panel — permanece MONTADO mesmo com o picker aberto,
