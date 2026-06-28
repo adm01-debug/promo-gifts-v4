@@ -92,8 +92,9 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
 
   return (
     <ScrollArea className="h-[calc(100vh-9rem)] pr-3">
-      <div className="relative pl-1">
-        <TimelineLine leftClassName="left-[19px]" />
+      <div className="relative">
+        <TimelineLine leftClassName="left-[15px]" />
+
 
 
         <ol className="space-y-1.5">
