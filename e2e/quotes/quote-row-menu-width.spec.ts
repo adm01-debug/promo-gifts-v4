@@ -91,18 +91,59 @@ for (const vp of [
         ).toBeLessThanOrEqual(1);
       }
 
-      // Hover + focus em "Histórico" não devem alterar a largura do menu.
+      // Hover + focus em "Histórico" — falha com diagnóstico completo.
       const historico = content.locator('[role="menuitem"]', { hasText: /hist/i }).first();
       if (await historico.count()) {
-        const baseBox = await content.boundingBox();
+        const snap = async (label: string) => {
+          const data = await content.evaluate((el) => {
+            const c = getComputedStyle(el as HTMLElement);
+            const h = el as HTMLElement;
+            const r = h.getBoundingClientRect();
+            return {
+              width: c.width,
+              minWidth: c.minWidth,
+              maxWidth: c.maxWidth,
+              boxWidth: r.width,
+              boxX: r.x,
+              scrollW: h.scrollWidth,
+              clientW: h.clientWidth,
+            };
+          });
+          return { label, ...data };
+        };
+        const fmt = (s: Awaited<ReturnType<typeof snap>>) =>
+          `[${s.label}] vp=${vp.name}(${vp.width}px) width=${s.width} minWidth=${s.minWidth} ` +
+          `maxWidth=${s.maxWidth} box.width=${s.boxWidth.toFixed(2)} box.x=${s.boxX.toFixed(2)} ` +
+          `scrollW=${s.scrollW} clientW=${s.clientW} overflow=${s.scrollW - s.clientW}`;
+
+        const base = await snap('idle');
         await historico.hover();
-        const hoverBox = await content.boundingBox();
-        expect(Math.abs((hoverBox!.width) - (baseBox!.width))).toBeLessThanOrEqual(0.5);
+        const hover = await snap('hover');
         await historico.focus();
-        const focusBox = await content.boundingBox();
-        expect(Math.abs((focusBox!.width) - (baseBox!.width))).toBeLessThanOrEqual(0.5);
-        expect(focusBox!.x + focusBox!.width).toBeLessThanOrEqual(vp.width + 1);
+        const focus = await snap('focus');
+
+        expect(
+          Math.abs(hover.boxWidth - base.boxWidth),
+          `width mudou no hover.\n${fmt(base)}\n${fmt(hover)}`,
+        ).toBeLessThanOrEqual(0.5);
+        expect(
+          Math.abs(focus.boxWidth - base.boxWidth),
+          `width mudou no focus.\n${fmt(base)}\n${fmt(focus)}`,
+        ).toBeLessThanOrEqual(0.5);
+        expect(
+          focus.boxX + focus.boxWidth,
+          `menu transbordou viewport ${vp.width}px no focus.\n${fmt(focus)}`,
+        ).toBeLessThanOrEqual(vp.width + 1);
+        expect(
+          focus.scrollW - focus.clientW,
+          `menu com overflow horizontal no focus.\n${fmt(focus)}`,
+        ).toBeLessThanOrEqual(1);
       }
+
+      await expect(content).toHaveScreenshot(`quote-row-menu-${vp.name}.png`, SNAP);
+    });
+  });
+}
 
       await expect(content).toHaveScreenshot(`quote-row-menu-${vp.name}.png`, SNAP);
     });
