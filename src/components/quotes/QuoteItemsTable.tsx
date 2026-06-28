@@ -363,7 +363,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             ref={scrollRef}
             onKeyDown={onScrollerKeyDown}
             className={cn(
-              'overflow-x-auto',
+              'overflow-x-auto [scrollbar-gutter:stable]',
               enableInnerScroll && [
                 'overflow-y-auto',
                 'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
