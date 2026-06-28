@@ -24,7 +24,7 @@ describe('chip "+N" — escala em altura, sem cortar texto', () => {
       </TooltipProvider>,
     );
     const chip = screen.getByTestId('color-swatches-overflow');
-    expect(chip).toHaveTextContent('+12'); // 17 - 5 = 12 → dois dígitos
+    expect(chip).toHaveTextContent('+13'); // contrato novo: chip substitui slot → 17 - (5-1) = 13
     expect(chip.className).toContain('min-w-[var(--swatch-size');
   });
 
