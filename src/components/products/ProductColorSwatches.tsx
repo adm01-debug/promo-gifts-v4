@@ -171,13 +171,14 @@ export const ProductColorSwatches = memo(
       <div
         className={cn(
           wrap
-            ? // Modo wrap: múltiplas linhas, altura automática, sem clipping nas bordas.
+            ? // Modo wrap: até 2 linhas, altura travada para garantir o "+N" no fim.
               //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
-              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[calc(2*var(--swatch-size,var(--swatch-size-sm))+var(--swatch-gap-y)+2*var(--swatch-container-py))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
               'flex h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[var(--swatch-size,var(--swatch-size-sm))] min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
+
         role="radiogroup"
         aria-live="polite"
         aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
