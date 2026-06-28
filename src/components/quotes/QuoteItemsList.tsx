@@ -147,13 +147,24 @@ function QuoteItemRow({
               <Input
                 type="number"
                 min={1}
-                value={item.quantity}
+                inputMode="numeric"
+                value={item.quantity === 0 ? '' : item.quantity}
+                onFocus={(e) => e.currentTarget.select()}
                 onKeyDown={(e) => {
                   if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
                 }}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const raw = e.target.value;
+                  if (raw === '') {
+                    onUpdateQuantity(0);
+                    return;
+                  }
+                  const v = parseInt(raw, 10);
+                  if (!Number.isNaN(v)) onUpdateQuantity(Math.max(0, v));
+                }}
+                onBlur={(e) => {
                   const v = parseInt(e.target.value, 10);
-                  onUpdateQuantity(Math.max(1, v || 1));
+                  onUpdateQuantity(Number.isNaN(v) || v < 1 ? 1 : v);
                 }}
                 className="h-7 w-16 px-2 text-xs tabular-nums"
               />
