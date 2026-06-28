@@ -291,6 +291,33 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   }>({ top: true, bottom: !enableInnerScroll, progress: 0 });
   const [announcement, setAnnouncement] = React.useState('');
   const announceTimer = React.useRef<number | null>(null);
+  const theadRef = React.useRef<HTMLTableSectionElement>(null);
+  const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
+  // Quando o engine suporta `scrollbar-gutter: stable`, o trilho da scrollbar é
+  // reservado dentro do scroller (não sobrepõe o header), tornando a máscara de
+  // canto redundante. Quando NÃO suporta (alguns WebKits antigos), renderizamos
+  // a máscara para evitar canto quadrado no topo-direito.
+  const [needsCornerMask, setNeedsCornerMask] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!enableInnerScroll) return;
+    const supportsGutter =
+      typeof CSS !== 'undefined' &&
+      typeof CSS.supports === 'function' &&
+      CSS.supports('scrollbar-gutter: stable');
+    setNeedsCornerMask(!supportsGutter);
+  }, [enableInnerScroll]);
+
+  React.useEffect(() => {
+    if (!enableInnerScroll) return;
+    const el = theadRef.current;
+    if (!el) return;
+    const measure = () => setHeaderHeight(el.getBoundingClientRect().height);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [enableInnerScroll]);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
