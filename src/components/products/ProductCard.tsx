@@ -839,14 +839,15 @@ export const ProductCard = memo(
                   }
                 }}
                 size="sm"
-                maxVisible={8}
+                maxVisible={14}
               />
             ) : (
               <ProductColorSwatches
                 colors={product.colors?.map((c) => ({ name: c.name, hex: c.hex ?? null }))}
-                max={6}
+                max={14}
                 size="sm"
                 wrap
+
                 hideWhenEmpty={false}
                 selectedName={activeColorName ?? null}
                 onSelect={(c) => {

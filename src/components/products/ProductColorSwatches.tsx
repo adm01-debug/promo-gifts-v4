@@ -157,10 +157,13 @@ export const ProductColorSwatches = memo(
     }
 
     // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
-    // Em modo `wrap`, exibe todas as cores sem chip de overflow.
-    const effectiveMax = wrap ? colors.length : Math.max(1, max);
-    const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
-    const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
+    // Regra unificada (wrap ou não): se sobrar, a ÚLTIMA bolinha é o chip "+N";
+    // nunca colocamos o chip após o limite.
+    const effectiveMax = Math.max(1, max);
+    const hasOverflow = colors.length > effectiveMax;
+    const overflow = hasOverflow ? colors.length - (effectiveMax - 1) : 0;
+    const visible = hasOverflow ? colors.slice(0, effectiveMax - 1) : colors;
+
 
     const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
 
@@ -168,13 +171,14 @@ export const ProductColorSwatches = memo(
       <div
         className={cn(
           wrap
-            ? // Modo wrap: múltiplas linhas, altura automática, sem clipping nas bordas.
+            ? // Modo wrap: até 2 linhas, altura travada para garantir o "+N" no fim.
               //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
-              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[calc(2*var(--swatch-size,var(--swatch-size-sm))+var(--swatch-gap-y)+2*var(--swatch-container-py))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
               'flex h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[var(--swatch-size,var(--swatch-size-sm))] min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
         )}
+
         role="radiogroup"
         aria-live="polite"
         aria-label={`${colors.length} cor${colors.length === 1 ? '' : 'es'} disponív${
