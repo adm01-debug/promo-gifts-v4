@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
+import { qvSpacing, qvType } from '@/components/quotes/quote-view-typography';
 
 const HARNESS_QUOTE_ID = 'harness-quote-id-0042';
 
