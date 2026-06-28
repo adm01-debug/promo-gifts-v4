@@ -69,7 +69,7 @@ export function QuoteClientInfo({
         )}
       </div>
       <div>
-        <div className="mb-2 flex items-center gap-1.5">
+        <div className={`${qvSpacing.eyebrowGap} flex items-center gap-1.5`}>
           <User className="h-3 w-3 text-primary" aria-hidden="true" />
           <h3 className={qvType.eyebrow}>Contato</h3>
         </div>
