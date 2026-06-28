@@ -206,40 +206,46 @@ export function ProductCustomizationOptions({
           ref={stickyHeaderRef}
           className="sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none"
         >
-          <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-medium text-muted-foreground md:gap-2 md:pb-0 md:text-[11px]">
-            <button
-              type="button"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex shrink-0 items-center gap-1 transition-colors hover:text-primary md:gap-1.5"
-            >
-              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground md:h-4 md:w-4 md:text-[10px]">
-                1
-              </span>
-              <span>Local</span>
-            </button>
-            <span className="shrink-0 text-muted-foreground/40">→</span>
-            <button
-              type="button"
-              onClick={() => scrollToStep(2)}
-              className="flex shrink-0 items-center gap-1 transition-colors hover:text-primary md:gap-1.5"
-            >
-              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-[9px] font-bold text-foreground md:h-4 md:w-4 md:text-[10px]">
-                2
-              </span>
-              <span>Técnica</span>
-            </button>
-            <span className="shrink-0 text-muted-foreground/40">→</span>
-            <button
-              type="button"
-              onClick={() => scrollToStep(3)}
-              className="flex shrink-0 items-center gap-1 transition-colors hover:text-primary md:gap-1.5"
-            >
-              <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-[9px] font-bold text-foreground md:h-4 md:w-4 md:text-[10px]">
-                3
-              </span>
-              <span>Tamanho</span>
-            </button>
-          </div>
+          <nav
+            aria-label="Etapas da personalização"
+            className="scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-medium text-muted-foreground md:gap-2 md:pb-0 md:text-[11px]"
+          >
+            {[
+              { n: 1, label: 'Local', onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }), active: !currentLocation || !pricesRef.current.get(currentLocation.location_code) ? true : false },
+              { n: 2, label: 'Técnica', onClick: () => scrollToStep(2), active: !!currentLocation && !pricesRef.current.get(currentLocation.location_code) },
+              { n: 3, label: 'Tamanho', onClick: () => scrollToStep(3), active: !!currentLocation && !!pricesRef.current.get(currentLocation.location_code) },
+            ].map((step, idx, arr) => (
+              <div key={step.n} className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={step.onClick}
+                  aria-current={step.active ? 'step' : undefined}
+                  aria-label={`Etapa ${step.n}: ${step.label}${step.active ? ' (atual)' : ''}`}
+                  className={cn(
+                    'flex shrink-0 items-center gap-1 rounded-md px-1 py-0.5 transition-colors hover:text-primary md:gap-1.5',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                    step.active && 'text-foreground',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] font-bold md:h-4 md:w-4 md:text-[10px]',
+                      step.active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground',
+                    )}
+                  >
+                    {step.n}
+                  </span>
+                  <span>{step.label}</span>
+                </button>
+                {idx < arr.length - 1 && (
+                  <span className="shrink-0 text-muted-foreground/40" aria-hidden>→</span>
+                )}
+              </div>
+            ))}
+          </nav>
+
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
