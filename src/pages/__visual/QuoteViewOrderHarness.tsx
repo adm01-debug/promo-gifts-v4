@@ -39,7 +39,76 @@ import {
 } from '@/components/ui/alert-dialog';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 import { QuoteItemDetailSheet } from '@/components/quotes/QuoteItemDetailSheet';
+import { QuoteItemsTable, type QuoteItem } from '@/components/quotes/QuoteItemsTable';
 import { qvSpacing, qvType } from '@/components/quotes/quote-view-typography';
+
+/**
+ * Fixtures determinísticos para validar QuoteItemsTable em E2E:
+ *  - item sem personalização (0)
+ *  - item com 1 personalização
+ *  - item com 2+ personalizações (testa grid 2-col em md+)
+ */
+const HARNESS_TABLE_ITEMS: QuoteItem[] = [
+  {
+    id: 'fx-0',
+    product_name: 'Abridor de garrafa aço',
+    product_sku: '19049',
+    color_name: 'AZUL',
+    color_hex: '#1E88E5',
+    quantity: 10,
+    unit_price: 5.25,
+    personalizations: [],
+  },
+  {
+    id: 'fx-1',
+    product_name: 'Caneta esferográfica plástica',
+    product_sku: '88123',
+    color_name: 'BRANCA',
+    color_hex: '#FFFFFF',
+    quantity: 100,
+    unit_price: 1.2,
+    personalizations: [
+      {
+        id: 'p1',
+        technique_name: 'Tampografia | Plana',
+        width_cm: 4,
+        height_cm: 1,
+        colors_count: 1,
+        total_cost: 80,
+        notes: 'Lado A — TAMPO-01 | 4x1cm',
+      },
+    ],
+  },
+  {
+    id: 'fx-2',
+    product_name: 'Garrafa esportiva em alumínio 400 ml',
+    product_sku: '94297',
+    color_name: 'PRETO',
+    color_hex: '#111111',
+    quantity: 200,
+    unit_price: 23.4,
+    personalizations: [
+      {
+        id: 'p2a',
+        technique_name: 'Fiber Laser | Plana',
+        width_cm: 3,
+        height_cm: 12,
+        colors_count: 1,
+        total_cost: 470,
+        notes: 'Lado A — FIBER-PL-01 | 3x12cm',
+      },
+      {
+        id: 'p2b',
+        technique_name: 'Impressão Digital UV | Plano | Metal',
+        width_cm: 2.5,
+        height_cm: 12,
+        colors_count: 1,
+        total_cost: 520,
+        notes: 'Lado B — UV-METAL-02 | 2.5x12cm',
+      },
+    ],
+  },
+];
 
 
 const HARNESS_QUOTE_ID = 'harness-quote-id-0042';
@@ -250,6 +319,14 @@ export default function QuoteViewOrderHarness() {
                 }}
               />
             </div>
+
+            <Separator />
+            {/* Tabela com fixtures determinísticos (0/1/N personalizações) */}
+            <div data-testid="quote-items-table-fixture">
+              <QuoteItemsTable items={HARNESS_TABLE_ITEMS} />
+            </div>
+
+
 
           </CardContent>
         </Card>
