@@ -6,7 +6,6 @@
  */
 
 import { Check, Maximize2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TechniqueOption } from '@/types/customization';
 
