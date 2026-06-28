@@ -199,12 +199,38 @@ for (const vp of VIEWPORTS) {
         Math.abs(m.h - theadHeight),
         `máscara (${m.h}px) deve igualar altura real do thead (${theadHeight}px) @${vp.name}`,
       ).toBeLessThanOrEqual(2);
-    } else {
-      // Sem máscara: scrollbar-gutter:stable é obrigatório como alternativa.
+
+      // Seta indicadora de scroll dentro da máscara: presente, alinhada ao
+      // canto direito, e com hint "more" enquanto há conteúdo abaixo.
+      const hint = await cornerMask.getAttribute('data-scroll-hint');
+      expect(hint, `data-scroll-hint inicial @${vp.name}`).toBe('more');
+      const chevron = cornerMask.locator('svg').first();
+      await expect(chevron, `setinha SVG visível @${vp.name}`).toBeVisible();
+      const chevronBox = await chevron.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { w: r.width, h: r.height, top: r.top, right: r.right };
+      });
+      expect(chevronBox.w, `setinha width > 0 @${vp.name}`).toBeGreaterThan(0);
+      expect(chevronBox.h, `setinha height > 0 @${vp.name}`).toBeGreaterThan(0);
+      const maskRect = await cornerMask.evaluate((el) => el.getBoundingClientRect());
+      // Seta centralizada na máscara (±4px de tolerância).
       expect(
-        scrollerCss.gutter,
-        `sem máscara, scrollbar-gutter deve ser "stable" @${vp.name} (got "${scrollerCss.gutter}")`,
-      ).toContain('stable');
+        Math.abs(chevronBox.right - maskRect.right + (maskRect.width - chevronBox.w) / 2),
+      ).toBeLessThanOrEqual(4);
+
+      // Após scroll até o fim, hint muda para "end" (seta inverte).
+      await scroller.evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+      });
+      await expect
+        .poll(() => cornerMask.getAttribute('data-scroll-hint'), {
+          message: `data-scroll-hint após scroll @${vp.name}`,
+        })
+        .toBe('end');
+      await scroller.evaluate((el) => {
+        el.scrollTop = 0;
+      });
     }
+
   });
 }
