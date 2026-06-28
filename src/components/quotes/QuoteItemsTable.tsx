@@ -122,27 +122,27 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           isProductRemoved && 'bg-destructive/5 hover:bg-destructive/8',
         )}
       >
-        <td className="p-3">
-          <div className="flex items-center gap-3">
+        <td className="p-2.5">
+          <div className="flex items-center gap-2.5">
             {item.product_image_url ? (
               <img
                 src={item.product_image_url}
                 alt={item.product_name}
-                className="h-16 w-16 rounded border border-border object-cover print:hidden"
+                className="h-12 w-12 rounded border border-border object-cover print:hidden"
                 loading="lazy"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                 }}
               />
             ) : isProductRemoved ? (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded border border-destructive/30 bg-destructive/8 print:hidden">
-                <AlertTriangle className="h-6 w-6 text-destructive/60" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-destructive/30 bg-destructive/8 print:hidden">
+                <AlertTriangle className="h-5 w-5 text-destructive/60" />
               </div>
             ) : null}
             <div className="min-w-0">
               {item.product_sku && (
                 <span
-                  className="mb-1 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs font-semibold"
+                  className="mb-1 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-semibold"
                   style={{
                     backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
                     borderColor: item.color_hex || 'hsl(var(--border))',
@@ -151,7 +151,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 >
                   {item.color_hex && (
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-border/50"
+                      className="h-2 w-2 rounded-full border border-border/50"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
@@ -159,7 +159,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
-              <p className={cn('font-medium', isProductRemoved && 'text-muted-foreground')}>
+              <p className={cn('text-[13px] font-medium leading-snug', isProductRemoved && 'text-muted-foreground')}>
                 {item.product_name}
               </p>
               {isProductRemoved && (
@@ -172,7 +172,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         </td>
 
         {hasPersonalizations && (
-          <td className="p-3">
+          <td className="p-2.5">
             {allPersonalizations.length > 0 ? (
               <div className="space-y-1.5">
                 {allPersonalizations.map((p, pIdx) => {
@@ -187,11 +187,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   }
                   return (
                     <div key={pIdx} className={cn(pIdx > 0 && 'border-t border-border/30 pt-1.5')}>
-                      <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1.5">
-                        <span className="flex items-center gap-1 text-xs font-semibold text-primary">
+                      <div className="bg-primary/8 inline-flex flex-col gap-0.5 rounded-md border border-primary/20 px-2 py-1">
+                        <span className="flex items-center gap-1 text-[11px] font-semibold text-primary">
                           ✦ {p.technique_name}
                         </span>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                           {locationLabel && (
                             <span className="font-medium text-foreground/70">{locationLabel}</span>
                           )}
@@ -208,12 +208,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 })}
               </div>
             ) : (
-              <span className="text-sm text-muted-foreground">—</span>
+              <span className="text-xs text-muted-foreground">—</span>
             )}
           </td>
         )}
-        <td className="w-20 p-3 text-center text-sm font-semibold">{item.quantity}</td>
-        <td className="w-28 p-3 text-left tabular-nums text-muted-foreground">
+        <td className="w-16 p-2.5 text-center text-xs font-semibold tabular-nums">{item.quantity}</td>
+        <td className="w-24 p-2.5 text-left text-xs tabular-nums text-muted-foreground">
           <div className="flex flex-col gap-0.5">
             <span>
               {formatCurrency(
@@ -236,10 +236,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             )}
           </div>
         </td>
-        <td className="w-32 p-3 text-left text-base font-bold tabular-nums">
+        <td className="w-28 p-2.5 text-left text-sm font-semibold tabular-nums">
           {formatCurrency(itemTotal)}
         </td>
-        <td className="p-3 text-center print:hidden">
+        <td className="p-2.5 text-center print:hidden">
           <QuoteItemDetailSheet
             item={{
               product_name: item.product_name,
@@ -269,19 +269,19 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   return (
     <div>
-      <h3 className="mb-2.5 font-display text-xs font-semibold uppercase tracking-wide text-muted-foreground">Itens do Orçamento</h3>
+      <h3 className="mb-2 font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Itens do Orçamento</h3>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-primary/15">
-              <th className="p-3 text-left text-sm font-semibold text-primary">Produto</th>
+              <th className="p-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-primary">Produto</th>
               {hasPersonalizations && (
-                <th className="p-3 text-left text-sm font-semibold text-primary">Personalização</th>
+                <th className="p-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-primary">Personalização</th>
               )}
-              <th className="w-20 p-3 text-center text-sm font-semibold text-primary">Qtd</th>
-              <th className="w-28 p-3 text-left text-sm font-semibold text-primary">Unitário</th>
-              <th className="w-32 p-3 text-left text-sm font-semibold text-primary">Total</th>
-              <th className="w-24 p-3 text-center text-sm font-semibold text-primary print:hidden" />
+              <th className="w-16 p-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-primary">Qtd</th>
+              <th className="w-24 p-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-primary">Unitário</th>
+              <th className="w-28 p-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-primary">Total</th>
+              <th className="w-20 p-2.5 text-center text-[11px] font-semibold text-primary print:hidden" />
             </tr>
           </thead>
           <tbody>
