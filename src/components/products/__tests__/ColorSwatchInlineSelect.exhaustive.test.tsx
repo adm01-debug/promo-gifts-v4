@@ -506,7 +506,9 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
 // SUITE 3 — Auditoria estática dos 4 componentes modificados
 // ═══════════════════════════════════════════════════════════════════════════
 describe('Suite 3 — Auditoria estática de código (os 4 componentes)', () => {
-  const BASE = '/workspace/repos/promo-gifts-v4/src/components/products';
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const BASE = resolve(__dirname, '..');
   const PC   = `${BASE}/ProductCard.tsx`;
   const PLI  = `${BASE}/ProductListItem.tsx`;
   const PTR  = `${BASE}/table-view/ProductTableRow.tsx`;
