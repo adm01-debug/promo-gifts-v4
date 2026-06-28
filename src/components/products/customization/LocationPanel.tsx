@@ -11,7 +11,8 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
 import { Pencil, Info } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -119,12 +120,20 @@ function SelectedTechniqueBar({
   pickerId,
   changeButtonRef,
 }: SelectedTechniqueBarProps) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div
+    <motion.div
+      layout={reduceMotion ? false : 'position'}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
+      }
       className={cn(
-        'flex items-center justify-between gap-2 rounded-full border px-3 py-1.5 transition-colors',
+        'flex items-center justify-between gap-2 rounded-full border px-3 py-1.5',
+        'transition-[background-color,border-color,box-shadow] duration-200 ease-out',
         isPickerOpen
-          ? 'border-primary/50 bg-primary/[0.06]'
+          ? 'border-primary/50 bg-primary/[0.06] shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
           : 'border-border/60 bg-card',
       )}
     >
@@ -132,13 +141,19 @@ function SelectedTechniqueBar({
         <span
           className={cn(
             'h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-transform',
-            isPickerOpen && 'animate-pulse',
+            isPickerOpen && !reduceMotion && 'animate-pulse',
           )}
           aria-hidden
         />
-        <p className="truncate text-[13px] font-medium text-foreground">
+        <motion.p
+          key={technique.technique_id}
+          initial={reduceMotion ? false : { opacity: 0, y: -2 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+          className="truncate text-[13px] font-medium text-foreground"
+        >
           {technique.tecnica_nome}
-        </p>
+        </motion.p>
         {technique.grupo_tecnica && (
           <span className="hidden shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/70 sm:inline">
             · {technique.grupo_tecnica.replace('_', ' ')}
@@ -150,7 +165,7 @@ function SelectedTechniqueBar({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 shrink-0 gap-1 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+        className="h-7 shrink-0 gap-1 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         onClick={onChangeClick}
         aria-expanded={isPickerOpen}
         aria-controls={pickerId}
@@ -164,7 +179,7 @@ function SelectedTechniqueBar({
         <Pencil className="h-3 w-3" />
         {isPickerOpen ? 'Fechar' : 'Trocar'}
       </Button>
-    </div>
+    </motion.div>
   );
 }
 
@@ -182,6 +197,8 @@ export function LocationPanel({
   );
 
   const [announcement, setAnnouncement] = useState('');
+  const [isSwapping, setIsSwapping] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Hidrata estado inicial: confirmada > rascunho persistido > nada.
   const initialDraft = useMemo<LocationDraft | null>(
@@ -347,6 +364,8 @@ export function LocationPanel({
 
       setSelectedTechnique(technique);
       setIsPickerOpen(false);
+      setIsSwapping(true);
+      window.setTimeout(() => setIsSwapping(false), reduceMotion ? 0 : 140);
 
       // Foco automático no controle ajustado se houve clamp (A11y)
       setTimeout(() => {
@@ -364,7 +383,7 @@ export function LocationPanel({
       }, 50);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: see comment above
-    [selectedTechnique, toast],
+    [selectedTechnique, toast, reduceMotion],
   );
 
   const handlePriceCalculated = useCallback(
@@ -503,9 +522,9 @@ export function LocationPanel({
           }
           className="overflow-hidden rounded-lg border border-border/50 bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           data-testid="customization-technique-picker"
-          initial={{ opacity: 0, y: -4 }}
+          initial={reduceMotion ? false : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
           onKeyDown={(e) => {
             if (e.key === 'Escape' && selectedTechnique) {
               setIsPickerOpen(false);
@@ -549,7 +568,13 @@ export function LocationPanel({
           apenas ocultado via `hidden`. Isso preserva o hook reativo de preço
           e evita re-cálculo desnecessário ao clicar na mesma técnica. */}
       {showConfig && (
-        <div hidden={isPickerOpen} aria-hidden={isPickerOpen}>
+        <div
+          hidden={isPickerOpen}
+          aria-hidden={isPickerOpen}
+          /* Altura mínima evita layout-shift ao trocar técnica enquanto
+             o ConfigurationPanelV6 remonta (key muda) e recalcula preço. */
+          className="relative min-h-[260px]"
+        >
           <ConfigurationPanelV6
             key={selectedTechnique.technique_id}
             technique={selectedTechnique}
@@ -561,6 +586,31 @@ export function LocationPanel({
             onPriceCalculated={handlePriceCalculated}
             onDimensionsChange={handleDimensionsChange}
           />
+
+          {/* Skeleton overlay durante a troca de técnica — evita CLS e dá
+              feedback de "carregando" sem desmontar o painel (preserva foco e
+              hooks reativos). Respeita prefers-reduced-motion. */}
+          <AnimatePresence>
+            {isSwapping && (
+              <motion.div
+                key="config-skeleton-overlay"
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.12 }}
+                className="pointer-events-none absolute inset-0 z-10 space-y-2 rounded-md bg-background/85 p-2 backdrop-blur-[2px]"
+                data-testid="customization-config-skeleton"
+                aria-hidden="true"
+              >
+                <Skeleton className="h-8 w-2/3 rounded-md" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Skeleton className="h-16 rounded-md" />
+                  <Skeleton className="h-16 rounded-md" />
+                </div>
+                <Skeleton className="h-24 w-full rounded-md" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

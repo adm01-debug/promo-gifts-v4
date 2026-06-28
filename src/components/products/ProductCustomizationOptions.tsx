@@ -199,12 +199,75 @@ export function ProductCustomizationOptions({
   const hasFlatOption = locations.some((l) => !isCircularLocation(l));
   const mutuallyExclusive = hasCircularOption && hasFlatOption;
 
+  const summaryItems = Array.from(pricesRef.current.values());
+
+  const summary = pricesRef.current.size > 0 && (
+    <div
+      className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
+      data-testid="customization-summary"
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-success" />
+          <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Resumo das Configurações
+          </h4>
+        </div>
+        <span className="text-[10px] tabular-nums text-muted-foreground">
+          {summaryItems.length} {summaryItems.length === 1 ? 'local' : 'locais'}
+        </span>
+      </div>
+
+      <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
+        {summaryItems.map((item) => (
+          <div
+            key={item.locationCode}
+            className="flex items-center justify-between gap-3 px-3 py-2"
+          >
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
+                {item.locationName}
+              </span>
+              <span className="truncate text-[12px] font-medium text-foreground">
+                {item.techniqueName}
+              </span>
+              <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
+                {item.width && item.height && <>· {item.width}×{item.height}cm </>}
+                · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
+              </span>
+            </div>
+            <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
+              {item.price?.total_cobrado?.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {summaryItems.length > 1 && (
+        <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-3 py-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Total personalização
+          </span>
+          <span className="text-[15px] font-bold tabular-nums text-success">
+            {summaryItems
+              .reduce((acc, it) => acc + (it.price?.total_cobrado ?? 0), 0)
+              .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <TooltipProvider>
-      <div className="space-y-3">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6">
+        <div className="space-y-3">
         <div
           ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none"
+          className="sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none lg:static lg:mx-0 lg:rounded-xl lg:border lg:border-border/60 lg:bg-background/40 lg:px-3 lg:shadow-none"
         >
           <nav
             aria-label="Etapas da personalização"
@@ -285,6 +348,7 @@ export function ProductCustomizationOptions({
                     onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
                     className={cn(
                       'group relative flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-center transition-all md:h-11 md:px-3',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                       isDisabled
                         ? 'cursor-not-allowed border-border bg-muted/30 opacity-40'
                         : isActive
@@ -351,51 +415,31 @@ export function ProductCustomizationOptions({
           </div>
         )}
 
-        {pricesRef.current.size > 0 && (
-          <div className="mt-5 border-t border-border/40 pt-3 animate-in fade-in slide-in-from-bottom-2">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-success" />
-                <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Resumo das Configurações
-                </h4>
-              </div>
-              <span className="text-[10px] tabular-nums text-muted-foreground">
-                {pricesRef.current.size} {pricesRef.current.size === 1 ? 'local' : 'locais'}
-              </span>
-            </div>
-
-            <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
-              {Array.from(pricesRef.current.values()).map((item) => (
-                <div
-                  key={item.locationCode}
-                  className="flex items-center justify-between gap-3 px-3 py-2"
-                >
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
-                      {item.locationName}
-                    </span>
-                    <span className="truncate text-[12px] font-medium text-foreground">
-                      {item.techniqueName}
-                    </span>
-                    <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
-                      {item.width && item.height && <>· {item.width}×{item.height}cm </>}
-                      · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
-                    </span>
-                  </div>
-                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
-                    {item.price?.total_cobrado?.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Resumo inline — apenas em telas < lg. No desktop ele vive no aside sticky. */}
+        {summaryItems.length > 0 && (
+          <div className="mt-5 border-t border-border/40 pt-3 lg:hidden">{summary}</div>
         )}
+        </div>
 
-
+        {/* Aside sticky no desktop com o resumo + preço sempre visíveis. */}
+        <aside
+          aria-label="Resumo da personalização"
+          className="hidden lg:sticky lg:top-24 lg:block lg:self-start"
+          data-testid="customization-summary-aside"
+        >
+          {summaryItems.length > 0 ? (
+            summary
+          ) : (
+            <div className="rounded-xl border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Resumo
+              </p>
+              <p className="mt-1 text-[12px] text-muted-foreground/80">
+                Configure uma técnica para ver o preço aqui.
+              </p>
+            </div>
+          )}
+        </aside>
       </div>
     </TooltipProvider>
   );
