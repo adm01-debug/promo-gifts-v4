@@ -326,6 +326,32 @@ export default function QuoteViewOrderHarness() {
               <QuoteItemsTable items={HARNESS_TABLE_ITEMS} />
             </div>
 
+            <Separator />
+            {/* Fixture com 8 itens para validar o scroll interno (>5). */}
+            <div data-testid="quote-items-table-fixture-many">
+              <QuoteItemsTable
+                items={Array.from({ length: 8 }, (_, i) => ({
+                  id: `fx-many-${i}`,
+                  product_name: `Produto rolável ${i + 1}`,
+                  product_sku: `SKU-${1000 + i}`,
+                  quantity: 10 + i,
+                  unit_price: 5 + i,
+                  personalizations: [],
+                }))}
+              />
+            </div>
+
+            <Separator />
+            <section
+              data-testid="harness-quote-versions"
+              aria-label="Versões do Orçamento"
+              className="mt-6"
+            >
+              <h2 className="text-base font-semibold">Versões do Orçamento</h2>
+              <p className="text-sm text-muted-foreground">v1 · v2 · v3 (stub)</p>
+            </section>
+
+
 
 
           </CardContent>

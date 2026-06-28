@@ -267,37 +267,73 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   // Scroll interno: mantém ~5 produtos visíveis sem aumentar a página.
   // Acima de 5 itens, ativa overflow vertical no container da tabela com
-  // thead sticky para preservar contexto. Limite calculado por linha (~88px)
-  // + header (~44px). Usamos max-h em rem para escalar com o root font-size.
+  // thead sticky para preservar contexto. Limites responsivos por breakpoint
+  // calculados em rem (escalam com root font-size) para evitar cortes de linha
+  // e manter ~5 produtos visíveis em sm/md/lg.
   const totalRows = items.length;
   const enableInnerScroll = totalRows > 5;
+
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = React.useState<{ top: boolean; bottom: boolean }>({
+    top: true,
+    bottom: !enableInnerScroll,
+  });
+
+  React.useEffect(() => {
+    if (!enableInnerScroll) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const atTop = el.scrollTop <= 1;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      setScrollState({ top: atTop, bottom: atBottom });
+    };
+    onScroll();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [enableInnerScroll, totalRows]);
 
   return (
     <section aria-labelledby="quote-items-heading">
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
-      <div
-        className={cn(
-          'overflow-x-auto rounded-lg border border-border',
-          enableInnerScroll && 'overflow-y-auto max-h-[34rem] print:max-h-none print:overflow-visible',
-        )}
-        data-testid="quote-items-table-scroll"
-      >
-        <table className="w-full min-w-[640px] border-collapse">
-          <caption className="sr-only">
-            Lista de itens do orçamento com quantidade, preço unitário e total.
-          </caption>
-          <thead className={cn(enableInnerScroll && 'sticky top-0 z-10')}>
-            <tr className="bg-primary/15 backdrop-blur supports-[backdrop-filter]:bg-primary/20">
-              <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Produto</th>
-              {hasPersonalizations && (
-                <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Personalização</th>
-              )}
-              <th scope="col" className={cn('w-16 text-center', qvSpacing.cell, qvType.tableHead)}>Qtd</th>
-              <th scope="col" className={cn('w-24 text-left', qvSpacing.cell, qvType.tableHead)}>Unitário</th>
-              <th scope="col" className={cn('w-28 text-left', qvSpacing.cell, qvType.tableHead)}>Total</th>
-              <th scope="col" aria-label="Ações" className={cn('w-20 text-center print:hidden', qvSpacing.cell, qvType.tableHead)} />
-            </tr>
-          </thead>
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className={cn(
+            'overflow-x-auto rounded-lg border border-border',
+            enableInnerScroll && [
+              'overflow-y-auto',
+              'max-h-[30rem] md:max-h-[34rem] lg:max-h-[38rem]',
+              'print:max-h-none print:overflow-visible',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+            ],
+          )}
+          data-testid="quote-items-table-scroll"
+          data-inner-scroll={enableInnerScroll ? 'true' : 'false'}
+          data-scroll-at-top={scrollState.top ? 'true' : 'false'}
+          data-scroll-at-bottom={scrollState.bottom ? 'true' : 'false'}
+          {...(enableInnerScroll && {
+            tabIndex: 0,
+            role: 'region',
+            'aria-label': `Lista rolável de ${totalRows} itens do orçamento`,
+          })}
+        >
+          <table className="w-full min-w-[640px] border-collapse">
+            <caption className="sr-only">
+              Lista de itens do orçamento com quantidade, preço unitário e total.
+            </caption>
+            <thead className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
+              <tr className="bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15">
+                <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Produto</th>
+                {hasPersonalizations && (
+                  <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Personalização</th>
+                )}
+                <th scope="col" className={cn('w-16 text-center', qvSpacing.cell, qvType.tableHead)}>Qtd</th>
+                <th scope="col" className={cn('w-24 text-left', qvSpacing.cell, qvType.tableHead)}>Unitário</th>
+                <th scope="col" className={cn('w-28 text-left', qvSpacing.cell, qvType.tableHead)}>Total</th>
+                <th scope="col" aria-label="Ações" className={cn('w-20 text-center print:hidden', qvSpacing.cell, qvType.tableHead)} />
+              </tr>
+            </thead>
           <tbody>
             {Array.from(kitGroups.entries()).map(([groupId, group]) => (
               <React.Fragment key={groupId}>
@@ -327,6 +363,20 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             {looseItems.map((item, idx) => renderItemRow(item, idx))}
           </tbody>
         </table>
+        </div>
+        {enableInnerScroll && !scrollState.bottom && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 rounded-b-lg bg-gradient-to-t from-background to-transparent print:hidden"
+          />
+        )}
+        {enableInnerScroll && (
+          <p className="sr-only" aria-live="polite">
+            {scrollState.bottom
+              ? 'Fim da lista de itens.'
+              : 'Há mais itens abaixo. Use as setas ou arraste para rolar.'}
+          </p>
+        )}
       </div>
     </section>
   );
