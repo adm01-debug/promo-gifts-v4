@@ -80,8 +80,16 @@ Deno.serve(async (req) => {
     const { quote, proposalData, pdfUrl, filename, bitrixCompanyId, shippingType, shippingCost } = parsed.data;
 
     const { value: webhookUrl } = await resolveCredential('N8N_QUOTE_WEBHOOK_URL');
+    // BUG-CRED-2 FIX (2026-06-28): dependência ausente → 503 (Service Unavailable), não 500.
+    // Espelha o precedente BUG-CRED-1 (analyze-logo-colors): o webhook do n8n não estar
+    // configurado NÃO é um bug de código, é falta de credencial. 503 separa "serviço
+    // indisponível por configuração" de "erro interno inesperado" na triagem de alertas.
+    // Anti-regressão: NÃO reverter para `throw new Error(...)` (cai no catch → 500 cego).
     if (!webhookUrl) {
-      throw new Error('N8N_QUOTE_WEBHOOK_URL nao configurado nos secrets');
+      return new Response(
+        JSON.stringify({ error: 'N8N_QUOTE_WEBHOOK_URL não configurada. Configure em /admin/conexoes > Webhooks.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // BUG-A09 FIX: busca bitrix_id do banco em vez do mapa hardcoded
@@ -93,15 +101,28 @@ Deno.serve(async (req) => {
     const sellerId = await resolveSellerBitrixId(authenticatedEmail, serviceClient);
 
     const companyId = bitrixCompanyId ? parseInt(bitrixCompanyId, 10) : null;
+    // BUG-CRED-2 FIX (2026-06-28): erro de validação de input → 422 (Unprocessable Entity),
+    // não 500. company_id ausente/inválido é dado do request (culpa do cliente), não defeito
+    // do servidor. 500 aqui poluía o monitoramento sugerindo bug onde não há.
     if (!companyId || !Number.isFinite(companyId) || companyId <= 0) {
-      throw new Error('company_id (Bitrix) e obrigatorio.');
+      return new Response(
+        JSON.stringify({ error: 'company_id (Bitrix) é obrigatório e deve ser um número positivo.' }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     const rawItems = proposalData?.items || [];
     const itemsValidos = rawItems.filter((item: any) => !!item.bitrix_product_id);
     const itemsExcluidos = rawItems.length - itemsValidos.length;
     if (itemsExcluidos > 0) console.warn(`${itemsExcluidos} item(ns) excluido(s) por nao ter bitrix_product_id`);
-    if (itemsValidos.length === 0) throw new Error('Nenhum produto possui bitrix_product_id. Aguarde importacao do catalogo.');
+    // BUG-CRED-2 FIX (2026-06-28): nenhum item sincronizável → 422 (dado do request), não 500.
+    // Catálogo ainda não importado para o Bitrix é estado de dados, não bug do servidor.
+    if (itemsValidos.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Nenhum produto possui bitrix_product_id. Aguarde a importação do catálogo no Bitrix.' }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     const products = itemsValidos.map((item: any) => ({
       offer_id: item.bitrix_product_id,
@@ -135,7 +156,13 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errText = await response.text();
       console.error('n8n webhook error:', response.status, errText);
-      throw new Error(`n8n webhook error: ${response.status}`);
+      // BUG-CRED-2 FIX (2026-06-28): upstream (n8n) retornou não-2xx → 502 (Bad Gateway), não 500.
+      // O erro é do serviço externo a jusante, não deste edge function. 502 deixa claro na
+      // triagem que o gateway/n8n falhou, não o código local.
+      return new Response(
+        JSON.stringify({ error: `Webhook do n8n retornou erro ${response.status}.`, upstream_status: response.status }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     const result = await response.json();
@@ -144,7 +171,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (err) {
+    // CircuitOpenError → 503 padronizado do breaker (n8n marcado como indisponível).
     if (err instanceof CircuitOpenError) return circuitOpenResponse(err, corsHeaders);
+    // Pós-BUG-CRED-2: chegar aqui agora significa erro REALMENTE inesperado (não credencial
+    // ausente, não validação, não upstream). 500 passa a ser sinal honesto de bug interno.
     console.error('sync-quote-bitrix error:', err);
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
     return new Response(JSON.stringify({ error: message }), {
