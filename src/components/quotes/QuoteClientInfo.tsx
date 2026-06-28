@@ -28,7 +28,7 @@ export function QuoteClientInfo({
       className={`grid grid-cols-1 md:grid-cols-2 ${qvSpacing.clientGrid}`}
     >
       <div>
-        <div className="mb-2 flex items-center gap-1.5">
+        <div className={`${qvSpacing.eyebrowGap} flex items-center gap-1.5`}>
           <Building2 className="h-3 w-3 text-primary" aria-hidden="true" />
           <h3 className={qvType.eyebrow}>Empresa</h3>
         </div>
