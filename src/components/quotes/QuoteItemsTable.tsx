@@ -334,7 +334,20 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     const measure = () => {
       const pad = Math.max(0, el.offsetWidth - el.clientWidth);
       setScrollbarPad(pad);
+      // Telemetria opcional: ative com `window.__DEBUG_QUOTE_TABLE = true`
+      // em ambientes com scrollbar overlay (macOS Safari/iOS) ou bugs de alinhamento.
+      if (typeof window !== 'undefined' && (window as unknown as { __DEBUG_QUOTE_TABLE?: boolean }).__DEBUG_QUOTE_TABLE) {
+        // eslint-disable-next-line no-console
+        console.debug('[QuoteItemsTable] scrollbarPad', {
+          pad,
+          offsetWidth: el.offsetWidth,
+          clientWidth: el.clientWidth,
+          totalRows,
+          enableInnerScroll,
+        });
+      }
     };
+
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
