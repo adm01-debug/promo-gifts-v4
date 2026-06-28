@@ -434,15 +434,21 @@ export async function fetchPromobrindProductById(
     }
   }
 
-  // ── Lookup color_variations.internal_code para XBZ ─────────────────────────
+  // ── Lookup color_variations.internal_code (XBZ, ASIA, SÓ MARCAS) ───────────
   // fix_version: pdp_sku_badge_v2
-  // Produtos XBZ usam supplier_sku no formato 'ER143B-CIN' (código XBZ abreviado).
-  // O badge da PDP deve exibir '{sku_promo}-{cv.internal_code}' (ex: 'ER143B-11.2').
-  // Para outros fornecedores (SPOT: '51736-2.1'), product_variants.sku já está correto.
-  const XBZ_SUPPLIER_ID = 'd6718a29-e954-4c1b-bd84-03ea24884900';
+  // Fornecedores cujo product_variants.sku usa código próprio (não canônico):
+  //   XBZ:      'ER143B-CIN'      → badge: 'ER143B-11.2'
+  //   ASIA:     'ASIA-BAC006-AZ'  → badge: 'BAC006-1.1'
+  //   SÓ MARCAS: 'AS-00610'      → badge: '{sku_promo}-{cv.internal_code}'
+  // SPOT (51736-2.1) já usa o padrão canônico — não precisa lookup.
+  const SUPPLIERS_NEEDING_CV_CODE = new Set([
+    'd6718a29-e954-4c1b-bd84-03ea24884900', // XBZ
+    'd2734e23-d633-4819-bb15-e51aa44e2118', // ASIA IMPORT
+    '841cd690-210a-422a-908c-7676828db272', // SÓ MARCAS
+  ]);
   const colorIdToInternalCode = new Map<string, string>();
 
-  if (product.supplier_id === XBZ_SUPPLIER_ID && variants.length > 0) {
+  if (SUPPLIERS_NEEDING_CV_CODE.has(product.supplier_id ?? '') && variants.length > 0) {
     const uniqueColorIds = [...new Set(
       variants.map((v) => v.color_id).filter((id): id is string => !!id)
     )];
