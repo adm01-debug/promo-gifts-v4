@@ -197,6 +197,8 @@ export function LocationPanel({
   );
 
   const [announcement, setAnnouncement] = useState('');
+  const [isSwapping, setIsSwapping] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Hidrata estado inicial: confirmada > rascunho persistido > nada.
   const initialDraft = useMemo<LocationDraft | null>(
