@@ -86,9 +86,9 @@ function RemovedProductBadge() {
 }
 
 export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
-  const hasPersonalizations = items.some(
-    (item) => item.personalizations && item.personalizations.length > 0,
-  );
+  // Coluna "Personalização" foi removida da tabela — técnicas seguem
+  // visíveis no sheet "Detalhes" e continuam computadas no unitário.
+  const hasPersonalizations = false;
 
   const kitGroups = new Map<string, { name: string; items: QuoteItem[] }>();
   const looseItems: QuoteItem[] = [];
