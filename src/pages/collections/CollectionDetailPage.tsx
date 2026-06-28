@@ -648,7 +648,7 @@ export default function CollectionDetailPage() {
             </TabsContent>
           </Tabs>
         ) : products.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-4" style={swatchSizeStyle(viewMode, gridColumns)}>
             {viewMode === 'table' ? (
               <ProductTableView
                 products={productsWithVariant}
