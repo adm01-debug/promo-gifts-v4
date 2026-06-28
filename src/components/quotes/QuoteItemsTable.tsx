@@ -293,6 +293,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const announceTimer = React.useRef<number | null>(null);
   const theadRef = React.useRef<HTMLTableSectionElement>(null);
   const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
+  const [scrollbarPad, setScrollbarPad] = React.useState<number>(0);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
@@ -304,6 +305,23 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     ro.observe(el);
     return () => ro.disconnect();
   }, [enableInnerScroll]);
+
+  // Mede a largura real da scrollbar vertical do body para reservar
+  // padding-right equivalente no header — garante alinhamento perfeito
+  // das colunas entre as duas tabelas (header e corpo).
+  React.useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => {
+      const pad = Math.max(0, el.offsetWidth - el.clientWidth);
+      setScrollbarPad(pad);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [enableInnerScroll, totalRows]);
+
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
