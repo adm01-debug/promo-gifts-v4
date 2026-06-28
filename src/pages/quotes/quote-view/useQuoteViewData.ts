@@ -123,11 +123,9 @@ export function useQuoteViewData(id: string | undefined) {
         name: item.product_name,
         sku: item.product_sku || undefined,
         supplier_sku: item.product_sku || undefined,
-        composedCode: item.product_sku
-          ? item.color_name
-            ? `${item.product_sku}-${item.color_name}`
-            : item.product_sku
-          : undefined,
+        // product_sku já contém o código composto da variante (ex.: "94297-7.1")
+        // quando o item foi adicionado com cor/variação selecionada.
+        composedCode: item.product_sku || undefined,
         colorHex: item.color_hex || undefined,
         quantity: item.quantity,
         unitPrice: item.unit_price,

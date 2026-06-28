@@ -71,7 +71,9 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
           {
             product_id: product.id,
             product_name: product.name,
-            product_sku: product.sku,
+            // Persistir o SKU composto da variante (ex.: "94297-7.1") quando
+            // houver variante selecionada. Cai no SKU base se não houver.
+            product_sku: variant?.sku || product.sku,
             product_image_url: imageUrl,
             quantity: initialQuantity,
             unit_price: product.price,
