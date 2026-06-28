@@ -271,14 +271,18 @@ export function ConfigurationPanelV6({
               <Palette className="h-3 w-3" />
               Nº de cores
             </div>
-            <div className="inline-flex rounded-lg border border-border/60 bg-card p-0.5">
+            <div role="radiogroup" aria-label="Número de cores" className="inline-flex rounded-lg border border-border/60 bg-card p-0.5">
               {Array.from({ length: technique.max_cores }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
                   type="button"
+                  role="radio"
+                  aria-checked={n === numCores}
+                  aria-label={`${n} ${n === 1 ? 'cor' : 'cores'}${n === 2 ? ' — 10% de desconto' : ''}${n === 3 ? ' — 15% de desconto' : ''}`}
                   disabled={isLocked}
                   className={cn(
                     'h-7 rounded-md px-2.5 text-[12px] font-medium tabular-nums transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                     isLocked && 'cursor-not-allowed opacity-50',
                     n === numCores
                       ? 'bg-primary text-primary-foreground shadow-sm'
