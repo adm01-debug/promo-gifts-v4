@@ -426,21 +426,26 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             className="overflow-hidden print:overflow-visible"
             style={{ paddingRight: scrollbarPad ? `${scrollbarPad}px` : undefined }}
             data-testid="quote-items-table-header-wrap"
-            aria-hidden="false"
+            data-scrollbar-pad={scrollbarPad}
+            aria-hidden="true"
           >
-
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+            <table
+              role="presentation"
+              aria-hidden="true"
+              className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
+            >
               <ColGroup />
               <thead ref={theadRef}>
                 <tr>
-                  <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
+                  <th id={colIds.produto} scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
                   {hasPersonalizations && (
-                    <th scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
+                    <th id={colIds.pers} scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
                   )}
-                  <th scope="col" className={cn('text-center', headerCellClass)}>Qtd</th>
-                  <th scope="col" className={cn('text-left', headerCellClass)}>Unitário</th>
-                  <th scope="col" className={cn('text-left', headerCellClass)}>Total</th>
+                  <th id={colIds.qtd} scope="col" className={cn('text-center', headerCellClass)}>Qtd</th>
+                  <th id={colIds.un} scope="col" className={cn('text-left', headerCellClass)}>Unitário</th>
+                  <th id={colIds.total} scope="col" className={cn('text-left', headerCellClass)}>Total</th>
                   <th
+                    id={colIds.act}
                     scope="col"
                     aria-label="Ações"
                     className={cn('rounded-tr-lg text-center print:hidden', headerCellClass)}
@@ -449,6 +454,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               </thead>
             </table>
           </div>
+
           {/* Corpo rolável — scroll começa abaixo do header */}
           <div
             ref={scrollRef}
