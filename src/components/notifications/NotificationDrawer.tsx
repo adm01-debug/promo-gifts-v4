@@ -43,6 +43,7 @@ import { notificationsMetrics, type TriggerSource } from '@/lib/notifications-me
 import { NotificationsBadgeStatsPanel } from './NotificationsBadgeStatsPanel';
 import { NotificationPreferences } from './NotificationPreferences';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 
 const typeConfig = {
   info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
