@@ -543,7 +543,7 @@ export const SidebarReorganized = React.memo(
           className={cn(
             'theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
             isCollapsed ? 'overflow-visible' : 'overflow-hidden',
-            'lg:sticky lg:top-0 lg:z-40 lg:h-screen',
+            'lg:sticky lg:top-0 lg:z-40 lg:h-[100dvh] lg:max-h-[100dvh]',
             isOpen
               ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]'
               : '-translate-x-full lg:translate-x-0',
