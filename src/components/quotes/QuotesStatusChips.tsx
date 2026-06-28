@@ -7,6 +7,7 @@
  * de tela (evita o "Sincronizado1" colado).
  */
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { cn } from '@/lib/utils';
 import type { Quote } from '@/hooks/quotes';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
@@ -330,6 +331,8 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel nos chips de status (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(containerRef);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, idx: number) => {
     const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>(

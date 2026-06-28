@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { useNavigate } from 'react-router-dom';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Clock, X, Trash2 } from 'lucide-react';
@@ -21,6 +22,9 @@ interface RecentlyViewedBarProps {
 
 export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedBarProps) {
   const navigate = useNavigate();
+  const recentScrollRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(recentScrollRef);
   const { items, itemCount, removeFromRecentlyViewed, clearRecentlyViewed } =
     useRecentlyViewedStore();
   const { getProductsByIds } = useProductsContext();
@@ -51,7 +55,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
           </div>
 
           {/* Products */}
-          <div className="scrollbar-none flex flex-1 items-center gap-2 overflow-x-auto">
+          <div ref={recentScrollRef} className="scrollbar-none flex flex-1 items-center gap-2 overflow-x-auto">
             {products.map((product, idx) => (
               <motion.div
                 key={product.id}

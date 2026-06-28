@@ -3,6 +3,7 @@
  * indicador de follow-up e botão "+" para criar novo.
  */
 import { useRef, useCallback, useState } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { type SellerCart } from '@/hooks/products';
 import { Building2, Plus, Clock, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,8 @@ export function CartTabsRich({
   isLoading,
 }: CartTabsRichProps) {
   const tablistRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel nos tabs (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(tablistRef);
   const [limitDetailsOpen, setLimitDetailsOpen] = useState(false);
 
 

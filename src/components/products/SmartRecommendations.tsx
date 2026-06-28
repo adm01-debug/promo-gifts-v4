@@ -10,6 +10,7 @@
  * - Limite configurável (`maxResults`)
  */
 import { useEffect, useMemo, useRef } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { Sparkles, ChevronLeft, ChevronRight, TrendingUp, Trophy, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -204,6 +205,8 @@ export function SmartRecommendations({
   className,
 }: SmartRecommendationsProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(scrollerRef);
   const { data, recommendations, isLoading, error, fetchRecommendations } = useAIRecommendations();
 
   // Filtra o produto atual da lista de candidatos
