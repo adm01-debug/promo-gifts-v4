@@ -364,6 +364,17 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     [enableInnerScroll],
   );
 
+  const ColGroup = () => (
+    <colgroup>
+      <col />
+      {hasPersonalizations && <col />}
+      <col style={{ width: '4rem' }} />
+      <col style={{ width: '6rem' }} />
+      <col style={{ width: '7rem' }} />
+      <col style={{ width: '5rem' }} className="print:hidden" />
+    </colgroup>
+  );
+
   return (
     <section aria-labelledby="quote-items-heading">
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
@@ -372,6 +383,35 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           className="relative overflow-hidden rounded-lg bg-background"
           data-testid="quote-items-table-wrapper"
         >
+          {/* Header fixo — fora da área de scroll */}
+          <div
+            className={cn(
+              'overflow-y-scroll [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
+              'print:overflow-visible',
+            )}
+            aria-hidden="false"
+          >
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+              <ColGroup />
+              <thead ref={theadRef}>
+                <tr>
+                  <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
+                  {hasPersonalizations && (
+                    <th scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
+                  )}
+                  <th scope="col" className={cn('text-center', headerCellClass)}>Qtd</th>
+                  <th scope="col" className={cn('text-left', headerCellClass)}>Unitário</th>
+                  <th scope="col" className={cn('text-left', headerCellClass)}>Total</th>
+                  <th
+                    scope="col"
+                    aria-label="Ações"
+                    className={cn('rounded-tr-lg text-center print:hidden', headerCellClass)}
+                  />
+                </tr>
+              </thead>
+            </table>
+          </div>
+          {/* Corpo rolável — scroll começa abaixo do header */}
           <div
             ref={scrollRef}
             onKeyDown={onScrollerKeyDown}
@@ -396,71 +436,38 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               'aria-describedby': 'quote-items-scroll-help',
             })}
           >
-          <table className="w-full min-w-[640px] border-separate border-spacing-0">
-            <caption className="sr-only">
-              Lista de itens do orçamento com quantidade, preço unitário e total.
-            </caption>
-            <thead ref={theadRef} className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
-              <tr>
-                <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
-                {hasPersonalizations && (
-                  <th scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+              <ColGroup />
+              <tbody>
+                {Array.from(kitGroups.entries()).map(([groupId, group]) => (
+                  <React.Fragment key={groupId}>
+                    <tr className="border-b border-border bg-accent/60">
+                      <td colSpan={colCount} className="p-3">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-bold text-primary">Kit: {group.name}</span>
+                          <Badge variant="outline" className="ml-1 text-xs">
+                            {group.items.length} itens
+                          </Badge>
+                        </div>
+                      </td>
+                    </tr>
+                    {group.items.map((item, idx) => renderItemRow(item, idx))}
+                  </React.Fragment>
+                ))}
+                {kitGroups.size > 0 && looseItems.length > 0 && (
+                  <tr className="border-b border-border bg-muted/30">
+                    <td colSpan={colCount} className="p-2 px-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Itens Avulsos
+                      </span>
+                    </td>
+                  </tr>
                 )}
-                <th scope="col" className={cn('w-16 text-center', headerCellClass)}>Qtd</th>
-                <th scope="col" className={cn('w-24 text-left', headerCellClass)}>Unitário</th>
-                <th scope="col" className={cn('w-28 text-left', headerCellClass)}>Total</th>
-                <th
-                  scope="col"
-                  aria-label="Ações"
-                  className={cn(
-                    'w-20 text-center print:hidden',
-                    !enableInnerScroll && 'rounded-tr-lg',
-                    headerCellClass,
-                  )}
-                />
-              </tr>
-            </thead>
-          <tbody>
-            {Array.from(kitGroups.entries()).map(([groupId, group]) => (
-              <React.Fragment key={groupId}>
-                <tr className="border-b border-border bg-accent/60">
-                  <td colSpan={colCount} className="p-3">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-bold text-primary">Kit: {group.name}</span>
-                      <Badge variant="outline" className="ml-1 text-xs">
-                        {group.items.length} itens
-                      </Badge>
-                    </div>
-                  </td>
-                </tr>
-                {group.items.map((item, idx) => renderItemRow(item, idx))}
-              </React.Fragment>
-            ))}
-            {kitGroups.size > 0 && looseItems.length > 0 && (
-              <tr className="border-b border-border bg-muted/30">
-                <td colSpan={colCount} className="p-2 px-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Itens Avulsos
-                  </span>
-                </td>
-              </tr>
-            )}
-            {looseItems.map((item, idx) => renderItemRow(item, idx))}
-          </tbody>
-          </table>
+                {looseItems.map((item, idx) => renderItemRow(item, idx))}
+              </tbody>
+            </table>
           </div>
-          {enableInnerScroll && (
-            <div
-              aria-hidden="true"
-              data-testid="quote-items-table-scrollbar-corner-mask"
-              style={headerHeight ? { height: `${headerHeight}px` } : undefined}
-              className="pointer-events-none absolute right-0 top-0 z-20 flex w-[18px] items-center justify-center rounded-tr-lg bg-primary print:hidden"
-              data-scroll-hint={scrollState.bottom ? 'end' : 'more'}
-            >
-
-            </div>
-          )}
         </div>
         {enableInnerScroll && !scrollState.bottom && (
           <div
@@ -468,6 +475,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             className="pointer-events-none absolute inset-x-0 bottom-0 h-6 rounded-b-lg bg-gradient-to-t from-background to-transparent print:hidden"
           />
         )}
+
         {enableInnerScroll && (
           <>
             <span id="quote-items-scroll-help" className="sr-only">
