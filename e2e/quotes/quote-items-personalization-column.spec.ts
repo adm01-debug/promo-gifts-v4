@@ -27,65 +27,94 @@ async function open(page: Page) {
 }
 
 for (const vp of VIEWPORTS) {
-  test(`coluna "Personalização" presente @ ${vp.name}px`, async ({ page }) => {
+  test(`coluna "Personalização" presente + a11y @ ${vp.name}px`, async ({ page }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await open(page);
 
-    const header = page.locator('th', { hasText: /^\s*Personalização\s*$/ });
-    await expect(header, 'header da coluna Personalização deve estar visível').toHaveCount(1);
+    // A11y: header é <th scope="col"> (semântico, leitores de tela
+    // anunciam relação coluna×célula).
+    const header = page.locator('th[scope="col"]', {
+      hasText: /^\s*Personalização\s*$/,
+    });
+    await expect(header, 'header <th scope="col">Personalização</th>').toHaveCount(1);
+    await expect(header).toBeVisible();
 
-    // Pelo menos 1 chip (✦ <técnica>) renderizado em alguma linha do tbody.
+    // A11y: chips são visíveis (não aria-hidden, não display:none).
     const chips = page.locator('table tbody').getByText(/^\s*✦\s+\S/);
-    expect(await chips.count(), 'esperado ao menos 1 chip de técnica').toBeGreaterThan(0);
+    const total = await chips.count();
+    expect(total, 'esperado ao menos 1 chip de técnica').toBeGreaterThan(0);
+    for (let i = 0; i < total; i++) {
+      await expect(chips.nth(i)).toBeVisible();
+    }
   });
 }
 
-test('linha com 2+ gravações usa grid 2-col em ≥768px sem dobrar altura', async ({ page }) => {
+test('linha com 2+ gravações: grid 2-col em ≥md e altura proporcional', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
   await open(page);
 
-  // Localiza a célula que contém ≥2 chips de técnica.
+  // Coleta alturas de linhas COM e SEM personalização + info do grid.
+  const layout = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll<HTMLTableRowElement>('table tbody tr'));
+    let multiCell: HTMLTableCellElement | null = null;
+    let multiRowH = 0;
+    const baselineHeights: number[] = [];
+    for (const tr of rows) {
+      const cells = Array.from(tr.querySelectorAll('td'));
+      const personCell = cells.find((td) =>
+        Array.from(td.querySelectorAll('*')).some((el) =>
+          /^\s*✦\s+\S/.test(el.textContent ?? ''),
+        ),
+      );
+      const chipCount = personCell
+        ? Array.from(personCell.querySelectorAll('*')).filter((el) =>
+            /^\s*✦\s+\S/.test(el.textContent ?? ''),
+          ).length
+        : 0;
+      const h = tr.getBoundingClientRect().height;
+      if (chipCount >= 2 && !multiCell) {
+        multiCell = personCell as HTMLTableCellElement;
+        multiRowH = h;
+      } else if (chipCount === 0) {
+        baselineHeights.push(h);
+      }
+    }
+    if (!multiCell) return null;
+    const grid = multiCell.querySelector<HTMLElement>(':scope > div');
+    const cs = grid ? getComputedStyle(grid) : null;
+    return {
+      display: cs?.display ?? null,
+      cols: cs ? cs.gridTemplateColumns.split(' ').filter(Boolean).length : 0,
+      multiRowH,
+      baselineMedian:
+        baselineHeights.sort((a, b) => a - b)[Math.floor(baselineHeights.length / 2)] ?? 0,
+    };
+  });
+
+  test.skip(!layout, 'harness sem linha de 2+ gravações — nada a validar');
+
+  expect(layout!.display, 'wrapper de chips deve ser grid').toBe('grid');
+  expect(layout!.cols, 'grid deve ter 2 colunas em ≥md (1024px)').toBe(2);
+
+  // Tolerância relativa: linha com 2 gravações ≤ 2.2× a linha base
+  // (sem técnica). Robusto a variações de fonte/zoom do ambiente.
+  const ratio = layout!.baselineMedian > 0 ? layout!.multiRowH / layout!.baselineMedian : 0;
+  expect(
+    ratio,
+    `linha de 2 gravações (${layout!.multiRowH}px) vs baseline (${layout!.baselineMedian}px) → ratio=${ratio.toFixed(2)} > 2.2`,
+  ).toBeLessThanOrEqual(2.2);
+});
+
+test('visual regression: célula da coluna Personalização (md+)', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await open(page);
   const cell = page
     .locator('table tbody td')
     .filter({ has: page.getByText(/^\s*✦\s+\S/) })
-    .filter({
-      has: page.locator(':scope >> text=/✦[\\s\\S]*✦/s'),
-    })
     .first();
-
-  // Fallback robusto: pega célula com ≥2 chips contando.
-  const multiCellHandle = await page.evaluateHandle(() => {
-    const cells = Array.from(document.querySelectorAll('table tbody td'));
-    return (
-      cells.find(
-        (td) =>
-          Array.from(td.querySelectorAll('*')).filter((el) =>
-            /^\s*✦\s+\S/.test(el.textContent ?? ''),
-          ).length >= 2,
-      ) ?? null
-    );
+  await expect(cell).toBeVisible();
+  await expect(cell).toHaveScreenshot('personalization-cell-md.png', {
+    maxDiffPixelRatio: 0.02,
   });
-  const multiCell = multiCellHandle.asElement();
-  test.skip(!multiCell, 'harness sem linha de 2+ gravações — nada a validar');
-
-  const gridInfo = await (multiCell!).evaluate((td) => {
-    const grid = td.querySelector<HTMLElement>(':scope > div');
-    if (!grid) return null;
-    const cs = getComputedStyle(grid);
-    return {
-      display: cs.display,
-      cols: cs.gridTemplateColumns.split(' ').filter(Boolean).length,
-      rowH: (td as HTMLElement).getBoundingClientRect().height,
-    };
-  });
-  expect(gridInfo, 'célula com chips deve ter um wrapper grid').not.toBeNull();
-  expect(gridInfo!.display, 'wrapper de chips deve ser grid').toBe('grid');
-  expect(gridInfo!.cols, 'grid deve ter 2 colunas em ≥md (1024px)').toBe(2);
-
-  // Sanidade de altura: célula com 2 chips em grid 2-col não deve
-  // ultrapassar 140px (chips de 1 linha + padding da célula).
-  expect(
-    gridInfo!.rowH,
-    `linha com 2 gravações alta demais (${gridInfo!.rowH}px) — grid 2-col não está reduzindo`,
-  ).toBeLessThanOrEqual(140);
 });
+
