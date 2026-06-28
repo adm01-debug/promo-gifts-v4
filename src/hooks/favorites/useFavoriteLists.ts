@@ -5,6 +5,7 @@ import { untypedRpc } from '@/lib/supabase-untyped';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 import { logger } from '@/lib/logger';
