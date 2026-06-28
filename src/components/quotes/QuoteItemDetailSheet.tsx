@@ -181,7 +181,6 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                     />
                   )}
                   {item.product_sku}
-                  {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
               <p className={`${qvType.productName}`}>{item.product_name}</p>
