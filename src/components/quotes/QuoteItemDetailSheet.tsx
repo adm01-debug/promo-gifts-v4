@@ -13,6 +13,8 @@ import {
   Wrench,
   TrendingDown,
 } from 'lucide-react';
+import { qvType, qvSpacing } from './quote-view-typography';
+
 
 const QUANTITY_TIERS = [
   { min: 1, max: 9 },
