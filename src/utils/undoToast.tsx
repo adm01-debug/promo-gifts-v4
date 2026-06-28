@@ -106,6 +106,7 @@ export function UndoToastContent({
       </div>
       <button
         type="button"
+        data-testid="undo-toast-button"
         onClick={onUndo}
         aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
         className={cn(
