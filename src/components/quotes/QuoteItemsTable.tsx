@@ -317,6 +317,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }
