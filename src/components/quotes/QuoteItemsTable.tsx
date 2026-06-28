@@ -303,7 +303,9 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             'overflow-x-auto rounded-lg border border-border',
             enableInnerScroll && [
               'overflow-y-auto',
-              'max-h-[30rem] md:max-h-[34rem] lg:max-h-[38rem]',
+              // Header ~44px + 5 linhas × ~88px = ~484px. Limites por
+              // breakpoint fecham a 5ª linha sem cortar.
+              'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
               'print:max-h-none print:overflow-visible',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
             ],
