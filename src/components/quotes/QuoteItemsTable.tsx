@@ -10,7 +10,7 @@
  * fix_version: quote_items_null_product_graceful_20260627
  */
 import React from 'react';
-import { Package, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Package, AlertTriangle, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { ProductThumb } from './ProductThumb';
@@ -383,7 +383,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
       <div className="relative">
         <div
-          className="relative overflow-hidden rounded-lg border border-border bg-background"
+          className="relative overflow-hidden rounded-lg bg-background"
           data-testid="quote-items-table-wrapper"
         >
           <div
@@ -464,15 +464,14 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               className="pointer-events-none absolute right-0 top-0 z-20 flex w-[18px] items-center justify-center rounded-tr-lg bg-primary print:hidden"
               data-scroll-hint={scrollState.bottom ? 'end' : 'more'}
             >
-              <ChevronDown
+              <ArrowUpDown
                 className={cn(
-                  'h-3 w-3 text-primary-foreground/90 transition-all duration-200',
-                  scrollState.bottom
-                    ? 'rotate-180 opacity-50'
-                    : 'animate-bounce opacity-100',
+                  'h-3 w-3 text-primary-foreground transition-opacity duration-200',
+                  scrollState.bottom ? 'opacity-60' : 'opacity-100',
                 )}
-                strokeWidth={2.5}
+                strokeWidth={2.25}
               />
+
             </div>
           )}
         </div>
