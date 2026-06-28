@@ -64,6 +64,18 @@ function QuoteItemRow({
   );
   const itemTotal = item.quantity * item.unit_price + personalizationTotal;
 
+  // Estado local de string para permitir limpar o campo enquanto digita.
+  // O store ignora quantity < 1, então não podemos depender só do valor do item.
+  const [qtyDraft, setQtyDraft] = useState<string>(String(item.quantity ?? 1));
+  useEffect(() => {
+    // Sincroniza quando o item muda externamente (apenas se o usuário não está editando algo diferente).
+    setQtyDraft((prev) => {
+      const parsed = parseInt(prev, 10);
+      if (!Number.isNaN(parsed) && parsed === item.quantity) return prev;
+      return String(item.quantity ?? 1);
+    });
+  }, [item.quantity]);
+
   return (
     <motion.div
       data-testid={`quote-item-${index}`}
