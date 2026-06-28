@@ -82,9 +82,11 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    // overflow-x-clip previne bleed horizontal sem criar scroll container
-    // ancestral, preservando o comportamento de elementos sticky filhos.
-    <div className="min-h-screen overflow-x-clip bg-background print:min-h-0" role="document">
+    // overflow-x-hidden no root mantém a clipagem horizontal SEM promover
+    // implicitamente overflow-y para auto (efeito de `overflow-x: clip`),
+    // preservando o viewport como scrollport único — necessário para que o
+    // sidebar com `lg:sticky lg:top-0` permaneça fixo durante o scroll.
+    <div className="min-h-screen overflow-x-hidden bg-background print:min-h-0 print:overflow-visible" role="document">
       <div className="fixed inset-0 z-[-1]">
         <Suspense fallback={null}>
           <StarBackground />
