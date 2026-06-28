@@ -1,6 +1,6 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { z } from '../_shared/zod-validate.ts';
-import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
+import { fetchWithBreaker, CircuitOpenError, InsecureUrlError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 import { authorize } from '../_shared/authorize.ts';
 import { resolveCredential } from '../_shared/credentials.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
@@ -81,10 +81,8 @@ Deno.serve(async (req) => {
 
     const { value: webhookUrl } = await resolveCredential('N8N_QUOTE_WEBHOOK_URL');
     // BUG-CRED-2 FIX (2026-06-28): dependência ausente → 503 (Service Unavailable), não 500.
-    // Espelha o precedente BUG-CRED-1 (analyze-logo-colors): o webhook do n8n não estar
-    // configurado NÃO é um bug de código, é falta de credencial. 503 separa "serviço
-    // indisponível por configuração" de "erro interno inesperado" na triagem de alertas.
-    // Anti-regressão: NÃO reverter para `throw new Error(...)` (cai no catch → 500 cego).
+    // Espelha o precedente BUG-CRED-1 (analyze-logo-colors): webhook não configurado NÃO é
+    // bug de código, é falta de credencial. Anti-regressão: NÃO reverter para throw.
     if (!webhookUrl) {
       return new Response(
         JSON.stringify({ error: 'N8N_QUOTE_WEBHOOK_URL não configurada. Configure em /admin/conexoes > Webhooks.' }),
@@ -101,9 +99,7 @@ Deno.serve(async (req) => {
     const sellerId = await resolveSellerBitrixId(authenticatedEmail, serviceClient);
 
     const companyId = bitrixCompanyId ? parseInt(bitrixCompanyId, 10) : null;
-    // BUG-CRED-2 FIX (2026-06-28): erro de validação de input → 422 (Unprocessable Entity),
-    // não 500. company_id ausente/inválido é dado do request (culpa do cliente), não defeito
-    // do servidor. 500 aqui poluía o monitoramento sugerindo bug onde não há.
+    // BUG-CRED-2 FIX (2026-06-28): erro de validação de input → 422, não 500.
     if (!companyId || !Number.isFinite(companyId) || companyId <= 0) {
       return new Response(
         JSON.stringify({ error: 'company_id (Bitrix) é obrigatório e deve ser um número positivo.' }),
@@ -111,12 +107,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    const rawItems = proposalData?.items || [];
+    // BUG-CRED-3 FIX (2026-06-28) [G1]: `items` pode chegar truthy NÃO-array (string/objeto)
+    // e passar pelo schema (proposalData é z.record(z.any())). Antes, `proposalData?.items || []`
+    // mantinha o não-array e `.filter` lançava TypeError → catch → 500 cego. A guarda
+    // Array.isArray normaliza para [] → vira 422 (dado inválido do cliente), coerente com BUG-CRED-2.
+    // Forma `const itemsRaw = proposalData?.items` evita reacessar proposalData (que é opcional).
+    const itemsRaw = proposalData?.items;
+    const rawItems: any[] = Array.isArray(itemsRaw) ? itemsRaw : [];
     const itemsValidos = rawItems.filter((item: any) => !!item.bitrix_product_id);
     const itemsExcluidos = rawItems.length - itemsValidos.length;
     if (itemsExcluidos > 0) console.warn(`${itemsExcluidos} item(ns) excluido(s) por nao ter bitrix_product_id`);
-    // BUG-CRED-2 FIX (2026-06-28): nenhum item sincronizável → 422 (dado do request), não 500.
-    // Catálogo ainda não importado para o Bitrix é estado de dados, não bug do servidor.
     if (itemsValidos.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Nenhum produto possui bitrix_product_id. Aguarde a importação do catálogo no Bitrix.' }),
@@ -147,34 +147,63 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
     };
 
-    const response = await fetchWithBreaker('bitrix', webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(n8nPayload),
-    });
+    // BUG-CRED-3 FIX (2026-06-28) [G2]: isola a chamada ao upstream. `fetchWithBreaker` pode
+    // lançar CircuitOpenError (breaker aberto), InsecureUrlError (credencial não-https) ou erro
+    // de rede (DNS/conexão/TLS/timeout). Antes, TODOS caíam no catch externo → 500. Agora:
+    // circuito→503, credencial inválida→503, rede→502 (upstream inacessível, não bug interno).
+    let response: Response;
+    try {
+      response = await fetchWithBreaker('bitrix', webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(n8nPayload),
+      });
+    } catch (fetchErr) {
+      if (fetchErr instanceof CircuitOpenError) return circuitOpenResponse(fetchErr, corsHeaders);
+      if (fetchErr instanceof InsecureUrlError) {
+        console.error('sync-quote-bitrix: webhook URL insegura (esperado https):', fetchErr);
+        return new Response(
+          JSON.stringify({ error: 'N8N_QUOTE_WEBHOOK_URL inválida: deve usar https://. Corrija em /admin/conexoes > Webhooks.' }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+      console.error('sync-quote-bitrix: falha de rede ao contatar webhook n8n:', fetchErr);
+      return new Response(
+        JSON.stringify({ error: 'Não foi possível contatar o webhook do n8n (upstream inacessível).' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     if (!response.ok) {
       const errText = await response.text();
       console.error('n8n webhook error:', response.status, errText);
       // BUG-CRED-2 FIX (2026-06-28): upstream (n8n) retornou não-2xx → 502 (Bad Gateway), não 500.
-      // O erro é do serviço externo a jusante, não deste edge function. 502 deixa claro na
-      // triagem que o gateway/n8n falhou, não o código local.
       return new Response(
         JSON.stringify({ error: `Webhook do n8n retornou erro ${response.status}.`, upstream_status: response.status }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    const result = await response.json();
+    // BUG-CRED-3 FIX (2026-06-28) [G3]: n8n pode responder 2xx com corpo VAZIO ou não-JSON
+    // (ex.: nó "Respond to Webhook" sem body). Antes, `response.json()` lançava → catch → 500,
+    // reportando FALHA de uma sincronização que SUCEDEU (falso negativo). Agora trata como
+    // sucesso sem payload (result=null) — o upstream aceitou (2xx).
+    let result: unknown = null;
+    try {
+      result = await response.json();
+    } catch {
+      console.warn('sync-quote-bitrix: n8n 2xx com corpo não-JSON; tratando como sucesso (result=null).');
+      result = null;
+    }
     return new Response(JSON.stringify({ ok: true, result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (err) {
-    // CircuitOpenError → 503 padronizado do breaker (n8n marcado como indisponível).
+    // Defesa: CircuitOpenError já é tratado inline na chamada ao n8n; mantido aqui por robustez.
+    // Pós-BUG-CRED-2/3, chegar ao catch externo significa erro REALMENTE inesperado (bug interno) —
+    // 500 passa a ser sinal honesto, não mais "lixeira" de credencial/validação/upstream.
     if (err instanceof CircuitOpenError) return circuitOpenResponse(err, corsHeaders);
-    // Pós-BUG-CRED-2: chegar aqui agora significa erro REALMENTE inesperado (não credencial
-    // ausente, não validação, não upstream). 500 passa a ser sinal honesto de bug interno.
     console.error('sync-quote-bitrix error:', err);
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
     return new Response(JSON.stringify({ error: message }), {
