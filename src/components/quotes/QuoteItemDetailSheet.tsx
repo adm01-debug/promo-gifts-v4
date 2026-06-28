@@ -239,9 +239,10 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 <span className="text-muted-foreground">Quantidade</span>
                 <span className="font-medium">
                   {item.quantity}
-                  <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  <span className={`ml-1.5 ${qvType.microLabel}`}>
                     (faixa {getCurrentTierLabel(item.quantity)} un)
                   </span>
+
                 </span>
               </div>
               <div className="flex justify-between border-t border-border/50 pt-1.5 font-semibold">
