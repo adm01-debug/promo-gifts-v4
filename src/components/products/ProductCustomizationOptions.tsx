@@ -278,32 +278,21 @@ export function ProductCustomizationOptions({
                     disabled={isDisabled}
                     onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
                     className={cn(
-                      'group relative flex min-w-[120px] snap-start flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left transition-all md:min-w-0',
+                      'group relative flex min-w-[120px] snap-start items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-center transition-all md:min-w-0',
                       isDisabled
                         ? 'cursor-not-allowed border-border bg-muted/30 opacity-40'
                         : isActive
-                          ? 'border-primary bg-primary/15 shadow-sm ring-2 ring-primary/30'
-                          : hasPrice
-                            ? 'border-primary/40 bg-primary/5 hover:bg-primary/10'
-                            : 'border-border bg-secondary/40 hover:border-primary/30 hover:bg-secondary',
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-transparent text-foreground hover:border-primary/40 hover:bg-primary/5',
                     )}
                   >
-                    <div className="flex w-full items-center justify-between">
-                      <span
-                        className={cn(
-                          'text-xs font-bold uppercase tracking-wide',
-                          isActive ? 'text-primary' : 'text-foreground',
-                        )}
-                      >
-                        {loc.location_name}
-                      </span>
-                      {hasPrice && <span className="text-[10px] font-bold text-primary">✓</span>}
-                    </div>
-                    <span className="text-[10px] text-muted-foreground">
-                      {isCircular ? 'Volta toda · 360°' : 'Lado único'}
+                    <span className="text-xs font-semibold uppercase tracking-wide">
+                      {isCircular ? 'CIRCULAR 360°' : loc.location_name}
                     </span>
+                    {hasPrice && <span className="text-[10px] font-bold text-primary">✓</span>}
                   </button>
                 );
+
 
                 return isDisabled && disabledReason ? (
                   <Tooltip key={loc.location_code}>
