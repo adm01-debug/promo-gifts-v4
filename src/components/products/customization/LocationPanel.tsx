@@ -383,7 +383,7 @@ export function LocationPanel({
       }, 50);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: see comment above
-    [selectedTechnique, toast],
+    [selectedTechnique, toast, reduceMotion],
   );
 
   const handlePriceCalculated = useCallback(
