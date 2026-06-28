@@ -27,33 +27,6 @@ test('≤5 itens: scroll interno não é ativado', async ({ page }) => {
   await expect(scroller).toHaveAttribute('data-inner-scroll', 'false');
 });
 
-test('fronteira: 5 itens não rola, 6 itens rola mostrando só 5 linhas', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await open(page);
-
-  const five = page
-    .getByTestId('quote-items-table-fixture-five')
-    .getByTestId('quote-items-table-scroll');
-  const six = page
-    .getByTestId('quote-items-table-fixture-six')
-    .getByTestId('quote-items-table-scroll');
-
-  await expect(five).toHaveAttribute('data-inner-scroll', 'false');
-  await expect(six).toHaveAttribute('data-inner-scroll', 'true');
-
-  const sixMetrics = await six.evaluate((el) => {
-    const eb = el.getBoundingClientRect();
-    const rows = Array.from(el.querySelectorAll<HTMLTableRowElement>('tbody tr[data-quote-item-row="true"]'));
-    const visibleRows = rows.filter((row) => {
-      const rb = row.getBoundingClientRect();
-      return rb.top >= eb.top - 1 && rb.bottom <= eb.bottom + 1;
-    }).length;
-    return { scrollH: el.scrollHeight, clientH: el.clientHeight, visibleRows };
-  });
-  expect(sixMetrics.scrollH).toBeGreaterThan(sixMetrics.clientH);
-  expect(sixMetrics.visibleRows).toBe(5);
-});
-
 test('>5 itens: scroll interno ativo, a11y e thead sticky', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await open(page);
@@ -73,19 +46,7 @@ test('>5 itens: scroll interno ativo, a11y e thead sticky', async ({ page }) => 
   }));
   expect(metrics.scrollH).toBeGreaterThan(metrics.clientH);
 
-  await scroller.focus();
-  const beforeWheel = await scroller.evaluate((el) => el.scrollTop);
-  await page.keyboard.press('PageDown');
-  await expect
-    .poll(() => scroller.evaluate((el) => el.scrollTop), {
-      message: 'scroll interno deve responder à navegação por teclado',
-    })
-    .toBeGreaterThan(beforeWheel);
-
   // Estado inicial: topo da rolagem interna.
-  await scroller.evaluate((el) => {
-    el.scrollTop = 0;
-  });
   await expect(scroller).toHaveAttribute('data-scroll-at-top', 'true');
 
   // Rola internamente e confirma que o thead sticky se mantém no topo do

@@ -19,11 +19,11 @@
    sem quebrar posicionamentos fixed/sticky.
    ───────────────────────────────────────────── */
 html {
-  overflow-x: clip;
+  overflow-x: hidden;
   min-height: 100dvh; /* dvh = dynamic viewport height (iOS Safari) */
 }
 body {
-  overflow-x: clip;
+  overflow-x: hidden;
   min-height: 100dvh;
 }
 
