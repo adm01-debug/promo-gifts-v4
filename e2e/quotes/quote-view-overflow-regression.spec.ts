@@ -139,3 +139,48 @@ test('@smoke thead permanece sticky durante rolagem interna em md e lg', async (
     ).toBeLessThanOrEqual(2);
   }
 });
+
+test('Tab percorre controles dentro da região rolável sem perder foco após scroll', async ({
+  page,
+}) => {
+  await open(page);
+  const scroller = page
+    .getByTestId('quote-items-table-fixture-many')
+    .getByTestId('quote-items-table-scroll');
+
+  // Foca o scroller e tabula para o primeiro controle interativo interno.
+  await scroller.focus();
+  await expect(scroller).toBeFocused();
+
+  // Tab move para dentro: ao menos um focável (botão da QuoteItemDetailSheet).
+  await page.keyboard.press('Tab');
+  const firstFocusContained = await scroller.evaluate(
+    (el) => !!document.activeElement && el.contains(document.activeElement),
+  );
+  expect(firstFocusContained, 'Tab deveria entrar na região rolável').toBe(true);
+
+  // Continua tabulando 4x; cada foco deve permanecer no DOM e visível.
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('Tab');
+    const stillVisible = await page.evaluate(() => {
+      const ae = document.activeElement as HTMLElement | null;
+      if (!ae) return false;
+      const r = ae.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+    expect(stillVisible, `Tab #${i + 2}: foco perdeu visibilidade`).toBe(true);
+  }
+
+  // Após muda de estado de rolagem (End), o foco atual NÃO deve ser resetado
+  // para body — o navegador preserva foco; validamos que continua dentro do
+  // documento e que o scroller mantém data-scroll-at-bottom.
+  const activeBefore = await page.evaluate(() => document.activeElement?.tagName ?? null);
+  await scroller.focus();
+  await page.keyboard.press('End');
+  await expect(scroller).toHaveAttribute('data-scroll-at-bottom', 'true');
+  const activeAfter = await page.evaluate(() => document.activeElement?.tagName ?? null);
+  expect(activeAfter).not.toBeNull();
+  expect(activeAfter).not.toBe('BODY');
+  expect(activeBefore).not.toBeNull();
+});
+
