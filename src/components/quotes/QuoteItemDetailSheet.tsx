@@ -337,28 +337,23 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                           <Separator className="my-0.5" />
                           <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
                             <div>
-                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Unitário
-                              </span>
+                              <span className={`block ${qvType.microLabel}`}>Unitário</span>
                               <span className="font-semibold text-foreground">
                                 {fmt(unitRounded)}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Setup
-                              </span>
+                              <span className={`block ${qvType.microLabel}`}>Setup</span>
                               <span className="font-semibold text-foreground">
                                 {fmt(p.setup_cost || 0)}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Total
-                              </span>
+                              <span className={`block ${qvType.microLabel}`}>Total</span>
                               <span className="font-semibold text-primary">
                                 {fmt(totalRounded)}
                               </span>
+
                             </div>
                           </div>
                         </div>
