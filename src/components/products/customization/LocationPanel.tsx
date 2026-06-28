@@ -568,18 +568,56 @@ export function LocationPanel({
           apenas ocultado via `hidden`. Isso preserva o hook reativo de preço
           e evita re-cálculo desnecessário ao clicar na mesma técnica. */}
       {showConfig && (
-        <div hidden={isPickerOpen} aria-hidden={isPickerOpen}>
-          <ConfigurationPanelV6
-            key={selectedTechnique.technique_id}
-            technique={selectedTechnique}
-            quantity={quantity}
-            isConfirmed={confirmedPersonalization?.techniqueId === selectedTechnique.technique_id}
-            initialWidth={initialWidth}
-            initialHeight={initialHeight}
-            initialColors={initialColors}
-            onPriceCalculated={handlePriceCalculated}
-            onDimensionsChange={handleDimensionsChange}
-          />
+        <div
+          hidden={isPickerOpen}
+          aria-hidden={isPickerOpen}
+          /* Altura mínima evita layout-shift ao trocar técnica enquanto
+             o ConfigurationPanelV6 remonta (key muda) e recalcula preço. */
+          className="min-h-[260px]"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {isSwapping ? (
+              <motion.div
+                key={`skeleton-${selectedTechnique.technique_id}`}
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.12 }}
+                className="space-y-2 pt-1"
+                data-testid="customization-config-skeleton"
+                aria-hidden="true"
+              >
+                <Skeleton className="h-8 w-2/3 rounded-md" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Skeleton className="h-16 rounded-md" />
+                  <Skeleton className="h-16 rounded-md" />
+                </div>
+                <Skeleton className="h-24 w-full rounded-md" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`panel-${selectedTechnique.technique_id}`}
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+              >
+                <ConfigurationPanelV6
+                  key={selectedTechnique.technique_id}
+                  technique={selectedTechnique}
+                  quantity={quantity}
+                  isConfirmed={
+                    confirmedPersonalization?.techniqueId === selectedTechnique.technique_id
+                  }
+                  initialWidth={initialWidth}
+                  initialHeight={initialHeight}
+                  initialColors={initialColors}
+                  onPriceCalculated={handlePriceCalculated}
+                  onDimensionsChange={handleDimensionsChange}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>
