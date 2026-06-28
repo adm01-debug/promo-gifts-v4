@@ -11,7 +11,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
 import { Pencil, Info } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
