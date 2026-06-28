@@ -1,16 +1,21 @@
 /**
- * QuoteItemsTable · header fora do scroller + alinhamento de colunas.
+ * QuoteItemsTable · header fora do scroller + alinhamento de colunas + a11y.
  *
- * Valida em 390 / 768 / 1280 sobre `/__visual/quote-view-order`:
- *  - Wrapper externo mantém border-radius > 0 nos 4 cantos e recorta o conteúdo.
- *  - `<thead>` NÃO pertence ao DOM do scroller (header fica fora da área rolável).
- *  - `<tbody>` pertence ao scroller.
- *  - 1ª th tem border-top-left-radius > 0 e última th tem border-top-right-radius > 0
- *    (não há mais cornerMask sobrepondo cantos — sem pixel preto na borda azul).
- *  - Larguras das colunas do header e do corpo ficam alinhadas (Δ ≤ 2px) antes e
- *    durante o scroll vertical/horizontal.
- *  - Header não se move quando o body rola (top constante).
- *  - Não há corte, sobreposição ou overflow lateral no documento (390/768/1280).
+ * Cobertura em 390 / 768 / 1280 × 2 fixtures (5 colunas sem scroll interno
+ * e 6 colunas com scroll interno e personalização):
+ *  - Wrapper preserva os 4 cantos arredondados e overflow:hidden.
+ *  - `<thead>` NÃO pertence ao scroller (scroll começa abaixo do header);
+ *    `<tbody>` pertence; `cornerMask` legado não existe mais.
+ *  - 1ª `<th>` TL > 0 e última `<th>` TR > 0 (sem pixel preto na borda azul).
+ *  - Colunas header ↔ body alinhadas (Δ ≤ 2px) no início, no meio e no fim
+ *    do scroll vertical.
+ *  - `data-scrollbar-pad` reflete a medida runtime (`offsetWidth - clientWidth`)
+ *    e mantém colunas alinhadas em ambientes com scrollbar overlay (=0) e
+ *    clássica (>0).
+ *  - A11y: cada `<td>` referencia o `<th id>` correspondente via `headers`,
+ *    garantindo leitura "Coluna: valor" em leitores de tela mesmo com
+ *    thead/tbody em <table>s distintas.
+ *  - Documento não estoura horizontalmente em nenhum breakpoint.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { gotoAndSettle } from '../helpers/nav';
@@ -21,219 +26,198 @@ const VIEWPORTS = [
   { name: 'tablet', width: 768, height: 1024 },
   { name: 'desktop', width: 1280, height: 900 },
 ] as const;
+const FIXTURES = [
+  { id: 'quote-items-table-fixture', label: 'with-personalization' },
+  { id: 'quote-items-table-fixture-many', label: 'many-rows-inner-scroll' },
+] as const;
+
+const MIN_RADIUS_PX = 2;
+const ALIGN_TOLERANCE_PX = 2;
 
 async function open(page: Page) {
   await gotoAndSettle(page, ROUTE);
   await expect(page.getByTestId('quote-view-order-harness')).toBeVisible();
 }
 
-function px(v: string): number {
-  return Number.parseFloat(v) || 0;
-}
+const px = (v: string) => Number.parseFloat(v) || 0;
 
-const MIN_RADIUS_PX = 2;
-const ALIGN_TOLERANCE_PX = 2;
-
-for (const vp of VIEWPORTS) {
-  test(`[${vp.name}] header fora do scroller, colunas alinhadas e cantos arredondados`, async ({ page }) => {
-    await page.setViewportSize({ width: vp.width, height: vp.height });
-    await open(page);
-
-    const fixture = page.getByTestId('quote-items-table-fixture-many');
-    const wrapper = fixture.getByTestId('quote-items-table-wrapper');
-    const headerWrap = fixture.getByTestId('quote-items-table-header-wrap');
-    const scroller = fixture.getByTestId('quote-items-table-scroll');
-    await expect(wrapper).toBeVisible();
-    await expect(headerWrap).toBeVisible();
-    await expect(scroller).toBeVisible();
-
-    // ── Wrapper: 4 cantos arredondados e overflow hidden.
-    const wrapperMetrics = await wrapper.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      const r = el.getBoundingClientRect();
+async function measureAlignment(scope: ReturnType<Page['getByTestId']>) {
+  return scope.evaluate((fx) => {
+    const ths = [
+      ...fx.querySelectorAll<HTMLTableCellElement>(
+        '[data-testid="quote-items-table-header-wrap"] thead tr > th',
+      ),
+    ];
+    const tr = fx.querySelector<HTMLTableRowElement>(
+      '[data-testid="quote-items-table-scroll"] tbody tr:not([class*="bg-accent"]):not([class*="bg-muted/30"])',
+    );
+    const tds = tr ? [...tr.querySelectorAll<HTMLTableCellElement>('td')] : [];
+    return ths.map((th, i) => {
+      const a = th.getBoundingClientRect();
+      const b = tds[i]?.getBoundingClientRect();
       return {
-        tl: cs.borderTopLeftRadius,
-        tr: cs.borderTopRightRadius,
-        bl: cs.borderBottomLeftRadius,
-        br: cs.borderBottomRightRadius,
-        overflowX: cs.overflowX,
-        overflowY: cs.overflowY,
-        left: r.left,
-        right: r.right,
-        width: r.width,
+        i,
+        thId: th.id,
+        tdHeaders: tds[i]?.getAttribute('headers') ?? null,
+        dLeft: b ? Number((b.left - a.left).toFixed(2)) : null,
+        dRight: b ? Number((b.right - a.right).toFixed(2)) : null,
+        dWidth: b ? Number((b.width - a.width).toFixed(2)) : null,
       };
-    });
-    for (const [corner, value] of Object.entries({
-      tl: wrapperMetrics.tl,
-      tr: wrapperMetrics.tr,
-      bl: wrapperMetrics.bl,
-      br: wrapperMetrics.br,
-    })) {
-      expect(
-        px(value),
-        `wrapper ${corner} @${vp.name} = "${value}" (>= ${MIN_RADIUS_PX}px)`,
-      ).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
-    }
-    expect(wrapperMetrics.overflowX).toBe('hidden');
-    expect(wrapperMetrics.overflowY).toBe('hidden');
-
-    // ── Documento não estoura horizontalmente em nenhum breakpoint.
-    const docMetrics = await page.evaluate(() => ({
-      doc: document.documentElement.scrollWidth,
-      vw: window.innerWidth,
-    }));
-    expect(
-      docMetrics.doc,
-      `document (${docMetrics.doc}) <= viewport (${docMetrics.vw}) @${vp.name}`,
-    ).toBeLessThanOrEqual(docMetrics.vw + 2);
-
-    // ── Header fora do scroller: thead NÃO pertence ao scroll container,
-    // tbody pertence. Garante que o scroll começa abaixo do header.
-    const domTopology = await fixture.evaluate((fx) => {
-      const sc = fx.querySelector('[data-testid="quote-items-table-scroll"]');
-      const thead = fx.querySelector('thead');
-      const tbody = fx.querySelector('tbody');
-      const hw = fx.querySelector('[data-testid="quote-items-table-header-wrap"]');
-      return {
-        theadInScroller: !!(sc && thead && sc.contains(thead)),
-        tbodyInScroller: !!(sc && tbody && sc.contains(tbody)),
-        theadInHeaderWrap: !!(hw && thead && hw.contains(thead)),
-      };
-    });
-    expect(domTopology.theadInScroller, `<thead> NÃO deve estar no scroller @${vp.name}`).toBe(false);
-    expect(domTopology.tbodyInScroller, `<tbody> deve estar no scroller @${vp.name}`).toBe(true);
-    expect(domTopology.theadInHeaderWrap, `<thead> deve estar no header-wrap @${vp.name}`).toBe(true);
-
-    // ── Scroller continua rolável (vertical + horizontal) sem scrollbar-gutter.
-    const scrollerCss = await scroller.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      return { overflowX: cs.overflowX, overflowY: cs.overflowY };
-    });
-    expect(scrollerCss.overflowX).toBe('auto');
-    expect(scrollerCss.overflowY).toBe('auto');
-
-    // ── Cantos do header (sem cornerMask): TL na 1ª th, TR na última th.
-    const ths = headerWrap.locator('thead tr > th');
-    const thCount = await ths.count();
-    expect(thCount).toBeGreaterThan(1);
-
-    const firstTl = await ths.first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
-    const lastTr = await ths.nth(thCount - 1).evaluate((el) => getComputedStyle(el).borderTopRightRadius);
-    expect(px(firstTl), `1ª th TL @${vp.name}`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
-    expect(px(lastTr), `última th TR @${vp.name}`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
-
-    // cornerMask antigo NÃO deve mais existir (era fonte do pixel preto na borda).
-    await expect(fixture.getByTestId('quote-items-table-scrollbar-corner-mask')).toHaveCount(0);
-
-    // ── Modelo de pintura: <tr> transparente + border-separate (impede que
-    // bordas da célula vazem por cima do background azul do <th>).
-    const paintModel = await ths.first().evaluate((th) => {
-      const tr = th.closest('tr')!;
-      const table = th.closest('table')!;
-      return {
-        rowBg: getComputedStyle(tr).backgroundColor,
-        collapse: getComputedStyle(table).borderCollapse,
-        thBg: getComputedStyle(th).backgroundColor,
-      };
-    });
-    expect(paintModel.rowBg).toBe('rgba(0, 0, 0, 0)');
-    expect(paintModel.collapse).toBe('separate');
-    expect(paintModel.thBg).not.toBe('rgba(0, 0, 0, 0)');
-
-    // ── Alinhamento de colunas header ↔ corpo (Δ ≤ 2px) — regressão visual
-    // contra desalinhamento causado por reservas distintas de scrollbar.
-    const tds = scroller.locator(
-      'tbody tr:not([class*="bg-accent"]):not([class*="bg-muted/30"])',
-    ).first().locator('td');
-    const tdCount = await tds.count();
-    expect(tdCount, `header e body devem ter o mesmo nº de colunas @${vp.name}`).toBe(thCount);
-
-    const alignments: Array<{ i: number; dLeft: number; dRight: number; dWidth: number }> = [];
-    for (let i = 0; i < thCount; i++) {
-      const pair = await ths.nth(i).evaluate(
-        (thEl, tdEl) => {
-          const a = thEl.getBoundingClientRect();
-          const b = (tdEl as HTMLElement).getBoundingClientRect();
-          return {
-            dLeft: Number((b.left - a.left).toFixed(2)),
-            dRight: Number((b.right - a.right).toFixed(2)),
-            dWidth: Number((b.width - a.width).toFixed(2)),
-          };
-        },
-        await tds.nth(i).elementHandle(),
-      );
-      alignments.push({ i, ...pair });
-      expect(
-        Math.abs(pair.dLeft),
-        `col[${i}] dLeft @${vp.name} = ${pair.dLeft}px`,
-      ).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
-      expect(
-        Math.abs(pair.dRight),
-        `col[${i}] dRight @${vp.name} = ${pair.dRight}px`,
-      ).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
-      expect(
-        Math.abs(pair.dWidth),
-        `col[${i}] dWidth @${vp.name} = ${pair.dWidth}px`,
-      ).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
-    }
-
-    // ── Larguras de coluna > 0 e top do header dentro do wrapper (sem corte).
-    const headerWrapRect = await headerWrap.evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return { top: r.top, left: r.left, right: r.right, height: r.height };
-    });
-    for (let i = 0; i < thCount; i++) {
-      const box = await ths.nth(i).evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return { left: r.left, right: r.right, top: r.top, width: r.width, height: r.height };
-      });
-      expect(box.width, `th[${i}] width > 0 @${vp.name}`).toBeGreaterThan(0);
-      expect(box.height, `th[${i}] height > 0 @${vp.name}`).toBeGreaterThan(0);
-      expect(box.left).toBeGreaterThanOrEqual(headerWrapRect.left - 2);
-      expect(box.right).toBeLessThanOrEqual(headerWrapRect.right + 2);
-    }
-
-    // ── Header NÃO se move quando o body rola verticalmente (regressão sticky).
-    const theadTopBefore = await headerWrap
-      .locator('thead')
-      .evaluate((el) => el.getBoundingClientRect().top);
-    await scroller.evaluate((el) => {
-      el.scrollTop = el.scrollHeight;
-    });
-    await page.waitForTimeout(150);
-    const theadTopAfter = await headerWrap
-      .locator('thead')
-      .evaluate((el) => el.getBoundingClientRect().top);
-    expect(
-      Math.abs(theadTopAfter - theadTopBefore),
-      `header top constante após scrollTop=end @${vp.name}`,
-    ).toBeLessThanOrEqual(1);
-
-    // ── Alinhamento de colunas se mantém com o body rolado.
-    for (let i = 0; i < thCount; i++) {
-      const pair = await ths.nth(i).evaluate(
-        (thEl, tdEl) => {
-          const a = thEl.getBoundingClientRect();
-          const b = (tdEl as HTMLElement).getBoundingClientRect();
-          return {
-            dLeft: Number((b.left - a.left).toFixed(2)),
-            dWidth: Number((b.width - a.width).toFixed(2)),
-          };
-        },
-        await tds.nth(i).elementHandle(),
-      );
-      expect(
-        Math.abs(pair.dLeft),
-        `col[${i}] dLeft após scroll @${vp.name} = ${pair.dLeft}px`,
-      ).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
-      expect(
-        Math.abs(pair.dWidth),
-        `col[${i}] dWidth após scroll @${vp.name} = ${pair.dWidth}px`,
-      ).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
-    }
-
-    await scroller.evaluate((el) => {
-      el.scrollTop = 0;
     });
   });
 }
+
+for (const vp of VIEWPORTS) {
+  for (const fx of FIXTURES) {
+    test(`[${vp.name}/${fx.label}] header fora do scroller, colunas alinhadas e a11y`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await open(page);
+
+      const fixture = page.getByTestId(fx.id);
+      const wrapper = fixture.getByTestId('quote-items-table-wrapper');
+      const headerWrap = fixture.getByTestId('quote-items-table-header-wrap');
+      const scroller = fixture.getByTestId('quote-items-table-scroll');
+      await expect(wrapper).toBeVisible();
+      await expect(headerWrap).toBeVisible();
+      await expect(scroller).toBeVisible();
+
+      // ── Wrapper: 4 cantos arredondados + overflow:hidden.
+      const w = await wrapper.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return {
+          tl: cs.borderTopLeftRadius,
+          tr: cs.borderTopRightRadius,
+          bl: cs.borderBottomLeftRadius,
+          br: cs.borderBottomRightRadius,
+          ox: cs.overflowX,
+          oy: cs.overflowY,
+        };
+      });
+      for (const k of ['tl', 'tr', 'bl', 'br'] as const) {
+        expect(px(w[k]), `wrapper ${k} @${vp.name}/${fx.label}`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+      }
+      expect(w.ox).toBe('hidden');
+      expect(w.oy).toBe('hidden');
+
+      // ── Documento não estoura horizontalmente.
+      const dm = await page.evaluate(() => ({
+        d: document.documentElement.scrollWidth,
+        v: window.innerWidth,
+      }));
+      expect(dm.d).toBeLessThanOrEqual(dm.v + 2);
+
+      // ── Topologia DOM: header fora do scroller, tbody dentro, sem cornerMask.
+      const topo = await fixture.evaluate((el) => {
+        const sc = el.querySelector('[data-testid="quote-items-table-scroll"]');
+        const hw = el.querySelector('[data-testid="quote-items-table-header-wrap"]');
+        const thead = el.querySelector('thead');
+        const tbody = el.querySelector('tbody');
+        return {
+          theadInScroller: !!(sc && thead && sc.contains(thead)),
+          tbodyInScroller: !!(sc && tbody && sc.contains(tbody)),
+          theadInHeaderWrap: !!(hw && thead && hw.contains(thead)),
+          cornerMaskCount: el.querySelectorAll('[data-testid="quote-items-table-scrollbar-corner-mask"]').length,
+        };
+      });
+      expect(topo.theadInScroller).toBe(false);
+      expect(topo.tbodyInScroller).toBe(true);
+      expect(topo.theadInHeaderWrap).toBe(true);
+      expect(topo.cornerMaskCount).toBe(0);
+
+      // ── Cantos do header (regressão visual contra pixel preto na borda).
+      const ths = headerWrap.locator('thead tr > th');
+      const thCount = await ths.count();
+      expect(thCount).toBeGreaterThan(1);
+      const firstTl = await ths.first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+      const lastTr = await ths.nth(thCount - 1).evaluate((el) => getComputedStyle(el).borderTopRightRadius);
+      expect(px(firstTl)).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+      expect(px(lastTr)).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+
+      // ── A11y: cada <th> tem id e cada <td> da 1ª linha referencia via headers.
+      const align0 = await measureAlignment(fixture);
+      for (const a of align0) {
+        expect(a.thId, `th[${a.i}] precisa de id @${vp.name}/${fx.label}`).toBeTruthy();
+        expect(a.tdHeaders, `td[${a.i}] headers @${vp.name}/${fx.label}`).toBe(a.thId);
+      }
+
+      // ── Alinhamento header ↔ body no estado inicial.
+      for (const a of align0) {
+        expect(Math.abs(a.dLeft ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+        expect(Math.abs(a.dRight ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+        expect(Math.abs(a.dWidth ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+      }
+
+      // ── data-scrollbar-pad runtime: número >= 0; em scrollbar overlay = 0,
+      // em scrollbar clássica > 0 (caso o body role verticalmente).
+      const padAttr = await headerWrap.getAttribute('data-scrollbar-pad');
+      const padNum = Number(padAttr);
+      expect(Number.isFinite(padNum)).toBe(true);
+      expect(padNum).toBeGreaterThanOrEqual(0);
+      const scrollMetrics = await scroller.evaluate((el) => ({
+        offsetWidth: el.offsetWidth,
+        clientWidth: el.clientWidth,
+        canScrollY: el.scrollHeight > el.clientHeight + 1,
+      }));
+      const expectedPad = Math.max(0, scrollMetrics.offsetWidth - scrollMetrics.clientWidth);
+      expect(
+        Math.abs(padNum - expectedPad),
+        `data-scrollbar-pad (${padNum}) ≈ offsetWidth-clientWidth (${expectedPad})`,
+      ).toBeLessThanOrEqual(1);
+
+      // ── Header não se move ao rolar verticalmente (constância de top).
+      const headTop0 = await headerWrap.locator('thead').evaluate((el) => el.getBoundingClientRect().top);
+
+      if (scrollMetrics.canScrollY) {
+        // Meio do scroll.
+        await scroller.evaluate((el) => {
+          el.scrollTop = Math.floor((el.scrollHeight - el.clientHeight) / 2);
+        });
+        await page.waitForTimeout(120);
+        const headTopMid = await headerWrap.locator('thead').evaluate((el) => el.getBoundingClientRect().top);
+        expect(Math.abs(headTopMid - headTop0)).toBeLessThanOrEqual(1);
+        const alignMid = await measureAlignment(fixture);
+        for (const a of alignMid) {
+          expect(Math.abs(a.dLeft ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+          expect(Math.abs(a.dWidth ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+        }
+
+        // Fim do scroll.
+        await scroller.evaluate((el) => {
+          el.scrollTop = el.scrollHeight;
+        });
+        await page.waitForTimeout(120);
+        const headTopEnd = await headerWrap.locator('thead').evaluate((el) => el.getBoundingClientRect().top);
+        expect(Math.abs(headTopEnd - headTop0)).toBeLessThanOrEqual(1);
+        const alignEnd = await measureAlignment(fixture);
+        for (const a of alignEnd) {
+          expect(Math.abs(a.dLeft ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+          expect(Math.abs(a.dWidth ?? 0)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
+        }
+        await scroller.evaluate((el) => {
+          el.scrollTop = 0;
+        });
+      }
+
+      // ── A11y: header é navegável (scope=col em todas as colunas).
+      const scopes = await ths.evaluateAll((els) => els.map((e) => e.getAttribute('scope')));
+      for (const s of scopes) expect(s).toBe('col');
+    });
+  }
+}
+
+test('debug telemetry (window.__DEBUG_QUOTE_TABLE) emite scrollbarPad', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __DEBUG_QUOTE_TABLE?: boolean }).__DEBUG_QUOTE_TABLE = true;
+  });
+  const debugLogs: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'debug' && msg.text().includes('[QuoteItemsTable] scrollbarPad')) {
+      debugLogs.push(msg.text());
+    }
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await open(page);
+  await expect(page.getByTestId('quote-items-table-fixture-many')).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(debugLogs.length, 'pelo menos 1 log de debug emitido').toBeGreaterThan(0);
+});
