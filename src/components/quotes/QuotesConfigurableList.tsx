@@ -502,7 +502,7 @@ export function QuotesConfigurableList({
 
                   </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()} data-testid={`quote-row-menu-${quote.id}`} className="min-w-[6.4rem] max-w-[calc(100vw-1rem)] [&_[role=menuitem]]:whitespace-nowrap">
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()} data-testid={`quote-row-menu-${quote.id}`} className="!min-w-0 w-[6.4rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5">
                     <DropdownMenuItem data-testid={`quote-row-menu-view-${quote.id}`} onClick={() => navigate(`/orcamentos/${quote.id}`)}>
                       <Eye className="mr-2 h-4 w-4" /> Visualizar
                     </DropdownMenuItem>
