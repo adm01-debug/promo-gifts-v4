@@ -274,24 +274,72 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const enableInnerScroll = totalRows > 5;
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const [scrollState, setScrollState] = React.useState<{ top: boolean; bottom: boolean }>({
-    top: true,
-    bottom: !enableInnerScroll,
-  });
+  const [scrollState, setScrollState] = React.useState<{
+    top: boolean;
+    bottom: boolean;
+    progress: number;
+  }>({ top: true, bottom: !enableInnerScroll, progress: 0 });
+  const [announcement, setAnnouncement] = React.useState('');
+  const announceTimer = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
     const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => {
+      const max = el.scrollHeight - el.clientHeight;
       const atTop = el.scrollTop <= 1;
       const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-      setScrollState({ top: atTop, bottom: atBottom });
+      const progress = max > 0 ? Math.round((el.scrollTop / max) * 100) : 100;
+      setScrollState({ top: atTop, bottom: atBottom, progress });
     };
     onScroll();
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, [enableInnerScroll, totalRows]);
+
+  // Anuncia transições de fim/início de rolagem para leitores de tela.
+  React.useEffect(() => {
+    if (!enableInnerScroll) return;
+    const msg = scrollState.bottom
+      ? 'Fim da lista de itens.'
+      : scrollState.top
+        ? `Início da lista. ${totalRows} itens disponíveis. Use as setas para rolar.`
+        : `Rolando, ${scrollState.progress}% da lista.`;
+    if (announceTimer.current) window.clearTimeout(announceTimer.current);
+    announceTimer.current = window.setTimeout(() => setAnnouncement(msg), 150);
+    return () => {
+      if (announceTimer.current) window.clearTimeout(announceTimer.current);
+    };
+  }, [enableInnerScroll, scrollState.top, scrollState.bottom, scrollState.progress, totalRows]);
+
+  const onScrollerKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!enableInnerScroll) return;
+      const el = scrollRef.current;
+      if (!el) return;
+      // Não interferir quando o foco está num controle interativo dentro da tabela.
+      const target = e.target as HTMLElement;
+      if (target !== el && target.closest('button,a,input,select,textarea,[role="button"]')) {
+        return;
+      }
+      const line = 88; // altura aproximada de uma linha
+      const page = el.clientHeight - line;
+      let delta = 0;
+      switch (e.key) {
+        case 'ArrowDown': delta = line; break;
+        case 'ArrowUp': delta = -line; break;
+        case 'PageDown': case ' ': delta = page; break;
+        case 'PageUp': delta = -page; break;
+        case 'Home': el.scrollTo({ top: 0, behavior: 'smooth' }); e.preventDefault(); return;
+        case 'End': el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); e.preventDefault(); return;
+        default: return;
+      }
+      e.preventDefault();
+      el.scrollBy({ top: delta, behavior: 'smooth' });
+    },
+    [enableInnerScroll],
+  );
 
   return (
     <section aria-labelledby="quote-items-heading">
@@ -299,12 +347,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <div className="relative">
         <div
           ref={scrollRef}
+          onKeyDown={onScrollerKeyDown}
           className={cn(
             'overflow-x-auto rounded-lg border border-border',
             enableInnerScroll && [
               'overflow-y-auto',
-              // Header ~44px + 5 linhas × ~88px = ~484px. Limites por
-              // breakpoint fecham a 5ª linha sem cortar.
               'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
               'print:max-h-none print:overflow-visible',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
@@ -314,10 +361,12 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           data-inner-scroll={enableInnerScroll ? 'true' : 'false'}
           data-scroll-at-top={scrollState.top ? 'true' : 'false'}
           data-scroll-at-bottom={scrollState.bottom ? 'true' : 'false'}
+          data-scroll-progress={enableInnerScroll ? String(scrollState.progress) : '0'}
           {...(enableInnerScroll && {
             tabIndex: 0,
             role: 'region',
-            'aria-label': `Lista rolável de ${totalRows} itens do orçamento`,
+            'aria-label': `Lista rolável de ${totalRows} itens do orçamento. Use setas, PageUp/PageDown, Home e End para navegar.`,
+            'aria-describedby': 'quote-items-scroll-help',
           })}
         >
           <table className="w-full min-w-[640px] border-collapse">
