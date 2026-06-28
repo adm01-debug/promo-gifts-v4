@@ -124,7 +124,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         )}
       >
         <td className={qvSpacing.cell}>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-start gap-3">
             {item.product_image_url ? (
               <img
                 src={item.product_image_url}
