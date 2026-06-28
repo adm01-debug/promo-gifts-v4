@@ -24,11 +24,8 @@ describe('chip "+N" — escala em altura, sem cortar texto', () => {
       </TooltipProvider>,
     );
     const chip = screen.getByTestId('color-swatches-overflow');
-    // Contrato novo: chip substitui o último slot.
-    // 17 cores, max=5 → 4 swatches visíveis + chip "+13" (17 − 4).
-    expect(chip).toHaveTextContent('+13');
+    expect(chip).toHaveTextContent('+12'); // single-line: 17 − 5 = 12
     expect(chip.className).toContain('min-w-[var(--swatch-size');
-
   });
 
   it('NÃO usa largura fixa w-[var(--swatch-size…)] (que cortaria "+12")', () => {
