@@ -6,6 +6,7 @@
  * A ordem segue estritamente a fonte de dados (`items`).
  */
 
+import { useEffect, useState } from 'react';
 import { Package, Trash2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
