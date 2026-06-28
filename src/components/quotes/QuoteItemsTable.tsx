@@ -13,6 +13,7 @@ import React from 'react';
 import { Package, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
+import { ProductThumb } from './ProductThumb';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
