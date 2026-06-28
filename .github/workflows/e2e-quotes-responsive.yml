@@ -62,6 +62,11 @@ jobs:
           npx playwright test e2e/routes/quotes/quote-list-responsive.spec.ts \
             --grep "${{ matrix.viewport }}|mirror E2E|desktop mostra mais"
 
+      - name: Run header-radius spec (${{ matrix.viewport }})
+        run: |
+          npx playwright test e2e/quotes/quote-items-table-header-radius.spec.ts \
+            --grep "\[${{ matrix.viewport }}\]"
+
       - name: Upload report + snapshots
         if: always()
         uses: actions/upload-artifact@v4
