@@ -416,14 +416,15 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   const ColGroup = () => (
     <colgroup>
-      <col />
+      <col style={{ width: '28%' }} />
       {hasPersonalizations && <col />}
-      <col style={{ width: '4rem' }} />
-      <col style={{ width: '6rem' }} />
-      <col style={{ width: '7rem' }} />
-      <col style={{ width: '5rem' }} className="print:hidden" />
+      <col style={{ width: '3.5rem' }} />
+      <col style={{ width: '5.5rem' }} />
+      <col style={{ width: '6.5rem' }} />
+      <col style={{ width: '6rem' }} className="print:hidden" />
     </colgroup>
   );
+
 
   return (
     <section aria-labelledby="quote-items-heading">
