@@ -1,16 +1,27 @@
 /**
- * Valida o DropdownMenuContent das linhas de orçamento sob zoom 125%.
- * Roda no project `chromium-authed` (storageState gerado por auth.setup),
- * que abre `/orcamentos` autenticado com dados reais — sem fallback para /auth.
+ * Valida o DropdownMenuContent das linhas de orçamento sob zoom de 125%
+ * (browser-level via CSS zoom no <html>), garantindo:
+ *  - min-width permanece 0
+ *  - "Visualizar" (item mais longo, sempre habilitado) não é cortado
+ *    (scrollWidth ≤ clientWidth + 1), inclusive sob focus:font-bold
+ *  - Ao hover/focus de "Visualizar", o menu mantém width nominal = 6.8rem
+ *    (a largura renderizada ≈ 6.8rem * zoom) sem overflow do viewport.
+ *
+ * Itens reais: Visualizar / Editar / Duplicar / Excluir. NÃO existe "Histórico".
+ *
+ * O zoom é aplicado APÓS navegar para a rota e ANTES de abrir o menu: como
+ * `addStyleTag` injeta no documento corrente, aplicá-lo antes de navegar faria
+ * o estilo ser descartado na navegação (zoom não chegaria à página do menu).
  *
  * Asserts emitem evidência (width, min-width, scrollWidth/clientWidth, box).
+ * Cobre desktop (1280) e mobile (390).
  */
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import { gotoAndSettle } from '../helpers/nav';
 
 const ROUTE = '/orcamentos';
 const ZOOM = 1.25;
-const BASE_WIDTH_PX = 6.4 * 16; // 102.4
+const BASE_WIDTH_PX = 6.8 * 16; // 108.8
 
 test.use({ reducedMotion: 'reduce' });
 
@@ -41,12 +52,14 @@ function fmt(s: Awaited<ReturnType<typeof snapshotMenu>>, vpName: string, vpWidt
   );
 }
 
-async function openMenu(page: Page) {
+async function openZoomedMenu(page: Page, zoom: number): Promise<Locator> {
   await gotoAndSettle(page, ROUTE);
   const trigger = page.locator('[aria-haspopup="menu"]').first();
   if ((await trigger.count()) === 0) {
     test.skip(true, 'lista vazia — sem trigger de menu disponível');
   }
+  // zoom aplicado no documento já navegado, antes de abrir o menu.
+  await page.addStyleTag({ content: `html { zoom: ${zoom}; }` });
   await trigger.click();
   const content = page.locator('[data-testid^="quote-row-menu-"][role="menu"]').first();
   await expect(content).toBeVisible();
@@ -60,13 +73,12 @@ for (const vp of [
   test.describe(`quote row menu @ zoom 125% (${vp.name})`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
 
-    test('min-width=0, Histórico não corta, hover/focus mantém width', async ({ page }) => {
-      await page.goto('/');
-      await page.addStyleTag({ content: `html { zoom: ${ZOOM}; }` });
-
-      const content = await openMenu(page);
+    test('min-width=0, "Visualizar" não corta, hover/focus mantém width', async ({ page }) => {
+      const content = await openZoomedMenu(page, ZOOM);
       const base = await snapshotMenu(content, 'idle');
 
+      // min-width permanece 0; width nominal 6.8rem (CSS zoom não altera a computed
+      // width, apenas o layout renderizado).
       expect(
         parseFloat(base.minWidth),
         `min-width deveria ser 0 sob zoom ${ZOOM}.\n${fmt(base, vp.name, vp.width)}`,
@@ -77,21 +89,22 @@ for (const vp of [
       ).toBeGreaterThanOrEqual(BASE_WIDTH_PX - 0.5);
       expect(parseFloat(base.width)).toBeLessThanOrEqual(BASE_WIDTH_PX + 0.5);
 
-      const historico = content.locator('[role="menuitem"]', { hasText: /hist/i }).first();
-      await expect(historico, '"Histórico" não foi renderizado').toBeVisible();
-
-      const itemInfo = await historico.evaluate((el) => {
+      // "Visualizar" cabe sem corte (repouso).
+      const view = content.locator('[data-testid^="quote-row-menu-view-"]').first();
+      await expect(view, '"Visualizar" não foi renderizado').toBeVisible();
+      const cut = await view.evaluate((el) => {
         const h = el as HTMLElement;
         return { scrollW: h.scrollWidth, clientW: h.clientWidth, ws: getComputedStyle(h).whiteSpace };
       });
       expect(
-        itemInfo.scrollW - itemInfo.clientW,
-        `"Histórico" cortado: scrollW=${itemInfo.scrollW} clientW=${itemInfo.clientW} ws=${itemInfo.ws}`,
+        cut.scrollW - cut.clientW,
+        `"Visualizar" cortado: scrollW=${cut.scrollW} clientW=${cut.clientW} ws=${cut.ws}`,
       ).toBeLessThanOrEqual(1);
 
-      await historico.hover();
+      // Hover + focus mantêm a largura do menu (proporção real, com zoom).
+      await view.hover();
       const hover = await snapshotMenu(content, 'hover');
-      await historico.focus();
+      await view.focus();
       const focus = await snapshotMenu(content, 'focus');
 
       expect(
@@ -103,7 +116,7 @@ for (const vp of [
         `width mudou no focus.\n${fmt(base, vp.name, vp.width)}\n${fmt(focus, vp.name, vp.width)}`,
       ).toBeLessThanOrEqual(0.5);
 
-      // Largura renderizada ≈ 6.4rem * zoom = 128px
+      // largura renderizada ≈ 6.8rem * zoom (108.8 * 1.25 = 136)
       const expectedRendered = BASE_WIDTH_PX * ZOOM;
       expect(
         focus.boxWidth,
@@ -115,6 +128,16 @@ for (const vp of [
         focus.boxX + focus.boxWidth,
         `menu transbordou viewport.\n${fmt(focus, vp.name, vp.width)}`,
       ).toBeLessThanOrEqual(vp.width + 1);
+
+      // sob focus:font-bold (peso 700) "Visualizar" NÃO pode cortar.
+      const focusedCut = await view.evaluate((el) => {
+        const h = el as HTMLElement;
+        return { scrollW: h.scrollWidth, clientW: h.clientWidth };
+      });
+      expect(
+        focusedCut.scrollW - focusedCut.clientW,
+        `"Visualizar" cortado sob focus:font-bold (${focusedCut.scrollW}>${focusedCut.clientW})`,
+      ).toBeLessThanOrEqual(1);
     });
   });
 }
