@@ -93,11 +93,7 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
   return (
     <ScrollArea className="h-[calc(100vh-9rem)] pr-3">
       <div className="relative">
-        {/* Timeline line — gradient sutil */}
-        <div
-          aria-hidden="true"
-          className="absolute bottom-2 left-[15px] top-2 w-px bg-gradient-to-b from-primary/30 via-border/60 to-transparent"
-        />
+        <TimelineLine leftClassName="left-[15px]" />
 
         <ol className="space-y-1.5">
           {history.map((entry, index) => (
@@ -111,24 +107,19 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
 
 function HistoryEntry({ entry, isFirst }: { entry: QuoteHistoryEntry; isFirst: boolean }) {
   const icon = actionIcons[entry.action] || <Clock className="h-3.5 w-3.5" />;
-  const colorClass = actionColors[entry.action] || 'bg-muted/40 text-muted-foreground border-border/50';
+  const colorClass =
+    actionColors[entry.action] || 'bg-muted/40 text-muted-foreground border-border/50';
 
   return (
     <li className="group relative pl-11">
-      {/* Timeline dot — menor, elegante, glow no primeiro */}
-      <div
-        className={cn(
-          'absolute left-0 top-2 flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-sm',
-          'transition-all duration-200 group-hover:scale-105',
-          colorClass,
-          isFirst &&
-            'ring-2 ring-primary/25 ring-offset-2 ring-offset-background shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]',
-        )}
+      <TimelineDot
+        highlighted={isFirst}
+        toneClassName={colorClass}
+        className="absolute left-0 top-2 h-8 w-8"
       >
         {icon}
-      </div>
+      </TimelineDot>
 
-      {/* Card sutil ao redor do conteúdo */}
       <div
         className={cn(
           'rounded-lg border border-transparent px-3 py-2 transition-all duration-200',
