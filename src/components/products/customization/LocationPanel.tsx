@@ -119,28 +119,36 @@ function SelectedTechniqueBar({
 }: SelectedTechniqueBarProps) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors ${isPickerOpen ? 'border-primary/60 bg-primary/10 ring-1 ring-primary/30' : 'border-primary/30 bg-primary/5'}`}
+      className={cn(
+        'flex items-center justify-between gap-2 rounded-full border px-3 py-1.5 transition-colors',
+        isPickerOpen
+          ? 'border-primary/50 bg-primary/[0.06]'
+          : 'border-border/60 bg-card',
+      )}
     >
       <div className="flex min-w-0 items-center gap-2">
         <span
-          className={`h-2 w-2 shrink-0 rounded-full bg-primary transition-transform ${isPickerOpen ? 'scale-110 animate-pulse' : ''}`}
+          className={cn(
+            'h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-transform',
+            isPickerOpen && 'animate-pulse',
+          )}
           aria-hidden
         />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{technique.tecnica_nome}</p>
-          {technique.grupo_tecnica && (
-            <p className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">
-              {technique.grupo_tecnica}
-            </p>
-          )}
-        </div>
+        <p className="truncate text-[13px] font-medium text-foreground">
+          {technique.tecnica_nome}
+        </p>
+        {technique.grupo_tecnica && (
+          <span className="hidden shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/70 sm:inline">
+            · {technique.grupo_tecnica.replace('_', ' ')}
+          </span>
+        )}
       </div>
       <Button
         ref={changeButtonRef}
         type="button"
-        variant={isPickerOpen ? 'default' : 'outline'}
+        variant="ghost"
         size="sm"
-        className="h-8 shrink-0 gap-1.5"
+        className="h-7 shrink-0 gap-1 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
         onClick={onChangeClick}
         aria-expanded={isPickerOpen}
         aria-controls={pickerId}
@@ -151,12 +159,13 @@ function SelectedTechniqueBar({
         }
         data-testid="customization-change-technique"
       >
-        <Pencil className="h-3.5 w-3.5" />
+        <Pencil className="h-3 w-3" />
         {isPickerOpen ? 'Fechar' : 'Trocar'}
       </Button>
     </div>
   );
 }
+
 
 export function LocationPanel({
   location,
