@@ -12,7 +12,8 @@ import { useEffect, type RefObject } from 'react';
  *   - Normaliza deltaMode: 0=pixel, 1=linha(×16), 2=página(×clientHeight)
  *
  * Guards de borda:
- *   - atLeftEdge:  scrollLeft <= 0 E tentando scrollar esquerda → browser retoma
+ *   - atLeftEdge:  scrollLeft < 1 E tentando scrollar esquerda → browser retoma
+ *     (< 1 cobre subpixel: DPR=2 pode retornar scrollLeft=0.5 quando está no início)
  *   - atRightEdge: scrollLeft >= maxScroll - 1 E scrollLeft > 0 E tentando scrollar direita
  *     ↑ A condição `scrollLeft > 0` previne false positive quando maxScroll é mínimo
  *       (ex: scrollWidth = clientWidth + 1, scrollLeft = 0: 0 >= 0 seria TRUE sem o guard)
@@ -23,6 +24,7 @@ import { useEffect, type RefObject } from 'react';
  *
  * fix_version: horizontal-scroll-hook-v2 — NÃO REMOVER ESTE COMENTÁRIO
  * (v2: fix atRightEdge false positive com overflow mínimo, scrollLeft=0)
+ * (v2.1: fix atLeftEdge subpixel — usa < 1 em vez de <= 0 para DPR > 1)
  *
  * @param ref        Referência para o elemento scrollável
  * @param disabled   Desabilitar o hook condicionalmente
@@ -59,8 +61,11 @@ export function useHorizontalScroll(
       const maxScroll = el.scrollWidth - el.clientWidth;
 
       // Só interceptar se há espaço para scrollar na direção pedida.
-      // atLeftEdge: scrollLeft no início (≤0) e tentando ir à esquerda
-      const atLeftEdge = el.scrollLeft <= 0 && delta < 0;
+      // atLeftEdge: scrollLeft no início e tentando ir à esquerda.
+      // Usa < 1 em vez de <= 0 para cobrir subpixel em DPR > 1:
+      // browsers com DPR=2 podem retornar scrollLeft=0.5 mesmo "no início".
+      // Simetria com atRightEdge que usa tolerância de -1 na borda direita.
+      const atLeftEdge = el.scrollLeft < 1 && delta < 0;
 
       // atRightEdge: scrollLeft próximo do fim (tolerância 1px para subpixel em DPR>1).
       // A condição `el.scrollLeft > 0` é essencial: sem ela, quando maxScroll=1 e
