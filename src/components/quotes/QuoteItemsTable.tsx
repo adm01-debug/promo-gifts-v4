@@ -108,6 +108,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     qvSpacing.cell,
     qvType.tableHead,
     'bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15',
+    'text-primary-foreground',
   );
 
   const renderItemRow = (item: QuoteItem, index: number) => {
@@ -355,7 +356,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
       <div className="relative">
         <div
-          className="overflow-hidden rounded-lg border border-border bg-background"
+          className="relative overflow-hidden rounded-lg border border-border bg-background"
           data-testid="quote-items-table-wrapper"
         >
           <div
@@ -428,6 +429,13 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           </tbody>
           </table>
           </div>
+          {enableInnerScroll && (
+            <div
+              aria-hidden="true"
+              data-testid="quote-items-table-scrollbar-corner-mask"
+              className="pointer-events-none absolute right-0 top-0 z-20 h-[2.375rem] w-5 rounded-tr-lg bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:hidden"
+            />
+          )}
         </div>
         {enableInnerScroll && !scrollState.bottom && (
           <div
