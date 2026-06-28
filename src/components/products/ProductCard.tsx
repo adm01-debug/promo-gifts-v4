@@ -793,11 +793,12 @@ export const ProductCard = memo(
               data-testid="product-card-name"
               data-product-name={product.name}
               className={cn(
-                'line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]',
+                'line-clamp-2 max-h-[1.75rem] min-h-[1.75rem] overflow-hidden break-words font-display text-[11.2px] font-bold leading-tight tracking-tight transition-colors duration-300 sm:max-h-[2rem] sm:min-h-[2rem] sm:text-[12.8px]',
                 isAIActive
                   ? 'text-violet-700 group-hover:text-violet-600 dark:text-violet-300'
                   : 'text-foreground group-hover:text-primary',
               )}
+
             >
               {displayName}
             </h3>
