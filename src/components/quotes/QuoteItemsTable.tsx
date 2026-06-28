@@ -239,8 +239,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
           </td>
         )}
-        <td className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}>{item.quantity}</td>
-        <td className={cn('w-24 text-left', qvSpacing.cell, qvType.unitPrice)}>
+        <td headers={headersFor('qtd')} className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}>{item.quantity}</td>
+        <td headers={headersFor('un')} className={cn('w-24 text-left', qvSpacing.cell, qvType.unitPrice)}>
           <div className="flex flex-col gap-0.5">
             <span>
               {formatCurrency(
@@ -263,10 +263,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             )}
           </div>
         </td>
-        <td className={cn('w-28 text-left', qvSpacing.cell, qvType.rowTotal)}>
+        <td headers={headersFor('total')} className={cn('w-28 text-left', qvSpacing.cell, qvType.rowTotal)}>
           {formatCurrency(itemTotal)}
         </td>
-        <td className={cn('text-center print:hidden', qvSpacing.cell)}>
+        <td headers={headersFor('act')} className={cn('text-center print:hidden', qvSpacing.cell)}>
+
           <QuoteItemDetailSheet
             item={{
               product_name: item.product_name,
