@@ -73,12 +73,12 @@ test('>5 itens: scroll interno ativo, a11y e thead sticky', async ({ page }) => 
   }));
   expect(metrics.scrollH).toBeGreaterThan(metrics.clientH);
 
-  await scroller.hover();
+  await scroller.focus();
   const beforeWheel = await scroller.evaluate((el) => el.scrollTop);
-  await page.mouse.wheel(0, 300);
+  await page.keyboard.press('PageDown');
   await expect
     .poll(() => scroller.evaluate((el) => el.scrollTop), {
-      message: 'scroll interno deve responder ao wheel do usuário',
+      message: 'scroll interno deve responder à navegação por teclado',
     })
     .toBeGreaterThan(beforeWheel);
 
