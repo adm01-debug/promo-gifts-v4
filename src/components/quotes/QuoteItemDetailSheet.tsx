@@ -158,7 +158,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <ProductThumb
               src={item.product_image_url}
               alt={item.product_name}
-              sizeClassName="h-[68px] w-[68px]"
+              size="sheet"
               roundedClassName="rounded-md"
               iconClassName="h-6 w-6"
               data-testid="quote-detail-thumb"
