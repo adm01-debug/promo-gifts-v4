@@ -253,7 +253,7 @@ export default function QuoteViewPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="min-w-[11rem] rounded-lg p-1 text-[12px] leading-tight tracking-tight sm:text-[13px] [&_svg]:h-3.5 [&_svg]:w-3.5 [&_[role=menuitem]]:gap-2 [&_[role=menuitem]]:rounded-md [&_[role=menuitem]]:px-2 [&_[role=menuitem]]:py-1.5"
+                className="w-40 rounded-lg p-1 text-[12px] leading-tight tracking-tight [&_svg]:h-3.5 [&_svg]:w-3.5 [&_[role=menuitem]]:gap-2 [&_[role=menuitem]]:rounded-md [&_[role=menuitem]]:px-2 [&_[role=menuitem]]:py-1.5"
               >
                 {quote.status === 'sent' && (
                   <DropdownMenuItem
