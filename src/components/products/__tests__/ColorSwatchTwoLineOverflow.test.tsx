@@ -5,8 +5,8 @@
  *  - Quando há overflow, a ÚLTIMA bolinha vira o chip "+N" — preserva a ordem.
  *  - Default do limite = 14 (≈ 2 linhas em cards típicos do grid).
  */
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 import { ColorSwatchPicker } from '@/components/ui/ColorSwatchPicker';
