@@ -427,15 +427,14 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             style={{ paddingRight: scrollbarPad ? `${scrollbarPad}px` : undefined }}
             data-testid="quote-items-table-header-wrap"
             data-scrollbar-pad={scrollbarPad}
-            aria-hidden="true"
           >
             <table
-              role="presentation"
-              aria-hidden="true"
+              aria-label="Cabeçalho da tabela de itens do orçamento"
               className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
             >
               <ColGroup />
               <thead ref={theadRef}>
+
                 <tr>
                   <th id={colIds.produto} scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
                   {hasPersonalizations && (
