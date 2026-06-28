@@ -137,47 +137,47 @@ function QuoteItemRow({
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
+            </div>
+          </div>
 
-              {/* Inputs Row */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Qtd</span>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onKeyDown={(e) => {
-                      if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
-                    }}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const v = parseInt(e.target.value, 10);
-                      onUpdateQuantity(Math.max(1, v || 1));
-                    }}
-                    className="h-7 w-16 px-2 text-xs tabular-nums"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Preço</span>
-                  <div className="flex items-center gap-1">
-                    <CurrencyInput
-                      value={item.unit_price}
-                      onChange={(n) => onUpdatePrice(n)}
-                      className="h-7 w-24 px-2 text-xs tabular-nums"
-                    />
-                    <PriceFreshnessBadge
-                      priceUpdatedAt={item.price_updated_at}
-                      confirmedAt={item.price_confirmed_at}
-                      thresholdDays={item.price_freshness_threshold_days}
-                      onConfirm={onConfirmPrice}
-                      variant="compact"
-                    />
-                  </div>
-                </div>
-                <div className="ml-auto text-right">
-                  <p className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</p>
-                  <p className="text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</p>
-                </div>
+          {/* Inputs Row — full width below image */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Qtd</span>
+              <Input
+                type="number"
+                min={1}
+                value={item.quantity}
+                onKeyDown={(e) => {
+                  if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
+                }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const v = parseInt(e.target.value, 10);
+                  onUpdateQuantity(Math.max(1, v || 1));
+                }}
+                className="h-7 w-16 px-2 text-xs tabular-nums"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Preço</span>
+              <div className="flex items-center gap-1">
+                <CurrencyInput
+                  value={item.unit_price}
+                  onChange={(n) => onUpdatePrice(n)}
+                  className="h-7 w-24 px-2 text-xs tabular-nums"
+                />
+                <PriceFreshnessBadge
+                  priceUpdatedAt={item.price_updated_at}
+                  confirmedAt={item.price_confirmed_at}
+                  thresholdDays={item.price_freshness_threshold_days}
+                  onConfirm={onConfirmPrice}
+                  variant="compact"
+                />
               </div>
+            </div>
+            <div className="ml-auto flex items-baseline gap-1.5">
+              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</span>
+              <span className="text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</span>
             </div>
           </div>
 
