@@ -35,8 +35,10 @@ for (const vp of VIEWPORTS) {
     const fixture = page.getByTestId('quote-items-table-fixture-many');
     const wrapper = fixture.getByTestId('quote-items-table-wrapper');
     const scroller = fixture.getByTestId('quote-items-table-scroll');
+    const cornerMask = fixture.getByTestId('quote-items-table-scrollbar-corner-mask');
     await expect(wrapper).toBeVisible();
     await expect(scroller).toBeVisible();
+    await expect(cornerMask).toBeVisible();
 
     // Wrapper visual: 4 cantos arredondados e overflow hidden, que é o que recorta
     // o header azul quando a tabela usa min-width e/ou há scrollbar interna.
@@ -117,5 +119,23 @@ for (const vp of VIEWPORTS) {
     });
     expect(paintModel.rowBg, `thead tr não deve pintar fundo próprio @${vp.name}`).toBe('rgba(0, 0, 0, 0)');
     expect(paintModel.tableCollapse, `table border-collapse @${vp.name}`).toBe('separate');
+
+    const cornerMaskMetrics = await cornerMask.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return {
+        bg: cs.backgroundColor,
+        radius: cs.borderTopRightRadius,
+        width: rect.width,
+        height: rect.height,
+      };
+    });
+    expect(
+      px(cornerMaskMetrics.radius),
+      `máscara do canto direito deve manter arredondamento @${vp.name}`,
+    ).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+    expect(cornerMaskMetrics.width, `máscara cobre trilho da scrollbar @${vp.name}`).toBeGreaterThanOrEqual(12);
+    expect(cornerMaskMetrics.height, `máscara cobre altura do header @${vp.name}`).toBeGreaterThanOrEqual(32);
+    expect(cornerMaskMetrics.bg, `máscara deve usar fundo azul do header @${vp.name}`).not.toBe('rgba(0, 0, 0, 0)');
   });
 }
