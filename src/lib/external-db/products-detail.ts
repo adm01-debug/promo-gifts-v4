@@ -459,8 +459,11 @@ export async function fetchPromobrindProductById(
         const entry: ColorEntry = {
           name: variant.color_name,
           hex: variant.color_hex || '#CCCCCC',
+          // code = código XBZ do fornecedor (ex: 'CIN', 'BCO') — usado para match de imagens.
+          // fix_version: pdp_sku_badge_v1 — sku REMOVIDO daqui para não vazar o
+          // supplier_sku (ER143B-CIN) até o badge da PDP via product-mapper.
+          // O badge sempre exibe product.sku (produto-pai), nunca o sku da variante.
           code: variant.color_code || '',
-          sku: variant.sku || undefined,
           stock: variant.stock_quantity ?? undefined,
           image: thumb || undefined,
           images: finalImages.length > 0 ? finalImages : undefined,
