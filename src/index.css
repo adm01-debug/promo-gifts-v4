@@ -2617,11 +2617,11 @@ a[href*="lovable.dev"][target="_blank"] {
  * que é estável e independente de ordem/casamento de classes do tw-merge.
  * `!important` garante precedência mesmo se a util `min-w-[8rem]` aparecer
  * depois no bundle em algum cenário de cache HMR.
- * Largura efetiva: 6.4rem (20% menor que o baseline 8rem do shadcn).
+ * Largura efetiva: 6.8rem (~15% menor que o baseline 8rem do shadcn; minimo a prova de corte incl. fallback system-ui em bold/FOUT). NAO reduzir para 6.4rem: corta "Visualizar" no fallback.
  * ────────────────────────────────────────────────────────────────────────── */
 [data-testid^="quote-row-menu-"][role="menu"],
 [role="menu"][data-testid^="quote-row-menu-"] {
-  width: 6.4rem !important;
+  width: 6.8rem !important;
   min-width: 0 !important;
   max-width: calc(100vw - 1rem) !important;
 }
