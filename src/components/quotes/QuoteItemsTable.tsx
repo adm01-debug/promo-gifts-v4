@@ -138,7 +138,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             ) : isProductRemoved ? (
               <div
                 aria-hidden="true"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-destructive/30 bg-destructive/8 print:hidden"
+                className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded border border-destructive/30 bg-destructive/8 print:hidden"
               >
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
