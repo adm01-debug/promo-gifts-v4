@@ -100,13 +100,37 @@ function QuoteItemRow({
             {/* Product Info */}
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h4 className="truncate text-[13px] font-medium leading-tight">{item.product_name}</h4>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <div className="min-w-0 flex-1 space-y-1">
+                  {/* 1) SKU + gravações */}
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <Badge variant="outline" className="h-5 border-border/60 px-1.5 font-mono text-[10px] font-normal text-muted-foreground">
                       {item.product_sku}
                     </Badge>
-                    {item.color_name && (
+                    {hasPersonalizations && (
+                      <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
+                        <Palette className="h-2.5 w-2.5" />
+                        {item.personalizations?.length} gravação(ões)
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* 2) Nome (até 2 linhas) */}
+                  <h4
+                    className="text-[13px] font-medium leading-snug"
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                    title={item.product_name}
+                  >
+                    {item.product_name}
+                  </h4>
+
+                  {/* 3) Cor */}
+                  {item.color_name && (
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Badge
                         variant="outline"
                         className="h-5 gap-1 border-border/60 px-1.5 text-[10px] font-normal text-muted-foreground"
@@ -117,14 +141,8 @@ function QuoteItemRow({
                         />
                         {item.color_name}
                       </Badge>
-                    )}
-                    {hasPersonalizations && (
-                      <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
-                        <Palette className="h-2.5 w-2.5" />
-                        {item.personalizations?.length} gravação(ões)
-                      </Badge>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 <Button
