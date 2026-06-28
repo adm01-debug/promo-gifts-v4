@@ -72,6 +72,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { QuoteItem } from '@/hooks/quotes';
 import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
+import { ProductThumb } from '@/components/quotes/ProductThumb';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import {
   getDiscountValidationMessage,
@@ -738,24 +739,13 @@ export function QuoteBuilderSummaryColumn({
                                   >
                                     <GripVertical className="h-4 w-4" />
                                   </button>
-                                  <div className="shrink-0">
-                                    {item.product_image_url ? (
-                                      <img
-                                        src={item.product_image_url}
-                                        alt={item.product_name}
-                                        className="h-[58px] w-[58px] rounded-lg bg-muted object-cover"
-                                        loading="lazy"
-                                        onError={(e) => {
-                                          (e.currentTarget as HTMLImageElement).src =
-                                            '/placeholder.svg';
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="flex h-[58px] w-[58px] items-center justify-center rounded-lg bg-muted">
-                                        <Package className="h-5 w-5 text-muted-foreground" />
-                                      </div>
-                                    )}
-                                  </div>
+                                  <ProductThumb
+                                    src={item.product_image_url}
+                                    alt={item.product_name}
+                                    size="summary"
+                                    roundedClassName="rounded-lg"
+                                    data-testid="quote-summary-thumb"
+                                  />
                                    <div className="min-w-0 flex-1">
                                      <p className="truncate pr-1 text-sm font-medium leading-[1.125rem]">
                                        {item.product_name}
@@ -965,17 +955,14 @@ export function QuoteBuilderSummaryColumn({
                       >
                         <div className="flex items-center gap-2">
                           <GripVertical className="h-4 w-4 text-primary" />
-                          {activeItemForOverlay.product_image_url ? (
-                            <img
-                              src={activeItemForOverlay.product_image_url}
-                              alt=""
-                              className="h-12 w-12 rounded-lg bg-muted object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                              <Package className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
+                          <ProductThumb
+                            src={activeItemForOverlay.product_image_url}
+                            alt={activeItemForOverlay.product_name}
+                            size="compact"
+                            roundedClassName="rounded-lg"
+                            iconClassName="h-4 w-4"
+                            data-testid="quote-summary-drag-thumb"
+                          />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium">
                               {activeItemForOverlay.product_name}

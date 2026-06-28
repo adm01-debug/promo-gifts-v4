@@ -91,7 +91,7 @@ function QuoteItemRow({
             <ProductThumb
               src={item.product_image_url}
               alt={item.product_name}
-              sizeClassName="h-[77px] w-[77px]"
+              size="list"
               roundedClassName="rounded-lg"
               iconClassName="h-6 w-6"
               data-testid="quote-list-thumb"
