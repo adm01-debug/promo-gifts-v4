@@ -118,6 +118,18 @@ export function AppRoutes() {
         {QuoteViewOrderHarness && (
           <Route path="/__visual/quote-view-order" element={<QuoteViewOrderHarness />} />
         )}
+        {QuoteViewOrderHarness && (
+          <Route
+            path="/__visual/quote-view-order-layout"
+            element={
+              <AppProviders>
+                <MainLayout>
+                  <QuoteViewOrderHarness embeddedInLayout />
+                </MainLayout>
+              </AppProviders>
+            }
+          />
+        )}
 
 
         <Route element={<ProtectedRoute />}>

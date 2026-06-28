@@ -119,6 +119,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     return (
       <tr
         key={item.id || `item-${index}`}
+        data-quote-item-row="true"
         className={cn(
           'border-b border-border/50 transition-colors hover:bg-muted/40',
           index % 2 === 1 && 'bg-muted/20',
@@ -274,10 +275,58 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const enableInnerScroll = totalRows > 5;
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [scrollMaxHeightPx, setScrollMaxHeightPx] = React.useState<number | null>(null);
   const [scrollState, setScrollState] = React.useState<{ top: boolean; bottom: boolean }>({
     top: true,
     bottom: !enableInnerScroll,
   });
+
+  React.useLayoutEffect(() => {
+    if (!enableInnerScroll) {
+      setScrollMaxHeightPx(null);
+      return;
+    }
+
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const itemRows = Array.from(
+          el.querySelectorAll<HTMLTableRowElement>('tbody tr[data-quote-item-row="true"]'),
+        );
+        const fifthRow = itemRows[4];
+        if (!fifthRow) return;
+
+        const scrollerBox = el.getBoundingClientRect();
+        const fifthRowBox = fifthRow.getBoundingClientRect();
+        const borderBottom = parseFloat(getComputedStyle(el).borderBottomWidth) || 0;
+        const nextHeight = Math.ceil(fifthRowBox.bottom - scrollerBox.top + borderBottom);
+
+        setScrollMaxHeightPx((prev) =>
+          prev !== null && Math.abs(prev - nextHeight) <= 1 ? prev : nextHeight,
+        );
+      });
+    };
+
+    measure();
+    document.fonts?.ready.then(measure).catch(() => {});
+
+    const observer =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    observer?.observe(el);
+    const table = el.querySelector('table');
+    if (table) observer?.observe(table);
+    window.addEventListener('resize', measure);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [enableInnerScroll, totalRows, hasPersonalizations]);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
@@ -303,13 +352,19 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             'overflow-x-auto rounded-lg border border-border',
             enableInnerScroll && [
               'overflow-y-auto',
-              // Header ~44px + 5 linhas × ~88px = ~484px. Limites por
-              // breakpoint fecham a 5ª linha sem cortar.
-              'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
+              // Altura medida no DOM: fecha exatamente no fim da 5ª linha de
+              // produto, respeitando zoom, fontes carregadas e linhas maiores
+              // por personalização — sem cortar a linha nem mostrar a 6ª.
+              'max-h-[var(--quote-items-scroll-max-h,34rem)]',
               'print:max-h-none print:overflow-visible',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
             ],
           )}
+          style={
+            enableInnerScroll && scrollMaxHeightPx
+              ? ({ '--quote-items-scroll-max-h': `${scrollMaxHeightPx}px` } as React.CSSProperties)
+              : undefined
+          }
           data-testid="quote-items-table-scroll"
           data-inner-scroll={enableInnerScroll ? 'true' : 'false'}
           data-scroll-at-top={scrollState.top ? 'true' : 'false'}
@@ -320,7 +375,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             'aria-label': `Lista rolável de ${totalRows} itens do orçamento`,
           })}
         >
-          <table className="w-full min-w-[640px] border-collapse">
+          <table className="w-full min-w-[640px] border-separate border-spacing-0">
             <caption className="sr-only">
               Lista de itens do orçamento com quantidade, preço unitário e total.
             </caption>

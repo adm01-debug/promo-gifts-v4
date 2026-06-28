@@ -89,7 +89,8 @@ body {
 
 /* Prevent horizontal scroll and set default background */
 body {
-  overflow-x: hidden;
+  /* `hidden` em X computa overflow-y:auto e quebra sticky dentro do app. */
+  overflow-x: clip;
   width: 100%;
   background-color: #0a0a0a;
 }

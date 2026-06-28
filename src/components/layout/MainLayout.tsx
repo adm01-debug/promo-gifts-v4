@@ -82,11 +82,13 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    // overflow-x-hidden no root mantém a clipagem horizontal SEM promover
-    // implicitamente overflow-y para auto (efeito de `overflow-x: clip`),
-    // preservando o viewport como scrollport único — necessário para que o
-    // sidebar com `lg:sticky lg:top-0` permaneça fixo durante o scroll.
-    <div className="min-h-screen overflow-x-hidden bg-background print:min-h-0 print:overflow-visible" role="document">
+    // CSS root-cause do bug do sidebar:
+    // `overflow-x-hidden` computa `overflow-y:auto` quando Y não é declarado.
+    // Esse ancestral vira scroll-container e o `position: sticky` do sidebar
+    // passa a grudar nele — visualmente o menu sobe com a página e o logo some.
+    // `overflow-x-clip` corta o excesso horizontal sem criar scroll-container;
+    // assim o viewport continua sendo o scrollport do sidebar.
+    <div className="min-h-screen overflow-x-clip bg-background print:min-h-0 print:overflow-visible" role="document">
       <div className="fixed inset-0 z-[-1]">
         <Suspense fallback={null}>
           <StarBackground />

@@ -110,6 +110,15 @@ const HARNESS_TABLE_ITEMS: QuoteItem[] = [
   },
 ];
 
+const createScrollableHarnessItem = (index: number): QuoteItem => ({
+  id: `fx-many-${index}`,
+  product_name: `Produto rolável ${index + 1}`,
+  product_sku: `SKU-${1000 + index}`,
+  quantity: 10 + index,
+  unit_price: 5 + index,
+  personalizations: [],
+});
+
 
 const HARNESS_QUOTE_ID = 'harness-quote-id-0042';
 
@@ -120,7 +129,11 @@ declare global {
   }
 }
 
-export default function QuoteViewOrderHarness() {
+interface QuoteViewOrderHarnessProps {
+  embeddedInLayout?: boolean;
+}
+
+export default function QuoteViewOrderHarness({ embeddedInLayout = false }: QuoteViewOrderHarnessProps) {
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -157,8 +170,10 @@ export default function QuoteViewOrderHarness() {
     }
   };
 
+  const Root = embeddedInLayout ? 'div' : 'main';
+
   return (
-    <main
+    <Root
       data-testid="quote-view-order-harness"
       data-quote-id={HARNESS_QUOTE_ID}
       className="min-h-dvh bg-background"
@@ -327,17 +342,21 @@ export default function QuoteViewOrderHarness() {
             </div>
 
             <Separator />
+            {/* Fixtures de fronteira: 5 não rola; 6 rola. */}
+            <div data-testid="quote-items-table-fixture-five">
+              <QuoteItemsTable items={Array.from({ length: 5 }, (_, i) => createScrollableHarnessItem(i))} />
+            </div>
+
+            <Separator />
+            <div data-testid="quote-items-table-fixture-six">
+              <QuoteItemsTable items={Array.from({ length: 6 }, (_, i) => createScrollableHarnessItem(i))} />
+            </div>
+
+            <Separator />
             {/* Fixture com 8 itens para validar o scroll interno (>5). */}
             <div data-testid="quote-items-table-fixture-many">
               <QuoteItemsTable
-                items={Array.from({ length: 8 }, (_, i) => ({
-                  id: `fx-many-${i}`,
-                  product_name: `Produto rolável ${i + 1}`,
-                  product_sku: `SKU-${1000 + i}`,
-                  quantity: 10 + i,
-                  unit_price: 5 + i,
-                  personalizations: [],
-                }))}
+                items={Array.from({ length: 8 }, (_, i) => createScrollableHarnessItem(i))}
               />
             </div>
 
@@ -357,6 +376,6 @@ export default function QuoteViewOrderHarness() {
           </CardContent>
         </Card>
       </div>
-    </main>
+    </Root>
   );
 }
