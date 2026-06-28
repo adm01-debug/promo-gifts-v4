@@ -500,7 +500,7 @@ export function LocationPanel({
               ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
               : `Escolha a técnica de gravação para ${location.location_name}.`
           }
-          className="space-y-3 rounded-lg border border-primary/20 bg-primary/[0.02] p-3 animate-in fade-in slide-in-from-top-1"
+          className="space-y-2 rounded-lg border border-border/50 bg-card/40 p-2.5 animate-in fade-in slide-in-from-top-1"
           data-testid="customization-technique-picker"
           onKeyDown={(e) => {
             if (e.key === 'Escape' && selectedTechnique) {
@@ -509,21 +509,19 @@ export function LocationPanel({
           }}
         >
           {selectedTechnique && (
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Escolha a nova técnica
-              </p>
-              <Badge variant="secondary" className="text-[10px]">
-                Atual: {selectedTechnique.tecnica_nome}
-              </Badge>
-            </div>
+            <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Escolha a nova técnica
+              <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
+                · atual: {selectedTechnique.tecnica_nome}
+              </span>
+            </p>
           )}
 
           {Object.entries(grouped).map(([grupo, techs]) => (
-            <div key={grupo} className="space-y-1.5">
+            <div key={grupo} className="space-y-1">
               {Object.keys(grouped).length > 1 && (
-                <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {grupo}
+                <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+                  {grupo.replace('_', ' ')}
                 </p>
               )}
               {techs.map((t) => (
@@ -536,6 +534,7 @@ export function LocationPanel({
               ))}
             </div>
           ))}
+
         </div>
       )}
 
