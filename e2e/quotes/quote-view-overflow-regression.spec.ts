@@ -24,7 +24,7 @@ async function open(page: Page, width = 1280, height = 900) {
   await expect(page.getByTestId('quote-view-order-harness')).toBeVisible();
 }
 
-test('nenhum ancestral da sidebar quebra sticky via overflow ou containing block', async ({
+test('@smoke nenhum ancestral da sidebar quebra sticky via overflow ou containing block', async ({
   page,
 }) => {
   await open(page);
