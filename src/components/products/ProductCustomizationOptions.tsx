@@ -348,22 +348,25 @@ export function ProductCustomizationOptions({
         {pricesRef.current.size > 0 && (
           <div className="mt-5 border-t border-border/40 pt-3 animate-in fade-in slide-in-from-bottom-2">
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Resumo das configurações
-              </h4>
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-success" />
+                <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Resumo das Configurações
+                </h4>
+              </div>
               <span className="text-[10px] tabular-nums text-muted-foreground">
                 {pricesRef.current.size} {pricesRef.current.size === 1 ? 'local' : 'locais'}
               </span>
             </div>
 
-            <div className="divide-y divide-border/40 overflow-hidden rounded-lg border border-border/50 bg-card/40">
+            <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
               {Array.from(pricesRef.current.values()).map((item) => (
                 <div
                   key={item.locationCode}
                   className="flex items-center justify-between gap-3 px-3 py-2"
                 >
                   <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
                       {item.locationName}
                     </span>
                     <span className="truncate text-[12px] font-medium text-foreground">
@@ -374,7 +377,7 @@ export function ProductCustomizationOptions({
                       · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-foreground">
+                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
                     {item.price?.total_cobrado?.toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -385,6 +388,7 @@ export function ProductCustomizationOptions({
             </div>
           </div>
         )}
+
 
       </div>
     </TooltipProvider>
