@@ -70,20 +70,21 @@ const CONT_CLIENT_H = 60; // barra compacta do cliente (continuação)
 const TABLE_HEADER_H = 38; // cabeçalho verde da tabela
 const SIMPLE_FOOTER_H = 30; // rodapé: barra verde + número da página
 const CONTENT_PAD = 36; // padding lateral do conteúdo
-const ROW_H = 96; // altura REAL de uma linha com foto (92px) + respiro (corrige clipping)
-const NOTES_H = 300; // bloco "Condições + Termos" (renderizado em TODAS as páginas)
+const ROW_H = 100; // altura TÍPICA de uma linha (foto 92px + respiro). Linhas ricas: estimateItemHeight + spill.
+const NOTES_H = 300; // bloco "Condições + Termos" (renderizado SÓ na última página — ver #5a)
+const HINT_H = 28; // lembrete enxuto "Condições na última página" nas páginas intermediárias (#5b)
 const TOTALS_H = 180; // bloco de totais (subtotal/desconto/frete/total)
 const SIGNATURE_H = 120; // assinatura do vendedor + disclaimer eletrônico
 const SAFETY = 24; // folga anti-clipping
 
 // Capacidade de linhas conforme o tipo de página (sempre >= 1).
 const rowCap = (available: number) => Math.max(1, Math.floor(available / ROW_H));
-// Páginas SEM totais (apenas notas no rodapé):
+// Páginas SEM totais (apenas o lembrete enxuto no rodapé — #5b reclama o espaço do #5a):
 const MID_CAP_FIRST = rowCap(
-  PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - NOTES_H - SIMPLE_FOOTER_H - SAFETY,
+  PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - HINT_H - SIMPLE_FOOTER_H - SAFETY,
 );
 const MID_CAP_CONT = rowCap(
-  PAGE_H - CONT_HEADER_H - CONT_CLIENT_H - TABLE_HEADER_H - NOTES_H - SIMPLE_FOOTER_H - SAFETY,
+  PAGE_H - CONT_HEADER_H - CONT_CLIENT_H - TABLE_HEADER_H - HINT_H - SIMPLE_FOOTER_H - SAFETY,
 );
 // Última página: itens + totais + assinatura + notas.
 const LAST_CAP_SINGLE = rowCap(
@@ -117,11 +118,59 @@ const LAST_CAP_CONT = rowCap(
  *  • distribuição equilibrada de itens entre as páginas.
  * Os totais são renderizados na página marcada como `isLast` (a última retornada).
  */
+/**
+ * Altura ESTIMADA (px) de uma linha de produto — casa com o render de ProposalProductTable:
+ * foto (92px) como piso; pilha de texto = nome (clampado a ~2 linhas, #1535) + descrição
+ * (truncada, #7) + linha "Cor" + bloco "Gravação". Alimenta a correção por altura (spill) que
+ * garante zero clipping mesmo em linhas ricas. Validado por simulação (800+ mixes).
+ * @fix_version proposal-height-spill-5b-2026-06
+ */
+function estimateItemHeight(item: ProposalItem): number {
+  const IMG = 92;
+  const BREATH = 4;
+  const NAME_LH = 17;
+  const NAME_MB = 2;
+  const DESC_LH = 15.4;
+  const DESC_MB = 4;
+  const COLOR_H = 16;
+  const GRAV_H = 25;
+  const NAME_CPL = 46; // chars/linha do nome (fonte e largura atuais)
+  const DESC_CPL = 58; // chars/linha da descrição
+  const nameLen = Math.min((item.name ?? '').length, 90);
+  const nameLines = Math.max(1, Math.ceil(nameLen / NAME_CPL));
+  const descLen = item.description ? Math.min(item.description.length, 120) : 0;
+  const descLines = descLen > 0 ? Math.max(1, Math.ceil(descLen / DESC_CPL)) : 0;
+  const hasColor = Boolean(item.color);
+  const hasGrav = (item.personalizations?.length ?? 0) > 0;
+  const textStack =
+    nameLines * NAME_LH +
+    NAME_MB +
+    (descLines > 0 ? descLines * DESC_LH + DESC_MB : 0) +
+    (hasColor ? COLOR_H : 0) +
+    (hasGrav ? GRAV_H : 0);
+  return Math.max(IMG, textStack) + BREATH;
+}
+
+/**
+ * Espaço (px) para ITENS numa página, conforme a posição. Última página reserva
+ * totais+assinatura+notas; intermediárias reservam só o lembrete. @fix_version
+ * proposal-height-spill-5b-2026-06
+ */
+function itemsBudget(isFirst: boolean, isLast: boolean): number {
+  const header = isFirst ? FIRST_HEADER_H : CONT_HEADER_H;
+  const client = isFirst ? CLIENT_BAR_H : CONT_CLIENT_H;
+  const reserve = isLast ? TOTALS_H + SIGNATURE_H + NOTES_H : HINT_H;
+  return PAGE_H - header - client - TABLE_HEADER_H - reserve - SIMPLE_FOOTER_H - SAFETY;
+}
+
 function paginateItems(items: ProposalItem[]): ProposalItem[][] {
   const n = items.length;
   if (n === 0) return [[]];
-  // Cabe tudo (itens + totais + assinatura + notas) numa única página?
-  if (n <= LAST_CAP_SINGLE) return [items];
+  // Cabe tudo numa única página? Checa também a ALTURA real (2 linhas ricas podem não caber).
+  if (n <= LAST_CAP_SINGLE) {
+    const totalHeight = items.reduce((acc, item) => acc + estimateItemHeight(item), 0);
+    if (totalHeight <= itemsBudget(true, true)) return [items];
+  }
 
   // Capacidade de p páginas: 1ª + (p-2) continuações + última-com-totais.
   const capacityFor = (p: number): number =>
@@ -159,6 +208,28 @@ function paginateItems(items: ProposalItem[]): ProposalItem[][] {
     pages.push(items.slice(cursor, cursor + counts[i]));
     cursor += counts[i];
   }
+
+  // Correção por ALTURA REAL (spill): a distribuição acima é por contagem (ROW_H típico).
+  // Uma linha rica (nome 2 linhas + descrição + Cor + Gravação) pode exceder o orçamento da
+  // página; aqui o último item que não couber "transborda" para a próxima, preservando ordem e
+  // conservação (≥1 item por página). Garante ZERO clipping — validado por simulação (800+ mixes).
+  // @fix_version proposal-height-spill-5b-2026-06
+  for (let pass = 0; pass <= items.length; pass++) {
+    let moved = false;
+    for (let j = 0; j < pages.length; j++) {
+      const budget = itemsBudget(j === 0, j === pages.length - 1);
+      let used = pages[j].reduce((acc, item) => acc + estimateItemHeight(item), 0);
+      while (used > budget && pages[j].length > 1) {
+        const overflow = pages[j].pop()!;
+        used -= estimateItemHeight(overflow);
+        if (j + 1 < pages.length) pages[j + 1].unshift(overflow);
+        else pages.push([overflow]);
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+
   return pages;
 }
 

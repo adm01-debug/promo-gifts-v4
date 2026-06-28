@@ -311,18 +311,19 @@ describe('paginateItems — regras de negócio', () => {
   const CONT_CLIENT_H = 60;
   const TABLE_HEADER_H = 38;
   const SIMPLE_FOOTER_H = 30;
-  const ROW_H = 96;
+  const ROW_H = 100;
   const NOTES_H = 300;
+  const HINT_H = 28;
   const TOTALS_H = 180;
   const SIGNATURE_H = 120;
   const SAFETY = 24;
 
   const rowCap = (available: number) => Math.max(1, Math.floor(available / ROW_H));
   const MID_CAP_FIRST = rowCap(
-    PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - NOTES_H - SIMPLE_FOOTER_H - SAFETY,
+    PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - HINT_H - SIMPLE_FOOTER_H - SAFETY,
   );
   const MID_CAP_CONT = rowCap(
-    PAGE_H - CONT_HEADER_H - CONT_CLIENT_H - TABLE_HEADER_H - NOTES_H - SIMPLE_FOOTER_H - SAFETY,
+    PAGE_H - CONT_HEADER_H - CONT_CLIENT_H - TABLE_HEADER_H - HINT_H - SIMPLE_FOOTER_H - SAFETY,
   );
   const LAST_CAP_SINGLE = rowCap(
     PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - TOTALS_H - SIGNATURE_H - NOTES_H -
@@ -333,10 +334,48 @@ describe('paginateItems — regras de negócio', () => {
       SIMPLE_FOOTER_H - SAFETY,
   );
 
+  // Réplicas de #5b (estimativa de altura + orçamento por posição) — alimentam o spill.
+  // @fix_version proposal-height-spill-5b-2026-06
+  function estimateItemHeight(item: ProposalItem): number {
+    const IMG = 92;
+    const BREATH = 4;
+    const NAME_LH = 17;
+    const NAME_MB = 2;
+    const DESC_LH = 15.4;
+    const DESC_MB = 4;
+    const COLOR_H = 16;
+    const GRAV_H = 25;
+    const NAME_CPL = 46;
+    const DESC_CPL = 58;
+    const nameLen = Math.min((item.name ?? '').length, 90);
+    const nameLines = Math.max(1, Math.ceil(nameLen / NAME_CPL));
+    const descLen = item.description ? Math.min(item.description.length, 120) : 0;
+    const descLines = descLen > 0 ? Math.max(1, Math.ceil(descLen / DESC_CPL)) : 0;
+    const hasColor = Boolean(item.color);
+    const hasGrav = (item.personalizations?.length ?? 0) > 0;
+    const textStack =
+      nameLines * NAME_LH +
+      NAME_MB +
+      (descLines > 0 ? descLines * DESC_LH + DESC_MB : 0) +
+      (hasColor ? COLOR_H : 0) +
+      (hasGrav ? GRAV_H : 0);
+    return Math.max(IMG, textStack) + BREATH;
+  }
+
+  function itemsBudget(isFirst: boolean, isLast: boolean): number {
+    const header = isFirst ? FIRST_HEADER_H : CONT_HEADER_H;
+    const client = isFirst ? CLIENT_BAR_H : CONT_CLIENT_H;
+    const reserve = isLast ? TOTALS_H + SIGNATURE_H + NOTES_H : HINT_H;
+    return PAGE_H - header - client - TABLE_HEADER_H - reserve - SIMPLE_FOOTER_H - SAFETY;
+  }
+
   function paginateItems(items: ProposalItem[]): ProposalItem[][] {
     const n = items.length;
     if (n === 0) return [[]];
-    if (n <= LAST_CAP_SINGLE) return [items];
+    if (n <= LAST_CAP_SINGLE) {
+      const totalHeight = items.reduce((acc, item) => acc + estimateItemHeight(item), 0);
+      if (totalHeight <= itemsBudget(true, true)) return [items];
+    }
     const capacityFor = (p: number): number =>
       p <= 1 ? LAST_CAP_SINGLE : MID_CAP_FIRST + Math.max(0, p - 2) * MID_CAP_CONT + LAST_CAP_CONT;
     let pageCount = 2;
@@ -365,6 +404,24 @@ describe('paginateItems — regras de negócio', () => {
       pages.push(items.slice(cursor, cursor + counts[i]));
       cursor += counts[i];
     }
+
+    // Correção por ALTURA REAL (spill) — réplica de #5b. Garante zero clipping em linhas ricas.
+    for (let pass = 0; pass <= items.length; pass++) {
+      let moved = false;
+      for (let j = 0; j < pages.length; j++) {
+        const budget = itemsBudget(j === 0, j === pages.length - 1);
+        let used = pages[j].reduce((acc, item) => acc + estimateItemHeight(item), 0);
+        while (used > budget && pages[j].length > 1) {
+          const overflow = pages[j].pop()!;
+          used -= estimateItemHeight(overflow);
+          if (j + 1 < pages.length) pages[j + 1].unshift(overflow);
+          else pages.push([overflow]);
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
+
     return pages;
   }
 
@@ -448,6 +505,54 @@ describe('paginateItems — regras de negócio', () => {
     const second = computeStartIndices(pages);
     expect(first).toEqual(second);
     expect(first[0]).toBe(0);
+  });
+
+  // ── #5b: correção por ALTURA REAL (spill) — linhas ricas não estouram a página ──
+  const richItem = (i: number): ProposalItem =>
+    makeItem({
+      name: `Produto premium com nome longo o suficiente para ocupar duas linhas ${i}`,
+      description:
+        'Descricao longa o bastante para ocupar duas linhas inteiras na coluna central, exercitando a altura real da linha no PDF gerado.',
+      color: 'Azul Marinho',
+      personalizations: [
+        { technique_name: 'Silk Screen', location_name: 'Frente', total_cost: 12 },
+      ],
+    });
+
+  const itemsBudgetT = (isFirst: boolean, isLast: boolean): number => {
+    const header = isFirst ? FIRST_HEADER_H : CONT_HEADER_H;
+    const client = isFirst ? CLIENT_BAR_H : CONT_CLIENT_H;
+    const reserve = isLast ? TOTALS_H + SIGNATURE_H + NOTES_H : HINT_H;
+    return PAGE_H - header - client - TABLE_HEADER_H - reserve - SIMPLE_FOOTER_H - SAFETY;
+  };
+
+  it('#5b: linhas ricas (n=1..40) — nenhuma pagina excede o orcamento por ALTURA (zero clipping)', () => {
+    for (let n = 1; n <= 40; n++) {
+      const items = Array.from({ length: n }, (_, i) => richItem(i));
+      const pages = paginateItems(items);
+      expect(pages.reduce((a, p) => a + p.length, 0)).toBe(n);
+      expect(pages.every((p) => p.length > 0)).toBe(true);
+      expect(pages.flat().map((item) => item.name)).toEqual(items.map((item) => item.name));
+      const within = pages.every((p, idx) => {
+        const used = p.reduce((a, item) => a + estimateItemHeight(item), 0);
+        return used <= itemsBudgetT(idx === 0, idx === pages.length - 1) + 0.01;
+      });
+      expect(within).toBe(true);
+    }
+  });
+
+  it('#5b: 2 itens ricos quebram em 2 paginas (early-return ciente de altura)', () => {
+    const pages = paginateItems([richItem(1), richItem(2)]);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.flat()).toHaveLength(2);
+  });
+
+  it('#5b: itens simples (96px) nao disparam spill — densidade intacta (8 itens → 2 pags)', () => {
+    const items = Array.from({ length: 8 }, (_, i) => makeItem({ name: `S${i}` }));
+    const pages = paginateItems(items);
+    expect(pages.reduce((a, p) => a + p.length, 0)).toBe(8);
+    expect(pages.every((p) => p.length > 0)).toBe(true);
+    expect(pages.length).toBe(2);
   });
 });
 
