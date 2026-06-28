@@ -147,12 +147,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle className="text-left text-sm font-semibold tracking-tight">
-            Detalhes do Item
-          </SheetTitle>
+          <SheetTitle className={`text-left ${qvType.sheetTitle}`}>Detalhes do Item</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-5 space-y-5">
+        <div className={qvSpacing.sheetStack}>
+
           {/* Product Info */}
           <div className="flex items-start gap-2.5">
             {item.product_image_url && (
