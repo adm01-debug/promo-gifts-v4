@@ -263,9 +263,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
   return (
     <section aria-labelledby="quote-items-heading">
-      <h3 id="quote-items-heading" className={cn(qvSpacing.eyebrowGap, qvType.eyebrow)}>
-        Itens do Orçamento
-      </h3>
+      <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[640px] border-collapse">
           <caption className="sr-only">
