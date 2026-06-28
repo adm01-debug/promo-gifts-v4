@@ -250,10 +250,28 @@ export const PropostaComercialTailwind = forwardRef<
                 </>
               )}
 
-              {/* Commercial conditions on EVERY page */}
-              <div style={{ marginTop: 'auto' }}>
-                <ProposalNotes data={data} />
-              </div>
+              {/* P0 #5: Condições + Termos de aceite APENAS na última página
+                  (antes repetidos em TODA página — redundância). Continuações
+                  exibem um lembrete enxuto no rodapé.
+                  @fix_version proposal-notes-last-page-only-2026-06 */}
+              {isLast ? (
+                <div style={{ marginTop: 'auto' }}>
+                  <ProposalNotes data={data} />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    marginTop: 'auto',
+                    paddingTop: '8px',
+                    fontSize: '9px',
+                    color: '#9e9e9e',
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                  }}
+                >
+                  Condições comerciais e termos de aceite na última página.
+                </div>
+              )}
             </div>
 
             <ProposalFooter
