@@ -461,8 +461,19 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               aria-hidden="true"
               data-testid="quote-items-table-scrollbar-corner-mask"
               style={headerHeight ? { height: `${headerHeight}px` } : undefined}
-              className="pointer-events-none absolute right-0 top-0 z-20 w-[18px] rounded-tr-lg bg-primary print:hidden"
-            />
+              className="pointer-events-none absolute right-0 top-0 z-20 flex w-[18px] items-center justify-center rounded-tr-lg bg-primary print:hidden"
+              data-scroll-hint={scrollState.bottom ? 'end' : 'more'}
+            >
+              <ChevronDown
+                className={cn(
+                  'h-3 w-3 text-primary-foreground/90 transition-all duration-200',
+                  scrollState.bottom
+                    ? 'rotate-180 opacity-50'
+                    : 'animate-bounce opacity-100',
+                )}
+                strokeWidth={2.5}
+              />
+            </div>
           )}
         </div>
         {enableInnerScroll && !scrollState.bottom && (
