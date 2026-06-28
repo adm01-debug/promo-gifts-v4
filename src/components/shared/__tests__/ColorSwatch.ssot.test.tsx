@@ -133,7 +133,7 @@ function assertInvariants(
   expect(btn.className).not.toContain('grayscale');
   expect(btn.className).not.toContain('opacity-40');
 
-  if (selected) expect(btn.className).toContain('ring-primary');
+  if (selected) expect(btn.className).toContain('ring-foreground');
 
   if (stock === 'out') {
     expect(btn.getAttribute('data-stock-state')).toBe('out');
