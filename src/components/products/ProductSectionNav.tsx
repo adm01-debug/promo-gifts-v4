@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,8 @@ interface ProductSectionNavProps {
 export function ProductSectionNav({ tabs, className }: ProductSectionNavProps) {
   const [activeId, setActiveId] = useState(tabs[0]?.id ?? '');
   const navRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(navRef);
   const isClickScrolling = useRef(false);
 
   // Scroll-spy: observe which section is visible

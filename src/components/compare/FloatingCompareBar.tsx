@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { useNavigate } from 'react-router-dom';
 import { GitCompare, X, ChevronRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,10 @@ export const FloatingCompareBar = React.forwardRef<HTMLDivElement>((_props, _ref
   const ctx = useProductsContextSafe();
   const getProductsByIds = ctx?.getProductsByIds;
   const cacheSignal = ctx?.products;
+
+  const compareScrollRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(compareScrollRef);
 
   const compareEntries = useMemo(() => {
     if (!getProductsByIds) return [];
@@ -55,7 +60,7 @@ export const FloatingCompareBar = React.forwardRef<HTMLDivElement>((_props, _ref
       </div>
 
       {/* Product Thumbnails */}
-      <div className="scrollbar-none flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+      <div ref={compareScrollRef} className="scrollbar-none flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
         {compareEntries.map((entry, idx) => (
           <div
             key={`cmp-${entry.index}`}

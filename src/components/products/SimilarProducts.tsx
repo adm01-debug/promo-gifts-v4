@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, forwardRef, useMemo } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Layers, Loader2, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -104,6 +105,9 @@ export function SimilarProducts({
 }: SimilarProductsProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll horizontal via mouse wheel (Melhoria UX: fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(scrollRef);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
