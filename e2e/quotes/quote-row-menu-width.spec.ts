@@ -91,6 +91,19 @@ for (const vp of [
         ).toBeLessThanOrEqual(1);
       }
 
+      // Hover + focus em "Histórico" não devem alterar a largura do menu.
+      const historico = content.locator('[role="menuitem"]', { hasText: /hist/i }).first();
+      if (await historico.count()) {
+        const baseBox = await content.boundingBox();
+        await historico.hover();
+        const hoverBox = await content.boundingBox();
+        expect(Math.abs((hoverBox!.width) - (baseBox!.width))).toBeLessThanOrEqual(0.5);
+        await historico.focus();
+        const focusBox = await content.boundingBox();
+        expect(Math.abs((focusBox!.width) - (baseBox!.width))).toBeLessThanOrEqual(0.5);
+        expect(focusBox!.x + focusBox!.width).toBeLessThanOrEqual(vp.width + 1);
+      }
+
       await expect(content).toHaveScreenshot(`quote-row-menu-${vp.name}.png`, SNAP);
     });
   });
