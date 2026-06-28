@@ -522,9 +522,9 @@ export function LocationPanel({
           }
           className="overflow-hidden rounded-lg border border-border/50 bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           data-testid="customization-technique-picker"
-          initial={{ opacity: 0, y: -4 }}
+          initial={reduceMotion ? false : { opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
           onKeyDown={(e) => {
             if (e.key === 'Escape' && selectedTechnique) {
               setIsPickerOpen(false);
