@@ -422,11 +422,14 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           />
         )}
         {enableInnerScroll && (
-          <p className="sr-only" aria-live="polite">
-            {scrollState.bottom
-              ? 'Fim da lista de itens.'
-              : 'Há mais itens abaixo. Use as setas ou arraste para rolar.'}
-          </p>
+          <>
+            <span id="quote-items-scroll-help" className="sr-only">
+              Pressione setas para cima e para baixo para rolar uma linha, PageUp e PageDown para uma página, Home para o início e End para o fim.
+            </span>
+            <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              {announcement}
+            </p>
+          </>
         )}
       </div>
     </section>
