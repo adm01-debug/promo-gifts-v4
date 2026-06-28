@@ -58,7 +58,7 @@ describe('AuditHistory — acessibilidade', () => {
 
     const list = container.querySelector('ol');
     expect(list).not.toBeNull();
-    const items = list?.querySelectorAll(':scope > li') ?? [];
+    const items = list?.querySelectorAll('li') ?? [];
     expect(items.length).toBe(2);
   });
 
