@@ -68,6 +68,14 @@ jobs:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
 
+      # GATE 2.7: overflow-x: clip em MainLayout/html/body (bloqueante)
+      # Previne regressão silenciosa do sticky da sidebar: `overflow-x: hidden`
+      # promove overflow-y para auto (CSS spec) e anula `position: sticky`.
+      - name: Gate 2.7 — overflow-x-clip (bloqueante)
+        run: node scripts/check-overflow-x-clip.mjs
+
+
+
 
       # GATE 3: Build (zero build errors)
       - name: Build check
