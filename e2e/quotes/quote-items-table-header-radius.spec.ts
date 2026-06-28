@@ -7,9 +7,9 @@
  *  - Última `th` (visível) tem border-top-right-radius > 0.
  *  - O overflow horizontal, quando existir por causa do min-width da tabela,
  *    fica contido no scroller e não aumenta a largura do documento.
- *  - Quando o engine suporta `scrollbar-gutter: stable`, a máscara de canto
- *    pode estar ausente (redundante). Quando presente, sua altura é validada
- *    contra a altura real do <thead>.
+ *  - A área azul da seta no canto superior-direito cobre o gutter e carrega o
+ *    border-radius real; a última <th> fica sem radius para não criar pixel
+ *    escuro entre célula e overlay.
  *  - scrollLeft/scrollWidth: ao rolar horizontalmente, nenhuma <th> some do
  *    DOM e o header completo permanece dentro do bounding-box do scroller.
  */
@@ -108,7 +108,9 @@ for (const vp of VIEWPORTS) {
     expect(overflow.rectLeft).toBeGreaterThanOrEqual(wrapperMetrics.rectLeft - 2);
     expect(overflow.rectRight).toBeLessThanOrEqual(wrapperMetrics.rectRight + 2);
 
-    // ── Header: 1ª th TL>0; última th TR>0; pintado nas células (não no <tr>).
+    // ── Header: 1ª th TL>0; última th TR só existe quando não há máscara.
+    // Com scroll interno, a área azul da seta é quem carrega o radius TR; isso
+    // evita sobreposição de dois cantos arredondados e o pixel escuro no seam.
     const ths = scroller.locator('thead tr > th');
     const count = await ths.count();
     expect(count).toBeGreaterThan(1);
@@ -116,7 +118,7 @@ for (const vp of VIEWPORTS) {
     const firstTl = await ths.first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
     const lastTr = await ths.nth(count - 1).evaluate((el) => getComputedStyle(el).borderTopRightRadius);
     expect(px(firstTl), `1ª th TL @${vp.name} = "${firstTl}"`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
-    expect(px(lastTr), `última th TR @${vp.name} = "${lastTr}"`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+    expect(px(lastTr), `última th TR deve ser reto quando há área da seta @${vp.name}`).toBe(0);
 
     const paintModel = await scroller.locator('thead tr').evaluate((el) => {
       const table = el.closest('table');
@@ -181,56 +183,76 @@ for (const vp of VIEWPORTS) {
       });
     }
 
-    // ── Máscara de canto: OPCIONAL — só existe em engines sem `scrollbar-gutter: stable`.
-    // Quando presente, sua altura DEVE bater com a altura real do <thead> (±2px),
-    // garantindo que não dependemos mais da constante h-[2.375rem].
+    // ── Área azul da seta: reproduz o padrão visual da lista de Orçamentos.
+    // Sua altura DEVE bater com a altura real do <thead> (±2px), garantindo que
+    // não dependemos mais da constante h-[2.375rem].
     const cornerMask = fixture.getByTestId('quote-items-table-scrollbar-corner-mask');
     const maskCount = await cornerMask.count();
-    if (maskCount > 0) {
-      const m = await cornerMask.evaluate((el) => {
-        const cs = getComputedStyle(el);
-        const r = el.getBoundingClientRect();
-        return { bg: cs.backgroundColor, radius: cs.borderTopRightRadius, w: r.width, h: r.height };
-      });
-      expect(px(m.radius)).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
-      expect(m.w).toBeGreaterThanOrEqual(12);
-      expect(m.bg).not.toBe('rgba(0, 0, 0, 0)');
-      expect(
-        Math.abs(m.h - theadHeight),
-        `máscara (${m.h}px) deve igualar altura real do thead (${theadHeight}px) @${vp.name}`,
-      ).toBeLessThanOrEqual(2);
+    expect(maskCount, `área azul da seta deve existir @${vp.name}`).toBe(1);
 
-      // Seta indicadora de scroll dentro da máscara: presente, alinhada ao
-      // canto direito, e com hint "more" enquanto há conteúdo abaixo.
-      const hint = await cornerMask.getAttribute('data-scroll-hint');
-      expect(hint, `data-scroll-hint inicial @${vp.name}`).toBe('more');
-      const chevron = cornerMask.locator('svg').first();
-      await expect(chevron, `setinha SVG visível @${vp.name}`).toBeVisible();
-      const chevronBox = await chevron.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return { w: r.width, h: r.height, top: r.top, right: r.right };
-      });
-      expect(chevronBox.w, `setinha width > 0 @${vp.name}`).toBeGreaterThan(0);
-      expect(chevronBox.h, `setinha height > 0 @${vp.name}`).toBeGreaterThan(0);
-      const maskRect = await cornerMask.evaluate((el) => el.getBoundingClientRect());
-      // Seta centralizada na máscara (±4px de tolerância).
-      expect(
-        Math.abs(chevronBox.right - maskRect.right + (maskRect.width - chevronBox.w) / 2),
-      ).toBeLessThanOrEqual(4);
+    const m = await cornerMask.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return { bg: cs.backgroundColor, radius: cs.borderTopRightRadius, w: r.width, h: r.height };
+    });
+    expect(px(m.radius)).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+    expect(m.w).toBeGreaterThanOrEqual(18);
+    expect(m.bg).not.toBe('rgba(0, 0, 0, 0)');
+    expect(
+      Math.abs(m.h - theadHeight),
+      `máscara (${m.h}px) deve igualar altura real do thead (${theadHeight}px) @${vp.name}`,
+    ).toBeLessThanOrEqual(2);
 
-      // Após scroll até o fim, hint muda para "end" (seta inverte).
-      await scroller.evaluate((el) => {
-        el.scrollTop = el.scrollHeight;
-      });
-      await expect
-        .poll(() => cornerMask.getAttribute('data-scroll-hint'), {
-          message: `data-scroll-hint após scroll @${vp.name}`,
-        })
-        .toBe('end');
-      await scroller.evaluate((el) => {
-        el.scrollTop = 0;
-      });
-    }
+    const seam = await cornerMask.evaluate((mask) => {
+      const maskRect = mask.getBoundingClientRect();
+      const table = mask.parentElement?.querySelector('table');
+      const last = table?.querySelector('thead tr > th:last-child');
+      const lastRect = last?.getBoundingClientRect();
+      return {
+        overlap: lastRect ? lastRect.right - maskRect.left : Number.NaN,
+        maskLeft: maskRect.left,
+        lastRight: lastRect?.right ?? Number.NaN,
+      };
+    });
+    expect(seam.overlap, `área da seta deve sobrepor a última th sem gap @${vp.name}`).toBeGreaterThanOrEqual(1);
+
+    // Seta indicadora dentro da área azul: mesmo ícone ArrowUpDown do módulo de
+    // Orçamentos, visível e centralizado no canto direito.
+    const hint = await cornerMask.getAttribute('data-scroll-hint');
+    expect(hint, `data-scroll-hint inicial @${vp.name}`).toBe('more');
+    const chevron = cornerMask.locator('svg').first();
+    await expect(chevron, `setinha SVG visível @${vp.name}`).toBeVisible();
+    const chevronBox = await chevron.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { w: r.width, h: r.height, left: r.left, top: r.top };
+    });
+    expect(chevronBox.w, `setinha width 16px @${vp.name}`).toBeCloseTo(16, 1);
+    expect(chevronBox.h, `setinha height 16px @${vp.name}`).toBeCloseTo(16, 1);
+    const maskRect = await cornerMask.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    });
+    expect(
+      Math.abs(chevronBox.left + chevronBox.w / 2 - (maskRect.left + maskRect.width / 2)),
+      `seta centralizada no eixo X @${vp.name}`,
+    ).toBeLessThanOrEqual(1.5);
+    expect(
+      Math.abs(chevronBox.top + chevronBox.h / 2 - (maskRect.top + maskRect.height / 2)),
+      `seta centralizada no eixo Y @${vp.name}`,
+    ).toBeLessThanOrEqual(1.5);
+
+    // Após scroll até o fim, hint muda para "end" sem alterar o ícone visual.
+    await scroller.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect
+      .poll(() => cornerMask.getAttribute('data-scroll-hint'), {
+        message: `data-scroll-hint após scroll @${vp.name}`,
+      })
+      .toBe('end');
+    await scroller.evaluate((el) => {
+      el.scrollTop = 0;
+    });
 
   });
 }
