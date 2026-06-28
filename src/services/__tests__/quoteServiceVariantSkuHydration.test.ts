@@ -113,7 +113,7 @@ describe('quoteService.fetchQuote — hidratação de SKU composto (variante)', 
             id: 'i-3',
             product_id: 'prod-1',
             product_name: 'Y',
-            product_sku: 'PV-00570',
+            product_sku: 'PV00570',
             color_name: 'colorido',
           },
         ],
@@ -121,12 +121,13 @@ describe('quoteService.fetchQuote — hidratação de SKU composto (variante)', 
       quote_item_personalizations: { data: [] },
       products: { data: [] },
       product_variants: {
-        data: [{ product_id: 'prod-1', sku: 'PV-00570-COL', color_name: 'Colorido' }],
+        data: [{ product_id: 'prod-1', sku: 'PV00570-COL', color_name: 'Colorido' }],
       },
     });
 
     const quote = await quoteService.fetchQuote('q-3');
-    expect(quote?.items?.[0].product_sku).toBe('PV-00570-COL');
+    expect(quote?.items?.[0].product_sku).toBe('PV00570-COL');
+
   });
 
   it('quando variante não é encontrada, mantém SKU base e registra warn (fallback)', async () => {
