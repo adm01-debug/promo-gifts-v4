@@ -1,0 +1,68 @@
+name: Quote Items Table — Header (cross-browser e2e)
+
+# Garante que o header do QuoteItemsTable (fora do scroller, com
+# scrollbar-gutter dinâmico e alinhamento header↔body) não regrida em
+# Chromium, Firefox e WebKit.
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/QuoteItemsTable.tsx'
+      - 'src/components/quotes/**'
+      - 'e2e/quotes/quote-items-table-header-radius.spec.ts'
+      - '.github/workflows/e2e-quote-items-table-header.yml'
+      - 'playwright.config.ts'
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/QuoteItemsTable.tsx'
+      - 'src/components/quotes/**'
+      - 'e2e/quotes/quote-items-table-header-radius.spec.ts'
+      - '.github/workflows/e2e-quote-items-table-header.yml'
+
+concurrency:
+  group: quote-items-table-header-${{ github.ref }}-${{ matrix.browser || 'all' }}
+  cancel-in-progress: true
+
+jobs:
+  header-e2e:
+    name: Quote Items Table header — ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_BASE_URL: http://localhost:8080
+      PW_TEST_HTML_REPORT_OPEN: never
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Playwright (${{ matrix.browser }})
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Run header spec on ${{ matrix.browser }}-public
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-items-table-header-radius.spec.ts \
+            --project=${{ matrix.browser }}-public \
+            --reporter=list,github
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
