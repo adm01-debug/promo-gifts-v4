@@ -183,37 +183,36 @@ export function useQuotesListPage() {
     const restorable = snapshots.filter((s) => !failed.includes(s.id ?? ''));
     if (restorable.length === 0) return;
 
-    toast.success(`${successCount} orçamento(s) excluído(s).`, {
+    showUndoToast({
+      title: `${successCount} orçamento(s) excluído(s)`,
+      description: 'Você pode desfazer esta ação.',
       duration: 8000,
-      action: {
-        label: 'Desfazer',
-        onClick: async () => {
-          let restored = 0;
-          for (const snap of restorable) {
-            try {
-              const items: QuoteItem[] = (snap.items ?? []).map((it) => ({
-                ...it,
-              })) as QuoteItem[];
-              // remove campos gerados para evitar conflito de PK/timestamps no INSERT
-              const { id: _omitId, created_at: _c, updated_at: _u, quote_number: _qn, ...rest } =
-                snap as Quote & { id?: string };
-              void _omitId; void _c; void _u; void _qn;
-              const created = await createQuote(rest as Partial<Quote>, items);
-              if (created) restored += 1;
-            } catch {
-              /* segue restaurando os demais */
-            }
+      onUndo: async () => {
+        let restored = 0;
+        for (const snap of restorable) {
+          try {
+            const items: QuoteItem[] = (snap.items ?? []).map((it) => ({
+              ...it,
+            })) as QuoteItem[];
+            // remove campos gerados para evitar conflito de PK/timestamps no INSERT
+            const { id: _omitId, created_at: _c, updated_at: _u, quote_number: _qn, ...rest } =
+              snap as Quote & { id?: string };
+            void _omitId; void _c; void _u; void _qn;
+            const created = await createQuote(rest as Partial<Quote>, items);
+            if (created) restored += 1;
+          } catch {
+            /* segue restaurando os demais */
           }
-          if (restored === restorable.length) {
-            toast.success(`${restored} orçamento(s) restaurado(s).`);
-          } else if (restored > 0) {
-            toast.warning(
-              `${restored}/${restorable.length} orçamentos restaurados. Alguns não puderam ser recriados.`,
-            );
-          } else {
-            toast.error('Não foi possível restaurar os orçamentos.');
-          }
-        },
+        }
+        if (restored === restorable.length) {
+          toast.success(`${restored} orçamento(s) restaurado(s).`);
+        } else if (restored > 0) {
+          toast.warning(
+            `${restored}/${restorable.length} orçamentos restaurados. Alguns não puderam ser recriados.`,
+          );
+        } else {
+          toast.error('Não foi possível restaurar os orçamentos.');
+        }
       },
     });
   }, [bulkDeleteIds, deleteQuote, fetchQuote, createQuote]);
