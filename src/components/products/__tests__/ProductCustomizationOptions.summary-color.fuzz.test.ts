@@ -75,8 +75,8 @@ describe('Gate summary-color-tokens — fuzz exaustivo', () => {
     ['comentário inline', (s) => s.replace('Resumo das Configurações', '/* x */ Resumo das Configurações')],
     ['aspas JS', (s) => s.replace(/'pt-BR'/, '"pt-BR"')],
     ['whitespace extra', (s) => s.replace(/border border-success\/20/, 'border  border-success/20')],
-    ['classe inócua extra', (s) => s.replace('bg-success/5 p-2.5', 'bg-success/5 p-2.5 transition-colors')],
-    ['aspas JSX', (s) => s.replace('className="mt-6 border-t border-border/60', "className='mt-6 border-t border-border/60")],
+    ['classe inócua extra', (s) => s.replace('bg-success/5', 'bg-success/5 transition-colors')],
+    ['aspas JSX', (s) => s.replace('className="mt-5 border-t border-border/40', "className='mt-5 border-t border-border/40")],
     ['quebra de linha extra', (s) => s.replace('Resumo das Configurações', 'Resumo das Configurações\n')],
     ['emoji no título do JSX', (s) => s.replace('Resumo das Configurações', 'Resumo das Configurações ✨')],
   ];
