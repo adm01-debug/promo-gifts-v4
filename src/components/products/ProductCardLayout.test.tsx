@@ -89,6 +89,48 @@ describe('ProductCard Layout and Typography', () => {
     expect(infoSection!.className).toContain('space-y-2');
     expect(infoSection!.className).toContain('sm:space-y-3');
   });
+
+  it('h3 do nome usa line-clamp-2 + overflow-hidden e alturas fixas (1.75rem mobile / 2rem sm+)', () => {
+    render(
+      <Wrapper>
+        <ProductCard product={mockProduct} />
+      </Wrapper>,
+    );
+
+    const title = screen.getByTestId('product-card-name');
+    const cls = title.className;
+
+    // Truncamento em 2 linhas com reticências (line-clamp gera text-overflow: ellipsis)
+    expect(cls).toContain('line-clamp-2');
+    expect(cls).toContain('overflow-hidden');
+
+    // Alturas exatas de 2 linhas — mobile e sm+
+    expect(cls).toContain('min-h-[1.75rem]');
+    expect(cls).toContain('max-h-[1.75rem]');
+    expect(cls).toContain('sm:min-h-[2rem]');
+    expect(cls).toContain('sm:max-h-[2rem]');
+  });
+
+  it('nome muito longo permanece dentro do h3 truncado em 2 linhas', () => {
+    const longName =
+      'Caneta esferográfica premium com clip metálico personalizado, ' +
+      'tinta azul de alta durabilidade, ponta fina e acabamento fosco antiderrapante';
+
+    render(
+      <Wrapper>
+        <ProductCard product={{ ...mockProduct, name: longName } as Product} />
+      </Wrapper>,
+    );
+
+    const title = screen.getByTestId('product-card-name');
+    // O nome completo permanece no DOM (acessibilidade/SEO); o corte visual é via CSS
+    expect(title.textContent).toBe(longName);
+    expect(title.getAttribute('data-product-name')).toBe(longName);
+    // Classes responsáveis pelo "…" na 2ª linha
+    expect(title.className).toContain('line-clamp-2');
+    expect(title.className).toContain('overflow-hidden');
+  });
 });
+
 
 
