@@ -36,29 +36,29 @@ export function QuoteTotalsSummary({
   return (
     <div className="flex justify-end">
       <div className="w-full max-w-sm overflow-hidden rounded-lg border border-border">
-        <div className="space-y-2 p-4">
-          <div className="flex justify-between text-sm">
+        <div className="space-y-1.5 px-3.5 py-3">
+          <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Subtotal produtos:</span>
-            <span data-testid="summary-subtotal-products">{formatCurrency(productSubtotal)}</span>
+            <span className="tabular-nums" data-testid="summary-subtotal-products">{formatCurrency(productSubtotal)}</span>
           </div>
           {hasPersonalizations && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Personalização:</span>
-              <span data-testid="summary-personalization">
+              <span className="tabular-nums" data-testid="summary-personalization">
                 {formatCurrency(personalizationTotal)}
               </span>
             </div>
           )}
           {discountValue > 0 && (
-            <div className="flex justify-between text-sm text-destructive">
+            <div className="flex justify-between text-xs text-destructive">
               <span>Desconto{discountPercent ? ` (${discountPercent}%)` : ''}:</span>
-              <span data-testid="summary-discount">-{formatCurrency(discountValue)}</span>
+              <span className="tabular-nums" data-testid="summary-discount">-{formatCurrency(discountValue)}</span>
             </div>
           )}
           {shippingType && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Frete:</span>
-              <span>
+              <span className="tabular-nums">
                 {shippingType === 'cif'
                   ? 'CIF — Cortesia'
                   : shippingType === 'fob'
@@ -70,10 +70,10 @@ export function QuoteTotalsSummary({
             </div>
           )}
         </div>
-        <div className="border-t border-border bg-muted/50 px-4 py-3">
+        <div className="border-t border-border bg-muted/50 px-3.5 py-2.5">
           <div className="flex items-baseline justify-between">
-            <span className="text-lg font-bold">Total:</span>
-            <span data-testid="summary-total" className="text-2xl font-bold text-primary">
+            <span className="text-sm font-semibold">Total:</span>
+            <span data-testid="summary-total" className="font-display text-lg font-semibold tabular-nums text-primary">
               {formatCurrency(computedTotal)}
             </span>
           </div>
