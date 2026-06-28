@@ -52,6 +52,11 @@ vi.mock('sonner', () => ({
   },
 }));
 
+const showUndoToast = vi.fn();
+vi.mock('@/utils/undoToast', () => ({
+  showUndoToast: (...a: unknown[]) => showUndoToast(...a),
+}));
+
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
