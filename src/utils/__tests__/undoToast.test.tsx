@@ -119,4 +119,52 @@ describe('UndoToastContent — countdown + pause-on-hover', () => {
     expect(onTimeout).toHaveBeenCalled();
     expect(onUndo).not.toHaveBeenCalled();
   });
+
+  it('expõe aria-live="polite" e aria-atomic="true" no contador (a11y)', () => {
+    render(
+      <UndoToastContent
+        title="t"
+        duration={5000}
+        onUndo={() => {}}
+        onTimeout={() => {}}
+      />,
+    );
+    const counter = screen.getByText('5s');
+    expect(counter.getAttribute('aria-live')).toBe('polite');
+    expect(counter.getAttribute('aria-atomic')).toBe('true');
+  });
+
+  it('respeita prefers-reduced-motion desligando transições', () => {
+    const mqlListeners: Array<(e: { matches: boolean }) => void> = [];
+    const originalMM = window.matchMedia;
+    // @ts-expect-error — mock parcial para teste
+    window.matchMedia = (q: string) => ({
+      matches: q.includes('reduce'),
+      media: q,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: (_: string, l: (e: { matches: boolean }) => void) => {
+        mqlListeners.push(l);
+      },
+      removeEventListener: () => {},
+      dispatchEvent: () => true,
+    });
+
+    const { container } = render(
+      <UndoToastContent
+        title="t"
+        duration={3000}
+        onUndo={() => {}}
+        onTimeout={() => {}}
+      />,
+    );
+
+    // Quando reduced-motion está ativo, classes de transition/hover-shadow não devem ser aplicadas
+    const html = container.innerHTML;
+    expect(html).not.toMatch(/transition-all/);
+    expect(html).not.toMatch(/hover:shadow-/);
+
+    window.matchMedia = originalMM;
+  });
 });
