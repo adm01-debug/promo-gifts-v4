@@ -14,6 +14,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { qvType, qvSpacing } from './quote-view-typography';
+import { ProductThumb } from './ProductThumb';
 
 
 const QUANTITY_TIERS = [
