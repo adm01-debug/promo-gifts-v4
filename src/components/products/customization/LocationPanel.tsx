@@ -573,17 +573,32 @@ export function LocationPanel({
           aria-hidden={isPickerOpen}
           /* Altura mínima evita layout-shift ao trocar técnica enquanto
              o ConfigurationPanelV6 remonta (key muda) e recalcula preço. */
-          className="min-h-[260px]"
+          className="relative min-h-[260px]"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            {isSwapping ? (
+          <ConfigurationPanelV6
+            key={selectedTechnique.technique_id}
+            technique={selectedTechnique}
+            quantity={quantity}
+            isConfirmed={confirmedPersonalization?.techniqueId === selectedTechnique.technique_id}
+            initialWidth={initialWidth}
+            initialHeight={initialHeight}
+            initialColors={initialColors}
+            onPriceCalculated={handlePriceCalculated}
+            onDimensionsChange={handleDimensionsChange}
+          />
+
+          {/* Skeleton overlay durante a troca de técnica — evita CLS e dá
+              feedback de "carregando" sem desmontar o painel (preserva foco e
+              hooks reativos). Respeita prefers-reduced-motion. */}
+          <AnimatePresence>
+            {isSwapping && (
               <motion.div
-                key={`skeleton-${selectedTechnique.technique_id}`}
+                key="config-skeleton-overlay"
                 initial={reduceMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.12 }}
-                className="space-y-2 pt-1"
+                className="pointer-events-none absolute inset-0 z-10 space-y-2 rounded-md bg-background/85 p-2 backdrop-blur-[2px]"
                 data-testid="customization-config-skeleton"
                 aria-hidden="true"
               >
@@ -593,28 +608,6 @@ export function LocationPanel({
                   <Skeleton className="h-16 rounded-md" />
                 </div>
                 <Skeleton className="h-24 w-full rounded-md" />
-              </motion.div>
-            ) : (
-              <motion.div
-                key={`panel-${selectedTechnique.technique_id}`}
-                initial={reduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
-                transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
-              >
-                <ConfigurationPanelV6
-                  key={selectedTechnique.technique_id}
-                  technique={selectedTechnique}
-                  quantity={quantity}
-                  isConfirmed={
-                    confirmedPersonalization?.techniqueId === selectedTechnique.technique_id
-                  }
-                  initialWidth={initialWidth}
-                  initialHeight={initialHeight}
-                  initialColors={initialColors}
-                  onPriceCalculated={handlePriceCalculated}
-                  onDimensionsChange={handleDimensionsChange}
-                />
               </motion.div>
             )}
           </AnimatePresence>
