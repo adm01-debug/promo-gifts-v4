@@ -94,7 +94,7 @@ export function ColorSwatchPicker({
               getColorSwatchClasses({ isActive, isOutOfStock: isOut, hasBg: bg.hasBg }),
               'cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               isActive
-                ? 'scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary after:absolute after:inset-[-1px] after:rounded-full after:shadow-[0_0_12px_2px_hsl(var(--primary)/0.5)] after:content-[""]'
+                ? 'opacity-100 ring-[var(--swatch-ring-width)] ring-inset ring-primary after:absolute after:inset-0 after:rounded-full after:shadow-[inset_0_0_0_1px_hsl(var(--background)/0.85),inset_0_0_10px_0_hsl(var(--primary)/0.45)] after:content-[""]'
                 : !isOut &&
                     'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
             )}

@@ -42,9 +42,13 @@ describe('getColorSwatchClasses (SSOT) — invariantes por estado', () => {
       expect(cls).toContain('rounded-full');
       expect(cls).toContain('border');
 
-      // Ativo ⇒ ring; inativo ⇒ sem ring-primary
-      if (isActive) expect(cls).toContain('ring-primary');
-      else expect(cls).not.toContain('ring-primary');
+      // Ativo ⇒ ring interno; inativo ⇒ sem ring-primary. Ring externo reabre
+      // clipping nos containers com overflow-hidden do catálogo/super filtro.
+      if (isActive) {
+        expect(cls).toContain('ring-primary');
+        expect(cls).toContain('ring-inset');
+        expect(cls).not.toContain('ring-offset');
+      } else expect(cls).not.toContain('ring-primary');
 
       // Sem bg ⇒ borda tracejada
       if (hasBg) expect(cls).not.toContain('border-dashed');
@@ -126,7 +130,12 @@ function assertInvariants(
   expect(btn.className).not.toContain('grayscale');
   expect(btn.className).not.toContain('opacity-40');
 
-  if (selected) expect(btn.className).toContain('ring-primary');
+    if (selected) {
+      expect(btn.className).toContain('ring-primary');
+      expect(btn.className).toContain('ring-inset');
+      expect(btn.className).not.toContain('scale-[var(--swatch-scale-hover)]');
+      expect(btn.className).not.toContain('after:inset-[-1px]');
+    }
 
   if (stock === 'out') {
     expect(btn.getAttribute('data-stock-state')).toBe('out');
