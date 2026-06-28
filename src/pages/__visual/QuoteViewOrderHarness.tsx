@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Copy, Edit2, Eye, History, MoreHorizontal, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,6 +38,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
+import { qvSpacing, qvType } from '@/components/quotes/quote-view-typography';
 
 const HARNESS_QUOTE_ID = 'harness-quote-id-0042';
 
@@ -115,7 +117,7 @@ export default function QuoteViewOrderHarness() {
               <div className="flex items-center gap-2">
                 <h1
                   data-testid="page-title-quote-view"
-                  className="font-display text-base font-semibold leading-tight tracking-tight"
+                  className="font-display text-base font-semibold leading-tight tracking-tight text-foreground"
                 >
                   Orçamento ORC-2026-0042
                 </h1>
@@ -123,7 +125,7 @@ export default function QuoteViewOrderHarness() {
                   Pendente
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Criado em 01/06/2026</p>
+              <p className={qvType.meta}>Criado em 01/06/2026</p>
             </div>
           </div>
 
@@ -212,12 +214,12 @@ export default function QuoteViewOrderHarness() {
           data-testid="quote-content-card"
           className="border-0 bg-transparent shadow-none"
         >
-          <CardContent className="space-y-4 pt-4">
-            <div className="text-sm text-foreground">
+          <CardContent className={cn('pt-4', qvSpacing.sectionStack)}>
+            <div className={qvType.blockTitle}>
               Cliente · Empresa Demonstração LTDA
             </div>
             <Separator />
-            <div className="text-sm text-muted-foreground">
+            <div className={qvType.meta}>
               [conteúdo do orçamento ocultado no harness]
             </div>
           </CardContent>
