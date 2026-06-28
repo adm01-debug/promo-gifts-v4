@@ -1,25 +1,44 @@
 /**
- * Valida o DropdownMenuContent das linhas de orçamento sob zoom de 125%
- * (browser-level via CSS zoom no <html>), garantindo:
- *  - min-width permanece 0
- *  - "Histórico" não é cortado (scrollWidth ≤ clientWidth + 1)
- *  - Ao hover/focus do item "Histórico", o menu mantém width = 6.4rem
- *    (proporção real; aceita o multiplicador de zoom) sem overflow.
+ * Valida o DropdownMenuContent das linhas de orçamento sob zoom 125%.
+ * Roda no project `chromium-authed` (storageState gerado por auth.setup),
+ * que abre `/orcamentos` autenticado com dados reais — sem fallback para /auth.
  *
- * Cobre desktop (1280) e mobile (390).
+ * Asserts emitem evidência (width, min-width, scrollWidth/clientWidth, box).
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 import { gotoAndSettle } from '../helpers/nav';
 
 const ROUTE = '/orcamentos';
 const ZOOM = 1.25;
-const BASE_WIDTH_REM = 6.4;
-const BASE_WIDTH_PX = BASE_WIDTH_REM * 16; // 102.4
+const BASE_WIDTH_PX = 6.4 * 16; // 102.4
 
 test.use({ reducedMotion: 'reduce' });
 
-async function applyZoom(page: Page, factor: number) {
-  await page.addStyleTag({ content: `html { zoom: ${factor}; }` });
+async function snapshotMenu(content: Locator, label: string) {
+  const data = await content.evaluate((el) => {
+    const c = getComputedStyle(el as HTMLElement);
+    const h = el as HTMLElement;
+    const r = h.getBoundingClientRect();
+    return {
+      width: c.width,
+      minWidth: c.minWidth,
+      maxWidth: c.maxWidth,
+      boxWidth: r.width,
+      boxX: r.x,
+      scrollW: h.scrollWidth,
+      clientW: h.clientWidth,
+    };
+  });
+  return { label, ...data };
+}
+
+function fmt(s: Awaited<ReturnType<typeof snapshotMenu>>, vpName: string, vpWidth: number) {
+  return (
+    `[${s.label}] vp=${vpName}(${vpWidth}px) zoom=${ZOOM} ` +
+    `width=${s.width} minWidth=${s.minWidth} maxWidth=${s.maxWidth} ` +
+    `box.width=${s.boxWidth.toFixed(2)} box.x=${s.boxX.toFixed(2)} ` +
+    `scrollW=${s.scrollW} clientW=${s.clientW} overflow=${s.scrollW - s.clientW}`
+  );
 }
 
 async function openMenu(page: Page) {
@@ -43,51 +62,59 @@ for (const vp of [
 
     test('min-width=0, Histórico não corta, hover/focus mantém width', async ({ page }) => {
       await page.goto('/');
-      await applyZoom(page, ZOOM);
+      await page.addStyleTag({ content: `html { zoom: ${ZOOM}; }` });
 
       const content = await openMenu(page);
+      const base = await snapshotMenu(content, 'idle');
 
-      // 1. computed styles — min-width permanece 0 sob zoom.
-      const cs = await content.evaluate((el) => {
-        const c = getComputedStyle(el as HTMLElement);
-        return { width: c.width, minWidth: c.minWidth };
-      });
-      expect(parseFloat(cs.minWidth)).toBe(0);
-      // width nominal computada permanece 6.4rem (zoom não muda computed style,
-      // apenas o layout final). Tolerância 0.5px.
-      expect(parseFloat(cs.width)).toBeGreaterThanOrEqual(BASE_WIDTH_PX - 0.5);
-      expect(parseFloat(cs.width)).toBeLessThanOrEqual(BASE_WIDTH_PX + 0.5);
+      expect(
+        parseFloat(base.minWidth),
+        `min-width deveria ser 0 sob zoom ${ZOOM}.\n${fmt(base, vp.name, vp.width)}`,
+      ).toBe(0);
+      expect(
+        parseFloat(base.width),
+        `computed width deveria ser ~${BASE_WIDTH_PX}px.\n${fmt(base, vp.name, vp.width)}`,
+      ).toBeGreaterThanOrEqual(BASE_WIDTH_PX - 0.5);
+      expect(parseFloat(base.width)).toBeLessThanOrEqual(BASE_WIDTH_PX + 0.5);
 
-      // 2. Histórico cabe sem corte.
       const historico = content.locator('[role="menuitem"]', { hasText: /hist/i }).first();
-      await expect(historico).toBeVisible();
-      const cut = await historico.evaluate((el) => {
-        const h = el as HTMLElement;
-        return { scrollW: h.scrollWidth, clientW: h.clientWidth };
-      });
-      expect(cut.scrollW - cut.clientW).toBeLessThanOrEqual(1);
+      await expect(historico, '"Histórico" não foi renderizado').toBeVisible();
 
-      // 3. Hover + focus mantêm width do menu (proporção real, considerando zoom).
-      const baseBox = await content.boundingBox();
-      expect(baseBox).toBeTruthy();
+      const itemInfo = await historico.evaluate((el) => {
+        const h = el as HTMLElement;
+        return { scrollW: h.scrollWidth, clientW: h.clientWidth, ws: getComputedStyle(h).whiteSpace };
+      });
+      expect(
+        itemInfo.scrollW - itemInfo.clientW,
+        `"Histórico" cortado: scrollW=${itemInfo.scrollW} clientW=${itemInfo.clientW} ws=${itemInfo.ws}`,
+      ).toBeLessThanOrEqual(1);
 
       await historico.hover();
-      const hoverBox = await content.boundingBox();
-      expect(hoverBox).toBeTruthy();
-      expect(Math.abs(hoverBox!.width - baseBox!.width)).toBeLessThanOrEqual(0.5);
-
+      const hover = await snapshotMenu(content, 'hover');
       await historico.focus();
-      const focusBox = await content.boundingBox();
-      expect(focusBox).toBeTruthy();
-      expect(Math.abs(focusBox!.width - baseBox!.width)).toBeLessThanOrEqual(0.5);
+      const focus = await snapshotMenu(content, 'focus');
 
-      // largura real ≈ 6.4rem * zoom (102.4 * 1.25 = 128)
+      expect(
+        Math.abs(hover.boxWidth - base.boxWidth),
+        `width mudou no hover.\n${fmt(base, vp.name, vp.width)}\n${fmt(hover, vp.name, vp.width)}`,
+      ).toBeLessThanOrEqual(0.5);
+      expect(
+        Math.abs(focus.boxWidth - base.boxWidth),
+        `width mudou no focus.\n${fmt(base, vp.name, vp.width)}\n${fmt(focus, vp.name, vp.width)}`,
+      ).toBeLessThanOrEqual(0.5);
+
+      // Largura renderizada ≈ 6.4rem * zoom = 128px
       const expectedRendered = BASE_WIDTH_PX * ZOOM;
-      expect(focusBox!.width).toBeGreaterThanOrEqual(expectedRendered - 2);
-      expect(focusBox!.width).toBeLessThanOrEqual(expectedRendered + 2);
+      expect(
+        focus.boxWidth,
+        `box width fora do esperado sob zoom.\n${fmt(focus, vp.name, vp.width)}`,
+      ).toBeGreaterThanOrEqual(expectedRendered - 2);
+      expect(focus.boxWidth).toBeLessThanOrEqual(expectedRendered + 2);
 
-      // sem overflow horizontal do viewport.
-      expect(focusBox!.x + focusBox!.width).toBeLessThanOrEqual(vp.width + 1);
+      expect(
+        focus.boxX + focus.boxWidth,
+        `menu transbordou viewport.\n${fmt(focus, vp.name, vp.width)}`,
+      ).toBeLessThanOrEqual(vp.width + 1);
     });
   });
 }
