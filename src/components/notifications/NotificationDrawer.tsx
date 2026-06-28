@@ -276,11 +276,9 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
     const markAsRead = useCallback(
       async (id: string) => {
         await baseMarkAsRead(id);
-        toast.success('Notificação marcada como lida', {
-          action: {
-            label: 'Desfazer',
-            onClick: () => undoMarkAsRead(id),
-          },
+        showUndoToast({
+          title: 'Notificação marcada como lida',
+          onUndo: () => undoMarkAsRead(id),
         });
       },
       [baseMarkAsRead, undoMarkAsRead],
