@@ -74,56 +74,52 @@ function QuoteItemRow({
     >
       <Card
         className={cn(
-          'overflow-hidden transition-all duration-200',
-          'hover:shadow-md',
-          isExpanded && 'flex max-h-[calc(100vh-12rem)] flex-col',
+          'overflow-hidden border-border/50 bg-card/60 shadow-none transition-all duration-200',
+          'hover:border-border hover:bg-card',
+          isExpanded && 'flex max-h-[calc(100vh-12rem)] flex-col border-primary/30',
         )}
       >
         {/* Product header — sticky when personalization is open */}
         <div
           className={cn(
-            'z-10 bg-card p-4',
-            isExpanded && 'sticky top-0 border-b border-border/50 shadow-sm',
+            'z-10 bg-card/60 p-3',
+            isExpanded && 'sticky top-0 border-b border-border/40 bg-card',
           )}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2.5">
             {/* Product Image */}
             <ProductThumb
               src={item.product_image_url}
               alt={item.product_name}
               size="list"
-              roundedClassName="rounded-lg"
-              iconClassName="h-6 w-6"
+              roundedClassName="rounded-md"
+              iconClassName="h-5 w-5"
               data-testid="quote-list-thumb"
             />
 
             {/* Product Info */}
-            <div className="min-w-0 flex-1 space-y-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h4 className="truncate text-sm font-medium">{item.product_name}</h4>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="font-mono text-[10px]">
+                  <h4 className="truncate text-[13px] font-medium leading-tight">{item.product_name}</h4>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline" className="h-5 border-border/60 px-1.5 font-mono text-[10px] font-normal text-muted-foreground">
                       {item.product_sku}
                     </Badge>
                     {item.color_name && (
                       <Badge
-                        variant="secondary"
-                        className="gap-1 text-[10px]"
-                        style={{
-                          backgroundColor: item.color_hex ? `${item.color_hex}20` : undefined,
-                          borderColor: item.color_hex,
-                        }}
+                        variant="outline"
+                        className="h-5 gap-1 border-border/60 px-1.5 text-[10px] font-normal text-muted-foreground"
                       >
-                        <div
-                          className="h-2 w-2 rounded-full border"
+                        <span
+                          className="h-1.5 w-1.5 rounded-full ring-1 ring-border/60"
                           style={{ backgroundColor: item.color_hex }}
                         />
                         {item.color_name}
                       </Badge>
                     )}
                     {hasPersonalizations && (
-                      <Badge variant="secondary" className="gap-1 bg-primary/10 text-[10px]">
+                      <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
                         <Palette className="h-2.5 w-2.5" />
                         {item.personalizations?.length} gravação(ões)
                       </Badge>
@@ -134,18 +130,18 @@ function QuoteItemRow({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   onClick={onRemove}
                   aria-label="Excluir"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
               {/* Inputs Row */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Qtd:</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Qtd</span>
                   <Input
                     type="number"
                     min={1}
@@ -157,16 +153,16 @@ function QuoteItemRow({
                       const v = parseInt(e.target.value, 10);
                       onUpdateQuantity(Math.max(1, v || 1));
                     }}
-                    className="h-8 w-20 text-sm"
+                    className="h-7 w-16 px-2 text-xs tabular-nums"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Preço:</span>
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Preço</span>
+                  <div className="flex items-center gap-1">
                     <CurrencyInput
                       value={item.unit_price}
                       onChange={(n) => onUpdatePrice(n)}
-                      className="h-8 w-28 text-sm"
+                      className="h-7 w-24 px-2 text-xs tabular-nums"
                     />
                     <PriceFreshnessBadge
                       priceUpdatedAt={item.price_updated_at}
@@ -178,8 +174,8 @@ function QuoteItemRow({
                   </div>
                 </div>
                 <div className="ml-auto text-right">
-                  <p className="text-xs text-muted-foreground">Subtotal</p>
-                  <p className="text-sm font-semibold">{formatCurrency(itemTotal)}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Subtotal</p>
+                  <p className="text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</p>
                 </div>
               </div>
             </div>
@@ -187,26 +183,26 @@ function QuoteItemRow({
 
           {/* Personalization toggle — inside sticky header */}
           {onTogglePersonalization && (
-            <div className="mt-2">
+            <div className="mt-2.5">
               <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'w-full justify-between rounded-lg border text-sm font-medium transition-all',
+                  'h-8 w-full justify-between rounded-md border px-2.5 text-xs font-medium transition-all',
                   isExpanded
-                    ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15'
-                    : 'border-border bg-accent/50 hover:border-primary/20 hover:bg-accent',
+                    ? 'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
+                    : 'border-border/60 bg-transparent text-muted-foreground hover:border-border hover:bg-accent/40 hover:text-foreground',
                 )}
                 onClick={onTogglePersonalization}
               >
-                <span className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
+                <span className="flex items-center gap-1.5">
+                  <Palette className="h-3.5 w-3.5" />
                   Personalização
                 </span>
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-3.5 w-3.5" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3.5 w-3.5" />
                 )}
               </Button>
             </div>
