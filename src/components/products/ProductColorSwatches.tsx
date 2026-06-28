@@ -157,10 +157,13 @@ export const ProductColorSwatches = memo(
     }
 
     // Trunca para `max` swatches e expõe `+N` chip quando há excedente.
-    // Em modo `wrap`, exibe todas as cores sem chip de overflow.
-    const effectiveMax = wrap ? colors.length : Math.max(1, max);
-    const overflow = wrap ? 0 : Math.max(0, colors.length - effectiveMax);
-    const visible = overflow > 0 ? colors.slice(0, effectiveMax) : colors;
+    // Regra unificada (wrap ou não): se sobrar, a ÚLTIMA bolinha é o chip "+N";
+    // nunca colocamos o chip após o limite.
+    const effectiveMax = Math.max(1, max);
+    const hasOverflow = colors.length > effectiveMax;
+    const overflow = hasOverflow ? colors.length - (effectiveMax - 1) : 0;
+    const visible = hasOverflow ? colors.slice(0, effectiveMax - 1) : colors;
+
 
     const normalizedSelected = (selectedName || urlColor)?.toLowerCase() ?? null;
 
