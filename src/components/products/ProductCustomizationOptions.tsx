@@ -252,7 +252,9 @@ export function ProductCustomizationOptions({
             Total personalização
           </span>
           <span className="text-[15px] font-bold tabular-nums text-success">
-            {summaryTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {summaryItems
+              .reduce((acc, it) => acc + (it.price?.total_cobrado ?? 0), 0)
+              .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </span>
         </div>
       )}
