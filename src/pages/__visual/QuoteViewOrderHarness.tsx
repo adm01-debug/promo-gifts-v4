@@ -320,6 +320,14 @@ export default function QuoteViewOrderHarness() {
               />
             </div>
 
+            <Separator />
+            {/* Tabela com fixtures determinísticos (0/1/N personalizações) */}
+            <div data-testid="quote-items-table-fixture">
+              <QuoteItemsTable items={HARNESS_TABLE_ITEMS} />
+            </div>
+
+
+
           </CardContent>
         </Card>
       </div>
