@@ -142,7 +142,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             />
             <div className="min-w-0">
               {item.product_sku && (
-                <span className="mb-1 inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-foreground">
+                <span
+                  data-testid="quote-item-sku-badge"
+                  data-sku={item.product_sku}
+                  className="mb-1 inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-foreground"
+                >
                   {item.color_hex && (
                     <span
                       aria-hidden="true"
@@ -153,6 +157,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   {item.product_sku}
                 </span>
               )}
+
               <p className={cn(qvType.productName, isProductRemoved && 'text-muted-foreground')}>
                 {item.product_name}
               </p>
