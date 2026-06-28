@@ -100,6 +100,20 @@ describe('V1 ProductColorSwatches (wrap, max=14)', () => {
       expect(screen.getByTestId('color-swatches-overflow')).toHaveTextContent(chip);
     },
   );
+
+  it('distribuição em 2 linhas: 30 cores com max=14 → 13 visíveis + "+17" (cobertura total = visíveis + overflow)', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(30)} max={14} wrap hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    const names = visibleNamesV1();
+    const chip = screen.getByTestId('color-swatches-overflow').textContent ?? '';
+    const hidden = Number(chip.replace(/\D/g, ''));
+    // Contrato: visíveis + ocultas no chip = total de cores
+    expect(names.length + hidden).toBe(30);
+    expect(hidden).toBe(17);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
