@@ -67,4 +67,20 @@ describe('ProductCard Layout and Typography', () => {
     // Acessibilidade
     expect(sku.getAttribute('aria-label')).toBe('Código do produto: SKU12345');
   });
+
+  it('mantém offset compacto (-mt-0.5 sm:-mt-1.5) entre badge de categoria e fornecedor', () => {
+    render(
+      <Wrapper>
+        <ProductCard product={mockProduct} />
+      </Wrapper>,
+    );
+
+    // Linha do fornecedor — wrapper que segura o offset vertical
+    const supplierRow = screen.getByText('SupplierName').closest('div.flex')
+      ?.parentElement as HTMLElement | null;
+    expect(supplierRow).toBeTruthy();
+    expect(supplierRow!.className).toContain('-mt-0.5');
+    expect(supplierRow!.className).toContain('sm:-mt-1.5');
+  });
 });
+
