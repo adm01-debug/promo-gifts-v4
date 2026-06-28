@@ -65,7 +65,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-quote-view-sticky-traces
+          name: playwright-quote-view-sticky-traces-${{ matrix.project }}
           path: |
             test-results/**
             playwright-report/**
