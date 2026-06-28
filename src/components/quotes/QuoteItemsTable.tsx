@@ -13,6 +13,7 @@ import React from 'react';
 import { Package, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
+import { ProductThumb } from './ProductThumb';
 import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -125,24 +126,24 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       >
         <td className={qvSpacing.cell}>
           <div className="flex items-start gap-3">
-            {item.product_image_url ? (
-              <img
-                src={item.product_image_url}
-                alt=""
-                className="h-[58px] w-[58px] shrink-0 rounded border border-border object-cover print:hidden"
-                loading="lazy"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-            ) : isProductRemoved ? (
+            {isProductRemoved && !item.product_image_url ? (
               <div
                 aria-hidden="true"
                 className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded border border-destructive/30 bg-destructive/8 print:hidden"
+                data-testid="quote-item-thumb-removed"
               >
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
-            ) : null}
+            ) : (
+              <ProductThumb
+                src={item.product_image_url}
+                alt=""
+                sizeClassName="h-[58px] w-[58px]"
+                roundedClassName="rounded"
+                className="print:hidden"
+                data-testid="quote-item-thumb"
+              />
+            )}
             <div className="min-w-0">
               {item.product_sku && (
                 <span className="mb-1 inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-foreground">

@@ -14,6 +14,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { qvType, qvSpacing } from './quote-view-typography';
+import { ProductThumb } from './ProductThumb';
 
 
 const QUANTITY_TIERS = [
@@ -154,17 +155,14 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
 
           {/* Product Info */}
           <div className="flex items-start gap-3">
-            {item.product_image_url && (
-              <img
-                src={item.product_image_url}
-                alt={item.product_name}
-                className="h-[68px] w-[68px] shrink-0 rounded-md border border-border object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-            )}
+            <ProductThumb
+              src={item.product_image_url}
+              alt={item.product_name}
+              sizeClassName="h-[68px] w-[68px]"
+              roundedClassName="rounded-md"
+              iconClassName="h-6 w-6"
+              data-testid="quote-detail-thumb"
+            />
 
             <div className="min-w-0 flex-1">
               {item.product_sku && (
