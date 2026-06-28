@@ -1,0 +1,62 @@
+================================================================
+🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 13)
+================================================================
+Run:        #5428 (id 28331668736)
+SHA:        dc7a3e27ab3997f2f5ff7d1b9398423107afc418
+Event:      push
+Outcome:    skipped
+Conclusion: skipped
+Marker:     absent (smoke exit != 0)
+
+--- Environment ---
+  pwd: /home/runner/work/promo-gifts-v4/promo-gifts-v4
+  GH_TOKEN length: 426
+  GITHUB_TOKEN length: 426
+  which gh: /usr/bin/gh
+  which curl: /usr/bin/curl
+
+--- ls -la playwright-report/ ---
+total 12
+drwxr-xr-x  2 runner runner 4096 Jun 28 19:39 .
+drwxr-xr-x 22 runner runner 4096 Jun 28 19:39 ..
+-rw-r--r--  1 runner runner  568 Jun 28 19:39 T14-step-log.txt
+
+--- find playwright-report -type f ---
+playwright-report/T14-step-log.txt
+
+--- head -100 smoke-summary.md ---
+================================================================
+
+=== PROBE A: curl direct heartbeat ===
+Heartbeat content (cat):
+# T14 heartbeat
+
+Run #5428 at 2026-06-28T19:39:59Z
+SHA: dc7a3e27ab3997f2f5ff7d1b9398423107afc418
+---
+Base64 length: 132
+GET HTTP: 404
+GET response (first 200 chars): {
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+  "status": "404"
+}
+Existing SHA: ''
+PUT body size: 193 bytes
+PUT HTTP: 409
+PUT response (first 500 chars): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+✗ Heartbeat FAILED (HTTP 409)
+
+=== PROBE B: Diagnostic file commits via curl ===
+  [playwright-report/results.json] does not exist locally — skipped
+  [playwright-report/smoke-summary.md] does not exist locally — skipped
+  [playwright-report/smoke-summary.json] does not exist locally — skipped
+
+Done.
