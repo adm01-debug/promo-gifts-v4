@@ -96,19 +96,20 @@ function NextTierHint({ currentQty }: { currentQty: number }) {
   const nextTierLabel = nextTier.max ? `${nextTier.min}-${nextTier.max}` : `${nextTier.min}+`;
 
   return (
-    <div className="space-y-2 rounded-lg border border-accent bg-accent/50 p-3">
-      <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-        <TrendingDown className="h-3.5 w-3.5 text-primary" />
+    <div className="space-y-1.5 rounded-lg border border-accent bg-accent/40 p-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+        <TrendingDown className="h-3 w-3 text-primary" />
         Próxima faixa de desconto
       </div>
-      <div className="text-xs text-muted-foreground">
+      <div className="text-[11px] text-muted-foreground">
         Faltam{' '}
-        <span className="font-bold text-foreground">
+        <span className="font-semibold text-foreground">
           {unitsNeeded} {unitsNeeded === 1 ? 'unidade' : 'unidades'}
         </span>{' '}
-        para a faixa de <span className="font-bold text-foreground">{nextTierLabel} un</span>
+        para a faixa de <span className="font-semibold text-foreground">{nextTierLabel} un</span>
       </div>
     </div>
+
   );
 }
 export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
