@@ -10,7 +10,7 @@
  * fix_version: quote_items_null_product_graceful_20260627
  */
 import React from 'react';
-import { Package, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import { Package, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { QuoteItemDetailSheet } from './QuoteItemDetailSheet';
 import { ProductThumb } from './ProductThumb';
