@@ -61,6 +61,7 @@ import { QuoteClientInfo } from '@/components/quotes/QuoteClientInfo';
 import { QuoteItemsTable } from '@/components/quotes/QuoteItemsTable';
 import { QuoteTotalsSummary } from '@/components/quotes/QuoteTotalsSummary';
 import { qvType, qvSpacing } from '@/components/quotes/quote-view-typography';
+import { SectionEyebrow } from '@/components/quotes/SectionEyebrow';
 import { PdfGenerationDialog } from '@/components/quotes/PdfGenerationDialog';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { useQuoteViewData } from '@/pages/quotes/quote-view/useQuoteViewData';
