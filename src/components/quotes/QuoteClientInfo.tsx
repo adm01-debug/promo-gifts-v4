@@ -6,6 +6,7 @@
  */
 import { Building2, CreditCard, Mail, MapPin, Phone, User, UserPlus } from 'lucide-react';
 import { qvType, qvSpacing } from './quote-view-typography';
+import { SectionEyebrow } from './SectionEyebrow';
 
 interface QuoteClientInfoProps {
   clientCompany?: string | null;
