@@ -42,15 +42,16 @@ describe('getColorSwatchClasses (SSOT) — invariantes por estado', () => {
       expect(cls).toContain('rounded-full');
       expect(cls).toContain('border');
 
-      // Ativo ⇒ efeito de seleção completo; inativo ⇒ sem ring-primary
+      // Ativo ⇒ efeito de seleção completo; inativo ⇒ sem ring-foreground
       if (isActive) {
-        expect(cls).toContain('ring-primary');
-        expect(cls).toContain('ring-offset-1');
+        expect(cls).toContain('ring-foreground');
+        expect(cls).toContain('ring-offset-2');
         expect(cls).toContain('scale-[var(--swatch-scale-hover)]');
         expect(cls).toContain('shadow-[var(--swatch-selected-glow)]');
         expect(cls).toContain('after:shadow-[var(--swatch-selected-inner-highlight)]');
         expect(cls).not.toContain('ring-inset');
-      } else expect(cls).not.toContain('ring-primary');
+      } else expect(cls).not.toContain('ring-foreground');
+
 
       // Sem bg ⇒ borda tracejada
       if (hasBg) expect(cls).not.toContain('border-dashed');
