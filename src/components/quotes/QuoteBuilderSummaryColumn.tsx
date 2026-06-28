@@ -743,7 +743,7 @@ export function QuoteBuilderSummaryColumn({
                                       <img
                                         src={item.product_image_url}
                                         alt={item.product_name}
-                                        className="h-12 w-12 rounded-lg bg-muted object-cover"
+                                        className="h-[58px] w-[58px] rounded-lg bg-muted object-cover"
                                         loading="lazy"
                                         onError={(e) => {
                                           (e.currentTarget as HTMLImageElement).src =
@@ -751,7 +751,7 @@ export function QuoteBuilderSummaryColumn({
                                         }}
                                       />
                                     ) : (
-                                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
+                                      <div className="flex h-[58px] w-[58px] items-center justify-center rounded-lg bg-muted">
                                         <Package className="h-5 w-5 text-muted-foreground" />
                                       </div>
                                     )}
