@@ -7,6 +7,9 @@ import type { Product } from '@/hooks/products';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 
 // BUG-HP-05 FIX (2026-06-21): Intl.NumberFormat dentro de formatPrice era recriado a cada render.
 const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -25,6 +28,15 @@ export function ProductHoverPreview({
   side = 'right',
   align = 'center',
 }: ProductHoverPreviewProps) {
+  // Respeita o toggle "Etiquetas dos Produtos" — fix_version: badge-toggle-v2
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) return actualTheme === 'dark' ? settings.dark : settings.light;
+    return s.badgesEnabled;
+  });
+
   return (
     <HoverCard openDelay={300} closeDelay={100}>
       <HoverCardTrigger asChild>{children}</HoverCardTrigger>
@@ -44,15 +56,17 @@ export function ProductHoverPreview({
             containerClassName="h-full w-full"
           />
 
-          {/* Badges overlay */}
-          <div className="absolute left-2 top-2 flex flex-col gap-1">
-            {product.featured && (
-              <Badge className="bg-primary text-xs text-primary-foreground">Destaque</Badge>
-            )}
-            {product.newArrival && (
-              <Badge className="bg-info text-xs text-info-foreground">Novidade</Badge>
-            )}
-          </div>
+          {/* Badges overlay — ocultados quando toggle "Etiquetas dos Produtos" está OFF */}
+          {badgesEnabled && (
+            <div className="absolute left-2 top-2 flex flex-col gap-1">
+              {product.featured && (
+                <Badge className="bg-primary text-xs text-primary-foreground">Destaque</Badge>
+              )}
+              {product.newArrival && (
+                <Badge className="bg-info text-xs text-info-foreground">Novidade</Badge>
+              )}
+            </div>
+          )}
 
           {/* Price overlay */}
           <div className="absolute bottom-2 right-2">

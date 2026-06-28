@@ -1,4 +1,7 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Star,
@@ -242,19 +245,30 @@ interface DynamicTrustBadgesProps {
 }
 
 export function DynamicTrustBadges({ trust, productFlags, className }: DynamicTrustBadgesProps) {
+  // Respeita o toggle "Etiquetas dos Produtos" para badges de marketing.
+  // Badges de confiança do fornecedor (verified, fast, rating) são sempre exibidos.
+  // fix_version: badge-toggle-v2 — DynamicTrustBadges agora controlado pelo toggle
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) return actualTheme === 'dark' ? settings.dark : settings.light;
+    return s.badgesEnabled;
+  });
+
   const badges: React.ReactNode[] = [];
 
-  if (productFlags?.newArrival) {
+  if (badgesEnabled && productFlags?.newArrival) {
     badges.push(
       <TrustBadge key="new" type="new" tooltip="Produto adicionado recentemente ao catálogo" />,
     );
   }
-  if (productFlags?.onSale) {
+  if (badgesEnabled && productFlags?.onSale) {
     badges.push(
       <TrustBadge key="sale" type="sale" tooltip="Este produto está com preço promocional" />,
     );
   }
-  if (productFlags?.featured) {
+  if (badgesEnabled && productFlags?.featured) {
     badges.push(
       <TrustBadge
         key="bestseller"

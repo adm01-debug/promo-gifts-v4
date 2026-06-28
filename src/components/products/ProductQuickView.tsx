@@ -22,6 +22,9 @@ import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
@@ -103,6 +106,15 @@ export const ProductQuickView = React.memo(
     const [_imageError, setImageError] = useState(false);
     const [selectorOpen, setSelectorOpen] = useState(false);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
+
+  // Respeita o toggle "Etiquetas dos Produtos" — fix_version: badge-toggle-v2
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) return actualTheme === 'dark' ? settings.dark : settings.light;
+    return s.badgesEnabled;
+  });
 
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
     const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
@@ -707,13 +719,15 @@ export const ProductQuickView = React.memo(
                 </TooltipProvider>
               </div>
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-1">
-                {product.newArrival && <Badge variant="secondary">Novidade</Badge>}
-                {product.onSale && <Badge variant="destructive">Promoção</Badge>}
-                {product.featured && <Badge variant="outline">Destaque</Badge>}
-                {product.isKit && <Badge variant="outline">Kit</Badge>}
-              </div>
+              {/* Badges — ocultados quando toggle "Etiquetas dos Produtos" está OFF */}
+              {badgesEnabled && (
+                <div className="flex flex-wrap gap-1">
+                  {product.newArrival && <Badge variant="secondary">Novidade</Badge>}
+                  {product.onSale && <Badge variant="destructive">Promoção</Badge>}
+                  {product.featured && <Badge variant="outline">Destaque</Badge>}
+                  {product.isKit && <Badge variant="outline">Kit</Badge>}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
