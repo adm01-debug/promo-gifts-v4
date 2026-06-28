@@ -1,6 +1,28 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.8.1
+// Versão: 3.9.0
+//
+// CHANGELOG v3.9.0 (2026-06-28 — fix/sw-503-stale-chunk-detection):
+//   BUG-SW-14 FIX [CRÍTICO]: looksStale() não detectava res.status === 503.
+//     O Vercel retorna "503 Stale Chunk" para chunks removidos em novo deploy.
+//     Como looksStale() só verificava 404 e HTML, 503 caía no branch "erro
+//     não-obsoleto" e era repassado ao browser sem chamar handleStaleChunk().
+//     O postMessage SW_STALE_CHUNK (→ reload em 300ms) NUNCA disparava neste
+//     path — a app ficava travada até o usuário dar hard refresh manual.
+//
+//   BUG-SW-15 FIX [ALTO]: ampliação da detecção de "stale" para qualquer
+//     status não-ok. Para assets hashed (conteúdo imutável por construção),
+//     qualquer falha de rede (502, 503, 504, 404…) indica que o CDN não tem
+//     mais aquele hash — ou seja, houve um novo deploy. A distinção anterior
+//     entre "stale" e "outro erro não-ok" era incorreta: não existe cenário
+//     em que um hashed asset retorna 5xx por razão que não seja deploy/CDN.
+//     Fix: looksStale() simplificado para !res.ok (+ HTML check para módulos).
+//
+//   BUG-SW-21 FIX [BAIXO]: handleStaleChunk() — cadeia
+//     self.clients.matchAll().then() não tinha .catch(). Se matchAll falhar
+//     (Service Worker não controla clients ainda) ou postMessage rejeitar,
+//     a Promise pendia sem handler → unhandledrejection silencioso.
+//     Fix: .catch(() => {}) adicionado ao final da cadeia.
 //
 // CHANGELOG v3.8.0 (2026-06-27 — fix/sw-base64url-hashed-asset-routing):
 //   [contexto] Após cada deploy, chunks lazy versionados (ex:
@@ -58,12 +80,13 @@
 //   Navigation (SPA)                   → Network First + cache fallback        ← v3.3.0
 //   /assets/* (hashed)                 → Cache First + retry 1s + MIME fix     ← v3.4.0
 //   SPA routes não-navigate            → Cache index.html (sem network fetch)  ← v3.7.0
+//   Stale chunk 503 detection          → looksStale captura qualquer não-ok    ← v3.9.0
 //   Imagens (mesma origem / CDN)       → Cache First + LRU (max 500, 90d TTL)
 //   Google Fonts                       → Stale-While-Revalidate
 //   Supabase API (.supabase.co)        → Network Only (dados dinâmicos)
 //   Resto                              → Stale-While-Revalidate + fallback     ← v3.3.0
 
-const CACHE_VERSION = 'v15'; // v3.8.0 — base64url hashed-asset routing fix
+const CACHE_VERSION = 'v16'; // v3.9.0 — BUG-SW-14/15 looksStale captura 503+5xx; BUG-SW-21 handleStaleChunk .catch()
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -239,7 +262,8 @@ function handleStaleChunk(chunkUrl) {
       clients.forEach((client) =>
         client.postMessage({ type: 'SW_STALE_CHUNK', url: chunkUrl }),
       ),
-    );
+    )
+    .catch(() => {}); // BUG-SW-21 FIX: guard para rejeição de matchAll/postMessage
 }
 // ── Roteamento de asset versionado (/assets/*) ────────────────────────────────
 // BUG-SW-9/10/11 FIX: Cache-first (imutável por hash). Trata deploy/CDN em
@@ -258,9 +282,15 @@ async function handleHashedAsset(request, url) {
   try { cached = await caches.match(request); } catch (_e) { /* sem cache */ }
   if (cached) return cached;
 
+  // BUG-SW-14/15 FIX: hashed assets são IMUTÁVEIS por definição (hash = conteúdo).
+  // Qualquer status não-ok significa que o asset não existe neste deploy/CDN edge.
+  // Inclui: 404 (removido), 503 (Vercel "Stale Chunk"), 502/504 (CDN em propagação).
+  // A distinção anterior entre "stale" e "outro erro não-ok" era incorreta —
+  // para assets content-addressed, qualquer falha de rede → recovery.
   const looksStale = (res) => {
     if (!res) return true;
-    if (res.status === 404) return true;
+    if (!res.ok) return true; // BUG-SW-14/15: qualquer não-2xx = stale para hashed assets
+    // Status 200 mas corpo é HTML (Vercel edge rewrites obsoletos para módulos)
     if (isModule && responseLooksLikeHtml(res)) return true;
     return false;
   };
