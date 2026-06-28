@@ -68,7 +68,8 @@ export function TimelineDot({
         'transition-all duration-200 group-hover:scale-105',
         toneClassName,
         highlighted &&
-          'ring-2 ring-primary/25 ring-offset-2 ring-offset-background shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]',
+          'ring-2 ring-primary/25 ring-offset-1 ring-offset-background shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]',
+
         className,
       )}
       {...rest}
