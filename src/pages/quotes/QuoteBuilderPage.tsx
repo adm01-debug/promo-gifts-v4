@@ -213,7 +213,7 @@ export default function QuoteBuilderPage() {
         {/* LAYOUT-FIX: header + stepper na MESMA linha (inline à direita do título)
             e sticky no topo para preservar contexto sem consumir altura extra. */}
         <div
-          className="sticky z-40 -mx-3 bg-background px-3 py-2 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
+          className="sticky isolate z-40 -mx-3 bg-background px-3 py-2 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
           style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 40px))' }}
         >
           <div className="flex flex-row items-center gap-2 sm:gap-4 lg:gap-6">
