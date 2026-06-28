@@ -129,7 +129,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               <img
                 src={item.product_image_url}
                 alt=""
-                className="h-12 w-12 shrink-0 rounded border border-border object-cover print:hidden"
+                className="h-[58px] w-[58px] shrink-0 rounded border border-border object-cover print:hidden"
                 loading="lazy"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
