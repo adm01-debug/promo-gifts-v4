@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast as sonnerToast } from 'sonner';
 import { Undo2, Check, X, AlertTriangle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,32 +21,81 @@ interface UndoToastContentProps {
   description?: string;
   duration: number;
   onUndo: () => void;
+  onTimeout: () => void;
 }
 
-/** Conteúdo do toast com contagem regressiva discreta no botão. */
-function UndoToastContent({ title, description, duration, onUndo }: UndoToastContentProps) {
-  const totalSec = Math.max(1, Math.round(duration / 1000));
-  const [remaining, setRemaining] = useState(totalSec);
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return reduced;
+}
+
+/**
+ * Conteúdo do toast com contagem regressiva discreta no botão.
+ *
+ * Pausa automaticamente quando o mouse entra ou recebe foco, e retoma
+ * ao sair — UX padrão de toasts com ação reversível.
+ * Respeita `prefers-reduced-motion` desligando transições.
+ */
+export function UndoToastContent({
+  title,
+  description,
+  duration,
+  onUndo,
+  onTimeout,
+}: UndoToastContentProps) {
+  const totalMs = Math.max(1000, duration);
+  const totalSec = Math.round(totalMs / 1000);
+  const [remainingMs, setRemainingMs] = useState(totalMs);
+  const pausedRef = useRef(false);
+  const lastTickRef = useRef<number>(Date.now());
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    const startedAt = Date.now();
-    const tick = () => {
-      const elapsed = (Date.now() - startedAt) / 1000;
-      const left = Math.max(0, totalSec - Math.floor(elapsed));
-      setRemaining(left);
-    };
-    const id = window.setInterval(tick, 250);
+    lastTickRef.current = Date.now();
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      const delta = now - lastTickRef.current;
+      lastTickRef.current = now;
+      if (pausedRef.current) return;
+      setRemainingMs((prev) => Math.max(0, prev - delta));
+    }, 200);
     return () => window.clearInterval(id);
-  }, [totalSec]);
+  }, []);
 
-  // SVG ring: progresso restante sobre circunferência (r=7 → C≈43.98)
+  useEffect(() => {
+    if (remainingMs <= 0) onTimeout();
+  }, [remainingMs, onTimeout]);
+
+  const pause = useCallback(() => {
+    pausedRef.current = true;
+  }, []);
+  const resume = useCallback(() => {
+    lastTickRef.current = Date.now();
+    pausedRef.current = false;
+  }, []);
+
+  const remainingSec = Math.ceil(remainingMs / 1000);
   const R = 7;
   const C = 2 * Math.PI * R;
-  const progress = remaining / totalSec;
+  const progress = remainingMs / totalMs;
   const dashoffset = C * (1 - progress);
 
   return (
-    <div className="flex w-full items-center gap-2.5">
+    <div
+      className="flex w-full items-center gap-2.5"
+      onMouseEnter={pause}
+      onMouseLeave={resume}
+      onFocusCapture={pause}
+      onBlurCapture={resume}
+    >
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-medium leading-tight text-foreground">{title}</p>
         {description && (
@@ -54,15 +103,18 @@ function UndoToastContent({ title, description, duration, onUndo }: UndoToastCon
         )}
       </div>
       <button
+        type="button"
         onClick={onUndo}
+        aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
         className={cn(
           'group relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1',
           'border border-primary/30 bg-primary/10 text-primary backdrop-blur-sm',
           'text-[11px] font-semibold tracking-wide',
           'shadow-[0_2px_10px_-2px_hsl(var(--primary)/0.35)]',
-          'transition-all duration-200 ease-out',
-          'hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_4px_16px_-2px_hsl(var(--primary)/0.5)] hover:-translate-y-px',
-          'active:translate-y-0 active:scale-[0.98]',
+          !reduced && 'transition-all duration-200 ease-out',
+          'hover:border-primary/50 hover:bg-primary/15',
+          !reduced &&
+            'hover:shadow-[0_4px_16px_-2px_hsl(var(--primary)/0.5)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98]',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         )}
       >
@@ -87,17 +139,23 @@ function UndoToastContent({ title, description, duration, onUndo }: UndoToastCon
               strokeLinecap="round"
               strokeDasharray={C}
               strokeDashoffset={dashoffset}
-              style={{ transition: 'stroke-dashoffset 250ms linear' }}
+              style={reduced ? undefined : { transition: 'stroke-dashoffset 200ms linear' }}
             />
           </svg>
-          <Undo2 className="h-2.5 w-2.5 transition-transform duration-300 group-hover:-rotate-12" />
+          <Undo2
+            className={cn(
+              'h-2.5 w-2.5',
+              !reduced && 'transition-transform duration-300 group-hover:-rotate-12',
+            )}
+          />
         </span>
-        <span>Desfazer</span>
+        <span aria-hidden="true">Desfazer</span>
         <span
+          aria-live="polite"
+          aria-atomic="true"
           className="tabular-nums text-primary/70 font-normal"
-          aria-label={`${remaining} segundos restantes`}
         >
-          {remaining}s
+          {remainingSec}s
         </span>
       </button>
     </div>
@@ -105,30 +163,41 @@ function UndoToastContent({ title, description, duration, onUndo }: UndoToastCon
 }
 
 /**
- * Shows a toast with an Undo button for reversible actions
+ * Shows a toast with an Undo button for reversible actions.
+ * O countdown pausa no hover/focus e respeita prefers-reduced-motion.
  */
 export function showUndoToast({ title, description, onUndo, duration = 5000 }: UndoToastOptions) {
   let undone = false;
 
+  const handleUndo = () => {
+    if (undone) return;
+    undone = true;
+    onUndo();
+    sonnerToast.dismiss(toastId);
+    sonnerToast.success('Ação desfeita!', {
+      duration: 2000,
+      icon: <Undo2 className="h-4 w-4" />,
+    });
+  };
+
+  const handleTimeout = () => {
+    if (undone) return;
+    sonnerToast.dismiss(toastId);
+  };
+
+  // Controlamos o dismiss manualmente (Infinity em sonner) para suportar pausa.
   const toastId = sonnerToast(
     <UndoToastContent
       title={title}
       description={description}
       duration={duration}
-      onUndo={() => {
-        if (undone) return;
-        undone = true;
-        onUndo();
-        sonnerToast.dismiss(toastId);
-        sonnerToast.success('Ação desfeita!', {
-          duration: 2000,
-          icon: <Undo2 className="h-4 w-4" />,
-        });
-      }}
+      onUndo={handleUndo}
+      onTimeout={handleTimeout}
     />,
     {
-      duration,
-      className: '!bg-card/95 !border-border/60 !backdrop-blur-md !rounded-xl !shadow-lg !py-2.5 !px-3',
+      duration: Infinity,
+      className:
+        '!bg-card/95 !border-border/60 !backdrop-blur-md !rounded-xl !shadow-lg !py-2.5 !px-3',
     },
   );
 

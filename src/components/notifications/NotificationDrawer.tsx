@@ -43,6 +43,7 @@ import { notificationsMetrics, type TriggerSource } from '@/lib/notifications-me
 import { NotificationsBadgeStatsPanel } from './NotificationsBadgeStatsPanel';
 import { NotificationPreferences } from './NotificationPreferences';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 
 const typeConfig = {
   info: { icon: Info, color: 'text-primary', bg: 'bg-primary/10' },
@@ -275,11 +276,9 @@ export const NotificationBell = React.forwardRef<HTMLDivElement, NotificationBel
     const markAsRead = useCallback(
       async (id: string) => {
         await baseMarkAsRead(id);
-        toast.success('Notificação marcada como lida', {
-          action: {
-            label: 'Desfazer',
-            onClick: () => undoMarkAsRead(id),
-          },
+        showUndoToast({
+          title: 'Notificação marcada como lida',
+          onUndo: () => undoMarkAsRead(id),
         });
       },
       [baseMarkAsRead, undoMarkAsRead],

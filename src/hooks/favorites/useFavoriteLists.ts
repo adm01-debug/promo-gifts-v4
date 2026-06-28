@@ -5,6 +5,7 @@ import { untypedRpc } from '@/lib/supabase-untyped';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 import { logger } from '@/lib/logger';
@@ -342,41 +343,39 @@ export function useFavoriteListItems(listId: string | null) {
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
       qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       if (!user) return;
-      toast.success('Item removido', {
+      showUndoToast({
+        title: 'Item removido',
         description: 'Você tem 30 dias para restaurar pela Lixeira.',
-        action: {
-          label: 'Desfazer',
-          onClick: async () => {
-            // Find the exact item by original_id before calling restore
-            const { data: trashed } = await supabase
-              .from('favorite_items_trash')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('original_id', deletedId)
-              .maybeSingle();
-            if (!trashed) {
-              toast.error('Item não encontrado na lixeira');
-              return;
-            }
-            const { data: rawRestored } = await untypedRpc('restore_favorite_from_trash', {
-              _trash_id: trashed.id,
-              _user_id: user.id,
-            });
-            const restored = rawRestored as RestoreResult | null;
-            if (restored?.ok) {
-              qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
-              qc.invalidateQueries({ queryKey: LISTS_KEY });
-              qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-              const msg = restored.original_list_changed
-                ? 'Item restaurado na lista padrão (lista original foi excluída)'
-                : 'Item restaurado';
-              toast.success(msg);
-            } else {
-              toast.error('Não foi possível restaurar');
-            }
-          },
-        },
         duration: 8000,
+        onUndo: async () => {
+          // Find the exact item by original_id before calling restore
+          const { data: trashed } = await supabase
+            .from('favorite_items_trash')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('original_id', deletedId)
+            .maybeSingle();
+          if (!trashed) {
+            toast.error('Item não encontrado na lixeira');
+            return;
+          }
+          const { data: rawRestored } = await untypedRpc('restore_favorite_from_trash', {
+            _trash_id: trashed.id,
+            _user_id: user.id,
+          });
+          const restored = rawRestored as RestoreResult | null;
+          if (restored?.ok) {
+            qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+            qc.invalidateQueries({ queryKey: LISTS_KEY });
+            qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+            const msg = restored.original_list_changed
+              ? 'Item restaurado na lista padrão (lista original foi excluída)'
+              : 'Item restaurado';
+            toast.success(msg);
+          } else {
+            toast.error('Não foi possível restaurar');
+          }
+        },
       });
     },
   });

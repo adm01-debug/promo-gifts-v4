@@ -50,6 +50,7 @@ import { useExternalCollections, useExternalCollectionProducts } from '@/hooks/c
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -323,16 +324,15 @@ export default function CollectionDetailPage() {
   const handleRemoveFromCollection = (productId: string) => {
     removeProductFromCollection(collection.id, productId);
     setAnnouncement(`Produto removido da coleção ${collection.name}`);
-    toast.success('Produto removido da coleção', {
-      action: {
-        label: 'Desfazer',
-        onClick: async () => {
-          const ok = await restoreFromTrash(collection.id, productId);
-          if (ok) {
-            setAnnouncement('Produto restaurado');
-            toast.success('Produto restaurado');
-          } else toast.error('Não foi possível restaurar');
-        },
+    showUndoToast({
+      title: 'Produto removido da coleção',
+      description: 'Você pode desfazer esta ação.',
+      onUndo: async () => {
+        const ok = await restoreFromTrash(collection.id, productId);
+        if (ok) {
+          setAnnouncement('Produto restaurado');
+          toast.success('Produto restaurado');
+        } else toast.error('Não foi possível restaurar');
       },
     });
   };
