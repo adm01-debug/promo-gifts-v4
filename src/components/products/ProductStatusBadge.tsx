@@ -81,14 +81,13 @@ export function ProductStatusBadge({
     return s.badgesEnabled;
   });
 
-  // Hide all status badges when user has disabled them.
-  // Exceção: urgências contextuais permanecem visíveis, EXCETO "limited-stock"
-  // (badge "Estoque baixo"), que deve respeitar o toggle global como as demais
-  // badges de status de estoque (out-of-stock, etc.).
-  if (!badgesEnabled) {
-    const isToggleableUrgency = type === 'urgency' && urgencyType === 'limited-stock';
-    if (type !== 'urgency' || isToggleableUrgency) return null;
-  }
+  // Quando o toggle "Etiquetas dos Produtos" está desligado, TODOS os badges de
+  // status/marketing são ocultados (featured, novelty, out-of-stock, packaging,
+  // promotion, kit, urgency:limited-stock, urgency:trending, urgency:ending-soon).
+  // Badges de fornecedor, categoria e cores ficam sempre visíveis — eles são
+  // renderizados por outros componentes e não passam por aqui.
+  // fix_version: badge-toggle-v2 — cobertura total de urgency badges
+  if (!badgesEnabled) return null;
 
   const isClickable = !!onClick;
 
