@@ -143,17 +143,19 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle className="text-left">Detalhes do Item</SheetTitle>
+          <SheetTitle className="text-left text-sm font-semibold tracking-tight">
+            Detalhes do Item
+          </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-5 space-y-5">
           {/* Product Info */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2.5">
             {item.product_image_url && (
               <img
                 src={item.product_image_url}
                 alt={item.product_name}
-                className="h-16 w-16 rounded-lg border border-border object-cover"
+                className="h-14 w-14 rounded-md border border-border object-cover"
                 loading="lazy"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
@@ -163,7 +165,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <div className="min-w-0 flex-1">
               {item.product_sku && (
                 <span
-                  className="mb-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-xs"
+                  className="mb-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px]"
                   style={{
                     backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
                     borderColor: item.color_hex || 'hsl(var(--border))',
@@ -172,7 +174,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 >
                   {item.color_hex && (
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-border/50"
+                      className="h-2 w-2 rounded-full border border-border/50"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
@@ -180,16 +182,18 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                   {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
-              <p className="font-semibold text-foreground">{item.product_name}</p>
+              <p className="text-[13px] font-semibold leading-snug text-foreground">
+                {item.product_name}
+              </p>
               {!item.product_sku && item.color_name && (
-                <div className="mt-1.5 flex items-center gap-1.5">
+                <div className="mt-1 flex items-center gap-1.5">
                   {item.color_hex && (
                     <span
-                      className="h-3.5 w-3.5 rounded-full border border-border"
+                      className="h-3 w-3 rounded-full border border-border"
                       style={{ backgroundColor: item.color_hex }}
                     />
                   )}
-                  <span className="text-sm text-muted-foreground">{item.color_name}</span>
+                  <span className="text-xs text-muted-foreground">{item.color_name}</span>
                 </div>
               )}
             </div>
@@ -199,11 +203,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
 
           {/* Pricing Summary */}
           <div>
-            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <DollarSign className="h-4 w-4 text-primary" />
+            <h4 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+              <DollarSign className="h-3.5 w-3.5 text-primary" />
               Preços
             </h4>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 text-xs tabular-nums">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Preço unitário (produto)</span>
                 <span className="font-medium">{fmt(item.unit_price)}</span>
@@ -224,7 +228,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                   </span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-border/50 pt-2 font-semibold">
+              <div className="flex justify-between border-t border-border/50 pt-1.5 font-semibold">
                 <span className="text-foreground">Unitário all-in</span>
                 <span className="text-primary">{fmt(allInUnit)}</span>
               </div>
@@ -232,16 +236,18 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 <span className="text-muted-foreground">Quantidade</span>
                 <span className="font-medium">
                   {item.quantity}
-                  <span className="ml-1.5 text-xs text-muted-foreground">
+                  <span className="ml-1.5 text-[10px] text-muted-foreground">
                     (faixa {getCurrentTierLabel(item.quantity)} un)
                   </span>
                 </span>
               </div>
-              <div className="flex justify-between border-t border-border/50 pt-2 font-semibold">
+              <div className="flex justify-between border-t border-border/50 pt-1.5 font-semibold">
                 <span className="text-foreground">Total do item</span>
                 <span className="text-foreground">{fmt(itemTotalCanonical)}</span>
               </div>
             </div>
+          </div>
+
           </div>
 
           {/* Personalizations Detail */}
