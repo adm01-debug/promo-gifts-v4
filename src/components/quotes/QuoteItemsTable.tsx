@@ -18,6 +18,7 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { qvSpacing, qvType } from './quote-view-typography';
+import { SectionEyebrow } from './SectionEyebrow';
 import {
   Tooltip,
   TooltipContent,
