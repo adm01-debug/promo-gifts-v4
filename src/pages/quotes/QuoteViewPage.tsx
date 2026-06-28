@@ -61,6 +61,7 @@ import { QuoteClientInfo } from '@/components/quotes/QuoteClientInfo';
 import { QuoteItemsTable } from '@/components/quotes/QuoteItemsTable';
 import { QuoteTotalsSummary } from '@/components/quotes/QuoteTotalsSummary';
 import { qvType, qvSpacing } from '@/components/quotes/quote-view-typography';
+import { SectionEyebrow } from '@/components/quotes/SectionEyebrow';
 import { PdfGenerationDialog } from '@/components/quotes/PdfGenerationDialog';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { useQuoteViewData } from '@/pages/quotes/quote-view/useQuoteViewData';
@@ -380,9 +381,8 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <section aria-labelledby="quote-terms-heading">
-                  <h3 id="quote-terms-heading" className={`${qvSpacing.eyebrowGap} ${qvType.eyebrow}`}>
-                    Condições Comerciais
-                  </h3>
+                  <SectionEyebrow id="quote-terms-heading">Condições Comerciais</SectionEyebrow>
+
 
                   <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${qvSpacing.termsGrid}`}>
                     {quote.payment_terms && (
@@ -433,7 +433,7 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <div>
-                  <h3 className={`${qvSpacing.eyebrowGap} ${qvType.eyebrow}`}>Observações</h3>
+                  <SectionEyebrow>Observações</SectionEyebrow>
                   <p className="whitespace-pre-line text-sm text-muted-foreground">{quote.notes}</p>
 
                 </div>

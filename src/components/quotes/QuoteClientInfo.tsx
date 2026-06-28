@@ -6,6 +6,7 @@
  */
 import { Building2, CreditCard, Mail, MapPin, Phone, User, UserPlus } from 'lucide-react';
 import { qvType, qvSpacing } from './quote-view-typography';
+import { SectionEyebrow } from './SectionEyebrow';
 
 interface QuoteClientInfoProps {
   clientCompany?: string | null;
@@ -28,10 +29,7 @@ export function QuoteClientInfo({
       className={`grid grid-cols-1 md:grid-cols-2 ${qvSpacing.clientGrid}`}
     >
       <div>
-        <div className={`${qvSpacing.eyebrowGap} flex items-center gap-1.5`}>
-          <Building2 className="h-3 w-3 text-primary" aria-hidden="true" />
-          <h3 className={qvType.eyebrow}>Empresa</h3>
-        </div>
+        <SectionEyebrow icon={Building2}>Empresa</SectionEyebrow>
         {clientCompany || clientName ? (
           (() => {
             const company = clientCompany || 'Não especificado';
@@ -69,10 +67,7 @@ export function QuoteClientInfo({
         )}
       </div>
       <div>
-        <div className={`${qvSpacing.eyebrowGap} flex items-center gap-1.5`}>
-          <User className="h-3 w-3 text-primary" aria-hidden="true" />
-          <h3 className={qvType.eyebrow}>Contato</h3>
-        </div>
+        <SectionEyebrow icon={User}>Contato</SectionEyebrow>
         {clientName ? (
           <div className="space-y-1">
             <p className={qvType.blockTitle}>{clientName}</p>
