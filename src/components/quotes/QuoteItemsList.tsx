@@ -87,23 +87,14 @@ function QuoteItemRow({
         >
           <div className="flex items-start gap-3">
             {/* Product Image */}
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-              {item.product_image_url ? (
-                <img
-                  src={item.product_image_url}
-                  alt={item.product_name}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Package className="h-6 w-6 text-muted-foreground" />
-                </div>
-              )}
-            </div>
+            <ProductThumb
+              src={item.product_image_url}
+              alt={item.product_name}
+              sizeClassName="h-[77px] w-[77px]"
+              roundedClassName="rounded-lg"
+              iconClassName="h-6 w-6"
+              data-testid="quote-list-thumb"
+            />
 
             {/* Product Info */}
             <div className="min-w-0 flex-1 space-y-2">
