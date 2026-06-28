@@ -53,22 +53,29 @@ export function ColorSwatchPicker({
   activeVariantId,
   onSelect,
   onReset,
-  maxVisible = 8,
+  maxVisible = 14,
   size = 'md',
   className,
 }: ColorSwatchPickerProps) {
   if (!swatches || swatches.length === 0) return null;
 
   const sizeVar = SIZE_VAR[size];
-  const visible = swatches.slice(0, maxVisible);
-  const overflow = swatches.length - maxVisible;
+  // Regra: mostra TODAS as bolinhas que couberem em 2 linhas (limite `maxVisible`).
+  // Se sobrarem cores, a ÚLTIMA bolinha visível vira o chip "+N" — nunca após o limite.
+  const hasOverflow = swatches.length > maxVisible;
+  const visible = hasOverflow ? swatches.slice(0, maxVisible - 1) : swatches;
+  const overflow = hasOverflow ? swatches.length - (maxVisible - 1) : 0;
 
   return (
     <div
       className={cn(
-        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]',
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]',
         className,
       )}
+      style={{
+        // Rede de segurança: nunca passa de 2 linhas, mesmo em cards muito estreitos.
+        maxHeight: `calc(2 * ${sizeVar} + var(--swatch-gap-y) + 2 * var(--swatch-container-py))`,
+      }}
     >
       {visible.map((swatch) => {
         const isActive = activeVariantId === swatch.variant_id;
@@ -117,6 +124,7 @@ export function ColorSwatchPicker({
           +{overflow}
         </span>
       )}
+
 
       {/* Botão Todos — aparece apenas quando há seleção ativa (mesmo estilo do ProductColorSwatches) */}
       {activeVariantId !== null && (
