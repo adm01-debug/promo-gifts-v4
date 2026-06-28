@@ -116,7 +116,7 @@ export default function QuoteViewOrderHarness() {
               <div className="flex items-center gap-2">
                 <h1
                   data-testid="page-title-quote-view"
-                  className="font-display text-base font-semibold leading-tight tracking-tight"
+                  className="font-display text-base font-semibold leading-tight tracking-tight text-foreground"
                 >
                   Orçamento ORC-2026-0042
                 </h1>
@@ -124,7 +124,7 @@ export default function QuoteViewOrderHarness() {
                   Pendente
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Criado em 01/06/2026</p>
+              <p className={qvType.meta}>Criado em 01/06/2026</p>
             </div>
           </div>
 
