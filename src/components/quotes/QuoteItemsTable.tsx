@@ -149,7 +149,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           isProductRemoved && 'bg-destructive/5 hover:bg-destructive/8',
         )}
       >
-        <td className={qvSpacing.cell}>
+        <td headers={headersFor('produto')} className={qvSpacing.cell}>
+
           <div className="flex items-start gap-3">
             <ProductThumb
               src={item.product_image_url}
