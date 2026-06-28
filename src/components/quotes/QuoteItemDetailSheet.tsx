@@ -259,10 +259,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <>
               <Separator />
               <div>
-                <h4 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                <h4 className={`mb-2.5 flex items-center gap-1.5 ${qvType.sheetSection}`}>
                   <Wrench className="h-3.5 w-3.5 text-primary" />
                   Personalização ({personalizations.length})
                 </h4>
+
                 <div className="space-y-3">
                   {personalizations.map((p, idx) => {
                     const parsed = parseNotesField(p.notes || '');
