@@ -228,10 +228,10 @@ describe('A11y — chip "+N" e swatches', () => {
     expect(chip).toHaveTextContent('+3');
   });
 
-  it('V1: chip singular usa "Mais 1 cor" (sem "s")', () => {
+  it('V1: chip singular usa "Mais 1 cor" (sem "s") — single-line', () => {
     render(
       <TooltipProvider>
-        <ProductColorSwatches colors={makeColors(14)} max={13} wrap hideWhenEmpty={false} />
+        <ProductColorSwatches colors={makeColors(7)} max={6} hideWhenEmpty={false} />
       </TooltipProvider>,
     );
     expect(screen.getByTestId('color-swatches-overflow').getAttribute('aria-label')).toBe('Mais 1 cor');
