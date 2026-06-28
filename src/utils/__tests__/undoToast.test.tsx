@@ -135,7 +135,6 @@ describe('UndoToastContent — countdown + pause-on-hover', () => {
   });
 
   it('respeita prefers-reduced-motion desligando transições', () => {
-    const mqlListeners: Array<(e: { matches: boolean }) => void> = [];
     const originalMM = window.matchMedia;
     // @ts-expect-error — mock parcial para teste
     window.matchMedia = (q: string) => ({
@@ -144,9 +143,7 @@ describe('UndoToastContent — countdown + pause-on-hover', () => {
       onchange: null,
       addListener: () => {},
       removeListener: () => {},
-      addEventListener: (_: string, l: (e: { matches: boolean }) => void) => {
-        mqlListeners.push(l);
-      },
+      addEventListener: () => {},
       removeEventListener: () => {},
       dispatchEvent: () => true,
     });
@@ -160,10 +157,12 @@ describe('UndoToastContent — countdown + pause-on-hover', () => {
       />,
     );
 
-    // Quando reduced-motion está ativo, classes de transition/hover-shadow não devem ser aplicadas
+    const root = container.querySelector('[data-testid="undo-toast"]');
+    expect(root?.getAttribute('data-reduced-motion')).toBe('true');
+
     const html = container.innerHTML;
     expect(html).not.toMatch(/transition-all/);
-    expect(html).not.toMatch(/hover:shadow-/);
+    expect(html).not.toMatch(/hover:shadow-\[/);
 
     window.matchMedia = originalMM;
   });

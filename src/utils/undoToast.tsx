@@ -90,6 +90,8 @@ export function UndoToastContent({
 
   return (
     <div
+      data-testid="undo-toast"
+      data-reduced-motion={reduced ? 'true' : 'false'}
       className="flex w-full items-center gap-2.5"
       onMouseEnter={pause}
       onMouseLeave={resume}
@@ -104,6 +106,7 @@ export function UndoToastContent({
       </div>
       <button
         type="button"
+        data-testid="undo-toast-button"
         onClick={onUndo}
         aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
         className={cn(
@@ -202,6 +205,13 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
   );
 
   return toastId;
+}
+
+// Expõe um helper global apenas em DEV para specs Playwright dispararem o toast
+// sem depender de seed de dados. Não é incluído em produção.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as { __showUndoToast?: typeof showUndoToast }).__showUndoToast =
+    showUndoToast;
 }
 
 /**
