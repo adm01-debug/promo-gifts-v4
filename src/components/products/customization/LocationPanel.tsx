@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TechniqueCard } from './TechniqueCard';
 import { ConfigurationPanelV6 } from './ConfigurationPanelV6';
+import { cn } from '@/lib/utils';
 import type {
   TechniqueOption,
   GravacaoLocation,
