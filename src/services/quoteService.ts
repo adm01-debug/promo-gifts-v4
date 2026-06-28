@@ -170,9 +170,24 @@ export const quoteService = {
           for (const it of candidates) {
             if (!it.product_id || !it.color_name) continue;
             const sku = variantMap.get(`${it.product_id}|${norm(it.color_name)}`);
-            if (sku) it.product_sku = sku;
+            if (sku) {
+              it.product_sku = sku;
+            } else {
+              // Fallback: variante não encontrada — mantém o SKU base sem expor
+              // o nome da cor no badge composto. Registra aviso para investigação
+              // (variante removida/renomeada, color_name divergente, etc.).
+              logger.warn(
+                '[quoteService.fetchQuote] variant sku not found — keeping base SKU',
+                {
+                  product_id: it.product_id,
+                  color_name: it.color_name,
+                  base_sku: it.product_sku ?? null,
+                },
+              );
+            }
           }
         }
+
       }
     } catch (err) {
       logger.warn('[quoteService.fetchQuote] variant sku hydration failed', err);
