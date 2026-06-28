@@ -81,6 +81,14 @@ describe('ProductCard Layout and Typography', () => {
     expect(supplierRow).toBeTruthy();
     expect(supplierRow!.className).toContain('-mt-0.5');
     expect(supplierRow!.className).toContain('sm:-mt-1.5');
+
+    // Parent (info section) precisa preservar o ritmo vertical base
+    // — gap efetivo entre badges = space-y − mt = 6px em todos os breakpoints
+    const infoSection = supplierRow!.parentElement as HTMLElement | null;
+    expect(infoSection).toBeTruthy();
+    expect(infoSection!.className).toContain('space-y-2');
+    expect(infoSection!.className).toContain('sm:space-y-3');
   });
 });
+
 
