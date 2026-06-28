@@ -106,7 +106,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const colCount = hasPersonalizations ? 6 : 5;
   const headerCellClass = cn(
     qvSpacing.cell,
-    qvType.tableHead,
+    'text-[11px] font-semibold uppercase tracking-wide',
     'bg-primary print:bg-primary/15',
     'text-primary-foreground',
   );
