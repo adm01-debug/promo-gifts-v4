@@ -148,3 +148,30 @@ describe('V2 ColorSwatchPicker (default maxVisible=14)', () => {
     expect(container.querySelector('[aria-label^="Mais "]')!.textContent).toBe('+12');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// V1 — Modo legado single-line (sem wrap) — usado em BaseProductGridCard
+// Regra preservada: mostra `max` bolinhas + chip "+N" APÓS (chip NÃO substitui).
+// ─────────────────────────────────────────────────────────────────────────────
+describe('V1 ProductColorSwatches (single-line, sem wrap)', () => {
+  it('20 cores com max=6 → exibe 6 bolinhas + chip "+14" (chip não substitui última)', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(20)} max={6} hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    const names = visibleNamesV1();
+    expect(names).toEqual(Array.from({ length: 6 }, (_, i) => `cor-${i}`));
+    expect(screen.getByTestId('color-swatches-overflow')).toHaveTextContent('+14');
+  });
+
+  it('6 cores com max=6 → exibe TODAS, sem chip', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(6)} max={6} hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    expect(visibleNamesV1()).toHaveLength(6);
+    expect(screen.queryByTestId('color-swatches-overflow')).toBeNull();
+  });
+});
