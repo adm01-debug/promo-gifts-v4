@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TimelineDot, TimelineLine } from '@/components/ui/timeline';
 import { cn } from '@/lib/utils';
 
 interface AuditHistoryProps {
