@@ -228,32 +228,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       unsubscribe = () => subscription.unsubscribe();
 
-      supabase.auth.getSession().then(async ({ data: { session: authSession } }) => {
+      supabase.auth.getSession().then(({ data: { session: authSession } }) => {
         if (cancelled) return;
         setSession(authSession);
         setUser(authSession?.user ?? null);
         if (authSession?.user) {
-          // BUG-CRÍTICO FIX: revalida o token no boot. Se o kid foi rotacionado
-          // enquanto a aba estava fechada, getUser() retorna bad_jwt e disparamos
-          // recovery antes de hidratar dados/papéis com um token quebrado.
-          try {
-            const { error: getUserError } = await supabase.auth.getUser();
-            if (isBadJwtError(getUserError)) {
-              await recoverSession('boot:getUser');
-              return;
-            }
-          } catch {
-            /* getUser falhou por rede — segue fluxo normal */
-          }
-
-          // BUG-2 FIX: onAuthStateChange(INITIAL_SESSION) já agendou
-          // fetchUserData via Promise.resolve().then acima. Só buscar aqui
-          // se o listener ainda não disparou (ex.: Supabase não emitiu
-          // INITIAL_SESSION antes de getSession() resolver).
+          // BUG-AUTH-STALL FIX (2026-06-28): hidrata perfil/roles IMEDIATAMENTE,
+          // sem bloquear no await getUser(). Antes, o getUser() (round-trip a
+          // /auth/v1/user, que segura o lock interno do GoTrue) serializava toda a
+          // hidratação atrás de si; em qualquer round-trip lento/instável o
+          // isLoading congelava até o watchdog de 8s forçar false, e esse flip
+          // tardio re-disparava as queries de badge (HEAD count) que abortavam na
+          // camada de rede → os erros "Falha ao carregar" no console.
+          //
+          // BUG-2 FIX: onAuthStateChange(INITIAL_SESSION) já agendou fetchUserData
+          // via Promise.resolve().then acima. Só buscar aqui se o listener ainda
+          // não disparou (ex.: Supabase não emitiu INITIAL_SESSION antes de
+          // getSession() resolver).
           if (!initialFetchScheduled) {
             fetchUserData(authSession.user.id);
             fetchAAL();
           }
+
+          // Revalidação bad_jwt agora roda em BACKGROUND (não-bloqueante). Se o kid
+          // foi rotacionado enquanto a aba estava fechada, getUser() retorna bad_jwt
+          // e a recovery dispara de forma reativa — uma rotação rara de kid passa a
+          // se auto-corrigir via um único 401-then-recover, em vez de um stall de 8s
+          // em TODO carregamento lento. attachSessionRevalidation() + recoverSession
+          // reativo continuam cobrindo a rotação de signing keys.
+          void supabase.auth
+            .getUser()
+            .then(({ error: getUserError }) => {
+              if (!cancelled && isBadJwtError(getUserError)) {
+                void recoverSession('boot:getUser');
+              }
+            })
+            .catch(() => {
+              /* getUser falhou por rede — segue fluxo normal */
+            });
         } else {
           setIsLoading(false);
         }
