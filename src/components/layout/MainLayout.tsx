@@ -82,11 +82,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    // overflow-x-hidden no root mantém a clipagem horizontal SEM promover
-    // implicitamente overflow-y para auto (efeito de `overflow-x: clip`),
-    // preservando o viewport como scrollport único — necessário para que o
-    // sidebar com `lg:sticky lg:top-0` permaneça fixo durante o scroll.
-    <div className="min-h-screen overflow-x-hidden bg-background print:min-h-0 print:overflow-visible" role="document">
+    // CRÍTICO: usar `overflow-x: clip` (não `hidden`). `overflow-x: hidden`
+    // promove `overflow-y` para `auto` (CSS spec), criando um scroll container
+    // intermediário que ANULA o `lg:sticky lg:top-0` da `<aside>`. `clip` evita
+    // o vazamento horizontal SEM criar scroll container, preservando o viewport
+    // como scrollport único — pré-requisito do sticky da sidebar.
+    <div className="min-h-screen overflow-x-clip bg-background print:min-h-0 print:overflow-visible" role="document">
       <div className="fixed inset-0 z-[-1]">
         <Suspense fallback={null}>
           <StarBackground />
