@@ -253,9 +253,15 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                           marginBottom: '4px',
                           lineHeight: '1.4',
                           maxWidth: '340px',
+                          wordBreak: 'break-word',
                         }}
                       >
-                        {item.description}
+                        {/* FIX P1 #7: trunca descrições longas (~2 linhas) para blindar
+                            a altura da linha e evitar clipping no html2canvas.
+                            @fix_version proposal-truncate-desc-2026-06 */}
+                        {item.description.length > 120
+                          ? `${item.description.slice(0, 120).trimEnd()}…`
+                          : item.description}
                       </span>
                     )}
                     {gravacao && (
