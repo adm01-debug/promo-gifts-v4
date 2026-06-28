@@ -742,6 +742,7 @@ export const ProductListItem = memo(
                   max={product.colors?.length || 0}
                   size="sm"
                   wrap
+                  unbounded
                   hideWhenEmpty
                   className="justify-start"
                   selectedName={userSelectedColorName}

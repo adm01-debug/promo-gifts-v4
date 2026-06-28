@@ -64,7 +64,11 @@ describe('ProductColorSwatches', () => {
     window.location = originalLocation;
   });
 
-  describe('modo wrap (grid de Catálogo/Super Filtro/Novidades/Reposição)', () => {
+  // fix_version: list-swatch-unbounded-wrap-20260628 — o contrato "exibir TODAS as
+  // cores sem chip/clipping" (antes implícito em `wrap`) agora requer `unbounded`
+  // (modo Lista). O grid usa wrap CLAMPADO (2 linhas + chip), coberto em
+  // ColorSwatchTwoLineOverflow.test.tsx. Estes testes validam o modo unbounded.
+  describe('modo wrap + unbounded — exibe todas as cores sem chip nem clipping', () => {
     const manyColors = Array.from({ length: 12 }, (_, i) => ({
       name: `Cor ${i + 1}`,
       hex: `#${((i + 1) * 1118481).toString(16).padStart(6, '0').slice(0, 6)}`,
@@ -73,7 +77,7 @@ describe('ProductColorSwatches', () => {
     it('renderiza TODAS as bolinhas sem chip "+N" quando wrap=true', () => {
       render(
         <TooltipProvider>
-          <ProductColorSwatches colors={manyColors} max={5} wrap hideWhenEmpty={false} />
+          <ProductColorSwatches colors={manyColors} max={5} wrap unbounded hideWhenEmpty={false} />
         </TooltipProvider>,
       );
 
@@ -97,7 +101,7 @@ describe('ProductColorSwatches', () => {
     it('container wrap usa flex-wrap e height automático (sem clipping)', () => {
       render(
         <TooltipProvider>
-          <ProductColorSwatches colors={manyColors} wrap hideWhenEmpty={false} />
+          <ProductColorSwatches colors={manyColors} wrap unbounded hideWhenEmpty={false} />
         </TooltipProvider>,
       );
 

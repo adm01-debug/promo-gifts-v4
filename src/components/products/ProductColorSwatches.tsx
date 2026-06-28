@@ -59,6 +59,17 @@ interface ProductColorSwatchesProps {
    * Super Filtro, Novidades e Reposição. Default false (legado).
    */
   wrap?: boolean;
+  /**
+   * fix_version: list-swatch-unbounded-wrap-20260628
+   * Quando true (somente com `wrap`): o container cresce em N linhas via
+   * flex-wrap SEM `max-h`/`overflow-hidden` e SEM chip "+N" — exibe TODAS as cores.
+   * Usado no modo Lista (ProductListItem), onde a linha pode crescer verticalmente.
+   * ProductCard/grid mantém o clamp de 2 linhas (não passa esta prop).
+   * Contrato: e2e/catalog/list-color-swatches-wrap.spec.ts.
+   * ANTI-REGRESSÃO (Lovable): não remover — a remoção reintroduz clipping silencioso
+   * das cores no modo Lista (o chip "+N" nunca dispara porque max = colors.length).
+   */
+  unbounded?: boolean;
   /** Handler de seleção. Recebe a cor e o índice. stopPropagation já aplicado. */
   onSelect?: (color: ColorDotLike, index: number) => void;
   /** Nome da cor atualmente selecionada — recebe ring de destaque. */
@@ -94,6 +105,7 @@ export const ProductColorSwatches = memo(
     className,
     hideWhenEmpty = true,
     wrap = false,
+    unbounded = false,
     onSelect,
     selectedName,
     onClear,
@@ -161,8 +173,11 @@ export const ProductColorSwatches = memo(
     //    para nunca ultrapassar o limite visual de 2 linhas.
     //  - Modo legado (1 linha): mostra `max` swatches + chip após (compat. antiga).
     const effectiveMax = Math.max(1, max);
-    const hasOverflow = colors.length > effectiveMax;
-    const reserveSlot = wrap && hasOverflow ? 1 : 0;
+    // fix_version: list-swatch-unbounded-wrap-20260628 — modo `unbounded` (Lista)
+    // exibe TODAS as cores: nunca há overflow nem chip "+N".
+    const showAllUnbounded = wrap && unbounded;
+    const hasOverflow = !showAllUnbounded && colors.length > effectiveMax;
+    const reserveSlot = wrap && !unbounded && hasOverflow ? 1 : 0;
     const overflow = hasOverflow ? colors.length - (effectiveMax - reserveSlot) : 0;
     const visible = hasOverflow ? colors.slice(0, effectiveMax - reserveSlot) : colors;
 
@@ -174,9 +189,12 @@ export const ProductColorSwatches = memo(
       <div
         className={cn(
           wrap
-            ? // Modo wrap: até 2 linhas, altura travada para garantir o "+N" no fim.
-              //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
-              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[calc(2*var(--swatch-size,var(--swatch-size-sm))+var(--swatch-gap-y)+2*var(--swatch-container-py))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]'
+            ? unbounded
+              ? // fix_version: list-swatch-unbounded-wrap-20260628 — modo Lista: wrap em N linhas, SEM max-h/overflow-hidden (não corta cores) e sem chip. Contrato: e2e/catalog/list-color-swatches-wrap.spec.ts
+                'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] px-[2px] py-[var(--swatch-container-py)]'
+              : // Modo wrap clampado: até 2 linhas, altura travada para garantir o "+N" no fim.
+                //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
+                'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[calc(2*var(--swatch-size,var(--swatch-size-sm))+var(--swatch-gap-y)+2*var(--swatch-container-py))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
               'flex h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[var(--swatch-size,var(--swatch-size-sm))] min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
           className,
