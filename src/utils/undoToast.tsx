@@ -24,8 +24,10 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
   const toastId = sonnerToast(
     <div className="flex w-full items-center gap-3">
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-foreground">{title}</p>
-        {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        {description && (
+          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+        )}
       </div>
       <button
         onClick={() => {
@@ -40,19 +42,23 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
           }
         }}
         className={cn(
-          'flex items-center gap-1.5 rounded-lg px-3 py-1.5',
-          'bg-primary/10 text-primary hover:bg-primary/20',
-          'text-sm font-medium transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-primary/50',
+          'group relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5',
+          'border border-primary/30 bg-primary/10 text-primary backdrop-blur-sm',
+          'text-xs font-semibold tracking-wide',
+          'shadow-[0_2px_12px_-2px_hsl(var(--primary)/0.35)]',
+          'transition-all duration-200 ease-out',
+          'hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_4px_18px_-2px_hsl(var(--primary)/0.5)] hover:-translate-y-px',
+          'active:translate-y-0 active:scale-[0.98]',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         )}
       >
-        <Undo2 className="h-4 w-4" />
+        <Undo2 className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-rotate-12" />
         Desfazer
       </button>
     </div>,
     {
       duration,
-      className: '!bg-card !border-border',
+      className: '!bg-card/95 !border-border/60 !backdrop-blur-md !rounded-xl !shadow-lg',
     },
   );
 
