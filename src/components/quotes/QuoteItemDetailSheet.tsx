@@ -279,7 +279,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                         key={`${p.technique_id || p.technique_name}-${idx}`}
                         className="space-y-2"
                       >
-                        <div className="space-y-2 rounded-lg border border-border/50 bg-muted/40 p-2.5">
+                        <div className={qvSpacing.techCard}>
                           {/* Technique */}
                           <div className="flex items-center gap-2">
                             <Badge className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary hover:bg-primary/10">
