@@ -42,12 +42,14 @@ describe('getColorSwatchClasses (SSOT) — invariantes por estado', () => {
       expect(cls).toContain('rounded-full');
       expect(cls).toContain('border');
 
-      // Ativo ⇒ ring interno; inativo ⇒ sem ring-primary. Ring externo reabre
-      // clipping nos containers com overflow-hidden do catálogo/super filtro.
+      // Ativo ⇒ efeito de seleção completo; inativo ⇒ sem ring-primary
       if (isActive) {
         expect(cls).toContain('ring-primary');
-        expect(cls).toContain('ring-inset');
-        expect(cls).not.toContain('ring-offset');
+        expect(cls).toContain('ring-offset-1');
+        expect(cls).toContain('scale-[var(--swatch-scale-hover)]');
+        expect(cls).toContain('shadow-[var(--swatch-selected-glow)]');
+        expect(cls).toContain('after:shadow-[var(--swatch-selected-inner-highlight)]');
+        expect(cls).not.toContain('ring-inset');
       } else expect(cls).not.toContain('ring-primary');
 
       // Sem bg ⇒ borda tracejada
@@ -130,12 +132,7 @@ function assertInvariants(
   expect(btn.className).not.toContain('grayscale');
   expect(btn.className).not.toContain('opacity-40');
 
-    if (selected) {
-      expect(btn.className).toContain('ring-primary');
-      expect(btn.className).toContain('ring-inset');
-      expect(btn.className).not.toContain('scale-[var(--swatch-scale-hover)]');
-      expect(btn.className).not.toContain('after:inset-[-1px]');
-    }
+  if (selected) expect(btn.className).toContain('ring-primary');
 
   if (stock === 'out') {
     expect(btn.getAttribute('data-stock-state')).toBe('out');

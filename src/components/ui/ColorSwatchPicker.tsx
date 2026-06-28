@@ -69,7 +69,7 @@ export function ColorSwatchPicker({
   return (
     <div
       className={cn(
-        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]',
+        'flex min-h-[var(--swatch-size-sm)] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[var(--swatch-container-px)] py-[var(--swatch-container-py)]',
         className,
       )}
       style={{
@@ -93,10 +93,9 @@ export function ColorSwatchPicker({
               // SSOT visual: base + estados out-of-stock/active (igual ao ProductColorSwatches)
               getColorSwatchClasses({ isActive, isOutOfStock: isOut, hasBg: bg.hasBg }),
               'cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              isActive
-                ? 'opacity-100 ring-[var(--swatch-ring-width)] ring-inset ring-primary after:absolute after:inset-0 after:rounded-full after:shadow-[inset_0_0_0_1px_hsl(var(--background)/0.85),inset_0_0_10px_0_hsl(var(--primary)/0.45)] after:content-[""]'
-                : !isOut &&
-                    'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
+              !isActive &&
+                !isOut &&
+                'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
             )}
             style={{
               width: sizeVar,

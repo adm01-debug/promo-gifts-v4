@@ -52,9 +52,11 @@ export function getColorSwatchClasses({
   return cn(
     // Base — mesmo border/shadow do catálogo, posicionamento relativo para overlays
     'relative inline-block rounded-full border border-border/40 shadow-sm transition-all',
-    // Ativo/selecionado (catálogo + estoque): ring interno para não ser cortado
-    // por containers com `overflow-hidden` usados para limitar o wrap em 2 linhas.
-    isActive && 'z-10 ring-[var(--swatch-ring-width)] ring-inset ring-primary',
+    // Ativo/selecionado (catálogo + estoque): mantém o efeito perceptível
+    // (leve scale + aro primary + brilho interno) sem depender de glow externo
+    // grande, que é cortado por containers `overflow-hidden` de 1–2 linhas.
+    isActive &&
+      'z-10 scale-[var(--swatch-scale-hover)] opacity-100 ring-[var(--swatch-ring-width)] ring-primary ring-offset-1 ring-offset-background shadow-[var(--swatch-selected-glow)] after:pointer-events-none after:absolute after:inset-[2px] after:rounded-full after:shadow-[var(--swatch-selected-inner-highlight)] after:content-[""]',
     // Sem cor definida — borda tracejada de placeholder
     !hasBg && 'border-dashed border-muted-foreground/40',
     // Esgotado — MANTÉM a cor da bolinha; o ÚNICO indicador é o risco diagonal.

@@ -175,10 +175,10 @@ export const ProductColorSwatches = memo(
         className={cn(
           wrap
             ? // Modo wrap: até 2 linhas, altura travada para garantir o "+N" no fim.
-              //  px-[2px] reserva espaço para o ring/glow do swatch selecionado sem cortar.
-              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[calc(2*var(--swatch-size,var(--swatch-size-sm))+var(--swatch-gap-y)+2*var(--swatch-container-py))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[2px] py-[var(--swatch-container-py)]'
+              // px/py reservam espaço para scale + ring do swatch selecionado sem cortar.
+              'flex min-h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[calc(2*var(--swatch-size,var(--swatch-size-sm))+var(--swatch-gap-y)+2*var(--swatch-container-py))] flex-wrap items-center gap-x-[var(--swatch-gap-x)] gap-y-[var(--swatch-gap-y)] overflow-hidden px-[var(--swatch-container-px)] py-[var(--swatch-container-py)]'
             : // Modo legado: uma única linha + chip "+N".
-              'flex h-[var(--swatch-size,var(--swatch-size-sm))] max-h-[var(--swatch-size,var(--swatch-size-sm))] min-h-[var(--swatch-size,var(--swatch-size-sm))] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden py-[var(--swatch-container-py)]',
+              'flex h-[calc(var(--swatch-size,var(--swatch-size-sm))+2*var(--swatch-container-py))] max-h-[calc(var(--swatch-size,var(--swatch-size-sm))+2*var(--swatch-container-py))] min-h-[calc(var(--swatch-size,var(--swatch-size-sm))+2*var(--swatch-container-py))] flex-nowrap items-center gap-x-[var(--swatch-gap-x)] overflow-hidden px-[var(--swatch-container-px)] py-[var(--swatch-container-py)]',
           className,
         )}
 
@@ -217,10 +217,9 @@ export const ProductColorSwatches = memo(
                     // SSOT visual: base + estados out-of-stock/active (compartilhado com Estoque)
                     getColorSwatchClasses({ isActive: isSelected, isOutOfStock, hasBg: true }),
                     'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    isSelected
-                      ? 'opacity-100 ring-[var(--swatch-ring-width)] ring-inset ring-primary after:absolute after:inset-0 after:rounded-full after:shadow-[inset_0_0_0_1px_hsl(var(--background)/0.85),inset_0_0_10px_0_hsl(var(--primary)/0.45)] after:content-[""]'
-                      : !isOutOfStock &&
-                          'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
+                    !isSelected &&
+                      !isOutOfStock &&
+                      'opacity-90 hover:z-10 hover:scale-[var(--swatch-scale-hover)] hover:opacity-100',
 
                     SIZE_CLASS[size],
                   )}
