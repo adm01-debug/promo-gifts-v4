@@ -196,7 +196,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         </td>
 
         {hasPersonalizations && (
-          <td className={qvSpacing.cell}>
+          <td headers={headersFor('pers')} className={qvSpacing.cell}>
             {allPersonalizations.length > 0 ? (
               <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
                 {allPersonalizations.map((p, pIdx) => {
