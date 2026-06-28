@@ -14,6 +14,7 @@ import {
   totalsRowStyle,
 } from './ProposalStyles';
 import { getProposalImageUrl } from '@/utils/image-utils';
+import { ColorSwatch } from './proposal/ColorSwatch';
 import {
   formatPaymentTerms,
   formatPaymentMethod,
@@ -324,9 +325,12 @@ export function ProductRow({ item }: { item: ProposalItem }) {
             Gravação: {gravacao}
           </span>
         )}
-        {!gravacao && item.color && (
+        {/* FIX #4+#9: cor SEMPRE visível (antes !gravacao escondia) + swatch WCAG.
+            @fix_version proposal-color-swatch-9-2026-06 */}
+        {item.color && (
           <span style={{ display: 'block', fontSize: '13px', color: '#555', marginTop: '4px' }}>
-            Cor: {item.color}
+            Cor: <ColorSwatch hex={item.colorHex} size={11} />
+            {item.color}
             {item.size && ` | Tam: ${item.size}`}
           </span>
         )}

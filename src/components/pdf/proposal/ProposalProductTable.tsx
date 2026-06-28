@@ -11,6 +11,7 @@ import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
 import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
 import { getProposalImageUrl } from '@/utils/image-utils';
+import { ColorSwatch } from './ColorSwatch';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
   // FIX #3b: inicializar com src (não "") para que img.complete só retorne true
@@ -281,7 +282,9 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                           fontWeight: 600,
                         }}
                       >
-                        Cor: <span style={{ fontWeight: 500, color: '#333' }}>{item.color}</span>
+                        {/* FIX #9: swatch de cor dedicado (WCAG ≥3:1). @fix_version proposal-color-swatch-9-2026-06 */}
+                        Cor: <ColorSwatch hex={item.colorHex} size={9} />
+                        <span style={{ fontWeight: 500, color: '#333' }}>{item.color}</span>
                       </span>
                     )}
                     {gravacao && (
