@@ -472,7 +472,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             ref={scrollRef}
             onKeyDown={onScrollerKeyDown}
             className={cn(
-              'overflow-x-auto',
+              'overflow-x-hidden',
               enableInnerScroll && [
                 'overflow-y-auto',
                 'max-h-[30.25rem] md:max-h-[32.5rem] lg:max-h-[34rem]',
@@ -495,7 +495,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           >
             <table
               aria-label={`Lista de ${totalRows} itens do orçamento`}
-              className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
+              className="w-full table-fixed border-separate border-spacing-0"
             >
 
               <ColGroup />
