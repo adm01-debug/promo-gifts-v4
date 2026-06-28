@@ -185,9 +185,8 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                   {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
-              <p className="text-[13px] font-semibold leading-snug text-foreground">
-                {item.product_name}
-              </p>
+              <p className={`${qvType.productName}`}>{item.product_name}</p>
+
               {!item.product_sku && item.color_name && (
                 <div className="mt-1 flex items-center gap-1.5">
                   {item.color_hex && (
