@@ -205,11 +205,12 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
 
           {/* Pricing Summary */}
           <div>
-            <h4 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+            <h4 className={`mb-2.5 flex items-center gap-1.5 ${qvType.sheetSection}`}>
               <DollarSign className="h-3.5 w-3.5 text-primary" />
               Preços
             </h4>
-            <div className="space-y-1.5 text-xs tabular-nums">
+            <div className={`space-y-1.5 ${qvType.sheetRow}`}>
+
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Preço unitário (produto)</span>
                 <span className="font-medium">{fmt(item.unit_price)}</span>
