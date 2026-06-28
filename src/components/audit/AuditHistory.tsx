@@ -95,11 +95,11 @@ function FieldChange({
   const label = fieldLabels[field] || field;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 py-1 text-sm">
+    <div className="flex flex-wrap items-center gap-1.5 py-0.5 text-[11px] sm:text-xs">
       <span className="font-medium text-muted-foreground">{label}:</span>
-      <span className="text-destructive line-through">{formatFieldValue(oldValue)}</span>
-      <span className="text-muted-foreground">→</span>
-      <span className="font-medium text-success">{formatFieldValue(newValue)}</span>
+      <span className="break-all text-destructive/90 line-through">{formatFieldValue(oldValue)}</span>
+      <span className="text-muted-foreground/70">→</span>
+      <span className="break-all font-medium text-success">{formatFieldValue(newValue)}</span>
     </div>
   );
 }
