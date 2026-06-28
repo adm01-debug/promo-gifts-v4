@@ -141,7 +141,7 @@ function QuoteItemRow({
               {/* Inputs Row */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Qtd</span>
+                  <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Qtd</span>
                   <Input
                     type="number"
                     min={1}
@@ -157,7 +157,7 @@ function QuoteItemRow({
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">Preço</span>
+                  <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Preço</span>
                   <div className="flex items-center gap-1">
                     <CurrencyInput
                       value={item.unit_price}
@@ -174,7 +174,7 @@ function QuoteItemRow({
                   </div>
                 </div>
                 <div className="ml-auto text-right">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Subtotal</p>
+                  <p className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</p>
                   <p className="text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</p>
                 </div>
               </div>
