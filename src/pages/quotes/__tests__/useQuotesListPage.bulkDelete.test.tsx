@@ -194,11 +194,11 @@ describe('useQuotesListPage — handleBulkDelete', () => {
       await result.current.handleBulkDelete();
     });
 
-    const opts = toastSuccess.mock.calls[0][1] as { action?: { onClick?: () => Promise<void> } };
-    expect(opts.action?.onClick).toBeTypeOf('function');
+    const opts = showUndoToast.mock.calls[0][0] as { onUndo?: () => Promise<void> };
+    expect(opts.onUndo).toBeTypeOf('function');
 
     await act(async () => {
-      await opts.action?.onClick?.();
+      await opts.onUndo?.();
     });
 
     expect(mockCreateQuote).toHaveBeenCalledTimes(2);
