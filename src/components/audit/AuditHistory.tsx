@@ -190,10 +190,10 @@ export function AuditHistory({
       <CardContent className="p-0">
         <ScrollArea style={{ maxHeight }}>
           <div className="relative px-3 py-3 sm:px-4 sm:py-4">
-            {/* Timeline line — gradient sutil */}
-            <div
-              aria-hidden="true"
-              className="absolute bottom-4 left-[27px] top-4 w-px bg-gradient-to-b from-primary/30 via-border/60 to-transparent sm:left-[31px]"
+            <TimelineLine
+              topClassName="top-4"
+              bottomClassName="bottom-4"
+              leftClassName="left-[27px] sm:left-[31px]"
             />
 
             <ol className="space-y-1">
@@ -212,18 +212,14 @@ export function AuditHistory({
                     onOpenChange={() => hasDetails && toggleExpanded(log.id)}
                   >
                     <li className="group relative pl-10 sm:pl-12">
-                      {/* Timeline dot */}
-                      <div
-                        className={cn(
-                          'absolute left-0 top-2 flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm sm:h-8 sm:w-8',
-                          'transition-all duration-200 group-hover:scale-105',
-                          config.className,
-                          isFirst &&
-                            'ring-2 ring-primary/25 ring-offset-2 ring-offset-background shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]',
-                        )}
+                      <TimelineDot
+                        highlighted={isFirst}
+                        toneClassName={config.className}
+                        className="absolute left-0 top-2 h-7 w-7 sm:h-8 sm:w-8"
                       >
                         <Icon className="h-3.5 w-3.5" />
-                      </div>
+                      </TimelineDot>
+
 
                       {/* Card sutil ao redor do conteúdo */}
                       <div
