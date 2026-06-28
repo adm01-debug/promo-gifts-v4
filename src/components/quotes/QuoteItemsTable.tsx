@@ -111,6 +111,24 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     'text-primary-foreground',
   );
 
+  // IDs estáveis para vincular <td headers> ao <th id> entre as duas tabelas
+  // (header e corpo). Garante que leitores de tela leiam corretamente
+  // "Produto: X / Quantidade: Y" mesmo com thead/tbody em <table>s distintas.
+  const tableUid = React.useId();
+  const colIds = React.useMemo(
+    () => ({
+      produto: `${tableUid}-h-produto`,
+      pers: `${tableUid}-h-pers`,
+      qtd: `${tableUid}-h-qtd`,
+      un: `${tableUid}-h-un`,
+      total: `${tableUid}-h-total`,
+      act: `${tableUid}-h-act`,
+    }),
+    [tableUid],
+  );
+  const headersFor = (key: keyof typeof colIds) => colIds[key];
+
+
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
     const personalizationCost = allPersonalizations.reduce(
@@ -131,7 +149,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           isProductRemoved && 'bg-destructive/5 hover:bg-destructive/8',
         )}
       >
-        <td className={qvSpacing.cell}>
+        <td headers={headersFor('produto')} className={qvSpacing.cell}>
+
           <div className="flex items-start gap-3">
             <ProductThumb
               src={item.product_image_url}
@@ -177,7 +196,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         </td>
 
         {hasPersonalizations && (
-          <td className={qvSpacing.cell}>
+          <td headers={headersFor('pers')} className={qvSpacing.cell}>
             {allPersonalizations.length > 0 ? (
               <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
                 {allPersonalizations.map((p, pIdx) => {
@@ -220,8 +239,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
 
           </td>
         )}
-        <td className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}>{item.quantity}</td>
-        <td className={cn('w-24 text-left', qvSpacing.cell, qvType.unitPrice)}>
+        <td headers={headersFor('qtd')} className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}>{item.quantity}</td>
+        <td headers={headersFor('un')} className={cn('w-24 text-left', qvSpacing.cell, qvType.unitPrice)}>
           <div className="flex flex-col gap-0.5">
             <span>
               {formatCurrency(
@@ -244,10 +263,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             )}
           </div>
         </td>
-        <td className={cn('w-28 text-left', qvSpacing.cell, qvType.rowTotal)}>
+        <td headers={headersFor('total')} className={cn('w-28 text-left', qvSpacing.cell, qvType.rowTotal)}>
           {formatCurrency(itemTotal)}
         </td>
-        <td className={cn('text-center print:hidden', qvSpacing.cell)}>
+        <td headers={headersFor('act')} className={cn('text-center print:hidden', qvSpacing.cell)}>
+
           <QuoteItemDetailSheet
             item={{
               product_name: item.product_name,
@@ -314,7 +334,20 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     const measure = () => {
       const pad = Math.max(0, el.offsetWidth - el.clientWidth);
       setScrollbarPad(pad);
+      // Telemetria opcional: ative com `window.__DEBUG_QUOTE_TABLE = true`
+      // em ambientes com scrollbar overlay (macOS Safari/iOS) ou bugs de alinhamento.
+      if (typeof window !== 'undefined' && (window as unknown as { __DEBUG_QUOTE_TABLE?: boolean }).__DEBUG_QUOTE_TABLE) {
+        // eslint-disable-next-line no-console
+        console.debug('[QuoteItemsTable] scrollbarPad', {
+          pad,
+          offsetWidth: el.offsetWidth,
+          clientWidth: el.clientWidth,
+          totalRows,
+          enableInnerScroll,
+        });
+      }
     };
+
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -406,21 +439,25 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             className="overflow-hidden print:overflow-visible"
             style={{ paddingRight: scrollbarPad ? `${scrollbarPad}px` : undefined }}
             data-testid="quote-items-table-header-wrap"
-            aria-hidden="false"
+            data-scrollbar-pad={scrollbarPad}
           >
-
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+            <table
+              aria-label="Cabeçalho da tabela de itens do orçamento"
+              className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
+            >
               <ColGroup />
               <thead ref={theadRef}>
+
                 <tr>
-                  <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
+                  <th id={colIds.produto} scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
                   {hasPersonalizations && (
-                    <th scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
+                    <th id={colIds.pers} scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
                   )}
-                  <th scope="col" className={cn('text-center', headerCellClass)}>Qtd</th>
-                  <th scope="col" className={cn('text-left', headerCellClass)}>Unitário</th>
-                  <th scope="col" className={cn('text-left', headerCellClass)}>Total</th>
+                  <th id={colIds.qtd} scope="col" className={cn('text-center', headerCellClass)}>Qtd</th>
+                  <th id={colIds.un} scope="col" className={cn('text-left', headerCellClass)}>Unitário</th>
+                  <th id={colIds.total} scope="col" className={cn('text-left', headerCellClass)}>Total</th>
                   <th
+                    id={colIds.act}
                     scope="col"
                     aria-label="Ações"
                     className={cn('rounded-tr-lg text-center print:hidden', headerCellClass)}
@@ -429,6 +466,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               </thead>
             </table>
           </div>
+
           {/* Corpo rolável — scroll começa abaixo do header */}
           <div
             ref={scrollRef}
@@ -455,7 +493,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               'aria-describedby': 'quote-items-scroll-help',
             })}
           >
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+            <table
+              aria-label={`Lista de ${totalRows} itens do orçamento`}
+              className="w-full min-w-[640px] table-fixed border-separate border-spacing-0"
+            >
+
               <ColGroup />
               <tbody>
                 {Array.from(kitGroups.entries()).map(([groupId, group]) => (
