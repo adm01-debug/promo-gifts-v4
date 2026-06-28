@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TimelineDot, TimelineLine } from '@/components/ui/timeline';
 import { useQuoteHistory, type QuoteHistoryEntry } from '@/hooks/quotes';
 import { cn } from '@/lib/utils';
 
