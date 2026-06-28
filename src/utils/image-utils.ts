@@ -109,6 +109,20 @@ export function getCdnUrl(url: string | null | undefined, variant: CdnVariant = 
 }
 
 /**
+ * getProposalImageUrl — normaliza a imagem do produto para a PROPOSTA/PDF.
+ *
+ * Usa o variant QUADRADO e pequeno `small` (300×300) quando a imagem está no
+ * Cloudflare Images: garante dimensões uniformes na tabela (box 92×92) e acelera
+ * a remoção de fundo client-side (processa 300×300 em vez de 1366×768 do /public).
+ * URLs fora do Cloudflare (fornecedores externos) ficam intactas; vazio → ''.
+ * @fix_version proposal-square-image-8-2026-06
+ */
+export function getProposalImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  return getCdnUrl(url, 'small');
+}
+
+/**
  * Gera srcSet para imagens responsivas.
  */
 export function getSrcSet(url: string | null | undefined): string | undefined {

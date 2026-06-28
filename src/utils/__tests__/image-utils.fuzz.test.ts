@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   getCdnUrl,
+  getProposalImageUrl,
   getSrcSet,
   getImageSizes,
   getOgImageUrl,
@@ -87,6 +88,45 @@ describe('getCdnUrl — fuzz (variantes × formas de URL)', () => {
     expect(getCdnUrl('https://imagedelivery.net/hash/card/real-id', 'large')).toBe(
       'https://imagedelivery.net/hash/card/real-id/large',
     );
+  });
+});
+
+describe('getProposalImageUrl — variant quadrado p/ proposta (#8)', () => {
+  const H = 'vKMs9Ow8bA_enuhLXZ2HAw';
+  it('CF: troca qualquer variant por /small preservando host e id', () => {
+    for (const v of ['public', 'card', 'large', 'medium', 'thumbnail', 'small'] as const) {
+      expect(getProposalImageUrl(`https://imagedelivery.net/${H}/abc123/${v}`)).toBe(
+        `https://imagedelivery.net/${H}/abc123/small`,
+      );
+    }
+  });
+  it('CF sem variant: anexa /small (nao corta o id)', () => {
+    expect(getProposalImageUrl(`https://imagedelivery.net/${H}/abc123`)).toBe(
+      `https://imagedelivery.net/${H}/abc123/small`,
+    );
+  });
+  it('idempotente: aplicar 2x = 1x', () => {
+    const u = `https://imagedelivery.net/${H}/zzz/public`;
+    expect(getProposalImageUrl(getProposalImageUrl(u))).toBe(getProposalImageUrl(u));
+  });
+  it('URLs externas (fornecedores) ficam intactas', () => {
+    for (const u of [
+      'https://media.asiaimport.com.br/fotos/PROD123.jpg',
+      'https://www.spotgifts.com.br/imagens/55555.png',
+      'https://xbz.com.br/img/p-05054.jpg',
+    ]) {
+      expect(getProposalImageUrl(u)).toBe(u);
+    }
+  });
+  it('hosts falsos nao sao tratados como CDN (seguranca)', () => {
+    expect(getProposalImageUrl(`https://imagedelivery.net.evil.com/${H}/id/public`)).toBe(
+      `https://imagedelivery.net.evil.com/${H}/id/public`,
+    );
+  });
+  it('vazio/nulo retorna string vazia', () => {
+    expect(getProposalImageUrl(null)).toBe('');
+    expect(getProposalImageUrl(undefined)).toBe('');
+    expect(getProposalImageUrl('')).toBe('');
   });
 });
 

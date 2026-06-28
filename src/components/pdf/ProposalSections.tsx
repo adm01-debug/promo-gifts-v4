@@ -13,6 +13,7 @@ import {
   tdStyle,
   totalsRowStyle,
 } from './ProposalStyles';
+import { getProposalImageUrl } from '@/utils/image-utils';
 import {
   formatPaymentTerms,
   formatPaymentMethod,
@@ -224,7 +225,7 @@ export function ProductRow({ item }: { item: ProposalItem }) {
       <td style={{ ...tdStyle, textAlign: 'center', padding: '20px 8px', width: '90px' }}>
         {item.imageUrl ? (
           <img
-            src={item.imageUrl}
+            src={getProposalImageUrl(item.imageUrl)}
             alt={item.name}
             crossOrigin="anonymous"
             style={{

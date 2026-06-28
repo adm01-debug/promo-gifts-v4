@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
 import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
+import { getProposalImageUrl } from '@/utils/image-utils';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
   // FIX #3b: inicializar com src (não "") para que img.complete só retorne true
@@ -183,7 +184,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                   {hasAnyImage && (
                     <td style={{ padding: '1px', textAlign: 'center', verticalAlign: 'middle' }}>
                       {item.imageUrl ? (
-                        <ProductImageTransparent src={item.imageUrl} alt={item.name} />
+                        <ProductImageTransparent src={getProposalImageUrl(item.imageUrl)} alt={item.name} />
                       ) : (
                         <div
                           style={{
