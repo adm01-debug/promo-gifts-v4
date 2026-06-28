@@ -9,13 +9,20 @@ import { useEffect, type RefObject } from 'react';
  *   - Se deltaX ≠ 0 → scroll horizontal nativo (trackpad 2 dedos) → não intercepta
  *   - Se shiftKey → comportamento padrão do browser para scroll horizontal → não intercepta
  *   - Se não há overflow horizontal real → não intercepta (página scrolla normalmente)
- *   - Normaliza deltaMode: 0=pixel, 1=linha(×16), 2=página(×400)
+ *   - Normaliza deltaMode: 0=pixel, 1=linha(×16), 2=página(×clientHeight)
+ *
+ * Guards de borda:
+ *   - atLeftEdge:  scrollLeft <= 0 E tentando scrollar esquerda → browser retoma
+ *   - atRightEdge: scrollLeft >= maxScroll - 1 E scrollLeft > 0 E tentando scrollar direita
+ *     ↑ A condição `scrollLeft > 0` previne false positive quando maxScroll é mínimo
+ *       (ex: scrollWidth = clientWidth + 1, scrollLeft = 0: 0 >= 0 seria TRUE sem o guard)
  *
  * Requer { passive: false } para poder chamar preventDefault().
  * O hook registra o listener diretamente no DOM (não via React sintético)
  * para garantir o passive:false independente da versão do React.
  *
- * fix_version: horizontal-scroll-hook-v1 — NÃO REMOVER ESTE COMENTÁRIO
+ * fix_version: horizontal-scroll-hook-v2 — NÃO REMOVER ESTE COMENTÁRIO
+ * (v2: fix atRightEdge false positive com overflow mínimo, scrollLeft=0)
  *
  * @param ref        Referência para o elemento scrollável
  * @param disabled   Desabilitar o hook condicionalmente
@@ -40,7 +47,7 @@ export function useHorizontalScroll(
       // Normalizar delta por deltaMode:
       //   0 = pixels (Chrome/Edge)
       //   1 = linhas (Firefox, ~16px/linha)
-      //   2 = páginas (raro, ~400px/página)
+      //   2 = páginas (raro, ~clientHeight por página)
       const LINE_HEIGHT = 16;
       const PAGE_HEIGHT = el.clientHeight || 400;
       let delta = e.deltaY;
@@ -49,9 +56,17 @@ export function useHorizontalScroll(
 
       delta *= multiplier;
 
-      // Só interceptar se há espaço para scrollar na direção pedida
+      const maxScroll = el.scrollWidth - el.clientWidth;
+
+      // Só interceptar se há espaço para scrollar na direção pedida.
+      // atLeftEdge: scrollLeft no início (≤0) e tentando ir à esquerda
       const atLeftEdge = el.scrollLeft <= 0 && delta < 0;
-      const atRightEdge = el.scrollLeft >= el.scrollWidth - el.clientWidth - 1 && delta > 0;
+
+      // atRightEdge: scrollLeft próximo do fim (tolerância 1px para subpixel em DPR>1).
+      // A condição `el.scrollLeft > 0` é essencial: sem ela, quando maxScroll=1 e
+      // scrollLeft=0, teríamos `0 >= maxScroll(1) - 1 = 0` → TRUE (false positive).
+      const atRightEdge = el.scrollLeft > 0 && el.scrollLeft >= maxScroll - 1 && delta > 0;
+
       if (atLeftEdge || atRightEdge) return;
 
       e.preventDefault();
