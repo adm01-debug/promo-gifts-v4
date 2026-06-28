@@ -258,7 +258,7 @@ export function ProductDetailHero({
           </div>
 
           <ProductInfoBar
-            sku={product.sku}
+            sku={selectedVariation?.sku || product.sku}
             supplierName={product.supplier?.name}
             supplierId={product.supplier?.id}
             onOpenFutureStock={onOpenFutureStock}

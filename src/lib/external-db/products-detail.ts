@@ -209,13 +209,16 @@ export async function fetchPromobrindProductById(
     color_name: string | null;
     color_hex: string | null;
     color_code: string | null;
+    // fix_version: pdp_sku_badge_v2 — color_id adicionado para lookup de
+    // color_variations.internal_code (ex: '11.2') usado no badge SKU para XBZ.
+    color_id: string | null;
     sku: string | null;
     stock_quantity: number | null;
   };
   const variantsPromise = dbInvoke<Variant>({
     table: 'product_variants',
     operation: 'select',
-    select: 'id, color_name, color_hex, color_code, sku, stock_quantity',
+    select: 'id, color_name, color_hex, color_code, color_id, sku, stock_quantity',
     filters: { product_id: productId, is_active: true },
     limit: 60,
   })
@@ -431,6 +434,41 @@ export async function fetchPromobrindProductById(
     }
   }
 
+  // ── Lookup color_variations.internal_code para XBZ ─────────────────────────
+  // fix_version: pdp_sku_badge_v2
+  // Produtos XBZ usam supplier_sku no formato 'ER143B-CIN' (código XBZ abreviado).
+  // O badge da PDP deve exibir '{sku_promo}-{cv.internal_code}' (ex: 'ER143B-11.2').
+  // Para outros fornecedores (SPOT: '51736-2.1'), product_variants.sku já está correto.
+  const XBZ_SUPPLIER_ID = 'd6718a29-e954-4c1b-bd84-03ea24884900';
+  const colorIdToInternalCode = new Map<string, string>();
+
+  if (product.supplier_id === XBZ_SUPPLIER_ID && variants.length > 0) {
+    const uniqueColorIds = [...new Set(
+      variants.map((v) => v.color_id).filter((id): id is string => !!id)
+    )];
+    if (uniqueColorIds.length > 0) {
+      try {
+        const cvResult = await dbInvoke<{ id: string; internal_code: string | null }>({
+          table: 'color_variations',
+          operation: 'select',
+          select: 'id, internal_code',
+          filters: { id: uniqueColorIds },
+          limit: uniqueColorIds.length + 10,
+        });
+        for (const cv of cvResult.records) {
+          if (cv.id && cv.internal_code) {
+            colorIdToInternalCode.set(cv.id, cv.internal_code);
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          `[product:${productId}] Não foi possível buscar internal_code de color_variations:`,
+          err,
+        );
+      }
+    }
+  }
+
   if (variants.length > 0) {
     type ColorEntry = {
       name: string;
@@ -456,14 +494,20 @@ export async function fetchPromobrindProductById(
           : [];
         const finalImages = byCode;
         const thumb = finalImages[0] || product.primary_image_url || product.image_url || null;
+        // fix_version: pdp_sku_badge_v2 — sku do badge:
+        // XBZ: '{sku_promo}-{cv.internal_code}' (ex: ER143B-11.2 para Cinza)
+        // SPOT/outros: variant.sku já tem o formato correto (ex: 51736-2.1)
+        const cvInternalCode = variant.color_id
+          ? colorIdToInternalCode.get(variant.color_id)
+          : undefined;
+        const skuPromo = (product as { sku_promo?: string | null }).sku_promo || product.sku;
         const entry: ColorEntry = {
           name: variant.color_name,
           hex: variant.color_hex || '#CCCCCC',
-          // code = código XBZ do fornecedor (ex: 'CIN', 'BCO') — usado para match de imagens.
-          // fix_version: pdp_sku_badge_v1 — sku REMOVIDO daqui para não vazar o
-          // supplier_sku (ER143B-CIN) até o badge da PDP via product-mapper.
-          // O badge sempre exibe product.sku (produto-pai), nunca o sku da variante.
           code: variant.color_code || '',
+          sku: cvInternalCode && skuPromo
+            ? `${skuPromo}-${cvInternalCode}`
+            : variant.sku || undefined,
           stock: variant.stock_quantity ?? undefined,
           image: thumb || undefined,
           images: finalImages.length > 0 ? finalImages : undefined,

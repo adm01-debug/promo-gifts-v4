@@ -7,6 +7,8 @@ export interface PromobrindProduct {
   id: string;
   name: string;
   sku: string;
+  /** Código público do produto-pai (sem sufixo de variante). Ex: 'ER143B', '51736'. */
+  sku_promo?: string | null;
   sale_price?: number | null;
   /** @deprecated Use sale_price */
   base_price?: number | null;
