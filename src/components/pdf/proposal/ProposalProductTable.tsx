@@ -258,8 +258,25 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                         {item.description}
                       </span>
                     )}
+                    {/* FIX P0 #4: Cor e Gravação exibidas JUNTAS quando ambas existem.
+                        Antes, `{!gravacao && item.color}` OCULTAVA a cor sempre que
+                        havia gravação → metadados inconsistentes entre itens.
+                        @fix_version proposal-metadata-color-and-engraving-2026-06 */}
+                    {item.color && (
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: '10px',
+                          color: '#555',
+                          marginTop: '2px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Cor: <span style={{ fontWeight: 500, color: '#333' }}>{item.color}</span>
+                      </span>
+                    )}
                     {gravacao && (
-                      <table style={{ borderCollapse: 'collapse', marginTop: '2px' }}>
+                      <table style={{ borderCollapse: 'collapse', marginTop: '3px' }}>
                         <tbody>
                           <tr>
                             <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
@@ -280,18 +297,6 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                           </tr>
                         </tbody>
                       </table>
-                    )}
-                    {!gravacao && item.color && (
-                      <span
-                        style={{
-                          display: 'block',
-                          fontSize: '10px',
-                          color: '#666',
-                          marginTop: '2px',
-                        }}
-                      >
-                        Cor: {item.color}
-                      </span>
                     )}
                   </td>
                   <td
