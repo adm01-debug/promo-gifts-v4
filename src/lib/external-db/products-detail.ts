@@ -215,12 +215,17 @@ export async function fetchPromobrindProductById(
     sku: string | null;
     stock_quantity: number | null;
   };
+  // fix_version: variant_limit_120_20260628
+  // Aumento de 60 → 120: o produto STRICKER com mais variantes tem 100 (cor×tamanho).
+  // Com limit=60, 8 das 20 cores de camisetas STRICKER (30504/30508/30512) ficavam
+  // invisíveis na PDP. Max real observado no catálogo = 100. Margem 20% = 120.
+  // Anti-regressão: NÃO reduzir abaixo de 120 sem auditoria prévia do catálogo.
   const variantsPromise = dbInvoke<Variant>({
     table: 'product_variants',
     operation: 'select',
     select: 'id, color_name, color_hex, color_code, color_id, sku, stock_quantity',
     filters: { product_id: productId, is_active: true },
-    limit: 60,
+    limit: 120,
   })
     .then((r) => r.records)
     .catch((err) => {
