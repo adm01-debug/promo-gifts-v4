@@ -383,7 +383,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
       <div className="relative">
         <div
-          className="relative overflow-hidden rounded-lg border border-border bg-background"
+          className="relative overflow-hidden rounded-lg bg-background"
           data-testid="quote-items-table-wrapper"
         >
           <div
