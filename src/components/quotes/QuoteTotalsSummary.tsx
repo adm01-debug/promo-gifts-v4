@@ -1,8 +1,10 @@
 /**
- * QuoteTotalsSummary — Totals breakdown card for QuoteViewPage
+ * QuoteTotalsSummary — Totals breakdown card for QuoteViewPage.
+ * Tipografia via SSOT `quote-view-typography` (consistência com cliente/itens).
  */
 import { formatCurrency } from '@/lib/format';
 import type { QuoteItem } from './QuoteItemsTable';
+import { qvSpacing, qvType } from './quote-view-typography';
 
 interface QuoteTotalsSummaryProps {
   items: QuoteItem[];
@@ -34,31 +36,29 @@ export function QuoteTotalsSummary({
   const hasPersonalizations = personalizationTotal > 0;
 
   return (
-    <div className="flex justify-end">
+    <aside aria-label="Resumo de totais" className="flex justify-end">
       <div className="w-full max-w-sm overflow-hidden rounded-lg border border-border">
-        <div className="space-y-1.5 px-3.5 py-3">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Subtotal produtos:</span>
-            <span className="tabular-nums" data-testid="summary-subtotal-products">{formatCurrency(productSubtotal)}</span>
+        <dl className={`space-y-1.5 ${qvSpacing.summaryBody}`}>
+          <div className={`flex justify-between ${qvType.summaryRow}`}>
+            <dt className="text-muted-foreground">Subtotal produtos:</dt>
+            <dd data-testid="summary-subtotal-products">{formatCurrency(productSubtotal)}</dd>
           </div>
           {hasPersonalizations && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Personalização:</span>
-              <span className="tabular-nums" data-testid="summary-personalization">
-                {formatCurrency(personalizationTotal)}
-              </span>
+            <div className={`flex justify-between ${qvType.summaryRow}`}>
+              <dt className="text-muted-foreground">Personalização:</dt>
+              <dd data-testid="summary-personalization">{formatCurrency(personalizationTotal)}</dd>
             </div>
           )}
           {discountValue > 0 && (
-            <div className="flex justify-between text-xs text-destructive">
-              <span>Desconto{discountPercent ? ` (${discountPercent}%)` : ''}:</span>
-              <span className="tabular-nums" data-testid="summary-discount">-{formatCurrency(discountValue)}</span>
+            <div className={`flex justify-between text-destructive ${qvType.summaryRow}`}>
+              <dt>Desconto{discountPercent ? ` (${discountPercent}%)` : ''}:</dt>
+              <dd data-testid="summary-discount">-{formatCurrency(discountValue)}</dd>
             </div>
           )}
           {shippingType && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Frete:</span>
-              <span className="tabular-nums">
+            <div className={`flex justify-between ${qvType.summaryRow}`}>
+              <dt className="text-muted-foreground">Frete:</dt>
+              <dd>
                 {shippingType === 'cif'
                   ? 'CIF — Cortesia'
                   : shippingType === 'fob'
@@ -66,19 +66,20 @@ export function QuoteTotalsSummary({
                     : shippingType === 'fob_pre'
                       ? `FOB Pré-negociado (${formatCurrency(shippingCost || 0)})`
                       : formatCurrency(shippingCost || 0)}
-              </span>
+              </dd>
             </div>
           )}
-        </div>
-        <div className="border-t border-border bg-muted/50 px-3.5 py-2.5">
+        </dl>
+        <div className={`border-t border-border bg-muted/50 ${qvSpacing.summaryTotalBar}`}>
           <div className="flex items-baseline justify-between">
-            <span className="text-sm font-semibold">Total:</span>
-            <span data-testid="summary-total" className="font-display text-lg font-semibold tabular-nums text-primary">
+            <span className={qvType.totalLabel}>Total:</span>
+            <span data-testid="summary-total" className={qvType.totalValue}>
               {formatCurrency(computedTotal)}
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
+

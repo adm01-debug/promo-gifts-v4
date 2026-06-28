@@ -60,6 +60,7 @@ import { QuoteVersionHistory } from '@/components/quotes/QuoteVersionHistory';
 import { QuoteClientInfo } from '@/components/quotes/QuoteClientInfo';
 import { QuoteItemsTable } from '@/components/quotes/QuoteItemsTable';
 import { QuoteTotalsSummary } from '@/components/quotes/QuoteTotalsSummary';
+import { qvType, qvSpacing } from '@/components/quotes/quote-view-typography';
 import { PdfGenerationDialog } from '@/components/quotes/PdfGenerationDialog';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { useQuoteViewData } from '@/pages/quotes/quote-view/useQuoteViewData';
@@ -357,7 +358,7 @@ export default function QuoteViewPage() {
 
         {/* Quote Content */}
         <Card className="border-0 bg-transparent shadow-none print:hidden">
-          <CardContent className="space-y-4 pt-4">
+          <CardContent className={`${qvSpacing.sectionStack} pt-2`}>
             <QuoteClientInfo
               clientCompany={quote.client_company}
               clientName={quote.client_name}
@@ -378,44 +379,40 @@ export default function QuoteViewPage() {
             {(quote.payment_terms || quote.delivery_time) && (
               <>
                 <Separator />
-                <div>
-                  <h3 className="mb-2 font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Condições Comerciais</h3>
+                <section aria-labelledby="quote-terms-heading">
+                  <h3 id="quote-terms-heading" className={`mb-2 ${qvType.eyebrow}`}>
+                    Condições Comerciais
+                  </h3>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${qvSpacing.termsGrid}`}>
                     {quote.payment_terms && (
-                      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 p-2.5">
-                        <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div className={`flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/30 ${qvSpacing.card}`}>
+                        <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            Pagamento
-                          </p>
-                          <p className="mt-0.5 text-xs font-medium">
+                          <p className={qvType.eyebrowCard}>Pagamento</p>
+                          <p className={`mt-0.5 ${qvType.cardValue}`}>
                             {formatPaymentTerms(quote.payment_terms) || quote.payment_terms}
                           </p>
                         </div>
                       </div>
                     )}
                     {quote.delivery_time && (
-                      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 p-2.5">
-                        <Package className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div className={`flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/30 ${qvSpacing.card}`}>
+                        <Package className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            Prazo de Entrega
-                          </p>
-                          <p className="mt-0.5 text-xs font-medium">
+                          <p className={qvType.eyebrowCard}>Prazo de Entrega</p>
+                          <p className={`mt-0.5 ${qvType.cardValue}`}>
                             {formatDeliveryTime(quote.delivery_time) || quote.delivery_time}
                           </p>
                         </div>
                       </div>
                     )}
                     {quote.shipping_type && (
-                      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 p-2.5">
-                        <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div className={`flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/30 ${qvSpacing.card}`}>
+                        <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                            Frete
-                          </p>
-                          <p className="mt-0.5 text-xs font-medium">
+                          <p className={qvType.eyebrowCard}>Frete</p>
+                          <p className={`mt-0.5 ${qvType.cardValue}`}>
                             {quote.shipping_type === 'cif'
                               ? 'CIF — Cortesia'
                               : quote.shipping_type === 'fob'
@@ -428,7 +425,7 @@ export default function QuoteViewPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </section>
               </>
             )}
 
