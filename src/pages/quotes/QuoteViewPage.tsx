@@ -315,11 +315,14 @@ export default function QuoteViewPage() {
                       <History className="mr-2 h-4 w-4" /> Histórico
                     </DropdownMenuItem>
                   </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Histórico de Alterações</SheetTitle>
+                  <SheetContent className="flex flex-col gap-0 sm:max-w-md">
+                    <SheetHeader className="border-b border-border/40 pb-4">
+                      <SheetTitle className="flex items-center gap-2 text-base font-semibold">
+                        <History className="h-4 w-4 text-primary" aria-hidden="true" />
+                        Histórico de Alterações
+                      </SheetTitle>
                     </SheetHeader>
-                    <div className="mt-6">
+                    <div className="flex-1 overflow-hidden pt-4">
                       <QuoteHistoryPanel quoteId={quote.id ?? ''} />
                     </div>
                   </SheetContent>

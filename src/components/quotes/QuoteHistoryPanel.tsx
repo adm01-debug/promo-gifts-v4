@@ -90,44 +90,60 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
   }
 
   return (
-    <ScrollArea className="h-[400px] pr-4">
+    <ScrollArea className="h-[calc(100vh-9rem)] pr-3">
       <div className="relative">
-        {/* Timeline line */}
-        <div className="absolute bottom-0 left-4 top-0 w-px bg-border" />
+        {/* Timeline line — gradient sutil */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-2 left-[15px] top-2 w-px bg-gradient-to-b from-primary/30 via-border/60 to-transparent"
+        />
 
-        <div className="space-y-4">
+        <ol className="space-y-1.5">
           {history.map((entry, index) => (
             <HistoryEntry key={entry.id} entry={entry} isFirst={index === 0} />
           ))}
-        </div>
+        </ol>
       </div>
     </ScrollArea>
   );
 }
 
 function HistoryEntry({ entry, isFirst }: { entry: QuoteHistoryEntry; isFirst: boolean }) {
-  const icon = actionIcons[entry.action] || <Clock className="h-4 w-4" />;
-  const colorClass = actionColors[entry.action] || 'bg-muted text-muted-foreground';
+  const icon = actionIcons[entry.action] || <Clock className="h-3.5 w-3.5" />;
+  const colorClass = actionColors[entry.action] || 'bg-muted/40 text-muted-foreground border-border/50';
 
   return (
-    <div className="relative pl-10">
-      {/* Timeline dot */}
+    <li className="group relative pl-11">
+      {/* Timeline dot — menor, elegante, glow no primeiro */}
       <div
         className={cn(
-          'absolute left-0 flex h-8 w-8 items-center justify-center rounded-full border',
+          'absolute left-0 top-2 flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-sm',
+          'transition-all duration-200 group-hover:scale-105',
           colorClass,
-          isFirst && 'ring-2 ring-primary/20',
+          isFirst &&
+            'ring-2 ring-primary/25 ring-offset-2 ring-offset-background shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)]',
         )}
       >
         {icon}
       </div>
 
-      <div className="pt-1">
-        <p className="text-sm font-medium text-foreground">{entry.description}</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {format(new Date(entry.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+      {/* Card sutil ao redor do conteúdo */}
+      <div
+        className={cn(
+          'rounded-lg border border-transparent px-3 py-2 transition-all duration-200',
+          'group-hover:border-border/40 group-hover:bg-card/40',
+        )}
+      >
+        <p className="text-[13px] font-medium leading-snug text-foreground">
+          {entry.description}
+        </p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
+          <Clock className="h-3 w-3" aria-hidden="true" />
+          <time dateTime={entry.created_at}>
+            {format(new Date(entry.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+          </time>
         </p>
       </div>
-    </div>
+    </li>
   );
 }
