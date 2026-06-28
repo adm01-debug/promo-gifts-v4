@@ -266,30 +266,30 @@ export function ConfigurationPanelV6({
 
         {/* Color selector (conditional) */}
         {technique.cobra_por_cor && technique.max_cores > 1 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-sm text-foreground">
-              <Palette className="h-3.5 w-3.5" />
-              <span className="font-medium">Nº de cores</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <Palette className="h-3 w-3" />
+              Nº de cores
             </div>
-            <div className="flex gap-1.5">
+            <div className="inline-flex rounded-lg border border-border/60 bg-card p-0.5">
               {Array.from({ length: technique.max_cores }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
                   type="button"
                   disabled={isLocked}
                   className={cn(
-                    'h-9 rounded-md px-3 text-sm font-medium transition-colors',
+                    'h-7 rounded-md px-2.5 text-[12px] font-medium tabular-nums transition-colors',
                     isLocked && 'cursor-not-allowed opacity-50',
                     n === numCores
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                   data-testid={`customization-color-button-${n}`}
                   onClick={() => !isLocked && setNumCores(n)}
                 >
                   {n} {n === 1 ? 'cor' : 'cores'}
-                  {n === 2 && ' (-10%)'}
-                  {n === 3 && ' (-15%)'}
+                  {n === 2 && <span className="ml-1 text-success/80">−10%</span>}
+                  {n === 3 && <span className="ml-1 text-success/80">−15%</span>}
                 </button>
               ))}
             </div>
@@ -298,7 +298,7 @@ export function ConfigurationPanelV6({
 
         {/* Full color info */}
         {!technique.cobra_por_cor && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Palette className="h-3 w-3" />
             Full Color — sem limite de cores
           </div>
@@ -306,7 +306,7 @@ export function ConfigurationPanelV6({
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-[12px] text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Calculando preço...
           </div>
@@ -314,63 +314,65 @@ export function ConfigurationPanelV6({
 
         {/* Error */}
         {error && !loading && (
-          <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
             <AlertCircle className="h-3.5 w-3.5" />
             {error}
           </div>
         )}
 
-        {/* Price result */}
+        {/* Price result — denso (2 linhas + total destacado) */}
         {price && !loading && (
-          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">{price.nome_tabela}</span>
-            </div>
-
-            <div className="space-y-0.5 text-xs text-muted-foreground">
-              {technique.usa_dimensao && larguraNum > 0 && alturaNum > 0 && (
-                <p>
-                  Gravação: {larguraNum} × {alturaNum} cm
-                </p>
-              )}
-              <p>Quantidade: {price.quantidade} peças</p>
-              <p>
-                Faixa: {price.faixa?.qtd_min} a {price.faixa?.qtd_max} peças
-              </p>
-              {(price.num_cores ?? 0) > 1 && <p>Cores: {price.num_cores}</p>}
-            </div>
-
-            <div className="space-y-1 border-t border-border/50 pt-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Preço unitário:</span>
-                <span className="font-semibold text-primary">
-                  R$ {(price.preco_unitario ?? 0).toFixed(2)}
+          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/[0.04] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate text-[12px] font-medium text-foreground">
+                  {price.nome_tabela}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Gravação ({price.quantidade}×):</span>
-                <span className="font-medium text-foreground">
-                  R$ {(price.valor_gravacao ?? 0).toFixed(2)}
-                </span>
-              </div>
-              {(price.setup_total ?? 0) > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Setup:</span>
-                  <span className="font-medium text-foreground">
-                    R$ {(price.setup_total ?? 0).toFixed(2)}
+              <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                {price.quantidade} pç · faixa {price.faixa?.qtd_min}–{price.faixa?.qtd_max}
+                {technique.usa_dimensao && larguraNum > 0 && alturaNum > 0 && (
+                  <> · {larguraNum}×{alturaNum}cm</>
+                )}
+                {(price.num_cores ?? 0) > 1 && <> · {price.num_cores} cores</>}
+              </span>
+            </div>
+
+            <div className="flex items-end justify-between gap-3 border-t border-border/40 pt-2">
+              <div className="space-y-0.5">
+                <div className="flex items-baseline gap-1.5 text-[11px] text-muted-foreground">
+                  <span>unitário</span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    R$ {(price.preco_unitario ?? 0).toFixed(2)}
                   </span>
                 </div>
-              )}
-              <div className="flex justify-between border-t border-border/50 pt-1 text-sm font-bold">
-                <span className="text-foreground">TOTAL:</span>
-                <span className="text-primary" data-testid="customization-total-price">
+                <div className="flex items-baseline gap-1.5 text-[11px] text-muted-foreground">
+                  <span>gravação + setup</span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    R${' '}
+                    {(
+                      (price.valor_gravacao ?? 0) + (price.setup_total ?? 0)
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Total
+                </div>
+                <div
+                  className="text-[18px] font-semibold tabular-nums text-primary"
+                  data-testid="customization-total-price"
+                >
                   R$ {(price.total_cobrado ?? 0).toFixed(2)}
-                </span>
+                </div>
               </div>
             </div>
           </div>
         )}
+
+
 
         {/* Waiting for inputs */}
         {!price && !loading && !error && (
