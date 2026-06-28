@@ -120,12 +120,20 @@ function SelectedTechniqueBar({
   pickerId,
   changeButtonRef,
 }: SelectedTechniqueBarProps) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div
+    <motion.div
+      layout={reduceMotion ? false : 'position'}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
+      }
       className={cn(
-        'flex items-center justify-between gap-2 rounded-full border px-3 py-1.5 transition-colors',
+        'flex items-center justify-between gap-2 rounded-full border px-3 py-1.5',
+        'transition-[background-color,border-color,box-shadow] duration-200 ease-out',
         isPickerOpen
-          ? 'border-primary/50 bg-primary/[0.06]'
+          ? 'border-primary/50 bg-primary/[0.06] shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
           : 'border-border/60 bg-card',
       )}
     >
@@ -133,13 +141,19 @@ function SelectedTechniqueBar({
         <span
           className={cn(
             'h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-transform',
-            isPickerOpen && 'animate-pulse',
+            isPickerOpen && !reduceMotion && 'animate-pulse',
           )}
           aria-hidden
         />
-        <p className="truncate text-[13px] font-medium text-foreground">
+        <motion.p
+          key={technique.technique_id}
+          initial={reduceMotion ? false : { opacity: 0, y: -2 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+          className="truncate text-[13px] font-medium text-foreground"
+        >
           {technique.tecnica_nome}
-        </p>
+        </motion.p>
         {technique.grupo_tecnica && (
           <span className="hidden shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/70 sm:inline">
             · {technique.grupo_tecnica.replace('_', ' ')}
@@ -151,7 +165,7 @@ function SelectedTechniqueBar({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 shrink-0 gap-1 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+        className="h-7 shrink-0 gap-1 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         onClick={onChangeClick}
         aria-expanded={isPickerOpen}
         aria-controls={pickerId}
@@ -165,7 +179,7 @@ function SelectedTechniqueBar({
         <Pencil className="h-3 w-3" />
         {isPickerOpen ? 'Fechar' : 'Trocar'}
       </Button>
-    </div>
+    </motion.div>
   );
 }
 
