@@ -287,7 +287,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                             </Badge>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                          <div className={`grid grid-cols-2 gap-1.5 ${qvType.techGridItem}`}>
                             {parsed.location && (
                               <div className="flex items-center gap-1">
                                 <MapPin className="h-3 w-3 text-muted-foreground" />
