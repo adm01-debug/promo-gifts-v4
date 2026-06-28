@@ -293,20 +293,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const announceTimer = React.useRef<number | null>(null);
   const theadRef = React.useRef<HTMLTableSectionElement>(null);
   const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
-  // Quando o engine suporta `scrollbar-gutter: stable`, o trilho da scrollbar é
-  // reservado dentro do scroller (não sobrepõe o header), tornando a máscara de
-  // canto redundante. Quando NÃO suporta (alguns WebKits antigos), renderizamos
-  // a máscara para evitar canto quadrado no topo-direito.
-  const [needsCornerMask, setNeedsCornerMask] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!enableInnerScroll) return;
-    const supportsGutter =
-      typeof CSS !== 'undefined' &&
-      typeof CSS.supports === 'function' &&
-      CSS.supports('scrollbar-gutter: stable');
-    setNeedsCornerMask(!supportsGutter);
-  }, [enableInnerScroll]);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
@@ -423,7 +409,15 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 <th scope="col" className={cn('w-16 text-center', headerCellClass)}>Qtd</th>
                 <th scope="col" className={cn('w-24 text-left', headerCellClass)}>Unitário</th>
                 <th scope="col" className={cn('w-28 text-left', headerCellClass)}>Total</th>
-                <th scope="col" aria-label="Ações" className={cn('w-20 rounded-tr-lg text-center print:hidden', headerCellClass)} />
+                <th
+                  scope="col"
+                  aria-label="Ações"
+                  className={cn(
+                    'w-20 text-center print:hidden',
+                    !enableInnerScroll && 'rounded-tr-lg',
+                    headerCellClass,
+                  )}
+                />
               </tr>
             </thead>
           <tbody>
@@ -465,11 +459,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               data-scroll-hint={scrollState.bottom ? 'end' : 'more'}
             >
               <ArrowUpDown
-                className={cn(
-                  'h-3 w-3 text-primary-foreground transition-opacity duration-200',
-                  scrollState.bottom ? 'opacity-60' : 'opacity-100',
-                )}
-                strokeWidth={2.25}
+                className="h-4 w-4 text-primary-foreground"
+                strokeWidth={2}
               />
 
             </div>
