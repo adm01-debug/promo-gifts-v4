@@ -346,52 +346,50 @@ export function ProductCustomizationOptions({
         )}
 
         {pricesRef.current.size > 0 && (
-          <div className="mt-6 border-t border-border/60 pt-4 animate-in fade-in slide-in-from-bottom-2">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-success" />
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-foreground">
-                Resumo das Configurações
-              </h4>
+          <div className="mt-5 border-t border-border/40 pt-3 animate-in fade-in slide-in-from-bottom-2">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-success" />
+                <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Resumo das Configurações
+                </h4>
+              </div>
+              <span className="text-[10px] tabular-nums text-muted-foreground">
+                {pricesRef.current.size} {pricesRef.current.size === 1 ? 'local' : 'locais'}
+              </span>
             </div>
 
-            <div className="grid gap-2">
+            <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
               {Array.from(pricesRef.current.values()).map((item) => (
                 <div
                   key={item.locationCode}
-                  className="flex items-start justify-between rounded-lg border border-success/20 bg-success/5 p-2.5"
+                  className="flex items-center justify-between gap-3 px-3 py-2"
                 >
-                  <div className="space-y-0.5">
-                    <p className="mb-1 text-[10px] font-bold uppercase leading-none text-success">
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
                       {item.locationName}
-                    </p>
-                    <p className="text-xs font-semibold text-foreground">{item.techniqueName}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      {item.width && item.height && (
-                        <span>
-                          {item.width} × {item.height} cm
-                        </span>
-                      )}
-                      {item.width && item.height && <span>•</span>}
-                      <span>
-                        {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
-                      </span>
-                    </div>
+                    </span>
+                    <span className="truncate text-[12px] font-medium text-foreground">
+                      {item.techniqueName}
+                    </span>
+                    <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
+                      {item.width && item.height && <>· {item.width}×{item.height}cm </>}
+                      · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] uppercase text-muted-foreground">Total Local</p>
-                    <p className="text-xs font-bold text-success">
-
-                      {item.price?.total_cobrado?.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </p>
-                  </div>
+                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
+                    {item.price?.total_cobrado?.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         )}
+
+
       </div>
     </TooltipProvider>
   );
