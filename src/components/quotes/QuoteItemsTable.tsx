@@ -265,16 +265,29 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     );
   };
 
+  // Scroll interno: mantém ~5 produtos visíveis sem aumentar a página.
+  // Acima de 5 itens, ativa overflow vertical no container da tabela com
+  // thead sticky para preservar contexto. Limite calculado por linha (~88px)
+  // + header (~44px). Usamos max-h em rem para escalar com o root font-size.
+  const totalRows = items.length;
+  const enableInnerScroll = totalRows > 5;
+
   return (
     <section aria-labelledby="quote-items-heading">
       <SectionEyebrow id="quote-items-heading">Itens do Orçamento</SectionEyebrow>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div
+        className={cn(
+          'overflow-x-auto rounded-lg border border-border',
+          enableInnerScroll && 'overflow-y-auto max-h-[34rem] print:max-h-none print:overflow-visible',
+        )}
+        data-testid="quote-items-table-scroll"
+      >
         <table className="w-full min-w-[640px] border-collapse">
           <caption className="sr-only">
             Lista de itens do orçamento com quantidade, preço unitário e total.
           </caption>
-          <thead>
-            <tr className="bg-primary/15">
+          <thead className={cn(enableInnerScroll && 'sticky top-0 z-10')}>
+            <tr className="bg-primary/15 backdrop-blur supports-[backdrop-filter]:bg-primary/20">
               <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Produto</th>
               {hasPersonalizations && (
                 <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Personalização</th>
