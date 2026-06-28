@@ -401,14 +401,15 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
           className="relative overflow-hidden rounded-lg bg-background"
           data-testid="quote-items-table-wrapper"
         >
-          {/* Header fixo — fora da área de scroll */}
+          {/* Header fixo — fora da área de scroll, com padding-right igual
+              à largura real da scrollbar do body para alinhar colunas. */}
           <div
-            className={cn(
-              'overflow-y-scroll [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
-              'print:overflow-visible',
-            )}
+            className="overflow-hidden print:overflow-visible"
+            style={{ paddingRight: scrollbarPad ? `${scrollbarPad}px` : undefined }}
+            data-testid="quote-items-table-header-wrap"
             aria-hidden="false"
           >
+
             <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
               <ColGroup />
               <thead ref={theadRef}>
