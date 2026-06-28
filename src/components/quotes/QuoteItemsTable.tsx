@@ -363,6 +363,20 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             {looseItems.map((item, idx) => renderItemRow(item, idx))}
           </tbody>
         </table>
+        </div>
+        {enableInnerScroll && !scrollState.bottom && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 rounded-b-lg bg-gradient-to-t from-background to-transparent print:hidden"
+          />
+        )}
+        {enableInnerScroll && (
+          <p className="sr-only" aria-live="polite">
+            {scrollState.bottom
+              ? 'Fim da lista de itens.'
+              : 'Há mais itens abaixo. Use as setas ou arraste para rolar.'}
+          </p>
+        )}
       </div>
     </section>
   );
