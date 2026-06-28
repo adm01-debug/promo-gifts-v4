@@ -301,96 +301,83 @@ describe('ProposalProductTable — cálculo de lineTotal', () => {
 // para testar as regras de negócio de forma isolada.
 
 describe('paginateItems — regras de negócio', () => {
-  // Constantes replicadas de PropostaComercialTailwind para alinhamento
+  // Constantes replicadas de PropostaComercialTailwind (mantêm o teste alinhado
+  // ao componente e travam regressão da paginação).
+  // @fix_version proposal-pagination-v4-anchored-totals-2026-06
   const PAGE_H = 1123;
   const FIRST_HEADER_H = 128;
-  const CLIENT_BAR_H = 90;
-  const TABLE_HEADER_H = 38;
-  const TOTALS_H = 180;
-  const NOTES_H = 310;
-  const NOTES_FOOTER_H = 230;
-  const SIMPLE_FOOTER_H = 30;
   const CONT_HEADER_H = 60;
+  const CLIENT_BAR_H = 90;
   const CONT_CLIENT_H = 60;
-  const ROW_H = 76;
+  const TABLE_HEADER_H = 38;
+  const SIMPLE_FOOTER_H = 30;
+  const ROW_H = 96;
+  const NOTES_H = 300;
+  const TOTALS_H = 180;
+  const SIGNATURE_H = 120;
+  const SAFETY = 24;
+
+  const rowCap = (available: number) => Math.max(1, Math.floor(available / ROW_H));
+  const MID_CAP_FIRST = rowCap(
+    PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - NOTES_H - SIMPLE_FOOTER_H - SAFETY,
+  );
+  const MID_CAP_CONT = rowCap(
+    PAGE_H - CONT_HEADER_H - CONT_CLIENT_H - TABLE_HEADER_H - NOTES_H - SIMPLE_FOOTER_H - SAFETY,
+  );
+  const LAST_CAP_SINGLE = rowCap(
+    PAGE_H - FIRST_HEADER_H - CLIENT_BAR_H - TABLE_HEADER_H - TOTALS_H - SIGNATURE_H - NOTES_H -
+      SIMPLE_FOOTER_H - SAFETY,
+  );
+  const LAST_CAP_CONT = rowCap(
+    PAGE_H - CONT_HEADER_H - CONT_CLIENT_H - TABLE_HEADER_H - TOTALS_H - SIGNATURE_H - NOTES_H -
+      SIMPLE_FOOTER_H - SAFETY,
+  );
 
   function paginateItems(items: ProposalItem[]): ProposalItem[][] {
-    const singlePageAvailable =
-      PAGE_H -
-      FIRST_HEADER_H -
-      CLIENT_BAR_H -
-      TABLE_HEADER_H -
-      TOTALS_H -
-      NOTES_H -
-      NOTES_FOOTER_H -
-      SIMPLE_FOOTER_H -
-      40;
-    const singlePageRows = Math.max(0, Math.floor(singlePageAvailable / ROW_H));
-
-    if (items.length <= singlePageRows && singlePageRows > 0) {
-      return [items];
-    }
-
-    const pages: ProposalItem[][] = [];
-    let remaining = [...items];
-
-    const firstPageAvailable =
-      PAGE_H -
-      FIRST_HEADER_H -
-      CLIENT_BAR_H -
-      TABLE_HEADER_H -
-      NOTES_FOOTER_H -
-      SIMPLE_FOOTER_H -
-      30;
-    const firstPageRows = Math.max(1, Math.floor(firstPageAvailable / ROW_H));
-
-    const fpRows = Math.min(firstPageRows, remaining.length);
-    pages.push(remaining.slice(0, fpRows));
-    remaining = remaining.slice(fpRows);
-
-    if (remaining.length === 0) {
-      pages.push([]);
-    }
-
-    while (remaining.length > 0) {
-      const contPageAvailable =
-        PAGE_H -
-        CONT_HEADER_H -
-        CONT_CLIENT_H -
-        TABLE_HEADER_H -
-        NOTES_FOOTER_H -
-        SIMPLE_FOOTER_H -
-        30;
-      const contPageRows = Math.floor(contPageAvailable / ROW_H);
-
-      if (remaining.length <= contPageRows) {
-        const spaceNeeded =
-          remaining.length * ROW_H +
-          TABLE_HEADER_H +
-          TOTALS_H +
-          NOTES_H +
-          NOTES_FOOTER_H +
-          SIMPLE_FOOTER_H +
-          CONT_HEADER_H +
-          CONT_CLIENT_H +
-          40;
-        if (spaceNeeded <= PAGE_H) {
-          pages.push(remaining);
-          remaining = [];
-        } else {
-          const fitRows = Math.max(1, Math.floor(contPageAvailable / ROW_H));
-          pages.push(remaining.slice(0, fitRows));
-          remaining = remaining.slice(fitRows);
-          if (remaining.length === 0) pages.push([]);
+    const n = items.length;
+    if (n === 0) return [[]];
+    if (n <= LAST_CAP_SINGLE) return [items];
+    const capacityFor = (p: number): number =>
+      p <= 1 ? LAST_CAP_SINGLE : MID_CAP_FIRST + Math.max(0, p - 2) * MID_CAP_CONT + LAST_CAP_CONT;
+    let pageCount = 2;
+    while (capacityFor(pageCount) < n) pageCount++;
+    let counts: number[] = [];
+    for (let guard = 0; guard <= n; guard++) {
+      const caps: number[] = [MID_CAP_FIRST];
+      for (let i = 0; i < pageCount - 2; i++) caps.push(MID_CAP_CONT);
+      caps.push(LAST_CAP_CONT);
+      counts = new Array<number>(pageCount).fill(Math.floor(n / pageCount));
+      let extra = n % pageCount;
+      for (let i = 0; i < pageCount && extra > 0; i++, extra--) counts[i]++;
+      for (let i = pageCount - 1; i > 0; i--) {
+        if (counts[i] > caps[i]) {
+          const overflow = counts[i] - caps[i];
+          counts[i] -= overflow;
+          counts[i - 1] += overflow;
         }
-      } else {
-        pages.push(remaining.slice(0, contPageRows));
-        remaining = remaining.slice(contPageRows);
       }
+      if (counts.every((c, i) => c <= caps[i] && c >= 1)) break;
+      pageCount++;
     }
-
+    const pages: ProposalItem[][] = [];
+    let cursor = 0;
+    for (let i = 0; i < pageCount; i++) {
+      pages.push(items.slice(cursor, cursor + counts[i]));
+      cursor += counts[i];
+    }
     return pages;
   }
+
+  // Capacidade máxima de cada página conforme a posição (para travar clipping).
+  const capFor = (pages: ProposalItem[][], idx: number): number => {
+    const single = pages.length === 1;
+    const isFirst = idx === 0;
+    const isLast = idx === pages.length - 1;
+    if (single) return LAST_CAP_SINGLE;
+    if (isLast) return LAST_CAP_CONT;
+    if (isFirst) return MID_CAP_FIRST;
+    return MID_CAP_CONT;
+  };
 
   it('lista vazia retorna página única vazia', () => {
     const pages = paginateItems([]);
@@ -398,65 +385,69 @@ describe('paginateItems — regras de negócio', () => {
     expect(pages[0]).toHaveLength(0);
   });
 
-  it('1 item cabe em página única completa (com totais/assinatura)', () => {
-    // singlePageRows = floor(77px / 76px) = 1 → só 1 linha cabe na "página completa"
-    const items = [makeItem({ name: 'Produto Único' })];
-    const pages = paginateItems(items);
+  it('1 item cabe em página única (totais ancorados)', () => {
+    const pages = paginateItems([makeItem({ name: 'Produto Único' })]);
     expect(pages).toHaveLength(1);
     expect(pages[0]).toHaveLength(1);
   });
 
-  it('3 itens geram 2 páginas: [itens] + [página de totais]', () => {
-    // Com singlePageRows=1, qualquer proposta com 2+ itens usa layout multi-página:
-    // - Página 1: itens (até firstPageRows=7)
-    // - Última página: vazia — contém apenas Totals + Signature + Notes + Footer
-    const items = Array.from({ length: 3 }, (_, i) => makeItem({ name: `Produto ${i + 1}` }));
+  it('2 itens cabem em página ÚNICA — sem página de totais órfã (regressão do bug)', () => {
+    // ANTES: 2 itens geravam [2],[] (página 2 vazia só com totais). Corrigido.
+    const items = Array.from({ length: 2 }, (_, i) => makeItem({ name: `Produto ${i + 1}` }));
     const pages = paginateItems(items);
-    expect(pages).toHaveLength(2); // [3 itens] + [página de totais vazia]
-    expect(pages[0]).toHaveLength(3); // primeira página: todos os 3 itens
-    expect(pages[pages.length - 1]).toHaveLength(0); // última: vazia (totals page)
+    expect(pages).toHaveLength(1);
+    expect(pages[0]).toHaveLength(2);
   });
 
-  it('número total de itens é preservado em multi-página', () => {
-    const items = Array.from({ length: 20 }, (_, i) => makeItem({ name: `Produto ${i + 1}` }));
+  it('6 itens → 2 páginas equilibradas [3,3], totais na última (caso do PDF real)', () => {
+    const items = Array.from({ length: 6 }, (_, i) => makeItem({ name: `Produto ${i + 1}` }));
     const pages = paginateItems(items);
-    const totalItems = pages.reduce((sum, page) => sum + page.length, 0);
-    expect(totalItems).toBe(20);
+    expect(pages.map((p) => p.length)).toEqual([3, 3]);
+    expect(pages[pages.length - 1].length).toBeGreaterThan(0);
   });
 
-  it('multi-página: primeira página nunca vazia (exceto lista original vazia)', () => {
-    const items = Array.from({ length: 20 }, () => makeItem());
-    const pages = paginateItems(items);
-    expect(pages.length).toBeGreaterThan(1);
-    expect(pages[0].length).toBeGreaterThan(0);
-  });
+  it('INVARIANTES n=0..40: sem página vazia, totais ancorados, sem clipping, ordem e soma', () => {
+    for (let n = 0; n <= 40; n++) {
+      const items = Array.from({ length: n }, (_, i) => makeItem({ name: `P${i}` }));
+      const pages = paginateItems(items);
 
-  it('somente a última página pode ser vazia (página de totais)', () => {
-    const items = Array.from({ length: 20 }, () => makeItem());
-    const pages = paginateItems(items);
-    // páginas intermediárias nunca devem ser vazias
-    for (let i = 0; i < pages.length - 1; i++) {
-      expect(pages[i].length).toBeGreaterThan(0);
+      const sum = pages.reduce((a, p) => a + p.length, 0);
+      expect(sum).toBe(n);
+
+      if (n === 0) {
+        expect(pages).toHaveLength(1);
+        expect(pages[0]).toHaveLength(0);
+        continue;
+      }
+
+      // nenhuma página vazia (incl. a última → totais nunca órfãos)
+      expect(pages.every((p) => p.length > 0)).toBe(true);
+      // sem clipping: cada página respeita a capacidade da sua posição
+      expect(pages.every((p, idx) => p.length <= capFor(pages, idx))).toBe(true);
+      // ordem preservada, contígua e com soma exata (flat preserva a ordem das páginas)
+      expect(pages.flat().map((item) => item.name)).toEqual(items.map((item) => item.name));
     }
   });
 
+  it('número total de itens é preservado em multi-página (20 itens)', () => {
+    const items = Array.from({ length: 20 }, (_, i) => makeItem({ name: `Produto ${i + 1}` }));
+    const pages = paginateItems(items);
+    expect(pages.reduce((sum, page) => sum + page.length, 0)).toBe(20);
+    expect(pages.length).toBeGreaterThan(1);
+  });
+
   it('startIndices calculados com reduce() não causam duplicação em StrictMode', () => {
-    // Simular dupla renderização do React 18 StrictMode
     const items = Array.from({ length: 10 }, (_, i) => makeItem({ name: `Item ${i + 1}` }));
     const pages = paginateItems(items);
-
-    // Computar startIndices duas vezes (simula StrictMode)
     const computeStartIndices = (ps: ProposalItem[][]) =>
       ps.reduce<number[]>((acc, _page, i) => {
         acc.push(i === 0 ? 0 : acc[i - 1] + ps[i - 1].length);
         return acc;
       }, []);
-
     const first = computeStartIndices(pages);
     const second = computeStartIndices(pages);
-
-    expect(first).toEqual(second); // imutável → mesmo resultado sempre
-    expect(first[0]).toBe(0); // primeira página começa no índice 0
+    expect(first).toEqual(second);
+    expect(first[0]).toBe(0);
   });
 });
 
