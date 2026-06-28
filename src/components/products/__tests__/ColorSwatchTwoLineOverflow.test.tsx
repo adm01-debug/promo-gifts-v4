@@ -265,3 +265,79 @@ describe('A11y — chip "+N" e swatches', () => {
     btns.forEach((b, i) => expect(b.getAttribute('aria-label')).toBe(`cor-${i}`));
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A11y — teclado e foco
+// ─────────────────────────────────────────────────────────────────────────────
+describe('A11y — teclado/foco em swatches', () => {
+  it('V1: swatch recebe foco e dispara onSelect via Enter e Space', () => {
+    const onSelect = vi.fn();
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches
+          colors={makeColors(3)}
+          max={14}
+          wrap
+          hideWhenEmpty={false}
+          onSelect={onSelect}
+        />
+      </TooltipProvider>,
+    );
+    const first = screen.getAllByRole('radio')[0] as HTMLButtonElement;
+    first.focus();
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: 'Enter' });
+    fireEvent.keyDown(first, { key: ' ' });
+    expect(onSelect).toHaveBeenCalledTimes(2);
+  });
+
+  it('V1: chip "+N" é informacional (não interativo, não está no tab order)', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(20)} max={14} wrap hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    const chip = screen.getByTestId('color-swatches-overflow');
+    // Contrato: chip é <span> com aria-label, sem tabindex — affordance interativa
+    // fica no botão separado "Mostrar todas as variações".
+    expect(chip.tagName).toBe('SPAN');
+    expect(chip.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('V2: swatch recebe foco e dispara onSelect via clique do teclado', () => {
+    const onSelect = vi.fn();
+    const swatches = makeSwatches(3);
+    const { container } = render(
+      <ColorSwatchPicker
+        swatches={swatches}
+        activeVariantId={null}
+        onSelect={onSelect}
+        onReset={() => {}}
+      />,
+    );
+    const first = container.querySelector('button[aria-pressed]') as HTMLButtonElement;
+    first.focus();
+    expect(document.activeElement).toBe(first);
+    fireEvent.click(first);
+    expect(onSelect).toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A11y — aria-labels do chip plural/singular paramétrico
+// ─────────────────────────────────────────────────────────────────────────────
+describe('A11y — aria-label do chip plural/singular (single-line)', () => {
+  it.each([
+    { total: 7, max: 6, expected: 'Mais 1 cor' },
+    { total: 8, max: 6, expected: 'Mais 2 cores' },
+    { total: 10, max: 6, expected: 'Mais 4 cores' },
+    { total: 50, max: 6, expected: 'Mais 44 cores' },
+  ])('total=$total max=$max → aria-label "$expected"', ({ total, max, expected }) => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(total)} max={max} hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    expect(screen.getByTestId('color-swatches-overflow').getAttribute('aria-label')).toBe(expected);
+  });
+});
