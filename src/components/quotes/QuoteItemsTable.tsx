@@ -378,7 +378,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               Lista de itens do orçamento com quantidade, preço unitário e total.
             </caption>
             <thead className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
-              <tr className="bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15">
+              <tr className="bg-primary/95 supports-[backdrop-filter]:bg-primary/85 supports-[backdrop-filter]:backdrop-blur print:bg-primary/15 [&>th:first-child]:rounded-tl-lg [&>th:last-child]:rounded-tr-lg">
                 <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Produto</th>
                 {hasPersonalizations && (
                   <th scope="col" className={cn('text-left', qvSpacing.cell, qvType.tableHead)}>Personalização</th>
