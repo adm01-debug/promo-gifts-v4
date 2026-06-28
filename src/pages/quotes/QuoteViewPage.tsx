@@ -380,7 +380,7 @@ export default function QuoteViewPage() {
               <>
                 <Separator />
                 <section aria-labelledby="quote-terms-heading">
-                  <h3 id="quote-terms-heading" className={`mb-2 ${qvType.eyebrow}`}>
+                  <h3 id="quote-terms-heading" className={`${qvSpacing.eyebrowGap} ${qvType.eyebrow}`}>
                     Condições Comerciais
                   </h3>
 
