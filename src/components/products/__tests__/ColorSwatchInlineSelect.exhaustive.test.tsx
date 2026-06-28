@@ -12,6 +12,8 @@ import { ProductColorSwatches } from '../ProductColorSwatches';
 import type { ColorDotLike } from '../ProductColorSwatches';
 import { BaseProductGridCard } from '../BaseProductGridCard';
 import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 vi.mock('@/components/products/ProductQuickActionsFAB', () => ({ ProductQuickActionsFAB: () => null }));
 vi.mock('@/components/products/ProductCategoryBadges', () => ({ ProductCategoryBadges: () => null }));
