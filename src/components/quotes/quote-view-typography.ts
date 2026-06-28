@@ -76,7 +76,12 @@ export const qvSpacing = {
   termsGrid: 'gap-3',
   /** Ritmo vertical entre blocos do conteúdo do orçamento. */
   sectionStack: 'space-y-5 md:space-y-6',
+  /** Ritmo vertical entre seções dentro do SheetContent. */
+  sheetStack: 'mt-5 space-y-5',
+  /** Padding interno do card de personalização. */
+  techCard: 'space-y-2 rounded-lg border border-border/50 bg-muted/40 p-2.5',
 } as const;
+
 
 export type QvTypeKey = keyof typeof qvType;
 export type QvSpacingKey = keyof typeof qvSpacing;
