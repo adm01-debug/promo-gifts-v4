@@ -969,10 +969,10 @@ export function QuoteBuilderSummaryColumn({
                             <img
                               src={activeItemForOverlay.product_image_url}
                               alt=""
-                              className="h-10 w-10 rounded-lg bg-muted object-cover"
+                              className="h-12 w-12 rounded-lg bg-muted object-cover"
                             />
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
                               <Package className="h-4 w-4 text-muted-foreground" />
                             </div>
                           )}
