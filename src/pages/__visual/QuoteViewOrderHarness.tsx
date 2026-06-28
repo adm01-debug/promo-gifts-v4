@@ -224,6 +224,33 @@ export default function QuoteViewOrderHarness() {
             <div className={qvType.meta}>
               [conteúdo do orçamento ocultado no harness]
             </div>
+            <Separator />
+            <div data-testid="harness-item-row" className="flex items-center justify-between gap-2">
+              <span className={qvType.productName}>Garrafa esportiva 400ml</span>
+              <QuoteItemDetailSheet
+                item={{
+                  product_name: 'Garrafa esportiva 400ml',
+                  product_sku: '94297',
+                  color_name: 'LARANJA',
+                  color_hex: '#FF7A1A',
+                  quantity: 150,
+                  unit_price: 20,
+                  personalizations: [
+                    {
+                      technique_name: 'Fiber Laser | Plana',
+                      technique_id: 'fiber-plana',
+                      colors_count: 1,
+                      width_cm: 3,
+                      height_cm: 12,
+                      setup_cost: 150.5,
+                      total_cost: 470.85,
+                      notes: 'Lado A — FIBER-PL-01 | 3x12cm',
+                    },
+                  ],
+                }}
+              />
+            </div>
+
           </CardContent>
         </Card>
       </div>
