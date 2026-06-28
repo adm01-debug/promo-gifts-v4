@@ -2608,3 +2608,24 @@ body[data-offline='true'] button[type='submit']::after {
 a[href*="lovable.dev"][target="_blank"] {
   display: none !important;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Override determinístico do DropdownMenuContent das linhas de orçamento.
+ *
+ * O shadcn aplica `min-width: 8rem` via classe utilitária no próprio componente.
+ * Aqui forçamos width/min-width pelo seletor `[data-testid^="quote-row-menu-"]`,
+ * que é estável e independente de ordem/casamento de classes do tw-merge.
+ * `!important` garante precedência mesmo se a util `min-w-[8rem]` aparecer
+ * depois no bundle em algum cenário de cache HMR.
+ * Largura efetiva: 6.4rem (20% menor que o baseline 8rem do shadcn).
+ * ────────────────────────────────────────────────────────────────────────── */
+[data-testid^="quote-row-menu-"][role="menu"],
+[role="menu"][data-testid^="quote-row-menu-"] {
+  width: 6.4rem !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 1rem) !important;
+}
+[data-testid^="quote-row-menu-"] [role="menuitem"] {
+  white-space: nowrap;
+}
+
