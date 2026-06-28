@@ -307,8 +307,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   }, [enableInnerScroll]);
 
   // Mede a largura real da scrollbar vertical do body para reservar
-  // padding-right equivalente no header — garante alinhamento perfeito
-  // das colunas entre as duas tabelas (header e corpo).
+  // padding-right equivalente no header — garante alinhamento das colunas.
   React.useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
