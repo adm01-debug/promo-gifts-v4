@@ -47,7 +47,19 @@ export const qvType = {
   rowTotal: 'text-sm font-semibold tabular-nums text-foreground',
   /** Conteúdo de card pequeno (Condições Comerciais). */
   cardValue: 'text-xs font-medium text-foreground',
+  /** Título do SheetTitle "Detalhes do Item". */
+  sheetTitle: 'text-sm font-semibold tracking-tight text-foreground',
+  /** Eyebrow das seções do sheet (Preços / Personalização / Observações). */
+  sheetSection:
+    'text-[11px] font-semibold uppercase tracking-wider text-foreground',
+  /** Linha de dado dentro do sheet (label/valor). */
+  sheetRow: 'text-xs tabular-nums',
+  /** Microlabel (faixa, sub-rótulos de coluna). */
+  microLabel: 'text-[10px] uppercase tracking-wide text-muted-foreground',
+  /** Linha de metadados em grade no card de personalização. */
+  techGridItem: 'text-[11px]',
 } as const;
+
 
 export const qvSpacing = {
   /** Padding padrão de células da tabela. */
@@ -64,7 +76,12 @@ export const qvSpacing = {
   termsGrid: 'gap-3',
   /** Ritmo vertical entre blocos do conteúdo do orçamento. */
   sectionStack: 'space-y-5 md:space-y-6',
+  /** Ritmo vertical entre seções dentro do SheetContent. */
+  sheetStack: 'mt-5 space-y-5',
+  /** Padding interno do card de personalização. */
+  techCard: 'space-y-2 rounded-lg border border-border/50 bg-muted/40 p-2.5',
 } as const;
+
 
 export type QvTypeKey = keyof typeof qvType;
 export type QvSpacingKey = keyof typeof qvSpacing;

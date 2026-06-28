@@ -13,6 +13,8 @@ import {
   Wrench,
   TrendingDown,
 } from 'lucide-react';
+import { qvType, qvSpacing } from './quote-view-typography';
+
 
 const QUANTITY_TIERS = [
   { min: 1, max: 9 },
@@ -145,12 +147,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle className="text-left text-sm font-semibold tracking-tight">
-            Detalhes do Item
-          </SheetTitle>
+          <SheetTitle className={`text-left ${qvType.sheetTitle}`}>Detalhes do Item</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-5 space-y-5">
+        <div className={qvSpacing.sheetStack}>
+
           {/* Product Info */}
           <div className="flex items-start gap-2.5">
             {item.product_image_url && (
@@ -184,9 +185,8 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                   {item.color_name ? `-${item.color_name}` : ''}
                 </span>
               )}
-              <p className="text-[13px] font-semibold leading-snug text-foreground">
-                {item.product_name}
-              </p>
+              <p className={`${qvType.productName}`}>{item.product_name}</p>
+
               {!item.product_sku && item.color_name && (
                 <div className="mt-1 flex items-center gap-1.5">
                   {item.color_hex && (
@@ -205,11 +205,12 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
 
           {/* Pricing Summary */}
           <div>
-            <h4 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+            <h4 className={`mb-2.5 flex items-center gap-1.5 ${qvType.sheetSection}`}>
               <DollarSign className="h-3.5 w-3.5 text-primary" />
               Preços
             </h4>
-            <div className="space-y-1.5 text-xs tabular-nums">
+            <div className={`space-y-1.5 ${qvType.sheetRow}`}>
+
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Preço unitário (produto)</span>
                 <span className="font-medium">{fmt(item.unit_price)}</span>
@@ -238,9 +239,10 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 <span className="text-muted-foreground">Quantidade</span>
                 <span className="font-medium">
                   {item.quantity}
-                  <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  <span className={`ml-1.5 ${qvType.microLabel}`}>
                     (faixa {getCurrentTierLabel(item.quantity)} un)
                   </span>
+
                 </span>
               </div>
               <div className="flex justify-between border-t border-border/50 pt-1.5 font-semibold">
@@ -257,10 +259,11 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <>
               <Separator />
               <div>
-                <h4 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                <h4 className={`mb-2.5 flex items-center gap-1.5 ${qvType.sheetSection}`}>
                   <Wrench className="h-3.5 w-3.5 text-primary" />
                   Personalização ({personalizations.length})
                 </h4>
+
                 <div className="space-y-3">
                   {personalizations.map((p, idx) => {
                     const parsed = parseNotesField(p.notes || '');
@@ -276,7 +279,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                         key={`${p.technique_id || p.technique_name}-${idx}`}
                         className="space-y-2"
                       >
-                        <div className="space-y-2 rounded-lg border border-border/50 bg-muted/40 p-2.5">
+                        <div className={qvSpacing.techCard}>
                           {/* Technique */}
                           <div className="flex items-center gap-2">
                             <Badge className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary hover:bg-primary/10">
@@ -284,7 +287,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                             </Badge>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                          <div className={`grid grid-cols-2 gap-1.5 ${qvType.techGridItem}`}>
                             {parsed.location && (
                               <div className="flex items-center gap-1">
                                 <MapPin className="h-3 w-3 text-muted-foreground" />
@@ -334,28 +337,23 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                           <Separator className="my-0.5" />
                           <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
                             <div>
-                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Unitário
-                              </span>
+                              <span className={`block ${qvType.microLabel}`}>Unitário</span>
                               <span className="font-semibold text-foreground">
                                 {fmt(unitRounded)}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Setup
-                              </span>
+                              <span className={`block ${qvType.microLabel}`}>Setup</span>
                               <span className="font-semibold text-foreground">
                                 {fmt(p.setup_cost || 0)}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                                Total
-                              </span>
+                              <span className={`block ${qvType.microLabel}`}>Total</span>
                               <span className="font-semibold text-primary">
                                 {fmt(totalRounded)}
                               </span>
+
                             </div>
                           </div>
                         </div>
@@ -375,10 +373,9 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
             <>
               <Separator />
               <div>
-                <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
-                  Observações
-                </h4>
-                <p className="text-xs leading-relaxed text-muted-foreground">{item.notes}</p>
+                <h4 className={`mb-1.5 ${qvType.sheetSection}`}>Observações</h4>
+                <p className={`leading-relaxed ${qvType.meta}`}>{item.notes}</p>
+
 
               </div>
             </>
