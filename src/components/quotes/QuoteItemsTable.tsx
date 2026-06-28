@@ -111,6 +111,24 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     'text-primary-foreground',
   );
 
+  // IDs estáveis para vincular <td headers> ao <th id> entre as duas tabelas
+  // (header e corpo). Garante que leitores de tela leiam corretamente
+  // "Produto: X / Quantidade: Y" mesmo com thead/tbody em <table>s distintas.
+  const tableUid = React.useId();
+  const colIds = React.useMemo(
+    () => ({
+      produto: `${tableUid}-h-produto`,
+      pers: `${tableUid}-h-pers`,
+      qtd: `${tableUid}-h-qtd`,
+      un: `${tableUid}-h-un`,
+      total: `${tableUid}-h-total`,
+      act: `${tableUid}-h-act`,
+    }),
+    [tableUid],
+  );
+  const headersFor = (key: keyof typeof colIds) => colIds[key];
+
+
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
     const personalizationCost = allPersonalizations.reduce(
