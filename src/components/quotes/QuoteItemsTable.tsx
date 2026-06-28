@@ -414,7 +414,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             <caption className="sr-only">
               Lista de itens do orçamento com quantidade, preço unitário e total.
             </caption>
-            <thead className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
+            <thead ref={theadRef} className={cn(enableInnerScroll && 'sticky top-0 z-10 print:static')}>
               <tr>
                 <th scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
                 {hasPersonalizations && (
