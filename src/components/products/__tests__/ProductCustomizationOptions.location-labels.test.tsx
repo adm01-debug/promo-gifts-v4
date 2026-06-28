@@ -13,9 +13,9 @@ vi.mock('@/hooks/products/useProductCustomizationOptions', () => ({
   useProductCustomizationOptions: () => ({
     data: {
       locations: [
-        { location_code: 'LADO_A', location_name: 'LADO A' },
-        { location_code: 'LADO_B', location_name: 'LADO B' },
-        { location_code: 'CIRCULAR', location_name: 'CIRCULAR' },
+        { location_code: 'LADO_A', location_name: 'LADO A', options: [] },
+        { location_code: 'LADO_B', location_name: 'LADO B', options: [] },
+        { location_code: 'CIRCULAR', location_name: 'CIRCULAR', options: [] },
       ],
       techniques: [],
       sizes: [],
