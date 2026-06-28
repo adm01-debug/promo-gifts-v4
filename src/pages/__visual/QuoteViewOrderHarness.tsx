@@ -213,12 +213,12 @@ export default function QuoteViewOrderHarness() {
           data-testid="quote-content-card"
           className="border-0 bg-transparent shadow-none"
         >
-          <CardContent className="space-y-4 pt-4">
-            <div className="text-sm text-foreground">
+          <CardContent className={cn('pt-4', qvSpacing.sectionStack)}>
+            <div className={qvType.blockTitle}>
               Cliente · Empresa Demonstração LTDA
             </div>
             <Separator />
-            <div className="text-sm text-muted-foreground">
+            <div className={qvType.meta}>
               [conteúdo do orçamento ocultado no harness]
             </div>
           </CardContent>
