@@ -75,7 +75,7 @@ export const qvSpacing = {
   /** Gap do grid de Condições Comerciais. */
   termsGrid: 'gap-3',
   /** Ritmo vertical entre blocos do conteúdo do orçamento. */
-  sectionStack: 'space-y-5 md:space-y-6',
+  sectionStack: 'space-y-3 md:space-y-4',
   /** Ritmo vertical entre seções dentro do SheetContent. */
   sheetStack: 'mt-5 space-y-5',
   /** Padding interno do card de personalização. */
