@@ -242,7 +242,8 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                         marginBottom: '2px',
                       }}
                     >
-                      {item.name}
+                      {/* FIX gap-C (QA): clampa nome a ~2 linhas p/ não estourar ROW_H. */}
+                      {item.name.length > 90 ? `${item.name.slice(0, 90).trimEnd()}…` : item.name}
                     </div>
                     {item.description && (
                       <span
