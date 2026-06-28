@@ -189,3 +189,79 @@ describe('V1 ProductColorSwatches (single-line, sem wrap)', () => {
     expect(screen.queryByTestId('color-swatches-overflow')).toBeNull();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invariante paramétrico — wrap V1: visíveis + ocultas = total para 1..50
+// ─────────────────────────────────────────────────────────────────────────────
+describe('V1 wrap — invariante visíveis + chip = total (1..50)', () => {
+  const MAX = 14;
+  const totals = Array.from({ length: 50 }, (_, i) => i + 1);
+
+  it.each(totals)('total=%i mantém o invariante', (total) => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(total)} max={MAX} wrap hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    const visible = visibleNamesV1().length;
+    const chipEl = screen.queryByTestId('color-swatches-overflow');
+    const hidden = chipEl ? Number((chipEl.textContent ?? '').replace(/\D/g, '')) : 0;
+
+    expect(visible + hidden).toBe(total);
+    // Nunca ultrapassa o limite visual de 2 linhas (max - 1 quando há overflow, ou total)
+    expect(visible).toBeLessThanOrEqual(MAX);
+    // Ordem preservada: primeiras N cores
+    const names = visibleNamesV1();
+    expect(names).toEqual(Array.from({ length: visible }, (_, i) => `cor-${i}`));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Acessibilidade — chip "+N" e swatches têm role/aria corretos
+// ─────────────────────────────────────────────────────────────────────────────
+describe('A11y — chip "+N" e swatches', () => {
+  it('V1: cada swatch tem role="radio" e o container role="radiogroup" com aria-label', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(5)} max={14} wrap hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    const group = screen.getByRole('radiogroup');
+    expect(group.getAttribute('aria-label')).toMatch(/5 cores dispon/i);
+    expect(screen.getAllByRole('radio')).toHaveLength(5);
+  });
+
+  it('V1: chip "+N" expõe aria-label legível ("Mais N cores") com pluralização', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(16)} max={14} wrap hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    const chip = screen.getByTestId('color-swatches-overflow');
+    expect(chip.getAttribute('aria-label')).toBe('Mais 3 cores');
+    expect(chip).toHaveTextContent('+3');
+  });
+
+  it('V1: chip singular usa "Mais 1 cor" (sem "s") — single-line', () => {
+    render(
+      <TooltipProvider>
+        <ProductColorSwatches colors={makeColors(7)} max={6} hideWhenEmpty={false} />
+      </TooltipProvider>,
+    );
+    expect(screen.getByTestId('color-swatches-overflow').getAttribute('aria-label')).toBe('Mais 1 cor');
+  });
+
+  it('V2: cada swatch é button com aria-label = nome da cor', () => {
+    const { container } = render(
+      <ColorSwatchPicker
+        swatches={makeSwatches(5)}
+        activeVariantId={null}
+        onSelect={() => {}}
+        onReset={() => {}}
+      />,
+    );
+    const btns = Array.from(container.querySelectorAll('button[aria-pressed]'));
+    expect(btns).toHaveLength(5);
+    btns.forEach((b, i) => expect(b.getAttribute('aria-label')).toBe(`cor-${i}`));
+  });
+});
