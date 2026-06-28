@@ -37,8 +37,9 @@ for (const vp of VIEWPORTS) {
       .getByTestId('quote-items-table-scroll');
     await expect(scroller).toBeVisible();
 
-    // Wrapper: 4 cantos arredondados.
-    const wrapperRadii = await scroller.evaluate((el) => {
+    // Wrapper: 4 cantos arredondados (tolerância 1px p/ subpixel cross-browser).
+    const MIN_RADIUS_PX = 2;
+    const wrapper = await scroller.evaluate((el) => {
       const cs = getComputedStyle(el);
       return {
         tl: cs.borderTopLeftRadius,
@@ -49,16 +50,23 @@ for (const vp of VIEWPORTS) {
         cw: el.clientWidth,
       };
     });
-    expect(px(wrapperRadii.tl), `wrapper TL @${vp.name}`).toBeGreaterThan(0);
-    expect(px(wrapperRadii.tr), `wrapper TR @${vp.name}`).toBeGreaterThan(0);
-    expect(px(wrapperRadii.bl), `wrapper BL @${vp.name}`).toBeGreaterThan(0);
-    expect(px(wrapperRadii.br), `wrapper BR @${vp.name}`).toBeGreaterThan(0);
+    for (const [corner, value] of Object.entries({
+      tl: wrapper.tl,
+      tr: wrapper.tr,
+      bl: wrapper.bl,
+      br: wrapper.br,
+    })) {
+      expect(
+        px(value),
+        `wrapper ${corner} @${vp.name} = "${value}" (esperado >= ${MIN_RADIUS_PX}px)`,
+      ).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+    }
 
-    // Sem overflow horizontal além do scroll legítimo (tolerância 1px).
+    // Overflow horizontal: tolerância 2px p/ arredondamento de layout em WebKit.
     expect(
-      wrapperRadii.sw,
-      `scrollWidth (${wrapperRadii.sw}) <= clientWidth (${wrapperRadii.cw}) + 1 @${vp.name}`,
-    ).toBeLessThanOrEqual(wrapperRadii.cw + 1);
+      Math.round(wrapper.sw),
+      `scrollWidth (${wrapper.sw}) <= clientWidth (${wrapper.cw}) + 2 @${vp.name}`,
+    ).toBeLessThanOrEqual(Math.round(wrapper.cw) + 2);
 
     // Header: 1ª th com TL>0; última th com TR>0.
     const ths = scroller.locator('thead tr > th');
@@ -68,7 +76,7 @@ for (const vp of VIEWPORTS) {
     const firstTl = await ths.first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
     const lastTr = await ths.nth(count - 1).evaluate((el) => getComputedStyle(el).borderTopRightRadius);
 
-    expect(px(firstTl), `1ª th TL @${vp.name}`).toBeGreaterThan(0);
-    expect(px(lastTr), `última th TR @${vp.name}`).toBeGreaterThan(0);
+    expect(px(firstTl), `1ª th TL @${vp.name} = "${firstTl}"`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
+    expect(px(lastTr), `última th TR @${vp.name} = "${lastTr}"`).toBeGreaterThanOrEqual(MIN_RADIUS_PX);
   });
 }

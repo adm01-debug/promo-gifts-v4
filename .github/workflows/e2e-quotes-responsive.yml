@@ -9,17 +9,21 @@ on:
     branches: [main]
     paths:
       - 'src/components/quotes/QuotesConfigurableList.tsx'
+      - 'src/components/quotes/QuoteItemsTable.tsx'
       - 'src/lib/quotes/quotesLayout.ts'
       - 'e2e/helpers/quotes-layout.ts'
       - 'e2e/routes/quotes/quote-list-responsive.spec.ts'
+      - 'e2e/quotes/quote-items-table-header-radius.spec.ts'
       - '.github/workflows/e2e-quotes-responsive.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/components/quotes/QuotesConfigurableList.tsx'
+      - 'src/components/quotes/QuoteItemsTable.tsx'
       - 'src/lib/quotes/quotesLayout.ts'
       - 'e2e/helpers/quotes-layout.ts'
       - 'e2e/routes/quotes/quote-list-responsive.spec.ts'
+      - 'e2e/quotes/quote-items-table-header-radius.spec.ts'
       - '.github/workflows/e2e-quotes-responsive.yml'
   workflow_dispatch:
 
@@ -57,6 +61,11 @@ jobs:
         run: |
           npx playwright test e2e/routes/quotes/quote-list-responsive.spec.ts \
             --grep "${{ matrix.viewport }}|mirror E2E|desktop mostra mais"
+
+      - name: Run header-radius spec (${{ matrix.viewport }})
+        run: |
+          npx playwright test e2e/quotes/quote-items-table-header-radius.spec.ts \
+            --grep "\[${{ matrix.viewport }}\]"
 
       - name: Upload report + snapshots
         if: always()
