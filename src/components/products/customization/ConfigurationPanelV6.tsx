@@ -324,55 +324,53 @@ export function ConfigurationPanelV6({
           </div>
         )}
 
-        {/* Price result — denso (2 linhas + total destacado) */}
+        {/* Price result — "fichinha": label à esquerda, valores tabulares à direita */}
         {price && !loading && (
-          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/[0.04] p-3">
-            <div className="flex items-center justify-between gap-2">
+          <div
+            className="space-y-1.5 rounded-md border border-primary/20 bg-primary/[0.04] p-2.5"
+            aria-live="polite"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-1.5">
               <div className="flex min-w-0 items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="truncate text-[12px] font-medium text-foreground">
+                <Check className="h-3 w-3 shrink-0 text-primary" aria-hidden />
+                <span className="truncate text-[11px] font-medium text-foreground">
                   {price.nome_tabela}
                 </span>
               </div>
               <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-                {price.quantidade} pç · faixa {price.faixa?.qtd_min}–{price.faixa?.qtd_max}
+                {price.quantidade} pç
                 {technique.usa_dimensao && larguraNum > 0 && alturaNum > 0 && (
                   <> · {larguraNum}×{alturaNum}cm</>
                 )}
-                {(price.num_cores ?? 0) > 1 && <> · {price.num_cores} cores</>}
+                {(price.num_cores ?? 0) > 1 && <> · {price.num_cores}c</>}
               </span>
             </div>
 
-            <div className="flex items-end justify-between gap-3 border-t border-border/40 pt-2">
-              <div className="space-y-0.5">
-                <div className="flex items-baseline gap-1.5 text-[11px] text-muted-foreground">
-                  <span>unitário</span>
-                  <span className="font-medium tabular-nums text-foreground">
-                    R$ {(price.preco_unitario ?? 0).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1.5 text-[11px] text-muted-foreground">
-                  <span>gravação + setup</span>
-                  <span className="font-medium tabular-nums text-foreground">
-                    R${' '}
-                    {(
-                      (price.valor_gravacao ?? 0) + (price.setup_total ?? 0)
-                    ).toFixed(2)}
-                  </span>
-                </div>
+            <dl className="space-y-1 text-[11px]">
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">Preço unitário</dt>
+                <dd className="font-medium tabular-nums text-foreground">
+                  R$ {(price.preco_unitario ?? 0).toFixed(2)}
+                </dd>
               </div>
-              <div className="text-right">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">Setup + gravação</dt>
+                <dd className="font-medium tabular-nums text-foreground">
+                  R$ {((price.valor_gravacao ?? 0) + (price.setup_total ?? 0)).toFixed(2)}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
+                <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Total
-                </div>
-                <div
-                  className="text-[18px] font-semibold tabular-nums text-primary"
+                </dt>
+                <dd
+                  className="text-[15px] font-semibold tabular-nums text-primary"
                   data-testid="customization-total-price"
                 >
                   R$ {(price.total_cobrado ?? 0).toFixed(2)}
-                </div>
+                </dd>
               </div>
-            </div>
+            </dl>
           </div>
         )}
 
