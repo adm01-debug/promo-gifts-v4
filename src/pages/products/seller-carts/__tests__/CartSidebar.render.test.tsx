@@ -77,13 +77,18 @@ function renderSidebar() {
 }
 
 describe('CartSidebar — render smoke pós-faxina', () => {
-  it('monta sem dependências removidas e mostra hero pricing + CTA', () => {
+  it('monta sem dependências removidas e mostra hero pricing + CTA com data-loaded=true', () => {
     renderSidebar();
 
+    const hero = screen.getByTestId('cart-sidebar-hero');
+    expect(hero).toBeInTheDocument();
+    // Sinal de "renderizado" consumido pelo waitForFunction do spec E2E.
+    expect(hero).toHaveAttribute('data-loaded', 'true');
     expect(screen.getByText(/Subtotal do carrinho/i)).toBeInTheDocument();
     expect(screen.getByTestId('cart-checkout-cta')).toBeInTheDocument();
     expect(screen.getByText(/Gerar Orçamento/i)).toBeInTheDocument();
   });
+
 
   it('NÃO renderiza painéis legados (Saúde do carrinho / Inteligência de vendas / Histórico de ações / Sugestões inteligentes)', () => {
     const { container } = renderSidebar();
