@@ -122,6 +122,13 @@ export function AppRoutes() {
         {QuoteViewOrderHarness && (
           <Route path="/__visual/quote-view-order" element={<QuoteViewOrderHarness />} />
         )}
+        {QuoteItemsListMobileHarness && (
+          <Route
+            path="/__visual/quote-items-list-mobile"
+            element={<QuoteItemsListMobileHarness />}
+          />
+        )}
+
 
 
         <Route element={<ProtectedRoute />}>
