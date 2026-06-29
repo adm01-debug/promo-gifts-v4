@@ -3,10 +3,10 @@
  * These pages are too deeply interconnected for render tests in jsdom,
  * so we test their utility logic and data transformations.
  *
- * FIX 2026-06-23: CartStatus e getStatusColor atualizados para os valores
- * reais de produção: 'novo' | 'em_negociacao' | 'pronto_orcamento'.
- * Os valores antigos ('rascunho', 'aberto', 'enviado', 'aprovado', 'cancelado')
- * eram de uma iteração anterior que nunca chegou a produção.
+ * FIX 2026-06-29: ciclo de vida do carrinho reduzido para 2 estados
+ * (espelha STATUS_CONFIG + CartStatus + a constraint chk_sc_status do banco):
+ *   'em_separacao' (default) | 'pronto_orcamento'.
+ * Os valores antigos 'novo' e 'em_negociacao' foram colapsados em 'em_separacao'.
  */
 import { describe, it, expect } from "vitest";
 
@@ -24,16 +24,15 @@ function formatCNPJ(cnpj: string): string {
  *   src/hooks/products/useSellerCarts.ts  (export type CartStatus)
  *   src/components/cart/CartUtilComponents.tsx (STATUS_CONFIG)
  */
-type CartStatus = "novo" | "em_negociacao" | "pronto_orcamento";
+type CartStatus = "em_separacao" | "pronto_orcamento";
 
 const STATUS_COLORS: Record<CartStatus, string> = {
-  novo: "bg-primary/10 text-primary border-primary/20",
-  em_negociacao: "bg-warning/10 text-warning border-warning/20",
+  em_separacao: "bg-warning/10 text-warning border-warning/20",
   pronto_orcamento: "bg-success/10 text-success border-success/20",
 };
 
 function getStatusColor(status: CartStatus): string {
-  return STATUS_COLORS[status] ?? STATUS_COLORS.novo;
+  return STATUS_COLORS[status] ?? STATUS_COLORS.em_separacao;
 }
 
 function calculateCartTotal(items: Array<{ quantity: number; product_price: number }>): number {
@@ -64,12 +63,8 @@ describe("Page Utilities - SellerCartsPage", () => {
     expect(calculateCartTotal([])).toBe(0);
   });
 
-  it("returns correct color for 'novo'", () => {
-    expect(getStatusColor("novo")).toBe("bg-primary/10 text-primary border-primary/20");
-  });
-
-  it("returns correct color for 'em_negociacao'", () => {
-    expect(getStatusColor("em_negociacao")).toBe("bg-warning/10 text-warning border-warning/20");
+  it("returns correct color for 'em_separacao'", () => {
+    expect(getStatusColor("em_separacao")).toBe("bg-warning/10 text-warning border-warning/20");
   });
 
   it("returns correct color for 'pronto_orcamento'", () => {
@@ -77,7 +72,7 @@ describe("Page Utilities - SellerCartsPage", () => {
   });
 
   it("STATUS_COLORS cobre todos os valores de CartStatus sem fallback", () => {
-    const statuses: CartStatus[] = ["novo", "em_negociacao", "pronto_orcamento"];
+    const statuses: CartStatus[] = ["em_separacao", "pronto_orcamento"];
     for (const s of statuses) {
       expect(STATUS_COLORS[s]).toBeDefined();
       expect(getStatusColor(s)).toBe(STATUS_COLORS[s]);

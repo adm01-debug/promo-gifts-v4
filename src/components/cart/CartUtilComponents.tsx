@@ -38,8 +38,10 @@ export function formatCurrency(value: number) {
 }
 
 export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }> = {
-  novo: { label: 'Novo', color: 'bg-primary/10 text-primary border-primary/20' },
-  em_negociacao: { label: 'Em negociação', color: 'bg-warning/10 text-warning border-warning/20' },
+  em_separacao: {
+    label: 'Em separação',
+    color: 'bg-warning/10 text-warning border-warning/20',
+  },
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
     color: 'bg-success/10 text-success border-success/20',
@@ -47,7 +49,7 @@ export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }>
 };
 
 export function getStatusCfg(status: string | null | undefined) {
-  return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.novo;
+  return STATUS_CONFIG[status as CartStatus] || STATUS_CONFIG.em_separacao;
 }
 
 // ============================================

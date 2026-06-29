@@ -35,8 +35,8 @@ type Row = {
 const ops: Array<{ kind: string; [k: string]: unknown }> = [];
 let itemsTable: Row[] = [];
 const cartsTable = [
-  { id: 'cart-A', seller_id: 'seller-1', company_id: 'co', company_name: 'A', company_location: null, company_logo_url: null, notes: null, status: 'novo', created_at: '', updated_at: '' },
-  { id: 'cart-B', seller_id: 'seller-1', company_id: 'co', company_name: 'B', company_location: null, company_logo_url: null, notes: null, status: 'novo', created_at: '', updated_at: '' },
+  { id: 'cart-A', seller_id: 'seller-1', company_id: 'co', company_name: 'A', company_location: null, company_logo_url: null, notes: null, status: 'em_separacao', created_at: '', updated_at: '' },
+  { id: 'cart-B', seller_id: 'seller-1', company_id: 'co', company_name: 'B', company_location: null, company_logo_url: null, notes: null, status: 'em_separacao', created_at: '', updated_at: '' },
 ];
 
 function makeBuilder(table: string) {

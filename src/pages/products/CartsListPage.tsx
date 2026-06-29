@@ -84,12 +84,11 @@ function CartsListContent() {
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
       all: carts.length,
-      novo: 0,
-      em_negociacao: 0,
+      em_separacao: 0,
       pronto_orcamento: 0,
     };
     for (const c of carts) {
-      const k = (c.status ?? 'novo') as CartStatus;
+      const k = (c.status ?? 'em_separacao') as CartStatus;
       if (counts[k] !== undefined) counts[k] += 1;
     }
     return counts;
@@ -98,7 +97,7 @@ function CartsListContent() {
   const filteredCarts = useMemo(() => {
     const q = fold(query.trim());
     let out = carts.filter((c) => {
-      const matchesStatus = statusFilter === 'all' || (c.status ?? 'novo') === statusFilter;
+      const matchesStatus = statusFilter === 'all' || (c.status ?? 'em_separacao') === statusFilter;
       if (!matchesStatus) return false;
       if (!q) return true;
       return fold(c.company_name ?? '').includes(q) || fold(c.company_location ?? '').includes(q);

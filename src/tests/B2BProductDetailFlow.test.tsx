@@ -29,7 +29,7 @@ vi.mock('@/contexts/SellerCartContext', () => ({
   useSellerCartContext: () => ({
     activeCart: { id: 'cart-1', company_name: 'Empresa Teste', items: [] },
     activeCartId: 'cart-1',
-    carts: [{ id: 'cart-1', company_name: 'Empresa Teste', items: [], status: 'novo' }],
+    carts: [{ id: 'cart-1', company_name: 'Empresa Teste', items: [], status: 'em_separacao' }],
     addToActiveCart: mockAddToActiveCart,
     canCreateCart: true,
     isLoading: false,
