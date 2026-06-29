@@ -170,8 +170,9 @@ export function CartTabsRich({
                 {cart.items.length}
               </span>
             </button>
-
+          );
         })}
+
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-2 pb-2 pr-1">
