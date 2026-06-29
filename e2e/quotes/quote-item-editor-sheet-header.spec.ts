@@ -17,6 +17,7 @@ const VIEWPORTS = [
   { name: '320', width: 320, height: 720 },
   { name: '375', width: 375, height: 800 },
   { name: '768', width: 768, height: 1024 },
+  { name: '1024', width: 1024, height: 900 },
 ] as const;
 
 for (const vp of VIEWPORTS) {
@@ -123,6 +124,25 @@ for (const vp of VIEWPORTS) {
         `quote-item-editor-sheet-body-${vp.name}.png`,
         { maxDiffPixelRatio: 0.02 },
       );
+    });
+
+    test('layout: conteúdo preenche o sheet (sem rodapé vazio > 32px)', async ({ page }) => {
+      const dialog = page.getByRole('dialog');
+      const gap = await dialog.evaluate((root) => {
+        const r = root.getBoundingClientRect();
+        const focusables = Array.from(
+          root.querySelectorAll<HTMLElement>('*'),
+        ).filter((el) => {
+          const b = el.getBoundingClientRect();
+          return b.width > 0 && b.height > 0 && b.bottom <= r.bottom + 1;
+        });
+        const maxBottom = focusables.reduce(
+          (acc, el) => Math.max(acc, el.getBoundingClientRect().bottom),
+          r.top,
+        );
+        return r.bottom - maxBottom;
+      });
+      expect(gap, `rodapé vazio detectado: ${gap}px`).toBeLessThanOrEqual(32);
     });
   });
 }
