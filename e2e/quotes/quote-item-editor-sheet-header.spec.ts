@@ -154,5 +154,53 @@ for (const vp of VIEWPORTS) {
       });
       expect(gap, `rodapé vazio detectado: ${gap}px`).toBeLessThanOrEqual(vp.maxGap);
     });
+
+    test('a11y: "Salvar" expõe aria-label, title e ícone decorativo', async ({ page }) => {
+      const btn = page.getByTestId('quote-save-item-button-sheet');
+      await expect(btn).toBeVisible();
+      const aria = await btn.getAttribute('aria-label');
+      expect(aria, 'aria-label deve conter "Salvar"').toMatch(/Salvar/i);
+      const title = await btn.getAttribute('title');
+      expect(title, 'title deve conter "Salvar"').toMatch(/Salvar/i);
+      const iconAriaHidden = await btn.locator('svg').first().getAttribute('aria-hidden');
+      expect(iconAriaHidden).toBe('true');
+    });
+
+    test('estado: sem item ativo, "Salvar" fica desabilitado e anuncia indisponibilidade', async ({ page }) => {
+      // Harness default (sem ?withItem=1) → item=null → Salvar desabilitado.
+      const btn = page.getByTestId('quote-save-item-button-sheet');
+      await expect(btn).toBeDisabled();
+      await expect(btn).toHaveAttribute('aria-disabled', 'true');
+      const aria = await btn.getAttribute('aria-label');
+      expect(aria).toMatch(/indispon[ií]vel|nenhum item/i);
+    });
+  });
+
+  test.describe(`QuoteItemEditorSheet @ ${vp.name}px (com item ativo)`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await gotoAndSettle(page, `${ROUTE}?withItem=1&longContent=1`);
+      await page.getByTestId('open-editor-sheet').click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+    });
+
+    test('Salvar: habilitado, fecha o sheet e mantém estado fora dele', async ({ page }) => {
+      const btn = page.getByTestId('quote-save-item-button-sheet');
+      await expect(btn).toBeEnabled();
+      await expect(btn).toHaveAttribute('aria-disabled', 'false');
+      await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '1');
+
+      await btn.click();
+
+      // Sheet fecha → dialog desmonta → estado externo reflete o fechamento.
+      await expect(page.getByRole('dialog')).toBeHidden();
+      await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '0');
+
+      // Reabrir mostra o mesmo item persistido (escolhas preservadas no harness).
+      await page.getByTestId('open-editor-sheet').click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(btn).toBeEnabled();
+    });
   });
 }
+
