@@ -23,6 +23,10 @@ const PreviewButtonHarness = import.meta.env.DEV
 const QuoteViewOrderHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/QuoteViewOrderHarness'))
   : null;
+const QuoteItemsListMobileHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemsListMobileHarness'))
+  : null;
+
 
 
 // NProgress configuration
@@ -118,6 +122,13 @@ export function AppRoutes() {
         {QuoteViewOrderHarness && (
           <Route path="/__visual/quote-view-order" element={<QuoteViewOrderHarness />} />
         )}
+        {QuoteItemsListMobileHarness && (
+          <Route
+            path="/__visual/quote-items-list-mobile"
+            element={<QuoteItemsListMobileHarness />}
+          />
+        )}
+
 
 
         <Route element={<ProtectedRoute />}>

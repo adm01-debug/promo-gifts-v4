@@ -173,13 +173,19 @@ function QuoteItemRow({
           </div>
 
           {/* Inputs Row — single line, compact on mobile */}
-          <div className="mt-2 flex flex-nowrap items-center gap-x-2">
+          <div
+            className="mt-2 flex flex-nowrap items-center gap-x-2"
+            data-testid="quote-item-inputs-row"
+          >
             <div className="flex min-w-0 items-center gap-1">
-              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Qtd</span>
+              <span className="hidden whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground min-[360px]:inline">
+                Qtd
+              </span>
               <Input
                 type="number"
                 min={1}
                 inputMode="numeric"
+                aria-label="Quantidade"
                 value={qtyDraft}
                 onFocus={(e) => e.currentTarget.select()}
                 onKeyDown={(e) => {
@@ -205,16 +211,21 @@ function QuoteItemRow({
                     onUpdateQuantity(v);
                   }
                 }}
-                className="h-7 w-12 px-1.5 text-xs tabular-nums sm:w-14"
+                data-testid="quote-item-qty-input"
+                className="h-7 w-11 px-1 text-xs tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
               />
             </div>
             <div className="flex min-w-0 items-center gap-1">
-              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Preço</span>
+              <span className="hidden whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground min-[360px]:inline">
+                Preço
+              </span>
               <div className="flex items-center gap-1">
                 <CurrencyInput
                   value={item.unit_price}
                   onChange={(n) => onUpdatePrice(n)}
-                  className="h-7 w-20 px-1.5 text-xs tabular-nums sm:w-24"
+                  aria-label="Preço unitário"
+                  data-testid="quote-item-price-input"
+                  className="h-7 w-[72px] px-1 text-xs tabular-nums min-[360px]:w-20 min-[360px]:px-1.5 sm:w-24"
                 />
                 <span className="hidden sm:inline-flex">
                   <PriceFreshnessBadge
@@ -227,11 +238,19 @@ function QuoteItemRow({
                 </span>
               </div>
             </div>
-            <div className="ml-auto flex min-w-0 flex-col items-end leading-tight">
-              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</span>
-              <span className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</span>
+            <div
+              className="ml-auto flex min-w-0 flex-col items-end leading-tight"
+              data-testid="quote-item-subtotal"
+            >
+              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+                Subtotal
+              </span>
+              <span className="whitespace-nowrap text-xs font-semibold tabular-nums min-[360px]:text-sm">
+                {formatCurrency(itemTotal)}
+              </span>
             </div>
           </div>
+
 
 
 
