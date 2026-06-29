@@ -125,5 +125,24 @@ for (const vp of VIEWPORTS) {
         { maxDiffPixelRatio: 0.02 },
       );
     });
+
+    test('layout: conteúdo preenche o sheet (sem rodapé vazio > 32px)', async ({ page }) => {
+      const dialog = page.getByRole('dialog');
+      const gap = await dialog.evaluate((root) => {
+        const r = root.getBoundingClientRect();
+        const focusables = Array.from(
+          root.querySelectorAll<HTMLElement>('*'),
+        ).filter((el) => {
+          const b = el.getBoundingClientRect();
+          return b.width > 0 && b.height > 0 && b.bottom <= r.bottom + 1;
+        });
+        const maxBottom = focusables.reduce(
+          (acc, el) => Math.max(acc, el.getBoundingClientRect().bottom),
+          r.top,
+        );
+        return r.bottom - maxBottom;
+      });
+      expect(gap, `rodapé vazio detectado: ${gap}px`).toBeLessThanOrEqual(32);
+    });
   });
 }
