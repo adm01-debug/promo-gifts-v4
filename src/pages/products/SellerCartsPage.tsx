@@ -2,7 +2,7 @@
  * SellerCartsPage - Workspace de carrinhos do vendedor (Onda Excelência UX).
  * - Header compactado (Carrinhos · X · Y · R$ Z)
  * - Picker em Dialog (Recentes/Favoritas/Todas)
- * - Tabs ricas (status dot, contador colorido, indicador follow-up, +novo)
+ * - Tabs ricas (status dot, contador colorido, +novo)
  * - Cart header fundido (status como toggle segmentado óbvio)
  * - Empty state inteligente (template / duplicar / catálogo)
  * - Notas sempre visíveis (textarea inline com debounce)
