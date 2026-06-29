@@ -96,6 +96,7 @@ export function QuoteProductCustomization({
       <ProductCustomizationOptions
         productId={productId}
         quantity={quantity}
+        layout={layout}
         initialPersonalizations={existingPersonalizations.map((p) => ({
           locationCode: p.location_code || '',
           locationName: p.location_name || '',
