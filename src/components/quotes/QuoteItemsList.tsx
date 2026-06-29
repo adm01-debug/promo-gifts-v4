@@ -125,7 +125,9 @@ function QuoteItemRow({
                     {hasPersonalizations && (
                       <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
                         <Palette className="h-2.5 w-2.5" />
-                        {item.personalizations?.length} gravação(ões)
+                        {item.personalizations?.length === 1
+                          ? '1 gravação'
+                          : `${item.personalizations?.length} gravações`}
                       </Badge>
                     )}
                   </div>
@@ -164,9 +166,10 @@ function QuoteItemRow({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="h-7 w-7 shrink-0 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/40"
                   onClick={onRemove}
-                  aria-label="Excluir"
+                  aria-label={`Remover ${item.product_name}`}
+                  title={`Remover ${item.product_name}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -218,7 +221,7 @@ function QuoteItemRow({
               />
             </div>
 
-            <div className="flex min-w-0 flex-col items-end leading-tight">
+            <div className="flex min-w-0 flex-col items-end border-l border-border/40 pl-2 leading-tight">
               <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Vl Unitário
               </span>
@@ -246,7 +249,7 @@ function QuoteItemRow({
               </div>
             </div>
             <div
-              className="ml-auto flex min-w-0 flex-col items-end leading-tight"
+              className="ml-auto flex min-w-0 flex-col items-end border-l border-border/40 pl-2 leading-tight"
               data-testid="quote-item-subtotal"
             >
               <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
