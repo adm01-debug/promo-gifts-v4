@@ -166,9 +166,10 @@ function QuoteItemRow({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="h-7 w-7 shrink-0 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/40"
                   onClick={onRemove}
-                  aria-label="Excluir"
+                  aria-label={`Remover ${item.product_name}`}
+                  title={`Remover ${item.product_name}`}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
