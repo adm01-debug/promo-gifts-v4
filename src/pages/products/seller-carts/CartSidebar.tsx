@@ -184,37 +184,8 @@ export function CartSidebar({
         />
       </Card>
 
-      {/* Health Checklist (substitui o Score) */}
-      <CartHealthChecklist
-        cart={cart}
-        cartSubtotal={cartSubtotal}
-        onFocusNotes={onFocusNotes}
-        onAddProducts={() => onNavigate('/produtos')}
-        defaultOpen={isXl}
-      />
 
-      {/* Insights compactos */}
-      <Card className="border-border/30 p-4 shadow-sm">
-        <Collapsible open={intelOpen} onOpenChange={setIntelOpen} className="space-y-3">
-          <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
-            <span className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
-              <Sparkles aria-hidden="true" className="h-3.5 w-3.5 fill-warning/20 text-warning" />
-              Inteligência de vendas
-            </span>
-            <ChevronDown
-              aria-hidden="true"
-              className={cn(
-                'h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
-                intelOpen && 'rotate-180',
-              )}
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-3">
-            <SmartSuggestions cart={cart} allProducts={allProducts} isLoading={isLoadingProducts} />
-            <ActionHistoryPanel cartId={cart.id} />
-          </CollapsibleContent>
-        </Collapsible>
-      </Card>
+
 
       {/* Save Template (controlled) */}
       <Dialog
