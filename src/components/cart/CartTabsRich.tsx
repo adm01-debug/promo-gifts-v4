@@ -1,16 +1,14 @@
 /**
- * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente,
- * indicador de follow-up e botão "+" para criar novo.
+ * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente
+ * e botão "+" para criar novo.
  */
 import { useRef, useCallback, useState } from 'react';
 import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { type SellerCart } from '@/hooks/products';
-import { Building2, Plus, Clock, Info } from 'lucide-react';
+import { Building2, Plus, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { differenceInDays } from 'date-fns';
 import { getStatusCfg } from '@/components/cart/CartUtilComponents';
 import { Skeleton } from '@/components/ui/skeleton';
-import { m as motion } from 'framer-motion';
 import { MAX_SELLER_CARTS, SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
 import {
   Dialog,
@@ -96,10 +94,8 @@ export function CartTabsRich({
         {carts.map((cart) => {
           const isActive = cart.id === activeCartId;
           const statusCfg = getStatusCfg(cart.status);
-          const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
-          const needsFollowUp =
-            ageDays >= 3 && cart.items.length > 0 && cart.status !== 'pronto_orcamento';
           const hasItems = cart.items.length > 0;
+
           return (
             <button
               key={cart.id}
@@ -173,20 +169,10 @@ export function CartTabsRich({
               >
                 {cart.items.length}
               </span>
-              {needsFollowUp && (
-                <motion.span
-                  data-testid="cart-tab-followup"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
-                  title={`Follow-up sugerido — criado há ${ageDays} dias`}
-                >
-                  <Clock aria-hidden="true" className="h-3 w-3" />
-                </motion.span>
-              )}
             </button>
           );
         })}
+
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-2 pb-2 pr-1">
