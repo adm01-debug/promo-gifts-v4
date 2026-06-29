@@ -396,8 +396,11 @@ export function ProductCustomizationOptions({
                     disabled={isDisabled}
                     onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
                     className={cn(
-                      'group relative flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-center transition-all md:h-11 md:px-3',
+                      'group relative flex w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-center transition-all',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      stacked
+                        ? 'h-8 md:h-8 md:px-2'
+                        : 'h-10 md:h-11 md:px-3',
                       isDisabled
                         ? 'cursor-not-allowed border-border bg-muted/30 opacity-40'
                         : isActive
@@ -405,7 +408,12 @@ export function ProductCustomizationOptions({
                           : 'border-border bg-transparent text-foreground hover:border-primary/40 hover:bg-primary/5',
                     )}
                   >
-                    <span className="truncate text-[10px] font-semibold uppercase tracking-wide md:text-xs">
+                    <span
+                      className={cn(
+                        'truncate font-semibold uppercase tracking-wide',
+                        stacked ? 'text-[10px]' : 'text-[10px] md:text-xs',
+                      )}
+                    >
                       {isCircular ? 'CIRCULAR 360°' : loc.location_name}
                     </span>
                     {hasPrice && <span className="text-[10px] font-bold text-primary">✓</span>}
