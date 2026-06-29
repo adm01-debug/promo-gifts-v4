@@ -17,6 +17,7 @@ const VIEWPORTS = [
   { name: '320', width: 320, height: 720 },
   { name: '375', width: 375, height: 800 },
   { name: '768', width: 768, height: 1024 },
+  { name: '1024', width: 1024, height: 900 },
 ] as const;
 
 for (const vp of VIEWPORTS) {
