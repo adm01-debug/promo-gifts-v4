@@ -224,32 +224,6 @@ export function ProductCustomizationOptions({
 
   const showGroupHeaders = groupedSummary.length > 1;
 
-  const renderItem = (item: PersonalizationItem) => (
-    <div
-      key={item.locationCode}
-      className="flex items-center justify-between gap-3 px-3 py-2"
-    >
-      <div className="flex min-w-0 items-baseline gap-2">
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
-          {item.locationName}
-        </span>
-        <span className="truncate text-[12px] font-medium text-foreground">
-          {item.techniqueName}
-        </span>
-        <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
-          {item.width && item.height && <>· {item.width}×{item.height}cm </>}
-          · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
-        </span>
-      </div>
-      <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
-        {item.price?.total_cobrado?.toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-        })}
-      </span>
-    </div>
-  );
-
   const summary = pricesRef.current.size > 0 && (
     <section
       role="region"
@@ -283,7 +257,31 @@ export function ProductCustomizationOptions({
               </p>
             )}
             <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
-              {group.items.map(renderItem)}
+              {group.items.map((item) => (
+                <div
+                  key={item.locationCode}
+                  className="flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
+                      {item.locationName}
+                    </span>
+                    <span className="truncate text-[12px] font-medium text-foreground">
+                      {item.techniqueName}
+                    </span>
+                    <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
+                      {item.width && item.height && <>· {item.width}×{item.height}cm </>}
+                      · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
+                    </span>
+                  </div>
+                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
+                    {item.price?.total_cobrado?.toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         ))}
