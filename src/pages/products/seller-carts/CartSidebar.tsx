@@ -25,7 +25,14 @@ import {
 } from '@/components/cart/CartUtilComponents';
 import { CartHealthChecklist } from '@/components/cart/CartHealthChecklist';
 import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
-import { ArrowRight, Weight, Box, Sparkles, Trash2, Package } from 'lucide-react';
+import { ArrowRight, Weight, Box, Sparkles, Trash2, Package, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { useMediaQuery } from '@/hooks/ui/useMediaQuery';
 import { m as motion } from 'framer-motion';
 import type { UseMutationResult } from '@tanstack/react-query';
 
@@ -82,6 +89,10 @@ export function CartSidebar({
   const [loadOpen, setLoadOpen] = useState(false);
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
+
+  // Paineis colapsaveis: abertos no desktop (xl), recolhidos no tablet.
+  const isXl = useMediaQuery('(min-width: 1280px)');
+  const [intelOpen, setIntelOpen] = useState(isXl);
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
@@ -179,16 +190,31 @@ export function CartSidebar({
         cartSubtotal={cartSubtotal}
         onFocusNotes={onFocusNotes}
         onAddProducts={() => onNavigate('/produtos')}
+        defaultOpen={isXl}
       />
 
       {/* Insights compactos */}
-      <Card className="space-y-3 border-border/30 p-4 shadow-sm">
-        <h4 className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
-          <Sparkles aria-hidden="true" className="h-3.5 w-3.5 fill-warning/20 text-warning" />{' '}
-          Inteligência de vendas
-        </h4>
-        <SmartSuggestions cart={cart} allProducts={allProducts} isLoading={isLoadingProducts} />
-        <ActionHistoryPanel cartId={cart.id} />      </Card>
+      <Card className="border-border/30 p-4 shadow-sm">
+        <Collapsible open={intelOpen} onOpenChange={setIntelOpen} className="space-y-3">
+          <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
+            <span className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+              <Sparkles aria-hidden="true" className="h-3.5 w-3.5 fill-warning/20 text-warning" />
+              Inteligência de vendas
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={cn(
+                'h-3.5 w-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
+                intelOpen && 'rotate-180',
+              )}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3">
+            <SmartSuggestions cart={cart} allProducts={allProducts} isLoading={isLoadingProducts} />
+            <ActionHistoryPanel cartId={cart.id} />
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       {/* Save Template (controlled) */}
       <Dialog
