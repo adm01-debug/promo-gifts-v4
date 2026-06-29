@@ -1,5 +1,5 @@
 /**
- * Cart utility components: Skeletons, FollowUpTimer, Suggestions, History, and re-exports
+ * Cart utility components: Skeletons, Suggestions, History, and re-exports
  *
  * Dialogs, export utils, and mobile sheet extracted to ./cart-utils/
  */
@@ -16,7 +16,6 @@ import {
   Copy,
   Eraser,
   FileText,
-  Timer,
   Sparkles,
   TrendingUp,
   Lightbulb,
@@ -26,7 +25,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { type SellerCart, type CartStatus } from '@/hooks/products';
-import { differenceInDays, differenceInHours, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // ============================================
