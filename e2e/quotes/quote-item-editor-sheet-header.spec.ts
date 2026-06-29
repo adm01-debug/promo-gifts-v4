@@ -143,7 +143,7 @@ for (const vp of VIEWPORTS) {
         );
         return r.bottom - maxBottom;
       });
-      expect(gap, `rodapé vazio detectado: ${gap}px`).toBeLessThanOrEqual(32);
+      expect(gap, `rodapé vazio detectado: ${gap}px`).toBeLessThanOrEqual(vp.maxGap);
     });
   });
 }
