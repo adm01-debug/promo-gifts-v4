@@ -17,6 +17,7 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { ProductThumb } from './ProductThumb';
 import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import { showUndoToast } from '@/utils/undoToast';
 
 import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 
@@ -25,6 +26,7 @@ interface QuoteItemsListProps {
   onUpdateQuantity: (index: number, quantity: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
+  onRestore?: (item: QuoteItem, index: number) => void;
   onTogglePersonalization?: (index: number) => void;
   onConfirmPrice?: (index: number) => void;
   expandedItems?: Set<number>;
@@ -117,9 +119,9 @@ function QuoteItemRow({
                 <div className="min-w-0 flex-1 space-y-1">
                   {/* 1) SKU + gravações */}
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge variant="outline" className="h-6 border-border/70 bg-muted/40 px-2 font-mono text-[12px] font-semibold tracking-tight text-foreground">
+                    <span className="font-mono text-[11px] font-medium uppercase tracking-tight text-muted-foreground">
                       {item.product_sku}
-                    </Badge>
+                    </span>
                     {hasPersonalizations && (
                       <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
                         <Palette className="h-2.5 w-2.5" />
@@ -227,7 +229,7 @@ function QuoteItemRow({
                   aria-readonly="true"
                   aria-label={`Valor unitário (somente leitura, não editável): ${formatCurrency(item.unit_price)}`}
                   title="Preço definido pelo catálogo — somente leitura, não editável aqui"
-                  className="whitespace-nowrap cursor-not-allowed select-none text-xs font-semibold tabular-nums min-[360px]:text-sm"
+                  className="whitespace-nowrap cursor-not-allowed select-none text-xs font-semibold tabular-nums text-muted-foreground min-[360px]:text-sm"
                 >
                   {formatCurrency(item.unit_price)}
                 </span>
@@ -250,7 +252,7 @@ function QuoteItemRow({
               <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Subtotal
               </span>
-              <span className="whitespace-nowrap text-xs font-semibold tabular-nums min-[360px]:text-sm">
+              <span className="whitespace-nowrap text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
                 {formatCurrency(itemTotal)}
               </span>
             </div>
@@ -279,12 +281,25 @@ export function QuoteItemsList({
   onUpdateQuantity,
   onUpdatePrice,
   onRemove,
+  onRestore,
   onTogglePersonalization,
   onConfirmPrice,
   expandedItems = new Set(),
   renderPersonalization,
   formatCurrency,
 }: QuoteItemsListProps) {
+  const handleRemove = (index: number) => {
+    const removed = items[index];
+    onRemove(index);
+    if (onRestore && removed) {
+      showUndoToast({
+        title: 'Item removido',
+        description: removed.product_name,
+        onUndo: () => onRestore(removed, index),
+      });
+    }
+  };
+
   if (items.length === 0) {
     return (
       <div
@@ -311,7 +326,7 @@ export function QuoteItemsList({
             isExpanded={expandedItems.has(index)}
             onUpdateQuantity={(qty) => onUpdateQuantity(index, qty)}
             onUpdatePrice={(price) => onUpdatePrice(index, price)}
-            onRemove={() => onRemove(index)}
+            onRemove={() => handleRemove(index)}
             onTogglePersonalization={
               onTogglePersonalization ? () => onTogglePersonalization(index) : undefined
             }
