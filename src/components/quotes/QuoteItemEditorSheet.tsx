@@ -47,6 +47,7 @@ export function QuoteItemEditorSheet({
         side="right"
         className="flex w-full flex-col gap-0 p-0 sm:max-w-[430px]"
         data-testid="quote-item-editor-sheet"
+        aria-label="Editor de item do orçamento"
       >
         <SheetHeader className="shrink-0 border-b border-border/50 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
@@ -59,10 +60,8 @@ export function QuoteItemEditorSheet({
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Produto
             </Button>
-            <SheetTitle className="sr-only">Detalhes do Item</SheetTitle>
-
+            <SheetTitle className="sr-only">Editor de item do orçamento</SheetTitle>
           </div>
-
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
