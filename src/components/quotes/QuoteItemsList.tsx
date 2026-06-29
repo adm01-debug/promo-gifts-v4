@@ -177,8 +177,8 @@ function QuoteItemRow({
             className="mt-2 flex flex-nowrap items-center gap-x-2"
             data-testid="quote-item-inputs-row"
           >
-            <div className="flex min-w-0 items-center gap-1">
-              <span className="hidden whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground min-[360px]:inline">
+            <div className="flex min-w-0 flex-col items-start leading-tight">
+              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Qtd
               </span>
               <Input
@@ -215,6 +215,7 @@ function QuoteItemRow({
                 className="h-7 w-11 px-1 text-xs tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
               />
             </div>
+
             <div className="flex min-w-0 flex-col items-end leading-tight">
               <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Vl Unitário
