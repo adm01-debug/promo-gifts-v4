@@ -220,13 +220,15 @@ function QuoteItemRow({
                 Preço
               </span>
               <div className="flex items-center gap-1">
-                <CurrencyInput
-                  value={item.unit_price}
-                  onChange={(n) => onUpdatePrice(n)}
-                  aria-label="Preço unitário"
-                  data-testid="quote-item-price-input"
-                  className="h-7 w-[72px] px-1 text-xs tabular-nums min-[360px]:w-20 min-[360px]:px-1.5 sm:w-24"
-                />
+                <span
+                  data-testid="quote-item-price-display"
+                  aria-label={`Preço unitário (somente leitura): ${formatCurrency(item.unit_price)}`}
+                  title="Preço definido pelo catálogo — não editável"
+                  className="inline-flex h-7 min-w-[72px] items-center justify-end rounded-md border border-border/40 bg-muted/40 px-2 text-xs tabular-nums text-foreground/90 min-[360px]:min-w-20 sm:min-w-24"
+                >
+                  {formatCurrency(item.unit_price)}
+                </span>
+
                 <span className="hidden sm:inline-flex">
                   <PriceFreshnessBadge
                     priceUpdatedAt={item.price_updated_at}
