@@ -533,6 +533,20 @@ export function QuoteBuilderSummaryColumn({
             </div>
             <h3 className="font-display text-base font-semibold">Resumo</h3>
             <div className="ml-auto flex items-center gap-2">
+              {onAddProduct && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={onAddProduct}
+                  data-testid="quote-add-product-button-summary"
+                  aria-label="Adicionar novo produto ao orçamento"
+                  className="group h-7 gap-1.5 rounded-full border-[1.5px] border-primary/70 bg-transparent px-3 text-xs text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12),0_0_18px_hsl(var(--primary)/0.35)] transition-all hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_24px_hsl(var(--primary)/0.55)] focus-visible:ring-2 focus-visible:ring-primary/60"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span className="font-medium">Produto</span>
+                </Button>
+              )}
               {items.length >= 1 && (() => {
                 const openCount = items.length - collapsedItemKeys.size;
                 const tooltipMsg = allCollapsed
