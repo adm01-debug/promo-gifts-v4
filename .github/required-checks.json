@@ -13,8 +13,8 @@
         },
         {
           "name": "carrinhos",
-          "workflow": ".github/workflows/e2e-carrinhos.yml",
-          "rationale": "Bloqueia merges quando a matriz de viewports do popover de carrinhos (popover-footer-matrix.spec.ts) detectar clipping do footer ou regressão de snapshot."
+          "workflow": ".github/workflows/cart-quality.yml",
+          "rationale": "Bloqueia merges quando a matriz de viewports do popover de carrinhos (popover-footer-matrix.spec.ts) detectar clipping do footer ou regressão de snapshot. Consolidado em cart-quality.yml junto com typecheck e unit tests."
         }
       ]
     },
