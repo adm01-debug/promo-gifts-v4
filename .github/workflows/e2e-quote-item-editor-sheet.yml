@@ -11,17 +11,23 @@ on:
     branches: [main]
     paths:
       - 'src/components/quotes/QuoteItemEditorSheet.tsx'
+      - 'src/components/quotes/QuoteBuilderProductSearch.tsx'
       - 'src/pages/__visual/QuoteItemEditorSheetHarness.tsx'
+      - 'src/pages/__visual/QuoteAddProductButtonHarness.tsx'
       - 'src/routes/AppRoutes.tsx'
       - 'e2e/quotes/quote-item-editor-sheet-header.spec.ts'
+      - 'e2e/quotes/quote-add-product-button.spec.ts'
       - '.github/workflows/e2e-quote-item-editor-sheet.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/components/quotes/QuoteItemEditorSheet.tsx'
+      - 'src/components/quotes/QuoteBuilderProductSearch.tsx'
       - 'src/pages/__visual/QuoteItemEditorSheetHarness.tsx'
+      - 'src/pages/__visual/QuoteAddProductButtonHarness.tsx'
       - 'src/routes/AppRoutes.tsx'
       - 'e2e/quotes/quote-item-editor-sheet-header.spec.ts'
+      - 'e2e/quotes/quote-add-product-button.spec.ts'
       - '.github/workflows/e2e-quote-item-editor-sheet.yml'
   workflow_dispatch:
 
