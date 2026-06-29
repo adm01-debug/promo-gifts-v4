@@ -28,7 +28,7 @@ function resolveRoot() {
 export const ROOT = resolveRoot();
 export const TITLE = 'Resumo das Configurações';
 export const WINDOW_BEFORE = 400;
-export const WINDOW_AFTER = 2200;
+export const WINDOW_AFTER = 3500;
 
 export const REQUIRED = [
   /\bbg-success\b/,
