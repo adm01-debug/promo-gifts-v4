@@ -231,32 +231,6 @@ function QuoteItemRow({
             </div>
           </div>
 
-          {/* Personalization toggle — inside sticky header */}
-          {onTogglePersonalization && (
-            <div className="mt-2.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'h-8 w-full justify-between rounded-md border px-2.5 text-xs font-medium transition-all',
-                  isExpanded
-                    ? 'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
-                    : 'border-border/60 bg-transparent text-muted-foreground hover:border-border hover:bg-accent/40 hover:text-foreground',
-                )}
-                onClick={onTogglePersonalization}
-              >
-                <span className="flex items-center gap-1.5">
-                  <Palette className="h-3.5 w-3.5" />
-                  Personalização
-                </span>
-                {isExpanded ? (
-                  <ChevronUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Personalization content — scrollable area */}
