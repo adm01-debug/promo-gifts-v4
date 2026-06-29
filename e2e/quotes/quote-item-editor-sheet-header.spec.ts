@@ -28,38 +28,31 @@ for (const vp of VIEWPORTS) {
       await expect(page.getByRole('dialog')).toBeVisible();
     });
 
-    test('ordem DOM: "+ Produto" antes de "Detalhes do Item"', async ({ page }) => {
+    test('DOM: "+ Produto" presente e texto "Detalhes do Item" removido', async ({ page }) => {
       const dialog = page.getByRole('dialog');
-      const order = await dialog.evaluate((root) => {
+      const result = await dialog.evaluate((root) => {
         const btn = root.querySelector('[data-testid="quote-add-product-button-sheet"]');
-        const title = Array.from(root.querySelectorAll('h2, [data-radix-dialog-title]')).find(
-          (el) => /Detalhes do Item/i.test(el.textContent ?? ''),
-        );
-        if (!btn || !title) return null;
-        const pos = btn.compareDocumentPosition(title);
-        return { precedes: !!(pos & Node.DOCUMENT_POSITION_FOLLOWING) };
+        const hasOldTitle = /Detalhes do Item/i.test(root.textContent ?? '');
+        return { hasBtn: !!btn, hasOldTitle };
       });
-      expect(order?.precedes, '"+ Produto" deve preceder o título no DOM').toBe(true);
+      expect(result.hasBtn, '"+ Produto" deve existir no dialog').toBe(true);
+      expect(result.hasOldTitle, '"Detalhes do Item" não deve aparecer mais').toBe(false);
     });
 
-    test('layout: "+ Produto" à esquerda, título à direita, sem overflow', async ({
-      page,
-    }) => {
+    test('layout: "+ Produto" alinhado à esquerda, sem overflow', async ({ page }) => {
       const dialog = page.getByRole('dialog');
       const btn = page.getByTestId('quote-add-product-button-sheet');
-      const title = dialog.getByText(/Detalhes do Item/i);
 
-      const [dlgBox, btnBox, titleBox] = await Promise.all([
+      const [dlgBox, btnBox] = await Promise.all([
         dialog.boundingBox(),
         btn.boundingBox(),
-        title.boundingBox(),
       ]);
-      expect(dlgBox && btnBox && titleBox).toBeTruthy();
-      if (!dlgBox || !btnBox || !titleBox) return;
+      expect(dlgBox && btnBox).toBeTruthy();
+      if (!dlgBox || !btnBox) return;
 
+      // "+ Produto" deve ficar na metade esquerda do dialog.
       const btnCx = btnBox.x + btnBox.width / 2;
-      const titleCx = titleBox.x + titleBox.width / 2;
-      expect(btnCx, '"+ Produto" deve ficar à esquerda do título').toBeLessThan(titleCx);
+      expect(btnCx).toBeLessThan(dlgBox.x + dlgBox.width / 2);
 
       expect(dlgBox.width).toBeLessThanOrEqual(vp.width + 1);
       const { scrollW, clientW } = await page.evaluate(() => ({
