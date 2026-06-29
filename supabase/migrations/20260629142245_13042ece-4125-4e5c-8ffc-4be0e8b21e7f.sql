@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.prevent_non_admin_quote_item_price_change() FROM PUBLIC, anon, authenticated;
