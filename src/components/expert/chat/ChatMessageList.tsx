@@ -315,7 +315,7 @@ export function ChatMessageList({
           })}
         </AnimatePresence>
 
-        {/* Follow-up actions */}
+        {/* Ações sugeridas */}
         {messages.length > 0 &&
           messages[messages.length - 1]?.role === 'assistant' &&
           !messages[messages.length - 1]?.isError &&
