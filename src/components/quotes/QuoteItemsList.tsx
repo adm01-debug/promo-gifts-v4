@@ -225,7 +225,7 @@ function QuoteItemRow({
                 />
               </div>
             </div>
-            <div className="ml-auto flex items-baseline gap-1.5">
+            <div className="ml-auto flex flex-col items-end leading-tight">
               <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</span>
               <span className="text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</span>
             </div>
