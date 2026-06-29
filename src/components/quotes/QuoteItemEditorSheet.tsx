@@ -67,7 +67,7 @@ export function QuoteItemEditorSheet({
 
         <div className="flex flex-1 flex-col overflow-y-auto px-2 py-2">
           {item && index !== null ? (
-            <div className="flex min-h-full flex-1 flex-col space-y-3 [&>*]:flex-1 [&_.bg-card\/60]:bg-transparent [&_.bg-card]:bg-transparent [&_.rounded-2xl]:flex [&_.rounded-2xl]:flex-1 [&_.rounded-2xl]:flex-col [&_.rounded-2xl]:rounded-none [&_.rounded-2xl]:border-0 [&_.rounded-2xl]:shadow-none">
+            <div className="flex min-h-full flex-1 flex-col space-y-3 [&>*]:flex-1 [&_.bg-card\/60]:bg-transparent [&_.bg-card]:bg-transparent [&_.rounded-2xl]:flex [&_.rounded-2xl]:!max-h-none [&_.rounded-2xl]:flex-1 [&_.rounded-2xl]:flex-col [&_.rounded-2xl]:rounded-none [&_.rounded-2xl]:border-0 [&_.rounded-2xl]:shadow-none">
 
 
               <QuoteItemsList
