@@ -397,17 +397,18 @@ export function ConfigurationPanelV6({
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {!isConfirmed && (
               <Button
                 type="button"
                 size="sm"
-                className="flex-1"
+                className="h-8 flex-1 text-xs"
                 onClick={handleConfirm}
                 data-testid="customization-confirm-button"
+                aria-label="Adicionar gravação ao orçamento"
               >
-                <Check className="mr-1.5 h-4 w-4" />
-                Confirmar e adicionar ao orçamento
+                <Check className="mr-1 h-3.5 w-3.5" aria-hidden />
+                Adicionar ao orçamento
               </Button>
             )}
             {isConfirmed && !editing && (
@@ -416,31 +417,33 @@ export function ConfigurationPanelV6({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="flex-1"
+                  className="h-8 flex-1 text-xs"
                   onClick={handleEdit}
+                  aria-label="Editar gravação confirmada"
                 >
-                  <Pencil className="mr-1.5 h-4 w-4" />
+                  <Pencil className="mr-1 h-3.5 w-3.5" aria-hidden />
                   Editar
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={handleRemove}
+                  aria-label="Remover gravação do orçamento"
                 >
-                  <Trash2 className="mr-1.5 h-4 w-4" />
+                  <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden />
                   Remover
                 </Button>
               </>
             )}
             {isConfirmed && editing && (
               <>
-                <Button type="button" size="sm" className="flex-1" onClick={handleConfirm}>
-                  <Check className="mr-1.5 h-4 w-4" />
-                  Atualizar gravação
+                <Button type="button" size="sm" className="h-8 flex-1 text-xs" onClick={handleConfirm}>
+                  <Check className="mr-1 h-3.5 w-3.5" aria-hidden />
+                  Atualizar
                 </Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                <Button type="button" size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setEditing(false)}>
                   Cancelar
                 </Button>
               </>
