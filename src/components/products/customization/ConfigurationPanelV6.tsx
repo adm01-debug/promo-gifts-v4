@@ -404,12 +404,12 @@ export function ConfigurationPanelV6({
               <Button
                 type="button"
                 size="sm"
-                className="flex-1"
+                className="h-8 flex-1 text-xs"
                 onClick={handleConfirm}
                 data-testid="customization-confirm-button"
               >
-                <Check className="mr-1.5 h-4 w-4" />
-                Confirmar e adicionar ao orçamento
+                <Check className="mr-1.5 h-3.5 w-3.5" />
+                Adicionar ao orçamento
               </Button>
             )}
             {isConfirmed && !editing && (
