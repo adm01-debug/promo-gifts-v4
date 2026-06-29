@@ -45,7 +45,7 @@ export function QuoteItemEditorSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[430px]"
+        className="flex w-full flex-col gap-0 bg-background p-0 sm:max-w-[430px]"
         data-testid="quote-item-editor-sheet"
         aria-label="Editor de item do orçamento"
       >
