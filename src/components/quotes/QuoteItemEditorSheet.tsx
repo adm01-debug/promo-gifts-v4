@@ -52,16 +52,19 @@ export function QuoteItemEditorSheet({
         <SheetHeader className="shrink-0 border-b border-border/50 px-1.5 py-1.5">
           <div className="flex items-center justify-between gap-2">
             <Button
+              type="button"
               size="sm"
               variant="outline"
               data-testid="quote-save-item-button-sheet"
               onClick={() => onOpenChange(false)}
-              aria-label="Salvar escolhas do produto"
-              className="group h-8 rounded-full border-[1.5px] border-primary/70 bg-transparent px-3 text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12),0_0_18px_hsl(var(--primary)/0.35)] transition-all hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_24px_hsl(var(--primary)/0.55)] focus-visible:ring-2 focus-visible:ring-primary/60"
+              disabled={!item}
+              aria-label={item ? 'Salvar escolhas do produto e fechar editor' : 'Salvar indisponível — nenhum item selecionado'}
+              aria-disabled={!item}
+              title="Salvar escolhas do produto"
+              className="group h-8 rounded-full border-[1.5px] border-primary/70 bg-transparent px-3 text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12),0_0_18px_hsl(var(--primary)/0.35)] transition-all hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_24px_hsl(var(--primary)/0.55)] focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
-              <Check className="mr-1 h-3.5 w-3.5" />
+              <Check className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
               <span className="font-medium">Salvar</span>
-
             </Button>
             <SheetTitle className="sr-only">Editor de item do orçamento</SheetTitle>
           </div>
