@@ -109,5 +109,21 @@ for (const vp of VIEWPORTS) {
         { maxDiffPixelRatio: 0.02 },
       );
     });
+
+    test('snapshot visual do corpo inteiro do sheet (sem overflow)', async ({ page }) => {
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+
+      const box = await dialog.boundingBox();
+      expect(box).not.toBeNull();
+      if (box) {
+        expect(box.x + box.width).toBeLessThanOrEqual(vp.width + 1);
+      }
+
+      expect(await dialog.screenshot()).toMatchSnapshot(
+        `quote-item-editor-sheet-body-${vp.name}.png`,
+        { maxDiffPixelRatio: 0.02 },
+      );
+    });
   });
 }
