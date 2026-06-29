@@ -455,107 +455,110 @@ function SellerCartsContent() {
         />
       ) : s.activeCart ? (
         <>
+        {/* Cart header fundido — full-width, logo após "Carrinhos" */}
+        <Card className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="relative">
+              {s.activeCart.company_logo_url ? (
+                <img
+                  src={s.activeCart.company_logo_url}
+                  alt=""
+                  className="h-12 w-12 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover shadow-inner transition-transform duration-300 group-hover/header:scale-105"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
+                  <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
+                </div>
+              )}
+              <div
+                className={cn(
+                  'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background',
+                  getStatusCfg(s.activeCart.status).color.split(' ')[0],
+                )}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h2 className="truncate font-display text-lg font-bold tracking-tight text-foreground/90">
+                {s.activeCart.company_name}
+              </h2>
+              <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                {s.activeCart.company_location && (
+                  <span className="flex items-center gap-1.5 truncate">
+                    <Briefcase aria-hidden="true" className="h-3 w-3 opacity-60" />
+                    {s.activeCart.company_location}
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                  <Clock aria-hidden="true" className="h-3 w-3 opacity-60" />
+                  Atualizado{' '}
+                  {formatDistanceToNow(new Date(s.activeCart.updated_at), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2.5">
+            <div
+              role="radiogroup"
+              aria-label="Status do carrinho"
+              className="inline-flex items-center gap-1 rounded-xl border border-border/40 bg-muted/20 p-1"
+            >
+              {(
+                Object.entries(STATUS_CONFIG) as [
+                  CartStatus,
+                  (typeof STATUS_CONFIG)[CartStatus],
+                ][]
+              ).map(([key, cfg]) => {
+                const active = s.activeCart?.status === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={cfg.label}
+                    onClick={() => {
+                      if (s.activeCart) s.updateCartStatus(s.activeCart.id, key);
+                    }}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+                      active
+                        ? cfg.color
+                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'h-1.5 w-1.5 rounded-full',
+                        active ? 'bg-current opacity-80' : 'bg-muted-foreground/40',
+                      )}
+                    />
+                    {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-destructive transition-all hover:bg-destructive/5 hover:text-destructive"
+              onClick={() => s.setConfirmDeleteCart(true)}
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" /> Excluir
+            </Button>
+          </div>
+        </Card>
+
+        <FollowUpTimer createdAt={s.activeCart.created_at} status={s.activeCart.status} />
+
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
           <div className="space-y-4">
-            {/* Cart header fundido (status como toggle segmentado + ações inline) */}
-            <Card className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="relative">
-                  {s.activeCart.company_logo_url ? (
-                    <img
-                      src={s.activeCart.company_logo_url}
-                      alt=""
-                      className="h-12 w-12 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover shadow-inner transition-transform duration-300 group-hover/header:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
-                      <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background',
-                      getStatusCfg(s.activeCart.status).color.split(' ')[0],
-                    )}
-                  />
-                </div>
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <h2 className="truncate font-display text-lg font-bold tracking-tight text-foreground/90">
-                    {s.activeCart.company_name}
-                  </h2>
-                  <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                    {s.activeCart.company_location && (
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Briefcase aria-hidden="true" className="h-3 w-3 opacity-60" />
-                        {s.activeCart.company_location}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1.5 whitespace-nowrap">
-                      <Clock aria-hidden="true" className="h-3 w-3 opacity-60" />
-                      Atualizado{' '}
-                      {formatDistanceToNow(new Date(s.activeCart.updated_at), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-shrink-0 items-center gap-2.5">
-                <div
-                  role="radiogroup"
-                  aria-label="Status do carrinho"
-                  className="inline-flex items-center gap-1 rounded-xl border border-border/40 bg-muted/20 p-1"
-                >
-                  {(
-                    Object.entries(STATUS_CONFIG) as [
-                      CartStatus,
-                      (typeof STATUS_CONFIG)[CartStatus],
-                    ][]
-                  ).map(([key, cfg]) => {
-                    const active = s.activeCart?.status === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        role="radio"
-                        aria-checked={active}
-                        aria-label={cfg.label}
-                        onClick={() => {
-                          if (s.activeCart) s.updateCartStatus(s.activeCart.id, key);
-                        }}
-                        className={cn(
-                          'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
-                          active
-                            ? cfg.color
-                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-                        )}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            'h-1.5 w-1.5 rounded-full',
-                            active ? 'bg-current opacity-80' : 'bg-muted-foreground/40',
-                          )}
-                        />
-                        {cfg.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-destructive transition-all hover:bg-destructive/5 hover:text-destructive"
-                  onClick={() => s.setConfirmDeleteCart(true)}
-                >
-                  <Trash2 aria-hidden="true" className="h-4 w-4" /> Excluir
-                </Button>
-              </div>
-            </Card>
 
-            <FollowUpTimer createdAt={s.activeCart.created_at} status={s.activeCart.status} />
+
 
 
             {/* Produtos */}
