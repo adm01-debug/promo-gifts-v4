@@ -42,6 +42,11 @@ jobs:
       - name: 🗑️ Sem referências residuais a QuoteComments/quote_comments
         run: node scripts/check-no-quote-comments.mjs
 
+      - name: 🚫 Sem follow-up no frontend (src/)
+        run: npm run check:no-followup-frontend
+
+
+
 
       - name: Run Unit & Integration Tests
         run: npm run test:quality
