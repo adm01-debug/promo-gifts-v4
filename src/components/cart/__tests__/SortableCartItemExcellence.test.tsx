@@ -113,7 +113,8 @@ describe('SortableCartItem Excellence UI', () => {
   it('uses standard price styling', () => {
     renderComponent();
     const subtotalLabel = screen.getByText(/Subtotal/i);
-    expect(subtotalLabel).toHaveClass('uppercase', 'font-bold', 'opacity-60');
+    // sentence-case styling (Onda Excelência: sem CAIXA ALTA)
+    expect(subtotalLabel).toHaveClass('font-medium', 'tracking-tight', 'opacity-70');
   });
 });
 

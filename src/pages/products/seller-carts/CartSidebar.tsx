@@ -2,12 +2,11 @@
  * CartSidebar — Summary panel reorganized in 3 zones:
  * 1) Hero Pricing (subtotal grande + peso/volume)
  * 2) Ação primária (Gerar Orçamento)
- * 3) Mais ações (DropdownMenu) + Health Checklist + Outros carrinhos
+ * 3) Mais ações (DropdownMenu) + Health Checklist
  */
 import { useState } from 'react';
 import { type CartTemplateItem, type SellerCart, type Product } from '@/hooks/products';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,23 +20,19 @@ import {
 } from '@/components/ui/dialog';
 import {
   formatCurrency,
-  getStatusCfg,
   SmartSuggestions,
   ActionHistoryPanel,
 } from '@/components/cart/CartUtilComponents';
 import { CartHealthChecklist } from '@/components/cart/CartHealthChecklist';
 import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
-import { cn } from '@/lib/utils';
-import { ArrowRight, Weight, Box, Building2, Sparkles, Trash2, Package } from 'lucide-react';
+import { ArrowRight, Weight, Box, Sparkles, Trash2, Package } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 interface CartSidebarProps {
   cart: SellerCart;
-  otherCarts: SellerCart[];
   cartSubtotal: number;
   cartTotalQty: number;
-  cartAge: number;
   weightVolume: { weightKg: number; volumeM3: number; volumeCm3: number } | null;
   allProducts: Product[];
   isLoadingProducts?: boolean;
@@ -59,16 +54,13 @@ interface CartSidebarProps {
   onDeleteTemplate: UseMutationResult<void, Error, string>;
   onClear: () => void;
   onNavigate: (path: string) => void;
-  onSetActiveCartId: (id: string) => void;
   onFocusNotes?: () => void;
 }
 
 export function CartSidebar({
   cart,
-  otherCarts,
   cartSubtotal,
   cartTotalQty,
-  cartAge,
   weightVolume,
   allProducts,
   isLoadingProducts,
@@ -84,7 +76,6 @@ export function CartSidebar({
   onDeleteTemplate,
   onClear,
   onNavigate,
-  onSetActiveCartId,
   onFocusNotes,
 }: CartSidebarProps) {
   const [saveOpen, setSaveOpen] = useState(false);
@@ -99,8 +90,8 @@ export function CartSidebar({
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl transition-colors group-hover/hero:bg-primary/10" />
 
         <div className="relative z-10 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground opacity-70">
-            Subtotal do Carrinho
+          <p className="text-[11px] font-medium text-muted-foreground">
+            Subtotal do carrinho
           </p>
           <div className="flex items-baseline gap-1">
             <motion.p
@@ -192,58 +183,12 @@ export function CartSidebar({
 
       {/* Insights compactos */}
       <Card className="space-y-3 border-border/30 p-4 shadow-sm">
-        <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        <h4 className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
           <Sparkles aria-hidden="true" className="h-3.5 w-3.5 fill-warning/20 text-warning" />{' '}
-          Inteligência de Vendas
+          Inteligência de vendas
         </h4>
         <SmartSuggestions cart={cart} allProducts={allProducts} isLoading={isLoadingProducts} />
-        <ActionHistoryPanel cartId={cart.id} />
-        {cartAge >= 3 && cart.status !== 'pronto_orcamento' && (
-          <p className="rounded-lg border border-warning/10 bg-warning/5 px-2.5 py-1.5 text-[10px] text-warning">
-            ⏰ Carrinho há {cartAge} dias — considere fazer follow-up!
-          </p>
-        )}
-      </Card>
-
-      {/* Outros carrinhos */}
-      {otherCarts.length > 0 && (
-        <Card className="space-y-3 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Outros Carrinhos
-          </h4>
-          {otherCarts.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onSetActiveCartId(c.id)}
-              className="flex w-full items-center gap-2.5 rounded-lg border border-border/30 p-2.5 text-left transition-all hover:border-border/60 hover:bg-muted/20"
-            >
-              {c.company_logo_url ? (
-                <img
-                  src={c.company_logo_url}
-                  alt=""
-                  className="h-8 w-8 rounded-full border border-border/50 bg-background object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                  <Building2 aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">{c.company_name}</p>
-                <p className="text-[10px] text-muted-foreground">{c.items.length} itens</p>
-              </div>
-              <Badge
-                variant="outline"
-                className={cn('px-1.5 text-[9px]', getStatusCfg(c.status).color)}
-              >
-                {getStatusCfg(c.status).label}
-              </Badge>
-            </button>
-          ))}
-        </Card>
-      )}
+        <ActionHistoryPanel cartId={cart.id} />      </Card>
 
       {/* Save Template (controlled) */}
       <Dialog
