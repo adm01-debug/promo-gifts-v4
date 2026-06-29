@@ -82,7 +82,7 @@ export function CartSidebar({
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
       {/* ZONE 1 — Hero Pricing */}
-      <Card className="group/hero relative space-y-5 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 shadow-md">
+      <Card data-testid="cart-sidebar-hero" data-loaded="true" className="group/hero relative space-y-5 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 shadow-md">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl transition-colors group-hover/hero:bg-primary/10" />
 
         <div className="relative z-10 space-y-1">
