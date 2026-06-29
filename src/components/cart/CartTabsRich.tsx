@@ -171,7 +171,6 @@ export function CartTabsRich({
               </span>
             </button>
 
-          );
         })}
       </div>
 
