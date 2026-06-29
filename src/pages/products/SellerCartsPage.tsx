@@ -27,7 +27,6 @@ import {
   getStatusCfg,
   STATUS_CONFIG,
   CartItemSkeleton,
-  FollowUpTimer,
   CompareCartsDialog,
   MobileSummarySheet,
   formatCurrency,
@@ -553,7 +552,7 @@ function SellerCartsContent() {
           </div>
         </Card>
 
-        <FollowUpTimer createdAt={s.activeCart.created_at} status={s.activeCart.status} />
+
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
           <div className="space-y-4">
