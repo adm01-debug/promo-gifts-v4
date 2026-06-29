@@ -7,7 +7,7 @@
  *
  * Lógica de preço/personalização é preservada — apenas o invólucro muda.
  */
-import { Package, Plus } from 'lucide-react';
+import { Check, Package } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { QuoteItemsList } from './QuoteItemsList';
