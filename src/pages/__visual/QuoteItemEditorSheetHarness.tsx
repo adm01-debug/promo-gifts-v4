@@ -85,6 +85,7 @@ export default function QuoteItemEditorSheetHarness() {
         onPersonalizationsChange={() => {}}
         formatCurrency={fmt}
         onAddProduct={() => setAddProductClicks((c) => c + 1)}
+        hasUnsavedChanges={unsaved}
       />
     </main>
   );
