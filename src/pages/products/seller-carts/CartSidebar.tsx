@@ -20,19 +20,10 @@ import {
 } from '@/components/ui/dialog';
 import {
   formatCurrency,
-  SmartSuggestions,
-  ActionHistoryPanel,
 } from '@/components/cart/CartUtilComponents';
-import { CartHealthChecklist } from '@/components/cart/CartHealthChecklist';
 import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
-import { ArrowRight, Weight, Box, Sparkles, Trash2, Package, ChevronDown } from 'lucide-react';
+import { ArrowRight, Weight, Box, Sparkles, Trash2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { useMediaQuery } from '@/hooks/ui/useMediaQuery';
 import { m as motion } from 'framer-motion';
 import type { UseMutationResult } from '@tanstack/react-query';
 
