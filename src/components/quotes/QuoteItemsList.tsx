@@ -281,12 +281,25 @@ export function QuoteItemsList({
   onUpdateQuantity,
   onUpdatePrice,
   onRemove,
+  onRestore,
   onTogglePersonalization,
   onConfirmPrice,
   expandedItems = new Set(),
   renderPersonalization,
   formatCurrency,
 }: QuoteItemsListProps) {
+  const handleRemove = (index: number) => {
+    const removed = items[index];
+    onRemove(index);
+    if (onRestore && removed) {
+      showUndoToast({
+        title: 'Item removido',
+        description: removed.product_name,
+        onUndo: () => onRestore(removed, index),
+      });
+    }
+  };
+
   if (items.length === 0) {
     return (
       <div
@@ -313,7 +326,7 @@ export function QuoteItemsList({
             isExpanded={expandedItems.has(index)}
             onUpdateQuantity={(qty) => onUpdateQuantity(index, qty)}
             onUpdatePrice={(price) => onUpdatePrice(index, price)}
-            onRemove={() => onRemove(index)}
+            onRemove={() => handleRemove(index)}
             onTogglePersonalization={
               onTogglePersonalization ? () => onTogglePersonalization(index) : undefined
             }
