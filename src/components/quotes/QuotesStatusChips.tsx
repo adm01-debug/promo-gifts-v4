@@ -124,7 +124,7 @@ export const QUOTE_ROW_BADGE_STYLES = {
   sent: {
     label: 'Enviado',
     className: 'border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-300',
-    description: 'Orçamento já foi para o cliente. Agora é acompanhar e fazer follow-up.',
+    description: 'Orçamento já foi para o cliente. Agora é acompanhar e manter o contato ativo.',
   },
   viewed: {
     label: 'Visualizado',
