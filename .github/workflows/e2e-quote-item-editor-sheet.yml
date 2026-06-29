@@ -75,4 +75,5 @@ jobs:
             playwright-report
             test-results
             e2e/quotes/quote-item-editor-sheet-header.spec.ts-snapshots
+            e2e/quotes/quote-add-product-button.spec.ts-snapshots
           retention-days: 14
