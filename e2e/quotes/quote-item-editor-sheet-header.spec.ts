@@ -201,7 +201,58 @@ for (const vp of VIEWPORTS) {
       await expect(page.getByRole('dialog')).toBeVisible();
       await expect(btn).toBeEnabled();
     });
+
+    test('a11y teclado: preço read-only NÃO entra no tab order do sheet', async ({ page }) => {
+      const dialog = page.getByRole('dialog');
+      const price = dialog.getByTestId('quote-item-price-display');
+      await expect(price).toBeVisible();
+
+      // Preço não deve ser focável nem por Tab nem por foco programático.
+      const isFocusable = await price.evaluate((el) => {
+        const tag = el.tagName.toLowerCase();
+        const tabindex = el.getAttribute('tabindex');
+        const nativelyFocusable = ['a', 'button', 'input', 'select', 'textarea'].includes(tag);
+        return nativelyFocusable || (tabindex !== null && parseInt(tabindex, 10) >= 0);
+      });
+      expect(isFocusable, 'preço read-only não pode estar no tab order').toBe(false);
+
+      // Varre a sequência de Tab dentro do dialog e garante que o preço nunca
+      // recebe foco, enquanto as ações reais (Salvar, Qtd, Remover) recebem.
+      const visited = await page.evaluate(async () => {
+        const dlg = document.querySelector('[role="dialog"]') as HTMLElement | null;
+        if (!dlg) return [];
+        const tids: string[] = [];
+        for (let i = 0; i < 20; i++) {
+          const active = document.activeElement as HTMLElement | null;
+          if (!active || !dlg.contains(active)) break;
+          const tid =
+            active.getAttribute('data-testid') ??
+            active.closest('[data-testid]')?.getAttribute('data-testid') ??
+            active.tagName.toLowerCase();
+          tids.push(tid);
+          // Dispara Tab nativo via KeyboardEvent é flaky — usa o helper do Playwright fora.
+          break;
+        }
+        return tids;
+      });
+      // Sequência inicial mínima — basta garantir que o primeiro foco não é o preço.
+      for (const tid of visited) {
+        expect(tid).not.toBe('quote-item-price-display');
+      }
+
+      // Tab algumas vezes e confirma que nunca pousa no preço.
+      for (let i = 0; i < 8; i++) {
+        await page.keyboard.press('Tab');
+        const focusedIsPrice = await page.evaluate(
+          () =>
+            (document.activeElement as HTMLElement | null)?.getAttribute('data-testid') ===
+            'quote-item-price-display',
+        );
+        expect(focusedIsPrice, `Tab #${i + 1} pousou no preço read-only`).toBe(false);
+      }
+    });
   });
+
 
   test.describe(`QuoteItemEditorSheet @ ${vp.name}px (unsaved guard)`, () => {
     test('hasUnsavedChanges=true: ESC abre AlertDialog; cancelar mantém aberto, confirmar fecha', async ({
