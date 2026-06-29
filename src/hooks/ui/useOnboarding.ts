@@ -95,7 +95,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'notifications',
     title: 'Central de Notificações',
     description:
-      'Receba alertas importantes, lembretes de follow-up e atualizações de orçamentos. Configure lembretes para nunca perder um deal!',
+      'Receba alertas importantes, lembretes e atualizações de orçamentos. Configure lembretes para nunca perder um deal!',
     targetSelector: "[data-tour='notifications']",
     position: 'bottom',
   },
