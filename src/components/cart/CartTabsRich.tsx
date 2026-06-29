@@ -169,18 +169,8 @@ export function CartTabsRich({
               >
                 {cart.items.length}
               </span>
-              {needsFollowUp && (
-                <motion.span
-                  data-testid="cart-tab-followup"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-warning text-warning-foreground shadow-md"
-                  title={`Follow-up sugerido — criado há ${ageDays} dias`}
-                >
-                  <Clock aria-hidden="true" className="h-3 w-3" />
-                </motion.span>
-              )}
             </button>
+
           );
         })}
       </div>
