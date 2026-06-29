@@ -221,7 +221,7 @@ function QuoteItemRow({
               />
             </div>
 
-            <div className="flex min-w-0 flex-col items-end border-l border-border/40 pl-2 leading-tight">
+            <div className="flex min-w-0 flex-col items-end leading-tight">
               <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Vl Unitário
               </span>
