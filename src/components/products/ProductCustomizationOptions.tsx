@@ -425,31 +425,35 @@ export function ProductCustomizationOptions({
           </div>
         )}
 
-        {/* Resumo inline — apenas em telas < lg. No desktop ele vive no aside sticky. */}
+        {/* Resumo inline — sempre no stacked; em ≥lg vive no aside. */}
         {summaryItems.length > 0 && (
-          <div className="mt-5 border-t border-border/40 pt-3 lg:hidden">{summary}</div>
+          <div className={cn('mt-5 border-t border-border/40 pt-3', !stacked && 'lg:hidden')}>
+            {summary}
+          </div>
         )}
         </div>
 
         {/* Aside sticky no desktop com o resumo + preço sempre visíveis. */}
-        <aside
-          aria-label="Resumo da personalização"
-          className="hidden lg:sticky lg:top-24 lg:block lg:self-start"
-          data-testid="customization-summary-aside"
-        >
-          {summaryItems.length > 0 ? (
-            summary
-          ) : (
-            <div className="rounded-xl border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Resumo
-              </p>
-              <p className="mt-1 text-[12px] text-muted-foreground/80">
-                Configure uma técnica para ver o preço aqui.
-              </p>
-            </div>
-          )}
-        </aside>
+        {!stacked && (
+          <aside
+            aria-label="Resumo da personalização"
+            className="hidden lg:sticky lg:top-24 lg:block lg:self-start"
+            data-testid="customization-summary-aside"
+          >
+            {summaryItems.length > 0 ? (
+              summary
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Resumo
+                </p>
+                <p className="mt-1 text-[12px] text-muted-foreground/80">
+                  Configure uma técnica para ver o preço aqui.
+                </p>
+              </div>
+            )}
+          </aside>
+        )}
       </div>
     </TooltipProvider>
   );
