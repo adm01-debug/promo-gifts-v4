@@ -261,7 +261,7 @@ export function ProductCustomizationOptions({
                   </dd>
                 </div>
                 <div className="flex items-center justify-between border-t border-success/15 pt-1">
-                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-success">
                     Total
                   </dt>
                   <dd className="text-[13px] font-semibold tabular-nums text-success">
