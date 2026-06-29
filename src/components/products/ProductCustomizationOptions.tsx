@@ -30,6 +30,11 @@ interface ProductCustomizationOptionsProps {
   quantity?: number;
   initialPersonalizations?: PersonalizationItem[];
   onSelectionChange?: (personalizations: PersonalizationItem[]) => void;
+  /**
+   * 'auto' (default): grid 2-col com aside sticky em ≥lg (PDP).
+   * 'stacked': fluxo vertical single-column compacto (drawer estreito).
+   */
+  layout?: 'auto' | 'stacked';
 }
 
 /** Detecta se um local é "CIRCULAR/360°" (mutuamente exclusivo com locais planos). */
@@ -49,7 +54,9 @@ export function ProductCustomizationOptions({
   quantity = 100,
   initialPersonalizations = [],
   onSelectionChange,
+  layout = 'auto',
 }: ProductCustomizationOptionsProps) {
+  const stacked = layout === 'stacked';
   const { data: options, isLoading, isError, error, refetch } = useProductCustomizationOptions(productId);
   const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
@@ -263,11 +270,14 @@ export function ProductCustomizationOptions({
 
   return (
     <TooltipProvider>
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6">
+      <div className={cn(!stacked && 'lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6')}>
         <div className="space-y-3">
         <div
           ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none lg:static lg:mx-0 lg:rounded-xl lg:border lg:border-border/60 lg:bg-background/40 lg:px-3 lg:shadow-none"
+          className={cn(
+            'sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none',
+            !stacked && 'lg:static lg:mx-0 lg:rounded-xl lg:border lg:border-border/60 lg:bg-background/40 lg:px-3 lg:shadow-none',
+          )}
         >
           <nav
             aria-label="Etapas da personalização"
@@ -415,31 +425,35 @@ export function ProductCustomizationOptions({
           </div>
         )}
 
-        {/* Resumo inline — apenas em telas < lg. No desktop ele vive no aside sticky. */}
+        {/* Resumo inline — sempre no stacked; em ≥lg vive no aside. */}
         {summaryItems.length > 0 && (
-          <div className="mt-5 border-t border-border/40 pt-3 lg:hidden">{summary}</div>
+          <div className={cn('mt-5 border-t border-border/40 pt-3', !stacked && 'lg:hidden')}>
+            {summary}
+          </div>
         )}
         </div>
 
         {/* Aside sticky no desktop com o resumo + preço sempre visíveis. */}
-        <aside
-          aria-label="Resumo da personalização"
-          className="hidden lg:sticky lg:top-24 lg:block lg:self-start"
-          data-testid="customization-summary-aside"
-        >
-          {summaryItems.length > 0 ? (
-            summary
-          ) : (
-            <div className="rounded-xl border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Resumo
-              </p>
-              <p className="mt-1 text-[12px] text-muted-foreground/80">
-                Configure uma técnica para ver o preço aqui.
-              </p>
-            </div>
-          )}
-        </aside>
+        {!stacked && (
+          <aside
+            aria-label="Resumo da personalização"
+            className="hidden lg:sticky lg:top-24 lg:block lg:self-start"
+            data-testid="customization-summary-aside"
+          >
+            {summaryItems.length > 0 ? (
+              summary
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Resumo
+                </p>
+                <p className="mt-1 text-[12px] text-muted-foreground/80">
+                  Configure uma técnica para ver o preço aqui.
+                </p>
+              </div>
+            )}
+          </aside>
+        )}
       </div>
     </TooltipProvider>
   );

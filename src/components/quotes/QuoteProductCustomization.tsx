@@ -19,6 +19,7 @@ interface QuoteProductCustomizationProps {
   quantity: number;
   existingPersonalizations?: QuoteItemPersonalization[];
   onPersonalizationsChange: (personalizations: QuoteItemPersonalization[]) => void;
+  layout?: 'auto' | 'stacked';
 }
 
 export function QuoteProductCustomization({
@@ -26,6 +27,7 @@ export function QuoteProductCustomization({
   quantity,
   existingPersonalizations = [],
   onPersonalizationsChange,
+  layout = 'auto',
 }: QuoteProductCustomizationProps) {
   // Use ref to hold current personalizations to avoid stale closures
   const personalizationsRef = useRef<QuoteItemPersonalization[]>(existingPersonalizations);
@@ -94,6 +96,7 @@ export function QuoteProductCustomization({
       <ProductCustomizationOptions
         productId={productId}
         quantity={quantity}
+        layout={layout}
         initialPersonalizations={existingPersonalizations.map((p) => ({
           locationCode: p.location_code || '',
           locationName: p.location_name || '',
