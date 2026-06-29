@@ -202,5 +202,36 @@ for (const vp of VIEWPORTS) {
       await expect(btn).toBeEnabled();
     });
   });
+
+  test.describe(`QuoteItemEditorSheet @ ${vp.name}px (unsaved guard)`, () => {
+    test('hasUnsavedChanges=true: ESC dispara confirm; cancelar mantém aberto, aceitar fecha', async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await gotoAndSettle(page, `${ROUTE}?withItem=1&longContent=1&unsaved=1`);
+      await page.getByTestId('open-editor-sheet').click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+
+      // Cancela a confirmação → sheet permanece aberto.
+      page.once('dialog', (d) => {
+        expect(d.type()).toBe('confirm');
+        expect(d.message()).toMatch(/n[ãa]o salvas/i);
+        d.dismiss().catch(() => {});
+      });
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeVisible();
+      await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '1');
+
+      // Aceita a confirmação → sheet fecha.
+      page.once('dialog', (d) => {
+        d.accept().catch(() => {});
+      });
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '0');
+    });
+  });
 }
+
 
