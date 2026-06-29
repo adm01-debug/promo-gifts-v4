@@ -355,22 +355,22 @@ export function ClientSeasonalityHeatmap({ clientId, ramoAtividade }: Props) {
                     const peakDate = new Date();
                     peakDate.setMonth((seasonality.nextPeakMonth ?? 1) - 1, 1);
                     if (peakDate < new Date()) peakDate.setFullYear(peakDate.getFullYear() + 1);
-                    const followUp = new Date(peakDate);
-                    followUp.setDate(followUp.getDate() - 21);
+                    const reminder = new Date(peakDate);
+                    reminder.setDate(reminder.getDate() - 21);
                     const dt = (d: Date) =>
                       `${d.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
-                    const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bi-${Date.now()}@promogifts\nDTSTAMP:${dt(new Date())}\nDTSTART:${dt(followUp)}\nDTEND:${dt(new Date(followUp.getTime() + 30 * 60000))}\nSUMMARY:Follow-up campanha sazonal\nDESCRIPTION:Janela ideal: ${nextPeakName}\nEND:VEVENT\nEND:VCALENDAR`;
+                    const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bi-${Date.now()}@promogifts\nDTSTAMP:${dt(new Date())}\nDTSTART:${dt(reminder)}\nDTEND:${dt(new Date(reminder.getTime() + 30 * 60000))}\nSUMMARY:Lembrete campanha sazonal\nDESCRIPTION:Janela ideal: ${nextPeakName}\nEND:VEVENT\nEND:VCALENDAR`;
                     const blob = new Blob([ics], { type: 'text/calendar' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `follow-up-${nextPeakName.toLowerCase()}.ics`;
+                    a.download = `lembrete-${nextPeakName.toLowerCase()}.ics`;
                     a.click();
                     URL.revokeObjectURL(url);
                   }}
                 >
                   <Calendar className="h-3.5 w-3.5" />
-                  Agendar follow-up
+                  Agendar lembrete
                 </Button>
               </>
             ) : (
