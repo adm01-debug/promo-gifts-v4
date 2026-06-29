@@ -465,10 +465,11 @@ export function ProductCustomizationOptions({
         )}
 
         {/* Resumo inline — sempre no stacked; em ≥lg vive no aside. */}
-        {summaryItems.length > 0 && (
-          <div className={cn('mt-5 border-t border-border/40 pt-3', !stacked && 'lg:hidden')}>
-            {summary}
-          </div>
+        {summaryItems.length > 0 && !stacked && (
+          <div className="mt-5 border-t border-border/40 pt-3 lg:hidden">{summary}</div>
+        )}
+        {summaryItems.length > 0 && stacked && (
+          <div className="mt-5 border-t border-border/40 pt-3">{summary}</div>
         )}
         </div>
 
