@@ -542,3 +542,49 @@ O job **`E2E Subtítulo quote_number (visual)`** em
 sempre **sem** `--update-snapshots` — falha em qualquer regressão visual e
 publica os diffs (`*-actual.png`, `*-expected.png`, `*-diff.png`) como
 artifact `quote-number-subtitle-failure-bundle`.
+
+---
+
+## Política "Follow-up" — Frontend vs Backend
+
+A feature de lembretes (`quote-followup-reminders`) **permanece ativa no
+backend** — não migrar termos para a UI.
+
+### ✅ Mantido (backend / infra — não tocar sem aprovação do PO)
+
+- Edge function `supabase/functions/quote-followup-reminders/`
+- Edge function `supabase/functions/expert-chat/` (intent `'followup'` no enum +
+  prompts do system)
+- Refs em `market-intelligence-insights`, `semantic-search`, `e2e-cleanup`,
+  `_shared/edge-authz-manifest.ts`
+- Tabela `public.follow_up_reminders` + RLS + FK cascade
+  (migrations `20251220181526...`, `20260213150342...`, `20260317214344...`)
+- Registro `[functions.quote-followup-reminders]` em `supabase/config.toml`
+- Testes de backend: `tests/edge-functions/**/quote-followup-reminders*`,
+  `tests/contracts/webhook-schemas.ts`,
+  `tests/hooks/useWorkspaceNotifications.test.ts`
+
+### 🚫 Removido do frontend (`src/`) — NÃO reintroduzir
+
+- `CartTabsRich`: badge `needsFollowUp` + cálculo `differenceInDays`
+- `ChatEmptyState` / `ChatMessageList`: chips "Follow-up", "Msg follow-up",
+  "Dicas de follow-up" → substituídos por "Retomar contato", "Msg WhatsApp",
+  "Dicas de retomada"
+- `ClientSeasonalityHeatmap`: botão "Agendar follow-up" → "Agendar lembrete"
+  (variável `followUp` → `reminder`, arquivo `.ics` renomeado)
+- `QuotesStatusChips`: descrição do chip `sent` ajustada (sem "follow-up")
+- `useOnboarding`: descrição da Central de Notificações ajustada
+- Comentário em `useProductVariants.ts` traduzido para PT-BR sem o termo
+
+### 🛡️ Gates contra regressão
+
+- **Estático (CI):** `npm run check:no-followup-frontend` —
+  script `scripts/check-no-followup-frontend.mjs` falha o build se qualquer
+  arquivo em `src/` (exceto `src/integrations/supabase/types.ts` auto-gerado)
+  contiver `follow-up`, `followup` ou `needsFollowUp`. Plugado em
+  `.github/workflows/ci.yml` como **"🚫 Sem follow-up no frontend (src/)"**.
+- **Runtime (Vitest):**
+  `src/components/quotes/__tests__/QuotesStatusChips.no-followup.test.tsx` —
+  garante que nenhum chip renderizado expõe `textContent`, `aria-label` ou
+  `title` com os termos banidos.
+
