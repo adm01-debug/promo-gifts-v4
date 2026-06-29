@@ -59,9 +59,8 @@ export function QuoteItemEditorSheet({
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Produto
             </Button>
-            <SheetTitle className="font-display text-base font-semibold">
-              Detalhes do Item
-            </SheetTitle>
+            <SheetTitle className="sr-only">Detalhes do Item</SheetTitle>
+
           </div>
 
         </SheetHeader>
