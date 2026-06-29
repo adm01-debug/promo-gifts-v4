@@ -176,11 +176,11 @@ function QuoteItemRow({
 
           {/* Inputs Row — single line, compact on mobile */}
           <div
-            className="mt-2 flex flex-nowrap items-center gap-x-2"
+            className="mt-2 flex flex-nowrap items-end gap-x-2"
             data-testid="quote-item-inputs-row"
           >
             <div className="flex min-w-0 flex-col items-start leading-tight">
-              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Qtd
               </span>
               <Input
@@ -219,10 +219,10 @@ function QuoteItemRow({
             </div>
 
             <div className="flex min-w-0 flex-col items-end leading-tight">
-              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Vl Unitário
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex h-7 items-center gap-1">
                 <span
                   data-testid="quote-item-price-display"
                   role="text"
@@ -249,10 +249,10 @@ function QuoteItemRow({
               className="ml-auto flex min-w-0 flex-col items-end leading-tight"
               data-testid="quote-item-subtotal"
             >
-              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Subtotal
               </span>
-              <span className="whitespace-nowrap font-display text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
+              <span className="flex h-7 items-center whitespace-nowrap font-display text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
                 {formatCurrency(itemTotal)}
               </span>
             </div>
