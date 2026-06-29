@@ -26,6 +26,10 @@ const QuoteViewOrderHarness = import.meta.env.DEV
 const QuoteItemsListMobileHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemsListMobileHarness'))
   : null;
+const QuoteItemEditorSheetHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemEditorSheetHarness'))
+  : null;
+
 
 
 
@@ -128,6 +132,13 @@ export function AppRoutes() {
             element={<QuoteItemsListMobileHarness />}
           />
         )}
+        {QuoteItemEditorSheetHarness && (
+          <Route
+            path="/__visual/quote-item-editor-sheet"
+            element={<QuoteItemEditorSheetHarness />}
+          />
+        )}
+
 
 
 
