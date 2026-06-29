@@ -58,8 +58,6 @@ export function CartSidebar({
   cartSubtotal,
   cartTotalQty,
   weightVolume,
-  allProducts,
-  isLoadingProducts,
   templates,
   canCreateCart,
   onGenerateQuote,
