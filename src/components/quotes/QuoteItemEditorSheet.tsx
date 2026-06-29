@@ -49,7 +49,7 @@ export function QuoteItemEditorSheet({
         data-testid="quote-item-editor-sheet"
         aria-label="Editor de item do orçamento"
       >
-        <SheetHeader className="shrink-0 border-b border-border/50 px-2 py-2">
+        <SheetHeader className="shrink-0 border-b border-border/50 px-1.5 py-1.5">
           <div className="flex items-center justify-between gap-2">
             <Button
               size="sm"
