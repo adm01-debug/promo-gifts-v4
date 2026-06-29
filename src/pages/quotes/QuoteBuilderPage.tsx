@@ -741,7 +741,7 @@ export default function QuoteBuilderPage() {
             onReorder={(newItems) => s.setItems(newItems)}
             quoteId={s.quoteId ?? null}
             setSkipAutosaveSortOrder={s.setSkipAutosaveSortOrder}
-
+            onAddProduct={() => s.setProductSearchOpen(true)}
           />
         </div>
       </div>
