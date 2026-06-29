@@ -129,6 +129,15 @@ for (const vp of VIEWPORTS) {
 
     test(`layout: conteúdo preenche o sheet (sem rodapé vazio > ${vp.maxGap}px)`, async ({ page }) => {
       const dialog = page.getByRole('dialog');
+      // Estabiliza fontes + 2 RAFs + animações off para evitar flake de medição.
+      await page.addStyleTag({
+        content: `*, *::before, *::after { transition: none !important; animation: none !important; }`,
+      });
+      await page.evaluate(async () => {
+        // @ts-expect-error -- document.fonts pode não existir em alguns engines
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      });
       const gap = await dialog.evaluate((root) => {
         const r = root.getBoundingClientRect();
         const focusables = Array.from(
