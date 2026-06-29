@@ -82,5 +82,45 @@ for (const vp of VIEWPORTS) {
         { maxDiffPixelRatio: 0.02 },
       );
     });
+
+    test('Preço é read-only (sem input editável) e expõe a11y de somente leitura', async ({
+      page,
+    }) => {
+      const row = page.getByTestId('quote-item-1');
+      const display = row.getByTestId('quote-item-price-display');
+
+      // Existe display read-only e NÃO existe input editável.
+      await expect(display).toBeVisible();
+      await expect(row.getByTestId('quote-item-price-input')).toHaveCount(0);
+
+      // Não é um <input>/<textarea>/contenteditable — usuário não consegue digitar.
+      const editable = await display.evaluate((el) => {
+        const tag = el.tagName.toLowerCase();
+        return (
+          tag === 'input' ||
+          tag === 'textarea' ||
+          (el as HTMLElement).isContentEditable === true
+        );
+      });
+      expect(editable, 'preço NÃO pode ser editável').toBe(false);
+
+      // a11y: aria-label e title comunicam "somente leitura / não editável".
+      const aria = await display.getAttribute('aria-label');
+      expect(aria, 'aria-label deve marcar como somente leitura').toMatch(
+        /somente leitura|read[- ]?only|n[ãa]o edit/i,
+      );
+      const title = await display.getAttribute('title');
+      expect(title, 'title deve explicar que o preço não é editável').toMatch(
+        /n[ãa]o edit|cat[áa]logo|read[- ]?only/i,
+      );
+
+      // Tentar focar+digitar não deve alterar o texto exibido.
+      const before = (await display.textContent())?.trim() ?? '';
+      await display.click({ force: true }).catch(() => {});
+      await page.keyboard.type('9999');
+      const after = (await display.textContent())?.trim() ?? '';
+      expect(after).toBe(before);
+    });
   });
 }
+
