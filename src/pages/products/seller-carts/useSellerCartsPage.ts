@@ -9,7 +9,6 @@ import { useCartTemplates, type CartTemplateItem, type SellerCart } from '@/hook
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  recordAction,
   exportCartToCSV,
   exportCartToPDF,
   shareCartLink,
