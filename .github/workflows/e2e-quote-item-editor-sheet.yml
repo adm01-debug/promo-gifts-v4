@@ -60,7 +60,9 @@ jobs:
 
       - name: Run QuoteItemEditorSheet spec (${{ matrix.browser }})
         run: |
-          npx playwright test e2e/quotes/quote-item-editor-sheet-header.spec.ts \
+          npx playwright test \
+            e2e/quotes/quote-item-editor-sheet-header.spec.ts \
+            e2e/quotes/quote-add-product-button.spec.ts \
             --project=${{ matrix.browser }}-public \
             --reporter=line
 
