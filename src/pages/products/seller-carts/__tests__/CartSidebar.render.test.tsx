@@ -85,12 +85,27 @@ describe('CartSidebar — render smoke pós-faxina', () => {
     expect(screen.getByText(/Gerar Orçamento/i)).toBeInTheDocument();
   });
 
-  it('NÃO renderiza painéis legados (Saúde do carrinho / Inteligência de vendas / Histórico de ações)', () => {
-    renderSidebar();
+  it('NÃO renderiza painéis legados (Saúde do carrinho / Inteligência de vendas / Histórico de ações / Sugestões inteligentes)', () => {
+    const { container } = renderSidebar();
 
+    // Textos visíveis dos painéis removidos
     expect(screen.queryByText(/Saúde do carrinho/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Inteligência de vendas/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Histórico de ações/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sugestões inteligentes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Checklist/i)).not.toBeInTheDocument();
+
+    // Aria-labels / botões dos painéis legados
+    expect(screen.queryByRole('button', { name: /recolher/i })).not.toBeInTheDocument();
+
+    // Garante que SOMENTE o card hero (ZONE 1) é renderizado no sidebar.
+    // Os painéis removidos eram <Card> irmãos; se reintroduzidos, este count quebra.
+    const cards = container.querySelectorAll('[data-slot="card"], .rounded-lg.border.bg-card, [class*="bg-gradient-to-br"]');
+    // Hero card é o único <Card> visível no sidebar (dialogs ficam em portal).
+    const heroCards = Array.from(cards).filter((el) =>
+      el.textContent?.includes('Subtotal do carrinho'),
+    );
+    expect(heroCards).toHaveLength(1);
   });
 
   it('CartUtilComponents NÃO expõe mais SmartSuggestions/ActionHistoryPanel e helpers de histórico', () => {
@@ -98,8 +113,32 @@ describe('CartSidebar — render smoke pós-faxina', () => {
     expect(exported.SmartSuggestions).toBeUndefined();
     expect(exported.ActionHistoryPanel).toBeUndefined();
     expect(exported.SuggestionSkeleton).toBeUndefined();
+    expect(exported.CartHealthChecklist).toBeUndefined();
     expect(exported.recordAction).toBeUndefined();
     expect(exported.getActionHistory).toBeUndefined();
     expect(exported.clearActionHistory).toBeUndefined();
+  });
+
+  it('renderiza apenas o card hero + menu de ações secundárias (sem outros cards de painel)', () => {
+    renderSidebar();
+
+    // Hero pricing
+    expect(screen.getByText(/Subtotal do carrinho/i)).toBeInTheDocument();
+    expect(screen.getByText(/SKUs/i)).toBeInTheDocument();
+    expect(screen.getByText(/Qtd\. total/i)).toBeInTheDocument();
+
+    // CTA principal
+    expect(screen.getByTestId('cart-checkout-cta')).toBeInTheDocument();
+
+    // Nenhum dos labels dos painéis removidos
+    const forbiddenLabels = [
+      /Próximo passo recomendado/i,
+      /Conversão estimada/i,
+      /Margem do carrinho/i,
+      /Última ação/i,
+    ];
+    for (const re of forbiddenLabels) {
+      expect(screen.queryByText(re)).not.toBeInTheDocument();
+    }
   });
 });
