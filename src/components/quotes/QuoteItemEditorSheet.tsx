@@ -49,7 +49,7 @@ export function QuoteItemEditorSheet({
         data-testid="quote-item-editor-sheet"
         aria-label="Editor de item do orçamento"
       >
-        <SheetHeader className="shrink-0 border-b border-border/50 px-2 py-2">
+        <SheetHeader className="shrink-0 border-b border-border/50 px-1.5 py-1.5">
           <div className="flex items-center justify-between gap-2">
             <Button
               size="sm"
@@ -65,7 +65,7 @@ export function QuoteItemEditorSheet({
           </div>
         </SheetHeader>
 
-        <div className="flex flex-1 flex-col overflow-y-auto px-2 py-2">
+        <div className="flex flex-1 flex-col overflow-y-auto px-1.5 py-1.5">
           {item && index !== null ? (
             <div className="flex min-h-full flex-1 flex-col space-y-3 [&>*]:flex-1 [&_.bg-card\/60]:bg-transparent [&_.bg-card]:bg-transparent [&_.rounded-2xl]:flex [&_.rounded-2xl]:!max-h-none [&_.rounded-2xl]:flex-1 [&_.rounded-2xl]:flex-col [&_.rounded-2xl]:rounded-none [&_.rounded-2xl]:border-0 [&_.rounded-2xl]:shadow-none">
 
