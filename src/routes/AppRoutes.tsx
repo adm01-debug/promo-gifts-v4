@@ -141,6 +141,12 @@ export function AppRoutes() {
             element={<QuoteItemEditorSheetHarness />}
           />
         )}
+        {QuoteAddProductButtonHarness && (
+          <Route
+            path="/__visual/quote-add-product-button"
+            element={<QuoteAddProductButtonHarness />}
+          />
+        )}
 
 
 
