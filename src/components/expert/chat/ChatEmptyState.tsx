@@ -112,7 +112,7 @@ export function ChatEmptyState({
       >
         {clientId
           ? `Seu assistente pessoal para vender mais para ${clientName || 'este cliente'}.`
-          : 'Seu assistente pessoal de vendas. Produtos, propostas, follow-ups e oportunidades.'}
+          : 'Seu assistente pessoal de vendas. Produtos, propostas e oportunidades.'}
       </motion.p>
       <motion.div
         variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
