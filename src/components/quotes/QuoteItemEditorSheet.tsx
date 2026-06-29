@@ -56,6 +56,7 @@ export function QuoteItemEditorSheet({
   onUpdateQuantity,
   onUpdatePrice,
   onRemove,
+  onRestore,
   onConfirmPrice,
   onPersonalizationsChange,
   formatCurrency,
