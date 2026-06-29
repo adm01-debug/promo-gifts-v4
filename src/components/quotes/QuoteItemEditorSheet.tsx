@@ -65,9 +65,10 @@ export function QuoteItemEditorSheet({
           </div>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="flex-1 overflow-y-auto bg-background px-2 py-2 [&_.bg-card\/60]:!bg-transparent [&_.bg-card]:!bg-transparent [&_.rounded-2xl]:!rounded-none [&_.rounded-2xl]:!border-0 [&_.rounded-2xl]:!shadow-none">
           {item && index !== null ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
+
               <QuoteItemsList
                 items={[item]}
                 onUpdateQuantity={(_, qty) => onUpdateQuantity(index, qty)}
