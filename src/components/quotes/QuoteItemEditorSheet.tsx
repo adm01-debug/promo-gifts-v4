@@ -33,6 +33,7 @@ interface QuoteItemEditorSheetProps {
   onUpdateQuantity: (index: number, qty: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
+  onRestore?: (item: QuoteItem, index: number) => void;
   onConfirmPrice: (index: number) => void;
   onPersonalizationsChange: (index: number, p: QuoteItemPersonalization[]) => void;
   formatCurrency: (value: number) => string;
