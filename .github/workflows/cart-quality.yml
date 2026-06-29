@@ -6,6 +6,14 @@ name: Cart Quality — Typecheck, Unit & E2E
 # IMPORTANTE: o job `carrinhos` PRESERVA o nome exato porque é required check
 # no Branch Protection (ver .github/required-checks.json → ruleset "main").
 # Não renomeie sem atualizar required-checks.json e o ruleset no GitHub.
+#
+# Roteamento (per-job via dorny/paths-filter):
+#   required-checks-drift → SEMPRE (gate da SSOT)
+#   typecheck-unit         → quando QUALQUER coisa que afete CartSidebar muda
+#                            (CartSidebar.tsx, components/cart/**, contexto,
+#                             hook, tests, workflow)
+#   carrinhos (E2E)        → SOMENTE quando seller-carts/** OU components/cart/**
+#                            mudarem (escopo enxuto, evita E2E em PRs de teste)
 
 on:
   push:
@@ -15,11 +23,14 @@ on:
       - 'src/pages/products/seller-carts/**'
       - 'src/pages/products/**'
       - 'src/contexts/SellerCartContext.tsx'
+      - 'src/contexts/__tests__/SellerCartContext.test.tsx'
       - 'src/hooks/products/useSellerCarts.ts'
       - 'tests/components/cart/**'
       - 'e2e/carrinhos/**'
       - 'e2e/helpers/cart-mock.ts'
       - '.github/workflows/cart-quality.yml'
+      - '.github/required-checks.json'
+      - 'scripts/check-required-checks.mjs'
   pull_request:
     branches: [main, master, develop]
     paths:
@@ -27,16 +38,71 @@ on:
       - 'src/pages/products/seller-carts/**'
       - 'src/pages/products/**'
       - 'src/contexts/SellerCartContext.tsx'
+      - 'src/contexts/__tests__/SellerCartContext.test.tsx'
       - 'src/hooks/products/useSellerCarts.ts'
       - 'tests/components/cart/**'
       - 'e2e/carrinhos/**'
       - 'e2e/helpers/cart-mock.ts'
       - '.github/workflows/cart-quality.yml'
+      - '.github/required-checks.json'
+      - 'scripts/check-required-checks.mjs'
   workflow_dispatch:
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # 0) Classifica o diff em buckets para ligar/desligar jobs por escopo real.
+  # ─────────────────────────────────────────────────────────────────────────
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      unit: ${{ steps.filter.outputs.unit }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            unit:
+              - 'src/pages/products/seller-carts/CartSidebar.tsx'
+              - 'src/pages/products/seller-carts/**'
+              - 'src/components/cart/**'
+              - 'src/contexts/SellerCartContext.tsx'
+              - 'src/contexts/__tests__/SellerCartContext.test.tsx'
+              - 'src/hooks/products/useSellerCarts.ts'
+              - 'tests/components/cart/**'
+              - '.github/workflows/cart-quality.yml'
+            e2e:
+              - 'src/pages/products/seller-carts/**'
+              - 'src/components/cart/**'
+              - 'e2e/carrinhos/**'
+              - 'e2e/helpers/cart-mock.ts'
+              - '.github/workflows/cart-quality.yml'
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1) Gate SSOT: required check ainda aponta para este workflow + job carrinhos
+  # ─────────────────────────────────────────────────────────────────────────
+  required-checks-drift:
+    name: required-checks-drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validar SSOT de required checks (cart-quality → carrinhos)
+        run: node scripts/check-required-checks.mjs
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2) Typecheck + Unit Tests — dispara em qualquer mudança que afete o sidebar
+  # ─────────────────────────────────────────────────────────────────────────
   typecheck-unit:
     name: typecheck-unit
+    needs: changes
+    # PR: só roda se o bucket "unit" mudou. push/dispatch: sempre roda.
+    if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.unit == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -76,9 +142,14 @@ jobs:
             tests/components/cart/ \
             --reporter=default
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # 3) E2E carrinhos — escopo enxuto: só roda quando o módulo Cart muda
+  # ─────────────────────────────────────────────────────────────────────────
   carrinhos:
     name: carrinhos
-    needs: typecheck-unit
+    needs: [changes, typecheck-unit]
+    # PR: só roda se o bucket "e2e" mudou. push/dispatch: sempre roda.
+    if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.e2e == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -97,9 +168,14 @@ jobs:
       - name: Install Playwright Chromium
         run: npm run test:e2e:install
 
-      # Roda toda a suíte de carrinhos (inclui popover-footer-matrix.spec.ts e
-      # popover-scroll.spec.ts). Falha = merge bloqueado pelo branch protection.
-      - name: Run E2E — Carrinhos (limite 10 + popover footer matrix)
+      # Smoke rápido do sidebar (sem painéis legados). Falha cedo se alguém
+      # reintroduzir "Saúde do carrinho" / "Inteligência de vendas" / etc.
+      - name: E2E smoke — CartSidebar sem painéis legados
+        run: npx playwright test e2e/carrinhos/sidebar-no-legacy-labels.spec.ts --project=chromium-authed --retries=1
+
+      # Suíte completa de carrinhos (popover footer matrix, limite 10, etc.).
+      # Falha = merge bloqueado pelo branch protection (required check).
+      - name: Run E2E — Carrinhos (suíte completa)
         run: npm run test:e2e:carrinhos -- --retries=2
 
       - name: Upload Playwright report
