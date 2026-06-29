@@ -355,9 +355,12 @@ export function ProductCustomizationOptions({
                     key={loc.location_code}
                     type="button"
                     disabled={isDisabled}
+                    aria-pressed={isActive}
+                    aria-label={`${isCircular ? 'CIRCULAR 360°' : loc.location_name}${hasPrice ? ' (configurado)' : ''}${isActive ? ' — selecionado' : ''}`}
                     onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
                     className={cn(
-                      'group relative flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-center transition-all md:h-11 md:px-3',
+                      'group relative flex h-8 w-full items-center justify-center gap-1.5 rounded-md border px-2 text-center transition-all',
+                      stacked ? 'h-8' : 'md:h-9 md:px-3',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                       isDisabled
                         ? 'cursor-not-allowed border-border bg-muted/30 opacity-40'
@@ -366,10 +369,10 @@ export function ProductCustomizationOptions({
                           : 'border-border bg-transparent text-foreground hover:border-primary/40 hover:bg-primary/5',
                     )}
                   >
-                    <span className="truncate text-[10px] font-semibold uppercase tracking-wide md:text-xs">
+                    <span className="truncate text-[10px] font-semibold uppercase tracking-wide">
                       {isCircular ? 'CIRCULAR 360°' : loc.location_name}
                     </span>
-                    {hasPrice && <span className="text-[10px] font-bold text-primary">✓</span>}
+                    {hasPrice && <span aria-hidden className="text-[10px] font-bold text-primary">✓</span>}
                   </button>
                 );
 
