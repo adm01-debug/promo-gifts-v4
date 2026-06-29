@@ -41,6 +41,7 @@ import {
 import { format, addDays, startOfDay } from 'date-fns';
 
 import { QuoteProductCustomization } from '@/components/quotes/QuoteProductCustomization';
+import { QuoteItemEditorSheet } from '@/components/quotes/QuoteItemEditorSheet';
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
