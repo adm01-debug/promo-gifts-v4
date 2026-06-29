@@ -26,6 +26,7 @@ interface QuoteItemsListProps {
   onUpdateQuantity: (index: number, quantity: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
+  onRestore?: (item: QuoteItem, index: number) => void;
   onTogglePersonalization?: (index: number) => void;
   onConfirmPrice?: (index: number) => void;
   expandedItems?: Set<number>;
