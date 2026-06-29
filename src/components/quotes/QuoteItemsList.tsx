@@ -214,7 +214,7 @@ function QuoteItemRow({
                   }
                 }}
                 data-testid="quote-item-qty-input"
-                className="h-7 w-11 px-1 text-xs tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
+                className="h-7 w-11 px-1 font-display text-xs font-medium tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
               />
             </div>
 
@@ -229,7 +229,7 @@ function QuoteItemRow({
                   aria-readonly="true"
                   aria-label={`Valor unitário (somente leitura, não editável): ${formatCurrency(item.unit_price)}`}
                   title="Preço definido pelo catálogo — somente leitura, não editável aqui"
-                  className="whitespace-nowrap cursor-not-allowed select-none text-xs font-semibold tabular-nums text-muted-foreground min-[360px]:text-sm"
+                  className="whitespace-nowrap cursor-not-allowed select-none font-display text-xs font-medium tabular-nums text-muted-foreground min-[360px]:text-sm"
                 >
                   {formatCurrency(item.unit_price)}
                 </span>
@@ -252,7 +252,7 @@ function QuoteItemRow({
               <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Subtotal
               </span>
-              <span className="whitespace-nowrap text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
+              <span className="whitespace-nowrap font-display text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
                 {formatCurrency(itemTotal)}
               </span>
             </div>
