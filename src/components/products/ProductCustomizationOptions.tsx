@@ -30,6 +30,11 @@ interface ProductCustomizationOptionsProps {
   quantity?: number;
   initialPersonalizations?: PersonalizationItem[];
   onSelectionChange?: (personalizations: PersonalizationItem[]) => void;
+  /**
+   * 'auto' (default): grid 2-col com aside sticky em ≥lg (PDP).
+   * 'stacked': fluxo vertical single-column compacto (drawer estreito).
+   */
+  layout?: 'auto' | 'stacked';
 }
 
 /** Detecta se um local é "CIRCULAR/360°" (mutuamente exclusivo com locais planos). */
