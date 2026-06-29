@@ -47,6 +47,7 @@ export default function QuoteItemEditorSheetHarness() {
   }, []);
   const withItem = params.get('withItem') === '1';
   const longContent = params.get('longContent') === '1';
+  const unsaved = params.get('unsaved') === '1';
   const item = withItem ? makeStubItem(longContent) : null;
   const index = withItem ? 0 : null;
 
@@ -84,6 +85,7 @@ export default function QuoteItemEditorSheetHarness() {
         onPersonalizationsChange={() => {}}
         formatCurrency={fmt}
         onAddProduct={() => setAddProductClicks((c) => c + 1)}
+        hasUnsavedChanges={unsaved}
       />
     </main>
   );
