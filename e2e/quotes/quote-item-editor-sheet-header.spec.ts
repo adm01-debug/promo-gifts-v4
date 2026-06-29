@@ -33,7 +33,7 @@ for (const vp of VIEWPORTS) {
     test('DOM: "+ Produto" presente e texto "Detalhes do Item" removido', async ({ page }) => {
       const dialog = page.getByRole('dialog');
       const result = await dialog.evaluate((root) => {
-        const btn = root.querySelector('[data-testid="quote-add-product-button-sheet"]');
+        const btn = root.querySelector('[data-testid="quote-save-item-button-sheet"]');
         const hasOldTitle = /Detalhes do Item/i.test(root.textContent ?? '');
         return { hasBtn: !!btn, hasOldTitle };
       });
@@ -43,7 +43,7 @@ for (const vp of VIEWPORTS) {
 
     test('layout: "+ Produto" alinhado à esquerda, sem overflow', async ({ page }) => {
       const dialog = page.getByRole('dialog');
-      const btn = page.getByTestId('quote-add-product-button-sheet');
+      const btn = page.getByTestId('quote-save-item-button-sheet');
 
       const [dlgBox, btnBox] = await Promise.all([
         dialog.boundingBox(),
@@ -78,7 +78,7 @@ for (const vp of VIEWPORTS) {
       const reachedAddProduct = await page.evaluate(() => {
         const dlg = document.querySelector('[role="dialog"]');
         const target = dlg?.querySelector(
-          '[data-testid="quote-add-product-button-sheet"]',
+          '[data-testid="quote-save-item-button-sheet"]',
         ) as HTMLElement | null;
         if (!target) return false;
         const focusables = Array.from(
@@ -102,7 +102,7 @@ for (const vp of VIEWPORTS) {
       });
       const header = page
         .getByRole('dialog')
-        .locator('[data-testid="quote-add-product-button-sheet"]')
+        .locator('[data-testid="quote-save-item-button-sheet"]')
         .locator('xpath=ancestor::*[contains(@class, "flex")][1]');
       await expect(header).toBeVisible();
       expect(await header.screenshot()).toMatchSnapshot(
