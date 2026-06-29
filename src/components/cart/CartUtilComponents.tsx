@@ -72,7 +72,7 @@ export function PriceLabel({ label, value, testId, className, isPrimary }: Price
     <div className={cn('flex flex-col space-y-0.5', className)}>
       <span
         className={cn(
-          'font-bold uppercase tracking-tight text-muted-foreground opacity-60 transition-opacity group-hover:opacity-80',
+          'font-medium tracking-tight text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100',
           className?.includes('flex-row') ? 'text-[8px]' : 'text-[10px]',
         )}
       >
@@ -163,7 +163,7 @@ export function FollowUpTimer({ createdAt, status }: { createdAt: string; status
       className={cn(
         'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs',
         isUrgent
-          ? 'border-destructive/20 bg-destructive/10 text-destructive'
+          ? 'border-warning/30 bg-warning/15 text-warning'
           : isWarning
             ? 'border-warning/20 bg-warning/10 text-warning'
             : 'border-border/30 bg-muted/50 text-muted-foreground',
