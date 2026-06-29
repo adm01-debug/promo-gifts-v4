@@ -97,7 +97,7 @@ function formToPayload(formData: VariantFormData, extra?: Record<string, unknown
   // which is why every variant create/edit was failing. They are omitted so the
   // real columns persist. (These VariantForm inputs are non-persisted until
   // dedicated columns — or an attributes-jsonb mapping — are added; tracked as a
-  // follow-up so we don't silently clobber the sync-managed attributes jsonb here.)
+  // tarefa pendente, para não sobrescrever silenciosamente o jsonb gerenciado pelo sync.)
   return {
     ...extra,
     name: formData.name.trim(),

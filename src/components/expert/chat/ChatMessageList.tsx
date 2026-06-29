@@ -315,7 +315,7 @@ export function ChatMessageList({
           })}
         </AnimatePresence>
 
-        {/* Follow-up actions */}
+        {/* Ações sugeridas */}
         {messages.length > 0 &&
           messages[messages.length - 1]?.role === 'assistant' &&
           !messages[messages.length - 1]?.isError &&
@@ -342,9 +342,9 @@ export function ChatMessageList({
                       },
                       {
                         emoji: '💬',
-                        label: 'Msg follow-up',
+                        label: 'Msg WhatsApp',
                         prompt:
-                          'Crie uma mensagem de follow-up para enviar a este cliente por WhatsApp.',
+                          'Crie uma mensagem para enviar a este cliente por WhatsApp.',
                       },
                     ]
                   : []),
