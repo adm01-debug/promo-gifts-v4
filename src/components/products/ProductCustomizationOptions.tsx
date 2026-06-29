@@ -208,8 +208,54 @@ export function ProductCustomizationOptions({
 
   const summaryItems = Array.from(pricesRef.current.values());
 
-  const summary = pricesRef.current.size > 0 && (
+  // Agrupa por tipo de LADO (Plano vs Circular) para o aside ficar didático
+  // sem aumentar scroll. Quando só há um tipo, renderiza flat (modelo single-LADO).
+  const groupedSummary = (() => {
+    const circulars = summaryItems.filter((it) => {
+      const loc = locations.find((l) => l.location_code === it.locationCode);
+      return loc ? isCircularLocation(loc) : false;
+    });
+    const flats = summaryItems.filter((it) => !circulars.includes(it));
+    const groups: { label: string; items: PersonalizationItem[] }[] = [];
+    if (flats.length) groups.push({ label: 'Lados planos', items: flats });
+    if (circulars.length) groups.push({ label: 'Circular 360°', items: circulars });
+    return groups;
+  })();
+
+  const showGroupHeaders = groupedSummary.length > 1;
+
+  const renderItem = (item: PersonalizationItem) => (
     <div
+      key={item.locationCode}
+      className="flex items-center justify-between gap-3 px-3 py-2"
+    >
+      <div className="flex min-w-0 items-baseline gap-2">
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
+          {item.locationName}
+        </span>
+        <span className="truncate text-[12px] font-medium text-foreground">
+          {item.techniqueName}
+        </span>
+        <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
+          {item.width && item.height && <>· {item.width}×{item.height}cm </>}
+          · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
+        </span>
+      </div>
+      <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
+        {item.price?.total_cobrado?.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        })}
+      </span>
+    </div>
+  );
+
+  const summary = pricesRef.current.size > 0 && (
+    <section
+      role="region"
+      aria-label="Resumo das configurações de personalização"
+      aria-live="polite"
+      aria-atomic="false"
       className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
       data-testid="customization-summary"
     >
@@ -225,36 +271,31 @@ export function ProductCustomizationOptions({
         </span>
       </div>
 
-      <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
-        {summaryItems.map((item) => (
+      <div className="space-y-2">
+        {groupedSummary.map((group) => (
           <div
-            key={item.locationCode}
-            className="flex items-center justify-between gap-3 px-3 py-2"
+            key={group.label}
+            data-testid={`customization-summary-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
           >
-            <div className="flex min-w-0 items-baseline gap-2">
-              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
-                {item.locationName}
-              </span>
-              <span className="truncate text-[12px] font-medium text-foreground">
-                {item.techniqueName}
-              </span>
-              <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
-                {item.width && item.height && <>· {item.width}×{item.height}cm </>}
-                · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
-              </span>
+            {showGroupHeaders && (
+              <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/80">
+                {group.label}
+              </p>
+            )}
+            <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
+              {group.items.map(renderItem)}
             </div>
-            <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
-              {item.price?.total_cobrado?.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
-            </span>
           </div>
         ))}
       </div>
 
       {summaryItems.length > 1 && (
-        <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-3 py-2">
+        <div
+          className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-3 py-2"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="customization-summary-total"
+        >
           <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Total personalização
           </span>
