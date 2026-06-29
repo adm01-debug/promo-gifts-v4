@@ -27,7 +27,6 @@ import {
   getStatusCfg,
   STATUS_CONFIG,
   CartItemSkeleton,
-  FollowUpTimer,
   CompareCartsDialog,
   MobileSummarySheet,
   formatCurrency,
