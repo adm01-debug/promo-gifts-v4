@@ -26,6 +26,14 @@ interface QuoteItemEditorSheetProps {
   onPersonalizationsChange: (index: number, p: QuoteItemPersonalization[]) => void;
   formatCurrency: (value: number) => string;
   onAddProduct: () => void;
+  /**
+   * Quando `true`, intercepta o fechamento do sheet com `window.confirm`
+   * para evitar perda de escolhas não persistidas. Opt-in — por padrão
+   * fica desligado (cada `onUpdate*` já persiste em tempo real).
+   */
+  hasUnsavedChanges?: boolean;
+  /** Mensagem da confirmação. Default em PT-BR. */
+  unsavedChangesMessage?: string;
 }
 
 export function QuoteItemEditorSheet({
@@ -40,9 +48,23 @@ export function QuoteItemEditorSheet({
   onPersonalizationsChange,
   formatCurrency,
   onAddProduct,
+  hasUnsavedChanges = false,
+  unsavedChangesMessage = 'Você tem alterações não salvas. Deseja realmente fechar?',
 }: QuoteItemEditorSheetProps) {
+  const requestClose = (next: boolean) => {
+    if (next) {
+      onOpenChange(true);
+      return;
+    }
+    if (hasUnsavedChanges && typeof window !== 'undefined') {
+      const ok = window.confirm(unsavedChangesMessage);
+      if (!ok) return;
+    }
+    onOpenChange(false);
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={requestClose}>
       <SheetContent
         side="right"
         className="flex w-full flex-col gap-0 p-0 sm:max-w-[430px]"
