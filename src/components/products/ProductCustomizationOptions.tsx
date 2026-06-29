@@ -54,7 +54,9 @@ export function ProductCustomizationOptions({
   quantity = 100,
   initialPersonalizations = [],
   onSelectionChange,
+  layout = 'auto',
 }: ProductCustomizationOptionsProps) {
+  const stacked = layout === 'stacked';
   const { data: options, isLoading, isError, error, refetch } = useProductCustomizationOptions(productId);
   const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
