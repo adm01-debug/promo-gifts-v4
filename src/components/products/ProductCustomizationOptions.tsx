@@ -225,36 +225,57 @@ export function ProductCustomizationOptions({
         </span>
       </div>
 
-      <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
-        {summaryItems.map((item) => (
-          <div
-            key={item.locationCode}
-            className="flex items-center justify-between gap-3 px-3 py-2"
-          >
-            <div className="flex min-w-0 items-baseline gap-2">
-              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
-                {item.locationName}
-              </span>
-              <span className="truncate text-[12px] font-medium text-foreground">
-                {item.techniqueName}
-              </span>
-              <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
-                {item.width && item.height && <>· {item.width}×{item.height}cm </>}
-                · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
-              </span>
+      <div className="divide-y divide-success/15 overflow-hidden rounded-md border border-success/20 bg-success/5">
+        {summaryItems.map((item) => {
+          const unit = item.price?.preco_unitario ?? 0;
+          const setup =
+            (item.price?.valor_gravacao ?? 0) + (item.price?.setup_total ?? 0);
+          const total = item.price?.total_cobrado ?? 0;
+          return (
+            <div key={item.locationCode} className="space-y-1.5 px-2.5 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-baseline gap-1.5">
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
+                    {item.locationName}
+                  </span>
+                  <span className="truncate text-[11px] font-medium text-foreground">
+                    {item.techniqueName}
+                  </span>
+                </div>
+                <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                  {item.width && item.height && <>{item.width}×{item.height}cm · </>}
+                  {item.numberOfColors}c
+                </span>
+              </div>
+              <dl className="space-y-0.5 text-[11px]">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Preço unitário</dt>
+                  <dd className="font-medium tabular-nums text-foreground">
+                    R$ {unit.toFixed(2)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Setup + gravação</dt>
+                  <dd className="font-medium tabular-nums text-foreground">
+                    R$ {setup.toFixed(2)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between border-t border-success/15 pt-1">
+                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Total
+                  </dt>
+                  <dd className="text-[13px] font-semibold tabular-nums text-success">
+                    {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </dd>
+                </div>
+              </dl>
             </div>
-            <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
-              {item.price?.total_cobrado?.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {summaryItems.length > 1 && (
-        <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-3 py-2">
+        <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-2.5 py-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Total personalização
           </span>
