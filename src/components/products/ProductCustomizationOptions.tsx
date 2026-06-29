@@ -230,7 +230,6 @@ export function ProductCustomizationOptions({
           const unit = item.price?.preco_unitario ?? 0;
           const setup =
             (item.price?.valor_gravacao ?? 0) + (item.price?.setup_total ?? 0);
-          const total = item.price?.total_cobrado ?? 0;
           return (
             <div key={item.locationCode} className="space-y-1.5 px-2.5 py-2">
               <div className="flex items-center justify-between gap-2">
@@ -265,7 +264,10 @@ export function ProductCustomizationOptions({
                     Total
                   </dt>
                   <dd className="text-[13px] font-semibold tabular-nums text-success">
-                    {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {(item.price?.total_cobrado ?? 0).toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    })}
                   </dd>
                 </div>
               </dl>
