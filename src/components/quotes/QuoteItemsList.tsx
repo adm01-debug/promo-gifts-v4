@@ -252,7 +252,7 @@ function QuoteItemRow({
               <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
                 Subtotal
               </span>
-              <span className="whitespace-nowrap text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
+              <span className="whitespace-nowrap font-display text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
                 {formatCurrency(itemTotal)}
               </span>
             </div>
