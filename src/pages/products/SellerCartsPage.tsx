@@ -3,7 +3,7 @@
  * - Header compactado (Carrinhos · X · Y · R$ Z)
  * - Picker em Dialog (Recentes/Favoritas/Todas)
  * - Tabs ricas (status dot, contador colorido, indicador follow-up, +novo)
- * - Cart header fundido (status como Select óbvio)
+ * - Cart header fundido (status como toggle segmentado óbvio)
  * - Empty state inteligente (template / duplicar / catálogo)
  * - Notas sempre visíveis (textarea inline com debounce)
  * - Sidebar reorganizada (Hero pricing → Ação → Menu) + Health Checklist
@@ -38,13 +38,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
 import { DeleteConfirmDialog, ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -464,7 +457,7 @@ function SellerCartsContent() {
         <>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
           <div className="space-y-4">
-            {/* Cart header fundido (status Select óbvio + ações inline) */}
+            {/* Cart header fundido (status como toggle segmentado + ações inline) */}
             <Card className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-center gap-4">
                 <div className="relative">
@@ -510,42 +503,47 @@ function SellerCartsContent() {
                 </div>
               </div>
               <div className="flex flex-shrink-0 items-center gap-2.5">
-                <Select
-                  value={s.activeCart.status}
-                  onValueChange={(v) =>
-                    s.activeCart && s.updateCartStatus(s.activeCart.id, v as CartStatus)
-                  }
+                <div
+                  role="radiogroup"
+                  aria-label="Status do carrinho"
+                  className="inline-flex items-center gap-1 rounded-xl border border-border/40 bg-muted/20 p-1"
                 >
-                  <SelectTrigger className="h-9 w-auto min-w-[170px] gap-2 rounded-xl border-border/40 bg-muted/20 text-xs font-bold transition-all hover:bg-muted/40">
-                    <span
-                      className={cn(
-                        'inline-block h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
-                        getStatusCfg(s.activeCart.status).color.split(' ')[0],
-                      )}
-                    />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl p-1">
-                    {(
-                      Object.entries(STATUS_CONFIG) as [
-                        CartStatus,
-                        (typeof STATUS_CONFIG)[CartStatus],
-                      ][]
-                    ).map(([key, cfg]) => (
-                      <SelectItem key={key} value={key} className="rounded-lg py-2">
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className={cn(
-                              'h-2 w-2 rounded-full shadow-sm',
-                              cfg.color.split(' ')[0],
-                            )}
-                          />
-                          <span className="font-medium">{cfg.label}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {(
+                    Object.entries(STATUS_CONFIG) as [
+                      CartStatus,
+                      (typeof STATUS_CONFIG)[CartStatus],
+                    ][]
+                  ).map(([key, cfg]) => {
+                    const active = s.activeCart?.status === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        aria-label={cfg.label}
+                        onClick={() => {
+                          if (s.activeCart) s.updateCartStatus(s.activeCart.id, key);
+                        }}
+                        className={cn(
+                          'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+                          active
+                            ? cfg.color
+                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            active ? 'bg-current opacity-80' : 'bg-muted-foreground/40',
+                          )}
+                        />
+                        {cfg.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
