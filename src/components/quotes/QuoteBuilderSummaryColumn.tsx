@@ -137,6 +137,8 @@ interface Props {
   /** Liga/desliga supressão do `sort_order` no payload de autosave global enquanto
    * o reorder granular está em voo (drag-and-drop ou "Agrupar"). RACE-PROOF. */
   setSkipAutosaveSortOrder?: (v: boolean) => void;
+  /** Abre o seletor de produtos para adicionar um novo item ao orçamento. */
+  onAddProduct?: () => void;
 }
 
 
