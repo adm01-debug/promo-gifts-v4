@@ -32,8 +32,6 @@ interface CartSidebarProps {
   cartSubtotal: number;
   cartTotalQty: number;
   weightVolume: { weightKg: number; volumeM3: number; volumeCm3: number } | null;
-  allProducts: Product[];
-  isLoadingProducts?: boolean;
   templates: {
     id: string;
     name: string;
