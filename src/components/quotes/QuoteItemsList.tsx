@@ -125,7 +125,9 @@ function QuoteItemRow({
                     {hasPersonalizations && (
                       <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
                         <Palette className="h-2.5 w-2.5" />
-                        {item.personalizations?.length} gravação(ões)
+                        {item.personalizations?.length === 1
+                          ? '1 gravação'
+                          : `${item.personalizations?.length} gravações`}
                       </Badge>
                     )}
                   </div>
