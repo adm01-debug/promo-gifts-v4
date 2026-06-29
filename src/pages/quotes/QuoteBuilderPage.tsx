@@ -773,7 +773,9 @@ export default function QuoteBuilderPage() {
         onPersonalizationsChange={s.handlePersonalizationsChange}
         formatCurrency={s.formatCurrency}
         onAddProduct={() => s.setProductSearchOpen(true)}
+        hasUnsavedChanges={hasUnsavedChanges}
       />
+
 
       <UnsavedChangesDialog
         open={showDialog}
