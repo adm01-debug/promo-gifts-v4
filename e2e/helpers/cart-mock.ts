@@ -35,7 +35,7 @@ export interface MockCart {
   company_location: string | null;
   company_logo_url: string | null;
   notes: string | null;
-  status: 'novo' | 'em_negociacao' | 'pronto_orcamento';
+  status: 'em_separacao' | 'pronto_orcamento';
   created_at: string;
   updated_at: string;
   seller_cart_items: MockCartItem[];
@@ -75,7 +75,7 @@ export function makeMockCart(idx: number, itemCount = 3): MockCart {
     company_location: 'Varejo | Revenda',
     company_logo_url: null,
     notes: null,
-    status: 'novo',
+    status: 'em_separacao',
     created_at: ts(86400000 * (idx + 1)),
     updated_at: ts(3600000 * idx),
     seller_cart_items: Array.from({ length: itemCount }, (_, j) => makeMockItem(id, idx, j)),

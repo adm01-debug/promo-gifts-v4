@@ -148,7 +148,7 @@ const mkRow = (over: Partial<Row>): Row => ({
 });
 const mkCart = (over: Partial<CartRow>): CartRow => ({
   id: 'cart-A', seller_id: 'seller-1', company_id: 'co', company_name: 'A', company_location: null,
-  company_logo_url: null, notes: null, status: 'novo', created_at: '', updated_at: '', ...over,
+  company_logo_url: null, notes: null, status: 'em_separacao', created_at: '', updated_at: '', ...over,
 });
 
 beforeEach(() => {

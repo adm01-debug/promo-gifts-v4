@@ -14,7 +14,7 @@ const carts = [
     id: 'cart-1',
     company_name: 'Empresa A',
     notes: null,
-    status: 'novo',
+    status: 'em_separacao',
     items: [
       { id: 'i1', product_id: 'p1', product_name: 'Caneta', product_price: 10, quantity: 2 },
       { id: 'i2', product_id: 'p2', product_name: 'Caderno', product_price: 5, quantity: 3 },

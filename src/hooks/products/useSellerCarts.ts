@@ -87,7 +87,7 @@ export interface CreateCartInput {
   company_logo_url?: string;
 }
 
-export type CartStatus = 'em_negociacao' | 'novo' | 'pronto_orcamento';
+export type CartStatus = 'em_separacao' | 'pronto_orcamento';
 
 // Raw row returned by Supabase nested select: `seller_carts.*, seller_cart_items(*)`
 type SellerCartRawRow = Omit<SellerCart, 'items'> & {
@@ -159,7 +159,7 @@ export function useSellerCarts() {
         return {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'novo') as CartStatus,
+          status: ((cart.status as string) ?? 'em_separacao') as CartStatus,
           items: (rowItems ?? []) as SellerCartItem[],
         };
       });
@@ -193,7 +193,7 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'novo' as CartStatus, items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'em_separacao' as CartStatus, items: [] } as SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });

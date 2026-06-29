@@ -28,7 +28,7 @@ function makeCart(i: number): SellerCart {
     company_location: null,
     company_logo_url: null,
     notes: null,
-    status: 'novo',
+    status: 'em_separacao',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     items: [],
