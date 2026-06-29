@@ -95,11 +95,12 @@ function QuoteItemRow({
         {/* Product header — sticky when personalization is open */}
         <div
           className={cn(
-            'z-10 bg-card/60 p-3',
+            'z-10 bg-card/60 p-2',
             isExpanded && 'sticky top-0 border-b border-border/40 bg-card',
           )}
         >
-          <div className="flex items-start gap-2.5">
+          <div className="flex items-start gap-2">
+
             {/* Product Image */}
             <ProductThumb
               src={item.product_image_url}
@@ -171,10 +172,10 @@ function QuoteItemRow({
             </div>
           </div>
 
-          {/* Inputs Row — full width below image */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <div className="flex items-center gap-1.5">
-              <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Qtd</span>
+          {/* Inputs Row — single line, compact on mobile */}
+          <div className="mt-2 flex flex-nowrap items-center gap-x-2">
+            <div className="flex min-w-0 items-center gap-1">
+              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Qtd</span>
               <Input
                 type="number"
                 min={1}
@@ -188,7 +189,6 @@ function QuoteItemRow({
                 }}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const raw = e.target.value;
-                  // Aceita vazio e dígitos (sem sinais/decimais) durante a edição.
                   if (raw === '' || /^\d+$/.test(raw)) {
                     setQtyDraft(raw);
                     const v = parseInt(raw, 10);
@@ -205,31 +205,35 @@ function QuoteItemRow({
                     onUpdateQuantity(v);
                   }
                 }}
-                className="h-7 w-16 px-2 text-xs tabular-nums"
+                className="h-7 w-12 px-1.5 text-xs tabular-nums sm:w-14"
               />
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">Preço</span>
+            <div className="flex min-w-0 items-center gap-1">
+              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Preço</span>
               <div className="flex items-center gap-1">
                 <CurrencyInput
                   value={item.unit_price}
                   onChange={(n) => onUpdatePrice(n)}
-                  className="h-7 w-24 px-2 text-xs tabular-nums"
+                  className="h-7 w-20 px-1.5 text-xs tabular-nums sm:w-24"
                 />
-                <PriceFreshnessBadge
-                  priceUpdatedAt={item.price_updated_at}
-                  confirmedAt={item.price_confirmed_at}
-                  thresholdDays={item.price_freshness_threshold_days}
-                  onConfirm={onConfirmPrice}
-                  variant="compact"
-                />
+                <span className="hidden sm:inline-flex">
+                  <PriceFreshnessBadge
+                    priceUpdatedAt={item.price_updated_at}
+                    confirmedAt={item.price_confirmed_at}
+                    thresholdDays={item.price_freshness_threshold_days}
+                    onConfirm={onConfirmPrice}
+                    variant="compact"
+                  />
+                </span>
               </div>
             </div>
-            <div className="ml-auto flex flex-col items-end leading-tight">
+            <div className="ml-auto flex min-w-0 flex-col items-end leading-tight">
               <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</span>
-              <span className="text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</span>
+              <span className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatCurrency(itemTotal)}</span>
             </div>
           </div>
+
+
 
         </div>
 
