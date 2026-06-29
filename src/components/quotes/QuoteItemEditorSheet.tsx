@@ -54,12 +54,14 @@ export function QuoteItemEditorSheet({
             <Button
               size="sm"
               variant="outline"
-              data-testid="quote-add-product-button-sheet"
-              onClick={onAddProduct}
+              data-testid="quote-save-item-button-sheet"
+              onClick={() => onOpenChange(false)}
+              aria-label="Salvar escolhas do produto"
               className="group h-8 rounded-full border-[1.5px] border-primary/70 bg-transparent px-3 text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12),0_0_18px_hsl(var(--primary)/0.35)] transition-all hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_24px_hsl(var(--primary)/0.55)] focus-visible:ring-2 focus-visible:ring-primary/60"
             >
-              <Plus className="mr-1 h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
-              <span className="font-medium">Produto</span>
+              <Check className="mr-1 h-3.5 w-3.5" />
+              <span className="font-medium">Salvar</span>
+
             </Button>
             <SheetTitle className="sr-only">Editor de item do orçamento</SheetTitle>
           </div>
