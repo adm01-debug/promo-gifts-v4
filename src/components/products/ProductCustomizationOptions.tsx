@@ -242,7 +242,7 @@ export function ProductCustomizationOptions({
                     {item.techniqueName}
                   </span>
                 </div>
-                <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-[10px] tabular-nums text-success/80">
                   {item.width && item.height && <>{item.width}×{item.height}cm · </>}
                   {item.numberOfColors}c
                 </span>
