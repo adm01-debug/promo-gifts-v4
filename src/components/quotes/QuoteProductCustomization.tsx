@@ -19,7 +19,16 @@ interface QuoteProductCustomizationProps {
   quantity: number;
   existingPersonalizations?: QuoteItemPersonalization[];
   onPersonalizationsChange: (personalizations: QuoteItemPersonalization[]) => void;
+  layout?: 'auto' | 'stacked';
 }
+
+export function QuoteProductCustomization({
+  productId,
+  quantity,
+  existingPersonalizations = [],
+  onPersonalizationsChange,
+  layout = 'auto',
+}: QuoteProductCustomizationProps) {
 
 export function QuoteProductCustomization({
   productId,
