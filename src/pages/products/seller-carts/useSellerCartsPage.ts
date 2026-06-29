@@ -9,7 +9,6 @@ import { useCartTemplates, type CartTemplateItem, type SellerCart } from '@/hook
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  recordAction,
   exportCartToCSV,
   exportCartToPDF,
   shareCartLink,
@@ -219,7 +218,6 @@ export function useSellerCartsPage() {
       removeItem(itemId);
       if (item && activeCart) {
         const cartId = activeCart.id;
-        recordAction(cartId, { type: 'remove', itemName, time: new Date() });
         showUndoToast({
           title: `${itemName} removido`,
           description: activeCart.company_name,
@@ -248,51 +246,22 @@ export function useSellerCartsPage() {
   const handleUpdateQuantity = useCallback(
     (itemId: string, qty: number) => {
       updateItemQuantity(itemId, qty);
-      const item = activeCart?.items.find((i) => i.id === itemId);
-      if (item && activeCart) {
-        recordAction(activeCart.id, {
-          type: 'qty',
-          itemName: item.product_name,
-          detail: `${qty}`,
-          time: new Date(),
-        });
-      }
     },
-    [updateItemQuantity, activeCart],
+    [updateItemQuantity],
   );
 
   const handleMoveItem = useCallback(
     (itemId: string, targetCartId: string) => {
-      const item = activeCart?.items.find((i) => i.id === itemId);
-      const targetCart = carts.find((c) => c.id === targetCartId);
       moveItemToCart(itemId, targetCartId);
-      if (item && activeCart) {
-        recordAction(activeCart.id, {
-          type: 'move',
-          itemName: item.product_name,
-          detail: targetCart?.company_name,
-          time: new Date(),
-        });
-      }
     },
-    [moveItemToCart, activeCart, carts],
+    [moveItemToCart],
   );
 
   const handleDuplicateItem = useCallback(
     (itemId: string, targetCartId: string) => {
-      const item = activeCart?.items.find((i) => i.id === itemId);
-      const targetCart = carts.find((c) => c.id === targetCartId);
       duplicateItemToCart(itemId, targetCartId);
-      if (item && activeCart) {
-        recordAction(activeCart.id, {
-          type: 'duplicate',
-          itemName: item.product_name,
-          detail: targetCart?.company_name,
-          time: new Date(),
-        });
-      }
     },
-    [duplicateItemToCart, activeCart, carts],
+    [duplicateItemToCart],
   );
 
   const handleClearCart = useCallback(async () => {
@@ -304,7 +273,7 @@ export function useSellerCartsPage() {
       toast.error('Erro ao limpar carrinho. Tente novamente.');
       return;
     }
-    recordAction(activeCart.id, { type: 'clear', itemName: 'todos os itens', time: new Date() });
+
 
     showUndoToast({
       title: `Carrinho limpo`,

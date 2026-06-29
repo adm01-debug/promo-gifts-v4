@@ -21,7 +21,7 @@ import {
 } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { clearActionHistory } from '@/components/cart/CartUtilComponents';
+
 
 interface SellerCartContextType {
   // Data
@@ -152,7 +152,6 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
       deleteCartMutation.mutate(cartId, {
         onSuccess: () => {
-          clearActionHistory(cartId);
           if (activeCartId === cartId) {
             setActiveCartId(null);
             // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
