@@ -145,6 +145,31 @@ export function QuoteItemEditorSheet({
           )}
         </div>
       </SheetContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent data-testid="quote-editor-unsaved-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
+            <AlertDialogDescription>{unsavedChangesMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="quote-editor-unsaved-cancel">
+              Continuar editando
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="quote-editor-unsaved-confirm"
+              onClick={() => {
+                setConfirmOpen(false);
+                onOpenChange(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Descartar e fechar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
+
