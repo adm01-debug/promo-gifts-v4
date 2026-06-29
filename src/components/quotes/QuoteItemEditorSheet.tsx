@@ -7,9 +7,20 @@
  *
  * Lógica de preço/personalização é preservada — apenas o invólucro muda.
  */
+import { useState } from 'react';
 import { Check, Package } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { QuoteItemsList } from './QuoteItemsList';
 import { QuoteProductCustomization } from './QuoteProductCustomization';
 import type { QuoteItem, QuoteItemPersonalization } from '@/hooks/quotes/quoteTypes';
@@ -27,9 +38,9 @@ interface QuoteItemEditorSheetProps {
   formatCurrency: (value: number) => string;
   onAddProduct: () => void;
   /**
-   * Quando `true`, intercepta o fechamento do sheet com `window.confirm`
-   * para evitar perda de escolhas não persistidas. Opt-in — por padrão
-   * fica desligado (cada `onUpdate*` já persiste em tempo real).
+   * Quando `true`, intercepta o fechamento implícito (ESC / click-outside)
+   * com um AlertDialog do shadcn. Ações explícitas (Salvar / Remover)
+   * sempre fecham direto, sem confirmação.
    */
   hasUnsavedChanges?: boolean;
   /** Mensagem da confirmação. Default em PT-BR. */
@@ -49,19 +60,22 @@ export function QuoteItemEditorSheet({
   formatCurrency,
   onAddProduct,
   hasUnsavedChanges = false,
-  unsavedChangesMessage = 'Você tem alterações não salvas. Deseja realmente fechar?',
+  unsavedChangesMessage = 'Você tem alterações não salvas neste item. Deseja realmente fechar e descartá-las?',
 }: QuoteItemEditorSheetProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const requestClose = (next: boolean) => {
     if (next) {
       onOpenChange(true);
       return;
     }
-    if (hasUnsavedChanges && typeof window !== 'undefined') {
-      const ok = window.confirm(unsavedChangesMessage);
-      if (!ok) return;
+    if (hasUnsavedChanges) {
+      setConfirmOpen(true);
+      return;
     }
     onOpenChange(false);
   };
+
 
   return (
     <Sheet open={open} onOpenChange={requestClose}>
