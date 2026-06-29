@@ -33,9 +33,9 @@ export function ChatEmptyState({
         },
         {
           emoji: '📞',
-          label: 'Follow-up',
+          label: 'Retomar contato',
           prompt:
-            'Quais orçamentos estão pendentes? Sugira mensagens de follow-up para retomar contato com este cliente.',
+            'Quais orçamentos estão pendentes? Sugira mensagens para retomar contato com este cliente.',
         },
         {
           emoji: '🎯',
