@@ -29,6 +29,9 @@ const QuoteItemsListMobileHarness = import.meta.env.DEV
 const QuoteItemEditorSheetHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemEditorSheetHarness'))
   : null;
+const QuoteAddProductButtonHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteAddProductButtonHarness'))
+  : null;
 
 
 
