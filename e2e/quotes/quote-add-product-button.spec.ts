@@ -93,5 +93,50 @@ for (const vp of VIEWPORTS) {
         '0',
       );
     });
+
+    test('teclado: Enter e Espaço abrem o dialog e foco entra dentro dele', async ({
+      page,
+    }) => {
+      await gotoAndSettle(page, `${ROUTE}?longContent=1`);
+      const btn = page.getByTestId('quote-add-product-button-summary');
+
+      // Enter
+      await btn.focus();
+      await expect(btn).toBeFocused();
+      await page.keyboard.press('Enter');
+      let dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      const focusInsideEnter = await page.evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]');
+        return !!dlg && !!document.activeElement && dlg.contains(document.activeElement);
+      });
+      expect(focusInsideEnter, 'foco deve entrar no dialog após Enter').toBe(true);
+
+      // Fecha (Escape) e reabre com Espaço.
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      await btn.focus();
+      await page.keyboard.press('Space');
+      dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+
+      // Tab dentro do dialog navega entre focáveis (lista longa).
+      const before = await page.evaluate(
+        () => (document.activeElement as HTMLElement | null)?.tagName ?? null,
+      );
+      await page.keyboard.press('Tab');
+      const after = await page.evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]');
+        const el = document.activeElement as HTMLElement | null;
+        return {
+          tag: el?.tagName ?? null,
+          inside: !!dlg && !!el && dlg.contains(el),
+        };
+      });
+      expect(after.inside, 'Tab mantém foco dentro do dialog (focus trap)').toBe(true);
+      expect(after.tag).not.toBeNull();
+      expect(after.tag).not.toBe(before); // foco progrediu
+    });
   });
 }
+
