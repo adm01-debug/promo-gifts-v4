@@ -21,7 +21,7 @@ import {
 } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { clearActionHistory } from '@/components/cart/CartUtilComponents';
+
 
 interface SellerCartContextType {
   // Data
