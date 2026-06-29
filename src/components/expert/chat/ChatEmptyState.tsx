@@ -67,8 +67,8 @@ export function ChatEmptyState({
         },
         {
           emoji: '📞',
-          label: 'Dicas de follow-up',
-          prompt: 'Me dê dicas de como fazer follow-up eficiente em orçamentos pendentes.',
+          label: 'Dicas de retomada',
+          prompt: 'Me dê dicas de como retomar contato em orçamentos pendentes.',
         },
         {
           emoji: '🎯',
