@@ -14,10 +14,11 @@ import { gotoAndSettle } from '../helpers/nav';
 
 const ROUTE = '/__visual/quote-item-editor-sheet';
 const VIEWPORTS = [
-  { name: '320', width: 320, height: 720 },
-  { name: '375', width: 375, height: 800 },
-  { name: '768', width: 768, height: 1024 },
-  { name: '1024', width: 1024, height: 900 },
+  { name: '320', width: 320, height: 720, maxGap: 32 },
+  { name: '375', width: 375, height: 800, maxGap: 32 },
+  { name: '768', width: 768, height: 1024, maxGap: 32 },
+  { name: '1024', width: 1024, height: 900, maxGap: 24 },
+  { name: '1440', width: 1440, height: 1000, maxGap: 24 },
 ] as const;
 
 for (const vp of VIEWPORTS) {
