@@ -759,6 +759,22 @@ export default function QuoteBuilderPage() {
         formatCurrency={s.formatCurrency}
       />
 
+      <QuoteItemEditorSheet
+        open={s.activeItemIndex !== null && !!s.items[s.activeItemIndex ?? -1]}
+        onOpenChange={(open) => {
+          if (!open) s.setActiveItemIndex(null);
+        }}
+        item={s.activeItemIndex !== null ? s.items[s.activeItemIndex] ?? null : null}
+        index={s.activeItemIndex}
+        onUpdateQuantity={s.updateItemQuantity}
+        onUpdatePrice={s.updateItemPrice}
+        onRemove={s.removeItem}
+        onConfirmPrice={s.confirmItemPrice}
+        onPersonalizationsChange={s.handlePersonalizationsChange}
+        formatCurrency={s.formatCurrency}
+        onAddProduct={() => s.setProductSearchOpen(true)}
+      />
+
       <UnsavedChangesDialog
         open={showDialog}
         onConfirm={confirmLeave}
