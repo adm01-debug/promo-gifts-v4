@@ -23,6 +23,10 @@ const PreviewButtonHarness = import.meta.env.DEV
 const QuoteViewOrderHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/QuoteViewOrderHarness'))
   : null;
+const QuoteItemsListMobileHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemsListMobileHarness'))
+  : null;
+
 
 
 // NProgress configuration
