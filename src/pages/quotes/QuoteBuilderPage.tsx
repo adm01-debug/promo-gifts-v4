@@ -40,7 +40,8 @@ import {
 // FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
 import { format, addDays, startOfDay } from 'date-fns';
 
-import { QuoteProductCustomization } from '@/components/quotes/QuoteProductCustomization';
+
+import { QuoteItemEditorSheet } from '@/components/quotes/QuoteItemEditorSheet';
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
@@ -287,7 +288,7 @@ export default function QuoteBuilderPage() {
 
         <div data-testid="quote-builder-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
-          <div className="min-w-0 lg:col-span-3">
+          <div className="min-w-0 lg:col-span-5">
             <div className="space-y-3 pr-1">
               <div
                 className={cn(
@@ -703,76 +704,8 @@ export default function QuoteBuilderPage() {
             </div>
           </div>
 
-          {/* COL 2 — Item ativo + Personalização */}
-          <div className="min-w-0 lg:col-span-5">
-            <div className="flex flex-col">
-              <div className="flex flex-col rounded-2xl border border-border/50 bg-card">
-                <div className="flex shrink-0 items-center justify-between p-4 pb-3">
-                  <div>
-                    <h3 className="font-display text-sm font-semibold">Itens do Orçamento</h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {s.items.length} item(ns) adicionado(s)
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    data-testid="quote-add-product-button"
-                    onClick={() => s.setProductSearchOpen(true)}
-                  >
-                    <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    Produto
-                  </Button>
-                </div>
-                <div className="px-4 pb-4">
-                  {s.items.length === 0 ? (
-                    <div className="py-12 text-center text-muted-foreground">
-                      <Package className="mx-auto mb-3 h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Nenhum item adicionado</p>
-                      <p className="mt-1 text-xs">Pesquise e adicione produtos ao orçamento</p>
-                    </div>
-                  ) : s.activeItemIndex !== null && s.items[s.activeItemIndex] ? (
-                    (() => {
-                      const item = s.items[s.activeItemIndex];
-                      const idx = s.activeItemIndex;
-                      return (
-                        <div className="space-y-3">
-                          <QuoteItemsList
-                            items={[item]}
-                            onUpdateQuantity={(_, qty) => s.updateItemQuantity(idx, qty)}
-                            onUpdatePrice={(_, price) => s.updateItemPrice(idx, price)}
-                            onRemove={() => {
-                              s.removeItem(idx);
-                              s.setActiveItemIndex(null);
-                            }}
-                            onConfirmPrice={() => s.confirmItemPrice(idx)}
-                            onTogglePersonalization={() => s.toggleExpanded(idx)}
-                            expandedItems={new Set(s.expandedItems.has(idx) ? [0] : [])}
-                            renderPersonalization={() => (
-                              <QuoteProductCustomization
-                                productId={item.product_id}
-                                quantity={item.quantity}
-                                existingPersonalizations={item.personalizations}
-                                onPersonalizationsChange={(p) =>
-                                  s.handlePersonalizationsChange(idx, p)
-                                }
-                              />
-                            )}
-                            formatCurrency={s.formatCurrency}
-                          />
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="py-12 text-center text-muted-foreground">
-                      <Package className="mx-auto mb-3 h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Selecione um item no resumo</p>
-                      <p className="mt-1 text-xs">Ou adicione um novo produto</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* COL 2 removida — agora migrada para QuoteItemEditorSheet (drawer lateral) */}
+
 
           {/* COL 3 — Resumo */}
           <QuoteBuilderSummaryColumn
@@ -824,6 +757,22 @@ export default function QuoteBuilderPage() {
         onProductClick={s.handleProductClick}
         onAddWithColor={s.addProductWithColor}
         formatCurrency={s.formatCurrency}
+      />
+
+      <QuoteItemEditorSheet
+        open={s.activeItemIndex !== null && !!s.items[s.activeItemIndex ?? -1]}
+        onOpenChange={(open) => {
+          if (!open) s.setActiveItemIndex(null);
+        }}
+        item={s.activeItemIndex !== null ? s.items[s.activeItemIndex] ?? null : null}
+        index={s.activeItemIndex}
+        onUpdateQuantity={s.updateItemQuantity}
+        onUpdatePrice={s.updateItemPrice}
+        onRemove={s.removeItem}
+        onConfirmPrice={s.confirmItemPrice}
+        onPersonalizationsChange={s.handlePersonalizationsChange}
+        formatCurrency={s.formatCurrency}
+        onAddProduct={() => s.setProductSearchOpen(true)}
       />
 
       <UnsavedChangesDialog
