@@ -87,6 +87,7 @@ export function QuoteItemEditorSheet({
                     quantity={item.quantity}
                     existingPersonalizations={item.personalizations}
                     onPersonalizationsChange={(p) => onPersonalizationsChange(index, p)}
+                    layout="stacked"
                   />
                 )}
                 formatCurrency={formatCurrency}
