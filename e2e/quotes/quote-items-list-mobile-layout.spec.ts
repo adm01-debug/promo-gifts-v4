@@ -35,7 +35,7 @@ for (const vp of VIEWPORTS) {
       await expect(row).toBeVisible();
 
       const qty = page.getByTestId('quote-item-1').getByTestId('quote-item-qty-input');
-      const price = page.getByTestId('quote-item-1').getByTestId('quote-item-price-input');
+      const price = page.getByTestId('quote-item-1').getByTestId('quote-item-price-display');
       const subtotal = page.getByTestId('quote-item-1').getByTestId('quote-item-subtotal');
 
       const [rowBox, qtyBox, priceBox, subBox] = await Promise.all([
