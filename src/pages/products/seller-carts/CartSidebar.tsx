@@ -81,9 +81,7 @@ export function CartSidebar({
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
 
-  // Paineis colapsaveis: abertos no desktop (xl), recolhidos no tablet.
-  const isXl = useMediaQuery('(min-width: 1280px)');
-  const [intelOpen, setIntelOpen] = useState(isXl);
+
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
