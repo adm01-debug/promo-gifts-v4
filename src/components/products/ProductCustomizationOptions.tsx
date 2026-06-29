@@ -306,7 +306,7 @@ export function ProductCustomizationOptions({
           </span>
         </div>
       )}
-    </div>
+    </section>
   );
 
   return (
