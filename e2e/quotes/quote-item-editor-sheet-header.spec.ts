@@ -251,6 +251,37 @@ for (const vp of VIEWPORTS) {
         expect(focusedIsPrice, `Tab #${i + 1} pousou no preço read-only`).toBe(false);
       }
     });
+
+    test('a11y teclado: ciclo Salvar → reabrir mantém preço fora do tab order', async ({
+      page,
+    }) => {
+      const openBtn = page.getByTestId('open-editor-sheet');
+      const sheet = page.getByTestId('quote-item-editor-sheet');
+      const save = page.getByTestId('quote-save-item-button-sheet');
+
+      // Salvar fecha o sheet.
+      await expect(save).toBeEnabled();
+      await save.click();
+      await expect(sheet).toBeHidden();
+
+      // Reabre e revalida que o preço não entra no tab order após o ciclo.
+      await openBtn.click();
+      await expect(sheet).toBeVisible();
+      const price = page.getByTestId('quote-item-price-display');
+      await expect(price).toBeVisible();
+
+      for (let i = 0; i < 10; i++) {
+        await page.keyboard.press('Tab');
+        const focusedTid = await page.evaluate(
+          () =>
+            (document.activeElement as HTMLElement | null)?.getAttribute('data-testid') ?? '',
+        );
+        expect(
+          focusedTid,
+          `pós-reabrir: Tab #${i + 1} pousou no preço`,
+        ).not.toBe('quote-item-price-display');
+      }
+    });
   });
 
 
