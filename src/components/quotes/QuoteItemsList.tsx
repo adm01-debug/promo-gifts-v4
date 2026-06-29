@@ -214,7 +214,7 @@ function QuoteItemRow({
                   }
                 }}
                 data-testid="quote-item-qty-input"
-                className="h-7 w-11 px-1 text-xs tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
+                className="h-7 w-11 px-1 font-display text-xs font-medium tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
               />
             </div>
 
