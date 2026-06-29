@@ -33,16 +33,22 @@ test.describe('CartSidebar · smoke pós-faxina (sem painéis legados)', () => {
 
     await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
 
-    // Espera o CartSidebar montar antes de afirmar AUSÊNCIA de rótulos —
-    // sem isso, um getByText(...).toHaveCount(0) passaria trivialmente
-    // enquanto o componente ainda nem renderizou (falso verde).
-    const checkoutCta = page.getByTestId('cart-checkout-cta');
-    await checkoutCta.waitFor({ state: 'visible', timeout: 15_000 });
-    await expect(page.getByText(/Subtotal do carrinho/i)).toBeVisible();
-    // Aguarda fim das animações de entrada (framer-motion) para garantir
-    // que qualquer painel que fosse renderizar já está no DOM.
-    await expect(checkoutCta).toBeEnabled();
-    await page.waitForLoadState('networkidle');
+    // Espera o CartSidebar marcar data-loaded="true" no card hero —
+    // mais determinístico que networkidle (que sofre com WebSockets/polling)
+    // e elimina falso-verde em que getByText(...).toHaveCount(0) passa
+    // antes do componente ter renderizado.
+    await page.waitForFunction(
+      () =>
+        document.querySelector(
+          '[data-testid="cart-sidebar-hero"][data-loaded="true"]',
+        ) !== null,
+      undefined,
+      { timeout: 15_000 },
+    );
+
+    // Sanity: hero + CTA visíveis
+    await expect(page.getByTestId('cart-sidebar-hero')).toBeVisible();
+    await expect(page.getByTestId('cart-checkout-cta')).toBeVisible();
 
     // Nenhum dos rótulos dos painéis removidos pode aparecer no DOM
     for (const label of FORBIDDEN_LABELS) {
@@ -51,6 +57,7 @@ test.describe('CartSidebar · smoke pós-faxina (sem painéis legados)', () => {
         `Rótulo legado reintroduzido: ${label}`,
       ).toHaveCount(0);
     }
+
 
   });
 });
