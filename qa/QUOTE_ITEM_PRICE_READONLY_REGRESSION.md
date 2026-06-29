@@ -67,3 +67,15 @@ Reverter requer:
 
 > Não fazer rollback sem decisão explícita do PO — a edição livre de preço
 > é vetor de fraude conhecido.
+
+## 8. Automação
+
+- Execute `node scripts/qa-price-readonly-regression.mjs` para validar todos
+  os itens estáticos deste checklist (testids, trigger, specs, snapshots
+  antigos removidos). Sai com código 1 em qualquer regressão.
+- Regeneração visual dos snapshots `quote-items-list-inputs-row-*.png`:
+  dispare o workflow `.github/workflows/update-quote-reset-snapshots.yml`
+  via `workflow_dispatch` (botão "Run workflow" no GitHub Actions). Não
+  rode `playwright test --update-snapshots` localmente — o baseline oficial
+  é o renderizado pelo CI.
+
