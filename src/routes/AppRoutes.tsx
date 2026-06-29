@@ -132,6 +132,13 @@ export function AppRoutes() {
             element={<QuoteItemsListMobileHarness />}
           />
         )}
+        {QuoteItemEditorSheetHarness && (
+          <Route
+            path="/__visual/quote-item-editor-sheet"
+            element={<QuoteItemEditorSheetHarness />}
+          />
+        )}
+
 
 
 
