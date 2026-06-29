@@ -121,6 +121,7 @@ export function QuoteItemEditorSheet({
                   onRemove(index);
                   onOpenChange(false);
                 }}
+                onRestore={onRestore ? (it) => onRestore(it, index) : undefined}
                 onConfirmPrice={() => onConfirmPrice(index)}
                 onTogglePersonalization={() => {
                   /* sempre aberto dentro do sheet */
