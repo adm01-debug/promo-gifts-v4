@@ -33,9 +33,16 @@ test.describe('CartSidebar · smoke pós-faxina (sem painéis legados)', () => {
 
     await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
 
-    // Hero + CTA primária precisam estar presentes
+    // Espera o CartSidebar montar antes de afirmar AUSÊNCIA de rótulos —
+    // sem isso, um getByText(...).toHaveCount(0) passaria trivialmente
+    // enquanto o componente ainda nem renderizou (falso verde).
+    const checkoutCta = page.getByTestId('cart-checkout-cta');
+    await checkoutCta.waitFor({ state: 'visible', timeout: 15_000 });
     await expect(page.getByText(/Subtotal do carrinho/i)).toBeVisible();
-    await expect(page.getByTestId('cart-checkout-cta')).toBeVisible();
+    // Aguarda fim das animações de entrada (framer-motion) para garantir
+    // que qualquer painel que fosse renderizar já está no DOM.
+    await expect(checkoutCta).toBeEnabled();
+    await page.waitForLoadState('networkidle');
 
     // Nenhum dos rótulos dos painéis removidos pode aparecer no DOM
     for (const label of FORBIDDEN_LABELS) {
@@ -44,5 +51,6 @@ test.describe('CartSidebar · smoke pós-faxina (sem painéis legados)', () => {
         `Rótulo legado reintroduzido: ${label}`,
       ).toHaveCount(0);
     }
+
   });
 });
