@@ -214,6 +214,7 @@ export function QuoteBuilderSummaryColumn({
   onReorder,
   quoteId,
   setSkipAutosaveSortOrder,
+  onAddProduct,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
