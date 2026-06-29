@@ -270,11 +270,14 @@ export function ProductCustomizationOptions({
 
   return (
     <TooltipProvider>
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6">
+      <div className={cn(!stacked && 'lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6')}>
         <div className="space-y-3">
         <div
           ref={stickyHeaderRef}
-          className="sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none lg:static lg:mx-0 lg:rounded-xl lg:border lg:border-border/60 lg:bg-background/40 lg:px-3 lg:shadow-none"
+          className={cn(
+            'sticky top-0 z-20 -mx-3 space-y-2 border-b border-border/40 bg-card/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 md:space-y-3 md:shadow-none',
+            !stacked && 'lg:static lg:mx-0 lg:rounded-xl lg:border lg:border-border/60 lg:bg-background/40 lg:px-3 lg:shadow-none',
+          )}
         >
           <nav
             aria-label="Etapas da personalização"
