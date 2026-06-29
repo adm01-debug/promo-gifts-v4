@@ -29,13 +29,6 @@ export function QuoteProductCustomization({
   onPersonalizationsChange,
   layout = 'auto',
 }: QuoteProductCustomizationProps) {
-
-export function QuoteProductCustomization({
-  productId,
-  quantity,
-  existingPersonalizations = [],
-  onPersonalizationsChange,
-}: QuoteProductCustomizationProps) {
   // Use ref to hold current personalizations to avoid stale closures
   const personalizationsRef = useRef<QuoteItemPersonalization[]>(existingPersonalizations);
 
