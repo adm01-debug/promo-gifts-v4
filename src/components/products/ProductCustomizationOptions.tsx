@@ -208,28 +208,8 @@ export function ProductCustomizationOptions({
 
   const summaryItems = Array.from(pricesRef.current.values());
 
-  // Agrupa por tipo de LADO (Plano vs Circular) para o aside ficar didático
-  // sem aumentar scroll. Quando só há um tipo, renderiza flat (modelo single-LADO).
-  const groupedSummary = (() => {
-    const circulars = summaryItems.filter((it) => {
-      const loc = locations.find((l) => l.location_code === it.locationCode);
-      return loc ? isCircularLocation(loc) : false;
-    });
-    const flats = summaryItems.filter((it) => !circulars.includes(it));
-    const groups: { label: string; items: PersonalizationItem[] }[] = [];
-    if (flats.length) groups.push({ label: 'Lados planos', items: flats });
-    if (circulars.length) groups.push({ label: 'Circular 360°', items: circulars });
-    return groups;
-  })();
-
-  const showGroupHeaders = groupedSummary.length > 1;
-
   const summary = pricesRef.current.size > 0 && (
-    <section
-      role="region"
-      aria-label="Resumo das configurações de personalização"
-      aria-live="polite"
-      aria-atomic="false"
+    <div
       className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
       data-testid="customization-summary"
     >
@@ -245,55 +225,36 @@ export function ProductCustomizationOptions({
         </span>
       </div>
 
-      <div className="space-y-2">
-        {groupedSummary.map((group) => (
+      <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
+        {summaryItems.map((item) => (
           <div
-            key={group.label}
-            data-testid={`customization-summary-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
+            key={item.locationCode}
+            className="flex items-center justify-between gap-3 px-3 py-2"
           >
-            {showGroupHeaders && (
-              <p className="mb-1 px-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/80">
-                {group.label}
-              </p>
-            )}
-            <div className="divide-y divide-success/15 overflow-hidden rounded-lg border border-success/20 bg-success/5">
-              {group.items.map((item) => (
-                <div
-                  key={item.locationCode}
-                  className="flex items-center justify-between gap-3 px-3 py-2"
-                >
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
-                      {item.locationName}
-                    </span>
-                    <span className="truncate text-[12px] font-medium text-foreground">
-                      {item.techniqueName}
-                    </span>
-                    <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
-                      {item.width && item.height && <>· {item.width}×{item.height}cm </>}
-                      · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
-                    </span>
-                  </div>
-                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
-                    {item.price?.total_cobrado?.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                  </span>
-                </div>
-              ))}
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
+                {item.locationName}
+              </span>
+              <span className="truncate text-[12px] font-medium text-foreground">
+                {item.techniqueName}
+              </span>
+              <span className="hidden shrink-0 text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
+                {item.width && item.height && <>· {item.width}×{item.height}cm </>}
+                · {item.numberOfColors} {item.numberOfColors === 1 ? 'cor' : 'cores'}
+              </span>
             </div>
+            <span className="shrink-0 text-[13px] font-semibold tabular-nums text-success">
+              {item.price?.total_cobrado?.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+            </span>
           </div>
         ))}
       </div>
 
       {summaryItems.length > 1 && (
-        <div
-          className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-3 py-2"
-          aria-live="polite"
-          aria-atomic="true"
-          data-testid="customization-summary-total"
-        >
+        <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-3 py-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Total personalização
           </span>
@@ -304,7 +265,7 @@ export function ProductCustomizationOptions({
           </span>
         </div>
       )}
-    </section>
+    </div>
   );
 
   return (
@@ -394,13 +355,13 @@ export function ProductCustomizationOptions({
                     key={loc.location_code}
                     type="button"
                     disabled={isDisabled}
+                    aria-pressed={isActive}
+                    aria-label={`${isCircular ? 'CIRCULAR 360°' : loc.location_name}${hasPrice ? ' (configurado)' : ''}${isActive ? ' — selecionado' : ''}`}
                     onClick={() => !isDisabled && setActiveLocation(loc.location_code)}
                     className={cn(
-                      'group relative flex w-full items-center justify-center gap-1.5 rounded-lg border px-2 text-center transition-all',
+                      'group relative flex h-8 w-full items-center justify-center gap-1.5 rounded-md border px-2 text-center transition-all',
+                      stacked ? 'h-8' : 'md:h-9 md:px-3',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                      stacked
-                        ? 'h-8 md:h-8 md:px-2'
-                        : 'h-10 md:h-11 md:px-3',
                       isDisabled
                         ? 'cursor-not-allowed border-border bg-muted/30 opacity-40'
                         : isActive
@@ -408,15 +369,10 @@ export function ProductCustomizationOptions({
                           : 'border-border bg-transparent text-foreground hover:border-primary/40 hover:bg-primary/5',
                     )}
                   >
-                    <span
-                      className={cn(
-                        'truncate font-semibold uppercase tracking-wide',
-                        stacked ? 'text-[10px]' : 'text-[10px] md:text-xs',
-                      )}
-                    >
+                    <span className="truncate text-[10px] font-semibold uppercase tracking-wide">
                       {isCircular ? 'CIRCULAR 360°' : loc.location_name}
                     </span>
-                    {hasPrice && <span className="text-[10px] font-bold text-primary">✓</span>}
+                    {hasPrice && <span aria-hidden className="text-[10px] font-bold text-primary">✓</span>}
                   </button>
                 );
 
@@ -473,11 +429,10 @@ export function ProductCustomizationOptions({
         )}
 
         {/* Resumo inline — sempre no stacked; em ≥lg vive no aside. */}
-        {summaryItems.length > 0 && !stacked && (
-          <div className="mt-5 border-t border-border/40 pt-3 lg:hidden">{summary}</div>
-        )}
-        {summaryItems.length > 0 && stacked && (
-          <div className="mt-5 border-t border-border/40 pt-3">{summary}</div>
+        {summaryItems.length > 0 && (
+          <div className={cn('mt-5 border-t border-border/40 pt-3', !stacked && 'lg:hidden')}>
+            {summary}
+          </div>
         )}
         </div>
 

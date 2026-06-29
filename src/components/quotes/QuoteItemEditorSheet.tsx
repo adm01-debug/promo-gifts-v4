@@ -45,7 +45,7 @@ export function QuoteItemEditorSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[440px]"
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-[560px]"
         data-testid="quote-item-editor-sheet"
       >
         <SheetHeader className="shrink-0 border-b border-border/50 px-5 py-4">
