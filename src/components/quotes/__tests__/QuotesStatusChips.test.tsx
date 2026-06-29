@@ -59,14 +59,12 @@ describe('QuotesStatusChips', () => {
     q({ id: 'e', status: 'pending', synced_to_bitrix: null }),
   ];
 
-  it('renderiza 7 chips com contagem correta (com fallback null)', () => {
+  it('renderiza chips esperados com contagem correta (com fallback null)', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
     expect(screen.getByRole('button', { name: /Todos/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Rascunho/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Criado \(Sincronizado\)/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Sincronizado,/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Pendente/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Criado \(Não Sincronizado\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Criado\/Sincronizado/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Expirado/ })).toBeInTheDocument();
   });
 
@@ -75,10 +73,8 @@ describe('QuotesStatusChips', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={onChange} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Rascunho/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Criado \(Sincronizado\)/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Sincronizado,/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Pendente/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Criado \(Não Sincronizado\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Criado\/Sincronizado/ }));
     fireEvent.click(screen.getByRole('button', { name: /Expirado/ }));
     fireEvent.click(screen.getByRole('button', { name: /Todos/ }));
 
@@ -86,8 +82,6 @@ describe('QuotesStatusChips', () => {
       'draft',
       'unsynced',
       'created_synced',
-      'synced',
-      'pending',
       'expired',
       'all',
     ]);
@@ -114,23 +108,20 @@ describe('QuotesStatusChips', () => {
     expect(screen.getByRole('button', { name: /Todos/ })).toBeInTheDocument();
   });
 
-  it('contagem de "Sincronizado" ignora null/undefined (fallback de dados legados)', () => {
+  it('contagem de "Criado/Sincronizado" ignora null/undefined (fallback de dados legados)', () => {
     render(<QuotesStatusChips quotes={sample} value="all" onChange={() => {}} />);
-    // Apenas 'c' tem synced_to_bitrix === true
-    const syncedBtn = screen.getByRole('button', { name: /^Sincronizado,/ });
-    expect(syncedBtn.textContent).toBe('Sincronizado1');
+    // Apenas 'c' tem synced_to_bitrix === true e status pending
+    const createdSyncedBtn = screen.getByRole('button', { name: /Criado\/Sincronizado/ });
+    expect(createdSyncedBtn.textContent).toBe('Criado/Sincronizado1');
 
-    // 'Criado (Não Sinc.)' = pending && !synced → b + e = 2
-    const unsyncedBtn = screen.getByRole('button', { name: /Criado \(Não Sinc\.\)/ });
-    expect(unsyncedBtn.textContent).toBe('Criado (Não Sinc.)2');
-
-    // 'Criado (Sincronizado)' = pending && synced → c = 1
-    const createdSyncedBtn = screen.getByRole('button', { name: /Criado \(Sincronizado\)/ });
-    expect(createdSyncedBtn.textContent).toBe('Criado (Sincronizado)1');
+    // 'Criado (Não Sincronizado)' = pending && !synced → b + e = 2
+    const unsyncedBtn = screen.getByRole('button', { name: /Criado \(Não Sincronizado\)/ });
+    expect(unsyncedBtn.textContent).toBe('Criado (Não Sincronizado)2');
 
     // ARIA label inclui contagem pluralizada
-    expect(createdSyncedBtn).toHaveAttribute('aria-label', 'Criado (Sincronizado), 1 orçamento');
+    expect(createdSyncedBtn).toHaveAttribute('aria-label', 'Criado/Sincronizado, 1 orçamento');
   });
+
 
   it('renderiza rightSlot à direita da barra (fora do toolbar de chips)', () => {
     render(
