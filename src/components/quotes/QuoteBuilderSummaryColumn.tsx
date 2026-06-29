@@ -479,7 +479,7 @@ export function QuoteBuilderSummaryColumn({
     'lg:max-h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,40px)-2rem)]';
 
   return (
-    <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-4">
+    <div data-testid="quote-builder-summary-column" className="min-w-0 lg:col-span-7">
       {/*
        * SCROLL-FIX-01: Removido `lg:overflow-hidden` deste wrapper.
        *
