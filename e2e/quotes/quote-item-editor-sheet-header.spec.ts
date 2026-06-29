@@ -127,7 +127,7 @@ for (const vp of VIEWPORTS) {
       );
     });
 
-    test('layout: conteúdo preenche o sheet (sem rodapé vazio > 32px)', async ({ page }) => {
+    test(`layout: conteúdo preenche o sheet (sem rodapé vazio > ${vp.maxGap}px)`, async ({ page }) => {
       const dialog = page.getByRole('dialog');
       const gap = await dialog.evaluate((root) => {
         const r = root.getBoundingClientRect();
