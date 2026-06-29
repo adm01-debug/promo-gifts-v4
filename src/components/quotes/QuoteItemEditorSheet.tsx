@@ -50,9 +50,6 @@ export function QuoteItemEditorSheet({
       >
         <SheetHeader className="shrink-0 border-b border-border/50 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <SheetTitle className="font-display text-base font-semibold">
-              Detalhes do Item
-            </SheetTitle>
             <Button
               size="sm"
               variant="default"
@@ -62,7 +59,11 @@ export function QuoteItemEditorSheet({
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Produto
             </Button>
+            <SheetTitle className="font-display text-base font-semibold">
+              Detalhes do Item
+            </SheetTitle>
           </div>
+
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
