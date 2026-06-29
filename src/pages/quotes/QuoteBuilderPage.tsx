@@ -769,6 +769,13 @@ export default function QuoteBuilderPage() {
         onUpdateQuantity={s.updateItemQuantity}
         onUpdatePrice={s.updateItemPrice}
         onRemove={s.removeItem}
+        onRestore={(item, index) =>
+          s.setItems((prev) => {
+            const next = [...prev];
+            next.splice(Math.min(index, next.length), 0, item);
+            return next;
+          })
+        }
         onConfirmPrice={s.confirmItemPrice}
         onPersonalizationsChange={s.handlePersonalizationsChange}
         formatCurrency={s.formatCurrency}

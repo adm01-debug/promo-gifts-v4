@@ -33,6 +33,7 @@ interface QuoteItemEditorSheetProps {
   onUpdateQuantity: (index: number, qty: number) => void;
   onUpdatePrice: (index: number, price: number) => void;
   onRemove: (index: number) => void;
+  onRestore?: (item: QuoteItem, index: number) => void;
   onConfirmPrice: (index: number) => void;
   onPersonalizationsChange: (index: number, p: QuoteItemPersonalization[]) => void;
   formatCurrency: (value: number) => string;
@@ -55,6 +56,7 @@ export function QuoteItemEditorSheet({
   onUpdateQuantity,
   onUpdatePrice,
   onRemove,
+  onRestore,
   onConfirmPrice,
   onPersonalizationsChange,
   formatCurrency,
@@ -119,6 +121,7 @@ export function QuoteItemEditorSheet({
                   onRemove(index);
                   onOpenChange(false);
                 }}
+                onRestore={onRestore ? (it) => onRestore(it, index) : undefined}
                 onConfirmPrice={() => onConfirmPrice(index)}
                 onTogglePersonalization={() => {
                   /* sempre aberto dentro do sheet */
