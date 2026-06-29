@@ -215,22 +215,21 @@ function QuoteItemRow({
                 className="h-7 w-11 px-1 text-xs tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
               />
             </div>
-            <div className="flex min-w-0 items-center gap-1">
-              <span className="hidden whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground min-[360px]:inline">
-                Preço
+            <div className="flex min-w-0 flex-col items-end leading-tight">
+              <span className="whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+                Vl Unitário
               </span>
               <div className="flex items-center gap-1">
                 <span
                   data-testid="quote-item-price-display"
                   role="text"
                   aria-readonly="true"
-                  aria-label={`Preço unitário (somente leitura, não editável): ${formatCurrency(item.unit_price)}`}
+                  aria-label={`Valor unitário (somente leitura, não editável): ${formatCurrency(item.unit_price)}`}
                   title="Preço definido pelo catálogo — somente leitura, não editável aqui"
-                  className="inline-flex h-7 min-w-[72px] cursor-not-allowed select-none items-center justify-end rounded-md border border-border/40 bg-muted/40 px-2 text-xs tabular-nums text-foreground/90 min-[360px]:min-w-20 sm:min-w-24"
+                  className="whitespace-nowrap cursor-not-allowed select-none text-xs font-semibold tabular-nums min-[360px]:text-sm"
                 >
                   {formatCurrency(item.unit_price)}
                 </span>
-
 
                 <span className="hidden sm:inline-flex">
                   <PriceFreshnessBadge
