@@ -53,12 +53,13 @@ export function QuoteItemEditorSheet({
           <div className="flex items-center justify-between gap-3">
             <Button
               size="sm"
-              variant="default"
+              variant="outline"
               data-testid="quote-add-product-button-sheet"
               onClick={onAddProduct}
+              className="group h-9 rounded-full border-[1.5px] border-primary/70 bg-transparent px-4 text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.12),0_0_18px_hsl(var(--primary)/0.35)] transition-all hover:border-primary hover:bg-primary/5 hover:text-primary hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_24px_hsl(var(--primary)/0.55)] focus-visible:ring-2 focus-visible:ring-primary/60"
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Produto
+              <Plus className="mr-1.5 h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
+              <span className="font-medium">Produto</span>
             </Button>
             <SheetTitle className="sr-only">Editor de item do orçamento</SheetTitle>
           </div>
