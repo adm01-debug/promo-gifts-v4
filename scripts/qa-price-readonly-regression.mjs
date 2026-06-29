@@ -60,11 +60,16 @@ console.log('▶ Regressão preço read-only — checagens estáticas\n');
 console.log('1) Testid antigo `quote-item-price-input` ausente');
 {
   const files = walk(join(ROOT, 'src')).concat(walk(join(ROOT, 'e2e')));
-  const offenders = files.filter((f) =>
-    /\.(t|j)sx?$/.test(f) && read(f).includes('quote-item-price-input'),
-  );
+  // Permite asserções de ausência (toHaveCount(0)) em specs — flagra apenas uso real.
+  const offenders = files.filter((f) => {
+    if (!/\.(t|j)sx?$/.test(f)) return false;
+    const src = read(f);
+    return src.split('\n').some((line) =>
+      line.includes('quote-item-price-input') && !/toHaveCount\(\s*0\s*\)/.test(line),
+    );
+  });
   offenders.length === 0
-    ? ok('nenhum arquivo referencia `quote-item-price-input`')
+    ? ok('nenhum uso ativo de `quote-item-price-input` (asserções de ausência ok)')
     : fail(`testid antigo ainda referenciado em: ${offenders.join(', ')}`);
 }
 
