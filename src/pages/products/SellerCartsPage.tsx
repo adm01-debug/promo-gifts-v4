@@ -898,8 +898,6 @@ function SellerCartsContent() {
               cartSubtotal={s.cartSubtotal}
               cartTotalQty={s.cartTotalQty}
               weightVolume={s.weightVolume}
-              allProducts={s.allProducts}
-              isLoadingProducts={s.isLoadingProducts}
               templates={s.templates}
               canCreateCart={s.canCreateCart}
               onGenerateQuote={s.handleGenerateQuote}
