@@ -17,6 +17,7 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { ProductThumb } from './ProductThumb';
 import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import { showUndoToast } from '@/utils/undoToast';
 
 import { type QuoteItem } from '@/hooks/quotes/quoteTypes';
 
