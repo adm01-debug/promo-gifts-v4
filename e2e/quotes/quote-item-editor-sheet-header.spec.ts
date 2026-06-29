@@ -204,34 +204,74 @@ for (const vp of VIEWPORTS) {
   });
 
   test.describe(`QuoteItemEditorSheet @ ${vp.name}px (unsaved guard)`, () => {
-    test('hasUnsavedChanges=true: ESC dispara confirm; cancelar mantém aberto, aceitar fecha', async ({
+    test('hasUnsavedChanges=true: ESC abre AlertDialog; cancelar mantém aberto, confirmar fecha', async ({
       page,
     }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await gotoAndSettle(page, `${ROUTE}?withItem=1&longContent=1&unsaved=1`);
       await page.getByTestId('open-editor-sheet').click();
-      const dialog = page.getByRole('dialog');
-      await expect(dialog).toBeVisible();
+      const sheet = page.getByTestId('quote-item-editor-sheet');
+      await expect(sheet).toBeVisible();
 
-      // Cancela a confirmação → sheet permanece aberto.
-      page.once('dialog', (d) => {
-        expect(d.type()).toBe('confirm');
-        expect(d.message()).toMatch(/n[ãa]o salvas/i);
-        d.dismiss().catch(() => {});
-      });
+      // ESC → AlertDialog aparece; "Continuar editando" mantém sheet aberto.
       await page.keyboard.press('Escape');
-      await expect(dialog).toBeVisible();
+      const confirmDialog = page.getByTestId('quote-editor-unsaved-dialog');
+      await expect(confirmDialog).toBeVisible();
+      await expect(confirmDialog).toContainText(/n[ãa]o salvas/i);
+      await page.getByTestId('quote-editor-unsaved-cancel').click();
+      await expect(confirmDialog).toBeHidden();
+      await expect(sheet).toBeVisible();
       await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '1');
 
-      // Aceita a confirmação → sheet fecha.
-      page.once('dialog', (d) => {
-        d.accept().catch(() => {});
-      });
+      // ESC → confirmar → sheet fecha.
       await page.keyboard.press('Escape');
-      await expect(dialog).toBeHidden();
+      await expect(confirmDialog).toBeVisible();
+      await page.getByTestId('quote-editor-unsaved-confirm').click();
+      await expect(sheet).toBeHidden();
+      await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '0');
+    });
+
+    test('Salvar (ação explícita) fecha sem confirmação, mesmo com unsaved=1', async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await gotoAndSettle(page, `${ROUTE}?withItem=1&longContent=1&unsaved=1`);
+      await page.getByTestId('open-editor-sheet').click();
+      await expect(page.getByTestId('quote-item-editor-sheet')).toBeVisible();
+
+      await page.getByTestId('quote-save-item-button-sheet').click();
+      await expect(page.getByTestId('quote-editor-unsaved-dialog')).toBeHidden();
       await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '0');
     });
   });
+
+  test.describe(`QuoteItemEditorSheet @ ${vp.name}px (persistência Salvar → reabrir)`, () => {
+    test('escolhas permanecem ao reabrir após Salvar (conteúdo longo)', async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await gotoAndSettle(page, `${ROUTE}?withItem=1&longContent=1`);
+
+      await page.getByTestId('open-editor-sheet').click();
+      const sheet = page.getByTestId('quote-item-editor-sheet');
+      await expect(sheet).toBeVisible();
+
+      // Captura uma assinatura do conteúdo (product_name + notas) antes de fechar.
+      const before = await sheet.evaluate((el) => el.textContent ?? '');
+      expect(before).toMatch(/Caneca cer[âa]mica/i);
+      expect(before).toMatch(/Linha 1 de observação/i);
+
+      // Salvar → fecha.
+      await page.getByTestId('quote-save-item-button-sheet').click();
+      await expect(sheet).toBeHidden();
+      await expect(page.getByTestId('sheet-open-state')).toHaveAttribute('data-open', '0');
+
+      // Reabrir → o mesmo item (mesmo product_name e notas) deve continuar lá.
+      await page.getByTestId('open-editor-sheet').click();
+      await expect(sheet).toBeVisible();
+      const after = await sheet.evaluate((el) => el.textContent ?? '');
+      expect(after).toMatch(/Caneca cer[âa]mica/i);
+      expect(after).toMatch(/Linha 1 de observação/i);
+      expect(after).toMatch(/Linha 12 de observação/i);
+    });
+  });
 }
+
 
 
