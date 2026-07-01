@@ -250,7 +250,8 @@ supabase/
 │   ├── expert-chat/  # Assistente IA
 │   ├── external-db-bridge/ # Bridge para banco externo
 │   └── ...
-└── migrations/       # 710 arquivos SQL versionados (~685 aplicadas em PROD)
+├── migrations/       # 1.564 arquivos SQL versionados (SSOT de schema) — ver supabase/MIGRATIONS_README.md
+└── migrations-snapshot/  # Snapshots consolidados (ALL_IN_ONE.sql, SCHEMA_LIVE.sql) — auditoria read-only
 ```
 
 ---
@@ -325,7 +326,7 @@ supabase/
 ### Supabase (Interno)
 - **269 tabelas** em `public`, **100% com RLS ativo** (662 policies, ~2.5 por tabela)
 - **112 funções `SECURITY DEFINER`**, 100% com `search_path` setado (gate de CI bloqueia regressão)
-- **~710 migrations** versionadas (~685 aplicadas em PROD; drift de ~25)
+- **1.564 migrations** versionadas em `supabase/migrations/` (diretório padrão do Supabase CLI — sem override em `config.toml`); status de reconciliação em [`supabase/MIGRATIONS_README.md`](supabase/MIGRATIONS_README.md)
 - Tipos gerados automaticamente (`supabase gen types`)
 - Connection pooling via Supabase pooler
 - 17 cron jobs ativos via `pg_cron` (autenticados por secret no vault)
