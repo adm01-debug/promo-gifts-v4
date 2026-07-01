@@ -1,15 +1,35 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OptimizedImage } from '../OptimizedImage';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// JSDOM does not implement IntersectionObserver. Without this mock,
-// OptimizedImage's useEffect (priority=false path) throws on mount.
-// The previous assumption "mock is global in setupFiles" was fragile —
-// we make it explicit here so this file is self-contained.
-// JSDOM não implementa IntersectionObserver e o componente o instancia com `new`.
-// Vitest recente exige um construtor real (class), não vi.fn().mockReturnValue/arrow.
+// JSDOM não implementa IntersectionObserver e OptimizedImage gateia o placeholder
+// em `isInView`. Mock auto-fire: dispara isIntersecting:true no próximo microtask
+// após `observe()`, tornando o comportamento determinístico (equivalente ao mock
+// global em tests/setup.ts). Sem isso, o placeholder <img aria-hidden="true">
+// nunca renderiza e queries retornam undefined.
 class MockIntersectionObserver {
-  observe = vi.fn();
+  private cb: IntersectionObserverCallback;
+  constructor(cb: IntersectionObserverCallback) {
+    this.cb = cb;
+  }
+  observe = (target: Element) => {
+    queueMicrotask(() => {
+      this.cb(
+        [
+          {
+            isIntersecting: true,
+            target,
+            intersectionRatio: 1,
+            boundingClientRect: {} as DOMRectReadOnly,
+            intersectionRect: {} as DOMRectReadOnly,
+            rootBounds: null,
+            time: 0,
+          },
+        ],
+        this as unknown as IntersectionObserver,
+      );
+    });
+  };
   unobserve = vi.fn();
   disconnect = vi.fn();
   takeRecords = vi.fn(() => []);
