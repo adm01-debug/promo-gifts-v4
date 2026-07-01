@@ -70,3 +70,59 @@ node scripts/list-migration-drafts.mjs
 
 O script lê `qa/migrations-draft/*.sql`, extrai o cabeçalho de cada um e
 reescreve o bloco `DRAFT-INDEX` deste README.
+
+## Promoção automatizada — `npm run draft:promote -- <file> --apply --pr`
+
+O comando `draft:promote --pr` executa o fluxo completo:
+copia o SQL para `supabase/migrations/<timestamp>_<slug>.sql`, remove o
+rascunho, cria a branch `promote/<slug>-<timestamp>`, commita, faz push,
+abre o PR via `gh pr create` **já rotulado com `db-migration`** e anexa o
+resultado de `supabase db diff --linked --schema public` como comentário
+inicial (com fallback quando o CLI falhar).
+
+### Flags do PR
+
+| Flag | Valor | Descrição |
+| --- | --- | --- |
+| `--pr` | — | Ativa a automação (só faz sentido junto com `--apply`). |
+| `--base=<branch>` | `main` (default) | Branch alvo do PR. |
+| `--draft-pr` | — | Abre o PR como **draft** no GitHub. |
+| `--labels=<a,b,c>` | csv | Labels **extras** — a label `db-migration` é sempre adicionada. |
+| `--reviewers=<a,b>` | csv/espaço | Handles (`user`, `org/time`, `bot[bot]`). Validado antes de rodar `gh`. |
+| `--assignees=<a,b>` | csv/espaço | Idem `--reviewers`. Não use `@` no início. |
+| `--skip-db-diff` | — | Não coleta nem anexa o `supabase db diff --linked`. |
+| `--db-diff-max-bytes=<n>` | `60000` (default) | Limite de bytes do comentário do diff (evita corte silencioso em migrações grandes). |
+
+### Exemplos
+
+```bash
+# Fluxo padrão: label db-migration + diff no comentário
+npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr
+
+# Com revisores, assignee e labels extras
+npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr \
+  --reviewers='alice,bob,org/time-db' \
+  --assignees='carla' \
+  --labels='needs-dba,priority:p1'
+
+# Draft PR + diff maior que 60 KB
+npm run draft:promote -- 2026-06-19_kit_dimensions_backfill.sql --apply --pr \
+  --draft-pr --db-diff-max-bytes=250000
+
+# Sem coletar o diff (ex.: CLI supabase indisponível localmente)
+npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr --skip-db-diff
+```
+
+### Comportamento em falha
+
+- **`supabase db diff --linked` falha** → o PR é criado mesmo assim, e o
+  comentário inicial contém as primeiras 20 linhas do erro + o comando
+  `gh pr comment <url> --body-file /tmp/db-diff.md` para reanexar
+  localmente. Causas comuns: `supabase link` não feito, credenciais
+  expiradas ou CLI ausente.
+- **Reviewers/assignees inválidos** → o script aborta **antes** do
+  `git commit`, com mensagem indicando qual handle está mal formado.
+  Aceita `user`, `org/team` e `nome[bot]`. Não use `@` como prefixo.
+- **`gh pr comment` falha após o PR aberto** → o PR permanece criado; o
+  script imprime a linha exata para reanexar o comentário manualmente.
+

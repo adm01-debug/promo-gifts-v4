@@ -74,7 +74,12 @@ function parseArgs() {
     args.filter((a) => a.startsWith('--') && a.includes('='))
       .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
   );
-  const csv = (v) => (v ? String(v).split(',').map((s) => s.trim()).filter(Boolean) : []);
+  const csv = (v) => (v ? String(v).split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) : []);
+  const int = (v, def) => {
+    if (v == null || v === '') return def;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : NaN;
+  };
   return {
     file: positional[0],
     apply: flags.has('--apply'),
@@ -88,7 +93,24 @@ function parseArgs() {
     reviewers: csv(kv.reviewers ?? kv.reviewer),
     assignees: csv(kv.assignees ?? kv.assignee),
     skipDbDiff: flags.has('--skip-db-diff'),
+    dbDiffMaxBytes: int(kv['db-diff-max-bytes'], 60_000),
   };
+}
+
+// Validador leve de handle GitHub — cobre usuário, bot (`app/foo[bot]`) e time (`org/team`).
+// Não valida existência remota (isso quem faz é o `gh pr create`, que dá erro claro).
+const GH_HANDLE_RE = /^(?:[a-zA-Z0-9]([a-zA-Z0-9-]{0,38})|[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+|[a-zA-Z0-9-]+\[bot\])$/;
+function validateHandles(kind, list) {
+  const bad = list.filter((h) => !GH_HANDLE_RE.test(h));
+  if (bad.length) {
+    return `--${kind} inválido: ${bad.map((b) => `"${b}"`).join(', ')}. ` +
+      `Use handles GitHub separados por vírgula ou espaço (ex.: "alice,bob" ou "org/time-db").`;
+  }
+  const dupes = list.filter((h, i) => list.indexOf(h) !== i);
+  if (dupes.length) {
+    return `--${kind} tem entradas duplicadas: ${Array.from(new Set(dupes)).join(', ')}.`;
+  }
+  return null;
 }
 
 function usage(code = 1) {
@@ -120,6 +142,24 @@ function main() {
   if (!opts.file) usage(1);
   if (!existsSync(DRAFT_DIR)) { err(`Diretório inexistente: ${DRAFT_DIR}`); process.exit(1); }
   if (!existsSync(MIG_DIR)) mkdirSync(MIG_DIR, { recursive: true });
+
+  // ---- Validação prévia de flags do PR (rejeita cedo, antes de mexer em arquivos). ----
+  if (opts.pr) {
+    const flagProblems = [];
+    if (Number.isNaN(opts.dbDiffMaxBytes)) {
+      flagProblems.push('--db-diff-max-bytes deve ser inteiro positivo (bytes).');
+    }
+    const rEr = validateHandles('reviewers', opts.reviewers);
+    if (rEr) flagProblems.push(rEr);
+    const aEr = validateHandles('assignees', opts.assignees);
+    if (aEr) flagProblems.push(aEr);
+    if (flagProblems.length) {
+      err(`${flagProblems.length} problema(s) nas flags de --pr:`);
+      for (const p of flagProblems) err(`  • ${p}`);
+      process.exit(1);
+    }
+  }
+
 
   const draftFile = basename(opts.file);
   const draftPath = join(DRAFT_DIR, draftFile);
@@ -231,6 +271,7 @@ function main() {
       reviewers: opts.reviewers,
       assignees: opts.assignees,
       skipDbDiff: opts.skipDbDiff,
+      dbDiffMaxBytes: opts.dbDiffMaxBytes,
     });
     return;
   }
@@ -271,7 +312,7 @@ function preflightGit() {
   return problems;
 }
 
-function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false }) {
+function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false, dbDiffMaxBytes = 60_000 }) {
   log('Preparando PR de promoção…');
 
   const problems = preflightGit();
@@ -359,37 +400,69 @@ function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr
   if (reviewers.length) ok(`Reviewers: ${reviewers.join(', ')}`);
   if (assignees.length) ok(`Assignees: ${assignees.join(', ')}`);
 
-  // Anexa `supabase db diff --linked` como comentário inicial.
+  // Anexa `supabase db diff --linked` como comentário inicial (com fallback).
   if (!skipDbDiff) {
-    attachDbDiffComment(prUrl);
+    attachDbDiffComment(prUrl, dbDiffMaxBytes);
   } else {
     dim('  → --skip-db-diff: comentário com `supabase db diff --linked` não foi anexado.');
   }
 }
 
-function attachDbDiffComment(prUrl) {
-  log('Coletando `supabase db diff --linked` para anexar ao PR…');
+function attachDbDiffComment(prUrl, maxBytes) {
+  log(`Coletando \`supabase db diff --linked\` para anexar ao PR (limite ${maxBytes} bytes)…`);
   const diff = shSafe('supabase db diff --linked --schema public');
+
+  let body;
   if (!diff.ok) {
-    warn(`supabase db diff --linked falhou — pulando comentário. Detalhe: ${diff.out.split('\n')[0]}`);
-    return;
-  }
-  const raw = (diff.out || '').trim();
-  const body = raw
-    ? [
-        `### 🔍 \`supabase db diff --linked --schema public\``,
-        ``,
-        `Diff capturado no momento da abertura do PR (útil para revisão do drift).`,
-        ``,
-        '```diff',
-        raw.length > 60000 ? `${raw.slice(0, 60000)}\n... (truncado — diff completo maior que 60 KB)` : raw,
-        '```',
-      ].join('\n')
-    : [
+    // Fallback: publica um comentário indicando a falha + como reexecutar,
+    // para que a informação chegue ao revisor mesmo sem diff.
+    const detail = (diff.out || '').split('\n').slice(0, 20).join('\n') || '(sem stderr/stdout)';
+    warn(`supabase db diff --linked falhou — anexando comentário de fallback com a instrução de retry.`);
+    body = [
+      `### ⚠️ \`supabase db diff --linked --schema public\` falhou`,
+      ``,
+      `O comando falhou no momento da abertura do PR. O PR foi criado mesmo assim para não bloquear a revisão.`,
+      ``,
+      `**Como reexecutar localmente e anexar o diff:**`,
+      '```bash',
+      `supabase db diff --linked --schema public > /tmp/db-diff.md`,
+      `gh pr comment ${prUrl} --body-file /tmp/db-diff.md`,
+      '```',
+      ``,
+      `**Saída capturada (primeiras 20 linhas):**`,
+      '```',
+      detail,
+      '```',
+      ``,
+      `_Causas comuns: projeto não linkado (\`supabase link\`), credenciais expiradas, ou CLI não instalado._`,
+    ].join('\n');
+  } else {
+    const raw = (diff.out || '').trim();
+    if (!raw) {
+      body = [
         `### 🔍 \`supabase db diff --linked --schema public\``,
         ``,
         `_Sem drift detectado no schema \`public\` no momento da abertura do PR._`,
       ].join('\n');
+    } else {
+      const kb = (maxBytes / 1024).toFixed(1);
+      const truncated = raw.length > maxBytes;
+      const payload = truncated
+        ? `${raw.slice(0, maxBytes)}\n... (truncado — diff completo tem ${(raw.length / 1024).toFixed(1)} KB; limite atual: ${kb} KB via --db-diff-max-bytes)`
+        : raw;
+      body = [
+        `### 🔍 \`supabase db diff --linked --schema public\``,
+        ``,
+        truncated
+          ? `Diff capturado na abertura do PR (**truncado** — ${(raw.length / 1024).toFixed(1)} KB > limite ${kb} KB; aumente com \`--db-diff-max-bytes=<n>\`).`
+          : `Diff capturado na abertura do PR (${(raw.length / 1024).toFixed(1)} KB).`,
+        ``,
+        '```diff',
+        payload,
+        '```',
+      ].join('\n');
+    }
+  }
 
   writeFileSync('.git/PROMOTE_PR_DIFF.md', body);
   const cmt = shSafe(`gh pr comment ${JSON.stringify(prUrl)} --body-file .git/PROMOTE_PR_DIFF.md`);
@@ -398,7 +471,7 @@ function attachDbDiffComment(prUrl) {
     dim(`  Reanexe manualmente: gh pr comment ${prUrl} --body-file .git/PROMOTE_PR_DIFF.md`);
     return;
   }
-  ok('Diff do `supabase db diff --linked` anexado como comentário inicial.');
+  ok(diff.ok ? 'Diff do `supabase db diff --linked` anexado como comentário inicial.' : 'Comentário de fallback (erro do db diff) anexado ao PR.');
 }
 
 function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles }) {
