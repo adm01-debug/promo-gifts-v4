@@ -26,6 +26,10 @@
  *                          `origin` configurado.
  *   --base=<branch>        Branch alvo do PR (default: `main`).
  *   --draft-pr             Abre o PR como draft (para review antecipada).
+ *   --labels=<a,b,c>       Labels adicionais no PR (sempre inclui `db-migration`).
+ *   --reviewers=<a,b>      Usuários/times para `gh pr create --reviewer`.
+ *   --assignees=<a,b>      Usuários para `gh pr create --assignee`.
+ *   --skip-db-diff         Não anexa `supabase db diff --linked` como comentário.
  *
  * Validações executadas (todas obrigatórias, exceto quando indicado):
  *   1. Rascunho existe e termina em `.sql`.
