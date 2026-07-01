@@ -326,7 +326,7 @@ supabase/
 ### Supabase (Interno)
 - **269 tabelas** em `public`, **100% com RLS ativo** (662 policies, ~2.5 por tabela)
 - **112 funções `SECURITY DEFINER`**, 100% com `search_path` setado (gate de CI bloqueia regressão)
-- **~710 migrations** versionadas (~685 aplicadas em PROD; drift de ~25)
+- **1.564 migrations** versionadas em `supabase/migrations/` (diretório padrão do Supabase CLI — sem override em `config.toml`); status de reconciliação em [`supabase/MIGRATIONS_README.md`](supabase/MIGRATIONS_README.md)
 - Tipos gerados automaticamente (`supabase gen types`)
 - Connection pooling via Supabase pooler
 - 17 cron jobs ativos via `pg_cron` (autenticados por secret no vault)
