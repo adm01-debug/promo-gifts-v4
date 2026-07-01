@@ -19,12 +19,28 @@ export interface FormatEngravingTitleInput {
 
 const SEPARATOR_RE = /\s*[|/\-–—]\s*/g;
 const WHITESPACE_RE = /\s+/g;
+const ACRONYMS = new Set([
+  'UV',
+  'DTF',
+  'DTG',
+  'CNC',
+  'LED',
+  'PVC',
+  'ABS',
+  'PU',
+  '3D',
+  '2D',
+  '4D',
+]);
 
 function capitalizeWord(word: string): string {
   if (!word) return word;
-  // Preserva tokens já totalmente maiúsculos (siglas) e tokens numéricos.
-  if (/^[0-9]+[A-Z]*$/.test(word)) return word.toUpperCase();
-  if (word.length <= 3 && word === word.toUpperCase() && /[A-Z]/.test(word)) return word;
+  const upper = word.toUpperCase();
+  if (ACRONYMS.has(upper)) return upper;
+  // Preserva tokens numéricos com sufixo (ex.: "3D", "10ML").
+  if (/^[0-9]+[A-Za-z]+$/.test(word)) return word.toUpperCase();
+  // Preserva siglas já em CAIXA ALTA (2-4 letras).
+  if (word.length <= 4 && word === upper && /[A-Z]/.test(word)) return word;
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
 
@@ -37,18 +53,19 @@ function normalizeSegment(segment: string): string {
     .join(' ');
 }
 
-export function formatEngravingTitle(input: FormatEngravingTitleInput): string {
-  const raw =
-    firstNonEmpty(input.nomeTabela, input.techniqueName, input.groupName) ??
-    (input.fallback ?? 'Gravação confirmada');
+const DEFAULT_FALLBACK = 'Gravação confirmada';
 
-  const parts = raw
+export function formatEngravingTitle(input: FormatEngravingTitleInput): string {
+  const source = firstNonEmpty(input.nomeTabela, input.techniqueName, input.groupName);
+  if (!source) return input.fallback ?? DEFAULT_FALLBACK;
+
+  const parts = source
     .replace(SEPARATOR_RE, ' | ')
     .split('|')
     .map(normalizeSegment)
     .filter(Boolean);
 
-  return parts.length > 0 ? parts.join(' | ') : (input.fallback ?? 'Gravação confirmada');
+  return parts.length > 0 ? parts.join(' | ') : (input.fallback ?? DEFAULT_FALLBACK);
 }
 
 function firstNonEmpty(...values: Array<string | null | undefined>): string | null {
