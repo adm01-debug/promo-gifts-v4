@@ -258,13 +258,14 @@ export function ConfigurationPanelV6({
         {/* Dimension inputs (conditional) */}
         {technique.usa_dimensao && (
           <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-sm text-foreground">
+            <div className="flex items-center gap-1.5 text-sm text-foreground flex-wrap">
               <Ruler className="h-3.5 w-3.5" />
               <span className="font-medium">Tamanho da gravação</span>
+              <span className="text-xs text-muted-foreground">
+                Máx. {technique.efetiva_largura_max} × {technique.efetiva_altura_max} cm
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Máx. {technique.efetiva_largura_max} × {technique.efetiva_altura_max} cm
-            </p>
+
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <Label className="text-xs text-muted-foreground">Largura (cm)</Label>
