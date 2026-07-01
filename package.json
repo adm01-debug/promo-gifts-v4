@@ -134,7 +134,8 @@
     "test:e2e:carrinhos:update": "npx playwright test e2e/carrinhos --project=chromium-authed --update-snapshots",
     "schema:snapshot": "node scripts/export-schema-snapshot.mjs",
     "drafts:list": "node scripts/list-migration-drafts.mjs",
-    "drafts:check": "node scripts/list-migration-drafts.mjs --check"
+    "drafts:check": "node scripts/list-migration-drafts.mjs --check",
+    "check:migration-refs": "node scripts/check-migration-path-references.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

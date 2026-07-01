@@ -52,6 +52,13 @@ jobs:
       - name: Gate 2.3 — as any baseline (zero regressions)
         run: node scripts/check-any-type-baseline.mjs
 
+      # GATE 2.4: Migration path references — bloqueia referências novas a arquivos
+      # inexistentes sob supabase/migrations{,-snapshot}/ e qa/migrations-draft/.
+      # Baseline em .migration-refs-baseline.json congela o legado.
+      - name: Gate 2.4 — Migration path references (bloqueante)
+        run: node scripts/check-migration-path-references.mjs
+
+
       # GATE 2.5: Product type fields — campos críticos nunca podem ser removidos
       # Previne: remoção de price/shortDescription/category_id durante merge (gap C2)
       # Previne: renomeação silenciosa pelo Lovable como price→sale_price (gap L3)
