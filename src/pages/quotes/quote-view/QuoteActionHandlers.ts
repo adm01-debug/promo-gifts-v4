@@ -176,9 +176,9 @@ export async function handleSyncBitrix(params: {
     // catches Supabase errors (they resolve, not throw). Destructure { error }
     // and log it — the sync is still considered successful (fail-open), but the
     // failure is now visible in logs instead of silently reverting on next reload.
-    // rls-allow: update por id; RLS valida ownership
+    // rls-allow movido para a linha do .from (abaixo) para o checker creditar.
     const { error: crmUpdateErr } = await supabase
-      .from('quotes')
+      .from('quotes') // rls-allow: update por id; RLS valida ownership
       .update(crmUpdates)
       .eq('id', quoteId);
     if (crmUpdateErr) {

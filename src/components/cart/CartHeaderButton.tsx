@@ -82,9 +82,46 @@ export function CartHeaderButton() {
   // Resolve 21.664 unhandled_error + 5.123 React_Boundary_Error em frontend_telemetry.
   const cartContext = useSellerCartContextSafe();
 
+  // RULES-OF-HOOKS FIX (2026-06-29): estes dois useEffect rodavam DEPOIS do early
+  // return `if (!cartContext)` abaixo, o que alterava a contagem de hooks entre
+  // renders na transição contexto-ausente↔presente (Suspense fallback / HMR /
+  // Provider montando) — justamente o cenário que este componente diz mitigar — e
+  // disparava o crash "Rendered more hooks than during the previous render".
+  // Agora rodam SEMPRE (null-safe) e o early return fica ABAIXO de todos os hooks.
+
+  // Sanitiza collapsedIds: remove ids que não existem mais na lista (cart deletado/renomeado).
+  useEffect(() => {
+    const list = cartContext?.carts;
+    if (!list) return;
+    const validIds = new Set(list.map((c) => c.id));
+    setCollapsedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [cartContext?.carts]);
+
+  // Persiste collapsedIds em localStorage para sobreviver a refresh.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        COLLAPSED_STORAGE_KEY,
+        JSON.stringify(Array.from(collapsedIds)),
+      );
+    } catch {
+      /* quota/safari private mode — ignora silenciosamente */
+    }
+  }, [collapsedIds]);
+
   // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery,
   // ou Provider fora da árvore). Em vez de um botão inerte, o ícone NAVEGA para a página de
   // carrinhos — garante que o clique no carrinho do header nunca fique morto.
+  // IMPORTANTE: este return fica DEPOIS de todos os hooks (Rules of Hooks).
   if (!cartContext) {
     return (
       <Button
@@ -114,33 +151,6 @@ export function CartHeaderButton() {
     clearCart,
     restoreItems,
   } = cartContext;
-
-  // Sanitiza collapsedIds: remove ids que não existem mais na lista (cart deletado/renomeado).
-  // Persiste em localStorage para sobreviver a refresh.
-  useEffect(() => {
-    const validIds = new Set(carts.map((c) => c.id));
-    setCollapsedIds((prev) => {
-      let changed = false;
-      const next = new Set<string>();
-      for (const id of prev) {
-        if (validIds.has(id)) next.add(id);
-        else changed = true;
-      }
-      return changed ? next : prev;
-    });
-  }, [carts]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(
-        COLLAPSED_STORAGE_KEY,
-        JSON.stringify(Array.from(collapsedIds)),
-      );
-    } catch {
-      /* quota/safari private mode — ignora silenciosamente */
-    }
-  }, [collapsedIds]);
 
   // Debug em dev: rastreia activeCartId, fallback e collapsedIds.
   if (import.meta.env.DEV) {

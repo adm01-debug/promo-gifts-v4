@@ -359,9 +359,8 @@ export const quoteService = {
 
   async updateQuoteStatus(quoteId: string, status: Quote['status']) {
     // Fetch current status + email fields in one query to avoid a second round-trip.
-    // rls-allow: SELECT por id; RLS (can_access_quote) valida ownership
     const { data: current, error: fetchErr } = await supabase
-      .from('quotes')
+      .from('quotes') // rls-allow: SELECT por id; RLS (can_access_quote) valida ownership
       .select('status, client_email, client_name, quote_number, total, valid_until')
       .eq('id', quoteId)
       .single();

@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ConflictInfo } from '@/hooks/quotes/useQuoteConcurrencyGuard';
 import { format, addDays, startOfDay } from 'date-fns';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import { formatCurrency as fmtCurrency } from '@/lib/format';
 import { validateQuoteForm, QUOTE_FIELD_LABELS } from '@/lib/validations';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1055,7 +1056,7 @@ export function useQuoteBuilderState() {
             // A network failure or RLS denial returned { data: null, error } silently,
             // disabling concurrency protection for this save without any log trace.
             const { data: remoteQuote, error: conflictCheckErr } = await supabase
-              .from('quotes')
+              .from('quotes') // rls-allow: SELECT por id (conflict check); RLS valida ownership
               .select('updated_at')
               .eq('id', quoteId)
               .single();
@@ -1115,7 +1116,7 @@ export function useQuoteBuilderState() {
         // propagate uncaught, crashing the component with no user feedback.
         logger.error('Erro ao salvar orçamento:', error);
         toast.error('Erro ao salvar orçamento. Tente novamente.', {
-          description: error instanceof Error ? error.message : 'Erro desconhecido',
+          description: sanitizeError(error),
         });
       } finally {
         isSavingRef.current = false;

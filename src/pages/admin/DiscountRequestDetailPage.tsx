@@ -78,7 +78,7 @@ export default function DiscountRequestDetailPage() {
       if (!id || !data) return;
       const { data: u } = await supabase.auth.getUser();
       const { error } = await supabase
-        .from('discount_approval_requests')
+        .from('discount_approval_requests') // rls-allow: admin (admin-routes); decisão de desconto; RLS admin policy
         .update({
           status: approved ? 'approved' : 'rejected',
           admin_id: u.user?.id ?? null,
@@ -88,7 +88,7 @@ export default function DiscountRequestDetailPage() {
         .eq('id', id);
       if (error) throw error;
       await supabase
-        .from('quotes')
+        .from('quotes') // rls-allow: admin (admin-routes); atualiza status do orçamento vinculado; RLS admin policy
         .update({ status: approved ? 'pending' : 'draft' })
         .eq('id', data.quote_id);
     },
