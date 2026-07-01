@@ -1,0 +1,99 @@
+name: schema-snapshot-export
+
+# =============================================================================
+# Roda o script `scripts/export-schema-snapshot.mjs` em toda PR e no push para
+# `main`, publicando os artefatos gerados em `supabase/migrations-snapshot/`
+# (ALL_IN_ONE.sql, SCHEMA_LIVE.sql, SCHEMA_DRIFT.sql, SNAPSHOT_META.json).
+#
+# Semântica:
+#   - ALL_IN_ONE.sql SEMPRE é gerado (não depende de secrets).
+#   - SCHEMA_LIVE.sql e SCHEMA_DRIFT.sql só saem quando SUPABASE_ACCESS_TOKEN
+#     e SUPABASE_DB_PASSWORD estão configurados (safe-by-default: sem eles o
+#     script apenas emite warning e o job passa).
+#   - Este workflow NÃO commita nada — só publica artefato para auditoria.
+#   - Se quiser gate de drift bloqueante, use o workflow separado
+#     `db-schema-drift-check.yml`; aqui o objetivo é apenas expor snapshot.
+#
+# Retenção: 14 dias (mesmo padrão do drift-check).
+# =============================================================================
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schema-snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    name: Export schema snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'doufsxqlfjyuvxuezpln' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # CLI do Supabase é opcional — se ausente, o script pula live/drift.
+      # Instalamos sempre para dar cobertura máxima quando os secrets existem.
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Generate snapshot (ALL_IN_ONE.sql sempre; live/drift se secrets)
+        run: node scripts/export-schema-snapshot.mjs
+
+      - name: Sumário do job
+        if: always()
+        run: |
+          set -euo pipefail
+          echo "## Schema snapshot" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f supabase/migrations-snapshot/SNAPSHOT_META.json ]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat supabase/migrations-snapshot/SNAPSHOT_META.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Arquivos gerados:**" >> "$GITHUB_STEP_SUMMARY"
+          ls -la supabase/migrations-snapshot/ | awk 'NR>1{print "- `"$NF"` — "$5" bytes"}' \
+            >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload snapshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-snapshot-${{ github.sha }}
+          path: supabase/migrations-snapshot/
+          if-no-files-found: warn
+          retention-days: 14
+
+      # Detecta caso onde o ALL_IN_ONE.sql commitado no repo está desatualizado
+      # em relação às migrations atuais — sinal de que alguém adicionou/removeu
+      # migration sem regenerar o snapshot. NÃO bloqueia (só avisa) porque o
+      # snapshot é read-only; a SSOT continua sendo supabase/migrations/.
+      - name: Aviso — ALL_IN_ONE.sql commitado está stale?
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- supabase/migrations-snapshot/ALL_IN_ONE.sql; then
+            echo "✅ ALL_IN_ONE.sql em dia com as migrations."
+          else
+            echo "::warning::ALL_IN_ONE.sql commitado difere do gerado. Rode 'npm run schema:snapshot' e commite se quiser manter o snapshot versionado atualizado."
+          fi
