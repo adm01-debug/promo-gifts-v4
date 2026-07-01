@@ -173,15 +173,20 @@ export function ConfigurationPanelV6({
         )}
       >
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {isConfirmed && !editing ? 'Gravação confirmada' : 'Configure a gravação'}
-          </p>
-          <div className="flex items-center gap-2">
-            {isConfirmed && !editing && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-primary">
-                <Check className="h-3 w-3" /> Adicionada ao orçamento
+          {isConfirmed && !editing ? (
+            <p className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground">
+              <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+              <span className="truncate" title={price?.nome_tabela ?? technique.name ?? undefined}>
+                {price?.nome_tabela ?? technique.name ?? 'Gravação confirmada'}
               </span>
-            )}
+            </p>
+          ) : (
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Configure a gravação
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+
             <button
               type="button"
               onClick={() => setCollapsed((v) => !v)}
