@@ -97,13 +97,18 @@ function main() {
   const next = current.replace(re, block);
 
   if (check) {
-    if (next !== current) {
+    // Compara ignorando a linha de timestamp `_Atualizado em ..._`, senão
+    // --check falharia toda execução (o timestamp muda a cada rodada).
+    const stripTs = (s) =>
+      s.replace(/_Atualizado em [^_]+_/g, '_Atualizado em <ts>_');
+    if (stripTs(next) !== stripTs(current)) {
       console.error('[drafts] README desatualizado. Rode: node scripts/list-migration-drafts.mjs');
       process.exit(1);
     }
     console.log('[drafts] README ok.');
     return;
   }
+
 
   writeFileSync(README, next);
   console.log(`[drafts] README atualizado com ${rows.length} rascunho(s).`);
