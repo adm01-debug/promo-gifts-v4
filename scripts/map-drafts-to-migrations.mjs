@@ -64,17 +64,39 @@ function tokensOf(slug) {
 
 function findCandidates(slug, migFiles) {
   const wanted = tokensOf(slug);
+  const wantedLc = wanted.map((t) => t.toLowerCase());
   const scored = [];
   for (const f of migFiles) {
     const nameLc = f.toLowerCase();
+
+    // Match exato do slug inteiro → 100%, todos os tokens contam como hit.
     if (nameLc.includes(slug.toLowerCase())) {
-      scored.push({ file: f, score: 1.0 });
+      scored.push({
+        file: f,
+        score: 1.0,
+        matchType: 'slug-exato',
+        matchedTokens: [...wanted],
+        missingTokens: [],
+      });
       continue;
     }
-    const hits = wanted.filter((t) => nameLc.includes(t.toLowerCase())).length;
-    const ratio = wanted.length ? hits / wanted.length : 0;
-    if (ratio >= 0.6 && hits >= Math.min(3, wanted.length)) {
-      scored.push({ file: f, score: ratio });
+
+    // Fuzzy por tokens: quais tokens do slug aparecem no nome do arquivo canônico.
+    const matched = [];
+    const missing = [];
+    wantedLc.forEach((t, i) => {
+      if (nameLc.includes(t)) matched.push(wanted[i]);
+      else missing.push(wanted[i]);
+    });
+    const ratio = wanted.length ? matched.length / wanted.length : 0;
+    if (ratio >= 0.6 && matched.length >= Math.min(3, wanted.length)) {
+      scored.push({
+        file: f,
+        score: ratio,
+        matchType: 'tokens',
+        matchedTokens: matched,
+        missingTokens: missing,
+      });
     }
   }
   scored.sort((a, b) => b.score - a.score || a.file.localeCompare(b.file));
