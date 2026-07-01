@@ -47,8 +47,10 @@
  */
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync, mkdirSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync, mkdirSync, statSync } from 'node:fs';
+import { join, basename, dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = process.cwd();
 const DRAFT_DIR = join(ROOT, 'qa', 'migrations-draft');
