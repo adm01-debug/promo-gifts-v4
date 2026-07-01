@@ -39,7 +39,7 @@ Ele NÃO substitui `supabase/migrations/` — é uma antessala revisável.
 ## Rascunhos vigentes
 
 <!-- BEGIN:DRAFT-INDEX (gerado por scripts/list-migration-drafts.mjs) -->
-_Atualizado em 2026-07-01T10:53:52.205Z · 5 rascunho(s)._
+_Atualizado em 2026-07-01T11:02:38.982Z · 5 rascunho(s)._
 
 | Arquivo | Objetivo | Alvo | Risco | Validação |
 | --- | --- | --- | --- | --- |
