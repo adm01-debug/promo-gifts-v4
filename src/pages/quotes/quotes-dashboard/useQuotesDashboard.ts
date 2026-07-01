@@ -48,9 +48,11 @@ export function useQuotesDashboard() {
       try {
         const data = await selectCrm<Client>('companies', {
           select: 'id,nome_fantasia',
+          filters: { is_customer: true },
           orderBy: 'nome_fantasia',
-          limit: 500,
+          limit: 200,
         });
+
         setClients(data.map((c: Client) => ({ id: c.id, name: c.nome_fantasia || c.id })));
       } catch (err) {
         logger.error('Error fetching clients:', err);
