@@ -24,10 +24,12 @@
  *   • Ignora blocos de código diff/log de commit (linhas começando com `+++`/`---`).
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync, writeFileSync } from 'node:fs';
 import { join, relative, extname } from 'node:path';
 
 const ROOT = process.cwd();
+const BASELINE_PATH = join(ROOT, '.migration-refs-baseline.json');
+const UPDATE_BASELINE = process.argv.includes('--update-baseline');
 const EXT_ALLOW = new Set([
   '.md', '.mdx', '.txt', '.yml', '.yaml', '.json',
   '.ts', '.tsx', '.js', '.mjs', '.cjs', '.sh',
