@@ -143,6 +143,24 @@ function main() {
   if (!existsSync(DRAFT_DIR)) { err(`Diretório inexistente: ${DRAFT_DIR}`); process.exit(1); }
   if (!existsSync(MIG_DIR)) mkdirSync(MIG_DIR, { recursive: true });
 
+  // ---- Validação prévia de flags do PR (rejeita cedo, antes de mexer em arquivos). ----
+  if (opts.pr) {
+    const flagProblems = [];
+    if (Number.isNaN(opts.dbDiffMaxBytes)) {
+      flagProblems.push('--db-diff-max-bytes deve ser inteiro positivo (bytes).');
+    }
+    const rEr = validateHandles('reviewers', opts.reviewers);
+    if (rEr) flagProblems.push(rEr);
+    const aEr = validateHandles('assignees', opts.assignees);
+    if (aEr) flagProblems.push(aEr);
+    if (flagProblems.length) {
+      err(`${flagProblems.length} problema(s) nas flags de --pr:`);
+      for (const p of flagProblems) err(`  • ${p}`);
+      process.exit(1);
+    }
+  }
+
+
   const draftFile = basename(opts.file);
   const draftPath = join(DRAFT_DIR, draftFile);
   const validationPath = join(DRAFT_DIR, draftFile.replace(/\.sql$/, '.VALIDATION.md'));
