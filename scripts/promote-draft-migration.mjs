@@ -312,7 +312,7 @@ function preflightGit() {
   return problems;
 }
 
-function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false }) {
+function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false, dbDiffMaxBytes = 60_000 }) {
   log('Preparando PR de promoção…');
 
   const problems = preflightGit();
