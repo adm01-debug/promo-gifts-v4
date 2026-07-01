@@ -115,20 +115,61 @@ function scanFile(full, rel) {
 
 walk(ROOT);
 
-if (problems.length) {
+// ---- Baseline (legado congelado) ----
+const baseline = existsSync(BASELINE_PATH)
+  ? JSON.parse(readFileSync(BASELINE_PATH, 'utf8'))
+  : { entries: [] };
+const baselineSet = new Set(
+  (baseline.entries || []).map((e) => `${e.file}|${e.ref}`),
+);
+const isBaselined = (p) => baselineSet.has(`${p.file}|${p.ref}`);
+
+if (UPDATE_BASELINE) {
+  const uniq = new Map();
+  for (const p of problems) uniq.set(`${p.file}|${p.ref}`, { file: p.file, ref: p.ref });
+  const next = {
+    _comment: baseline._comment || 'Referências legadas congeladas — NOVAS entradas requerem justificativa no PR.',
+    entries: [...uniq.values()].sort((a, b) => (a.file + a.ref).localeCompare(b.file + b.ref)),
+  };
+  writeFileSync(BASELINE_PATH, JSON.stringify(next, null, 2) + '\n');
+  console.log(`📝 Baseline atualizada com ${next.entries.length} entrada(s).`);
+  process.exit(0);
+}
+
+const newProblems = problems.filter((p) => !isBaselined(p));
+const stale = [...baselineSet].filter(
+  (key) => !problems.some((p) => `${p.file}|${p.ref}` === key),
+);
+
+if (newProblems.length) {
   console.error(
-    `\n❌ ${problems.length} referência(s) a arquivo(s) inexistente(s) sob supabase/migrations{,-snapshot}/ ou qa/migrations-draft/:\n`,
+    `\n❌ ${newProblems.length} NOVA(S) referência(s) a arquivo(s) inexistente(s) sob supabase/migrations{,-snapshot}/ ou qa/migrations-draft/:\n`,
   );
-  for (const p of problems) {
+  for (const p of newProblems) {
     console.error(`  ${p.file}:${p.line} → ${p.ref}`);
   }
   console.error(
     '\nCorreções possíveis:',
     '\n  • Gerar o arquivo faltante (ex.: `npm run schema:snapshot`).',
     '\n  • Corrigir o caminho na referência.',
-    '\n  • Remover a menção obsoleta.\n',
+    '\n  • Remover a menção obsoleta.',
+    '\n  • Como último recurso: `node scripts/check-migration-path-references.mjs --update-baseline` e justificar no PR.\n',
   );
   process.exit(1);
 }
 
-console.log('✅ Nenhuma referência quebrada a supabase/migrations{,-snapshot}/ ou qa/migrations-draft/.');
+if (stale.length) {
+  console.error(
+    `\n⚠️  ${stale.length} entrada(s) da baseline não são mais referências quebradas (limpar):\n`,
+  );
+  for (const s of stale) console.error(`  ${s.replace('|', ' → ')}`);
+  console.error(
+    '\nRode: node scripts/check-migration-path-references.mjs --update-baseline\n',
+  );
+  process.exit(1);
+}
+
+console.log(
+  `✅ Nenhuma NOVA referência quebrada. (${baselineSet.size} entrada(s) legadas na baseline.)`,
+);
+
