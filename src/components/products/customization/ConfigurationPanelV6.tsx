@@ -178,18 +178,53 @@ export function ConfigurationPanelV6({
       >
         <div className="flex items-center justify-between gap-2">
           {isConfirmed && !editing ? (
-            <p className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground">
-              <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-              <span className="truncate" title={price?.nome_tabela ?? technique.name ?? undefined}>
-                {price?.nome_tabela ?? technique.name ?? 'Gravação confirmada'}
-              </span>
-            </p>
+            (() => {
+              const showSkeleton = loading && !price?.nome_tabela;
+              const title = formatEngravingTitle({
+                nomeTabela: price?.nome_tabela,
+                techniqueName:
+                  (technique as { name?: string; technique_name?: string }).name ??
+                  (technique as { technique_name?: string }).technique_name,
+                groupName: (technique as { grupo_tecnica?: string }).grupo_tecnica,
+                fallback: 'Gravação confirmada',
+              });
+              const iconNode =
+                confirmedIcon === null
+                  ? null
+                  : confirmedIcon ?? (
+                      <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                    );
+              return (
+                <p
+                  className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground"
+                  data-testid="customization-confirmed-header"
+                >
+                  {iconNode}
+                  {showSkeleton ? (
+                    <span
+                      aria-hidden
+                      data-testid="customization-confirmed-skeleton"
+                      className="inline-block h-3.5 w-24 animate-pulse rounded bg-muted"
+                    />
+                  ) : (
+                    <span
+                      className="truncate whitespace-nowrap"
+                      title={title}
+                      data-testid="customization-confirmed-title"
+                    >
+                      {title}
+                    </span>
+                  )}
+                </p>
+              );
+            })()
           ) : (
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Configure a gravação
             </p>
           )}
           <div className="flex items-center gap-2">
+
 
             <button
               type="button"
