@@ -11,6 +11,9 @@
  * (assume `1 cor` como padrão consistente).
  */
 
+import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
+
+
 export interface PersonalizationSummaryInput {
   technique_name?: string | null;
   location_name?: string | null;
