@@ -83,4 +83,36 @@ describe('formatEngravingTitle', () => {
       expect(formatEngravingTitle({ fallback: 'Sem gravação' })).toBe('Sem gravação');
     });
   });
+
+  describe('fallback via grupo_tecnica', () => {
+    it('usa apenas groupName quando nome_tabela e techniqueName ausentes', () => {
+      expect(formatEngravingTitle({ groupName: 'laser' })).toBe('Laser');
+    });
+
+    it('formata groupName com separadores e siglas', () => {
+      expect(formatEngravingTitle({ groupName: 'laser/uv' })).toBe('Laser | UV');
+    });
+
+    it('ignora groupName vazio/whitespace e cai no fallback default', () => {
+      expect(formatEngravingTitle({ groupName: '   ' })).toBe('Gravação confirmada');
+      expect(formatEngravingTitle({ groupName: '' })).toBe('Gravação confirmada');
+      expect(formatEngravingTitle({ groupName: null })).toBe('Gravação confirmada');
+    });
+
+    it('ignora groupName quando nome_tabela está presente (precedência correta)', () => {
+      expect(
+        formatEngravingTitle({ nomeTabela: 'Fiber Laser', groupName: 'outra coisa' }),
+      ).toBe('Fiber Laser');
+    });
+
+    it('cai para groupName quando techniqueName é whitespace', () => {
+      expect(
+        formatEngravingTitle({ nomeTabela: '', techniqueName: '   ', groupName: 'dtf' }),
+      ).toBe('DTF');
+    });
+
+    it('normaliza groupName composto (ex.: "gravação 3d")', () => {
+      expect(formatEngravingTitle({ groupName: 'gravação 3d' })).toBe('Gravação 3D');
+    });
+  });
 });
