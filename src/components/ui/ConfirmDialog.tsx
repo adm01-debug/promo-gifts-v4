@@ -104,7 +104,7 @@ export function ConfirmDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent
-        className="max-w-md gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card/95 p-0 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
+        className="max-w-xs gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
         data-testid={testId}
       >
         {/* Top accent bar — sutil, casa com a variante */}
@@ -119,39 +119,39 @@ export function ConfirmDialog({
           })}
         />
 
-        <div className="px-6 pb-2 pt-6">
+        <div className="px-4 pb-1.5 pt-4">
           <AlertDialogHeader>
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3">
               {/* Icon tile com glow suave */}
               <div className="relative flex-shrink-0">
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'absolute inset-0 -z-10 rounded-2xl blur-xl opacity-60',
+                    'absolute inset-0 -z-10 rounded-xl blur-lg opacity-60',
                     config.iconGlow,
                   )}
                 />
                 <div
                   className={cn(
-                    'flex h-12 w-12 animate-scale-in items-center justify-center rounded-2xl ring-1 ring-inset transition-transform duration-300 hover:scale-105',
+                    'flex h-9 w-9 animate-scale-in items-center justify-center rounded-xl ring-1 ring-inset transition-transform duration-300 hover:scale-105',
                     config.iconBg,
                     config.iconRing,
                   )}
                 >
-                  <Icon className={cn('h-6 w-6', config.iconColor)} strokeWidth={2.2} />
+                  <Icon className={cn('h-[18px] w-[18px]', config.iconColor)} strokeWidth={2.2} />
                 </div>
               </div>
 
-              <div className="min-w-0 flex-1 space-y-1.5 pt-0.5">
+              <div className="min-w-0 flex-1 space-y-1 pt-0.5">
                 <AlertDialogTitle
-                  className="text-[17px] font-semibold leading-tight tracking-tight text-foreground"
+                  className="text-sm font-semibold leading-tight tracking-tight text-foreground"
                   data-testid={titleTestId}
                 >
                   {title}
                 </AlertDialogTitle>
                 {description && (
                   <AlertDialogDescription
-                    className="text-sm leading-relaxed text-muted-foreground"
+                    className="text-xs leading-relaxed text-muted-foreground"
                     data-testid={descriptionTestId}
                   >
                     {description}
@@ -164,21 +164,21 @@ export function ConfirmDialog({
           {/* Impact Preview */}
           {impactPreview && (
             <div
-              className="animate-fade-in-up mt-5 rounded-xl border border-border/60 bg-muted/40 p-4"
+              className="animate-fade-in-up mt-3 rounded-lg border border-border/60 bg-muted/40 p-3"
               data-testid={testId ? `${testId}-impact` : 'confirm-dialog-impact'}
             >
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h4 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {impactPreview.title}
               </h4>
-              <ul className="stagger-children space-y-1.5">
+              <ul className="stagger-children space-y-1">
                 {impactPreview.items.map((item, index) => (
                   <li
                     key={index}
-                    className="flex items-start gap-2 text-sm text-foreground/80"
+                    className="flex items-start gap-2 text-xs text-foreground/80"
                   >
                     <span
                       className={cn(
-                        'mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                        'mt-1.5 h-1 w-1 flex-shrink-0 rounded-full',
                         config.iconColor.replace('text-', 'bg-'),
                       )}
                     />
@@ -191,13 +191,13 @@ export function ConfirmDialog({
         </div>
 
         {/* Divisor sutil + footer */}
-        <div className="mt-4 border-t border-border/50 bg-muted/20 px-6 py-4">
-          <AlertDialogFooter className="gap-2 sm:gap-2">
+        <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+          <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
             <AlertDialogCancel
               onClick={handleCancel}
               disabled={loading}
               data-testid={noTestId}
-              className="mt-0 h-10 rounded-lg border-border/70 bg-transparent px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="mt-0 h-8 rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {cancelLabel}
             </AlertDialogCancel>
@@ -206,7 +206,7 @@ export function ConfirmDialog({
               disabled={loading}
               data-testid={yesTestId}
               className={cn(
-                'h-10 rounded-lg px-5 text-sm font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                'h-8 rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
                 variant === 'destructive' &&
                   'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
                 variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
@@ -216,7 +216,7 @@ export function ConfirmDialog({
             >
               {loading && (
                 <Loader2
-                  className="mr-2 h-4 w-4 animate-spin"
+                  className="mr-1.5 h-3.5 w-3.5 animate-spin"
                   data-testid={testId ? `${testId}-loading` : 'confirm-dialog-loading'}
                 />
               )}
