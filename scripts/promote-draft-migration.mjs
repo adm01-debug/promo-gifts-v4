@@ -19,6 +19,13 @@
  *                          Padrão: remove após copiar (evita dupla verdade).
  *   --timestamp=<YYYYMMDDHHMMSS>
  *                          Força o timestamp (útil para testes/replay).
+ *   --pr                   Após --apply, cria branch `promote/<slug>-<ts>`,
+ *                          regenera índice/status, commita, faz push e abre
+ *                          um PR pronto para revisão via `gh pr create`.
+ *                          Requer: `git` limpo + `gh` autenticado + remoto
+ *                          `origin` configurado.
+ *   --base=<branch>        Branch alvo do PR (default: `main`).
+ *   --draft-pr             Abre o PR como draft (para review antecipada).
  *
  * Validações executadas (todas obrigatórias, exceto quando indicado):
  *   1. Rascunho existe e termina em `.sql`.
@@ -32,8 +39,10 @@
  *   Dry-run: imprime o plano e sai 0.
  *   --apply: copia SQL, remove draft (a menos que --keep-draft), imprime
  *            comandos para revisar/commitar.
+ *   --apply --pr: além do acima, cria branch, commita, push e abre PR.
  */
 
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
