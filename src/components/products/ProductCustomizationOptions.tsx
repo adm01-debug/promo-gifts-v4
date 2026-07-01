@@ -11,8 +11,8 @@
  * Selecionar CIRCULAR bloqueia LADO A/B (e vice-versa) com tooltip explicando.
  */
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect, useMemo, useId } from 'react';
+import { ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
