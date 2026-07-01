@@ -428,15 +428,73 @@ function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr
 
   // Anexa `supabase db diff --linked` como comentário inicial (com fallback).
   if (!skipDbDiff) {
-    attachDbDiffComment(prUrl, dbDiffMaxBytes);
+    attachDbDiffComment(prUrl, dbDiffMaxBytes, { useCache: dbDiffCache && !noDbDiffCache, ttlSeconds: dbDiffCacheTtl });
   } else {
     dim('  → --skip-db-diff: comentário com `supabase db diff --linked` não foi anexado.');
   }
 }
 
-function attachDbDiffComment(prUrl, maxBytes) {
-  log(`Coletando \`supabase db diff --linked\` para anexar ao PR (limite ${maxBytes} bytes)…`);
-  const diff = shSafe('supabase db diff --linked --schema public');
+// Cache local (opt-in) do resultado de `supabase db diff --linked`.
+// Reduz N chamadas ao Supabase quando promovo vários drafts em sequência.
+// Chave = SHA das migrations aplicadas + schema, então invalida sozinho
+// quando você aplica algo novo.
+const DIFF_CACHE_DIR = join(tmpdir(), 'promo-gifts', 'supabase-db-diff-cache');
+
+function computeDiffCacheKey() {
+  const migrations = existsSync(MIG_DIR)
+    ? readdirSync(MIG_DIR).filter((f) => f.endsWith('.sql')).sort().join('|')
+    : '';
+  // hash simples e determinístico — evita dependência extra
+  let h = 5381;
+  for (let i = 0; i < migrations.length; i++) h = ((h << 5) + h + migrations.charCodeAt(i)) | 0;
+  return `diff-${(h >>> 0).toString(16)}-public.txt`;
+}
+
+function readDiffCache(ttlSeconds) {
+  try {
+    const key = computeDiffCacheKey();
+    const p = join(DIFF_CACHE_DIR, key);
+    if (!existsSync(p)) return null;
+    const st = statSync(p);
+    const ageSec = (Date.now() - st.mtimeMs) / 1000;
+    if (ageSec > ttlSeconds) return { stale: true, ageSec, path: p };
+    return { stale: false, ageSec, path: p, out: readFileSync(p, 'utf8') };
+  } catch { return null; }
+}
+
+function writeDiffCache(payload) {
+  try {
+    mkdirSync(DIFF_CACHE_DIR, { recursive: true });
+    const p = join(DIFF_CACHE_DIR, computeDiffCacheKey());
+    writeFileSync(p, payload);
+    return p;
+  } catch { return null; }
+}
+
+function attachDbDiffComment(prUrl, maxBytes, { useCache = false, ttlSeconds = 900 } = {}) {
+  log(`Coletando \`supabase db diff --linked\` para anexar ao PR (limite ${maxBytes} bytes${useCache ? `, cache TTL ${ttlSeconds}s` : ''})…`);
+
+  let diff;
+  let fromCache = false;
+  if (useCache) {
+    const cached = readDiffCache(ttlSeconds);
+    if (cached && !cached.stale) {
+      dim(`  ↺ cache hit (${Math.floor(cached.ageSec)}s de idade): ${cached.path}`);
+      diff = { ok: true, out: cached.out };
+      fromCache = true;
+    } else if (cached?.stale) {
+      dim(`  ↻ cache expirado (${Math.floor(cached.ageSec)}s > ${ttlSeconds}s), regenerando…`);
+    }
+  }
+
+  if (!diff) {
+    diff = shSafe('supabase db diff --linked --schema public');
+    if (useCache && diff.ok) {
+      const p = writeDiffCache(diff.out || '');
+      if (p) dim(`  ✎ cache atualizado: ${p}`);
+    }
+  }
+
 
   let body;
   if (!diff.ok) {
