@@ -53,9 +53,15 @@ export function extractDimensionsFromNotes(
   return { width: w, height: h };
 }
 
-/** Retorna `[Local] Técnica` ou só `Técnica` quando ausente. */
+/** Retorna `[Local] Técnica` ou só `Técnica` quando ausente.
+ *  Padroniza `technique_name` via `formatEngravingTitle` (SSOT):
+ *  garante " | " entre segmentos e capitalização/siglas consistentes
+ *  com o cabeçalho da gravação confirmada no builder. */
 export function formatTechniqueWithLocation(p: PersonalizationSummaryInput): string {
-  const tech = (p.technique_name ?? '').trim() || TECHNIQUE_FALLBACK;
+  const raw = (p.technique_name ?? '').trim();
+  const tech = raw
+    ? formatEngravingTitle({ nomeTabela: raw, fallback: TECHNIQUE_FALLBACK })
+    : TECHNIQUE_FALLBACK;
   const loc = (p.location_name ?? '').trim();
   return loc ? `[${loc}] ${tech}` : tech;
 }
