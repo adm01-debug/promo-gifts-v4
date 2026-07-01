@@ -22,7 +22,7 @@ const MIN_BUTTON_HEIGHT_PX = 20;
 for (const variant of VARIANTS) {
   for (const width of WIDTHS) {
     test.describe(`ConfirmDialog visual — ${variant} @ ${width}px`, () => {
-      test.use({ viewport: { width: Math.max(width, 360), height: 720 } });
+      test.use({ viewport: { width, height: 720 } });
 
       test(`baseline + no-clip (${variant}, ${width}px)`, async ({ page }) => {
         await page.goto(`/__test/confirm-dialog?variant=${variant}&width=${width}`, {
