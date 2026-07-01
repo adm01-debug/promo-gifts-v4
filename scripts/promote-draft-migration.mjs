@@ -110,10 +110,16 @@ function main() {
 
   const sql = readFileSync(draftPath, 'utf8');
 
+  // Corpo executável = linhas fora de comentários (--) para checagem de refs.
+  const executableBody = sql
+    .split('\n')
+    .filter((l) => !l.trimStart().startsWith('--'))
+    .join('\n');
+
   // ---- Validação 2 e 3: referências de projeto ----
   const problems = [];
-  if (sql.includes(FORBIDDEN_REF)) {
-    problems.push(`referência PROIBIDA a \`${FORBIDDEN_REF}\` (Lovable Cloud interno). Alvo deve ser \`${CANONICAL_REF}\`.`);
+  if (executableBody.includes(FORBIDDEN_REF)) {
+    problems.push(`referência PROIBIDA a \`${FORBIDDEN_REF}\` em código executável. Alvo deve ser \`${CANONICAL_REF}\`.`);
   }
   const mentionsCanonical = sql.includes(CANONICAL_REF);
   const agnosticMarker = /\bDDL\s+agn[oó]stica\b/i.test(sql);
