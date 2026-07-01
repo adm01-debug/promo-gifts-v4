@@ -22,7 +22,7 @@ export function useNextQuoteNumberPreview(enabled: boolean): string | null {
       try {
         const yy = String(new Date().getFullYear() % 100).padStart(2, '0');
         const { data, error } = await supabase
-          .from('quotes')
+          .from('quotes') // rls-allow: preview best-effort do próximo número anual (sequência global); número autoritativo é atribuído server-side no insert
           .select('quote_number')
           .like('quote_number', `%/${yy}`)
           .order('created_at', { ascending: false })

@@ -5,6 +5,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import type { Product } from '@/types/product-catalog';
@@ -192,7 +193,7 @@ export function useCatalogSelection(
             clearSelection();
           })
           .catch((err) => {
-            toast.error('Erro ao gerar PDF', { description: String(err?.message ?? err) });
+            toast.error('Erro ao gerar PDF', { description: sanitizeError(err) });
           });
       }
     },

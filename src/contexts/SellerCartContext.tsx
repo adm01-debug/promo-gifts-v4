@@ -21,6 +21,7 @@ import {
 } from '@/hooks/products';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 
 interface SellerCartContextType {
@@ -137,7 +138,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         return result;
       } catch (err) {
         toast.error('Erro ao criar carrinho', {
-          description: err instanceof Error ? err.message : 'Tente novamente',
+          description: sanitizeError(err),
         });
         return undefined;
       }
