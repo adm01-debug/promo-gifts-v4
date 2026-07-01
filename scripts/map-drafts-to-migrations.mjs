@@ -33,8 +33,23 @@ const ROOT = process.cwd();
 const DRAFT_DIR = join(ROOT, 'qa', 'migrations-draft');
 const MIG_DIR = join(ROOT, 'supabase', 'migrations');
 const OUT = join(DRAFT_DIR, 'DRAFTS_STATUS.md');
+const REVIEWS = join(DRAFT_DIR, 'REVIEWS.json');
 
 const check = process.argv.includes('--check');
+
+function loadAcknowledged() {
+  if (!existsSync(REVIEWS)) return new Set();
+  try {
+    const data = JSON.parse(readFileSync(REVIEWS, 'utf8'));
+    const list = Array.isArray(data?.acknowledged_not_promoted)
+      ? data.acknowledged_not_promoted
+      : [];
+    return new Set(list.map((e) => (typeof e === 'string' ? e : e?.draft)).filter(Boolean));
+  } catch (e) {
+    console.error(`[drafts-map] REVIEWS.json inválido: ${e.message}`);
+    process.exit(2);
+  }
+}
 
 function slugOf(file) {
   // "2026-06-27_quotes_status_allow_cancelled.sql" -> "quotes_status_allow_cancelled"
