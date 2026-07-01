@@ -328,6 +328,7 @@ export function UnsavedChangesDialog({
       description="Você tem alterações que não foram salvas. Deseja descartar as alterações ou salvá-las?"
       confirmLabel={onSave ? 'Salvar' : 'Descartar'}
       cancelLabel="Continuar editando"
+      cancelLabelShort="Continuar"
       onConfirm={onSave || onDiscard}
       onCancel={() => onOpenChange(false)}
       loading={loading}
