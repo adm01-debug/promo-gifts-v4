@@ -1,6 +1,6 @@
 # Rastreamento draft → migration → DB
 
-_Atualizado em 2026-07-01T11:00:37.444Z · 5 rascunho(s) · **sem acesso ao DB** (ERROR:  permission denied for schema supabase_migrations)._
+_Atualizado em 2026-07-01T11:07:40.067Z · 5 rascunho(s) · **sem acesso ao DB** (ERROR:  permission denied for schema supabase_migrations)._
 
 Gerado por `scripts/map-drafts-to-migrations.mjs`. Não editar à mão.
 
