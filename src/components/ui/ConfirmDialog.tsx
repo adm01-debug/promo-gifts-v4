@@ -36,24 +36,32 @@ const variantConfig = {
     icon: HelpCircle,
     iconColor: 'text-primary',
     iconBg: 'bg-primary/10',
+    iconRing: 'ring-primary/20',
+    iconGlow: 'bg-primary/30',
     buttonVariant: 'default' as const,
   },
   destructive: {
     icon: Trash2,
     iconColor: 'text-destructive',
     iconBg: 'bg-destructive/10',
+    iconRing: 'ring-destructive/20',
+    iconGlow: 'bg-destructive/30',
     buttonVariant: 'destructive' as const,
   },
   warning: {
     icon: AlertTriangle,
     iconColor: 'text-warning',
     iconBg: 'bg-warning/10',
+    iconRing: 'ring-warning/20',
+    iconGlow: 'bg-warning/30',
     buttonVariant: 'default' as const,
   },
   info: {
     icon: Info,
     iconColor: 'text-info',
     iconBg: 'bg-info/10',
+    iconRing: 'ring-info/20',
+    iconGlow: 'bg-info/30',
     buttonVariant: 'default' as const,
   },
 };
@@ -88,12 +96,6 @@ export function ConfirmDialog({
     onOpenChange(false);
   };
 
-  // Quando o consumidor passa um `testId` (ex.: "cart-confirm-dialog"),
-  // derivamos testids específicos para os botões e título — ex.:
-  // "cart-confirm-dialog-yes" / "cart-confirm-dialog-no" / "cart-confirm-dialog-title".
-  // Isso elimina o uso do testid genérico "confirm-dialog-yes" quando vários
-  // diálogos podem coexistir na mesma tela. Os genéricos continuam disponíveis
-  // como fallback para compatibilidade com specs já existentes.
   const yesTestId = testId ? `${testId}-yes` : 'confirm-dialog-yes';
   const noTestId = testId ? `${testId}-no` : 'confirm-dialog-no';
   const titleTestId = testId ? `${testId}-title` : 'confirm-dialog-title';
@@ -101,70 +103,127 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md" data-testid={testId}>
-        <AlertDialogHeader>
-          <div className="flex items-start gap-4">
+      <AlertDialogContent
+        className="max-w-md gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card/95 p-0 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
+        data-testid={testId}
+      >
+        {/* Top accent bar — sutil, casa com a variante */}
+        <div
+          aria-hidden="true"
+          className={cn('h-[3px] w-full', {
+            'bg-gradient-to-r from-transparent via-primary to-transparent': variant === 'default',
+            'bg-gradient-to-r from-transparent via-destructive to-transparent':
+              variant === 'destructive',
+            'bg-gradient-to-r from-transparent via-warning to-transparent': variant === 'warning',
+            'bg-gradient-to-r from-transparent via-info to-transparent': variant === 'info',
+          })}
+        />
+
+        <div className="px-6 pb-2 pt-6">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-4">
+              {/* Icon tile com glow suave */}
+              <div className="relative flex-shrink-0">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute inset-0 -z-10 rounded-2xl blur-xl opacity-60',
+                    config.iconGlow,
+                  )}
+                />
+                <div
+                  className={cn(
+                    'flex h-12 w-12 animate-scale-in items-center justify-center rounded-2xl ring-1 ring-inset transition-transform duration-300 hover:scale-105',
+                    config.iconBg,
+                    config.iconRing,
+                  )}
+                >
+                  <Icon className={cn('h-6 w-6', config.iconColor)} strokeWidth={2.2} />
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-1.5 pt-0.5">
+                <AlertDialogTitle
+                  className="text-[17px] font-semibold leading-tight tracking-tight text-foreground"
+                  data-testid={titleTestId}
+                >
+                  {title}
+                </AlertDialogTitle>
+                {description && (
+                  <AlertDialogDescription
+                    className="text-sm leading-relaxed text-muted-foreground"
+                    data-testid={descriptionTestId}
+                  >
+                    {description}
+                  </AlertDialogDescription>
+                )}
+              </div>
+            </div>
+          </AlertDialogHeader>
+
+          {/* Impact Preview */}
+          {impactPreview && (
             <div
+              className="animate-fade-in-up mt-5 rounded-xl border border-border/60 bg-muted/40 p-4"
+              data-testid={testId ? `${testId}-impact` : 'confirm-dialog-impact'}
+            >
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {impactPreview.title}
+              </h4>
+              <ul className="stagger-children space-y-1.5">
+                {impactPreview.items.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-sm text-foreground/80"
+                  >
+                    <span
+                      className={cn(
+                        'mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                        config.iconColor.replace('text-', 'bg-'),
+                      )}
+                    />
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Divisor sutil + footer */}
+        <div className="mt-4 border-t border-border/50 bg-muted/20 px-6 py-4">
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel
+              onClick={handleCancel}
+              disabled={loading}
+              data-testid={noTestId}
+              className="mt-0 h-10 rounded-lg border-border/70 bg-transparent px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {cancelLabel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={loading}
+              data-testid={yesTestId}
               className={cn(
-                'flex h-12 w-12 flex-shrink-0 animate-scale-in items-center justify-center rounded-full',
-                config.iconBg,
+                'h-10 rounded-lg px-5 text-sm font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                variant === 'destructive' &&
+                  'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
+                variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
+                variant === 'info' && 'bg-info text-info-foreground hover:bg-info/90',
+                variant === 'warning' && 'bg-warning text-warning-foreground hover:bg-warning/90',
               )}
             >
-              <Icon className={cn('h-6 w-6', config.iconColor)} />
-            </div>
-            <div className="space-y-2">
-              <AlertDialogTitle className="text-lg" data-testid={titleTestId}>
-                {title}
-              </AlertDialogTitle>
-              {description && (
-                <AlertDialogDescription data-testid={descriptionTestId}>
-                  {description}
-                </AlertDialogDescription>
+              {loading && (
+                <Loader2
+                  className="mr-2 h-4 w-4 animate-spin"
+                  data-testid={testId ? `${testId}-loading` : 'confirm-dialog-loading'}
+                />
               )}
-            </div>
-          </div>
-        </AlertDialogHeader>
-
-        {/* Impact Preview */}
-        {impactPreview && (
-          <div
-            className="animate-fade-in-up my-4 rounded-lg border border-border bg-muted/50 p-4"
-            data-testid={testId ? `${testId}-impact` : 'confirm-dialog-impact'}
-          >
-            <h4 className="mb-2 text-sm font-medium">{impactPreview.title}</h4>
-            <ul className="stagger-children space-y-1">
-              {impactPreview.items.map((item, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel} disabled={loading} data-testid={noTestId}>
-            {cancelLabel}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            disabled={loading}
-            data-testid={yesTestId}
-            className={cn(
-              variant === 'destructive' &&
-                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-            )}
-          >
-            {loading && (
-              <Loader2
-                className="mr-2 h-4 w-4 animate-spin"
-                data-testid={testId ? `${testId}-loading` : 'confirm-dialog-loading'}
-              />
-            )}
-            {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+              {confirmLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
