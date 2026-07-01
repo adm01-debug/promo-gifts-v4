@@ -53,9 +53,9 @@ describe('ConfirmDialog — regressão responsiva (320 → 1440)', () => {
     expect(screen.getByTestId('confirm-dialog-yes')).toHaveTextContent('Descartar e fechar');
     expect(screen.getByTestId('confirm-dialog-no')).toHaveTextContent('Continuar editando');
 
-    // 3) classe max-w-[15rem] (240px) preserva contenção horizontal — nunca excede viewport
+    // 3) classe max-w-[11.25rem] (240px) preserva contenção horizontal — nunca excede viewport
     const contentClass = dialog.getAttribute('class') ?? '';
-    expect(contentClass).toContain('max-w-[15rem]');
+    expect(contentClass).toContain('max-w-[11.25rem]');
 
     // 4) accent bar presente
     const accent = dialog.querySelector('[aria-hidden="true"].h-\\[3px\\]');
