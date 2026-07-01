@@ -500,6 +500,18 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
 
       const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
 
+      // statement_timeout: degrada graciosamente (evita blank screen). O usuário
+      // recebe lista vazia + flag `stale` — a UI pode mostrar toast/refinar filtros.
+      if (isStatementTimeout(msg)) {
+        record(false, null, msg);
+        logger.warn('[CRM-DB] statement_timeout — retornando resultado vazio', {
+          requestId,
+          table: query.table,
+          message: safeCrmLogMessage(msg),
+        });
+        return { data: [], count: 0, stale: true, error: 'statement_timeout' } as unknown as CrmResponse<T>;
+      }
+
       // Rate-limit: ativa circuit breaker (que drena a fila) e nao faz retry
       if (isRateLimitError(msg)) {
         activateRateLimitCooldown();
@@ -510,6 +522,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
         });
         throw new Error(`CRM DB error: ${msg}`);
       }
+
 
       if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
         const delay = INITIAL_BACKOFF_MS * 2 ** attempt;
