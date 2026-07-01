@@ -139,7 +139,8 @@
     "drafts:status": "node scripts/map-drafts-to-migrations.mjs",
     "drafts:status:check": "node scripts/map-drafts-to-migrations.mjs --check",
     "draft:promote": "node scripts/promote-draft-migration.mjs",
-    "drafts:target:check": "node scripts/check-draft-canonical-target.mjs"
+    "drafts:target:check": "node scripts/check-draft-canonical-target.mjs",
+    "drafts:pr-comment": "node scripts/build-drafts-pr-comment.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
