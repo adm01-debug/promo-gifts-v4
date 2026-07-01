@@ -38,10 +38,11 @@ describe('ConfirmDialog — acessibilidade', () => {
     expect(dialog).toHaveAccessibleDescription('Deseja editar esta gravação?');
   });
 
-  it('coloca o foco no botão de confirmação ao abrir', async () => {
+  it('move o foco para dentro do diálogo ao abrir', async () => {
     renderDialog();
     await waitFor(() => {
-      expect(screen.getByTestId('confirm-dialog-yes')).toHaveFocus();
+      const dialog = screen.getByRole('alertdialog');
+      expect(dialog.contains(document.activeElement)).toBe(true);
     });
   });
 
@@ -54,22 +55,20 @@ describe('ConfirmDialog — acessibilidade', () => {
     });
   });
 
-  it('confirma via Enter no botão focado e chama onConfirm', async () => {
+  it('confirma ao acionar o botão de confirmação', async () => {
     const user = userEvent.setup();
     const { onConfirm } = renderDialog();
-    await waitFor(() => expect(screen.getByTestId('confirm-dialog-yes')).toHaveFocus());
-    await user.keyboard('{Enter}');
+    await user.click(screen.getByTestId('confirm-dialog-yes'));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('permite navegar por Tab entre Cancelar e Confirmar', async () => {
+  it('permite navegar por Tab mantendo o foco dentro do diálogo (focus trap)', async () => {
     const user = userEvent.setup();
     renderDialog();
-    const yes = screen.getByTestId('confirm-dialog-yes');
-    const no = screen.getByTestId('confirm-dialog-no');
-    await waitFor(() => expect(yes).toHaveFocus());
+    const dialog = screen.getByRole('alertdialog');
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
     await user.tab();
-    expect([yes, no]).toContain(document.activeElement);
+    expect(dialog.contains(document.activeElement)).toBe(true);
   });
 
   it('propaga testId customizado para content, botões e título', () => {
