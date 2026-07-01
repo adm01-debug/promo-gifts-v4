@@ -354,11 +354,8 @@ const INITIAL_BACKOFF_MS = 600;
  * capturavam 429 e geravam loop de retries).
  */
 const RETRYABLE_PATTERNS = [
-  'statement timeout',
-  '57014',
   '502',
   '503',
-  '504',
   'bad gateway',
   'network',
   'fetch',
@@ -368,6 +365,14 @@ const RETRYABLE_PATTERNS = [
   'Failed to fetch',
   'boot',
 ];
+
+// statement_timeout (57014) NAO deve ser retriado — apenas amplifica a carga
+// no CRM e prolonga o 504 percebido pelo usuário. Tratado como degradação.
+function isStatementTimeout(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return lower.includes('statement timeout') || lower.includes('57014') || lower.includes('504');
+}
+
 
 /**
  * Padroes que indicam erros DEFINITIVOS — nunca fazer retry.
