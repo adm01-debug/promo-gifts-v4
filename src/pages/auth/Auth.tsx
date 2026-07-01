@@ -94,6 +94,10 @@ export default function Auth() {
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
+  // P2-05: honeypot anti-bot. Campo invisível (name="website") fora do
+  // react-hook-form. Humanos não preenchem; bots automáticos costumam preencher
+  // todo input encontrado. Lemos via ref no submit pra decidir se rejeita.
+  const honeypotRef = useRef<HTMLInputElement | null>(null);
   // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
   const googleRetryRef = useRef<(() => void) | null>(null);
   const handleRetryGoogle = useCallback(() => {
@@ -244,6 +248,26 @@ export default function Auth() {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setIpBlocked(false);
+
+    // P2-05: honeypot anti-bot. Se o campo invisível `website` foi preenchido,
+    // quase certamente é bot. Simula delay realista (1.5-2.3s, faixa típica de
+    // resposta de servidor de auth) e retorna como credencial inválida sem
+    // sequer tocar o Supabase. Não loga em logLoginAttempt pra não poluir
+    // métricas reais de tentativas humanas.
+    if (honeypotRef.current?.value) {
+      logger.warn('[AUTH_HONEYPOT_HIT]', {
+        honeypot_len: honeypotRef.current.value.length,
+      });
+      const fakeDelayMs = 1500 + Math.random() * 800;
+      await new Promise((r) => setTimeout(r, fakeDelayMs));
+      toast({
+        variant: 'destructive',
+        title: 'Não foi possível entrar',
+        description: 'Ocorreu um erro ao validar seu acesso. Por favor, tente novamente.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const { error } = await signIn(data.email, data.password);
@@ -685,6 +709,36 @@ export default function Auth() {
                     name="login"
                     noValidate
                   >
+                    {/*
+                      P2-05: honeypot anti-bot. Não remova.
+                      - tabIndex={-1}: pula no Tab
+                      - autoComplete="off": browsers não tentam preencher
+                      - aria-hidden + position absolute fora da viewport:
+                        leitores de tela e usuários humanos nunca veem
+                      - name="website": bots genéricos preenchem campos
+                        com nomes plausíveis automaticamente
+                    */}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        width: '1px',
+                        height: '1px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <label htmlFor="website-hp">Website (deixe em branco)</label>
+                      <input
+                        ref={honeypotRef}
+                        id="website-hp"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        defaultValue=""
+                      />
+                    </div>
                     <div className="space-y-2">
                       <label
                         htmlFor="login-email"
