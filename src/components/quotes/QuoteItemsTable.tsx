@@ -217,14 +217,18 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   ]
                     .filter(Boolean)
                     .join(' · ');
+                  const displayName = formatEngravingTitle({
+                    nomeTabela: p.technique_name,
+                    fallback: 'Gravação',
+                  });
                   return (
                     <span
                       key={pIdx}
                       className="flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] leading-tight"
-                      title={`${p.technique_name} — ${meta}`}
+                      title={`${displayName} — ${meta}`}
                     >
-                      <span className="font-semibold text-primary">
-                        ✦ {p.technique_name}
+                      <span className="font-semibold text-primary whitespace-nowrap">
+                        ✦ {displayName}
                       </span>
                       {meta && (
                         <span className="text-muted-foreground">{meta}</span>
