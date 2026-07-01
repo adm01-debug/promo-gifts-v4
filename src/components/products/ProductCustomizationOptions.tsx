@@ -67,6 +67,7 @@ export function ProductCustomizationOptions({
 
   // Force re-render when pricesRef changes (badges/exclusão dependem disso)
   const [, forceTick] = useState(0);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
 
   // Reset local state when productId changes
   useEffect(() => {
