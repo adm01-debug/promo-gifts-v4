@@ -43,4 +43,44 @@ describe('formatEngravingTitle', () => {
       'Fiber Laser | Plana',
     );
   });
+
+  describe('separadores e siglas incomuns', () => {
+    it('padroniza pipe sem espaços (DTF|uv)', () => {
+      expect(formatEngravingTitle({ nomeTabela: 'DTF|uv' })).toBe('DTF | UV');
+    });
+
+    it('normaliza combinação hífen + sigla (3D-uv)', () => {
+      expect(formatEngravingTitle({ nomeTabela: '3D-uv' })).toBe('3D | UV');
+    });
+
+    it('normaliza múltiplos separadores encadeados', () => {
+      expect(formatEngravingTitle({ nomeTabela: 'fiber laser / plana - dourada' })).toBe(
+        'Fiber Laser | Plana | Dourada',
+      );
+    });
+
+    it('remove segmentos vazios entre separadores duplicados', () => {
+      expect(formatEngravingTitle({ nomeTabela: 'fiber laser || plana' })).toBe(
+        'Fiber Laser | Plana',
+      );
+    });
+
+    it('preserva siglas em qualquer posição', () => {
+      expect(formatEngravingTitle({ nomeTabela: 'gravação uv em pu' })).toBe('Gravação UV Em PU');
+    });
+
+    it('normaliza mistura de en-dash e em-dash', () => {
+      expect(formatEngravingTitle({ nomeTabela: 'fiber laser – plana — dourada' })).toBe(
+        'Fiber Laser | Plana | Dourada',
+      );
+    });
+
+    it('aceita tokens numéricos compostos (10ml)', () => {
+      expect(formatEngravingTitle({ nomeTabela: 'tampografia 10ml' })).toBe('Tampografia 10ML');
+    });
+
+    it('respeita fallback custom quando tudo vazio', () => {
+      expect(formatEngravingTitle({ fallback: 'Sem gravação' })).toBe('Sem gravação');
+    });
+  });
 });
