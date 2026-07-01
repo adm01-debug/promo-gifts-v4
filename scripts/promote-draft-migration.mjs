@@ -47,8 +47,10 @@
  */
 
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync, mkdirSync } from 'node:fs';
-import { join, basename } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync, mkdirSync, statSync } from 'node:fs';
+import { join, basename, dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = process.cwd();
 const DRAFT_DIR = join(ROOT, 'qa', 'migrations-draft');
@@ -66,41 +68,33 @@ const warn = (m) => console.warn(`${YELLOW}[promote][warn]${RESET} ${m}`);
 const err  = (m) => console.error(`${RED}[promote][err]${RESET} ${m}`);
 const dim  = (m) => console.log(`${DIM}${m}${RESET}`);
 
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const positional = args.filter((a) => !a.startsWith('--'));
-  const flags = new Set(args.filter((a) => a.startsWith('--') && !a.includes('=')));
-  const kv = Object.fromEntries(
-    args.filter((a) => a.startsWith('--') && a.includes('='))
-      .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
-  );
-  const csv = (v) => (v ? String(v).split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) : []);
-  const int = (v, def) => {
-    if (v == null || v === '') return def;
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : NaN;
-  };
-  return {
-    file: positional[0],
-    apply: flags.has('--apply'),
-    skipValidation: flags.has('--skip-validation'),
-    keepDraft: flags.has('--keep-draft'),
-    timestamp: kv.timestamp,
-    pr: flags.has('--pr'),
-    draftPr: flags.has('--draft-pr'),
-    base: kv.base || 'main',
-    labels: Array.from(new Set(['db-migration', ...csv(kv.labels ?? kv.label)])),
-    reviewers: csv(kv.reviewers ?? kv.reviewer),
-    assignees: csv(kv.assignees ?? kv.assignee),
-    skipDbDiff: flags.has('--skip-db-diff'),
-    dbDiffMaxBytes: int(kv['db-diff-max-bytes'], 60_000),
-  };
+/**
+ * Divide uma string csv/whitespace em lista trimada, sem vazios.
+ * Exposto para testes unitários — não depende de I/O.
+ */
+export function parseHandleList(v) {
+  return v ? String(v).split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) : [];
 }
 
-// Validador leve de handle GitHub — cobre usuário, bot (`app/foo[bot]`) e time (`org/team`).
-// Não valida existência remota (isso quem faz é o `gh pr create`, que dá erro claro).
-const GH_HANDLE_RE = /^(?:[a-zA-Z0-9]([a-zA-Z0-9-]{0,38})|[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+|[a-zA-Z0-9-]+\[bot\])$/;
-function validateHandles(kind, list) {
+/**
+ * Converte string para int positivo. Retorna `def` se vazio, `NaN` se inválido.
+ * Exposto para testes unitários.
+ */
+export function parsePositiveInt(v, def) {
+  if (v == null || v === '') return def;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : NaN;
+}
+
+// Validador leve de handle GitHub — cobre usuário, bot (`foo[bot]`) e time (`org/time`).
+// Não valida existência remota (quem faz isso é o `gh pr create`, com erro claro).
+export const GH_HANDLE_RE = /^(?:[a-zA-Z0-9]([a-zA-Z0-9-]{0,38})|[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+|[a-zA-Z0-9-]+\[bot\])$/;
+
+/**
+ * Valida uma lista de handles GitHub. Retorna `null` se OK, ou uma mensagem
+ * de erro pronta para exibir.
+ */
+export function validateHandles(kind, list) {
   const bad = list.filter((h) => !GH_HANDLE_RE.test(h));
   if (bad.length) {
     return `--${kind} inválido: ${bad.map((b) => `"${b}"`).join(', ')}. ` +
@@ -112,6 +106,35 @@ function validateHandles(kind, list) {
   }
   return null;
 }
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const positional = args.filter((a) => !a.startsWith('--'));
+  const flags = new Set(args.filter((a) => a.startsWith('--') && !a.includes('=')));
+  const kv = Object.fromEntries(
+    args.filter((a) => a.startsWith('--') && a.includes('='))
+      .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
+  );
+  return {
+    file: positional[0],
+    apply: flags.has('--apply'),
+    skipValidation: flags.has('--skip-validation'),
+    keepDraft: flags.has('--keep-draft'),
+    timestamp: kv.timestamp,
+    pr: flags.has('--pr'),
+    draftPr: flags.has('--draft-pr'),
+    base: kv.base || 'main',
+    labels: Array.from(new Set(['db-migration', ...parseHandleList(kv.labels ?? kv.label)])),
+    reviewers: parseHandleList(kv.reviewers ?? kv.reviewer),
+    assignees: parseHandleList(kv.assignees ?? kv.assignee),
+    skipDbDiff: flags.has('--skip-db-diff'),
+    dbDiffMaxBytes: parsePositiveInt(kv['db-diff-max-bytes'], 60_000),
+    dbDiffCache: flags.has('--db-diff-cache'),
+    dbDiffCacheTtl: parsePositiveInt(kv['db-diff-cache-ttl'], 900), // 15 min default
+    noDbDiffCache: flags.has('--no-db-diff-cache'),
+  };
+}
+
 
 function usage(code = 1) {
   console.log(`
@@ -272,6 +295,9 @@ function main() {
       assignees: opts.assignees,
       skipDbDiff: opts.skipDbDiff,
       dbDiffMaxBytes: opts.dbDiffMaxBytes,
+      dbDiffCache: opts.dbDiffCache,
+      dbDiffCacheTtl: opts.dbDiffCacheTtl,
+      noDbDiffCache: opts.noDbDiffCache,
     });
     return;
   }
@@ -312,7 +338,7 @@ function preflightGit() {
   return problems;
 }
 
-function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false, dbDiffMaxBytes = 60_000 }) {
+function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false, dbDiffMaxBytes = 60_000, dbDiffCache = false, dbDiffCacheTtl = 900, noDbDiffCache = false }) {
   log('Preparando PR de promoção…');
 
   const problems = preflightGit();
@@ -402,15 +428,73 @@ function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr
 
   // Anexa `supabase db diff --linked` como comentário inicial (com fallback).
   if (!skipDbDiff) {
-    attachDbDiffComment(prUrl, dbDiffMaxBytes);
+    attachDbDiffComment(prUrl, dbDiffMaxBytes, { useCache: dbDiffCache && !noDbDiffCache, ttlSeconds: dbDiffCacheTtl });
   } else {
     dim('  → --skip-db-diff: comentário com `supabase db diff --linked` não foi anexado.');
   }
 }
 
-function attachDbDiffComment(prUrl, maxBytes) {
-  log(`Coletando \`supabase db diff --linked\` para anexar ao PR (limite ${maxBytes} bytes)…`);
-  const diff = shSafe('supabase db diff --linked --schema public');
+// Cache local (opt-in) do resultado de `supabase db diff --linked`.
+// Reduz N chamadas ao Supabase quando promovo vários drafts em sequência.
+// Chave = SHA das migrations aplicadas + schema, então invalida sozinho
+// quando você aplica algo novo.
+const DIFF_CACHE_DIR = join(tmpdir(), 'promo-gifts', 'supabase-db-diff-cache');
+
+function computeDiffCacheKey() {
+  const migrations = existsSync(MIG_DIR)
+    ? readdirSync(MIG_DIR).filter((f) => f.endsWith('.sql')).sort().join('|')
+    : '';
+  // hash simples e determinístico — evita dependência extra
+  let h = 5381;
+  for (let i = 0; i < migrations.length; i++) h = ((h << 5) + h + migrations.charCodeAt(i)) | 0;
+  return `diff-${(h >>> 0).toString(16)}-public.txt`;
+}
+
+function readDiffCache(ttlSeconds) {
+  try {
+    const key = computeDiffCacheKey();
+    const p = join(DIFF_CACHE_DIR, key);
+    if (!existsSync(p)) return null;
+    const st = statSync(p);
+    const ageSec = (Date.now() - st.mtimeMs) / 1000;
+    if (ageSec > ttlSeconds) return { stale: true, ageSec, path: p };
+    return { stale: false, ageSec, path: p, out: readFileSync(p, 'utf8') };
+  } catch { return null; }
+}
+
+function writeDiffCache(payload) {
+  try {
+    mkdirSync(DIFF_CACHE_DIR, { recursive: true });
+    const p = join(DIFF_CACHE_DIR, computeDiffCacheKey());
+    writeFileSync(p, payload);
+    return p;
+  } catch { return null; }
+}
+
+function attachDbDiffComment(prUrl, maxBytes, { useCache = false, ttlSeconds = 900 } = {}) {
+  log(`Coletando \`supabase db diff --linked\` para anexar ao PR (limite ${maxBytes} bytes${useCache ? `, cache TTL ${ttlSeconds}s` : ''})…`);
+
+  let diff;
+  let fromCache = false;
+  if (useCache) {
+    const cached = readDiffCache(ttlSeconds);
+    if (cached && !cached.stale) {
+      dim(`  ↺ cache hit (${Math.floor(cached.ageSec)}s de idade): ${cached.path}`);
+      diff = { ok: true, out: cached.out };
+      fromCache = true;
+    } else if (cached?.stale) {
+      dim(`  ↻ cache expirado (${Math.floor(cached.ageSec)}s > ${ttlSeconds}s), regenerando…`);
+    }
+  }
+
+  if (!diff) {
+    diff = shSafe('supabase db diff --linked --schema public');
+    if (useCache && diff.ok) {
+      const p = writeDiffCache(diff.out || '');
+      if (p) dim(`  ✎ cache atualizado: ${p}`);
+    }
+  }
+
 
   let body;
   if (!diff.ok) {
@@ -471,7 +555,11 @@ function attachDbDiffComment(prUrl, maxBytes) {
     dim(`  Reanexe manualmente: gh pr comment ${prUrl} --body-file .git/PROMOTE_PR_DIFF.md`);
     return;
   }
-  ok(diff.ok ? 'Diff do `supabase db diff --linked` anexado como comentário inicial.' : 'Comentário de fallback (erro do db diff) anexado ao PR.');
+  ok(
+    diff.ok
+      ? `Diff do \`supabase db diff --linked\` anexado como comentário inicial${fromCache ? ' (cache hit)' : ''}.`
+      : 'Comentário de fallback (erro do db diff) anexado ao PR.',
+  );
 }
 
 function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles }) {
@@ -509,5 +597,11 @@ function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasVal
 }
 
 
-try { main(); }
-catch (e) { err(e.stack || e.message); process.exit(1); }
+// Só roda o CLI se este arquivo foi invocado diretamente por node.
+// Importado por testes unitários, `main()` NÃO deve rodar.
+const __filename = fileURLToPath(import.meta.url);
+const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === resolve(__filename);
+if (invokedDirectly) {
+  try { main(); }
+  catch (e) { err(e.stack || e.message); process.exit(1); }
+}
