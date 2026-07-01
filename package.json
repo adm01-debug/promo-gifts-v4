@@ -135,7 +135,9 @@
     "schema:snapshot": "node scripts/export-schema-snapshot.mjs",
     "drafts:list": "node scripts/list-migration-drafts.mjs",
     "drafts:check": "node scripts/list-migration-drafts.mjs --check",
-    "check:migration-refs": "node scripts/check-migration-path-references.mjs"
+    "check:migration-refs": "node scripts/check-migration-path-references.mjs",
+    "drafts:status": "node scripts/map-drafts-to-migrations.mjs",
+    "drafts:status:check": "node scripts/map-drafts-to-migrations.mjs --check"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

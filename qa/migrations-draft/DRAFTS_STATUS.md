@@ -1,0 +1,28 @@
+# Rastreamento draft → migration → DB
+
+_Atualizado em 2026-07-01T11:00:37.444Z · 5 rascunho(s) · **sem acesso ao DB** (ERROR:  permission denied for schema supabase_migrations)._
+
+Gerado por `scripts/map-drafts-to-migrations.mjs`. Não editar à mão.
+
+## Legenda
+
+- ✅ **aplicada** — existe migration versionada correspondente E o `version` está em `supabase_migrations.schema_migrations`.
+- 🟠 **versionada, não aplicada** — foi promovida para `supabase/migrations/` mas o DB canônico ainda não a executou.
+- 🟡 **não promovido** — só existe rascunho; nenhuma migration canônica bate com o slug.
+- ❔ **sem acesso ao DB** — status não pôde ser consultado (PG indisponível ou sem permissão).
+
+## Tabela
+
+| Rascunho | Slug | Migration(s) canônica(s) | Status no DB |
+| --- | --- | --- | --- |
+| `2026-06-18_security_definer_acl.sql` | `security_definer_acl` | _(nenhum match)_ | 🟡 não promovido |
+| `2026-06-19_kit_dimensions_backfill.sql` | `kit_dimensions_backfill` | _(nenhum match)_ | 🟡 não promovido |
+| `2026-06-19_reposicao_variants_summary.sql` | `reposicao_variants_summary` | _(nenhum match)_ | 🟡 não promovido |
+| `2026-06-20_revoke_secdef_from_authenticated.sql` | `revoke_secdef_from_authenticated` | `20260512222200_t28_pilot_revoke_admin_security_definer_from_anon_authenticated.sql` (75%)<br>`20260605014545_revoke_fn_process_raw_v2_execute_from_anon_authenticated.sql` (75%) | ❔ ERROR:  permission denied for schema supabase_migrations |
+| `2026-06-27_quotes_status_allow_cancelled.sql` | `quotes_status_allow_cancelled` | _(nenhum match)_ | 🟡 não promovido |
+
+## Como agir
+
+- **🟡 não promovido** → revisar o rascunho e, quando aprovado, copiar para `supabase/migrations/<timestamp>_<slug>.sql` (ver `qa/migrations-draft/README.md`).
+- **🟠 versionada, não aplicada** → verificar por que o `db push` não rodou; pode ser drift real ou marker faltando em `schema_migrations`.
+- **✅ aplicada** → deletar o arquivo do `qa/migrations-draft/` (dupla verdade proibida).
