@@ -185,7 +185,36 @@ function main() {
       console.error('[drafts-map] DRAFTS_STATUS.md desatualizado. Rode: node scripts/map-drafts-to-migrations.mjs');
       process.exit(1);
     }
-    console.log('[drafts-map] DRAFTS_STATUS.md ok.');
+
+    // Gate de revisão: todo draft 🟡 "não promovido" precisa estar registrado
+    // em qa/migrations-draft/REVIEWS.json (acknowledged_not_promoted).
+    const ack = loadAcknowledged();
+    const notPromoted = rows.filter((r) => r.statusCell.includes('não promovido')).map((r) => r.draft);
+    const unreviewed = notPromoted.filter((d) => !ack.has(d));
+    if (unreviewed.length > 0) {
+      console.error('[drafts-map] Rascunhos 🟡 "não promovido" sem revisão registrada:');
+      for (const d of unreviewed) console.error(`  - ${d}`);
+      console.error(
+        '\nAções:\n' +
+          '  1) Promova via `npm run draft:promote -- <arquivo> --apply` OU\n' +
+          '  2) Registre a revisão em qa/migrations-draft/REVIEWS.json adicionando:\n' +
+          '     { "draft": "<arquivo>", "reviewer": "<nome>", "date": "YYYY-MM-DD", "reason": "<motivo>" }\n' +
+          '     em `acknowledged_not_promoted`.',
+      );
+      process.exit(1);
+    }
+
+    // Também detecta ack órfão (draft foi promovido/removido mas ficou no ledger)
+    const draftsPresent = new Set(rows.map((r) => r.draft));
+    const orphanAck = [...ack].filter((d) => !draftsPresent.has(d));
+    if (orphanAck.length > 0) {
+      console.error('[drafts-map] REVIEWS.json contém entradas órfãs (rascunho não existe mais):');
+      for (const d of orphanAck) console.error(`  - ${d}`);
+      console.error('\nRemova a entrada correspondente de acknowledged_not_promoted.');
+      process.exit(1);
+    }
+
+    console.log(`[drafts-map] DRAFTS_STATUS.md ok · ${notPromoted.length} 🟡 revisados.`);
     return;
   }
 
