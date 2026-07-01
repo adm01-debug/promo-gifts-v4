@@ -295,6 +295,9 @@ function main() {
       assignees: opts.assignees,
       skipDbDiff: opts.skipDbDiff,
       dbDiffMaxBytes: opts.dbDiffMaxBytes,
+      dbDiffCache: opts.dbDiffCache,
+      dbDiffCacheTtl: opts.dbDiffCacheTtl,
+      noDbDiffCache: opts.noDbDiffCache,
     });
     return;
   }
