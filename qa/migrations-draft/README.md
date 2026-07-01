@@ -92,37 +92,79 @@ inicial (com fallback quando o CLI falhar).
 | `--assignees=<a,b>` | csv/espaço | Idem `--reviewers`. Não use `@` no início. |
 | `--skip-db-diff` | — | Não coleta nem anexa o `supabase db diff --linked`. |
 | `--db-diff-max-bytes=<n>` | `60000` (default) | Limite de bytes do comentário do diff (evita corte silencioso em migrações grandes). |
+| `--db-diff-cache` | — | Cacheia o resultado de `supabase db diff --linked` em `$TMPDIR/promo-gifts/supabase-db-diff-cache/` (opt-in). Útil ao promover vários drafts em sequência. |
+| `--db-diff-cache-ttl=<s>` | `900` (default) | TTL do cache em segundos. Chave inclui as migrations existentes, então aplicar uma nova invalida sozinho. |
+| `--no-db-diff-cache` | — | Ignora o cache mesmo com `--db-diff-cache` (força regeneração). |
 
 ### Exemplos
 
 ```bash
-# Fluxo padrão: label db-migration + diff no comentário
+# 1) Fluxo padrão: label db-migration + diff no comentário
 npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr
 
-# Com revisores, assignee e labels extras
+# 2) Com revisores (user + org/team), assignee e labels extras
 npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr \
   --reviewers='alice,bob,org/time-db' \
   --assignees='carla' \
   --labels='needs-dba,priority:p1'
 
-# Draft PR + diff maior que 60 KB
+# 3) Revisor bot + separadores mistos (vírgula E espaço são aceitos)
+npm run draft:promote -- 2026-06-18_security_definer_acl.sql --apply --pr \
+  --reviewers='alice bob renovate[bot]'
+
+# 4) Draft PR + diff grande (aumenta o limite de bytes do comentário)
 npm run draft:promote -- 2026-06-19_kit_dimensions_backfill.sql --apply --pr \
   --draft-pr --db-diff-max-bytes=250000
 
-# Sem coletar o diff (ex.: CLI supabase indisponível localmente)
+# 5) Sem coletar o diff (ex.: CLI supabase indisponível localmente)
 npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr --skip-db-diff
+
+# 6) Cache ativo: promova vários drafts em sequência sem chamar
+#    `supabase db diff` toda vez (default TTL 15 min).
+npm run draft:promote -- 2026-06-18_security_definer_acl.sql       --apply --pr --db-diff-cache
+npm run draft:promote -- 2026-06-19_reposicao_variants_summary.sql --apply --pr --db-diff-cache
+npm run draft:promote -- 2026-06-20_revoke_secdef_from_authenticated.sql --apply --pr --db-diff-cache
+
+# 7) Cache com TTL customizado (5 min) — útil se o schema muda com frequência
+npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr \
+  --db-diff-cache --db-diff-cache-ttl=300
+
+# 8) Forçar regeneração ignorando cache (útil quando outro dev aplicou algo)
+npm run draft:promote -- 2026-06-27_quotes_status_allow_cancelled.sql --apply --pr \
+  --db-diff-cache --no-db-diff-cache
 ```
 
 ### Comportamento em falha
 
 - **`supabase db diff --linked` falha** → o PR é criado mesmo assim, e o
   comentário inicial contém as primeiras 20 linhas do erro + o comando
-  `gh pr comment <url> --body-file /tmp/db-diff.md` para reanexar
-  localmente. Causas comuns: `supabase link` não feito, credenciais
-  expiradas ou CLI ausente.
+  de retry pronto para copiar/colar:
+
+  ```bash
+  supabase db diff --linked --schema public > /tmp/db-diff.md
+  gh pr comment <url-do-pr> --body-file /tmp/db-diff.md
+  ```
+
+  Causas comuns: `supabase link` não feito, credenciais expiradas ou CLI
+  ausente. O log do script imprime a mesma linha em `dim` para você
+  reexecutar sem precisar abrir o PR.
+
 - **Reviewers/assignees inválidos** → o script aborta **antes** do
   `git commit`, com mensagem indicando qual handle está mal formado.
   Aceita `user`, `org/team` e `nome[bot]`. Não use `@` como prefixo.
+  Duplicatas na mesma flag também são bloqueadas.
+
+- **`--db-diff-max-bytes` não numérico** → aborta antes do commit.
+
 - **`gh pr comment` falha após o PR aberto** → o PR permanece criado; o
   script imprime a linha exata para reanexar o comentário manualmente.
+
+- **Cache stale ou corrompido** → o script apenas ignora e regenera; o
+  arquivo é sobrescrito atomicamente ao final. Para inspecionar/limpar:
+
+  ```bash
+  ls "$TMPDIR/promo-gifts/supabase-db-diff-cache/"
+  rm -rf "$TMPDIR/promo-gifts/supabase-db-diff-cache/"
+  ```
+
 
