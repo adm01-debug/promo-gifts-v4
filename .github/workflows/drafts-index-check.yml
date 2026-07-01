@@ -26,6 +26,7 @@ on:
       - 'scripts/list-migration-drafts.mjs'
       - 'scripts/map-drafts-to-migrations.mjs'
       - 'scripts/check-draft-canonical-target.mjs'
+      - 'scripts/build-drafts-pr-comment.mjs'
       - '.github/workflows/drafts-index-check.yml'
   push:
     branches: [main]
@@ -34,6 +35,8 @@ on:
       - 'scripts/list-migration-drafts.mjs'
       - 'scripts/map-drafts-to-migrations.mjs'
       - 'scripts/check-draft-canonical-target.mjs'
+      - 'scripts/build-drafts-pr-comment.mjs'
+  workflow_dispatch:
   workflow_dispatch:
 
 permissions:
