@@ -26,6 +26,10 @@
  *                          `origin` configurado.
  *   --base=<branch>        Branch alvo do PR (default: `main`).
  *   --draft-pr             Abre o PR como draft (para review antecipada).
+ *   --labels=<a,b,c>       Labels adicionais no PR (sempre inclui `db-migration`).
+ *   --reviewers=<a,b>      Usuários/times para `gh pr create --reviewer`.
+ *   --assignees=<a,b>      Usuários para `gh pr create --assignee`.
+ *   --skip-db-diff         Não anexa `supabase db diff --linked` como comentário.
  *
  * Validações executadas (todas obrigatórias, exceto quando indicado):
  *   1. Rascunho existe e termina em `.sql`.
@@ -70,6 +74,7 @@ function parseArgs() {
     args.filter((a) => a.startsWith('--') && a.includes('='))
       .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
   );
+  const csv = (v) => (v ? String(v).split(',').map((s) => s.trim()).filter(Boolean) : []);
   return {
     file: positional[0],
     apply: flags.has('--apply'),
@@ -79,6 +84,10 @@ function parseArgs() {
     pr: flags.has('--pr'),
     draftPr: flags.has('--draft-pr'),
     base: kv.base || 'main',
+    labels: Array.from(new Set(['db-migration', ...csv(kv.labels ?? kv.label)])),
+    reviewers: csv(kv.reviewers ?? kv.reviewer),
+    assignees: csv(kv.assignees ?? kv.assignee),
+    skipDbDiff: flags.has('--skip-db-diff'),
   };
 }
 
@@ -218,6 +227,10 @@ function main() {
       draftPr: opts.draftPr,
       keepDraft: opts.keepDraft,
       hasValidation,
+      labels: opts.labels,
+      reviewers: opts.reviewers,
+      assignees: opts.assignees,
+      skipDbDiff: opts.skipDbDiff,
     });
     return;
   }
@@ -258,7 +271,7 @@ function preflightGit() {
   return problems;
 }
 
-function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation }) {
+function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation, labels = ['db-migration'], reviewers = [], assignees = [], skipDbDiff = false }) {
   log('Preparando PR de promoção…');
 
   const problems = preflightGit();
@@ -326,18 +339,66 @@ function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr
 
   // gh pr create
   writeFileSync('.git/PROMOTE_PR_BODY.md', body);
-  const draftFlag = draftPr ? '--draft ' : '';
-  const create = shSafe(
-    `gh pr create --base ${base} --head ${branch} --title ${JSON.stringify(title)} --body-file .git/PROMOTE_PR_BODY.md ${draftFlag}`.trim(),
-  );
+  const extraFlags = [
+    draftPr ? '--draft' : '',
+    ...labels.map((l) => `--label ${JSON.stringify(l)}`),
+    ...reviewers.map((r) => `--reviewer ${JSON.stringify(r)}`),
+    ...assignees.map((a) => `--assignee ${JSON.stringify(a)}`),
+  ].filter(Boolean).join(' ');
+  const createCmd = `gh pr create --base ${base} --head ${branch} --title ${JSON.stringify(title)} --body-file .git/PROMOTE_PR_BODY.md ${extraFlags}`.trim();
+  const create = shSafe(createCmd);
   if (!create.ok) {
     err(`gh pr create falhou: ${create.out.split('\n')[0]}`);
     dim('Abra manualmente:');
-    dim(`  gh pr create --base ${base} --head ${branch} --title ${JSON.stringify(title)} --body-file .git/PROMOTE_PR_BODY.md`);
+    dim(`  ${createCmd}`);
     process.exit(1);
   }
   const prUrl = create.out.split('\n').find((l) => l.startsWith('http')) || create.out;
   ok(`PR aberto${draftPr ? ' (draft)' : ''}: ${prUrl}`);
+  if (labels.length) ok(`Labels: ${labels.join(', ')}`);
+  if (reviewers.length) ok(`Reviewers: ${reviewers.join(', ')}`);
+  if (assignees.length) ok(`Assignees: ${assignees.join(', ')}`);
+
+  // Anexa `supabase db diff --linked` como comentário inicial.
+  if (!skipDbDiff) {
+    attachDbDiffComment(prUrl);
+  } else {
+    dim('  → --skip-db-diff: comentário com `supabase db diff --linked` não foi anexado.');
+  }
+}
+
+function attachDbDiffComment(prUrl) {
+  log('Coletando `supabase db diff --linked` para anexar ao PR…');
+  const diff = shSafe('supabase db diff --linked --schema public');
+  if (!diff.ok) {
+    warn(`supabase db diff --linked falhou — pulando comentário. Detalhe: ${diff.out.split('\n')[0]}`);
+    return;
+  }
+  const raw = (diff.out || '').trim();
+  const body = raw
+    ? [
+        `### 🔍 \`supabase db diff --linked --schema public\``,
+        ``,
+        `Diff capturado no momento da abertura do PR (útil para revisão do drift).`,
+        ``,
+        '```diff',
+        raw.length > 60000 ? `${raw.slice(0, 60000)}\n... (truncado — diff completo maior que 60 KB)` : raw,
+        '```',
+      ].join('\n')
+    : [
+        `### 🔍 \`supabase db diff --linked --schema public\``,
+        ``,
+        `_Sem drift detectado no schema \`public\` no momento da abertura do PR._`,
+      ].join('\n');
+
+  writeFileSync('.git/PROMOTE_PR_DIFF.md', body);
+  const cmt = shSafe(`gh pr comment ${JSON.stringify(prUrl)} --body-file .git/PROMOTE_PR_DIFF.md`);
+  if (!cmt.ok) {
+    warn(`gh pr comment falhou: ${cmt.out.split('\n')[0]}`);
+    dim(`  Reanexe manualmente: gh pr comment ${prUrl} --body-file .git/PROMOTE_PR_DIFF.md`);
+    return;
+  }
+  ok('Diff do `supabase db diff --linked` anexado como comentário inicial.');
 }
 
 function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles }) {
