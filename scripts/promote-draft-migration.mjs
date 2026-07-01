@@ -597,5 +597,11 @@ function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasVal
 }
 
 
-try { main(); }
-catch (e) { err(e.stack || e.message); process.exit(1); }
+// Só roda o CLI se este arquivo foi invocado diretamente por node.
+// Importado por testes unitários, `main()` NÃO deve rodar.
+const __filename = fileURLToPath(import.meta.url);
+const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === resolve(__filename);
+if (invokedDirectly) {
+  try { main(); }
+  catch (e) { err(e.stack || e.message); process.exit(1); }
+}
