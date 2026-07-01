@@ -400,37 +400,69 @@ function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr
   if (reviewers.length) ok(`Reviewers: ${reviewers.join(', ')}`);
   if (assignees.length) ok(`Assignees: ${assignees.join(', ')}`);
 
-  // Anexa `supabase db diff --linked` como comentário inicial.
+  // Anexa `supabase db diff --linked` como comentário inicial (com fallback).
   if (!skipDbDiff) {
-    attachDbDiffComment(prUrl);
+    attachDbDiffComment(prUrl, dbDiffMaxBytes);
   } else {
     dim('  → --skip-db-diff: comentário com `supabase db diff --linked` não foi anexado.');
   }
 }
 
-function attachDbDiffComment(prUrl) {
-  log('Coletando `supabase db diff --linked` para anexar ao PR…');
+function attachDbDiffComment(prUrl, maxBytes) {
+  log(`Coletando \`supabase db diff --linked\` para anexar ao PR (limite ${maxBytes} bytes)…`);
   const diff = shSafe('supabase db diff --linked --schema public');
+
+  let body;
   if (!diff.ok) {
-    warn(`supabase db diff --linked falhou — pulando comentário. Detalhe: ${diff.out.split('\n')[0]}`);
-    return;
-  }
-  const raw = (diff.out || '').trim();
-  const body = raw
-    ? [
-        `### 🔍 \`supabase db diff --linked --schema public\``,
-        ``,
-        `Diff capturado no momento da abertura do PR (útil para revisão do drift).`,
-        ``,
-        '```diff',
-        raw.length > 60000 ? `${raw.slice(0, 60000)}\n... (truncado — diff completo maior que 60 KB)` : raw,
-        '```',
-      ].join('\n')
-    : [
+    // Fallback: publica um comentário indicando a falha + como reexecutar,
+    // para que a informação chegue ao revisor mesmo sem diff.
+    const detail = (diff.out || '').split('\n').slice(0, 20).join('\n') || '(sem stderr/stdout)';
+    warn(`supabase db diff --linked falhou — anexando comentário de fallback com a instrução de retry.`);
+    body = [
+      `### ⚠️ \`supabase db diff --linked --schema public\` falhou`,
+      ``,
+      `O comando falhou no momento da abertura do PR. O PR foi criado mesmo assim para não bloquear a revisão.`,
+      ``,
+      `**Como reexecutar localmente e anexar o diff:**`,
+      '```bash',
+      `supabase db diff --linked --schema public > /tmp/db-diff.md`,
+      `gh pr comment ${prUrl} --body-file /tmp/db-diff.md`,
+      '```',
+      ``,
+      `**Saída capturada (primeiras 20 linhas):**`,
+      '```',
+      detail,
+      '```',
+      ``,
+      `_Causas comuns: projeto não linkado (\`supabase link\`), credenciais expiradas, ou CLI não instalado._`,
+    ].join('\n');
+  } else {
+    const raw = (diff.out || '').trim();
+    if (!raw) {
+      body = [
         `### 🔍 \`supabase db diff --linked --schema public\``,
         ``,
         `_Sem drift detectado no schema \`public\` no momento da abertura do PR._`,
       ].join('\n');
+    } else {
+      const kb = (maxBytes / 1024).toFixed(1);
+      const truncated = raw.length > maxBytes;
+      const payload = truncated
+        ? `${raw.slice(0, maxBytes)}\n... (truncado — diff completo tem ${(raw.length / 1024).toFixed(1)} KB; limite atual: ${kb} KB via --db-diff-max-bytes)`
+        : raw;
+      body = [
+        `### 🔍 \`supabase db diff --linked --schema public\``,
+        ``,
+        truncated
+          ? `Diff capturado na abertura do PR (**truncado** — ${(raw.length / 1024).toFixed(1)} KB > limite ${kb} KB; aumente com \`--db-diff-max-bytes=<n>\`).`
+          : `Diff capturado na abertura do PR (${(raw.length / 1024).toFixed(1)} KB).`,
+        ``,
+        '```diff',
+        payload,
+        '```',
+      ].join('\n');
+    }
+  }
 
   writeFileSync('.git/PROMOTE_PR_DIFF.md', body);
   const cmt = shSafe(`gh pr comment ${JSON.stringify(prUrl)} --body-file .git/PROMOTE_PR_DIFF.md`);
@@ -439,7 +471,7 @@ function attachDbDiffComment(prUrl) {
     dim(`  Reanexe manualmente: gh pr comment ${prUrl} --body-file .git/PROMOTE_PR_DIFF.md`);
     return;
   }
-  ok('Diff do `supabase db diff --linked` anexado como comentário inicial.');
+  ok(diff.ok ? 'Diff do `supabase db diff --linked` anexado como comentário inicial.' : 'Comentário de fallback (erro do db diff) anexado ao PR.');
 }
 
 function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles }) {
