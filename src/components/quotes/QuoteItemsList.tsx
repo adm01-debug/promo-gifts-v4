@@ -249,7 +249,7 @@ function QuoteItemRow({
               </div>
             </div>
             <div
-              className="ml-auto flex min-w-0 flex-col items-end leading-tight"
+              className="flex min-w-0 flex-col items-end leading-tight"
               data-testid="quote-item-subtotal"
             >
               <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
