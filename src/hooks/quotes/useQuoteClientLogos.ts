@@ -26,18 +26,25 @@ export function useQuoteClientLogos(cnpjs: Array<string | null | undefined>) {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     queryFn: async () => {
-      const rows = await selectCrm<CrmCompanyLogoRow>('companies', {
-        select: 'cnpj, logo_url',
-        filters: { cnpj: { in: normalized } },
-        limit: normalized.length,
-      });
+      // Chunk em blocos de 50 CNPJs para evitar statement_timeout no CRM
+      // quando o orçamento referencia dezenas de clientes.
+      const CHUNK = 50;
       const map: LogoByCnpj = {};
-      for (const row of rows) {
-        const key = normalizeCnpj(row.cnpj);
-        if (key) map[key] = row.logo_url || null;
+      for (let i = 0; i < normalized.length; i += CHUNK) {
+        const slice = normalized.slice(i, i + CHUNK);
+        const rows = await selectCrm<CrmCompanyLogoRow>('companies', {
+          select: 'cnpj, logo_url',
+          filters: { cnpj: { in: slice } },
+          limit: slice.length,
+        });
+        for (const row of rows) {
+          const key = normalizeCnpj(row.cnpj);
+          if (key) map[key] = row.logo_url || null;
+        }
       }
       return map;
     },
+
   });
 }
 
