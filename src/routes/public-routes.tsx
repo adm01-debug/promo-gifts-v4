@@ -12,6 +12,7 @@ import {
 
 // Dev-only harness (sem auth) para validação visual de componentes.
 const ColorSwatchesHarness = lazy(() => import('@/pages/dev/ColorSwatchesHarness'));
+const ConfirmDialogHarness = lazy(() => import('@/pages/dev/ConfirmDialogHarness'));
 
 /**
  * Public routes — accessible without authentication.
@@ -31,5 +32,6 @@ export const publicRoutes = (
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/privacidade" element={<PrivacyPage />} />
     <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
+    <Route path="/__test/confirm-dialog" element={<ConfirmDialogHarness />} />
   </>
 );

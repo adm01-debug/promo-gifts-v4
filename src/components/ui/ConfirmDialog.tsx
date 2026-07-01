@@ -17,7 +17,14 @@ interface ConfirmDialogProps {
   title: string;
   description?: string;
   confirmLabel?: string;
+  /**
+   * Rótulo curto exibido em containers estreitos (<220px). Se ausente,
+   * fallback para `confirmLabel`. O texto completo permanece no `aria-label`
+   * e no `title` (tooltip nativo) para leitor de tela.
+   */
+  confirmLabelShort?: string;
   cancelLabel?: string;
+  cancelLabelShort?: string;
   onConfirm: () => Promise<void> | void;
   onCancel?: () => void;
   variant?: 'default' | 'destructive' | 'info' | 'warning';
@@ -72,7 +79,9 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = 'Confirmar',
+  confirmLabelShort,
   cancelLabel = 'Cancelar',
+  cancelLabelShort,
   onConfirm,
   onCancel,
   variant = 'default',
@@ -197,16 +206,27 @@ export function ConfirmDialog({
               onClick={handleCancel}
               disabled={loading}
               data-testid={noTestId}
-              className="mt-0 h-8 rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={cancelLabel}
+              title={cancelLabel}
+              className="mt-0 h-8 whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              {cancelLabel}
+              {cancelLabelShort ? (
+                <>
+                  <span className="min-[220px]:hidden">{cancelLabelShort}</span>
+                  <span className="hidden min-[220px]:inline">{cancelLabel}</span>
+                </>
+              ) : (
+                cancelLabel
+              )}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirm}
               disabled={loading}
               data-testid={yesTestId}
+              aria-label={confirmLabel}
+              title={confirmLabel}
               className={cn(
-                'h-8 rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                'inline-flex h-8 items-center whitespace-nowrap rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
                 variant === 'destructive' &&
                   'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
                 variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
@@ -220,7 +240,14 @@ export function ConfirmDialog({
                   data-testid={testId ? `${testId}-loading` : 'confirm-dialog-loading'}
                 />
               )}
-              {confirmLabel}
+              {confirmLabelShort ? (
+                <>
+                  <span className="min-[220px]:hidden">{confirmLabelShort}</span>
+                  <span className="hidden min-[220px]:inline">{confirmLabel}</span>
+                </>
+              ) : (
+                confirmLabel
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </div>
@@ -301,6 +328,7 @@ export function UnsavedChangesDialog({
       description="Você tem alterações que não foram salvas. Deseja descartar as alterações ou salvá-las?"
       confirmLabel={onSave ? 'Salvar' : 'Descartar'}
       cancelLabel="Continuar editando"
+      cancelLabelShort="Continuar"
       onConfirm={onSave || onDiscard}
       onCancel={() => onOpenChange(false)}
       loading={loading}
