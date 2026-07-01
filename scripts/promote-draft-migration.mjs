@@ -271,6 +271,7 @@ function main() {
       reviewers: opts.reviewers,
       assignees: opts.assignees,
       skipDbDiff: opts.skipDbDiff,
+      dbDiffMaxBytes: opts.dbDiffMaxBytes,
     });
     return;
   }
