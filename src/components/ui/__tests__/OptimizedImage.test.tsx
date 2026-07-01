@@ -1,15 +1,35 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OptimizedImage } from '../OptimizedImage';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// JSDOM does not implement IntersectionObserver. Without this mock,
-// OptimizedImage's useEffect (priority=false path) throws on mount.
-// The previous assumption "mock is global in setupFiles" was fragile —
-// we make it explicit here so this file is self-contained.
-// JSDOM não implementa IntersectionObserver e o componente o instancia com `new`.
-// Vitest recente exige um construtor real (class), não vi.fn().mockReturnValue/arrow.
+// JSDOM não implementa IntersectionObserver e OptimizedImage gateia o placeholder
+// em `isInView`. Mock auto-fire: dispara isIntersecting:true no próximo microtask
+// após `observe()`, tornando o comportamento determinístico (equivalente ao mock
+// global em tests/setup.ts). Sem isso, o placeholder <img aria-hidden="true">
+// nunca renderiza e queries retornam undefined.
 class MockIntersectionObserver {
-  observe = vi.fn();
+  private cb: IntersectionObserverCallback;
+  constructor(cb: IntersectionObserverCallback) {
+    this.cb = cb;
+  }
+  observe = (target: Element) => {
+    queueMicrotask(() => {
+      this.cb(
+        [
+          {
+            isIntersecting: true,
+            target,
+            intersectionRatio: 1,
+            boundingClientRect: {} as DOMRectReadOnly,
+            intersectionRect: {} as DOMRectReadOnly,
+            rootBounds: null,
+            time: 0,
+          },
+        ],
+        this as unknown as IntersectionObserver,
+      );
+    });
+  };
   unobserve = vi.fn();
   disconnect = vi.fn();
   takeRecords = vi.fn(() => []);
@@ -77,37 +97,43 @@ describe('OptimizedImage', () => {
     expect(screen.getByText('Erro ao carregar')).toBeInTheDocument();
   });
 
-  it('uses lqip if provided', () => {
+  it('uses lqip if provided', async () => {
     const lqip = 'data:image/png;base64,lqip-data';
     render(<OptimizedImage {...defaultProps} lqip={lqip} />);
-    const placeholder = document.querySelector(`img[src="${lqip}"]`);
-    expect(placeholder).toBeInTheDocument();
-    expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    await waitFor(() => {
+      const placeholder = document.querySelector(`img[src="${lqip}"]`);
+      expect(placeholder).toBeInTheDocument();
+      expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    });
   });
 
-  it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', () => {
+  it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', async () => {
     const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
     render(<OptimizedImage {...defaultProps} src={cfSrc} />);
 
     expect(document.querySelector('[data-detection-rule="cloudflare"]')).toBeInTheDocument();
-    const placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toHaveAttribute(
-      'src',
-      'https://imagedelivery.net/abc123/product-id/thumbnail',
-    );
+    await waitFor(() => {
+      const placeholder = document.querySelector('img[aria-hidden="true"]');
+      expect(placeholder).toHaveAttribute(
+        'src',
+        'https://imagedelivery.net/abc123/product-id/thumbnail',
+      );
+    });
   });
 
-  it('handles Cloudflare edge cases: trailing slashes and query strings', () => {
+  it('handles Cloudflare edge cases: trailing slashes and query strings', async () => {
     const { unmount } = render(
       <OptimizedImage
         {...defaultProps}
         src="https://imagedelivery.net/abc123/product-id/public/"
       />,
     );
-    expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
-      'src',
-      'https://imagedelivery.net/abc123/product-id/thumbnail',
-    );
+    await waitFor(() => {
+      expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
+        'src',
+        'https://imagedelivery.net/abc123/product-id/thumbnail',
+      );
+    });
     unmount();
 
     render(
@@ -116,10 +142,12 @@ describe('OptimizedImage', () => {
         src="https://imagedelivery.net/abc123/product-id/public?v=123"
       />,
     );
-    expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
-      'src',
-      'https://imagedelivery.net/abc123/product-id/thumbnail',
-    );
+    await waitFor(() => {
+      expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
+        'src',
+        'https://imagedelivery.net/abc123/product-id/thumbnail',
+      );
+    });
   });
 
   it('emits console.info only when debug is true or in development', () => {
@@ -141,7 +169,7 @@ describe('OptimizedImage', () => {
     spy.mockRestore();
   });
 
-  it('detects Unsplash images and generates tiny thumbnail', () => {
+  it('detects Unsplash images and generates tiny thumbnail', async () => {
     render(
       <OptimizedImage
         {...defaultProps}
@@ -149,13 +177,15 @@ describe('OptimizedImage', () => {
       />,
     );
     expect(document.querySelector('[data-detection-rule="unsplash"]')).toBeInTheDocument();
-    const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
-    expect(src).toContain('w=50');
-    expect(src).toContain('q=10');
-    expect(src).toContain('blur=10');
+    await waitFor(() => {
+      const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
+      expect(src).toContain('w=50');
+      expect(src).toContain('q=10');
+      expect(src).toContain('blur=10');
+    });
   });
 
-  it('detects Supabase storage images and generates thumbnail params', () => {
+  it('detects Supabase storage images and generates thumbnail params', async () => {
     render(
       <OptimizedImage
         {...defaultProps}
@@ -163,9 +193,11 @@ describe('OptimizedImage', () => {
       />,
     );
     expect(document.querySelector('[data-detection-rule="supabase"]')).toBeInTheDocument();
-    const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
-    expect(src).toContain('width=50');
-    expect(src).toContain('quality=10');
+    await waitFor(() => {
+      const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
+      expect(src).toContain('width=50');
+      expect(src).toContain('quality=10');
+    });
   });
 
   describe('blurhash prop — cor dominante como placeholder', () => {

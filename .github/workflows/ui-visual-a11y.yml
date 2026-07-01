@@ -1,0 +1,52 @@
+name: UI · Visual & A11y
+on:
+  pull_request:
+    paths:
+      - "src/components/ui/ConfirmDialog.tsx"
+      - "src/components/ui/OptimizedImage.tsx"
+      - "src/components/ui/__tests__/**"
+      - "src/pages/dev/ConfirmDialogHarness.tsx"
+      - "e2e/ui/**"
+      - "tests/setup.ts"
+      - "tests/mocks/**"
+      - ".github/workflows/ui-visual-a11y.yml"
+  push:
+    branches: [main]
+
+jobs:
+  confirm-dialog:
+    name: ConfirmDialog · unit + a11y + visual
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Vitest — ConfirmDialog (responsive + a11y + keyboard + layout)
+        run: bunx vitest run "src/components/ui/__tests__/ConfirmDialog.*.test.tsx"
+      - name: Playwright — install chromium
+        run: bunx playwright install --with-deps chromium
+      - name: Playwright — visual + boundingBox
+        run: bunx playwright test e2e/ui/confirm-dialog-visual.spec.ts
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-confirm-dialog
+          path: playwright-report
+          retention-days: 7
+
+  optimized-image:
+    name: OptimizedImage · unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Vitest — OptimizedImage
+        run: bunx vitest run src/components/ui/__tests__/OptimizedImage.test.tsx

@@ -41,14 +41,37 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
-// Mock do IntersectionObserver
+// Mock do IntersectionObserver — auto-dispara isIntersecting:true no próximo
+// microtask para tornar componentes lazy (ex.: OptimizedImage) determinísticos
+// em jsdom. Sem isso, `isInView` fica eternamente false e placeholders/imagens
+// gateados por IO nunca renderizam.
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
+  private cb: IntersectionObserverCallback;
+  constructor(cb: IntersectionObserverCallback) {
+    this.cb = cb;
+  }
+  observe(target: Element) {
+    queueMicrotask(() => {
+      this.cb(
+        [
+          {
+            isIntersecting: true,
+            target,
+            intersectionRatio: 1,
+            boundingClientRect: {} as DOMRectReadOnly,
+            intersectionRect: {} as DOMRectReadOnly,
+            rootBounds: null,
+            time: 0,
+          },
+        ],
+        this as unknown as IntersectionObserver,
+      );
+    });
+  }
   disconnect() {}
-  observe() {}
-  takeRecords() { return []; }
   unobserve() {}
-} as any;
+  takeRecords() { return []; }
+} as unknown as typeof IntersectionObserver;
 
 // Mock do ResizeObserver
 global.ResizeObserver = class ResizeObserver {
