@@ -25,6 +25,7 @@ on:
       - 'qa/migrations-draft/**'
       - 'scripts/list-migration-drafts.mjs'
       - 'scripts/map-drafts-to-migrations.mjs'
+      - 'scripts/check-draft-canonical-target.mjs'
       - '.github/workflows/drafts-index-check.yml'
   push:
     branches: [main]
@@ -32,6 +33,7 @@ on:
       - 'qa/migrations-draft/**'
       - 'scripts/list-migration-drafts.mjs'
       - 'scripts/map-drafts-to-migrations.mjs'
+      - 'scripts/check-draft-canonical-target.mjs'
   workflow_dispatch:
 
 permissions:
@@ -61,6 +63,12 @@ jobs:
 
       - name: Drafts index (drafts:check)
         run: npm run drafts:check
+
+      - name: Alvo canônico dos rascunhos (drafts:target:check)
+        # Falha se algum rascunho declarar `pqp` como alvo, esquecer de
+        # declarar alvo canônico, ou se uma migration promovida em
+        # `supabase/migrations/` referenciar `pqp` em código executável.
+        run: npm run drafts:target:check
 
   publish-status:
     name: Drafts status (informacional)
