@@ -250,7 +250,8 @@ supabase/
 │   ├── expert-chat/  # Assistente IA
 │   ├── external-db-bridge/ # Bridge para banco externo
 │   └── ...
-└── migrations/       # 710 arquivos SQL versionados (~685 aplicadas em PROD)
+├── migrations/       # 1.564 arquivos SQL versionados (SSOT de schema) — ver supabase/MIGRATIONS_README.md
+└── migrations-snapshot/  # Snapshots consolidados (ALL_IN_ONE.sql, SCHEMA_LIVE.sql) — auditoria read-only
 ```
 
 ---
