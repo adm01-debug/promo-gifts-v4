@@ -74,7 +74,12 @@ function parseArgs() {
     args.filter((a) => a.startsWith('--') && a.includes('='))
       .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
   );
-  const csv = (v) => (v ? String(v).split(',').map((s) => s.trim()).filter(Boolean) : []);
+  const csv = (v) => (v ? String(v).split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) : []);
+  const int = (v, def) => {
+    if (v == null || v === '') return def;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : NaN;
+  };
   return {
     file: positional[0],
     apply: flags.has('--apply'),
@@ -88,7 +93,24 @@ function parseArgs() {
     reviewers: csv(kv.reviewers ?? kv.reviewer),
     assignees: csv(kv.assignees ?? kv.assignee),
     skipDbDiff: flags.has('--skip-db-diff'),
+    dbDiffMaxBytes: int(kv['db-diff-max-bytes'], 60_000),
   };
+}
+
+// Validador leve de handle GitHub — cobre usuário, bot (`app/foo[bot]`) e time (`org/team`).
+// Não valida existência remota (isso quem faz é o `gh pr create`, que dá erro claro).
+const GH_HANDLE_RE = /^(?:[a-zA-Z0-9]([a-zA-Z0-9-]{0,38})|[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+|[a-zA-Z0-9-]+\[bot\])$/;
+function validateHandles(kind, list) {
+  const bad = list.filter((h) => !GH_HANDLE_RE.test(h));
+  if (bad.length) {
+    return `--${kind} inválido: ${bad.map((b) => `"${b}"`).join(', ')}. ` +
+      `Use handles GitHub separados por vírgula ou espaço (ex.: "alice,bob" ou "org/time-db").`;
+  }
+  const dupes = list.filter((h, i) => list.indexOf(h) !== i);
+  if (dupes.length) {
+    return `--${kind} tem entradas duplicadas: ${Array.from(new Set(dupes)).join(', ')}.`;
+  }
+  return null;
 }
 
 function usage(code = 1) {
