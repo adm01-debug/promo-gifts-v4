@@ -33,6 +33,8 @@ interface ConfigurationPanelV6Props {
   ) => void;
   /** Emitido a cada mudança de dimensão/cor (sem precisar confirmar). Usado para preservar inputs ao trocar de técnica. */
   onDimensionsChange?: (dims: { width?: number; height?: number; colors?: number }) => void;
+  /** Ícone opcional exibido antes do nome da gravação confirmada. Default: <Check />. Passe `null` para ocultar. */
+  confirmedIcon?: ReactNode;
 }
 
 export function ConfigurationPanelV6({
