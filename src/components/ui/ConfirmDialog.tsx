@@ -17,7 +17,14 @@ interface ConfirmDialogProps {
   title: string;
   description?: string;
   confirmLabel?: string;
+  /**
+   * Rótulo curto exibido em containers estreitos (<220px). Se ausente,
+   * fallback para `confirmLabel`. O texto completo permanece no `aria-label`
+   * e no `title` (tooltip nativo) para leitor de tela.
+   */
+  confirmLabelShort?: string;
   cancelLabel?: string;
+  cancelLabelShort?: string;
   onConfirm: () => Promise<void> | void;
   onCancel?: () => void;
   variant?: 'default' | 'destructive' | 'info' | 'warning';
