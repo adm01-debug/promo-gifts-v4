@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -66,6 +67,7 @@ export function ProductCustomizationOptions({
 
   // Force re-render when pricesRef changes (badges/exclusão dependem disso)
   const [, forceTick] = useState(0);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
 
   // Reset local state when productId changes
   useEffect(() => {
@@ -213,80 +215,99 @@ export function ProductCustomizationOptions({
       className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
       data-testid="customization-summary"
     >
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-success" />
           <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Resumo das Configurações
           </h4>
         </div>
-        <span className="text-[10px] tabular-nums text-muted-foreground">
-          {summaryItems.length} {summaryItems.length === 1 ? 'local' : 'locais'}
-        </span>
-      </div>
-
-      <div className="divide-y divide-success/15 overflow-hidden rounded-md border border-success/20 bg-success/5">
-        {summaryItems.map((item) => {
-          const unit = item.price?.preco_unitario ?? 0;
-          const setup =
-            (item.price?.valor_gravacao ?? 0) + (item.price?.setup_total ?? 0);
-          return (
-            <div key={item.locationCode} className="space-y-1.5 px-2.5 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-baseline gap-1.5">
-                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
-                    {item.locationName}
-                  </span>
-                  <span className="truncate text-[11px] font-medium text-foreground">
-                    {item.techniqueName}
-                  </span>
-                </div>
-                <span className="shrink-0 text-[10px] tabular-nums text-success/80">
-                  {item.width && item.height && <>{item.width}×{item.height}cm · </>}
-                  {item.numberOfColors}c
-                </span>
-              </div>
-              <dl className="space-y-0.5 text-[11px]">
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Preço unitário</dt>
-                  <dd className="font-medium tabular-nums text-foreground">
-                    R$ {unit.toFixed(2)}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Setup + gravação</dt>
-                  <dd className="font-medium tabular-nums text-foreground">
-                    R$ {setup.toFixed(2)}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between border-t border-success/15 pt-1">
-                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-success">
-                    Total
-                  </dt>
-                  <dd className="text-[13px] font-semibold tabular-nums text-success">
-                    {(item.price?.total_cobrado ?? 0).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          );
-        })}
-      </div>
-
-      {summaryItems.length > 1 && (
-        <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-2.5 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Total personalização
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] tabular-nums text-muted-foreground">
+            {summaryItems.length} {summaryItems.length === 1 ? 'local' : 'locais'}
           </span>
-          <span className="text-[15px] font-bold tabular-nums text-success">
-            {summaryItems
-              .reduce((acc, it) => acc + (it.price?.total_cobrado ?? 0), 0)
-              .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </span>
+          <button
+            type="button"
+            onClick={() => setSummaryCollapsed((v) => !v)}
+            aria-expanded={!summaryCollapsed}
+            aria-label={summaryCollapsed ? 'Expandir resumo' : 'Colapsar resumo'}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-success/20 bg-success/5 text-success transition-colors hover:bg-success/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/40"
+          >
+            {summaryCollapsed ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronUp className="h-3.5 w-3.5" />
+            )}
+          </button>
         </div>
+      </div>
+
+      {!summaryCollapsed && (
+        <>
+          <div className="divide-y divide-success/15 overflow-hidden rounded-md border border-success/20 bg-success/5">
+            {summaryItems.map((item) => {
+              const unit = item.price?.preco_unitario ?? 0;
+              const setup =
+                (item.price?.valor_gravacao ?? 0) + (item.price?.setup_total ?? 0);
+              return (
+                <div key={item.locationCode} className="space-y-1.5 px-2.5 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-baseline gap-1.5">
+                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-success">
+                        {item.locationName}
+                      </span>
+                      <span className="truncate text-[11px] font-medium text-foreground">
+                        {item.techniqueName}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-[10px] tabular-nums text-success/80">
+                      {item.width && item.height && <>{item.width}×{item.height}cm · </>}
+                      {item.numberOfColors}c
+                    </span>
+                  </div>
+                  <dl className="space-y-0.5 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <dt className="text-muted-foreground">Preço unitário</dt>
+                      <dd className="font-medium tabular-nums text-foreground">
+                        R$ {unit.toFixed(2)}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-muted-foreground">Setup + gravação</dt>
+                      <dd className="font-medium tabular-nums text-foreground">
+                        R$ {setup.toFixed(2)}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-success/15 pt-1">
+                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-success">
+                        Total
+                      </dt>
+                      <dd className="text-[13px] font-semibold tabular-nums text-success">
+                        {(item.price?.total_cobrado ?? 0).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              );
+            })}
+          </div>
+
+          {summaryItems.length > 1 && (
+            <div className="mt-2 flex items-center justify-between rounded-md border border-success/20 bg-success/[0.04] px-2.5 py-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Total personalização
+              </span>
+              <span className="text-[15px] font-bold tabular-nums text-success">
+                {summaryItems
+                  .reduce((acc, it) => acc + (it.price?.total_cobrado ?? 0), 0)
+                  .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </span>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
