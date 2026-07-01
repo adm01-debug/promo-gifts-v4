@@ -161,7 +161,7 @@ describe('OptimizedImage', () => {
     spy.mockRestore();
   });
 
-  it('detects Unsplash images and generates tiny thumbnail', () => {
+  it('detects Unsplash images and generates tiny thumbnail', async () => {
     render(
       <OptimizedImage
         {...defaultProps}
@@ -169,13 +169,15 @@ describe('OptimizedImage', () => {
       />,
     );
     expect(document.querySelector('[data-detection-rule="unsplash"]')).toBeInTheDocument();
-    const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
-    expect(src).toContain('w=50');
-    expect(src).toContain('q=10');
-    expect(src).toContain('blur=10');
+    await waitFor(() => {
+      const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
+      expect(src).toContain('w=50');
+      expect(src).toContain('q=10');
+      expect(src).toContain('blur=10');
+    });
   });
 
-  it('detects Supabase storage images and generates thumbnail params', () => {
+  it('detects Supabase storage images and generates thumbnail params', async () => {
     render(
       <OptimizedImage
         {...defaultProps}
@@ -183,9 +185,11 @@ describe('OptimizedImage', () => {
       />,
     );
     expect(document.querySelector('[data-detection-rule="supabase"]')).toBeInTheDocument();
-    const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
-    expect(src).toContain('width=50');
-    expect(src).toContain('quality=10');
+    await waitFor(() => {
+      const src = document.querySelector('img[aria-hidden="true"]')?.getAttribute('src');
+      expect(src).toContain('width=50');
+      expect(src).toContain('quality=10');
+    });
   });
 
   describe('blurhash prop — cor dominante como placeholder', () => {
