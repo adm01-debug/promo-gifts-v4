@@ -131,7 +131,8 @@
     "build:verify": "npm run typecheck && npm run lint:baseline && npm run build",
     "test:e2e:novelties:snapshots": "playwright test e2e/catalog/novelties-visual-snapshot.spec.ts --project=chromium --update-snapshots",
     "test:e2e:carrinhos": "npx playwright test e2e/carrinhos --project=chromium-authed",
-    "test:e2e:carrinhos:update": "npx playwright test e2e/carrinhos --project=chromium-authed --update-snapshots"
+    "test:e2e:carrinhos:update": "npx playwright test e2e/carrinhos --project=chromium-authed --update-snapshots",
+    "schema:snapshot": "node scripts/export-schema-snapshot.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
