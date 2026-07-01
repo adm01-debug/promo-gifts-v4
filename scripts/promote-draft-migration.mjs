@@ -555,7 +555,11 @@ function attachDbDiffComment(prUrl, maxBytes, { useCache = false, ttlSeconds = 9
     dim(`  Reanexe manualmente: gh pr comment ${prUrl} --body-file .git/PROMOTE_PR_DIFF.md`);
     return;
   }
-  ok(diff.ok ? 'Diff do `supabase db diff --linked` anexado como comentário inicial.' : 'Comentário de fallback (erro do db diff) anexado ao PR.');
+  ok(
+    diff.ok
+      ? `Diff do \`supabase db diff --linked\` anexado como comentário inicial${fromCache ? ' (cache hit)' : ''}.`
+      : 'Comentário de fallback (erro do db diff) anexado ao PR.',
+  );
 }
 
 function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles }) {
