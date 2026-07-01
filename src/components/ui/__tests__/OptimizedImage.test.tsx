@@ -97,37 +97,43 @@ describe('OptimizedImage', () => {
     expect(screen.getByText('Erro ao carregar')).toBeInTheDocument();
   });
 
-  it('uses lqip if provided', () => {
+  it('uses lqip if provided', async () => {
     const lqip = 'data:image/png;base64,lqip-data';
     render(<OptimizedImage {...defaultProps} lqip={lqip} />);
-    const placeholder = document.querySelector(`img[src="${lqip}"]`);
-    expect(placeholder).toBeInTheDocument();
-    expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    await waitFor(() => {
+      const placeholder = document.querySelector(`img[src="${lqip}"]`);
+      expect(placeholder).toBeInTheDocument();
+      expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    });
   });
 
-  it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', () => {
+  it('detects Cloudflare Images (imagedelivery.net) and generates /thumbnail path', async () => {
     const cfSrc = 'https://imagedelivery.net/abc123/product-id/public';
     render(<OptimizedImage {...defaultProps} src={cfSrc} />);
 
     expect(document.querySelector('[data-detection-rule="cloudflare"]')).toBeInTheDocument();
-    const placeholder = document.querySelector('img[aria-hidden="true"]');
-    expect(placeholder).toHaveAttribute(
-      'src',
-      'https://imagedelivery.net/abc123/product-id/thumbnail',
-    );
+    await waitFor(() => {
+      const placeholder = document.querySelector('img[aria-hidden="true"]');
+      expect(placeholder).toHaveAttribute(
+        'src',
+        'https://imagedelivery.net/abc123/product-id/thumbnail',
+      );
+    });
   });
 
-  it('handles Cloudflare edge cases: trailing slashes and query strings', () => {
+  it('handles Cloudflare edge cases: trailing slashes and query strings', async () => {
     const { unmount } = render(
       <OptimizedImage
         {...defaultProps}
         src="https://imagedelivery.net/abc123/product-id/public/"
       />,
     );
-    expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
-      'src',
-      'https://imagedelivery.net/abc123/product-id/thumbnail',
-    );
+    await waitFor(() => {
+      expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
+        'src',
+        'https://imagedelivery.net/abc123/product-id/thumbnail',
+      );
+    });
     unmount();
 
     render(
@@ -136,10 +142,12 @@ describe('OptimizedImage', () => {
         src="https://imagedelivery.net/abc123/product-id/public?v=123"
       />,
     );
-    expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
-      'src',
-      'https://imagedelivery.net/abc123/product-id/thumbnail',
-    );
+    await waitFor(() => {
+      expect(document.querySelector('img[aria-hidden="true"]')).toHaveAttribute(
+        'src',
+        'https://imagedelivery.net/abc123/product-id/thumbnail',
+      );
+    });
   });
 
   it('emits console.info only when debug is true or in development', () => {
