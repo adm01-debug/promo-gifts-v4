@@ -32,5 +32,6 @@ export const publicRoutes = (
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/privacidade" element={<PrivacyPage />} />
     <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
+    <Route path="/__test/confirm-dialog" element={<ConfirmDialogHarness />} />
   </>
 );
