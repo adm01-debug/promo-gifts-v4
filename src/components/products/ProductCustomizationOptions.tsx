@@ -67,7 +67,59 @@ export function ProductCustomizationOptions({
 
   // Force re-render when pricesRef changes (badges/exclusão dependem disso)
   const [, forceTick] = useState(0);
-  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+
+  // Persistência do estado colapsado (por produto) — sobrevive entre sessões.
+  const summaryStorageKey = `pgo:customization-summary-collapsed:${productId}`;
+  const itemsStorageKey = `pgo:customization-summary-items-collapsed:${productId}`;
+  const summaryBodyId = useId();
+
+  const [summaryCollapsed, setSummaryCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(summaryStorageKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [collapsedItems, setCollapsedItems] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(itemsStorageKey);
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(summaryStorageKey, summaryCollapsed ? '1' : '0');
+    } catch {
+      /* storage indisponível — ignora silenciosamente */
+    }
+  }, [summaryCollapsed, summaryStorageKey]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(itemsStorageKey, JSON.stringify(Array.from(collapsedItems)));
+    } catch {
+      /* storage indisponível — ignora silenciosamente */
+    }
+  }, [collapsedItems, itemsStorageKey]);
+
+  const toggleItemCollapsed = useCallback((code: string) => {
+    setCollapsedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }, []);
+
+  const expandAll = useCallback(() => {
+    setSummaryCollapsed(false);
+    setCollapsedItems(new Set());
+  }, []);
 
   // Reset local state when productId changes
   useEffect(() => {
