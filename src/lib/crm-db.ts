@@ -354,11 +354,8 @@ const INITIAL_BACKOFF_MS = 600;
  * capturavam 429 e geravam loop de retries).
  */
 const RETRYABLE_PATTERNS = [
-  'statement timeout',
-  '57014',
   '502',
   '503',
-  '504',
   'bad gateway',
   'network',
   'fetch',
@@ -368,6 +365,14 @@ const RETRYABLE_PATTERNS = [
   'Failed to fetch',
   'boot',
 ];
+
+// statement_timeout (57014) NAO deve ser retriado — apenas amplifica a carga
+// no CRM e prolonga o 504 percebido pelo usuário. Tratado como degradação.
+function isStatementTimeout(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return lower.includes('statement timeout') || lower.includes('57014') || lower.includes('504');
+}
+
 
 /**
  * Padroes que indicam erros DEFINITIVOS — nunca fazer retry.
@@ -495,6 +500,18 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
 
       const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
 
+      // statement_timeout: degrada graciosamente (evita blank screen). O usuário
+      // recebe lista vazia + flag `stale` — a UI pode mostrar toast/refinar filtros.
+      if (isStatementTimeout(msg)) {
+        record(false, null, msg);
+        logger.warn('[CRM-DB] statement_timeout — retornando resultado vazio', {
+          requestId,
+          table: query.table,
+          message: safeCrmLogMessage(msg),
+        });
+        return { data: [], count: 0, stale: true, error: 'statement_timeout' } as unknown as CrmResponse<T>;
+      }
+
       // Rate-limit: ativa circuit breaker (que drena a fila) e nao faz retry
       if (isRateLimitError(msg)) {
         activateRateLimitCooldown();
@@ -505,6 +522,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
         });
         throw new Error(`CRM DB error: ${msg}`);
       }
+
 
       if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
         const delay = INITIAL_BACKOFF_MS * 2 ** attempt;
