@@ -11,8 +11,8 @@
  * Selecionar CIRCULAR bloqueia LADO A/B (e vice-versa) com tooltip explicando.
  */
 
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect, useMemo, useId } from 'react';
+import { ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -67,7 +67,59 @@ export function ProductCustomizationOptions({
 
   // Force re-render when pricesRef changes (badges/exclusão dependem disso)
   const [, forceTick] = useState(0);
-  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+
+  // Persistência do estado colapsado (por produto) — sobrevive entre sessões.
+  const summaryStorageKey = `pgo:customization-summary-collapsed:${productId}`;
+  const itemsStorageKey = `pgo:customization-summary-items-collapsed:${productId}`;
+  const summaryBodyId = useId();
+
+  const [summaryCollapsed, setSummaryCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(summaryStorageKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [collapsedItems, setCollapsedItems] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(itemsStorageKey);
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(summaryStorageKey, summaryCollapsed ? '1' : '0');
+    } catch {
+      /* storage indisponível — ignora silenciosamente */
+    }
+  }, [summaryCollapsed, summaryStorageKey]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(itemsStorageKey, JSON.stringify(Array.from(collapsedItems)));
+    } catch {
+      /* storage indisponível — ignora silenciosamente */
+    }
+  }, [collapsedItems, itemsStorageKey]);
+
+  const toggleItemCollapsed = useCallback((code: string) => {
+    setCollapsedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }, []);
+
+  const expandAll = useCallback(() => {
+    setSummaryCollapsed(false);
+    setCollapsedItems(new Set());
+  }, []);
 
   // Reset local state when productId changes
   useEffect(() => {
@@ -210,6 +262,9 @@ export function ProductCustomizationOptions({
 
   const summaryItems = Array.from(pricesRef.current.values());
 
+  const hasAnyItemCollapsed =
+    summaryCollapsed || summaryItems.some((it) => collapsedItems.has(it.locationCode));
+
   const summary = pricesRef.current.size > 0 && (
     <div
       className="animate-in fade-in slide-in-from-bottom-2 motion-reduce:animate-none"
@@ -222,33 +277,58 @@ export function ProductCustomizationOptions({
             Resumo das Configurações
           </h4>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span className="text-[10px] tabular-nums text-muted-foreground">
             {summaryItems.length} {summaryItems.length === 1 ? 'local' : 'locais'}
           </span>
+          {hasAnyItemCollapsed && (
+            <button
+              type="button"
+              onClick={expandAll}
+              aria-label="Expandir todos os blocos de configuração"
+              className="inline-flex h-6 items-center gap-1 rounded-md border border-success/20 bg-success/5 px-1.5 text-[10px] font-medium text-success transition-colors hover:bg-success/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            >
+              <Maximize2 className="h-3 w-3" aria-hidden="true" />
+              <span>Expandir tudo</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setSummaryCollapsed((v) => !v)}
             aria-expanded={!summaryCollapsed}
-            aria-label={summaryCollapsed ? 'Expandir resumo' : 'Colapsar resumo'}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-success/20 bg-success/5 text-success transition-colors hover:bg-success/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/40"
+            aria-controls={summaryBodyId}
+            aria-label={summaryCollapsed ? 'Expandir resumo das configurações' : 'Colapsar resumo das configurações'}
+            title={summaryCollapsed ? 'Expandir resumo' : 'Colapsar resumo'}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-success/20 bg-success/5 text-success transition-colors hover:bg-success/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           >
             {summaryCollapsed ? (
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
             ) : (
-              <ChevronUp className="h-3.5 w-3.5" />
+              <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
             )}
           </button>
         </div>
       </div>
 
-      {!summaryCollapsed && (
-        <>
+      {/* Colapso com transição suave via CSS grid-rows (respeita prefers-reduced-motion). */}
+      <div
+        id={summaryBodyId}
+        role="region"
+        aria-label="Detalhes do resumo das configurações"
+        hidden={summaryCollapsed}
+        className={cn(
+          'grid transition-[grid-template-rows,opacity] duration-300 ease-in-out motion-reduce:transition-none',
+          summaryCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
           <div className="divide-y divide-success/15 overflow-hidden rounded-md border border-success/20 bg-success/5">
             {summaryItems.map((item) => {
               const unit = item.price?.preco_unitario ?? 0;
               const setup =
                 (item.price?.valor_gravacao ?? 0) + (item.price?.setup_total ?? 0);
+              const itemBodyId = `${summaryBodyId}-${item.locationCode}`;
+              const itemCollapsed = collapsedItems.has(item.locationCode);
               return (
                 <div key={item.locationCode} className="space-y-1.5 px-2.5 py-2">
                   <div className="flex items-center justify-between gap-2">
@@ -260,36 +340,65 @@ export function ProductCustomizationOptions({
                         {item.techniqueName}
                       </span>
                     </div>
-                    <span className="shrink-0 text-[10px] tabular-nums text-success/80">
-                      {item.width && item.height && <>{item.width}×{item.height}cm · </>}
-                      {item.numberOfColors}c
-                    </span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="text-[10px] tabular-nums text-success/80">
+                        {item.width && item.height && <>{item.width}×{item.height}cm · </>}
+                        {item.numberOfColors}c
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleItemCollapsed(item.locationCode)}
+                        aria-expanded={!itemCollapsed}
+                        aria-controls={itemBodyId}
+                        aria-label={
+                          itemCollapsed
+                            ? `Expandir detalhes de ${item.locationName}`
+                            : `Colapsar detalhes de ${item.locationName}`
+                        }
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-success/70 transition-colors hover:bg-success/10 hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/50"
+                      >
+                        {itemCollapsed ? (
+                          <ChevronDown className="h-3 w-3" aria-hidden="true" />
+                        ) : (
+                          <ChevronUp className="h-3 w-3" aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <dl className="space-y-0.5 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <dt className="text-muted-foreground">Preço unitário</dt>
-                      <dd className="font-medium tabular-nums text-foreground">
-                        R$ {unit.toFixed(2)}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <dt className="text-muted-foreground">Setup + gravação</dt>
-                      <dd className="font-medium tabular-nums text-foreground">
-                        R$ {setup.toFixed(2)}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between border-t border-success/15 pt-1">
-                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-success">
-                        Total
-                      </dt>
-                      <dd className="text-[13px] font-semibold tabular-nums text-success">
-                        {(item.price?.total_cobrado ?? 0).toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
-                      </dd>
-                    </div>
-                  </dl>
+                  <div
+                    id={itemBodyId}
+                    hidden={itemCollapsed}
+                    className={cn(
+                      'grid transition-[grid-template-rows,opacity] duration-200 ease-in-out motion-reduce:transition-none',
+                      itemCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
+                    )}
+                  >
+                    <dl className="min-h-0 space-y-0.5 overflow-hidden text-[11px]">
+                      <div className="flex items-center justify-between">
+                        <dt className="text-muted-foreground">Preço unitário</dt>
+                        <dd className="font-medium tabular-nums text-foreground">
+                          R$ {unit.toFixed(2)}
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <dt className="text-muted-foreground">Setup + gravação</dt>
+                        <dd className="font-medium tabular-nums text-foreground">
+                          R$ {setup.toFixed(2)}
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between border-t border-success/15 pt-1">
+                        <dt className="text-[10px] font-semibold uppercase tracking-wide text-success">
+                          Total
+                        </dt>
+                        <dd className="text-[13px] font-semibold tabular-nums text-success">
+                          {(item.price?.total_cobrado ?? 0).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          })}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
                 </div>
               );
             })}
@@ -307,8 +416,8 @@ export function ProductCustomizationOptions({
               </span>
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 
