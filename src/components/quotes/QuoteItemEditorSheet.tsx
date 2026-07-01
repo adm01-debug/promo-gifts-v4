@@ -150,7 +150,10 @@ export function QuoteItemEditorSheet({
       </SheetContent>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent data-testid="quote-editor-unsaved-dialog">
+        <AlertDialogContent
+          data-testid="quote-editor-unsaved-dialog"
+          className="!max-w-[358px] w-[92vw]"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
             <AlertDialogDescription>{unsavedChangesMessage}</AlertDialogDescription>

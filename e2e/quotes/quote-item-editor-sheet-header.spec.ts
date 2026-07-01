@@ -300,6 +300,27 @@ for (const vp of VIEWPORTS) {
       const confirmDialog = page.getByTestId('quote-editor-unsaved-dialog');
       await expect(confirmDialog).toBeVisible();
       await expect(confirmDialog).toContainText(/n[ãa]o salvas/i);
+
+      const dialogBox = await confirmDialog.boundingBox();
+      expect(dialogBox).not.toBeNull();
+      if (dialogBox) {
+        const expectedWidth = Math.min(358, vp.width * 0.92);
+        expect(Math.abs(dialogBox.width - expectedWidth)).toBeLessThanOrEqual(4);
+      }
+
+      for (const testId of ['quote-editor-unsaved-cancel', 'quote-editor-unsaved-confirm']) {
+        const metrics = await page.getByTestId(testId).evaluate((el) => {
+          const node = el as HTMLElement;
+          return {
+            clientWidth: node.clientWidth,
+            scrollWidth: node.scrollWidth,
+            whiteSpace: getComputedStyle(node).whiteSpace,
+          };
+        });
+        expect(metrics.whiteSpace).toContain('nowrap');
+        expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+      }
+
       await page.getByTestId('quote-editor-unsaved-cancel').click();
       await expect(confirmDialog).toBeHidden();
       await expect(sheet).toBeVisible();
