@@ -39,6 +39,15 @@ Ele NÃO substitui `supabase/migrations/` — é uma antessala revisável.
 ## Rascunhos vigentes
 
 <!-- BEGIN:DRAFT-INDEX (gerado por scripts/list-migration-drafts.mjs) -->
+_Atualizado em 2026-07-01T10:53:52.205Z · 5 rascunho(s)._
+
+| Arquivo | Objetivo | Alvo | Risco | Validação |
+| --- | --- | --- | --- | --- |
+| `2026-06-18_security_definer_acl.sql` | 10 funções SECURITY DEFINER no schema public estão com EXECUTE concedido a PUBLIC/anon/authenticated | canônico | zero | — |
+| `2026-06-19_kit_dimensions_backfill.sql` | backfill de dimensões dos 301 kits incompletos Alvo: SSOT externo (doufsxqlfjyuvxuezpln) Autor: PromoGifts · 2026-06-19 ==================== | canônico | — | — |
+| `2026-06-19_reposicao_variants_summary.sql` | Cria RPC `fn_get_reposicao_variants_summary(p_product_ids | canônico | — | 📎 `.VALIDATION.md` |
+| `2026-06-20_revoke_secdef_from_authenticated.sql` | SECURITY DEFINER ACL — Revogação de authenticated/anon/public | canônico | zero | — |
+| `2026-06-27_quotes_status_allow_cancelled.sql` | liberar `cancelled` no CHECK `valid_quote_status` de `public | canônico | — | — |
 <!-- END:DRAFT-INDEX -->
 
 ## Regras
