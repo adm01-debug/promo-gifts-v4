@@ -37,7 +37,9 @@ on:
   workflow_dispatch:
 
 permissions:
+permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: drafts-index-${{ github.ref }}
