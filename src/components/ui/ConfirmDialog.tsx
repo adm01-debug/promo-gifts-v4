@@ -206,16 +206,27 @@ export function ConfirmDialog({
               onClick={handleCancel}
               disabled={loading}
               data-testid={noTestId}
-              className="mt-0 h-8 rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={cancelLabel}
+              title={cancelLabel}
+              className="mt-0 h-8 whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              {cancelLabel}
+              {cancelLabelShort ? (
+                <>
+                  <span className="min-[220px]:hidden">{cancelLabelShort}</span>
+                  <span className="hidden min-[220px]:inline">{cancelLabel}</span>
+                </>
+              ) : (
+                cancelLabel
+              )}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirm}
               disabled={loading}
               data-testid={yesTestId}
+              aria-label={confirmLabel}
+              title={confirmLabel}
               className={cn(
-                'h-8 rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                'inline-flex h-8 items-center whitespace-nowrap rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
                 variant === 'destructive' &&
                   'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
                 variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
@@ -229,7 +240,14 @@ export function ConfirmDialog({
                   data-testid={testId ? `${testId}-loading` : 'confirm-dialog-loading'}
                 />
               )}
-              {confirmLabel}
+              {confirmLabelShort ? (
+                <>
+                  <span className="min-[220px]:hidden">{confirmLabelShort}</span>
+                  <span className="hidden min-[220px]:inline">{confirmLabel}</span>
+                </>
+              ) : (
+                confirmLabel
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </div>
