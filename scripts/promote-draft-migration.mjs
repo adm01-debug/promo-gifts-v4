@@ -68,41 +68,33 @@ const warn = (m) => console.warn(`${YELLOW}[promote][warn]${RESET} ${m}`);
 const err  = (m) => console.error(`${RED}[promote][err]${RESET} ${m}`);
 const dim  = (m) => console.log(`${DIM}${m}${RESET}`);
 
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const positional = args.filter((a) => !a.startsWith('--'));
-  const flags = new Set(args.filter((a) => a.startsWith('--') && !a.includes('=')));
-  const kv = Object.fromEntries(
-    args.filter((a) => a.startsWith('--') && a.includes('='))
-      .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
-  );
-  const csv = (v) => (v ? String(v).split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) : []);
-  const int = (v, def) => {
-    if (v == null || v === '') return def;
-    const n = Number(v);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : NaN;
-  };
-  return {
-    file: positional[0],
-    apply: flags.has('--apply'),
-    skipValidation: flags.has('--skip-validation'),
-    keepDraft: flags.has('--keep-draft'),
-    timestamp: kv.timestamp,
-    pr: flags.has('--pr'),
-    draftPr: flags.has('--draft-pr'),
-    base: kv.base || 'main',
-    labels: Array.from(new Set(['db-migration', ...csv(kv.labels ?? kv.label)])),
-    reviewers: csv(kv.reviewers ?? kv.reviewer),
-    assignees: csv(kv.assignees ?? kv.assignee),
-    skipDbDiff: flags.has('--skip-db-diff'),
-    dbDiffMaxBytes: int(kv['db-diff-max-bytes'], 60_000),
-  };
+/**
+ * Divide uma string csv/whitespace em lista trimada, sem vazios.
+ * Exposto para testes unitários — não depende de I/O.
+ */
+export function parseHandleList(v) {
+  return v ? String(v).split(/[,\s]+/).map((s) => s.trim()).filter(Boolean) : [];
 }
 
-// Validador leve de handle GitHub — cobre usuário, bot (`app/foo[bot]`) e time (`org/team`).
-// Não valida existência remota (isso quem faz é o `gh pr create`, que dá erro claro).
-const GH_HANDLE_RE = /^(?:[a-zA-Z0-9]([a-zA-Z0-9-]{0,38})|[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+|[a-zA-Z0-9-]+\[bot\])$/;
-function validateHandles(kind, list) {
+/**
+ * Converte string para int positivo. Retorna `def` se vazio, `NaN` se inválido.
+ * Exposto para testes unitários.
+ */
+export function parsePositiveInt(v, def) {
+  if (v == null || v === '') return def;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : NaN;
+}
+
+// Validador leve de handle GitHub — cobre usuário, bot (`foo[bot]`) e time (`org/time`).
+// Não valida existência remota (quem faz isso é o `gh pr create`, com erro claro).
+export const GH_HANDLE_RE = /^(?:[a-zA-Z0-9]([a-zA-Z0-9-]{0,38})|[a-zA-Z0-9-]+\/[a-zA-Z0-9._-]+|[a-zA-Z0-9-]+\[bot\])$/;
+
+/**
+ * Valida uma lista de handles GitHub. Retorna `null` se OK, ou uma mensagem
+ * de erro pronta para exibir.
+ */
+export function validateHandles(kind, list) {
   const bad = list.filter((h) => !GH_HANDLE_RE.test(h));
   if (bad.length) {
     return `--${kind} inválido: ${bad.map((b) => `"${b}"`).join(', ')}. ` +
@@ -114,6 +106,35 @@ function validateHandles(kind, list) {
   }
   return null;
 }
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const positional = args.filter((a) => !a.startsWith('--'));
+  const flags = new Set(args.filter((a) => a.startsWith('--') && !a.includes('=')));
+  const kv = Object.fromEntries(
+    args.filter((a) => a.startsWith('--') && a.includes('='))
+      .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
+  );
+  return {
+    file: positional[0],
+    apply: flags.has('--apply'),
+    skipValidation: flags.has('--skip-validation'),
+    keepDraft: flags.has('--keep-draft'),
+    timestamp: kv.timestamp,
+    pr: flags.has('--pr'),
+    draftPr: flags.has('--draft-pr'),
+    base: kv.base || 'main',
+    labels: Array.from(new Set(['db-migration', ...parseHandleList(kv.labels ?? kv.label)])),
+    reviewers: parseHandleList(kv.reviewers ?? kv.reviewer),
+    assignees: parseHandleList(kv.assignees ?? kv.assignee),
+    skipDbDiff: flags.has('--skip-db-diff'),
+    dbDiffMaxBytes: parsePositiveInt(kv['db-diff-max-bytes'], 60_000),
+    dbDiffCache: flags.has('--db-diff-cache'),
+    dbDiffCacheTtl: parsePositiveInt(kv['db-diff-cache-ttl'], 900), // 15 min default
+    noDbDiffCache: flags.has('--no-db-diff-cache'),
+  };
+}
+
 
 function usage(code = 1) {
   console.log(`
