@@ -156,8 +156,14 @@ export function QuoteItemEditorSheet({
             <AlertDialogDescription>{unsavedChangesMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="quote-editor-unsaved-cancel">
-              Continuar editando
+            <AlertDialogCancel
+              data-testid="quote-editor-unsaved-cancel"
+              aria-label="Continuar editando"
+              title="Continuar editando"
+              className="whitespace-nowrap"
+            >
+              <span className="min-[220px]:hidden">Continuar</span>
+              <span className="hidden min-[220px]:inline">Continuar editando</span>
             </AlertDialogCancel>
             <AlertDialogAction
               data-testid="quote-editor-unsaved-confirm"
@@ -165,9 +171,12 @@ export function QuoteItemEditorSheet({
                 setConfirmOpen(false);
                 onOpenChange(false);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              aria-label="Descartar e fechar"
+              title="Descartar e fechar"
+              className="whitespace-nowrap bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Descartar e fechar
+              <span className="min-[220px]:hidden">Descartar</span>
+              <span className="hidden min-[220px]:inline">Descartar e fechar</span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
