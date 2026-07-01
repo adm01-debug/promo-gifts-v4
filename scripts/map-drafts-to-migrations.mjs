@@ -64,17 +64,39 @@ function tokensOf(slug) {
 
 function findCandidates(slug, migFiles) {
   const wanted = tokensOf(slug);
+  const wantedLc = wanted.map((t) => t.toLowerCase());
   const scored = [];
   for (const f of migFiles) {
     const nameLc = f.toLowerCase();
+
+    // Match exato do slug inteiro → 100%, todos os tokens contam como hit.
     if (nameLc.includes(slug.toLowerCase())) {
-      scored.push({ file: f, score: 1.0 });
+      scored.push({
+        file: f,
+        score: 1.0,
+        matchType: 'slug-exato',
+        matchedTokens: [...wanted],
+        missingTokens: [],
+      });
       continue;
     }
-    const hits = wanted.filter((t) => nameLc.includes(t.toLowerCase())).length;
-    const ratio = wanted.length ? hits / wanted.length : 0;
-    if (ratio >= 0.6 && hits >= Math.min(3, wanted.length)) {
-      scored.push({ file: f, score: ratio });
+
+    // Fuzzy por tokens: quais tokens do slug aparecem no nome do arquivo canônico.
+    const matched = [];
+    const missing = [];
+    wantedLc.forEach((t, i) => {
+      if (nameLc.includes(t)) matched.push(wanted[i]);
+      else missing.push(wanted[i]);
+    });
+    const ratio = wanted.length ? matched.length / wanted.length : 0;
+    if (ratio >= 0.6 && matched.length >= Math.min(3, wanted.length)) {
+      scored.push({
+        file: f,
+        score: ratio,
+        matchType: 'tokens',
+        matchedTokens: matched,
+        missingTokens: missing,
+      });
     }
   }
   scored.sort((a, b) => b.score - a.score || a.file.localeCompare(b.file));
@@ -115,6 +137,7 @@ function main() {
 
   const rows = drafts.map((draft) => {
     const slug = slugOf(draft);
+    const allTokens = tokensOf(slug);
     const cands = findCandidates(slug, migFiles);
 
     let candidateCell = '—';
@@ -125,8 +148,21 @@ function main() {
       statusCell = '🟡 não promovido';
     } else {
       candidateCell = cands
-        .map((c) => `\`${c.file}\`${c.score < 1 ? ` (${Math.round(c.score * 100)}%)` : ''}`)
-        .join('<br>');
+        .map((c) => {
+          const pct = Math.round(c.score * 100);
+          const badge = c.matchType === 'slug-exato' ? '🎯 slug exato' : `${pct}%`;
+          const matched = c.matchedTokens.length
+            ? c.matchedTokens.map((t) => `\`${t}\``).join(' ')
+            : '_(nenhum)_';
+          const missing = c.missingTokens.length
+            ? ` · faltou: ${c.missingTokens.map((t) => `~~\`${t}\`~~`).join(' ')}`
+            : '';
+          return (
+            `\`${c.file}\` — **${badge}**<br>` +
+            `&nbsp;&nbsp;↳ bateu: ${matched}${missing}`
+          );
+        })
+        .join('<br><br>');
       if (!applied.ok) {
         statusCell = `❔ ${applied.reason}`;
       } else {
@@ -138,7 +174,7 @@ function main() {
       }
     }
 
-    return { draft, slug, candidateCell, statusCell };
+    return { draft, slug, tokens: allTokens, candidateCell, statusCell };
   });
 
   const generatedAt = new Date().toISOString();
@@ -159,13 +195,23 @@ function main() {
     '- 🟡 **não promovido** — só existe rascunho; nenhuma migration canônica bate com o slug.',
     '- ❔ **sem acesso ao DB** — status não pôde ser consultado (PG indisponível ou sem permissão).',
     '',
+    '### Como ler a coluna "Candidatos"',
+    '',
+    '- **🎯 slug exato** — o nome do arquivo canônico contém o slug completo do draft (match 100%).',
+    '- **N%** — fuzzy por tokens: `N = tokens do slug encontrados / total`. Só aparece se ≥ 60% e ≥ 3 tokens (ou todos, se slug tiver menos).',
+    '- `token` — apareceu no nome do arquivo canônico.',
+    '- ~~`token`~~ — está no slug do draft mas **não** no candidato (sinal de divergência semântica).',
+    '',
     '## Tabela',
     '',
-    '| Rascunho | Slug | Migration(s) canônica(s) | Status no DB |',
+    '| Rascunho | Slug (tokens) | Candidatos em `supabase/migrations/` | Status no DB |',
     '| --- | --- | --- | --- |',
-    ...rows.map(
-      (r) => `| \`${r.draft}\` | \`${r.slug}\` | ${r.candidateCell} | ${r.statusCell} |`,
-    ),
+    ...rows.map((r) => {
+      const tokensCell = r.tokens.length
+        ? `\`${r.slug}\`<br>${r.tokens.map((t) => `\`${t}\``).join(' ')}`
+        : `\`${r.slug}\``;
+      return `| \`${r.draft}\` | ${tokensCell} | ${r.candidateCell} | ${r.statusCell} |`;
+    }),
     '',
     '## Como agir',
     '',
