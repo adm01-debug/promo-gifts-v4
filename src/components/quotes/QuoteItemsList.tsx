@@ -179,11 +179,11 @@ function QuoteItemRow({
 
           {/* Inputs Row — single line, compact on mobile */}
           <div
-            className="mt-2 flex flex-nowrap items-end gap-x-2"
+            className="mt-2 grid grid-cols-[auto_1fr_auto] items-end gap-x-3 min-[360px]:gap-x-4"
             data-testid="quote-item-inputs-row"
           >
             <div className="flex min-w-0 flex-col items-start leading-tight">
-              <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="mb-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 Qtd
               </span>
               <Input
@@ -217,12 +217,12 @@ function QuoteItemRow({
                   }
                 }}
                 data-testid="quote-item-qty-input"
-                className="h-7 w-11 px-1 font-display text-xs font-medium tabular-nums min-[360px]:w-12 min-[360px]:px-1.5 sm:w-14"
+                className="h-7 w-12 px-1.5 text-center font-display text-xs font-medium tabular-nums min-[360px]:w-14 sm:w-16"
               />
             </div>
 
-            <div className="flex min-w-0 flex-col items-end leading-tight">
-              <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+            <div className="flex min-w-0 flex-col items-center leading-tight">
+              <span className="mb-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 Vl Unitário
               </span>
               <div className="flex h-7 items-center gap-1">
@@ -252,14 +252,15 @@ function QuoteItemRow({
               className="flex min-w-0 flex-col items-end leading-tight"
               data-testid="quote-item-subtotal"
             >
-              <span className="mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="mb-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 Subtotal
               </span>
-              <span className="flex h-7 items-center whitespace-nowrap font-display text-xs font-bold tabular-nums text-foreground min-[360px]:text-sm">
+              <span className="flex h-7 items-center whitespace-nowrap font-display text-sm font-bold tabular-nums text-foreground min-[360px]:text-base">
                 {formatCurrency(itemTotal)}
               </span>
             </div>
           </div>
+
 
 
 
