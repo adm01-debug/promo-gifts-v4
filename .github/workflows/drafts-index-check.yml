@@ -70,6 +70,16 @@ jobs:
         # `supabase/migrations/` referenciar `pqp` em código executável.
         run: npm run drafts:target:check
 
+      - name: Status dos rascunhos (drafts:status:check)
+        # Falha a PR quando:
+        #   • DRAFTS_STATUS.md está desatualizado (rode `npm run drafts:status`), OU
+        #   • existe draft 🟡 "não promovido" sem entrada em
+        #     qa/migrations-draft/REVIEWS.json (acknowledged_not_promoted), OU
+        #   • REVIEWS.json contém entradas órfãs (draft removido/promovido).
+        # Não depende de PG (o script trata "sem acesso ao DB" como ❔, e ❔
+        # NÃO conta como "não promovido").
+        run: npm run drafts:status:check
+
   publish-status:
     name: Drafts status (informacional)
     runs-on: ubuntu-latest
