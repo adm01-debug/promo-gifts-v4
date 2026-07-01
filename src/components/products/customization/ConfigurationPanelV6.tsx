@@ -6,7 +6,7 @@
  * Briefing v6 (12/02/2026).
  */
 
-import { useState, useMemo, useRef, useEffect, useId, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useId, useCallback, type ReactNode } from 'react';
 import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { useCustomizationPriceReactive } from '@/hooks/simulation';
 import type { TechniqueOption, CustomizationPriceResponseV6 } from '@/types/customization';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCustomizationCollapsePrefs } from '@/hooks/customization/useCustomizationCollapsePrefs';
+import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 
 interface ConfigurationPanelV6Props {
   technique: TechniqueOption;
