@@ -35,7 +35,9 @@ describe('ConfirmDialog — regressão responsiva (320 → 1440)', () => {
         title="Descartar alterações?"
         description="Você tem alterações não salvas neste item. Deseja realmente fechar e descartá-las?"
         confirmLabel="Descartar e fechar"
+        confirmLabelShort="Descartar"
         cancelLabel="Continuar editando"
+        cancelLabelShort="Continuar"
         onConfirm={() => {}}
         variant="destructive"
       />,
@@ -43,27 +45,26 @@ describe('ConfirmDialog — regressão responsiva (320 → 1440)', () => {
 
     const dialog = screen.getByRole('alertdialog');
 
-    // 1) título/descrição no DOM sem clipping
     expect(screen.getByText('Descartar alterações?')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Você tem alterações não salvas neste item/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Você tem alterações não salvas neste item/i)).toBeInTheDocument();
 
-    // 2) ambos botões renderizados e acessíveis
-    expect(screen.getByTestId('confirm-dialog-yes')).toHaveTextContent('Descartar e fechar');
-    expect(screen.getByTestId('confirm-dialog-no')).toHaveTextContent('Continuar editando');
+    const yes = screen.getByTestId('confirm-dialog-yes');
+    // Ambas variações (curta + longa) presentes no DOM — Tailwind decide via breakpoint 220px
+    expect(yes).toHaveTextContent('Descartar');
+    expect(yes).toHaveTextContent('Descartar e fechar');
+    // aria-label + title carregam o texto completo para leitor de tela/tooltip
+    expect(yes).toHaveAttribute('aria-label', 'Descartar e fechar');
+    expect(yes).toHaveAttribute('title', 'Descartar e fechar');
+    // whitespace-nowrap → impede quebra em duas linhas
+    expect(yes.className).toContain('whitespace-nowrap');
 
-    // 3) classe max-w-[11.25rem] (240px) preserva contenção horizontal — nunca excede viewport
-    const contentClass = dialog.getAttribute('class') ?? '';
-    expect(contentClass).toContain('max-w-[11.25rem]');
+    const no = screen.getByTestId('confirm-dialog-no');
+    expect(no).toHaveAttribute('aria-label', 'Continuar editando');
+    expect(no).toHaveAttribute('title', 'Continuar editando');
+    expect(no.className).toContain('whitespace-nowrap');
 
-    // 4) accent bar presente
-    const accent = dialog.querySelector('[aria-hidden="true"].h-\\[3px\\]');
-    expect(accent).not.toBeNull();
-
-    // 5) footer com os dois botões dentro do dialog
-    expect(dialog.contains(screen.getByTestId('confirm-dialog-yes'))).toBe(true);
-    expect(dialog.contains(screen.getByTestId('confirm-dialog-no'))).toBe(true);
+    expect((dialog.getAttribute('class') ?? '')).toContain('max-w-[11.25rem]');
+    expect(dialog.querySelector('[aria-hidden="true"].h-\\[3px\\]')).not.toBeNull();
   });
 
   it.each(WIDTHS)('em %ipx: variante warning com impactPreview mantém lista sem truncar itens', (width) => {
