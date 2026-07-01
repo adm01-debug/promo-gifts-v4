@@ -227,6 +227,10 @@ function main() {
       draftPr: opts.draftPr,
       keepDraft: opts.keepDraft,
       hasValidation,
+      labels: opts.labels,
+      reviewers: opts.reviewers,
+      assignees: opts.assignees,
+      skipDbDiff: opts.skipDbDiff,
     });
     return;
   }
