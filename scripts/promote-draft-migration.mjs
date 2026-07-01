@@ -76,6 +76,9 @@ function parseArgs() {
     skipValidation: flags.has('--skip-validation'),
     keepDraft: flags.has('--keep-draft'),
     timestamp: kv.timestamp,
+    pr: flags.has('--pr'),
+    draftPr: flags.has('--draft-pr'),
+    base: kv.base || 'main',
   };
 }
 
