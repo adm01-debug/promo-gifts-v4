@@ -63,7 +63,7 @@ describe('ConfirmDialog — regressão responsiva (320 → 1440)', () => {
     expect(no).toHaveAttribute('title', 'Continuar editando');
     expect(no.className).toContain('whitespace-nowrap');
 
-    expect((dialog.getAttribute('class') ?? '')).toContain('max-w-[11.25rem]');
+    expect((dialog.getAttribute('class') ?? '')).toContain('!max-w-[358px]');
     expect(dialog.querySelector('[aria-hidden="true"].h-\\[3px\\]')).not.toBeNull();
   });
 
