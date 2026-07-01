@@ -19,6 +19,13 @@
  *                          Padrão: remove após copiar (evita dupla verdade).
  *   --timestamp=<YYYYMMDDHHMMSS>
  *                          Força o timestamp (útil para testes/replay).
+ *   --pr                   Após --apply, cria branch `promote/<slug>-<ts>`,
+ *                          regenera índice/status, commita, faz push e abre
+ *                          um PR pronto para revisão via `gh pr create`.
+ *                          Requer: `git` limpo + `gh` autenticado + remoto
+ *                          `origin` configurado.
+ *   --base=<branch>        Branch alvo do PR (default: `main`).
+ *   --draft-pr             Abre o PR como draft (para review antecipada).
  *
  * Validações executadas (todas obrigatórias, exceto quando indicado):
  *   1. Rascunho existe e termina em `.sql`.
@@ -32,8 +39,10 @@
  *   Dry-run: imprime o plano e sai 0.
  *   --apply: copia SQL, remove draft (a menos que --keep-draft), imprime
  *            comandos para revisar/commitar.
+ *   --apply --pr: além do acima, cria branch, commita, push e abre PR.
  */
 
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join, basename } from 'node:path';
 
@@ -67,6 +76,9 @@ function parseArgs() {
     skipValidation: flags.has('--skip-validation'),
     keepDraft: flags.has('--keep-draft'),
     timestamp: kv.timestamp,
+    pr: flags.has('--pr'),
+    draftPr: flags.has('--draft-pr'),
+    base: kv.base || 'main',
   };
 }
 
@@ -195,6 +207,21 @@ function main() {
   }
 
   console.log('');
+
+  if (opts.pr) {
+    openPullRequest({
+      slug,
+      timestamp,
+      targetName,
+      draftFile,
+      base: opts.base,
+      draftPr: opts.draftPr,
+      keepDraft: opts.keepDraft,
+      hasValidation,
+    });
+    return;
+  }
+
   log('Próximos passos:');
   dim(`  1. Regenerar índice/status:`);
   dim(`       npm run drafts:list`);
@@ -203,7 +230,150 @@ function main() {
   dim(`       supabase db diff --linked --schema public`);
   dim(`  3. Commit no PR: "feat(db): promote ${slug}"`);
   dim(`  4. Após merge, o deploy aplica via supabase db push.`);
+  dim(`  → Ou rode novamente com --pr para automatizar branch+commit+PR.`);
 }
+
+// ============================================================================
+// Automação de PR (--pr)
+// ============================================================================
+function sh(cmd, opts = {}) {
+  return execSync(cmd, { encoding: 'utf8', stdio: opts.pipe ? ['ignore', 'pipe', 'pipe'] : 'inherit', ...opts });
+}
+
+function shSafe(cmd) {
+  try { return { ok: true, out: execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim() }; }
+  catch (e) { return { ok: false, out: String(e.stderr || e.stdout || e.message || '').trim() }; }
+}
+
+function preflightGit() {
+  const problems = [];
+  if (!shSafe('git rev-parse --is-inside-work-tree').ok) problems.push('não é um repositório git.');
+  const gh = shSafe('gh --version');
+  if (!gh.ok) problems.push('CLI `gh` (GitHub CLI) não encontrado no PATH.');
+  else {
+    const auth = shSafe('gh auth status');
+    if (!auth.ok) problems.push('`gh` não autenticado. Rode `gh auth login`.');
+  }
+  if (!shSafe('git remote get-url origin').ok) problems.push('remoto `origin` não configurado.');
+  return problems;
+}
+
+function openPullRequest({ slug, timestamp, targetName, draftFile, base, draftPr, keepDraft, hasValidation }) {
+  log('Preparando PR de promoção…');
+
+  const problems = preflightGit();
+  if (problems.length) {
+    err('Pré-requisitos ausentes para --pr:');
+    for (const p of problems) err(`  • ${p}`);
+    warn('A migration já foi copiada; finalize o PR manualmente:');
+    dim(`  git checkout -b promote/${slug}-${timestamp}`);
+    dim(`  git add supabase/migrations/${targetName} qa/migrations-draft/`);
+    dim(`  git commit -m "feat(db): promote ${slug}"`);
+    dim(`  git push -u origin promote/${slug}-${timestamp}`);
+    process.exit(1);
+  }
+
+  // Regenera índice e status (não bloqueante — se falhar, apenas avisa).
+  const listRes = shSafe('node scripts/list-migration-drafts.mjs');
+  if (!listRes.ok) warn(`drafts:list falhou (${listRes.out.split('\n')[0]})`);
+  const statusRes = shSafe('node scripts/map-drafts-to-migrations.mjs');
+  if (!statusRes.ok) warn(`drafts:status falhou (${statusRes.out.split('\n')[0]})`);
+
+  const branch = `promote/${slug}-${timestamp}`;
+  const currentBranch = shSafe('git rev-parse --abbrev-ref HEAD').out;
+  if (currentBranch === branch) {
+    warn(`já estamos em ${branch}; reutilizando a branch.`);
+  } else {
+    // Cria nova branch a partir do estado atual (com os arquivos já alterados).
+    const co = shSafe(`git checkout -b ${branch}`);
+    if (!co.ok) {
+      err(`Falha ao criar branch ${branch}: ${co.out.split('\n')[0]}`);
+      process.exit(1);
+    }
+    ok(`Branch criada: ${branch}`);
+  }
+
+  // Stage explícito dos arquivos que a promoção toca.
+  sh(`git add supabase/migrations/${targetName}`, { pipe: true });
+  sh(`git add qa/migrations-draft/`, { pipe: true }); // draft removido + índice + status
+
+  const staged = shSafe('git diff --cached --name-only').out;
+  if (!staged) {
+    err('Nada em staging — abortei o commit do PR.');
+    process.exit(1);
+  }
+
+  const title = `feat(db): promote ${slug} (${timestamp})`;
+  const body = buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles: staged });
+
+  // Commit
+  writeFileSync('.git/PROMOTE_COMMIT_MSG', `${title}\n\n${body}`);
+  const commit = shSafe(`git commit -F .git/PROMOTE_COMMIT_MSG`);
+  if (!commit.ok) {
+    err(`Falha no commit: ${commit.out.split('\n')[0]}`);
+    process.exit(1);
+  }
+  ok('Commit criado.');
+
+  // Push
+  const push = shSafe(`git push -u origin ${branch}`);
+  if (!push.ok) {
+    err(`Falha no push: ${push.out.split('\n')[0]}`);
+    warn('PR não foi aberto. Corrija e rode `gh pr create` manualmente.');
+    process.exit(1);
+  }
+  ok(`Push concluído para origin/${branch}.`);
+
+  // gh pr create
+  writeFileSync('.git/PROMOTE_PR_BODY.md', body);
+  const draftFlag = draftPr ? '--draft ' : '';
+  const create = shSafe(
+    `gh pr create --base ${base} --head ${branch} --title ${JSON.stringify(title)} --body-file .git/PROMOTE_PR_BODY.md ${draftFlag}`.trim(),
+  );
+  if (!create.ok) {
+    err(`gh pr create falhou: ${create.out.split('\n')[0]}`);
+    dim('Abra manualmente:');
+    dim(`  gh pr create --base ${base} --head ${branch} --title ${JSON.stringify(title)} --body-file .git/PROMOTE_PR_BODY.md`);
+    process.exit(1);
+  }
+  const prUrl = create.out.split('\n').find((l) => l.startsWith('http')) || create.out;
+  ok(`PR aberto${draftPr ? ' (draft)' : ''}: ${prUrl}`);
+}
+
+function buildPrBody({ slug, timestamp, targetName, draftFile, keepDraft, hasValidation, stagedFiles }) {
+  return [
+    `## Promoção de rascunho → migration canônica`,
+    ``,
+    `- **Slug:** \`${slug}\``,
+    `- **Timestamp UTC:** \`${timestamp}\``,
+    `- **Destino:** \`supabase/migrations/${targetName}\``,
+    `- **Rascunho de origem:** \`qa/migrations-draft/${draftFile}\`${keepDraft ? ' _(mantido)_' : ' _(removido)_'}`,
+    `- **`.VALIDATION.md`:** ${hasValidation ? '✅ presente' : '⚠️ ausente (promovido com `--skip-validation`)'}`,
+    ``,
+    `### Validações executadas pelo \`draft:promote\``,
+    `- ✅ Alvo canônico declarado (\`doufsxqlfjyuvxuezpln\` ou DDL agnóstica)`,
+    `- ✅ Sem referência a \`pqpdolkaeqlyzpdpbizo\` em código executável`,
+    `- ✅ Destino livre em \`supabase/migrations/\``,
+    ``,
+    `### Arquivos em staging`,
+    '```',
+    stagedFiles,
+    '```',
+    ``,
+    `### Checklist do revisor`,
+    `- [ ] SQL revisado (compatibilidade + idempotência)`,
+    `- [ ] Rodou \`supabase db diff --linked --schema public\` local sem drift inesperado`,
+    `- [ ] Roteiro do \`.VALIDATION.md\` foi executado em staging`,
+    `- [ ] \`npm run drafts:check\` + \`npm run drafts:status:check\` + \`npm run drafts:target:check\` verdes no CI`,
+    ``,
+    `### Após merge`,
+    `O deploy aplica via \`supabase db push\`. Confirme com \`SELECT version FROM supabase_migrations.schema_migrations WHERE version = '${timestamp}';\`.`,
+    ``,
+    `---`,
+    `_Gerado por \`scripts/promote-draft-migration.mjs --pr\`._`,
+  ].join('\n');
+}
+
 
 try { main(); }
 catch (e) { err(e.stack || e.message); process.exit(1); }
