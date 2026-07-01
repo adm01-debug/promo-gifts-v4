@@ -44,6 +44,15 @@ for (const variant of VARIANTS) {
           animations: 'disabled',
         });
 
+        // 1.b) largura renderizada real (bounding box) — pega regressões que
+        // asserções de classe não detectam (ex.: `max-w-lg` do shadcn voltando
+        // a vencer). Alvo: min(358px, viewport*0.92) com tolerância de 4px.
+        const box = await dialog.boundingBox();
+        expect(box).not.toBeNull();
+        const viewportWidth = page.viewportSize()?.width ?? width;
+        const expectedWidth = Math.min(358, viewportWidth * 0.92);
+        expect(Math.abs(box!.width - expectedWidth)).toBeLessThanOrEqual(4);
+
         // 2) sem clipping horizontal em qualquer botão do footer.
         for (const testId of ['confirm-dialog-yes', 'confirm-dialog-no']) {
           const btn = page.getByTestId(testId);
