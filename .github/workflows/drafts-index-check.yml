@@ -1,0 +1,112 @@
+name: drafts-index-check
+
+# =============================================================================
+# Garante que o índice de rascunhos em `qa/migrations-draft/README.md` (bloco
+# DRAFT-INDEX) está sincronizado com os arquivos `.sql` do diretório.
+#
+# Falha quando:
+#   • um novo rascunho foi adicionado sem regenerar o índice, OU
+#   • um rascunho foi removido/renomeado sem atualizar o índice.
+#
+# Correção local:
+#   npm run drafts:list
+#   git add qa/migrations-draft/README.md
+#
+# O status draft → migration → DB (`DRAFTS_STATUS.md`) NÃO é gate aqui — ele
+# depende de acesso ao banco, e o script `map-drafts-to-migrations.mjs` já é
+# safe-by-default. Se quiser publicá-lo como artefato, use o job opcional
+# abaixo.
+# =============================================================================
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'qa/migrations-draft/**'
+      - 'scripts/list-migration-drafts.mjs'
+      - 'scripts/map-drafts-to-migrations.mjs'
+      - '.github/workflows/drafts-index-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'qa/migrations-draft/**'
+      - 'scripts/list-migration-drafts.mjs'
+      - 'scripts/map-drafts-to-migrations.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drafts-index-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-index:
+    name: Drafts index (bloqueante)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Drafts index (drafts:check)
+        run: npm run drafts:check
+
+  publish-status:
+    name: Drafts status (informacional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      # Sem PG* configurado, o script marca "sem acesso ao DB" mas NÃO falha —
+      # o job é informacional. Configure PGHOST/PGUSER/PGPASSWORD/PGDATABASE em
+      # secrets do repo para habilitar a checagem contra o DB canônico.
+      - name: Gerar DRAFTS_STATUS.md
+        env:
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+        run: npm run drafts:status
+
+      - name: Sumário do job
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f qa/migrations-draft/DRAFTS_STATUS.md ]; then
+            echo "## Status dos rascunhos" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat qa/migrations-draft/DRAFTS_STATUS.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload DRAFTS_STATUS.md
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drafts-status-${{ github.sha }}
+          path: qa/migrations-draft/DRAFTS_STATUS.md
+          if-no-files-found: warn
+          retention-days: 14

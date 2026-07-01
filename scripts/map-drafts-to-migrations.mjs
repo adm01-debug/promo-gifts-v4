@@ -161,13 +161,19 @@ function main() {
   ].join('\n');
 
   if (check) {
-    if (!existsSync(OUT) || readFileSync(OUT, 'utf8') !== body) {
+    // Compara ignorando o timestamp `_Atualizado em ..._`, senão --check
+    // falha toda execução por causa da nova data.
+    const stripTs = (s) =>
+      s.replace(/_Atualizado em [^_·]+/g, '_Atualizado em <ts> ');
+    const currentBody = existsSync(OUT) ? readFileSync(OUT, 'utf8') : '';
+    if (stripTs(currentBody) !== stripTs(body)) {
       console.error('[drafts-map] DRAFTS_STATUS.md desatualizado. Rode: node scripts/map-drafts-to-migrations.mjs');
       process.exit(1);
     }
     console.log('[drafts-map] DRAFTS_STATUS.md ok.');
     return;
   }
+
 
   writeFileSync(OUT, body);
   console.log(`[drafts-map] Gerado ${OUT} (${rows.length} rascunho(s)).`);
