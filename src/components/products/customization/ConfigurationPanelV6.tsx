@@ -6,7 +6,7 @@
  * Briefing v6 (12/02/2026).
  */
 
-import { useState, useMemo, useRef, useEffect, useId, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useId, useCallback, type ReactNode } from 'react';
 import { Loader2, Palette, Ruler, AlertCircle, Check, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { useCustomizationPriceReactive } from '@/hooks/simulation';
 import type { TechniqueOption, CustomizationPriceResponseV6 } from '@/types/customization';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCustomizationCollapsePrefs } from '@/hooks/customization/useCustomizationCollapsePrefs';
+import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 
 interface ConfigurationPanelV6Props {
   technique: TechniqueOption;
@@ -32,6 +33,8 @@ interface ConfigurationPanelV6Props {
   ) => void;
   /** Emitido a cada mudança de dimensão/cor (sem precisar confirmar). Usado para preservar inputs ao trocar de técnica. */
   onDimensionsChange?: (dims: { width?: number; height?: number; colors?: number }) => void;
+  /** Ícone opcional exibido antes do nome da gravação confirmada. Default: <Check />. Passe `null` para ocultar. */
+  confirmedIcon?: ReactNode;
 }
 
 export function ConfigurationPanelV6({
@@ -43,6 +46,7 @@ export function ConfigurationPanelV6({
   initialColors,
   onPriceCalculated,
   onDimensionsChange,
+  confirmedIcon,
 }: ConfigurationPanelV6Props) {
   // Dimensions
   const [largura, setLargura] = useState<string>(
@@ -174,18 +178,53 @@ export function ConfigurationPanelV6({
       >
         <div className="flex items-center justify-between gap-2">
           {isConfirmed && !editing ? (
-            <p className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground">
-              <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-              <span className="truncate" title={price?.nome_tabela ?? technique.name ?? undefined}>
-                {price?.nome_tabela ?? technique.name ?? 'Gravação confirmada'}
-              </span>
-            </p>
+            (() => {
+              const showSkeleton = loading && !price?.nome_tabela;
+              const title = formatEngravingTitle({
+                nomeTabela: price?.nome_tabela,
+                techniqueName:
+                  (technique as { name?: string; technique_name?: string }).name ??
+                  (technique as { technique_name?: string }).technique_name,
+                groupName: (technique as { grupo_tecnica?: string }).grupo_tecnica,
+                fallback: 'Gravação confirmada',
+              });
+              const iconNode =
+                confirmedIcon === null
+                  ? null
+                  : confirmedIcon ?? (
+                      <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                    );
+              return (
+                <p
+                  className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground"
+                  data-testid="customization-confirmed-header"
+                >
+                  {iconNode}
+                  {showSkeleton ? (
+                    <span
+                      aria-hidden
+                      data-testid="customization-confirmed-skeleton"
+                      className="inline-block h-3.5 w-24 animate-pulse rounded bg-muted"
+                    />
+                  ) : (
+                    <span
+                      className="truncate whitespace-nowrap"
+                      title={title}
+                      data-testid="customization-confirmed-title"
+                    >
+                      {title}
+                    </span>
+                  )}
+                </p>
+              );
+            })()
           ) : (
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Configure a gravação
             </p>
           )}
           <div className="flex items-center gap-2">
+
 
             <button
               type="button"
