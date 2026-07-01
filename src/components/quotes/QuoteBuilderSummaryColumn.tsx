@@ -936,7 +936,7 @@ export function QuoteBuilderSummaryColumn({
                                                   {p.location_name}
                                                 </span>
                                               ) : null}
-                                              {p.technique_name}
+                                              {formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
                                             </span>
                                             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-muted-foreground">
                                               {formatArea(p.width_cm, p.height_cm) && (
