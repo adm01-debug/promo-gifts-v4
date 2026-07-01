@@ -74,6 +74,7 @@ function parseArgs() {
     args.filter((a) => a.startsWith('--') && a.includes('='))
       .map((a) => { const [k, ...v] = a.slice(2).split('='); return [k, v.join('=')]; }),
   );
+  const csv = (v) => (v ? String(v).split(',').map((s) => s.trim()).filter(Boolean) : []);
   return {
     file: positional[0],
     apply: flags.has('--apply'),
@@ -83,6 +84,10 @@ function parseArgs() {
     pr: flags.has('--pr'),
     draftPr: flags.has('--draft-pr'),
     base: kv.base || 'main',
+    labels: Array.from(new Set(['db-migration', ...csv(kv.labels ?? kv.label)])),
+    reviewers: csv(kv.reviewers ?? kv.reviewer),
+    assignees: csv(kv.assignees ?? kv.assignee),
+    skipDbDiff: flags.has('--skip-db-diff'),
   };
 }
 
