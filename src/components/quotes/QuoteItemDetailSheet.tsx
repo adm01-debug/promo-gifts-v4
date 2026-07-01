@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { qvType, qvSpacing } from './quote-view-typography';
 import { ProductThumb } from './ProductThumb';
+import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 
 
 const QUANTITY_TIERS = [
@@ -281,7 +282,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                           {/* Technique */}
                           <div className="flex items-center gap-2">
                             <Badge className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary hover:bg-primary/10">
-                              ✦ {p.technique_name || 'Gravação'}
+                              ✦ {formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
                             </Badge>
                           </div>
 

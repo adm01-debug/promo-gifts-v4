@@ -97,4 +97,36 @@ describe('ConfigurationPanelV6 — cabeçalho da gravação confirmada', () => {
     // Nenhum ícone SVG ou span custom antes do título
     expect(header.querySelector('svg')).toBeNull();
   });
+
+  it('transiciona do skeleton para o texto sem estado intermediário vazio (sem piscadas)', () => {
+    // Estado 1: carregando, sem preço → skeleton visível, sem título
+    hookState.price = null;
+    hookState.loading = true;
+    const { rerender } = renderPanel();
+
+    const header = screen.getByTestId('customization-confirmed-header');
+    expect(screen.getByTestId('customization-confirmed-skeleton')).toBeInTheDocument();
+    expect(screen.queryByTestId('customization-confirmed-title')).not.toBeInTheDocument();
+    // Cabeçalho sempre tem conteúdo (ícone + skeleton), nunca colapsa a altura
+    expect(header.children.length).toBeGreaterThan(0);
+
+    // Estado 2: preço chega → skeleton some, título aparece na MESMA render
+    hookState.price = { nome_tabela: 'FIBER LASER | PLANA' };
+    hookState.loading = false;
+    rerender(
+      <ConfigurationPanelV6
+        technique={technique}
+        quantity={10}
+        isConfirmed
+        onPriceCalculated={() => {}}
+      />,
+    );
+
+    expect(screen.queryByTestId('customization-confirmed-skeleton')).not.toBeInTheDocument();
+    expect(screen.getByTestId('customization-confirmed-title')).toHaveTextContent(
+      'Fiber Laser | Plana',
+    );
+    // O cabeçalho permanece montado durante toda a transição
+    expect(screen.getByTestId('customization-confirmed-header')).toBe(header);
+  });
 });

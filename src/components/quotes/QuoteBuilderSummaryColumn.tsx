@@ -96,6 +96,7 @@ import { persistItemsOrder } from '@/services/quoteItemsReorder';
 import { logger } from '@/lib/logger';
 // BUG-C FIX: import SSOT round2 instead of duplicating it locally
 import { round2 } from '@/hooks/quotes/quoteHelpers';
+import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 
 interface Props {
   items: QuoteItem[];
@@ -935,7 +936,7 @@ export function QuoteBuilderSummaryColumn({
                                                   {p.location_name}
                                                 </span>
                                               ) : null}
-                                              {p.technique_name}
+                                              {formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
                                             </span>
                                             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-muted-foreground">
                                               {formatArea(p.width_cm, p.height_cm) && (
