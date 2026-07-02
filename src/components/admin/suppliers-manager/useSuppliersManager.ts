@@ -5,7 +5,8 @@ import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { searchCrm } from '@/lib/crm-db';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { validateCnpj, maskCep } from '@/utils/masks';
+import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
+import { assertPersistableCnpj } from '@/utils/cnpj-schema';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -340,7 +341,7 @@ export function useSuppliersManager() {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') ?? '';
+    const cnpjRaw = normalizeCnpj(editingSupplier.cnpj);
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
@@ -358,7 +359,7 @@ export function useSuppliersManager() {
           cnpj: string;
         }>('suppliers')
           .select('id,name,cnpj')
-          .eq('cnpj', editingSupplier.cnpj.trim())
+          .eq('cnpj', cnpjRaw)
           .limit(5);
         if (cnpjCheckErr) throw cnpjCheckErr;
         const duplicate = existingRecords?.find((r) => r.id !== editingSupplier.id);
@@ -449,7 +450,7 @@ export function useSuppliersManager() {
             .replace(/[^A-Z0-9_]/g, '')
             .slice(0, 20),
         trading_name: es.trading_name?.trim() || null,
-        cnpj: es.cnpj?.trim() || null,
+        cnpj: assertPersistableCnpj(es.cnpj),
         active: es.active ?? true,
         contact_name: contacts[0]?.name?.trim() || null,
         contact_person: contacts[0]?.role?.trim() || null,

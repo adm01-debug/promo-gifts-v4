@@ -84,6 +84,56 @@ describe('Utility Masks & Validation', () => {
     });
   });
 
+  describe('normalizeCnpj — edge cases (<14, >14, empty)', () => {
+    it('empty / whitespace / non-digit-only returns ""', () => {
+      expect(normalizeCnpj('')).toBe('');
+      expect(normalizeCnpj('   ')).toBe('');
+      expect(normalizeCnpj('abc-xyz/---')).toBe('');
+    });
+
+    it('less than 14 digits preserves partial digits (no padding)', () => {
+      expect(normalizeCnpj('02')).toBe('02');
+      expect(normalizeCnpj('02.931')).toBe('02931');
+      expect(normalizeCnpj('02.931.668/0001-8')).toBe('0293166800018'); // 13
+      expect(isNormalizedCnpj(normalizeCnpj('02.931.668/0001-8'))).toBe(false);
+    });
+
+    it('exactly 14 digits is a fixed point (idempotent)', () => {
+      const canonical = '02931668000188';
+      expect(normalizeCnpj(canonical)).toBe(canonical);
+      expect(normalizeCnpj(normalizeCnpj(canonical))).toBe(canonical);
+      expect(isNormalizedCnpj(canonical)).toBe(true);
+    });
+
+    it('more than 14 digits is truncated to first 14', () => {
+      expect(normalizeCnpj('02931668000188999')).toBe('02931668000188');
+      expect(normalizeCnpj('02.931.668/0001-88 extra 12345')).toBe('02931668000188');
+    });
+
+    it('consistency: normalize → mask → normalize is stable', () => {
+      const samples = [
+        '02.931.668/0001-88',
+        '  02 931 668 / 0001-88  ',
+        '02931668000188',
+        '02.931.668/0001-88 lixo',
+      ];
+      for (const s of samples) {
+        const norm = normalizeCnpj(s);
+        expect(norm).toBe('02931668000188');
+        expect(maskCnpj(norm)).toBe('02.931.668/0001-88');
+        expect(normalizeCnpj(maskCnpj(norm))).toBe(norm);
+        expect(isNormalizedCnpj(norm)).toBe(true);
+      }
+    });
+
+    it('mask of partial digits does not falsely satisfy isNormalizedCnpj', () => {
+      const partial = normalizeCnpj('02.931');
+      expect(isNormalizedCnpj(partial)).toBe(false);
+      expect(isNormalizedCnpj(maskCnpj(partial))).toBe(false);
+    });
+  });
+
+
 
   describe('Phone Masking', () => {
     it('masks a 10-digit landline number', () => {

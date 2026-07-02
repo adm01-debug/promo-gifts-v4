@@ -3,7 +3,8 @@ import { searchCrm } from '@/lib/crm-db';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { validateCnpj, maskCep } from '@/utils/masks';
+import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
+import { assertPersistableCnpj } from '@/utils/cnpj-schema';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -325,7 +326,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjDigits = cnpj.replace(/\D/g, '');
+    const cnpjDigits = normalizeCnpj(cnpj);
     if (cnpjDigits.length > 0 && !validateCnpj(cnpjDigits)) {
       setCnpjError('CNPJ inválido');
       toast.error('CNPJ informado é inválido');
@@ -346,7 +347,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           cnpj: string;
         }>('suppliers')
           .select('id,name,cnpj')
-          .eq('cnpj', cnpj.trim())
+          .eq('cnpj', cnpjDigits)
           .limit(1);
         if (cnpjCheckErr) throw cnpjCheckErr;
         if (existingRecords && existingRecords.length > 0) {
@@ -435,7 +436,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         name: name.trim(),
         code: generatedCode,
         trading_name: tradingName.trim() || null,
-        cnpj: cnpj.trim() || null,
+        cnpj: assertPersistableCnpj(cnpj),
         active: isActive,
         organization_id: ORGANIZATION_ID,
         contact_name: contacts[0]?.name?.trim() || null,
