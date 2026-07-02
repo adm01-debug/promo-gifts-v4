@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
 import { assertPersistableCnpj } from '@/utils/cnpj-schema';
-import { mapCnpjError } from '@/utils/cnpj-errors';
+import { cnpjErrorHaystack, mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -517,8 +517,7 @@ export function useSuppliersManager() {
     } catch (err: unknown) {
       logger.error('Failed to save supplier', err);
       // SSOT: mesma copy inline nas duas UIs (ver src/utils/cnpj-errors.ts).
-      const e = err as { message?: string; details?: string };
-      const hay = `${e?.message ?? ''} ${e?.details ?? ''}`;
+      const hay = cnpjErrorHaystack(err);
       if (/cnpj/i.test(hay)) {
         const mapped = mapCnpjError(err);
         setCnpjError(mapped.message);

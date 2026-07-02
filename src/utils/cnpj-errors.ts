@@ -34,30 +34,43 @@ export const CNPJ_ERROR_MESSAGES: Record<CnpjErrorCode, string> = {
  *        (ex.: índice `suppliers_cnpj_org_uniq`).
  *  - Mensagens livres contendo "duplic" / "already exists" → duplicated.
  */
+/**
+ * Leitura defensiva de um campo de erro: getters de erros externos podem
+ * lançar, e código de tratamento de erro NUNCA pode ele mesmo explodir.
+ */
+function readErrField(
+  input: unknown,
+  key: 'message' | 'code' | 'details',
+): string {
+  try {
+    if (typeof input !== 'object' || input === null) return '';
+    const v = (input as Record<string, unknown>)[key];
+    return v == null ? '' : String(v);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Haystack seguro (message + details) para gates `/cnpj/i` em catches.
+ * Garantia: NUNCA lança. Use isto nos hooks em vez de montar template
+ * literal direto sobre o erro (getter hostil derrubaria o catch).
+ */
+export function cnpjErrorHaystack(input: unknown): string {
+  try {
+    if (typeof input === 'string') return input;
+    return `${readErrField(input, 'message')} ${readErrField(input, 'details')}`;
+  } catch {
+    return '';
+  }
+}
+
 export function mapCnpjError(input: unknown): {
   code: CnpjErrorCode;
   message: string;
 } {
-  // Leituras defensivas: getters de erros externos podem lançar,
-  // e um mapper de erro NUNCA pode ele mesmo explodir.
-  const safeRead = (key: 'message' | 'code' | 'details'): string => {
-    try {
-      if (typeof input !== 'object' || input === null) return '';
-      const v = (input as Record<string, unknown>)[key];
-      return v == null ? '' : String(v);
-    } catch {
-      return '';
-    }
-  };
-  let raw = '';
-  try {
-    raw = typeof input === 'string' ? input : safeRead('message');
-  } catch {
-    raw = '';
-  }
-  const code = safeRead('code');
-  const details = safeRead('details');
-  const hay = `${raw} ${details}`.toLowerCase();
+  const code = readErrField(input, 'code');
+  const hay = cnpjErrorHaystack(input).toLowerCase();
 
   if (code === '23505' || /duplic|already exists|unique/i.test(hay)) {
     return { code: 'cnpj_duplicated', message: CNPJ_ERROR_MESSAGES.cnpj_duplicated };
