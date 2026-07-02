@@ -13,6 +13,7 @@ import { selectCrm, searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { CompanyAvatar, type CompanyOption } from './shared-types';
 import { useSearchHistory } from '@/hooks/common';
+import { maskCnpj } from '@/utils/masks';
 
 interface CompanyMeta {
   cnpj?: string | null;
@@ -225,7 +226,7 @@ export function CompanySearchDropdown({
           <div className="flex items-center gap-2">
             {selectedCompany.cnpj && (
               <span className="font-mono text-xs text-muted-foreground">
-                {selectedCompany.cnpj}
+                {maskCnpj(selectedCompany.cnpj)}
               </span>
             )}
           </div>
