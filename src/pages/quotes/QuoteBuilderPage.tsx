@@ -742,6 +742,13 @@ export default function QuoteBuilderPage() {
             quoteId={s.quoteId ?? null}
             setSkipAutosaveSortOrder={s.setSkipAutosaveSortOrder}
             onAddProduct={() => s.setProductSearchOpen(true)}
+            onRestore={(item, index) =>
+              s.setItems((prev) => {
+                const next = [...prev];
+                next.splice(Math.min(index, next.length), 0, item);
+                return next;
+              })
+            }
           />
         </div>
       </div>
