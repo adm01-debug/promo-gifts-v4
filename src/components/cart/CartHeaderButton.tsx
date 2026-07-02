@@ -726,7 +726,7 @@ export function CartHeaderButton() {
                                     className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover/item:opacity-100"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      removeItem(item.id);
+                                      handleRemoveWithUndo(cart.id, item);
                                     }}
                                   >
                                     <X aria-hidden="true" className="h-3 w-3" />
