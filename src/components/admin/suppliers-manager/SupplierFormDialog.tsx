@@ -39,6 +39,8 @@ interface SupplierFormDialogProps {
   setEditingSupplier: (s: Partial<Supplier> | null) => void;
   isNew: boolean;
   saving: boolean;
+  /** Erro CNPJ vindo do backend (SSOT: mapCnpjError) — exibido inline. */
+  cnpjError?: string;
   uploadingLogo: boolean;
   fetchingCnpj: boolean;
   contacts: SupplierContact[];
@@ -86,6 +88,7 @@ export function SupplierFormDialog({
   setEditingSupplier,
   isNew,
   saving,
+  cnpjError,
   uploadingLogo,
   fetchingCnpj,
   contacts,
@@ -317,6 +320,15 @@ export function SupplierFormDialog({
                   }
                   return null;
                 })()}
+                {cnpjError ? (
+                  <p
+                    id="admin-cnpj-backend-error"
+                    data-testid="admin-cnpj-backend-error"
+                    className="mt-1 text-xs text-destructive"
+                  >
+                    {cnpjError}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label className="text-xs font-semibold">Inscrição Estadual</Label>

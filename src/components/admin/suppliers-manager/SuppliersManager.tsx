@@ -52,6 +52,7 @@ export function SuppliersManager() {
         setEditingSupplier={m.setEditingSupplier}
         isNew={m.isNew}
         saving={m.saving}
+        cnpjError={m.cnpjError}
         uploadingLogo={m.uploadingLogo}
         fetchingCnpj={m.fetchingCnpj}
         contacts={m.contacts}
