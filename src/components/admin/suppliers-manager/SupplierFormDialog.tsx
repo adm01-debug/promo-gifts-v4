@@ -29,7 +29,7 @@ import {
   Search,
   Truck,
 } from 'lucide-react';
-import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj } from '@/utils/masks';
+import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj, validateCnpj } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
 import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
