@@ -223,22 +223,10 @@ export function CompanySearchDropdown({
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm font-medium">{selectedCompany.name}</span>
           <div className="flex items-center gap-2">
-            {selectedCompany.razao_social &&
-              selectedCompany.razao_social !== selectedCompany.name && (
-                <span className="truncate text-xs text-muted-foreground">
-                  {selectedCompany.razao_social}
-                </span>
-              )}
             {selectedCompany.cnpj && (
-              <>
-                {selectedCompany.razao_social &&
-                  selectedCompany.razao_social !== selectedCompany.name && (
-                    <span className="text-xs text-muted-foreground">·</span>
-                  )}
-                <span className="font-mono text-xs text-muted-foreground">
-                  {selectedCompany.cnpj}
-                </span>
-              </>
+              <span className="font-mono text-xs text-muted-foreground">
+                {selectedCompany.cnpj}
+              </span>
             )}
           </div>
         </div>
