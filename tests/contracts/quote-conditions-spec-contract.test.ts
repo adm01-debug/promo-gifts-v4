@@ -49,8 +49,8 @@ describe('e2e/ui/quote-conditions-visual.spec.ts — contrato', () => {
 
   it('ordem de foco Validade → Forma → Prazo preservada', () => {
     const idxValidity = SPEC.indexOf('validity.focus');
-    const idxMethod = SPEC.indexOf('payment-method-select');
-    const idxTerms = SPEC.indexOf('payment-terms-select');
+    const idxMethod = SPEC.indexOf('method).toBeFocused');
+    const idxTerms = SPEC.indexOf('terms).toBeFocused');
     expect(idxValidity).toBeGreaterThan(0);
     expect(idxMethod).toBeGreaterThan(idxValidity);
     expect(idxTerms).toBeGreaterThan(idxMethod);
