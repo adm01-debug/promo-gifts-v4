@@ -586,7 +586,10 @@ export default function QuoteBuilderPage() {
                             : 'Selecione a data'}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent
+                        className="w-auto rounded-2xl border border-border/50 bg-card p-0 shadow-xl"
+                        align="start"
+                      >
                         <Calendar
                           mode="single"
                           selected={s.deliveryDate}
