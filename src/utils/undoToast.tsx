@@ -22,6 +22,12 @@ interface UndoToastContentProps {
   duration: number;
   onUndo: () => void;
   onTimeout: () => void;
+  /**
+   * Se definido, congela o tempo restante no valor informado (ms) e desativa
+   * o intervalo interno + transições. Usado apenas por harness visual/testes
+   * para gerar snapshots PNG estáveis. Não use em produção.
+   */
+  frozenMs?: number;
 }
 
 function usePrefersReducedMotion(): boolean {
