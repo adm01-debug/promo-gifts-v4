@@ -40,5 +40,6 @@ export const publicRoutes = (
     <Route path="/__test/alert-dialog" element={<AlertDialogHarness />} />
     <Route path="/__test/dialog" element={<DialogHarness />} />
     <Route path="/__test/undo-toast" element={<UndoToastHarness />} />
+    <Route path="/__test/cnpj-form" element={<CnpjFormHarness />} />
   </>
 );
