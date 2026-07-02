@@ -57,6 +57,11 @@ for (const variant of VARIANTS) {
         expect(box!.x).toBeGreaterThanOrEqual(-1);
         expect(box!.x + box!.width).toBeLessThanOrEqual(viewportWidth + 1);
 
+        // 1.d) Sem overflow VERTICAL (top/bottom clipping em telas pequenas).
+        const viewportHeight = page.viewportSize()?.height ?? 720;
+        expect(box!.y).toBeGreaterThanOrEqual(-1);
+        expect(box!.y + box!.height).toBeLessThanOrEqual(viewportHeight + 1);
+
         // 2) sem clipping horizontal em qualquer botão do footer.
         for (const testId of ['confirm-dialog-yes', 'confirm-dialog-no']) {
           const btn = page.getByTestId(testId);
