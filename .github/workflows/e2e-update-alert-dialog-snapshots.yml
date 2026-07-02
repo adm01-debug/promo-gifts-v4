@@ -1,13 +1,13 @@
-name: E2E · Update Confirm Dialog snapshots
-# Executa `playwright test --update-snapshots` para o spec do ConfirmDialog
+name: E2E · Update Alert Dialog snapshots
+# Executa `playwright test --update-snapshots` para o spec do AlertDialog
 # e faz commit dos PNGs atualizados. Dispara manualmente OU quando o próprio
-# spec é editado.
+# spec (ou o harness) é editado.
 on:
   workflow_dispatch:
   push:
     paths:
-      - "e2e/ui/confirm-dialog-visual.spec.ts"
-      - "src/pages/dev/ConfirmDialogHarness.tsx"
+      - "e2e/ui/alert-dialog-visual.spec.ts"
+      - "src/pages/dev/AlertDialogHarness.tsx"
 
 permissions:
   contents: write
@@ -32,15 +32,15 @@ jobs:
       - name: Bootstrap (install deps + chromium)
         run: npm run e2e:bootstrap
       - name: Update baselines
-        run: npm run e2e:confirm-dialog:update
+        run: npm run e2e:alert-dialog:update
       - name: Commit updated snapshots
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A e2e/ui/confirm-dialog-visual.spec.ts-snapshots || true
+          git add -A e2e/ui/alert-dialog-visual.spec.ts-snapshots || true
           if git diff --cached --quiet; then
             echo "Sem mudanças de baseline."
           else
-            git commit -m "chore(e2e): update ConfirmDialog visual snapshots [skip ci]"
+            git commit -m "chore(e2e): update AlertDialog visual snapshots [skip ci]"
             git push
           fi
