@@ -56,15 +56,22 @@ export function UndoToastContent({
   duration,
   onUndo,
   onTimeout,
+  frozenMs,
 }: UndoToastContentProps) {
   const totalMs = Math.max(1000, duration);
   const totalSec = Math.round(totalMs / 1000);
-  const [remainingMs, setRemainingMs] = useState(totalMs);
+  const frozen = typeof frozenMs === 'number';
+  const [remainingMs, setRemainingMs] = useState(
+    frozen ? Math.max(0, Math.min(frozenMs!, totalMs)) : totalMs,
+  );
   const pausedRef = useRef(false);
   const lastTickRef = useRef<number>(Date.now());
-  const reduced = usePrefersReducedMotion();
+  const reducedNative = usePrefersReducedMotion();
+  // Harness pode congelar tempo — quando frozen também suprime animações.
+  const reduced = reducedNative || frozen;
 
   useEffect(() => {
+    if (frozen) return;
     lastTickRef.current = Date.now();
     const id = window.setInterval(() => {
       const now = Date.now();
@@ -74,7 +81,7 @@ export function UndoToastContent({
       setRemainingMs((prev) => Math.max(0, prev - delta));
     }, 200);
     return () => window.clearInterval(id);
-  }, []);
+  }, [frozen]);
 
   useEffect(() => {
     if (remainingMs <= 0) onTimeout();
