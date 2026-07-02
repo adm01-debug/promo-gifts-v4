@@ -677,7 +677,7 @@ export function CartHeaderButton() {
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             if (item.quantity <= 1) {
-                                              removeItem(item.id);
+                                              handleRemoveWithUndo(cart.id, item);
                                             } else {
                                               updateItemQuantity(item.id, item.quantity - 1);
                                             }
