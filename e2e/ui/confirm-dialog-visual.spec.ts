@@ -53,6 +53,10 @@ for (const variant of VARIANTS) {
         const expectedWidth = Math.min(358, viewportWidth * 0.92);
         expect(Math.abs(box!.width - expectedWidth)).toBeLessThanOrEqual(4);
 
+        // 1.c) Dialog inteiro DEVE estar dentro do viewport (sem overflow horizontal).
+        expect(box!.x).toBeGreaterThanOrEqual(-1);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(viewportWidth + 1);
+
         // 2) sem clipping horizontal em qualquer botão do footer.
         for (const testId of ['confirm-dialog-yes', 'confirm-dialog-no']) {
           const btn = page.getByTestId(testId);
