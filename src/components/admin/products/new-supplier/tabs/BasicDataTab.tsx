@@ -110,14 +110,15 @@ export function BasicDataTab({ form }: BasicDataTabProps) {
           <Label className="text-xs font-semibold">CNPJ</Label>
           <div className="flex gap-1.5">
             <Input
-              value={form.cnpj}
+              value={maskCnpj(form.cnpj)}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                form.setCnpj(maskCnpj(e.target.value));
+                form.setCnpj(normalizeCnpj(e.target.value));
                 form.setCnpjError('');
               }}
               placeholder="00.000.000/0000-00"
               className={`${fieldClass} flex-1 font-mono ${form.cnpjError ? 'border-destructive' : ''}`}
               maxLength={18}
+              inputMode="numeric"
             />
             <Button
               type="button"
