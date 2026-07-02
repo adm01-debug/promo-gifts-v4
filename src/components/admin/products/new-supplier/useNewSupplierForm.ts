@@ -347,7 +347,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           cnpj: string;
         }>('suppliers')
           .select('id,name,cnpj')
-          .eq('cnpj', cnpj.trim())
+          .eq('cnpj', cnpjDigits)
           .limit(1);
         if (cnpjCheckErr) throw cnpjCheckErr;
         if (existingRecords && existingRecords.length > 0) {
