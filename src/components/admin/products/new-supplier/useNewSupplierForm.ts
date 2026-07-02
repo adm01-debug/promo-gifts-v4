@@ -432,11 +432,23 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         transportadoraId,
       );
 
+      let persistableCnpj: string | null;
+      try {
+        persistableCnpj = assertPersistableCnpj(cnpj);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'CNPJ inválido';
+        setCnpjError(msg);
+        toast.error(msg);
+        setSaving(false);
+        return;
+      }
+
       const data: Record<string, unknown> = {
         name: name.trim(),
         code: generatedCode,
         trading_name: tradingName.trim() || null,
-        cnpj: assertPersistableCnpj(cnpj),
+        cnpj: persistableCnpj,
+
         active: isActive,
         organization_id: ORGANIZATION_ID,
         contact_name: contacts[0]?.name?.trim() || null,
