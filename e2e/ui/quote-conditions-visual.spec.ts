@@ -49,6 +49,9 @@ test.describe('Card Condições — layout responsivo', () => {
       // Snapshot visual do card
       await expect(card).toHaveScreenshot(`quote-conditions-${vp.name}.png`, {
         maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+        caret: 'hide',
+        scale: 'css',
       });
     });
   }
