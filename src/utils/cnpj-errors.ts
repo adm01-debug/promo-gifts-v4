@@ -27,9 +27,11 @@ export const CNPJ_ERROR_MESSAGES: Record<CnpjErrorCode, string> = {
  * Suporta:
  *  - Mensagens do `assertPersistableCnpj` (Zod) — casam por regex.
  *  - Códigos Postgres/PostgREST:
- *      * `23514` (check_violation) com constraint `cnpj_digits_only_chk`
- *        ou `cnpj_length_chk` → length_invalid.
- *      * `23505` (unique_violation) em coluna cnpj → duplicated.
+ *      * `23514` (check_violation):
+ *        constraint `*_cnpj_length_chk` → length_invalid;
+ *        constraint `*_cnpj_digits_only_chk` → dv_invalid.
+ *      * `23505` (unique_violation) em coluna cnpj → duplicated
+ *        (ex.: índice `suppliers_cnpj_org_uniq`).
  *  - Mensagens livres contendo "duplic" / "already exists" → duplicated.
  */
 export function mapCnpjError(input: unknown): {
