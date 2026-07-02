@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, ImagePlus, X, Search } from 'lucide-react';
-import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
+import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj } from '@/utils/masks';
 import type { NewSupplierForm } from '../useNewSupplierForm';
 
 const fieldClass = 'mt-1.5 h-9';
