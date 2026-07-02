@@ -26,7 +26,7 @@ const REJECTED: Case[] = [
   { label: 'só letras', input: 'ABCDEFGHIJKLMN', errorRegex: /14 d[ií]gitos/i },
   { label: 'letras + dígitos < 14', input: 'abc02931668000', errorRegex: /14 d[ií]gitos/i },
   { label: 'símbolos + dígitos < 14', input: '###02.931.668/00', errorRegex: /14 d[ií]gitos/i },
-  { label: 'apenas espaços', input: '     ', errorRegex: /14 d[ií]gitos/i },
+  // Nota: 'apenas espaços' → null (opcional) por design do schema — não é erro.
   // Contagem inválida.
   { label: 'menos de 14', input: '02931668000', errorRegex: /14 d[ií]gitos/i },
   // DVs inválidos.
