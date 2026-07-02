@@ -8,13 +8,23 @@ on:
     paths:
       - "e2e/ui/confirm-dialog-visual.spec.ts"
       - "src/pages/dev/ConfirmDialogHarness.tsx"
+    paths-ignore:
+      # Evita loop: o próprio job commita PNGs neste diretório.
+      - "e2e/ui/confirm-dialog-visual.spec.ts-snapshots/**"
+      - "**/*.png"
 
 permissions:
   contents: write
 
+# Evita execuções simultâneas — a última em fila cancela as anteriores no mesmo ref.
+concurrency:
+  group: e2e-update-confirm-dialog-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   update-snapshots:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
