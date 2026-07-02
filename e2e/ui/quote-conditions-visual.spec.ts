@@ -25,6 +25,12 @@ async function gotoQuoteBuilder(page: Page) {
   await loginAs(page);
   await page.goto('/quotes/new');
   await page.waitForSelector('h3:has-text("Condições")', { timeout: 15000 });
+  // Reduz flakiness: espera rede quieta + fontes carregadas + desativa animações.
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
+  await page.addStyleTag({
+    content: `*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }`,
+  });
 }
 
 test.describe('Card Condições — layout responsivo', () => {
@@ -43,6 +49,9 @@ test.describe('Card Condições — layout responsivo', () => {
       // Snapshot visual do card
       await expect(card).toHaveScreenshot(`quote-conditions-${vp.name}.png`, {
         maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+        caret: 'hide',
+        scale: 'css',
       });
     });
   }

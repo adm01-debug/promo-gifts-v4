@@ -1,0 +1,62 @@
+name: E2E · Update Quote Conditions snapshots
+# Executa manualmente para regenerar os PNGs baseline do card "Condições"
+# nos viewports 375/768/1280. Comita as imagens de volta na branch alvo.
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch para comitar os baselines atualizados"
+        required: true
+        default: "main"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: e2e-update-quote-conditions-${{ github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap
+        run: npm run e2e:bootstrap
+      - name: Start Vite
+        run: |
+          nohup bun run dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          tail -n 100 /tmp/vite.log >&2; exit 1
+      - name: Regenerar snapshots
+        run: |
+          npx playwright test e2e/ui/quote-conditions-visual.spec.ts \
+            --project=chromium-public \
+            --update-snapshots \
+            --reporter=list
+      - name: Comitar baselines
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/ui/__screenshots__/quote-conditions-visual.spec.ts || true
+          if git diff --cached --quiet; then
+            echo "Sem mudanças nos baselines."; exit 0
+          fi
+          git commit -m "chore(e2e): update quote-conditions visual baselines"
+          git push origin HEAD:${{ github.event.inputs.branch }}
