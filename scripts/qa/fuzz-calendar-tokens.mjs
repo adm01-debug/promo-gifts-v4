@@ -23,7 +23,7 @@ const REQUIRED = [
   /bg-foreground/,
   /text-background/,
   /text-destructive/,
-  /text-2xl/,
+  /text-base/,
   /font-bold/,
   /tracking-tight/,
   /hover:bg-accent/,
