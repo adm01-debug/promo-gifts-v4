@@ -21,40 +21,50 @@ const SELECT_TIDS = [
   'payment-terms-select', // Prazo | Pagamento
 ] as const;
 
-async function gotoQuoteBuilder(page: Page) {
+type Theme = 'light' | 'dark';
+
+async function gotoQuoteBuilder(page: Page, theme: Theme = 'light') {
   await loginAs(page);
   await page.goto('/quotes/new');
   await page.waitForSelector('h3:has-text("Condições")', { timeout: 15000 });
   // Reduz flakiness: espera rede quieta + fontes carregadas + desativa animações.
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
+  // Aplica tema (light/dark) via classe no <html> (Tailwind class-strategy).
+  await page.evaluate((t) => {
+    const html = document.documentElement;
+    html.classList.remove('light', 'dark');
+    html.classList.add(t);
+    html.style.colorScheme = t;
+  }, theme);
   await page.addStyleTag({
     content: `*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }`,
   });
 }
 
 test.describe('Card Condições — layout responsivo', () => {
-  for (const vp of VIEWPORTS) {
-    test(`grid ${vp.cols} coluna(s) em ${vp.name} (${vp.width}px)`, async ({ page }) => {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await gotoQuoteBuilder(page);
+  for (const theme of ['light', 'dark'] as const) {
+    for (const vp of VIEWPORTS) {
+      test(`grid ${vp.cols} coluna(s) em ${vp.name} (${vp.width}px) — ${theme}`, async ({ page }) => {
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await gotoQuoteBuilder(page, theme);
 
-      const card = page.locator('div:has(> div > h3:has-text("Condições"))').first();
-      await expect(card).toBeVisible();
+        const card = page.locator('div:has(> div > h3:has-text("Condições"))').first();
+        await expect(card).toBeVisible();
 
-      // Localiza o grid interno que envolve os 3 selects
-      const grid = card.locator('.grid.grid-cols-1.md\\:grid-cols-3').first();
-      await expect(grid).toBeVisible();
+        const grid = card.locator('.grid.grid-cols-1.md\\:grid-cols-3').first();
+        await expect(grid).toBeVisible();
 
-      // Snapshot visual do card
-      await expect(card).toHaveScreenshot(`quote-conditions-${vp.name}.png`, {
-        maxDiffPixelRatio: 0.02,
-        animations: 'disabled',
-        caret: 'hide',
-        scale: 'css',
+        await expect(card).toHaveScreenshot(`quote-conditions-${vp.name}-${theme}.png`, {
+          maxDiffPixelRatio: 0.02,
+          animations: 'disabled',
+          caret: 'hide',
+          scale: 'css',
+        });
       });
-    });
+    }
   }
+
 
   test('bounding boxes: 3 selects consistentes em md+ (larguras ~iguais)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });

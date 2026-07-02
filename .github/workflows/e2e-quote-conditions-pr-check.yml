@@ -53,11 +53,12 @@ jobs:
           echo "vite não subiu em 60s" >&2
           tail -n 100 /tmp/vite.log >&2
           exit 1
-      - name: Run quote-conditions spec (fail-on-diff)
+      - name: Run quote-conditions spec (fail-on-diff, trace+video on failure)
         run: |
           PLAYWRIGHT_JSON_OUTPUT_NAME=playwright-report/results.json \
           npx playwright test e2e/ui/quote-conditions-visual.spec.ts \
             --project=chromium-public \
+            --trace=retain-on-failure \
             --reporter=list,html,json
       - name: Coletar diffs
         if: failure()
@@ -67,7 +68,14 @@ jobs:
             find test-results -type f \( -name "*-diff.png" -o -name "*-actual.png" -o -name "*-expected.png" \) \
               -exec cp --parents {} diff-artifacts/ \; || true
           fi
-      - name: Upload Playwright HTML report on failure
+      - name: Gerar HTML preview (baseline × actual × diff)
+        if: failure()
+        run: |
+          node scripts/build-visual-diff-report.mjs \
+            --results test-results \
+            --out visual-diff-report/index.html \
+            --title "Card Condições — PR #${{ github.event.pull_request.number || github.run_id }}"
+      - name: Upload Playwright HTML report + traces on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -75,6 +83,15 @@ jobs:
           path: |
             playwright-report/
             test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload HTML diff preview
+        if: failure()
+        id: upload_preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-conditions-visual-diff-preview
+          path: visual-diff-report/
           if-no-files-found: ignore
           retention-days: 14
       - name: Upload diff PNGs on failure
@@ -92,16 +109,20 @@ jobs:
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           DIFF_URL: ${{ steps.upload_diff.outputs.artifact-url }}
+          PREVIEW_URL: ${{ steps.upload_preview.outputs.artifact-url }}
         with:
           script: |
             const runUrl = process.env.RUN_URL;
             const diffUrl = process.env.DIFF_URL || `${runUrl}#artifacts`;
+            const previewUrl = process.env.PREVIEW_URL || `${runUrl}#artifacts`;
             const body = [
-              '❌ **Snapshot visual do card "Condições" divergiu.**',
+              '❌ **Snapshot visual do card "Condições" divergiu (light + dark, 375/768/1280).**',
               '',
-              `📎 [diff PNGs](${diffUrl}) · [HTML report](${runUrl}#artifacts)`,
+              `🖼️ [HTML preview: baseline × actual × diff](${previewUrl})`,
+              `📎 [PNGs de diff](${diffUrl}) · [Playwright HTML report + traces](${runUrl}#artifacts)`,
               `🔗 Run: ${runUrl}`,
               '',
+              'Baixe o artefato **quote-conditions-visual-diff-preview**, abra `index.html` e inspecione cada viewport/tema.',
               'Se a mudança é intencional, atualize os baselines pelo workflow manual **E2E · Update Quote Conditions snapshots**.',
             ].join('\n');
             await github.rest.issues.createComment({
