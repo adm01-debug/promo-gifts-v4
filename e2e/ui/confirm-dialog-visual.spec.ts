@@ -57,6 +57,11 @@ for (const variant of VARIANTS) {
         expect(box!.x).toBeGreaterThanOrEqual(-1);
         expect(box!.x + box!.width).toBeLessThanOrEqual(viewportWidth + 1);
 
+        // 1.d) Sem overflow VERTICAL (top/bottom clipping em telas pequenas).
+        const viewportHeight = page.viewportSize()?.height ?? 720;
+        expect(box!.y).toBeGreaterThanOrEqual(-1);
+        expect(box!.y + box!.height).toBeLessThanOrEqual(viewportHeight + 1);
+
         // 2) sem clipping horizontal em qualquer botão do footer.
         for (const testId of ['confirm-dialog-yes', 'confirm-dialog-no']) {
           const btn = page.getByTestId(testId);
@@ -78,11 +83,14 @@ for (const variant of VARIANTS) {
           expect(metrics.ariaLabel?.length ?? 0).toBeGreaterThan(3);
           // texto visível não pode ultrapassar o container.
           expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
-          // botão inteiro dentro do viewport (sem clipping pela borda direita/esquerda).
+          // botão inteiro dentro do viewport (sem clipping H nem V).
           const btnBox = await btn.boundingBox();
           expect(btnBox).not.toBeNull();
+          const vpH = page.viewportSize()?.height ?? 720;
           expect(btnBox!.x).toBeGreaterThanOrEqual(-1);
           expect(btnBox!.x + btnBox!.width).toBeLessThanOrEqual(viewportWidth + 1);
+          expect(btnBox!.y).toBeGreaterThanOrEqual(-1);
+          expect(btnBox!.y + btnBox!.height).toBeLessThanOrEqual(vpH + 1);
         }
       });
     });
