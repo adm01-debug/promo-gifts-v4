@@ -362,7 +362,7 @@ export function CompanySearchDropdown({
                               <span className="truncate text-sm font-medium">{item.label}</span>
                               {meta.cnpj && (
                                 <span className="truncate font-mono text-[11px] text-muted-foreground/70">
-                                  {meta.cnpj}
+                                  {maskCnpj(meta.cnpj)}
                                 </span>
                               )}
                             </div>
