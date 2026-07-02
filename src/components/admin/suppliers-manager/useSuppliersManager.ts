@@ -359,7 +359,7 @@ export function useSuppliersManager() {
           cnpj: string;
         }>('suppliers')
           .select('id,name,cnpj')
-          .eq('cnpj', editingSupplier.cnpj.trim())
+          .eq('cnpj', cnpjRaw)
           .limit(5);
         if (cnpjCheckErr) throw cnpjCheckErr;
         const duplicate = existingRecords?.find((r) => r.id !== editingSupplier.id);
