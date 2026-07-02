@@ -53,6 +53,10 @@ for (const variant of VARIANTS) {
         const expectedWidth = Math.min(358, viewportWidth * 0.92);
         expect(Math.abs(box!.width - expectedWidth)).toBeLessThanOrEqual(4);
 
+        // 1.c) Dialog inteiro DEVE estar dentro do viewport (sem overflow horizontal).
+        expect(box!.x).toBeGreaterThanOrEqual(-1);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(viewportWidth + 1);
+
         // 2) sem clipping horizontal em qualquer botão do footer.
         for (const testId of ['confirm-dialog-yes', 'confirm-dialog-no']) {
           const btn = page.getByTestId(testId);
@@ -74,6 +78,11 @@ for (const variant of VARIANTS) {
           expect(metrics.ariaLabel?.length ?? 0).toBeGreaterThan(3);
           // texto visível não pode ultrapassar o container.
           expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+          // botão inteiro dentro do viewport (sem clipping pela borda direita/esquerda).
+          const btnBox = await btn.boundingBox();
+          expect(btnBox).not.toBeNull();
+          expect(btnBox!.x).toBeGreaterThanOrEqual(-1);
+          expect(btnBox!.x + btnBox!.width).toBeLessThanOrEqual(viewportWidth + 1);
         }
       });
     });
