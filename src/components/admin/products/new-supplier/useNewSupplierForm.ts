@@ -532,7 +532,16 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       }
     } catch (err: unknown) {
       logger.error('Failed to create supplier', err);
+      const msg = err instanceof Error ? err.message : '';
+      if (/cnpj/i.test(msg)) {
+        setCnpjError(
+          /d[ií]gito|digits|14/i.test(msg)
+            ? 'CNPJ deve conter apenas 14 dígitos'
+            : 'CNPJ inválido — verifique os dígitos',
+        );
+      }
       toast.error('Erro ao criar fornecedor');
+
     } finally {
       setSaving(false);
     }
