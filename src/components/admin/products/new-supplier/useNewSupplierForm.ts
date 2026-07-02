@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
 import { assertPersistableCnpj } from '@/utils/cnpj-schema';
-import { mapCnpjError } from '@/utils/cnpj-errors';
+import { cnpjErrorHaystack, mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -535,8 +535,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       logger.error('Failed to create supplier', err);
       // SSOT: mapCnpjError garante a MESMA copy do inline client-side para
       // erros vindos do backend (23514 *_cnpj_*_chk, 23505 suppliers_cnpj_org_uniq, Zod).
-      const e = err as { message?: string; details?: string };
-      const hay = `${e?.message ?? ''} ${e?.details ?? ''}`;
+      const hay = cnpjErrorHaystack(err);
       if (/cnpj/i.test(hay)) {
         const mapped = mapCnpjError(err);
         setCnpjError(mapped.message);
