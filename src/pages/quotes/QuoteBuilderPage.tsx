@@ -464,54 +464,63 @@ export default function QuoteBuilderPage() {
 
                 {/* Entrega */}
                 <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
-                  <div className="flex items-center gap-1.5" data-testid="delivery-label-container">
-                    <Label
-                      data-testid="delivery-label"
-                      className={cn(
-                        'text-xs',
-                        s.validationErrors.includes('prazo_entrega')
-                          ? 'text-destructive'
-                          : 'text-muted-foreground',
-                      )}
-                    >
-                      Prazo | Entrega{' '}
-                      {s.validationErrors.includes('prazo_entrega') && (
-                        <span className="ml-1">*</span>
-                      )}
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span
-                            data-testid="delivery-info-tooltip-trigger"
-                            className="inline-flex cursor-help align-middle text-muted-foreground/60 transition-colors hover:text-primary"
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-2"
+                    data-testid="delivery-label-container"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Label
+                        data-testid="delivery-label"
+                        className={cn(
+                          'text-xs',
+                          s.validationErrors.includes('prazo_entrega')
+                            ? 'text-destructive'
+                            : 'text-muted-foreground',
+                        )}
+                      >
+                        Prazo | Entrega{' '}
+                        {s.validationErrors.includes('prazo_entrega') && (
+                          <span className="ml-1">*</span>
+                        )}
+                      </Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span
+                              data-testid="delivery-info-tooltip-trigger"
+                              className="inline-flex cursor-help align-middle text-muted-foreground/60 transition-colors hover:text-primary"
+                            >
+                              <Info
+                                className="h-3 w-3"
+                                aria-label="Informação sobre prazo de entrega"
+                              />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            data-testid="delivery-info-tooltip-content"
+                            side="top"
+                            className="max-w-xs text-[11px] leading-relaxed"
                           >
-                            <Info
-                              className="h-3 w-3"
-                              aria-label="Informação sobre prazo de entrega"
-                            />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          data-testid="delivery-info-tooltip-content"
-                          side="top"
-                          className="max-w-xs text-[11px] leading-relaxed"
-                        >
-                          Antes de assumir o compromisso com seu Cliente, valide com todo o time
-                          (Fornecedores, Coordenador de Compras, Coordenador de Logística) a
-                          viabilidade do prazo.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
+                            Antes de assumir o compromisso com seu Cliente, valide com todo o time
+                            (Fornecedores, Coordenador de Compras, Coordenador de Logística) a
+                            viabilidade do prazo.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
 
-                  <div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/30 p-1.5">
-                    <div className="flex gap-1">
+                    <div
+                      role="tablist"
+                      aria-label="Modo de prazo de entrega"
+                      className="inline-flex items-center rounded-lg border border-border/40 bg-muted/30 p-0.5"
+                    >
                       <button
                         type="button"
+                        role="tab"
+                        aria-selected={s.deliveryMode === 'prazo'}
                         onClick={() => s.handleDeliveryModeChange('prazo')}
                         className={cn(
-                          'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
+                          'rounded-md px-2.5 py-0.5 text-[11px] font-semibold transition-all',
                           s.deliveryMode === 'prazo'
                             ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
                             : 'text-muted-foreground hover:bg-muted/50',
@@ -521,9 +530,11 @@ export default function QuoteBuilderPage() {
                       </button>
                       <button
                         type="button"
+                        role="tab"
+                        aria-selected={s.deliveryMode === 'data'}
                         onClick={() => s.handleDeliveryModeChange('data')}
                         className={cn(
-                          'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
+                          'rounded-md px-2.5 py-0.5 text-[11px] font-semibold transition-all',
                           s.deliveryMode === 'data'
                             ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
                             : 'text-muted-foreground hover:bg-muted/50',
