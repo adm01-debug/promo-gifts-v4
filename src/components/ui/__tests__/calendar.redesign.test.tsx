@@ -105,7 +105,9 @@ describe('Calendar redesign — tokens semânticos', () => {
 
   it('day_outside é discreto (muted-foreground/40)', () => {
     render(<Calendar mode="single" defaultMonth={REF} />);
-    const outside = byClass('day-outside');
+    const outside = Array.from(document.querySelectorAll<HTMLElement>('button[name="day"]')).find((b) =>
+      /\bday-outside\b/.test(b.getAttribute('class') ?? ''),
+    );
     if (outside) expect(classes(outside)).toMatch(/muted-foreground\/40/);
   });
 
