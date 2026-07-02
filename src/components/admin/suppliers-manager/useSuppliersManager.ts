@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
 import { assertPersistableCnpj } from '@/utils/cnpj-schema';
+import { mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -41,6 +42,7 @@ export function useSuppliersManager() {
   const [editingSupplier, setEditingSupplier] = useState<Partial<Supplier> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cnpjError, setCnpjError] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   // BUG-04 FIX: state-based delete confirmation — no more confirm() blocking dialog
   const [deleteConfirmSupplier, setDeleteConfirmSupplier] = useState<Supplier | null>(null);
@@ -348,6 +350,7 @@ export function useSuppliersManager() {
       toast.error('CNPJ informado é inválido');
       return;
     }
+    setCnpjError('');
     setSaving(true);
 
     // Duplicate checks
@@ -513,7 +516,16 @@ export function useSuppliersManager() {
       fetchSuppliers();
     } catch (err: unknown) {
       logger.error('Failed to save supplier', err);
-      toast.error('Erro ao salvar fornecedor');
+      // SSOT: mesma copy inline nas duas UIs (ver src/utils/cnpj-errors.ts).
+      const e = err as { message?: string; details?: string };
+      const hay = `${e?.message ?? ''} ${e?.details ?? ''}`;
+      if (/cnpj/i.test(hay)) {
+        const mapped = mapCnpjError(err);
+        setCnpjError(mapped.message);
+        toast.error(mapped.message);
+      } else {
+        toast.error('Erro ao salvar fornecedor');
+      }
     } finally {
       setSaving(false);
     }
@@ -642,6 +654,7 @@ export function useSuppliersManager() {
     setEditingSupplier,
     isNew,
     saving,
+    cnpjError,
     deleting,
     // BUG-04: new delete confirmation state/actions
     deleteConfirmSupplier,
