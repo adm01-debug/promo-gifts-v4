@@ -15,6 +15,7 @@ const ColorSwatchesHarness = lazy(() => import('@/pages/dev/ColorSwatchesHarness
 const ConfirmDialogHarness = lazy(() => import('@/pages/dev/ConfirmDialogHarness'));
 const AlertDialogHarness = lazy(() => import('@/pages/dev/AlertDialogHarness'));
 const DialogHarness = lazy(() => import('@/pages/dev/DialogHarness'));
+const UndoToastHarness = lazy(() => import('@/pages/dev/UndoToastHarness'));
 
 /**
  * Public routes — accessible without authentication.
