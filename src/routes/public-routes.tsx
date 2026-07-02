@@ -14,6 +14,7 @@ import {
 const ColorSwatchesHarness = lazy(() => import('@/pages/dev/ColorSwatchesHarness'));
 const ConfirmDialogHarness = lazy(() => import('@/pages/dev/ConfirmDialogHarness'));
 const AlertDialogHarness = lazy(() => import('@/pages/dev/AlertDialogHarness'));
+const DialogHarness = lazy(() => import('@/pages/dev/DialogHarness'));
 
 /**
  * Public routes — accessible without authentication.
@@ -35,5 +36,6 @@ export const publicRoutes = (
     <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
     <Route path="/__test/confirm-dialog" element={<ConfirmDialogHarness />} />
     <Route path="/__test/alert-dialog" element={<AlertDialogHarness />} />
+    <Route path="/__test/dialog" element={<DialogHarness />} />
   </>
 );
