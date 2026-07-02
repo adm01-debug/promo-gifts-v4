@@ -830,6 +830,8 @@ export function QuoteBuilderSummaryColumn({
                                             className="h-3 w-3 rounded-sm text-destructive/70 hover:text-destructive hover:bg-destructive/10 relative before:absolute before:inset-[-10px] before:content-['']"
                                             onClick={(e) => {
                                               e.stopPropagation();
+                                              const snapshot = items[idx];
+                                              const removedIndex = idx;
                                               removeItem(idx);
                                               if (activeItemIndex === idx) setActiveItemIndex(null);
                                               else if (
@@ -837,6 +839,14 @@ export function QuoteBuilderSummaryColumn({
                                                 activeItemIndex > idx
                                               )
                                                 setActiveItemIndex(activeItemIndex - 1);
+                                              if (snapshot && onRestore) {
+                                                showUndoToast({
+                                                  title: 'Item removido',
+                                                  description: snapshot.product_name,
+                                                  duration: 5000,
+                                                  onUndo: () => onRestore(snapshot, removedIndex),
+                                                });
+                                              }
                                             }}
                                           >
                                             <Trash2 className="h-2 w-2" />
