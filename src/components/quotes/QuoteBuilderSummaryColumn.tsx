@@ -91,6 +91,7 @@ import {
   saveCollapsedItems,
 } from '@/lib/quotes/collapsedItemsStorage';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { persistItemsOrder } from '@/services/quoteItemsReorder';
 import { logger } from '@/lib/logger';
@@ -140,6 +141,8 @@ interface Props {
   setSkipAutosaveSortOrder?: (v: boolean) => void;
   /** Abre o seletor de produtos para adicionar um novo item ao orçamento. */
   onAddProduct?: () => void;
+  /** Restaura um item removido no índice original — usado pelo undo do toast. */
+  onRestore?: (item: QuoteItem, index: number) => void;
 }
 
 
@@ -216,6 +219,7 @@ export function QuoteBuilderSummaryColumn({
   quoteId,
   setSkipAutosaveSortOrder,
   onAddProduct,
+  onRestore,
 }: Props) {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
@@ -826,6 +830,8 @@ export function QuoteBuilderSummaryColumn({
                                             className="h-3 w-3 rounded-sm text-destructive/70 hover:text-destructive hover:bg-destructive/10 relative before:absolute before:inset-[-10px] before:content-['']"
                                             onClick={(e) => {
                                               e.stopPropagation();
+                                              const snapshot = items[idx];
+                                              const removedIndex = idx;
                                               removeItem(idx);
                                               if (activeItemIndex === idx) setActiveItemIndex(null);
                                               else if (
@@ -833,6 +839,14 @@ export function QuoteBuilderSummaryColumn({
                                                 activeItemIndex > idx
                                               )
                                                 setActiveItemIndex(activeItemIndex - 1);
+                                              if (snapshot && onRestore) {
+                                                showUndoToast({
+                                                  title: 'Item removido',
+                                                  description: snapshot.product_name,
+                                                  duration: 5000,
+                                                  onUndo: () => onRestore(snapshot, removedIndex),
+                                                });
+                                              }
                                             }}
                                           >
                                             <Trash2 className="h-2 w-2" />
