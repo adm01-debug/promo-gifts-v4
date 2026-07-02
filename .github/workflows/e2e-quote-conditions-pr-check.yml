@@ -112,18 +112,58 @@ jobs:
           PREVIEW_URL: ${{ steps.upload_preview.outputs.artifact-url }}
         with:
           script: |
+            const fs = require('fs');
+            const path = require('path');
             const runUrl = process.env.RUN_URL;
             const diffUrl = process.env.DIFF_URL || `${runUrl}#artifacts`;
             const previewUrl = process.env.PREVIEW_URL || `${runUrl}#artifacts`;
+
+            // Matriz esperada: 3 viewports × 2 temas
+            const VIEWPORTS = ['375', '768', '1280'];
+            const THEMES = ['light', 'dark'];
+            const status = new Map();
+            for (const v of VIEWPORTS) for (const t of THEMES) status.set(`${v}|${t}`, { changed: false, anchor: null });
+
+            let total = 0;
+            try {
+              const raw = fs.readFileSync(path.join('visual-diff-report', 'summary.json'), 'utf8');
+              const summary = JSON.parse(raw);
+              total = summary.total || 0;
+              for (const c of summary.cases || []) {
+                if (!c.viewport || !c.theme) continue;
+                const key = `${c.viewport}|${c.theme}`;
+                if (status.has(key)) status.set(key, { changed: true, anchor: c.anchor });
+              }
+            } catch (e) {
+              core.warning(`summary.json ausente/ilegível: ${e.message}`);
+            }
+
+            const rows = [];
+            for (const v of VIEWPORTS) {
+              for (const t of THEMES) {
+                const s = status.get(`${v}|${t}`);
+                const badge = s.changed ? '🔴 mudou' : '🟢 ok';
+                const link = s.changed && s.anchor
+                  ? `[ver diff](${previewUrl}#${s.anchor})`
+                  : '—';
+                rows.push(`| ${v}px | ${t} | ${badge} | ${link} |`);
+              }
+            }
+
             const body = [
-              '❌ **Snapshot visual do card "Condições" divergiu (light + dark, 375/768/1280).**',
+              '❌ **Snapshot visual do card "Condições" divergiu.**',
+              '',
+              `**Resumo por viewport/tema** (${total} caso(s) divergente(s)):`,
+              '',
+              '| Viewport | Tema | Status | Diff |',
+              '|---|---|---|---|',
+              ...rows,
               '',
               `🖼️ [HTML preview: baseline × actual × diff](${previewUrl})`,
               `📎 [PNGs de diff](${diffUrl}) · [Playwright HTML report + traces](${runUrl}#artifacts)`,
               `🔗 Run: ${runUrl}`,
               '',
-              'Baixe o artefato **quote-conditions-visual-diff-preview**, abra `index.html` e inspecione cada viewport/tema.',
-              'Se a mudança é intencional, atualize os baselines pelo workflow manual **E2E · Update Quote Conditions snapshots**.',
+              'Se a mudança é intencional, dispare **E2E · Update Quote Conditions snapshots** (modo `safe_mode=true` recomendado).',
             ].join('\n');
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -131,3 +171,4 @@ jobs:
               repo: context.repo.repo,
               body,
             });
+

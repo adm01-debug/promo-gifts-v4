@@ -74,7 +74,12 @@ for (const [key, g] of [...groups.entries()].sort()) {
   const act = copyAsset(g.actual);
   const dif = copyAsset(g.diff);
   const label = relative(resultsDir, key);
-  rows.push({ label, exp, act, dif });
+  // Extrai viewport + tema de nomes tipo "...-375-light" / "...-1280-dark"
+  const vpMatch = label.match(/(\d{3,4})[-_](light|dark)/i);
+  const viewport = vpMatch ? vpMatch[1] : null;
+  const theme = vpMatch ? vpMatch[2].toLowerCase() : null;
+  const anchor = `case-${idx}`;
+  rows.push({ anchor, label, viewport, theme, exp, act, dif });
   idx += 1;
 }
 
@@ -91,7 +96,7 @@ const html = `<!doctype html>
   body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
   h1 { margin: 0 0 8px; font-size: 20px; }
   .meta { color: #6b7280; margin-bottom: 24px; }
-  .case { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+  .case { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 24px; scroll-margin-top: 16px; }
   .case h2 { font-size: 14px; margin: 0 0 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   figure { margin: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #f9fafb; }
@@ -112,8 +117,8 @@ const html = `<!doctype html>
   ${rows
     .map(
       (r) => `
-    <section class="case">
-      <h2>${r.label}</h2>
+    <section class="case" id="${r.anchor}">
+      <h2>${r.label}${r.viewport ? ` <small>[${r.viewport}px · ${r.theme}]</small>` : ''}</h2>
       <div class="grid">
         ${cell(r.exp, 'Expected (baseline)')}
         ${cell(r.act, 'Actual (PR)')}
@@ -127,4 +132,20 @@ const html = `<!doctype html>
 
 mkdirSync(outDir, { recursive: true });
 writeFileSync(outHtml, html, 'utf8');
+
+// summary.json — consumido pelo comentário do PR para render de tabela por viewport/tema
+const summary = {
+  title: values.title,
+  generatedAt: new Date().toISOString(),
+  total: rows.length,
+  cases: rows.map((r) => ({
+    anchor: r.anchor,
+    label: r.label,
+    viewport: r.viewport,
+    theme: r.theme,
+    hasDiff: Boolean(r.dif),
+  })),
+};
+writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf8');
 console.log(`[visual-diff] ${rows.length} caso(s) → ${outHtml}`);
+

@@ -237,6 +237,30 @@ Todos os scripts usam `--project=chromium-public` para consistência com o CI.
 
 ---
 
+### E2E · Snapshots visuais do card "Condições" (Quote Builder)
+
+Spec: `e2e/ui/quote-conditions-visual.spec.ts` — roda em **6 combinações** (viewports 375 / 768 / 1280 × temas `light` / `dark`). Baselines em `e2e/ui/__screenshots__/quote-conditions-visual.spec.ts/` seguem o padrão `quote-conditions-<viewport>-<theme>.png`.
+
+**Rodar localmente (mesmos flags do CI — `chromium-public`, `--trace=retain-on-failure`, gera HTML preview em falha):**
+```bash
+npm run e2e:quote-conditions           # valida contra baselines
+npm run e2e:quote-conditions:update    # regenera baselines (light + dark)
+```
+
+**No CI:**
+- **PR check (bloqueante):** `.github/workflows/e2e-quote-conditions-pr-check.yml` — falha em qualquer divergência visual. Em falha: anexa `playwright-report/`, `test-results/` (traces + vídeos), pasta `diff-artifacts/` e `visual-diff-report/index.html` (baseline × actual × diff). O comentário no PR inclui **tabela por viewport/tema** (ok vs mudou) com links âncora diretos para cada caso no HTML preview.
+- **Atualização manual (`workflow_dispatch`):** `E2E · Update Quote Conditions snapshots`.
+  - Modo padrão (`safe_mode=true`, **recomendado**): primeiro roda o spec **sem** `--update-snapshots`; **só regenera e commita** os baselines se a falha for por diferença visual (`toHaveScreenshot`). Evita rewrite acidental de baselines quando a falha real é código quebrado, `500`, timeout, etc.
+  - Modo `safe_mode=false`: comportamento antigo — força `--update-snapshots` sem verificar.
+
+**Mudou nome/sufixo de baseline (ex.: introdução do `-dark`)?**  
+Renomear ou remover o PNG antigo faz o Playwright reportar snapshot faltando na primeira execução. Fluxo correto:
+1. Rode `npm run e2e:quote-conditions:update` (ou o workflow manual em modo padrão) para gerar todos os PNGs sob o novo nome.
+2. Verifique com `git status` que apenas os PNGs com o novo sufixo foram criados e nenhum antigo permaneceu órfão.
+3. Commite juntos código + baselines para manter a bisseção verde.
+
+---
+
 
 
 ## 📁 Estrutura de Pastas
