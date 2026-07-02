@@ -83,11 +83,14 @@ for (const variant of VARIANTS) {
           expect(metrics.ariaLabel?.length ?? 0).toBeGreaterThan(3);
           // texto visível não pode ultrapassar o container.
           expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
-          // botão inteiro dentro do viewport (sem clipping pela borda direita/esquerda).
+          // botão inteiro dentro do viewport (sem clipping H nem V).
           const btnBox = await btn.boundingBox();
           expect(btnBox).not.toBeNull();
+          const vpH = page.viewportSize()?.height ?? 720;
           expect(btnBox!.x).toBeGreaterThanOrEqual(-1);
           expect(btnBox!.x + btnBox!.width).toBeLessThanOrEqual(viewportWidth + 1);
+          expect(btnBox!.y).toBeGreaterThanOrEqual(-1);
+          expect(btnBox!.y + btnBox!.height).toBeLessThanOrEqual(vpH + 1);
         }
       });
     });
