@@ -326,7 +326,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjDigits = cnpj.replace(/\D/g, '');
+    const cnpjDigits = normalizeCnpj(cnpj);
     if (cnpjDigits.length > 0 && !validateCnpj(cnpjDigits)) {
       setCnpjError('CNPJ inválido');
       toast.error('CNPJ informado é inválido');
