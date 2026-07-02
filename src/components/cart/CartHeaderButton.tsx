@@ -152,6 +152,43 @@ export function CartHeaderButton() {
     restoreItems,
   } = cartContext;
 
+  const handleRemoveWithUndo = (
+    cartId: string,
+    item: {
+      id: string;
+      product_id: string;
+      product_name: string;
+      product_sku: string | null;
+      product_image_url: string | null;
+      product_price: number;
+      quantity: number;
+      color_name: string | null;
+      color_hex: string | null;
+      notes: string | null;
+      sort_order: number | null;
+    },
+  ) => {
+    const snapshot = {
+      product_id: item.product_id,
+      product_name: item.product_name,
+      product_sku: item.product_sku ?? undefined,
+      product_image_url: item.product_image_url ?? undefined,
+      product_price: item.product_price,
+      quantity: item.quantity,
+      color_name: item.color_name ?? undefined,
+      color_hex: item.color_hex ?? undefined,
+      notes: item.notes ?? undefined,
+      sort_order: item.sort_order ?? undefined,
+    };
+    removeItem(item.id);
+    showUndoToast({
+      title: 'Item removido',
+      description: item.product_name,
+      duration: 5000,
+      onUndo: () => restoreItems(cartId, [snapshot]),
+    });
+  };
+
   // Debug em dev: rastreia activeCartId, fallback e collapsedIds.
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
