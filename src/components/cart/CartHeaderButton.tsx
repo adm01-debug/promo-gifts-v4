@@ -152,6 +152,43 @@ export function CartHeaderButton() {
     restoreItems,
   } = cartContext;
 
+  const handleRemoveWithUndo = (
+    cartId: string,
+    item: {
+      id: string;
+      product_id: string;
+      product_name: string;
+      product_sku: string | null;
+      product_image_url: string | null;
+      product_price: number;
+      quantity: number;
+      color_name: string | null;
+      color_hex: string | null;
+      notes: string | null;
+      sort_order: number | null;
+    },
+  ) => {
+    const snapshot = {
+      product_id: item.product_id,
+      product_name: item.product_name,
+      product_sku: item.product_sku ?? undefined,
+      product_image_url: item.product_image_url ?? undefined,
+      product_price: item.product_price,
+      quantity: item.quantity,
+      color_name: item.color_name ?? undefined,
+      color_hex: item.color_hex ?? undefined,
+      notes: item.notes ?? undefined,
+      sort_order: item.sort_order ?? undefined,
+    };
+    removeItem(item.id);
+    showUndoToast({
+      title: 'Item removido',
+      description: item.product_name,
+      duration: 5000,
+      onUndo: () => restoreItems(cartId, [snapshot]),
+    });
+  };
+
   // Debug em dev: rastreia activeCartId, fallback e collapsedIds.
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
@@ -640,7 +677,7 @@ export function CartHeaderButton() {
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             if (item.quantity <= 1) {
-                                              removeItem(item.id);
+                                              handleRemoveWithUndo(cart.id, item);
                                             } else {
                                               updateItemQuantity(item.id, item.quantity - 1);
                                             }
@@ -689,7 +726,7 @@ export function CartHeaderButton() {
                                     className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover/item:opacity-100"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      removeItem(item.id);
+                                      handleRemoveWithUndo(cart.id, item);
                                     }}
                                   >
                                     <X aria-hidden="true" className="h-3 w-3" />
