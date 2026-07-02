@@ -317,34 +317,7 @@ export default function QuoteBuilderPage() {
                 )}
               </div>
 
-              {/* Validade */}
-              <div className="space-y-3 rounded-2xl border border-border/50 bg-card p-4">
-                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
-                  <span className="text-primary">📅</span>Validade | Proposta
-                </h3>
-                <Select
-                  value={s.validityDays}
-                  onValueChange={(val) => {
-                    s.setValidityDays(val);
-                    s.setValidUntil(
-                      format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
-                    );
-                  }}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 dia</SelectItem>
-                    <SelectItem value="3">3 dias</SelectItem>
-                    <SelectItem value="7">7 dias</SelectItem>
-                    <SelectItem value="15">15 dias</SelectItem>
-                    <SelectItem value="30">30 dias</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Condições Comerciais */}
+              {/* Condições Comerciais (inclui Validade + Forma + Prazo de Pagamento na mesma linha) */}
               <div
                 className={cn(
                   'space-y-3 rounded-2xl border bg-card p-4',
@@ -381,82 +354,113 @@ export default function QuoteBuilderPage() {
                 {!conditionsCollapsed && (
                   <div id="quote-conditions-body" className="space-y-3">
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Validade | Proposta */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      <span className="mr-1">📅</span>Validade | Proposta
+                    </Label>
+                    <Select
+                      value={s.validityDays}
+                      onValueChange={(val) => {
+                        s.setValidityDays(val);
+                        s.setValidUntil(
+                          format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
+                        );
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 dia</SelectItem>
+                        <SelectItem value="3">3 dias</SelectItem>
+                        <SelectItem value="7">7 dias</SelectItem>
+                        <SelectItem value="15">15 dias</SelectItem>
+                        <SelectItem value="30">30 dias</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label
-                    className={cn(
-                      'text-xs',
-                      s.validationErrors.includes('forma_pagamento')
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Forma | Pagamento{' '}
-                    {s.validationErrors.includes('forma_pagamento') && (
-                      <span className="ml-1">*</span>
-                    )}
-                  </Label>
-                  <Select
-                    data-testid="payment-method-select-root"
-                    value={s.paymentMethod}
-                    onValueChange={s.setPaymentMethod}
-                  >
-                    <SelectTrigger
-                      data-testid="payment-method-select"
+                  {/* Forma | Pagamento */}
+                  <div className="space-y-1.5">
+                    <Label
                       className={cn(
-                        'h-8 text-xs',
-                        s.validationErrors.includes('forma_pagamento') && 'border-destructive',
+                        'text-xs',
+                        s.validationErrors.includes('forma_pagamento')
+                          ? 'text-destructive'
+                          : 'text-muted-foreground',
                       )}
                     >
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="boleto">Boleto Bancário</SelectItem>
-                      <SelectItem value="pix_transferencia">
-                        Transferência Bancária / Pix
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                      Forma | Pagamento{' '}
+                      {s.validationErrors.includes('forma_pagamento') && (
+                        <span className="ml-1">*</span>
+                      )}
+                    </Label>
+                    <Select
+                      data-testid="payment-method-select-root"
+                      value={s.paymentMethod}
+                      onValueChange={s.setPaymentMethod}
+                    >
+                      <SelectTrigger
+                        data-testid="payment-method-select"
+                        className={cn(
+                          'h-8 text-xs',
+                          s.validationErrors.includes('forma_pagamento') && 'border-destructive',
+                        )}
+                      >
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="boleto">Boleto Bancário</SelectItem>
+                        <SelectItem value="pix_transferencia">
+                          Transferência Bancária / Pix
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label
-                    className={cn(
-                      'text-xs',
-                      s.validationErrors.includes('prazo_pagamento')
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Prazo | Pagamento{' '}
-                    {s.validationErrors.includes('prazo_pagamento') && (
-                      <span className="ml-1">*</span>
-                    )}
-                  </Label>
-                  <Select
-                    data-testid="payment-terms-select-root"
-                    value={s.paymentTerms}
-                    onValueChange={s.setPaymentTerms}
-                  >
-                    <SelectTrigger
-                      data-testid="payment-terms-select"
+                  {/* Prazo | Pagamento */}
+                  <div className="space-y-1.5">
+                    <Label
                       className={cn(
-                        'h-8 text-xs',
-                        s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
+                        'text-xs',
+                        s.validationErrors.includes('prazo_pagamento')
+                          ? 'text-destructive'
+                          : 'text-muted-foreground',
                       )}
                     >
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7_dias">7 dias a partir da entrega</SelectItem>
-                      <SelectItem value="14_dias">14 dias a partir da entrega</SelectItem>
-                      <SelectItem value="21_dias">21 dias a partir da entrega</SelectItem>
-                      <SelectItem value="28_dias">28 dias a partir da entrega</SelectItem>
-                      <SelectItem value="7_14_dias">7 e 14 dias a partir da entrega</SelectItem>
-                      <SelectItem value="50_50">50/50 | 50% entrada / 50% após entrega</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      Prazo | Pagamento{' '}
+                      {s.validationErrors.includes('prazo_pagamento') && (
+                        <span className="ml-1">*</span>
+                      )}
+                    </Label>
+                    <Select
+                      data-testid="payment-terms-select-root"
+                      value={s.paymentTerms}
+                      onValueChange={s.setPaymentTerms}
+                    >
+                      <SelectTrigger
+                        data-testid="payment-terms-select"
+                        className={cn(
+                          'h-8 text-xs',
+                          s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
+                        )}
+                      >
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7_dias">7 dias a partir da entrega</SelectItem>
+                        <SelectItem value="14_dias">14 dias a partir da entrega</SelectItem>
+                        <SelectItem value="21_dias">21 dias a partir da entrega</SelectItem>
+                        <SelectItem value="28_dias">28 dias a partir da entrega</SelectItem>
+                        <SelectItem value="7_14_dias">7 e 14 dias a partir da entrega</SelectItem>
+                        <SelectItem value="50_50">50/50 | 50% entrada / 50% após entrega</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
 
                 {/* Entrega */}
                 <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
