@@ -544,6 +544,7 @@ export default function QuoteBuilderPage() {
                       </button>
                     </div>
                   </div>
+                  <div className="w-full md:w-2/5">
                   {s.deliveryMode === 'prazo' ? (
                     <Select
                       data-testid="delivery-time-select-root"
@@ -596,6 +597,7 @@ export default function QuoteBuilderPage() {
                       </PopoverContent>
                     </Popover>
                   )}
+                  </div>
                 </div>
 
                 {/* Frete */}
