@@ -23,8 +23,20 @@ declare global {
   }
 }
 
+/**
+ * Lê `?initial=<valor mascarado ou não>` para simular abertura do
+ * formulário em modo "Editar" com um CNPJ já persistido (possivelmente
+ * mascarado). Normalizamos para dígitos-only ao carregar — o display
+ * continua via maskCnpj.
+ */
+function readInitialFromQuery(): string {
+  if (typeof window === 'undefined') return '';
+  const raw = new URLSearchParams(window.location.search).get('initial') ?? '';
+  return normalizeCnpj(raw);
+}
+
 export default function CnpjFormHarness() {
-  const [cnpj, setCnpj] = useState('');
+  const [cnpj, setCnpj] = useState<string>(() => readInitialFromQuery());
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<SavedShape | null>(null);
 
