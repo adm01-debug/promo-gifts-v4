@@ -29,7 +29,7 @@ import {
   Search,
   Truck,
 } from 'lucide-react';
-import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj } from '@/utils/masks';
+import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj, validateCnpj } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
 import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
@@ -262,10 +262,16 @@ export function SupplierFormDialog({
                 <div className="flex gap-1.5">
                   <Input
                     value={maskCnpj(editingSupplier.cnpj || '')}
+                    data-testid="admin-cnpj-input"
                     onChange={(e) => updateField('cnpj', normalizeCnpj(e.target.value))}
                     className={`${fieldClass} flex-1 font-mono`}
                     maxLength={18}
                     inputMode="numeric"
+                    aria-invalid={(() => {
+                      const d = (editingSupplier.cnpj ?? '').replace(/\D/g, '');
+                      return d.length > 0 && (d.length !== 14 || !validateCnpj(d));
+                    })()}
+                    aria-describedby="admin-cnpj-error"
                   />
                   <Button
                     type="button"
@@ -284,6 +290,33 @@ export function SupplierFormDialog({
                     )}
                   </Button>
                 </div>
+                {(() => {
+                  const d = (editingSupplier.cnpj ?? '').replace(/\D/g, '');
+                  if (d.length === 0) return null;
+                  if (d.length !== 14) {
+                    return (
+                      <p
+                        id="admin-cnpj-error"
+                        data-testid="admin-cnpj-error"
+                        className="mt-1 text-xs text-destructive"
+                      >
+                        CNPJ deve ter 14 dígitos (atual: {d.length}).
+                      </p>
+                    );
+                  }
+                  if (!validateCnpj(d)) {
+                    return (
+                      <p
+                        id="admin-cnpj-error"
+                        data-testid="admin-cnpj-error"
+                        className="mt-1 text-xs text-destructive"
+                      >
+                        CNPJ inválido — verifique os dígitos.
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
               <div>
                 <Label className="text-xs font-semibold">Inscrição Estadual</Label>

@@ -206,7 +206,9 @@ export function useSuppliersManager() {
   const handleEdit = (supplier: Supplier) => {
     // BUG-25 FIX: removed dead code blocks for address_details / social_details
     // (those fields do not exist in the real DB schema)
-    const s: Partial<Supplier> = { ...supplier };
+    // CNPJ pode vir do BD com máscara/espaços — normalizamos para dígitos-only
+    // no formulário; o display continua via `maskCnpj(...)` nos inputs/cards.
+    const s: Partial<Supplier> = { ...supplier, cnpj: normalizeCnpj(supplier.cnpj) || null };
     setEditingSupplier(s);
 
     // BUG-16 FIX: contacts may come from DB as parsed object (JSONB) or as JSON string
