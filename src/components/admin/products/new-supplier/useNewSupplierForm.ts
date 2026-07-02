@@ -432,11 +432,23 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         transportadoraId,
       );
 
+      let persistableCnpj: string | null;
+      try {
+        persistableCnpj = assertPersistableCnpj(cnpj);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'CNPJ inválido';
+        setCnpjError(msg);
+        toast.error(msg);
+        setSaving(false);
+        return;
+      }
+
       const data: Record<string, unknown> = {
         name: name.trim(),
         code: generatedCode,
         trading_name: tradingName.trim() || null,
-        cnpj: assertPersistableCnpj(cnpj),
+        cnpj: persistableCnpj,
+
         active: isActive,
         organization_id: ORGANIZATION_ID,
         contact_name: contacts[0]?.name?.trim() || null,
@@ -520,7 +532,16 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       }
     } catch (err: unknown) {
       logger.error('Failed to create supplier', err);
+      const msg = err instanceof Error ? err.message : '';
+      if (/cnpj/i.test(msg)) {
+        setCnpjError(
+          /d[ií]gito|digits|14/i.test(msg)
+            ? 'CNPJ deve conter apenas 14 dígitos'
+            : 'CNPJ inválido — verifique os dígitos',
+        );
+      }
       toast.error('Erro ao criar fornecedor');
+
     } finally {
       setSaving(false);
     }
