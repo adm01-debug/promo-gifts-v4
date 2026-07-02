@@ -29,7 +29,7 @@ import {
   Search,
   Truck,
 } from 'lucide-react';
-import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
+import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
 import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
@@ -261,10 +261,11 @@ export function SupplierFormDialog({
                 <Label className="text-xs font-semibold">CNPJ</Label>
                 <div className="flex gap-1.5">
                   <Input
-                    value={editingSupplier.cnpj || ''}
-                    onChange={(e) => updateField('cnpj', maskCnpj(e.target.value))}
+                    value={maskCnpj(editingSupplier.cnpj || '')}
+                    onChange={(e) => updateField('cnpj', normalizeCnpj(e.target.value))}
                     className={`${fieldClass} flex-1 font-mono`}
                     maxLength={18}
+                    inputMode="numeric"
                   />
                   <Button
                     type="button"
