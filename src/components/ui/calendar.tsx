@@ -26,7 +26,7 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-4', className)}
+      className={cn('pointer-events-auto p-2', className)}
       formatters={{
         formatWeekdayName: (date) => {
           const narrow = ptBR.localize?.day(date.getDay(), { width: 'narrow' }) ?? '';
@@ -44,21 +44,21 @@ function Calendar({
       }}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-4',
-        month: 'space-y-3',
-        caption: 'flex justify-between items-center px-1 pb-3',
-        caption_label: 'text-2xl font-bold tracking-tight text-foreground capitalize',
+        month: 'space-y-1.5',
+        caption: 'flex justify-between items-center px-1 pb-1.5',
+        caption_label: 'text-base font-bold tracking-tight text-foreground capitalize',
         nav: 'flex items-center gap-1',
         nav_button:
-          'inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent p-0 text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'inline-flex h-5 w-5 items-center justify-center rounded-md bg-transparent p-0 text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         nav_button_previous: 'static',
         nav_button_next: 'static',
         table: 'w-full border-collapse',
         head_row: 'flex',
         head_cell:
-          'text-muted-foreground/70 w-10 h-8 font-semibold text-[11px] flex items-center justify-center',
-        row: 'flex w-full mt-1',
-        cell: 'h-10 w-10 text-center text-sm p-0 relative focus-within:relative focus-within:z-20',
-        day: 'inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+          'text-muted-foreground/70 w-6 h-5 font-semibold text-[9px] flex items-center justify-center',
+        row: 'flex w-full mt-0.5',
+        cell: 'h-6 w-6 text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20',
+        day: 'inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'bg-foreground text-background font-semibold hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background',
@@ -72,9 +72,10 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-        IconRight: () => <ChevronRight className="h-4 w-4" />,
+        IconLeft: () => <ChevronLeft className="h-3 w-3" />,
+        IconRight: () => <ChevronRight className="h-3 w-3" />,
       }}
+
       {...props}
     />
   );
