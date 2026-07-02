@@ -91,6 +91,7 @@ import {
   saveCollapsedItems,
 } from '@/lib/quotes/collapsedItemsStorage';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { releaseScrollLockIfIdle } from '@/lib/dom/scroll-lock';
 import { persistItemsOrder } from '@/services/quoteItemsReorder';
 import { logger } from '@/lib/logger';
