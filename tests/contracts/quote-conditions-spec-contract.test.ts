@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const SPEC = readFileSync(
-  resolve(__dirname, '../quote-conditions-visual.spec.ts'),
+  resolve(__dirname, '../../e2e/ui/quote-conditions-visual.spec.ts'),
   'utf8',
 );
 
