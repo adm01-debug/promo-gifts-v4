@@ -208,6 +208,37 @@ npm run build        # build de produção
 
 ---
 
+### E2E · Snapshots visuais de AlertDialog e ConfirmDialog
+
+Specs de snapshot rodam contra harnesses públicas (`/__test/alert-dialog`, `/__test/confirm-dialog`) em 4 viewports críticos (180 / 320 / 375 / 768 px) e validam bounding box + ausência de clipping H/V.
+
+**Bootstrap (1x por máquina):**
+```bash
+npm run e2e:bootstrap        # bun install --frozen-lockfile + playwright install --with-deps chromium
+```
+
+**Rodar os specs (valida contra baselines PNG atuais):**
+```bash
+npm run e2e:alert-dialog     # apenas AlertDialog
+npm run e2e:confirm-dialog   # apenas ConfirmDialog
+npm run e2e:dialogs          # ambos em sequência
+```
+
+**Atualizar baselines PNG (após mudança intencional no visual):**
+```bash
+npm run e2e:alert-dialog:update
+npm run e2e:confirm-dialog:update
+npm run e2e:dialogs:update
+```
+
+Todos os scripts usam `--project=chromium-public` para consistência com o CI.
+
+**Alternativa sem tocar em máquina local:** disparar manualmente os workflows **E2E · Update Alert Dialog snapshots** e **E2E · Update Confirm Dialog snapshots** em Actions — eles rodam `--update-snapshots` e commitam os PNGs (com `concurrency` + `timeout-minutes: 20` para evitar travamentos, e `paths-ignore` nos próprios PNGs para não haver loop).
+
+---
+
+
+
 ## 📁 Estrutura de Pastas
 
 ```
