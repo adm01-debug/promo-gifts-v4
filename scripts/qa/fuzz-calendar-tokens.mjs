@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Fuzz determinístico do calendar.tsx: 500 combinações validam invariantes
- * de tokens semânticos (sem cores hard-coded, presença dos utilitários chave).
+ * Fuzz determinístico do calendar.tsx (iOS redesign): valida invariantes
+ * de tokens semânticos e ausência de cores hard-coded em 500 iterações.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -15,37 +15,35 @@ const FORBIDDEN = [
   /\bbg-black\b/,
   /\btext-white\b/,
   /#[0-9a-fA-F]{3,6}\b/,
-  /variant:\s*['"]outline['"]/, // nav_button virou ghost
 ];
 const REQUIRED = [
-  /rounded-lg/,
+  /rounded-full/,
   /bg-primary/,
   /text-primary-foreground/,
-  /ring-1 ring-primary\/40/,
-  /muted-foreground\/70/,
-  /muted-foreground\/40/,
-  /muted-foreground\/30/,
+  /bg-foreground/,
+  /text-background/,
+  /text-destructive/,
+  /text-2xl/,
+  /font-bold/,
+  /tracking-tight/,
   /hover:bg-accent/,
-  /grid-cols-3|grid.*3/, // não aplicável ao arquivo do calendar, verificado em Quote
+  /invisible/,
 ];
-const REQUIRED_CAL_ONLY = REQUIRED.slice(0, -1);
 
 let pass = 0;
 let fail = 0;
 const gaps = [];
 
 for (let i = 0; i < 500; i++) {
-  // "amostra" o arquivo em slices para simular resiliência a variações;
-  // as invariantes devem valer sempre no arquivo completo.
   const slice = CAL.slice(0, CAL.length - (i % 5));
   let ok = true;
   for (const r of FORBIDDEN) {
     if (r.test(slice)) {
       ok = false;
-      gaps.push(`iter ${i}: proibido encontrado ${r}`);
+      gaps.push(`iter ${i}: proibido ${r}`);
     }
   }
-  for (const r of REQUIRED_CAL_ONLY) {
+  for (const r of REQUIRED) {
     if (!r.test(slice)) {
       ok = false;
       gaps.push(`iter ${i}: faltou ${r}`);
@@ -54,7 +52,7 @@ for (let i = 0; i < 500; i++) {
   ok ? pass++ : fail++;
 }
 
-console.log(`Fuzz calendar tokens: ${pass}/500 pass, ${fail} fail`);
+console.log(`Fuzz calendar tokens (iOS): ${pass}/500 pass, ${fail} fail`);
 if (fail) {
   for (const g of gaps.slice(0, 10)) console.log('  -', g);
   process.exit(1);
