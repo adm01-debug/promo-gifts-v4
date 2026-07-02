@@ -450,7 +450,7 @@ export function useSuppliersManager() {
             .replace(/[^A-Z0-9_]/g, '')
             .slice(0, 20),
         trading_name: es.trading_name?.trim() || null,
-        cnpj: es.cnpj?.trim() || null,
+        cnpj: assertPersistableCnpj(es.cnpj),
         active: es.active ?? true,
         contact_name: contacts[0]?.name?.trim() || null,
         contact_person: contacts[0]?.role?.trim() || null,
