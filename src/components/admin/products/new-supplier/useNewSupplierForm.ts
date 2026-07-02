@@ -436,7 +436,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         name: name.trim(),
         code: generatedCode,
         trading_name: tradingName.trim() || null,
-        cnpj: cnpj.trim() || null,
+        cnpj: assertPersistableCnpj(cnpj),
         active: isActive,
         organization_id: ORGANIZATION_ID,
         contact_name: contacts[0]?.name?.trim() || null,
