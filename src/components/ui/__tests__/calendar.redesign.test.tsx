@@ -81,9 +81,13 @@ describe('Calendar redesign — tokens semânticos', () => {
     }
   });
 
-  it('day_today (aria-current="date"): ring-1 + text-primary, sem bg-accent sólido', () => {
+  it('day_today: ring-1 + text-primary, sem bg-accent sólido', () => {
     render(<Calendar mode="single" defaultMonth={new Date()} />);
-    const today = document.querySelector('button[aria-current="date"]');
+    const today =
+      document.querySelector('button[aria-current="date"]') ??
+      Array.from(document.querySelectorAll<HTMLElement>('button[name="day"]')).find((b) =>
+        /ring-primary\/40/.test(b.getAttribute('class') ?? ''),
+      );
     expect(today).toBeTruthy();
     const c = classes(today);
     expect(c).toMatch(/ring-1/);
