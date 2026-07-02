@@ -36,5 +36,6 @@ export const publicRoutes = (
     <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
     <Route path="/__test/confirm-dialog" element={<ConfirmDialogHarness />} />
     <Route path="/__test/alert-dialog" element={<AlertDialogHarness />} />
+    <Route path="/__test/dialog" element={<DialogHarness />} />
   </>
 );
