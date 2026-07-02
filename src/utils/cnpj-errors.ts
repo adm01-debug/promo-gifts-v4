@@ -38,19 +38,25 @@ export function mapCnpjError(input: unknown): {
   code: CnpjErrorCode;
   message: string;
 } {
-  const raw =
-    typeof input === 'string'
-      ? input
-      : (input as { message?: string; code?: string; details?: string })
-          ?.message ?? '';
-  const code =
-    typeof input === 'object' && input !== null
-      ? String((input as { code?: string }).code ?? '')
-      : '';
-  const details =
-    typeof input === 'object' && input !== null
-      ? String((input as { details?: string }).details ?? '')
-      : '';
+  // Leituras defensivas: getters de erros externos podem lançar,
+  // e um mapper de erro NUNCA pode ele mesmo explodir.
+  const safeRead = (key: 'message' | 'code' | 'details'): string => {
+    try {
+      if (typeof input !== 'object' || input === null) return '';
+      const v = (input as Record<string, unknown>)[key];
+      return v == null ? '' : String(v);
+    } catch {
+      return '';
+    }
+  };
+  let raw = '';
+  try {
+    raw = typeof input === 'string' ? input : safeRead('message');
+  } catch {
+    raw = '';
+  }
+  const code = safeRead('code');
+  const details = safeRead('details');
   const hay = `${raw} ${details}`.toLowerCase();
 
   if (code === '23505' || /duplic|already exists|unique/i.test(hay)) {
@@ -67,3 +73,4 @@ export function mapCnpjError(input: unknown): {
   }
   return { code: 'cnpj_unknown', message: CNPJ_ERROR_MESSAGES.cnpj_unknown };
 }
+
