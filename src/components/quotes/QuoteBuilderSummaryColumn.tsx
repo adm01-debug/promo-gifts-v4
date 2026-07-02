@@ -141,6 +141,8 @@ interface Props {
   setSkipAutosaveSortOrder?: (v: boolean) => void;
   /** Abre o seletor de produtos para adicionar um novo item ao orçamento. */
   onAddProduct?: () => void;
+  /** Restaura um item removido no índice original — usado pelo undo do toast. */
+  onRestore?: (item: QuoteItem, index: number) => void;
 }
 
 
