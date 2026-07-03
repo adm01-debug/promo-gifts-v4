@@ -653,6 +653,10 @@ export default function QuoteBuilderPage() {
                 </div>
 
 
+
+
+
+
                 {s.companyInfo?.id && (
                   <a
                     href={`/ferramentas/bi?clientId=${s.companyInfo.id}`}
