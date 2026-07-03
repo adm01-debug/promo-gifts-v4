@@ -35,10 +35,16 @@ const RATIOS = (args.get("ratios") ?? "0.005,0.01,0.015,0.02,0.03")
   .map(Number)
   .filter((n) => !Number.isNaN(n));
 
+const DRY_RUN = args.has("dry-run") || process.env.CALIBRATE_DRY_RUN === "1";
+
 const OUT_DIR = "visual-diff-report";
 mkdirSync(OUT_DIR, { recursive: true });
 
-console.log("▶ Rodando o spec de colapso para gerar -actual.png / -diff.png…");
+console.log(
+  DRY_RUN
+    ? "▶ [dry-run] Rodando spec (falhas não abortam) para gerar -actual.png / -diff.png…"
+    : "▶ Rodando o spec de colapso para gerar -actual.png / -diff.png…",
+);
 const run = spawnSync(
   "npx",
   [
@@ -48,9 +54,12 @@ const run = spawnSync(
     "--project=chromium-authed",
     "--reporter=list",
   ],
-  { stdio: "inherit", env: { ...process.env, CI: "true" } },
+  {
+    stdio: "inherit",
+    env: { ...process.env, CI: "true", ...(DRY_RUN ? { PW_FORCE_UPDATE: "0" } : {}) },
+  },
 );
-if (run.status !== 0) {
+if (run.status !== 0 && !DRY_RUN) {
   console.warn("⚠ spec retornou não-zero (esperado se houver diffs). Continuando…");
 }
 
