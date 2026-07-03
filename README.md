@@ -595,36 +595,59 @@ e é servido em `/__visual/calendar`.
 
 ### Rodar / atualizar localmente
 
+Existem **dois níveis** de comandos npm:
+
+| Comando | Escopo | Modo | Uso típico |
+|---|---|---|---|
+| `npm run e2e:calendar` | **Todos** os specs do calendário | Leitura (falha se divergir) | Verificar tudo antes de abrir PR |
+| `npm run e2e:calendar:update` | **Todos** os specs do calendário | Escrita (`--update-snapshots`) | Refactor amplo do componente |
+| `npm run e2e:calendar:conditions` | Só cenários **"Condições"** (`--grep`) | Leitura (falha se divergir) | Validar mudanças focadas no calendário do Orçamento |
+| `npm run e2e:calendar:conditions:update` | Só cenários **"Condições"** | Escrita (`--update-snapshots`) | Regerar somente os PNGs de "Condições" |
+
 ```bash
-# Rodar o spec contra o baseline atual (falha se divergir)
-npm run e2e:calendar
+# 1) Validar em modo leitura (o que o CI roda no PR)
+npm run e2e:calendar:conditions
+#   → Falha com diff visual se você alterou o calendário sem atualizar as PNGs.
+#   → Os diffs ficam em test-results/**/*-diff.png para inspeção local.
 
-# Regenerar os PNGs (usa a flag --update-snapshots do Playwright)
-npm run e2e:calendar:update
-```
+# 2) Se a mudança visual é intencional, regenere só "Condições"
+npm run e2e:calendar:conditions:update
 
-Depois de rodar `:update`, revise o diff e comite os PNGs alterados:
-
-```bash
+# 3) Revise as PNGs alteradas e comite
 git add e2e/ui/calendar-visual.spec.ts-snapshots
-git commit -m "chore(e2e): update calendar visual baselines"
+git commit -m "chore(e2e): update calendar conditions baselines"
 git push
 ```
+
+> **Regra:** rode primeiro o modo leitura (`:conditions`) para confirmar que
+> só divergiu o que você esperava. Só então rode `:conditions:update`.
+> Nunca comite baselines sem antes ter aberto os PNGs `*-diff.png`.
 
 ### Disparar o workflow no CI (manual)
 
 1. GitHub → **Actions** → workflow **"E2E · Update Calendar snapshots"**
 2. Botão **Run workflow** → escolha a branch → **Run**
-3. Deixe `safe_mode = true` para só reescrever baselines quando houver diff
-   visual real (falhas não-visuais abortam o rewrite). Desmarque apenas para
-   forçar `--update-snapshots`.
+3. Escolha o modo:
+   - **`safe_mode = true`** (padrão): só reescreve baselines quando o dry-run
+     falha por diff visual. Falhas não-visuais (erro real de teste) abortam o
+     rewrite. Use no dia a dia.
+   - **`safe_mode = false`**: força `--update-snapshots` sempre. Use apenas
+     para **semear PNGs pela primeira vez** ou depois de um refactor grande
+     em que você **já sabe** que todas as baselines precisam ser regravadas.
 4. O job comita os PNGs de volta na branch escolhida como
-   `chore(e2e): update calendar visual baselines (safe|force)`.
+   `chore(e2e): update calendar visual baselines (safe|force)` e sobe os
+   artefatos `calendar-visual-diffs-*` e `calendar-baselines-*`.
 
 Ou via `gh` CLI:
 
 ```bash
+# Uso normal (safe)
 gh workflow run e2e-update-calendar-snapshots.yml --ref main
+
+# Seed inicial ou refactor grande (force)
+gh workflow run e2e-update-calendar-snapshots.yml --ref main \
+  -f branch=main -f safe_mode=false
+
 gh run watch
 ```
 
@@ -634,8 +657,14 @@ gh run watch
   automaticamente o **update** em modo safe.
 - **Pull Request** que toque os mesmos arquivos dispara
   **"E2E · Check Calendar snapshots"**, que roda o spec **sem**
-  `--update-snapshots` e **falha o CI** em qualquer divergência de baseline
-  (diffs vão para o artefato `calendar-visual-diffs`).
+  `--update-snapshots` e **falha o CI** em qualquer divergência de baseline.
+  Quando falha, o workflow:
+  - Sobe `calendar-visual-diffs` (antes / depois / diff em PNG) e
+    `calendar-playwright-report` (HTML report navegável) como artefatos.
+  - Publica um **comentário no PR** com links diretos para os artefatos e o
+    comando `npm run e2e:calendar:conditions:update` pronto para copiar
+    quando a mudança visual é intencional.
+  - Escreve o mesmo resumo no **Job Summary** do run.
 
 ---
 
