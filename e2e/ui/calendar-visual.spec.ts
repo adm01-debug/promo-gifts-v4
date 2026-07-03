@@ -11,6 +11,19 @@ const VIEWPORTS = [
   { name: 'xl', width: 1280, height: 900 },
 ] as const;
 
+/**
+ * Cenários adicionais do calendário "Condições":
+ * - Meses com layouts distintos (28/30/31 dias, ano bissexto, virada de ano)
+ * - Estados de seleção (nenhum, primeiro dia, último dia)
+ */
+const SCENARIOS = [
+  { name: 'jul-2026-selected-day3', query: 'month=2026-07&selected=day-3' },
+  { name: 'feb-2025-28d-no-selection', query: 'month=2025-02&selected=none' },
+  { name: 'feb-2024-leap-selected-first', query: 'month=2024-02&selected=first' },
+  { name: 'apr-2026-30d-selected-last', query: 'month=2026-04&selected=last' },
+  { name: 'dec-2026-year-turn-selected-day31', query: 'month=2026-12&selected=day-31' },
+] as const;
+
 type CalendarMetrics = {
   card: { width: number; height: number };
   table: { left: number; right: number };
@@ -71,6 +84,29 @@ test.describe('Calendar — baselines PNG e distribuição responsiva', () => {
       expect(Math.abs(metrics.lastCell.right - metrics.table.right)).toBeLessThanOrEqual(1);
 
       await expect(card).toHaveScreenshot(`calendar-${vp.name}.png`, {
+        animations: 'disabled',
+        caret: 'hide',
+        maxDiffPixelRatio: 0.02,
+        scale: 'css',
+      });
+    });
+  }
+});
+
+test.describe('Calendar — cenários "Condições" (meses + seleção)', () => {
+  for (const sc of SCENARIOS) {
+    test(`cenário: ${sc.name}`, async ({ page }) => {
+      await page.setViewportSize({ width: 768, height: 1024 });
+      await gotoAndSettle(page, `${ROUTE}?${sc.query}`);
+
+      const card = page.locator(CARD);
+      await expect(card).toBeVisible();
+
+      const metrics = await readMetrics(card);
+      expect(metrics.card.width).toBe(240);
+      expect(metrics.hasOverflow).toBe(false);
+
+      await expect(card).toHaveScreenshot(`calendar-scenario-${sc.name}.png`, {
         animations: 'disabled',
         caret: 'hide',
         maxDiffPixelRatio: 0.02,
