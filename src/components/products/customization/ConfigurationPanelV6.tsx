@@ -172,7 +172,8 @@ export function ConfigurationPanelV6({
       />
       <div
         className={cn(
-          'space-y-4 rounded-lg border p-4',
+          'flex flex-col rounded-lg border p-4 transition-[gap] duration-300 ease-out motion-reduce:transition-none',
+          collapsed ? 'gap-0' : 'gap-4',
           isConfirmed ? 'border-primary/30 bg-primary/5' : 'border-border/50 bg-secondary/30',
         )}
       >
