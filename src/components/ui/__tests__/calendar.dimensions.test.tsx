@@ -40,17 +40,17 @@ describe('Calendar shrink 50% — dimensions contract', () => {
     expect(nav).toBeTruthy();
   });
 
-  it('cell usa flex-1 + h-9 (largura fluida, altura fixa, sem aspect-square nem h-10)', () => {
+  it('cell usa flex-1 + aspect-square (largura fluida, sem altura fixa h-9/h-10)', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const cells = Array.from(
-      container.querySelectorAll<HTMLElement>('[class*="flex-1"][class*="h-9"]'),
+      container.querySelectorAll<HTMLElement>('[class*="flex-1"][class*="aspect-square"]'),
     );
     expect(cells.length).toBeGreaterThanOrEqual(20);
     for (const c of cells) {
       const cls = classes(c);
       expect(cls).toMatch(/flex-1/);
-      expect(cls).toMatch(/(?:^|\s)h-9(?:\s|$)/);
-      expect(cls).not.toMatch(/aspect-square/);
+      expect(cls).toMatch(/aspect-square/);
+      expect(cls).not.toMatch(/(?:^|\s)h-9(?:\s|$)/);
       expect(cls).not.toMatch(/(?:^|\s)h-10(?:\s|$)|(?:^|\s)w-10(?:\s|$)/);
     }
   });
