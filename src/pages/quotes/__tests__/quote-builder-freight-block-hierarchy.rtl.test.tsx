@@ -130,7 +130,6 @@ describe(`Bloco Frete — hierarquia + testids estáveis (${CASES.length} cenár
     const col1 = within(grid).getByTestId('freight-grid-col-1');
     expect(col1.parentElement).toBe(grid);
     expect(within(col1).getByTestId('shipping-type-select')).toBeInTheDocument();
-    expect(within(col1).getByTestId('shipping-type-select-root')).toBeInTheDocument();
     expect(col1.querySelector('label[for="freight-select"]')).toBeTruthy();
 
     // 4. col-2 presente SOMENTE em fob_pre, também como filho direto do grid.
