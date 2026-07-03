@@ -1,44 +1,48 @@
 /**
- * @vitest-environment node
+ * Smoke estrutural: garante invariantes do bloco Frete no QuoteBuilderPage
+ * que previnem regressões de layout em diferentes larguras de tela
+ * (mobile empilhado / md+ em 3 colunas) e evitam regressões de JSX
+ * mal-balanceado como as que já causaram "Unexpected token" no build.
  *
- * Smoke: garante que QuoteBuilderPage.tsx compila (parseia via esbuild).
- * Objetivo: detectar erros como "Unexpected token" ANTES do build de deploy.
+ * Nota: a verificação de compilação real ("tsc --noEmit" + "npm run build")
+ * roda no workflow build-typecheck.yml a cada PR — este teste é a
+ * primeira linha de defesa, barata e rápida.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { transformSync } from 'esbuild';
 
-const SRC_PATH = resolve(__dirname, '../QuoteBuilderPage.tsx');
-const SRC = readFileSync(SRC_PATH, 'utf8');
+const SRC = readFileSync(resolve(__dirname, '../QuoteBuilderPage.tsx'), 'utf8');
 
-describe('QuoteBuilderPage — parse smoke', () => {
-  it('esbuild consegue transformar o arquivo sem erros de sintaxe', () => {
-    expect(() =>
-      transformSync(SRC, {
-        loader: 'tsx',
-        jsx: 'automatic',
-        sourcefile: 'QuoteBuilderPage.tsx',
-      }),
-    ).not.toThrow();
-  });
-
-  it('bloco Frete: grid responsivo (grid-cols-1 md:grid-cols-3) presente para não quebrar layout em nenhuma largura', () => {
-    // Mobile: grid-cols-1 (empilha) | md+: md:grid-cols-3 (linha)
+describe('QuoteBuilderPage — bloco Frete: layout responsivo', () => {
+  it('usa grid grid-cols-1 md:grid-cols-3 gap-3 items-end (empilha em mobile, 3 col em md+)', () => {
     expect(SRC).toMatch(
-      /grid grid-cols-1 md:grid-cols-3 gap-3 items-end[^"]*"[\s\S]{0,400}shipping-type-select-root/,
+      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">\s*<div>\s*<Select\s+data-testid="shipping-type-select-root"/,
     );
   });
 
-  it('bloco Frete: trigger e input Valor R$ compartilham o mesmo grid (sem largura full-width isolada)', () => {
-    const idx = SRC.indexOf('shipping-type-select-root');
-    expect(idx).toBeGreaterThan(0);
-    const janela = SRC.slice(idx, idx + 2000);
-    // Ambos precisam viver no mesmo grid (não pode haver </div> fechando o grid
-    // antes do shipping-cost-input).
+  it('input "Valor R$" (fob_pre) vive DENTRO do mesmo grid do trigger (2ª coluna)', () => {
+    const gridIdx = SRC.indexOf('grid grid-cols-1 md:grid-cols-3 gap-3 items-end');
+    expect(gridIdx).toBeGreaterThan(0);
+    const janela = SRC.slice(gridIdx, gridIdx + 3000);
     const fobPreIdx = janela.indexOf("s.shippingType === 'fob_pre'");
     const shippingCostIdx = janela.indexOf('shipping-cost-input');
     expect(fobPreIdx).toBeGreaterThan(0);
     expect(shippingCostIdx).toBeGreaterThan(fobPreIdx);
+  });
+
+  it('não existe bloco full-width legado envolvendo o Valor R$ (mt-1.5 + shipping-cost)', () => {
+    expect(SRC).not.toMatch(/mt-1\.5 space-y-1[^"]*"[^]*?shipping-cost-input/);
+  });
+
+  it('JSX do bloco Frete tem <div> balanceados (open == close entre o wrapper externo e o próximo irmão)', () => {
+    const start = SRC.indexOf('{/* Frete */}');
+    const end = SRC.indexOf('{s.companyInfo?.id', start);
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const bloco = SRC.slice(start, end);
+    const opens = (bloco.match(/<div\b/g) ?? []).length;
+    const closes = (bloco.match(/<\/div>/g) ?? []).length;
+    expect(opens).toBe(closes);
   });
 });
