@@ -15,13 +15,14 @@ const classes = (el: Element | null | undefined) =>
   (el?.getAttribute('class') ?? '').toLowerCase();
 
 describe('Calendar shrink 50% — dimensions contract', () => {
-  it('container root tem p-2 (não p-4)', () => {
+  it('container root tem p-1.5 (não p-4)', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const root = container.querySelector('.rdp') ?? container.firstElementChild;
     const c = classes(root);
-    expect(c).toMatch(/(^|\s)p-2(\s|$)/);
+    expect(c).toMatch(/(^|\s)p-1\.5(\s|$)/);
     expect(c).not.toMatch(/(^|\s)p-4(\s|$)/);
   });
+
 
   it('caption_label é text-[15px] (não text-2xl)', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
