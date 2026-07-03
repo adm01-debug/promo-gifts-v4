@@ -43,7 +43,24 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Validate required secrets
+        run: |
+          missing=0
+          if [ -z "$E2E_USER_EMAIL" ]; then
+            echo "::error::Secret E2E_USER_EMAIL não configurado no repositório."
+            missing=1
+          fi
+          if [ -z "$E2E_USER_PASSWORD" ]; then
+            echo "::error::Secret E2E_USER_PASSWORD não configurado no repositório."
+            missing=1
+          fi
+          if [ "$missing" -eq 1 ]; then
+            echo "::error::Configure os secrets em Settings → Secrets and variables → Actions antes de rodar este workflow."
+            exit 1
+          fi
+
       - uses: actions/setup-node@v6
+
         with:
           node-version-file: '.nvmrc'
           cache: npm
