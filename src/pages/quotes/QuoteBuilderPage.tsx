@@ -544,8 +544,9 @@ export default function QuoteBuilderPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="w-full md:w-1/4">
-                  {s.deliveryMode === 'prazo' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                   {s.deliveryMode === 'prazo' ? (
                     <Select
                       data-testid="delivery-time-select-root"
                       value={s.deliveryTime}
@@ -599,7 +600,8 @@ export default function QuoteBuilderPage() {
                         />
                       </PopoverContent>
                     </Popover>
-                  )}
+                   )}
+                    </div>
                   </div>
                 </div>
 
