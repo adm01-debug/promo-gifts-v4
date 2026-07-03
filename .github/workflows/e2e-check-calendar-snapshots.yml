@@ -1,0 +1,60 @@
+name: E2E · Check Calendar snapshots
+# Roda o spec visual do calendário SEM --update-snapshots.
+# Falha o CI se qualquer PNG divergir do baseline comitado.
+on:
+  pull_request:
+    paths:
+      - "src/components/ui/calendar.tsx"
+      - "src/pages/__visual/CalendarHarness.tsx"
+      - "e2e/ui/calendar-visual.spec.ts"
+      - "e2e/ui/calendar-visual.spec.ts-snapshots/**"
+      - ".github/workflows/e2e-check-calendar-snapshots.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-check-calendar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap
+        run: npm run e2e:bootstrap
+      - name: Start Vite
+        run: |
+          nohup bun run dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          tail -n 100 /tmp/vite.log >&2; exit 1
+      - name: Run visual check (falha em qualquer divergência)
+        run: |
+          npx playwright test e2e/ui/calendar-visual.spec.ts \
+            --project=chromium-public \
+            --reporter=list
+      - name: Upload diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-visual-diffs
+          path: |
+            test-results/**/*-diff.png
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+          if-no-files-found: ignore
