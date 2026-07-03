@@ -110,3 +110,25 @@ jobs:
           MODE="${{ github.event.inputs.safe_mode != 'false' && 'safe' || 'force' }}"
           git commit -m "chore(e2e): update calendar visual baselines (${MODE})"
           git push origin HEAD:${{ github.event.inputs.branch || github.ref_name }}
+
+      - name: Upload diffs visuais (antes/depois)
+        if: ${{ always() && (steps.dryrun.outcome == 'failure' || github.event.inputs.safe_mode == 'false') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-visual-diffs-${{ github.run_id }}
+          path: |
+            test-results/**/*-diff.png
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            playwright-report/**
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload baselines regenerados
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-baselines-${{ github.run_id }}
+          path: e2e/ui/calendar-visual.spec.ts-snapshots/**
+          if-no-files-found: ignore
+          retention-days: 14
