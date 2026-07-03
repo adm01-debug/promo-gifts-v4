@@ -19,7 +19,7 @@ let fail = 0;
 const gaps = [];
 
 function check(width, seed) {
-  const cellMatch = CAL.match(/cell:\s*['"`]([^'"`]+)['"`]/);
+  const cellMatch = CAL.match(/(?:^|\s)cell:\s*['"`]([^'"`]+)['"`]/);
   const headCellMatch = CAL.match(/head_cell:\s*[\s\S]{0,200}?['"`]([^'"`]+)['"`]/);
   const headRowMatch = CAL.match(/head_row:\s*['"`]([^'"`]+)['"`]/);
   const capMatch = CAL.match(/caption_label:\s*['"`]([^'"`]+)['"`]/);
