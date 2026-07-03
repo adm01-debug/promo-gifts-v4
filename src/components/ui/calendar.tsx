@@ -26,7 +26,7 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-2', className)}
+      className={cn('pointer-events-auto p-1.5', className)}
       formatters={{
         formatWeekdayName: (date) => {
           const narrow = ptBR.localize?.day(date.getDay(), { width: 'narrow' }) ?? '';
@@ -44,8 +44,8 @@ function Calendar({
       }}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-4',
-        month: 'space-y-2',
-        caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-2',
+        month: 'space-y-1.5',
+        caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-1.5 mb-2',
         caption_label: 'text-[15px] font-bold tracking-tight leading-none text-foreground capitalize',
         nav: 'flex items-center gap-0.5',
         nav_button:
@@ -53,12 +53,12 @@ function Calendar({
         nav_button_previous: 'static',
         nav_button_next: 'static',
         table: 'w-full border-collapse',
-        head_row: 'flex w-full',
+        head_row: 'flex w-full gap-0',
         head_cell:
-          'flex-1 h-6 font-medium uppercase tracking-wider text-[11px] text-muted-foreground/60 flex items-center justify-center',
-        row: 'flex w-full mt-1',
-        cell: 'flex-1 aspect-square text-center text-xs p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
-        day: 'inline-flex h-full w-full max-h-8 max-w-8 items-center justify-center rounded-full text-xs font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+          'flex-1 h-5 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
+        row: 'flex w-full gap-0 mt-0.5',
+        cell: 'flex-1 aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
+        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'bg-foreground text-background font-semibold hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background',
