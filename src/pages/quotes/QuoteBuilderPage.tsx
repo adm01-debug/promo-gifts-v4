@@ -23,6 +23,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DeliveryModeToggle } from '@/pages/quotes/components/DeliveryModeToggle';
+
 import {
   FileText,
   Plus,
@@ -507,40 +509,11 @@ export default function QuoteBuilderPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <div
-                        role="tablist"
-                        aria-label="Modo de prazo de entrega"
-                        className="inline-flex items-center rounded-lg border border-border/40 bg-muted/30 p-0.5"
-                      >
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={s.deliveryMode === 'prazo'}
-                          onClick={() => s.handleDeliveryModeChange('prazo')}
-                          className={cn(
-                            'rounded-md px-2.5 py-0.5 text-[11px] font-semibold transition-all',
-                            s.deliveryMode === 'prazo'
-                              ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                              : 'text-muted-foreground hover:bg-muted/50',
-                          )}
-                        >
-                          Contar dias
-                        </button>
-                        <button
-                          type="button"
-                          role="tab"
-                          aria-selected={s.deliveryMode === 'data'}
-                          onClick={() => s.handleDeliveryModeChange('data')}
-                          className={cn(
-                            'rounded-md px-2.5 py-0.5 text-[11px] font-semibold transition-all',
-                            s.deliveryMode === 'data'
-                              ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                              : 'text-muted-foreground hover:bg-muted/50',
-                          )}
-                        >
-                          Data fixa
-                        </button>
-                      </div>
+                      <DeliveryModeToggle
+                        value={s.deliveryMode}
+                        onChange={s.handleDeliveryModeChange}
+                      />
+
                     </div>
                   </div>
 
