@@ -33,7 +33,7 @@ const REQUIRED = [
   /h-6 w-6/,
   /h-3\.5 w-3\.5/,
 ];
-const FORBIDDEN_CELL = [/h-10\s+w-10/, /h-6\s+w-6/];
+const REQUIRED_LITERALS = [`cell: 'flex-1 aspect-square`];
 
 
 let pass = 0;
