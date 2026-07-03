@@ -571,9 +571,14 @@ export function LocationPanel({
         <div
           hidden={isPickerOpen}
           aria-hidden={isPickerOpen}
-          /* Altura mínima evita layout-shift ao trocar técnica enquanto
-             o ConfigurationPanelV6 remonta (key muda) e recalcula preço. */
-          className="relative min-h-[260px]"
+          /* A altura mínima só existe durante troca de técnica. No estado normal,
+             o wrapper precisa seguir a altura real do ConfigurationPanelV6 para
+             permitir que o resumo abaixo suba/baixe ao colapsar a gravação. */
+          className={cn(
+            'relative transition-[min-height] duration-300 ease-out motion-reduce:transition-none',
+            isSwapping && 'min-h-[260px]',
+          )}
+          data-testid="customization-config-shell"
         >
           <ConfigurationPanelV6
             key={selectedTechnique.technique_id}

@@ -2,7 +2,7 @@
  * E2E — Colapso do ConfigurationPanelV6 (gravação).
  *
  * Cobre:
- *  - Toggle colapsa/expande a região (aria-expanded, hidden).
+ *  - Toggle colapsa/expande a região (aria-expanded, aria-hidden/inert).
  *  - Persistência após reload (localStorage v1).
  *  - Navegação via teclado (Enter / Space) com foco gerenciado.
  *  - Emissão de evento de analytics (`panel_collapsed` / `panel_expanded`)
@@ -56,12 +56,15 @@ test.describe("ConfigurationPanelV6 — colapso", () => {
     const controlsId = await toggle.getAttribute("aria-controls");
     expect(controlsId).toBeTruthy();
     const region = page.locator(`#${controlsId}`);
+    const shell = page.locator('[data-testid="customization-config-shell"]').first();
 
     // 1) Clique → colapsa + evento panel_collapsed.
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(region).toHaveAttribute("hidden", "");
+    await expect(region).toHaveAttribute("aria-hidden", "true");
+    await expect(region).toHaveAttribute("inert", "");
+    await expect(shell).not.toHaveClass(/min-h-\[260px\]/);
 
     // 2) Reload preserva o estado.
     await page.reload({ waitUntil: "domcontentloaded" });

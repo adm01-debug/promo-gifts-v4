@@ -105,6 +105,24 @@ describe('LocationPanel — fluxo Trocar técnica', () => {
     expect(screen.getByTestId('config-panel')).toHaveAttribute('data-technique-id', 'tech-A');
   });
 
+  it('não mantém altura mínima fixa no wrapper do painel após a troca terminar', () => {
+    vi.useFakeTimers();
+    try {
+      render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('Silk 1 cor'));
+      expect(screen.getByTestId('customization-config-shell').className).toMatch(/min-h-\[260px\]/);
+
+      vi.advanceTimersByTime(141);
+
+      expect(screen.getByTestId('customization-config-shell').className).not.toMatch(
+        /min-h-\[260px\]/,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("clicar em 'Trocar' reabre a lista de técnicas com a atual marcada", () => {
     render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
 
