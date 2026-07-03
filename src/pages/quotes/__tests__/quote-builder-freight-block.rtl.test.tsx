@@ -78,19 +78,14 @@ function FreightFixture({ initial = 'cif' as Shipping }) {
             <Label htmlFor="freight-value" className="text-xs text-muted-foreground">
               Valor R$
             </Label>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground" aria-hidden="true">
-                R$
-              </span>
-              <CurrencyInput
-                id="freight-value"
-                data-testid="shipping-cost-input"
-                aria-label="Valor do frete em reais"
-                value={shippingCost}
-                onChange={(n) => setShippingCost(Math.max(0, n))}
-                className="h-8 text-xs"
-              />
-            </div>
+            <CurrencyInput
+              id="freight-value"
+              data-testid="shipping-cost-input"
+              aria-label="Valor do frete em reais"
+              value={shippingCost}
+              onChange={(n) => setShippingCost(Math.max(0, n))}
+              className="h-8 text-xs"
+            />
           </div>
         )}
       </div>
