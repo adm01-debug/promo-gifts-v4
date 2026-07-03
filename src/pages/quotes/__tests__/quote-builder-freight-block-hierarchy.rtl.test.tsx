@@ -166,8 +166,8 @@ describe(`Bloco Frete — hierarquia + testids estáveis (${CASES.length} cenár
     );
     const unique = new Set(testids);
     expect(unique.size).toBe(testids.length);
+    },
   );
-});
 });
 
 describe('Bloco Frete — estabilidade dos testids ao alternar shippingType', () => {
