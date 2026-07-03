@@ -591,7 +591,7 @@ export default function QuoteBuilderPage() {
                   >
                     Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
                   </Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <div>
                       <Select
                         data-testid="shipping-type-select-root"
@@ -614,6 +614,35 @@ export default function QuoteBuilderPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    {s.shippingType === 'fob_pre' && (
+                      <div className="space-y-1">
+                        <Label
+                          className={cn(
+                            'text-xs',
+                            s.validationErrors.includes('valor_frete')
+                              ? 'text-destructive'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          Valor R${' '}
+                          {s.validationErrors.includes('valor_frete') && (
+                            <span className="ml-1">*</span>
+                          )}
+                        </Label>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">R$</span>
+                          <CurrencyInput
+                            data-testid="shipping-cost-input"
+                            value={s.shippingCost || 0}
+                            onChange={(n) => s.setShippingCost(Math.max(0, n))}
+                            className={cn(
+                              'h-8 text-xs',
+                              s.validationErrors.includes('valor_frete') && 'border-destructive',
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {s.validationErrors.includes('frete') && (
                     <p className="mt-0.5 flex items-center gap-1 text-[10px] text-destructive">
@@ -621,36 +650,6 @@ export default function QuoteBuilderPage() {
                       Selecione a modalidade de frete
                     </p>
                   )}
-                  {s.shippingType === 'fob_pre' && (
-                    <div className="mt-1.5 space-y-1">
-                      <Label
-                        className={cn(
-                          'text-xs',
-                          s.validationErrors.includes('valor_frete')
-                            ? 'text-destructive'
-                            : 'text-muted-foreground',
-                        )}
-                      >
-                        Valor R${' '}
-                        {s.validationErrors.includes('valor_frete') && (
-                          <span className="ml-1">*</span>
-                        )}
-                      </Label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">R$</span>
-                        <CurrencyInput
-                          data-testid="shipping-cost-input"
-                          value={s.shippingCost || 0}
-                          onChange={(n) => s.setShippingCost(Math.max(0, n))}
-                          className={cn(
-                            'h-8 text-xs',
-                            s.validationErrors.includes('valor_frete') && 'border-destructive',
-                          )}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
 
                 {s.companyInfo?.id && (
                   <a
