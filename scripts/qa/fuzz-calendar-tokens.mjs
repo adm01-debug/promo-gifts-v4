@@ -70,6 +70,14 @@ for (let i = 0; i < 500; i++) {
       gaps.push(`iter ${i}: literal faltando ${lit}`);
     }
   }
+  for (const lit of FORBIDDEN_LITERALS) {
+    if (slice.includes(lit)) {
+      ok = false;
+      gaps.push(`iter ${i}: literal proibido ${lit}`);
+    }
+  }
+
+
 
   ok ? pass++ : fail++;
 }
