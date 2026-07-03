@@ -31,29 +31,29 @@ describe('Calendar shrink 50% — dimensions contract', () => {
     expect(c).not.toMatch(/text-2xl/);
   });
 
-  it('nav_button é h-5 w-5', () => {
+  it('nav_button é h-6 w-6', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const nav = Array.from(container.querySelectorAll<HTMLElement>('button')).find((b) =>
-      /h-5\s+w-5/.test(b.getAttribute('class') ?? ''),
+      /h-6\s+w-6/.test(b.getAttribute('class') ?? ''),
     );
     expect(nav).toBeTruthy();
   });
 
-  it('day é h-6 w-6 (não h-10 w-10)', () => {
+  it('cell usa flex-1 + aspect-square (grid full-width, sem h-10 w-10)', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
-    const days = Array.from(container.querySelectorAll<HTMLElement>('button')).filter((b) =>
-      /h-6\s+w-6/.test(b.getAttribute('class') ?? ''),
-    );
-    expect(days.length).toBeGreaterThanOrEqual(20);
-    for (const d of days) {
-      expect(classes(d)).not.toMatch(/h-10|w-10/);
+    const cells = Array.from(container.querySelectorAll<HTMLElement>('[class*="aspect-square"]'));
+    expect(cells.length).toBeGreaterThanOrEqual(20);
+    for (const c of cells) {
+      const cls = classes(c);
+      expect(cls).toMatch(/flex-1/);
+      expect(cls).not.toMatch(/(?:^|\s)h-10(?:\s|$)|(?:^|\s)w-10(?:\s|$)/);
     }
   });
 
-  it('ícones nav são h-3 w-3', () => {
+  it('ícones nav são h-3.5 w-3.5', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const svgs = Array.from(container.querySelectorAll<SVGElement>('svg'));
-    const small = svgs.filter((s) => /h-3\s+w-3/.test(s.getAttribute('class') ?? ''));
+    const small = svgs.filter((s) => /h-3\.5\s+w-3\.5/.test(s.getAttribute('class') ?? ''));
     expect(small.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -65,7 +65,7 @@ describe('Calendar shrink 50% — dimensions contract', () => {
     const sel = container.querySelector('button[aria-selected="true"]');
     expect(sel).toBeTruthy();
     const navBtn = Array.from(container.querySelectorAll<HTMLElement>('button')).find((b) =>
-      /h-5\s+w-5/.test(b.getAttribute('class') ?? ''),
+      /h-6\s+w-6/.test(b.getAttribute('class') ?? ''),
     );
     expect(classes(navBtn)).toMatch(/focus-visible:ring-2/);
   });
