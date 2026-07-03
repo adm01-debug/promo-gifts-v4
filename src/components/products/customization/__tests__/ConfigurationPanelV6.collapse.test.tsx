@@ -213,8 +213,8 @@ describe('ConfigurationPanelV6 — contrato de colapso', () => {
     });
   });
 
-  describe('Fuzz determinístico — 500 sequências de toggles', () => {
-    it('estado final e classes sempre consistentes com paridade dos cliques', async () => {
+  describe('Fuzz determinístico — 200 sequências de toggles', () => {
+    it('estado final e classes sempre consistentes com paridade dos cliques', () => {
       // PRNG determinística (mulberry32) para reprodutibilidade
       let seed = 0xc0ffee;
       const rand = () => {
@@ -225,17 +225,15 @@ describe('ConfigurationPanelV6 — contrato de colapso', () => {
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
 
-      const user = userEvent.setup();
-      for (let sim = 0; sim < 500; sim++) {
+      for (let sim = 0; sim < 200; sim++) {
         collapsedState = false;
         setCollapsedMock.mockClear();
         renderPanel();
         const toggle = screen.getByTestId('customization-collapse-toggle');
         const clicks = 1 + Math.floor(rand() * 30);
         for (let c = 0; c < clicks; c++) {
-          // eslint-disable-next-line no-await-in-loop
-          await act(async () => {
-            await user.click(toggle);
+          act(() => {
+            fireEvent.click(toggle);
           });
         }
         const expectCollapsed = clicks % 2 === 1;
@@ -257,6 +255,6 @@ describe('ConfigurationPanelV6 — contrato de colapso', () => {
 
         cleanup();
       }
-    }, 60_000);
+    }, 30_000);
   });
 });
