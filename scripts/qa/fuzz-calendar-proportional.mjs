@@ -19,24 +19,29 @@ let fail = 0;
 const gaps = [];
 
 function check(width, seed) {
-  const cellLine = CAL.split('\n').find((l) => l.trim().startsWith('cell:'));
-  const headLine = CAL.split('\n').find((l) => l.trim().startsWith('head_cell:'));
-  const rowLine = CAL.split('\n').find((l) => l.trim().startsWith('head_row:'));
-  const capLine = CAL.split('\n').find((l) => l.trim().startsWith('caption_label:'));
+  const cellMatch = CAL.match(/cell:\s*['"`]([^'"`]+)['"`]/);
+  const headCellMatch = CAL.match(/head_cell:\s*[\s\S]{0,200}?['"`]([^'"`]+)['"`]/);
+  const headRowMatch = CAL.match(/head_row:\s*['"`]([^'"`]+)['"`]/);
+  const capMatch = CAL.match(/caption_label:\s*['"`]([^'"`]+)['"`]/);
 
-  if (!cellLine?.includes('flex-1') || !cellLine.includes('aspect-square')) {
+  const cell = cellMatch?.[1] ?? '';
+  const headCell = headCellMatch?.[1] ?? '';
+  const headRow = headRowMatch?.[1] ?? '';
+  const cap = capMatch?.[1] ?? '';
+
+  if (!cell.includes('flex-1') || !cell.includes('aspect-square')) {
     return `w=${width} seed=${seed}: cell sem flex-1/aspect-square`;
   }
-  if (/h-\d+\s+w-\d+/.test(cellLine)) {
-    return `w=${width} seed=${seed}: cell com dimensão fixa`;
+  if (/(?:^|\s)h-\d+\s+w-\d+(?:\s|$)/.test(cell)) {
+    return `w=${width} seed=${seed}: cell com dimensão fixa (${cell})`;
   }
-  if (!headLine?.includes('flex-1')) {
+  if (!headCell.includes('flex-1')) {
     return `w=${width} seed=${seed}: head_cell sem flex-1`;
   }
-  if (!rowLine?.includes('w-full')) {
+  if (!headRow.includes('w-full')) {
     return `w=${width} seed=${seed}: head_row sem w-full`;
   }
-  if (!capLine?.includes('leading-none') || !capLine.includes('text-[15px]')) {
+  if (!cap.includes('leading-none') || !cap.includes('text-[15px]')) {
     return `w=${width} seed=${seed}: caption sem leading-none/text-[15px]`;
   }
   return null;
