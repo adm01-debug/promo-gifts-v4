@@ -3,8 +3,8 @@
  * Blinda a correção do calendário: números distribuídos por toda a largura
  * usando justify-between/gap-0, sem reintroduzir mt/mb/space-y nas linhas.
  */
-import { afterEach, cleanup, describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
 import { Calendar } from '../calendar';
 
 const REF = new Date(2026, 6, 2);
@@ -21,7 +21,7 @@ function getCalendarRows(container: HTMLElement) {
   return Array.from(container.querySelectorAll<HTMLElement>('[class*="justify-between"]'))
     .filter((el) => {
       const c = classes(el);
-      return hasToken(c, 'flex') && hasToken(c, 'w-full');
+      return hasToken(c, 'flex') && hasToken(c, 'w-full') && !hasToken(c, 'flex-col');
     });
 }
 
