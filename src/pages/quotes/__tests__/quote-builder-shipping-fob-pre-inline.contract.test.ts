@@ -13,7 +13,16 @@ const SRC = readFileSync(resolve(__dirname, '../QuoteBuilderPage.tsx'), 'utf8');
 describe('QuoteBuilderPage — "Valor R$" inline no grid do Frete (fob_pre)', () => {
   it('grid do Frete usa items-end para alinhar input ao trigger', () => {
     expect(SRC).toMatch(
-      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">\s*<div>\s*<Select\s+data-testid="shipping-type-select-root"/,
+      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" data-testid="freight-grid">\s*<div className="space-y-1" data-testid="freight-grid-col-1">[^]*?<Select\s+data-testid="shipping-type-select-root"/,
+    );
+  });
+
+  it('mantém os labels dentro das células do grid, sem criar linha externa que aumenta o container', () => {
+    expect(SRC).toMatch(
+      /data-testid="freight-grid-col-1"[^]*?>[^]*?<Label[^]*?>[^]*?Frete[^]*?<\/Label>[^]*?shipping-type-select-root/,
+    );
+    expect(SRC).toMatch(
+      /data-testid="freight-grid-col-2"[^]*?>[^]*?<Label[^]*?>[^]*?Valor R\$[^]*?<\/Label>[^]*?shipping-cost-input/,
     );
   });
 
