@@ -13,9 +13,9 @@
  * O painel só aparece após escolher cliente/produto com personalização —
  * em ambientes sem seed o spec é encerrado com `test.skip()`.
  */
-import { test, expect, requireAuth } from "./fixtures/test-base";
-import { gotoAndSettle } from "./helpers/nav";
-import { TID } from "./fixtures/selectors";
+import { test, expect, requireAuth } from "../fixtures/test-base";
+import { gotoAndSettle } from "../helpers/nav";
+import { TID } from "../fixtures/selectors";
 
 const TOGGLE = TID("customization-collapse-toggle");
 
