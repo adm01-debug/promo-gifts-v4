@@ -22,7 +22,20 @@ import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProdu
 const fmt = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-function makeStubProducts(n: number) {
+// Mirrors QuoteBuilderProductSearch local Product interface (not exported).
+// fix_version: harness-type-mirror-2026-07-03 — tipo explícito evita TS2322/TS2345
+// ANTI-REGRESSÃO: não remover o tipo explícito; stubs inferidos causam TS2322+TS2345
+type StubProduct = {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  images: string[] | null;
+  colors?: { name: string; hex?: string; stock?: number }[];
+  totalStock?: number;
+};
+
+function makeStubProducts(n: number): StubProduct[] {
   return Array.from({ length: n }, (_, i) => ({
     id: `stub-prod-${i + 1}`,
     name: `Produto sintético ${i + 1} — caneca personalizada premium`,
@@ -44,7 +57,8 @@ export default function QuoteAddProductButtonHarness() {
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<ReturnType<typeof makeStubProducts>[number] | null>(null);
+  // fix_version: harness-type-mirror-2026-07-03 — usa StubProduct para evitar TS2345
+  const [selected, setSelected] = useState<StubProduct | null>(null);
 
   const products = useMemo(
     () => makeStubProducts(longContent ? 50 : 6),
