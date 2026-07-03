@@ -544,7 +544,7 @@ export default function QuoteBuilderPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="w-full md:w-1/3">
+                  <div className="w-full md:w-1/4">
                   {s.deliveryMode === 'prazo' ? (
                     <Select
                       data-testid="delivery-time-select-root"
