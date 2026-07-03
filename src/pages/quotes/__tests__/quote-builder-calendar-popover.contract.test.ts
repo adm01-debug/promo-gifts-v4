@@ -1,6 +1,6 @@
 /**
  * Guarda anti-regressão: garante que o PopoverContent do calendário
- * no QuoteBuilderPage mantém a largura do trigger com min-w-[260px] e p-3.
+ * no QuoteBuilderPage cola 1:1 na largura do trigger (sem min-w) e usa p-2.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -12,14 +12,14 @@ const SRC = readFileSync(
 );
 
 describe('QuoteBuilderPage — popover do calendário', () => {
-  it('usa largura do trigger + min-w-[260px] + p-3', () => {
+  it('cola na largura do trigger (sem min-w) e usa p-2', () => {
     const line = SRC.split('\n').find((l) =>
       l.includes('w-[var(--radix-popover-trigger-width)]'),
     );
     expect(line, 'PopoverContent do calendário não encontrado').toBeTruthy();
-    expect(line!).toMatch(/min-w-\[260px\]/);
-    expect(line!).toMatch(/\bp-3\b/);
-    expect(line!).not.toMatch(/min-w-\[220px\]/);
-    expect(line!).not.toMatch(/\bp-2\b/);
+    expect(line!).toMatch(/\bp-2\b/);
+    expect(line!).not.toMatch(/min-w-\[/);
+    expect(line!).not.toMatch(/\bp-3\b/);
   });
 });
+
