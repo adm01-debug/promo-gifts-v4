@@ -44,21 +44,21 @@ function Calendar({
       }}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-4',
-        month: 'space-y-1.5',
-        caption: 'flex justify-between items-center px-1 pb-1.5',
-        caption_label: 'text-base font-bold tracking-tight text-foreground capitalize',
-        nav: 'flex items-center gap-1',
+        month: 'space-y-2',
+        caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-2',
+        caption_label: 'text-[15px] font-bold tracking-tight leading-none text-foreground capitalize',
+        nav: 'flex items-center gap-0.5',
         nav_button:
-          'inline-flex h-5 w-5 items-center justify-center rounded-md bg-transparent p-0 text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'inline-flex h-6 w-6 items-center justify-center rounded-full bg-transparent p-0 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         nav_button_previous: 'static',
         nav_button_next: 'static',
         table: 'w-full border-collapse',
-        head_row: 'flex',
+        head_row: 'flex w-full',
         head_cell:
-          'text-muted-foreground/70 w-6 h-5 font-semibold text-[9px] flex items-center justify-center',
-        row: 'flex w-full mt-0.5',
-        cell: 'h-6 w-6 text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20',
-        day: 'inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+          'flex-1 h-6 font-medium uppercase tracking-wider text-[11px] text-muted-foreground/60 flex items-center justify-center',
+        row: 'flex w-full mt-1',
+        cell: 'flex-1 aspect-square text-center text-xs p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
+        day: 'inline-flex h-full w-full max-h-8 max-w-8 items-center justify-center rounded-full text-xs font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'bg-foreground text-background font-semibold hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background',
@@ -72,8 +72,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-3 w-3" />,
-        IconRight: () => <ChevronRight className="h-3 w-3" />,
+        IconLeft: () => <ChevronLeft className="h-3.5 w-3.5" />,
+        IconRight: () => <ChevronRight className="h-3.5 w-3.5" />,
       }}
 
       {...props}
