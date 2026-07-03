@@ -44,8 +44,8 @@ function Calendar({
         ...modifiersClassNames,
       }}
       classNames={{
-        months: 'flex flex-col sm:flex-row gap-4',
-        month: 'flex flex-col',
+        months: 'flex w-full flex-col sm:flex-row gap-4',
+        month: 'flex w-full flex-col',
         caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-1.5 mb-1',
         caption_label: 'text-[15px] font-bold tracking-tight leading-none text-foreground capitalize',
         nav: 'flex items-center gap-0.5',
