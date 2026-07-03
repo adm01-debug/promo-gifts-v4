@@ -146,14 +146,29 @@ const md = [
 writeFileSync(join(OUT_DIR, "calibration.md"), md, "utf8");
 writeFileSync(
   join(OUT_DIR, "calibration.json"),
-  JSON.stringify({ diffs: diffs.length, combos }, null, 2),
+  JSON.stringify({ diffs: diffs.length, combos, dryRun: DRY_RUN }, null, 2),
   "utf8",
 );
 
+// Um CSV por viewport com contagem de diffs por combinação.
+for (const vp of ["mobile", "tablet", "desktop"]) {
+  const lines = ["threshold,maxDiffPixelRatio,failures"];
+  for (const c of combos) {
+    lines.push(`${c.threshold},${c.ratio},${c.perViewport[vp] ?? 0}`);
+  }
+  writeFileSync(join(OUT_DIR, `calibration-${vp}.csv`), lines.join("\n"), "utf8");
+}
+
 console.log(`\n✓ Relatório: ${OUT_DIR}/calibration.md`);
 console.log(`✓ Dados brutos: ${OUT_DIR}/calibration.json`);
+console.log(`✓ CSVs por viewport: ${OUT_DIR}/calibration-{mobile,tablet,desktop}.csv`);
+if (DRY_RUN) {
+  console.log("ℹ️  Modo dry-run: exit 0 mesmo com diffs (nada falhou o job).");
+}
 if (combos[0]) {
   console.log(
     `\n💡 Menor combinação com ${combos[0].total} falha(s): threshold=${combos[0].threshold}, maxDiffPixelRatio=${combos[0].ratio}`,
   );
 }
+// Em dry-run sempre saímos 0.
+if (DRY_RUN) process.exit(0);
