@@ -11,7 +11,7 @@ const SRC = readFileSync(resolve(__dirname, '../QuoteBuilderPage.tsx'), 'utf8');
 describe('QuoteBuilderPage — largura do trigger "Frete"', () => {
   it('envolve o shipping-type-select no grid de 3 colunas', () => {
     expect(SRC).toMatch(
-      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3">\s*<div>\s*<Select\s+data-testid="shipping-type-select-root"/,
+      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3(?: items-end)?">\s*<div>\s*<Select\s+data-testid="shipping-type-select-root"/,
     );
   });
 
