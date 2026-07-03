@@ -26,6 +26,8 @@
     "e2e:quote-freight:local:update": "bash scripts/e2e/quote-freight-local.sh --update",
     "e2e:calendar": "bash scripts/e2e/calendar-local.sh",
     "e2e:calendar:update": "bash scripts/e2e/calendar-local.sh --update",
+    "e2e:calendar:conditions": "playwright test e2e/ui/calendar-visual.spec.ts --project=chromium-public --grep \"Condições\"",
+    "e2e:calendar:conditions:update": "playwright test e2e/ui/calendar-visual.spec.ts --project=chromium-public --grep \"Condições\" --update-snapshots",
     "e2e:visual-diff-report": "node scripts/build-visual-diff-report.mjs --results test-results --out visual-diff-report/index.html --title 'Visual diffs'",
     "e2e:bootstrap": "bun install --frozen-lockfile && npm run e2e:install",
     "dev": "npm run e2e:generate-fixtures && vite",
