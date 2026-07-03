@@ -587,7 +587,7 @@ export default function QuoteBuilderPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
-                        className="w-auto rounded-2xl border border-border/50 bg-card p-0 shadow-xl"
+                        className="w-[var(--radix-popover-trigger-width)] min-w-[220px] rounded-2xl border border-border/50 bg-card p-2 shadow-xl"
                         align="start"
                       >
                         <Calendar
