@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { TID } from '../fixtures/selectors';
 import { gotoAndSettle } from '../helpers/nav';
 
@@ -19,7 +19,7 @@ type CalendarMetrics = {
   hasOverflow: boolean;
 };
 
-async function readMetrics(card: ReturnType<typeof test.extend> extends never ? never : import('@playwright/test').Locator) {
+async function readMetrics(card: Locator) {
   return card.evaluate((el): CalendarMetrics => {
     const cardRect = el.getBoundingClientRect();
     const table = el.querySelector('[role="grid"]');
