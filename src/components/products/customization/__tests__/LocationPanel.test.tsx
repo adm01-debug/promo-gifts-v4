@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { act, render, screen, within, fireEvent } from '@testing-library/react';
 import { toast } from 'sonner';
 import { LocationPanel } from '../LocationPanel';
 import type { GravacaoLocation, TechniqueOption } from '@/types/customization';
@@ -113,7 +113,9 @@ describe('LocationPanel — fluxo Trocar técnica', () => {
       fireEvent.click(screen.getByText('Silk 1 cor'));
       expect(screen.getByTestId('customization-config-shell').className).toMatch(/min-h-\[260px\]/);
 
-      vi.advanceTimersByTime(141);
+      act(() => {
+        vi.advanceTimersByTime(141);
+      });
 
       expect(screen.getByTestId('customization-config-shell').className).not.toMatch(
         /min-h-\[260px\]/,
