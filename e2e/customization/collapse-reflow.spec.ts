@@ -17,6 +17,28 @@ import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { TID } from "../fixtures/selectors";
 import type { Locator, Page } from "@playwright/test";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SNAPSHOT_DIR = join(__dirname, "collapse-reflow.spec.ts-snapshots");
+
+/**
+ * Falha cedo com mensagem clara se a baseline não existir, sugerindo o comando
+ * npm exato para gerar/atualizar (por viewport ou geral).
+ */
+function assertBaselineExists(fileName: string, viewport: string): void {
+  const full = join(SNAPSHOT_DIR, fileName);
+  if (existsSync(full)) return;
+  const cmd = `npm run e2e:collapse:update:${viewport}`;
+  const hint =
+    `\n\n❌ Baseline ausente: ${fileName}` +
+    `\n   Esperado em: ${full}` +
+    `\n\n💡 Gere/atualize rodando:\n   ${cmd}` +
+    `\n   (ou \`npm run e2e:collapse:seed\` na primeira vez para todos os viewports).\n`;
+  throw new Error(hint);
+}
 
 const TOGGLE = TID("customization-collapse-toggle");
 const SHELL = '[data-testid="customization-config-shell"]';
@@ -109,6 +131,15 @@ for (const vp of VIEWPORTS) {
         mask: masks,
         maskColor: "#FF00FF",
       };
+
+      // PRE-CHECK: baselines devem existir antes de rodar (só quando não estamos
+      // em modo --update-snapshots). Falhamos com mensagem clara e comando npm.
+      const isUpdating = (test.info().config as { updateSnapshots?: string })
+        .updateSnapshots === "all";
+      if (!isUpdating) {
+        assertBaselineExists(`location-panel-expanded-${vp.label}.png`, vp.label);
+        assertBaselineExists(`location-panel-collapsed-${vp.label}.png`, vp.label);
+      }
 
       if ((await toggle.getAttribute("aria-expanded")) === "false") {
         await toggle.click();
