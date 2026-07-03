@@ -261,6 +261,39 @@ Renomear ou remover o PNG antigo faz o Playwright reportar snapshot faltando na 
 
 ---
 
+### E2E · Snapshots visuais do bloco Frete (Quote Builder)
+
+Spec: `e2e/visual/quote-freight-block.spec.ts` — cobre `shippingType` **cif**, **fob** e **fob_pre** em **3 viewports** (mobile 375, md 768, xl 1280). Baselines em `e2e/visual/quote-freight-block.spec.ts-snapshots/`.
+
+**Rodar localmente (`chromium-public`):**
+```bash
+npm run e2e:quote-freight               # valida contra baselines
+npm run e2e:quote-freight:update        # regenera baselines (9 PNGs)
+npm run e2e:quote-freight:local         # wrapper com HTML report
+npm run e2e:quote-freight:local:update  # wrapper + update + cópia dos PNGs
+```
+
+**Passo a passo para atualizar baselines:**
+1. Rode `npm run e2e:quote-freight:update` (ou dispare **Actions → E2E · Update Quote Freight snapshots**).
+2. `git status` deve mostrar apenas PNGs sob `e2e/visual/quote-freight-block.spec.ts-snapshots/`.
+3. Inspecione visualmente (`git diff --stat` + abrir os PNGs) para confirmar que a mudança é intencional.
+4. Commite código + baselines juntos: `git add e2e/visual/quote-freight-block.spec.ts-snapshots src/pages/quotes/QuoteBuilderPage.tsx && git commit -m "test(freight): atualiza baselines"`.
+
+**Quando marcar `safe_mode` no workflow manual:**
+- `safe_mode=true` (**padrão, recomendado**): roda o spec primeiro **sem** `--update-snapshots`; só regenera/commita se a falha for realmente diferença visual (`toHaveScreenshot`). Protege contra rewrite acidental por bug/500/timeout.
+- `safe_mode=false`: força `--update-snapshots` de cara. Use apenas na primeira geração (não há baseline ainda) ou após um redesign intencional já validado localmente.
+
+**Como ler o `playwright-report` do CI quando `E2E Quote Freight Block (visual)` falha:**
+1. Abra o run em **Actions → E2E Quote Freight Block (visual)**.
+2. O comentário automático no PR traz link direto do run + do artefato (`quote-freight-block-chromium`).
+3. Baixe o artefato → abra `playwright-report/index.html` → cada teste falho mostra **expected × actual × diff** pixel-a-pixel.
+4. Se a mudança for intencional, dispare **E2E · Update Quote Freight snapshots** para regenerar os baselines em `main`.
+
+---
+
+
+
+
 
 
 ## 📁 Estrutura de Pastas
