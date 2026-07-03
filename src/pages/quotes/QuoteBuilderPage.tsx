@@ -371,7 +371,7 @@ export default function QuoteBuilderPage() {
                         );
                       }}
                     >
-                      <SelectTrigger className="h-8 text-xs [&>span]:flex-1 [&>span]:text-left">
+                      <SelectTrigger className="h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
@@ -407,7 +407,7 @@ export default function QuoteBuilderPage() {
                       <SelectTrigger
                         data-testid="payment-method-select"
                         className={cn(
-                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left',
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
                           s.validationErrors.includes('forma_pagamento') && 'border-destructive',
                         )}
                       >
@@ -445,7 +445,7 @@ export default function QuoteBuilderPage() {
                       <SelectTrigger
                         data-testid="payment-terms-select"
                         className={cn(
-                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left',
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
                           s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
                         )}
                       >
