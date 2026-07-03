@@ -2,8 +2,9 @@
  * Teste RTL isolado do toggle Contar dias / Data fixa.
  * Não depende do QuoteBuilderPage inteiro (auth, providers, external DB).
  */
+import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   DeliveryModeToggle,
@@ -65,5 +66,56 @@ describe('<DeliveryModeToggle />', () => {
     expect(cls).toContain('border-border/40');
     expect(cls).toContain('bg-muted/30');
     expect(cls).not.toMatch(/bg-(blue|red|green|yellow|purple|pink|indigo)-\d+/);
+  });
+
+  // -------------------------------------------------------------------------
+  // Alternância controlada (pattern real do QuoteBuilderPage)
+  // -------------------------------------------------------------------------
+  it('alterna aria-selected quando o pai atualiza o value após onChange', async () => {
+    function Host() {
+      const [mode, setMode] = useState<DeliveryMode>('prazo');
+      return <DeliveryModeToggle value={mode} onChange={setMode} />;
+    }
+
+    render(<Host />);
+    const contar = screen.getByRole('tab', { name: 'Contar dias' });
+    const data = screen.getByRole('tab', { name: 'Data fixa' });
+
+    expect(contar).toHaveAttribute('aria-selected', 'true');
+    expect(data).toHaveAttribute('aria-selected', 'false');
+
+    await userEvent.click(data);
+    expect(contar).toHaveAttribute('aria-selected', 'false');
+    expect(data).toHaveAttribute('aria-selected', 'true');
+
+    await userEvent.click(contar);
+    expect(contar).toHaveAttribute('aria-selected', 'true');
+    expect(data).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('não altera o layout inline-flex ao trocar de valor', async () => {
+    const { rerender } = setup('prazo');
+    const listBefore = screen.getByTestId('delivery-mode-toggle');
+    const clsBefore = listBefore.className;
+    rerender(<DeliveryModeToggle value="data" onChange={() => {}} />);
+    const listAfter = screen.getByTestId('delivery-mode-toggle');
+    expect(listAfter.className).toBe(clsBefore);
+    expect(listAfter.className).toContain('inline-flex');
+    expect(listAfter.className).toContain('items-center');
+  });
+
+  it('permanece alinhado (inline-flex) em diferentes larguras de container', () => {
+    for (const width of [320, 375, 480, 768, 1024, 1440]) {
+      cleanup();
+      const { container } = render(
+        <div style={{ width }}>
+          <DeliveryModeToggle value="prazo" onChange={() => {}} />
+        </div>,
+      );
+      const list = container.querySelector('[data-testid="delivery-mode-toggle"]');
+      expect(list, `toggle deve renderizar em ${width}px`).toBeTruthy();
+      // inline-flex garante que ele NÃO cresce até 100% da largura do pai
+      expect((list as HTMLElement).className).toContain('inline-flex');
+    }
   });
 });
