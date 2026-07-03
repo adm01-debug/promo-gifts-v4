@@ -23,12 +23,18 @@ const REQUIRED = [
   /bg-foreground/,
   /text-background/,
   /text-destructive/,
-  /text-base/,
+  /text-\[15px\]/,
   /font-bold/,
   /tracking-tight/,
   /hover:bg-accent/,
   /invisible/,
+  /flex-1/,
+  /aspect-square/,
+  /h-6 w-6/,
+  /h-3\.5 w-3\.5/,
 ];
+const FORBIDDEN_CELL = [/h-10\s+w-10/, /h-6\s+w-6/];
+
 
 let pass = 0;
 let fail = 0;
