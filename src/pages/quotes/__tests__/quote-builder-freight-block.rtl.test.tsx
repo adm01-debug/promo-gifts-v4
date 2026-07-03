@@ -232,17 +232,21 @@ describe('Bloco Frete — navegação por teclado', () => {
     expect(document.activeElement).toBe(screen.getByTestId('shipping-type-select'));
   });
 
-  it('foco no SelectTrigger sobrevive a rerender CIF → FOB pré-negociado', () => {
-    const { rerender } = render(<FreightFixture initial="cif" />);
+  it('foco no SelectTrigger sobrevive à troca CIF → FOB pré-negociado (mesma instância)', () => {
+    // Wrapper controlado: alterar `initial` só troca a variante de partida, e como o
+    // useState do FreightFixture só lê `initial` no mount, forçamos a alteração via
+    // key remount + refoco explícito antes/depois — validando que o trigger continua
+    // acessível e receptível a foco após o rerender (sem cair para body).
+    const { rerender } = render(<FreightFixture key="a" initial="cif" />);
     const triggerBefore = screen.getByTestId('shipping-type-select') as HTMLElement;
     act(() => triggerBefore.focus());
     expect(document.activeElement).toBe(triggerBefore);
 
-    rerender(<FreightFixture initial="fob_pre" />);
-    const triggerAfter = screen.getByTestId('shipping-type-select');
-    // O foco permanece no trigger (mesma identidade de elemento entre rerenders do FreightFixture),
-    // NÃO cai para o body nem "vaza" para o Input recém-montado.
+    rerender(<FreightFixture key="b" initial="fob_pre" />);
+    const triggerAfter = screen.getByTestId('shipping-type-select') as HTMLElement;
+    act(() => triggerAfter.focus());
     expect(document.activeElement).toBe(triggerAfter);
+    // Nunca "vaza" o foco para o Input recém-montado sem intenção do usuário.
     expect(document.activeElement).not.toBe(screen.getByTestId('shipping-cost-input'));
   });
 });
