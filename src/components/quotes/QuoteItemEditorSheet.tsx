@@ -37,7 +37,10 @@ interface QuoteItemEditorSheetProps {
   onConfirmPrice: (index: number) => void;
   onPersonalizationsChange: (index: number, p: QuoteItemPersonalization[]) => void;
   formatCurrency: (value: number) => string;
-  onAddProduct: () => void;
+  /** @deprecated-ui Recebido mas não renderizado após redesign #1550 (clean e focado).
+   *  fix_version: quiet-onaddproduct-2026-07-03 — mantenha opcional para não quebrar callers.
+   */
+  onAddProduct?: () => void;
   /**
    * Quando `true`, intercepta o fechamento implícito (ESC / click-outside)
    * com um AlertDialog do shadcn. Ações explícitas (Salvar / Remover)
@@ -60,7 +63,8 @@ export function QuoteItemEditorSheet({
   onConfirmPrice,
   onPersonalizationsChange,
   formatCurrency,
-  onAddProduct,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onAddProduct: _onAddProduct,  // fix_version: quiet-onaddproduct-2026-07-03
   hasUnsavedChanges = false,
   unsavedChangesMessage = 'Você tem alterações não salvas neste item. Deseja realmente fechar e descartá-las?',
 }: QuoteItemEditorSheetProps) {

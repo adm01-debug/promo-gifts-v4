@@ -11,6 +11,8 @@
  *  - `loading=1`     → simula estado `quotesLoading` (botão disabled).
  *
  * Rota: `/__visual/quote-add-product-button` (somente em DEV).
+ *
+ * fix_version: harness-type-safe-2026-07-03 — imagens cast + assinatura onAddWithColor correta
  */
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
@@ -26,7 +28,7 @@ function makeStubProducts(n: number) {
     name: `Produto sintético ${i + 1} — caneca personalizada premium`,
     sku: `STUB-${String(i + 1).padStart(4, '0')}`,
     price: 19.9 + i,
-    images: null,
+    images: null as string[] | null,
     colors: [{ name: 'Azul', hex: '#1d4ed8' }],
     totalStock: 100,
   }));
@@ -88,7 +90,7 @@ export default function QuoteAddProductButtonHarness() {
         selectedProductForColor={selected}
         setSelectedProductForColor={setSelected}
         onProductClick={(p) => setSelected(p)}
-        onAddWithColor={() => setOpen(false)}
+        onAddWithColor={(_p, _v) => setOpen(false)}
         formatCurrency={fmt}
       />
     </main>

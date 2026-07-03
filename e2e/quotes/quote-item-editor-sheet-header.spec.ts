@@ -30,14 +30,14 @@ for (const vp of VIEWPORTS) {
       await expect(page.getByRole('dialog')).toBeVisible();
     });
 
-    test('DOM: "+ Produto" presente e texto "Detalhes do Item" removido', async ({ page }) => {
+    test('DOM: botão Salvar presente e texto "Detalhes do Item" removido', async ({ page }) => {
       const dialog = page.getByRole('dialog');
       const result = await dialog.evaluate((root) => {
         const btn = root.querySelector('[data-testid="quote-save-item-button-sheet"]');
         const hasOldTitle = /Detalhes do Item/i.test(root.textContent ?? '');
         return { hasBtn: !!btn, hasOldTitle };
       });
-      expect(result.hasBtn, '"+ Produto" deve existir no dialog').toBe(true);
+      expect(result.hasBtn, '"botão Salvar deve existir no dialog"').toBe(true);
       expect(result.hasOldTitle, '"Detalhes do Item" não deve aparecer mais').toBe(false);
     });
 
