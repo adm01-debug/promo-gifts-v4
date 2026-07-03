@@ -244,5 +244,48 @@ describe('Bloco Frete — navegação por teclado', () => {
     // Nunca "vaza" o foco para o Input recém-montado sem intenção do usuário.
     expect(document.activeElement).not.toBe(screen.getByTestId('shipping-cost-input'));
   });
+
+  describe('Alinhamento do label "Valor R$" (sem cifrão duplicado)', () => {
+    it.each(WIDTHS)(
+      'width=$width: label "Valor R$" alinha ao início do input, sem span R$ irmão',
+      ({ width }) => {
+        setViewport(width);
+        render(<FreightFixture initial="fob_pre" />);
+
+        const col2 = screen.getByTestId('freight-grid-col-2');
+        const label = within(col2).getByText('Valor R$');
+        const input = within(col2).getByTestId('shipping-cost-input');
+
+        // Label é filho direto da célula (space-y-1), input também — mesmo eixo X.
+        expect(label.parentElement).toBe(col2);
+        expect(input.parentElement).toBe(col2);
+
+        // Nenhum <span> irmão com "R$" duplicando o cifrão do label.
+        const spans = col2.querySelectorAll('span');
+        const dupCifrao = Array.from(spans).filter(
+          (s) => s.textContent?.trim() === 'R$',
+        );
+        expect(dupCifrao).toHaveLength(0);
+
+        // Célula usa space-y-1 (sem flex/gap horizontal que desalinhe).
+        expect(col2.className).toMatch(/space-y-1/);
+        expect(col2.className).not.toMatch(/\bflex\b/);
+      },
+    );
+
+    it('data-testid do campo de valor permanece estável entre rerenders', () => {
+      const { rerender } = render(<FreightFixture key="a" initial="fob_pre" />);
+      const before = screen.getByTestId('shipping-cost-input');
+      rerender(<FreightFixture key="b" initial="fob_pre" />);
+      const after = screen.getByTestId('shipping-cost-input');
+      expect(after.id).toBe('freight-value');
+      expect(after.getAttribute('data-testid')).toBe(
+        before.getAttribute('data-testid'),
+      );
+      // Único no DOM (sem duplicação).
+      expect(screen.getAllByTestId('shipping-cost-input')).toHaveLength(1);
+      expect(screen.getAllByText('Valor R$')).toHaveLength(1);
+    });
+  });
 });
-});
+
