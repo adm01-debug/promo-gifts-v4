@@ -86,46 +86,56 @@ jobs:
             e2e/visual/quote-freight-block.spec.ts-snapshots
           retention-days: 14
 
-      - name: Comentar diff no PR (em caso de falha)
-        if: ${{ failure() && github.event_name == 'pull_request' }}
+      - name: Comentar report/artefato no PR (sempre)
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const outcome = ${{ toJSON(steps.run.outcome) }};
+            const artifactUrl = ${{ toJSON(steps.upload.outputs.artifact-url) }} ||
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}#artifacts`;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const artifactUrl = `${runUrl}#artifacts`;
+            const icon = outcome === 'success' ? '✅' : '🖼️❌';
+            const status = outcome === 'success' ? 'passou' : 'falhou';
             const body = [
-              '### 🖼️ Regressão visual do bloco Frete falhou',
+              `### ${icon} Regressão visual do bloco Frete ${status}`,
               '',
               `**Browser:** \`${{ matrix.browser }}\``,
+              `**Resultado:** \`${outcome}\``,
               `**Run:** ${runUrl}`,
-              `**Artefato (report + diffs + snapshots):** ${artifactUrl}`,
+              `**Playwright report + diffs + snapshots:** ${artifactUrl}`,
               '',
-              'Passos:',
-              '1. Baixe o artefato `quote-freight-block-${{ matrix.browser }}`',
-              '2. Abra `playwright-report/index.html` para ver os diffs pixel-a-pixel',
-              '3. Se a mudança visual for intencional, dispare o workflow **E2E · Update Quote Freight snapshots** para regenerar os baselines',
+              outcome === 'success'
+                ? '_Nenhuma divergência visual detectada._'
+                : [
+                    'Passos para investigar:',
+                    `1. Baixe o artefato \`quote-freight-block-${{ matrix.browser }}\` em ${artifactUrl}`,
+                    '2. Abra `playwright-report/index.html` para ver **expected × actual × diff** pixel-a-pixel',
+                    '3. Se a mudança visual for intencional, dispare **E2E · Update Quote Freight snapshots** para regenerar os baselines',
+                  ].join('\n'),
             ].join('\n');
+            const marker = '<!-- freight-block-visual-report -->';
+            const fullBody = `${marker}\n${body}`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const marker = '### 🖼️ Regressão visual do bloco Frete falhou';
-            const existing = comments.find(c => c.body?.startsWith(marker));
+            const existing = comments.find(c => c.body?.includes(marker));
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: existing.id,
-                body,
+                body: fullBody,
               });
             } else {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body,
+                body: fullBody,
               });
             }
 
