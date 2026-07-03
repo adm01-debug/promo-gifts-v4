@@ -45,8 +45,8 @@ function Calendar({
       }}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-4',
-        month: 'space-y-1.5',
-        caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-1.5 mb-2',
+        month: 'flex flex-col',
+        caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-1.5 mb-1',
         caption_label: 'text-[15px] font-bold tracking-tight leading-none text-foreground capitalize',
         nav: 'flex items-center gap-0.5',
         nav_button:
@@ -54,10 +54,10 @@ function Calendar({
         nav_button_previous: 'static',
         nav_button_next: 'static',
         table: 'w-full border-collapse',
-        head_row: 'flex w-full gap-0 mb-1',
+        head_row: 'flex w-full justify-between',
         head_cell:
           'flex-1 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
-        row: 'flex w-full gap-0 mt-1',
+        row: 'flex w-full justify-between',
         cell: 'flex-1 aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
         day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
