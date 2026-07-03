@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { act, render, screen, within, fireEvent } from '@testing-library/react';
 import { toast } from 'sonner';
 import { LocationPanel } from '../LocationPanel';
 import type { GravacaoLocation, TechniqueOption } from '@/types/customization';
@@ -103,6 +103,26 @@ describe('LocationPanel — fluxo Trocar técnica', () => {
     expect(screen.queryByText('Transfer Digital')).not.toBeInTheDocument();
     expect(screen.getByTestId('customization-change-technique')).toBeInTheDocument();
     expect(screen.getByTestId('config-panel')).toHaveAttribute('data-technique-id', 'tech-A');
+  });
+
+  it('não mantém altura mínima fixa no wrapper do painel após a troca terminar', () => {
+    vi.useFakeTimers();
+    try {
+      render(<LocationPanel location={location} quantity={100} onPriceCalculated={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('Silk 1 cor'));
+      expect(screen.getByTestId('customization-config-shell').className).toMatch(/min-h-\[260px\]/);
+
+      act(() => {
+        vi.advanceTimersByTime(141);
+      });
+
+      expect(screen.getByTestId('customization-config-shell').className).not.toMatch(
+        /min-h-\[260px\]/,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("clicar em 'Trocar' reabre a lista de técnicas com a atual marcada", () => {

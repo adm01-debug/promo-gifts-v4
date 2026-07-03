@@ -149,6 +149,17 @@ describe('ConfigurationPanelV6 — contrato de colapso', () => {
       expect(getPanel().getAttribute('aria-hidden')).toBe('true');
     });
 
+    it('aplica inert quando colapsado para bloquear foco em controles escondidos', () => {
+      collapsedState = true;
+      renderPanel();
+      expect(getPanel().getAttribute('inert')).toBe('');
+
+      cleanup();
+      collapsedState = false;
+      renderPanel();
+      expect(getPanel().hasAttribute('inert')).toBe(false);
+    });
+
     it('mantém role="region", aria-label, min-h-0 e overflow-hidden', () => {
       collapsedState = false;
       renderPanel();

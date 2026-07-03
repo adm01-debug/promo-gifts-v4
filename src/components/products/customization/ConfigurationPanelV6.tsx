@@ -37,6 +37,10 @@ interface ConfigurationPanelV6Props {
   confirmedIcon?: ReactNode;
 }
 
+type CollapsedInteractionProps = {
+  inert?: '';
+};
+
 export function ConfigurationPanelV6({
   technique,
   quantity,
@@ -88,6 +92,7 @@ export function ConfigurationPanelV6({
 
   const contentId = useId();
   const isLocked = isConfirmed && !editing;
+  const collapsedInteractionProps: CollapsedInteractionProps = collapsed ? { inert: '' } : {};
 
   const larguraNum = parseFloat(largura) || 0;
   const alturaNum = parseFloat(altura) || 0;
@@ -242,6 +247,7 @@ export function ConfigurationPanelV6({
         </div>
 
         <div
+          {...collapsedInteractionProps}
           id={contentId}
           role="region"
           aria-label="Configurações da gravação"

@@ -13,7 +13,12 @@ const FILE = resolve(
   __dirname,
   '../../src/components/products/customization/ConfigurationPanelV6.tsx',
 );
+const LOCATION_FILE = resolve(
+  __dirname,
+  '../../src/components/products/customization/LocationPanel.tsx',
+);
 const SRC = readFileSync(FILE, 'utf8');
+const LOCATION_SRC = readFileSync(LOCATION_FILE, 'utf8');
 
 const ITER = 300;
 
@@ -43,6 +48,10 @@ const CHECKS = [
     fn: (s) => /aria-hidden=\{collapsed\}/.test(s),
   },
   {
+    name: 'painel colapsável aplica `inert` quando colapsado',
+    fn: (s) => /collapsedInteractionProps/.test(s) && /inert\?: ''/.test(s),
+  },
+  {
     name: 'painel mantém `grid-rows-[0fr]`/`grid-rows-[1fr]` alternantes',
     fn: (s) => /grid-rows-\[0fr\][^`]*grid-rows-\[1fr\]/.test(s.replace(/\n/g, ' ')),
   },
@@ -65,6 +74,14 @@ const CHECKS = [
   {
     name: 'toggle mantém `data-testid="customization-collapse-toggle"`',
     fn: (s) => /data-testid="customization-collapse-toggle"/.test(s),
+  },
+  {
+    name: 'LocationPanel NÃO mantém `min-h-[260px]` fixa no wrapper normal',
+    fn: () => !/className="relative min-h-\[260px\]"/.test(LOCATION_SRC),
+  },
+  {
+    name: 'LocationPanel limita `min-h-[260px]` ao estado `isSwapping`',
+    fn: () => /isSwapping && 'min-h-\[260px\]'/.test(LOCATION_SRC),
   },
 ];
 
