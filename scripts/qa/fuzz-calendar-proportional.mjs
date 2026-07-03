@@ -31,14 +31,11 @@ function check(width, seed) {
   const row = rowMatch?.[1] ?? '';
   const cap = capMatch?.[1] ?? '';
 
-  if (!cell.includes('flex-1') || !/\bh-9\b/.test(cell)) {
-    return `w=${width} seed=${seed}: cell sem flex-1/h-9 (${cell})`;
+  if (!cell.includes('flex-1') || !cell.includes('aspect-square')) {
+    return `w=${width} seed=${seed}: cell sem flex-1/aspect-square (${cell})`;
   }
-  if (cell.includes('aspect-square')) {
-    return `w=${width} seed=${seed}: cell ainda com aspect-square`;
-  }
-  if (!row.includes('mt-1')) {
-    return `w=${width} seed=${seed}: row sem mt-1 (${row})`;
+  if (/(?:^|\s)h-9(?:\s|$)/.test(cell)) {
+    return `w=${width} seed=${seed}: cell com altura fixa h-9 (${cell})`;
   }
 
   if (/(?:^|\s)h-\d+\s+w-\d+(?:\s|$)/.test(cell)) {
