@@ -151,6 +151,7 @@ jobs:
           fi
 
       - name: Upload artifacts (trace + vídeo + screenshots + diffs + report)
+        id: upload
         if: always()
         uses: actions/upload-artifact@v5
         with:
@@ -162,4 +163,53 @@ jobs:
             visual-diff-report/
           retention-days: 14
           if-no-files-found: ignore
+
+      - name: Job Summary — links + falhas por viewport
+        if: always()
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            echo "## 🔗 Artifacts do run"
+            if [ -n "$ARTIFACT_URL" ]; then
+              echo "- 📦 [Baixar \`customization-collapse-e2e\` (visual-diff-report, traces, vídeos, screenshots)]($ARTIFACT_URL)"
+            else
+              echo "- 📦 Artifact \`customization-collapse-e2e\` disponível na aba Artifacts deste run."
+            fi
+            echo "- 🧭 Após baixar, abra \`visual-diff-report/index.html\` para os diffs lado a lado e \`playwright-report/index.html\` para o HTML report (traces/vídeos linkados por teste)."
+            echo ""
+            echo "## 🖼️ Diffs por viewport"
+            echo ""
+            echo "| Viewport | Diffs | Screenshots atuais |"
+            echo "| --- | ---: | ---: |"
+            for vp in mobile tablet desktop; do
+              d=$(find test-results -name "*${vp}*-diff.png" 2>/dev/null | wc -l | tr -d ' ')
+              a=$(find test-results -name "*${vp}*-actual.png" 2>/dev/null | wc -l | tr -d ' ')
+              echo "| \`$vp\` | $d | $a |"
+            done
+            echo ""
+            failed_json="playwright-report/results-collapse.json"
+            if [ -f "$failed_json" ]; then
+              echo "## ❌ Casos que falharam"
+              echo ""
+              node -e '
+                const r = require("./'"$failed_json"'");
+                const walk = (s, acc=[]) => {
+                  (s.suites||[]).forEach(x => walk(x, acc));
+                  (s.specs||[]).forEach(sp => sp.tests.forEach(t => t.results.forEach(res => {
+                    if (res.status !== "passed" && res.status !== "skipped") {
+                      acc.push({title: sp.title, status: res.status});
+                    }
+                  })));
+                  return acc;
+                };
+                const fails = walk(r);
+                if (!fails.length) { console.log("_(nenhum)_"); process.exit(0); }
+                console.log("| Teste | Status |");
+                console.log("| --- | --- |");
+                for (const f of fails) console.log(`| ${f.title} | ${f.status} |`);
+              ' || echo "_(não foi possível parsear resultados)_"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
 

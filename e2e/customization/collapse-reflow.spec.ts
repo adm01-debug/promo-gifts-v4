@@ -84,16 +84,42 @@ for (const vp of VIEWPORTS) {
       const shell = page.locator(SHELL).first();
       await expect(shell).toBeVisible();
 
+      // Regiões dinâmicas mascaradas: timers, badges de contagem, preços que
+      // pulsam e toasts. O diff pixel a pixel foca somente no reflow.
+      const DYNAMIC_MASK_SELECTORS = [
+        '[data-testid*="timer"]',
+        '[data-testid*="countdown"]',
+        '[data-testid*="badge-count"]',
+        '[data-testid="quote-total-personalization"]',
+        '[data-dynamic="true"]',
+        '[data-live-region="true"]',
+        '[aria-live="polite"]',
+        '[aria-live="assertive"]',
+        '.sonner-toast',
+      ];
+      const masks = DYNAMIC_MASK_SELECTORS.map((sel) => page.locator(sel));
+
+      // Tolerância: até 1.5% de pixels diferentes e threshold antialiasing 0.25.
+      // Cobre variações de sub-pixel/font-rendering entre runners sem esconder
+      // regressões reais do reflow.
+      const SCREENSHOT_OPTS = {
+        maxDiffPixelRatio: 0.015,
+        threshold: 0.25,
+        animations: "disabled" as const,
+        mask: masks,
+        maskColor: "#FF00FF",
+      };
+
       if ((await toggle.getAttribute("aria-expanded")) === "false") {
         await toggle.click();
         await expect(toggle).toHaveAttribute("aria-expanded", "true");
       }
 
       const expandedHeight = await waitForStableHeight(page, shell);
-      await expect(shell).toHaveScreenshot(`location-panel-expanded-${vp.label}.png`, {
-        maxDiffPixelRatio: 0.02,
-        animations: "disabled",
-      });
+      await expect(shell).toHaveScreenshot(
+        `location-panel-expanded-${vp.label}.png`,
+        SCREENSHOT_OPTS,
+      );
 
       await toggle.click();
       await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -103,10 +129,11 @@ for (const vp of VIEWPORTS) {
       await expect(shell).not.toHaveClass(/min-h-\[260px\]/);
       expect(collapsedHeight).toBeLessThan(expandedHeight);
 
-      await expect(shell).toHaveScreenshot(`location-panel-collapsed-${vp.label}.png`, {
-        maxDiffPixelRatio: 0.02,
-        animations: "disabled",
-      });
+      await expect(shell).toHaveScreenshot(
+        `location-panel-collapsed-${vp.label}.png`,
+        SCREENSHOT_OPTS,
+      );
     });
+
   });
 }
