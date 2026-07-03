@@ -770,3 +770,48 @@ backend** — não migrar termos para a UI.
   garante que nenhum chip renderizado expõe `textContent`, `aria-label` ou
   `title` com os termos banidos.
 
+### 🧪 E2E — Colapso do LocationPanel (personalização)
+
+Suite dedicada ao card de gravação (`ConfigurationPanelV6` + `LocationPanel`)
+que valida comportamento (ARIA, teclado, persistência, analytics) **e**
+regressão visual do reflow (o conteúdo abaixo deve subir suavemente ao
+colapsar, sem gap residual causado por `min-h-[260px]`).
+
+**Pré-requisitos:**
+
+1. `E2E_USER_EMAIL` e `E2E_USER_PASSWORD` configurados (env local `.env.e2e`
+   ou GitHub Secrets no CI). A fixture `e2e/fixtures/auth.setup.ts` loga uma
+   vez, persiste o storage state em `playwright/.auth/user.json` e o project
+   `chromium-authed` reaproveita a sessão.
+2. Playwright + browsers instalados: `npx playwright install --with-deps chromium`.
+3. Dev server rodando em `http://localhost:8080` (`npm run dev`).
+
+**Comandos:**
+
+```bash
+# 1) Gerar sessão autenticada (uma vez por máquina / expiração):
+npx playwright test --project=setup
+
+# 2) Rodar comportamento + reflow visual:
+npx playwright test \
+  e2e/flows/04d-customization-collapse.spec.ts \
+  e2e/customization/collapse-reflow.spec.ts \
+  --project=chromium-authed
+
+# 3) Atualizar baselines visuais (após mudança intencional de UI):
+npx playwright test e2e/customization/collapse-reflow.spec.ts \
+  --project=chromium-authed --update-snapshots
+git add e2e/customization/collapse-reflow.spec.ts-snapshots
+git commit -m "test(e2e): atualiza baselines do colapso do LocationPanel"
+```
+
+**No CI:** o workflow
+[`.github/workflows/e2e-customization-collapse.yml`](.github/workflows/e2e-customization-collapse.yml)
+roda em PRs que tocam `src/components/products/customization/**` ou os specs
+acima. Para regravar baselines no CI use `workflow_dispatch` com
+`update_snapshots=true` — o job commita os PNGs atualizados na branch
+(use com cuidado, sempre revise o diff). Falhas publicam o artifact
+`customization-collapse-e2e` com `test-results/` (diffs antes/depois) e o
+relatório HTML do Playwright.
+
+
