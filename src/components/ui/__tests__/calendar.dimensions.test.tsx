@@ -23,11 +23,11 @@ describe('Calendar shrink 50% — dimensions contract', () => {
     expect(c).not.toMatch(/(^|\s)p-4(\s|$)/);
   });
 
-  it('caption_label é text-base (não text-2xl)', () => {
+  it('caption_label é text-[15px] (não text-2xl)', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const cap = container.querySelector('.capitalize');
     const c = classes(cap);
-    expect(c).toMatch(/text-base/);
+    expect(c).toMatch(/text-\[15px\]/);
     expect(c).not.toMatch(/text-2xl/);
   });
 
