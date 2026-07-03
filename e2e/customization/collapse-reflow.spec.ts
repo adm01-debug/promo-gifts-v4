@@ -21,8 +21,18 @@ import type { Locator, Page } from "@playwright/test";
 const TOGGLE = TID("customization-collapse-toggle");
 const SHELL = '[data-testid="customization-config-shell"]';
 
+// Instrumentação para depuração de falhas: trace, vídeo e screenshot completos
+// em qualquer falha (inclusive diff visual). Artifacts são publicados pelo
+// workflow `.github/workflows/e2e-customization-collapse.yml`.
+test.use({
+  trace: "retain-on-failure",
+  video: "retain-on-failure",
+  screenshot: "only-on-failure",
+});
+
 const VIEWPORTS = [
   { label: "mobile", width: 390, height: 844 },
+  { label: "tablet", width: 768, height: 1024 },
   { label: "desktop", width: 1440, height: 900 },
 ] as const;
 

@@ -128,7 +128,29 @@ jobs:
             git push
           fi
 
-      - name: Upload artifacts (diffs / report)
+      - name: Build visual diff summary (pixel-a-pixel)
+        if: always()
+        run: |
+          mkdir -p visual-diff-report
+          node scripts/build-visual-diff-report.mjs \
+            --results test-results \
+            --out visual-diff-report/index.html \
+            --title 'Colapso do LocationPanel — diffs visuais' || true
+          # Também gera um resumo Markdown no Job Summary do PR.
+          if [ -d test-results ]; then
+            {
+              echo "## 🖼️ Diffs visuais — Colapso do LocationPanel"
+              echo ""
+              diffs=$(find test-results -name '*-diff.png' | wc -l | tr -d ' ')
+              actuals=$(find test-results -name '*-actual.png' | wc -l | tr -d ' ')
+              echo "- Diffs gerados: **$diffs**"
+              echo "- Screenshots atuais: **$actuals**"
+              echo ""
+              echo "Baixe o artifact **customization-collapse-e2e** e abra \`visual-diff-report/index.html\` para navegar os diffs lado a lado."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload artifacts (trace + vídeo + screenshots + diffs + report)
         if: always()
         uses: actions/upload-artifact@v5
         with:
@@ -137,5 +159,7 @@ jobs:
             e2e-artifacts/
             playwright-report/
             test-results/
-          retention-days: 7
+            visual-diff-report/
+          retention-days: 14
           if-no-files-found: ignore
+
