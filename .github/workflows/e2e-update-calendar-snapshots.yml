@@ -109,4 +109,4 @@ jobs:
           fi
           MODE="${{ github.event.inputs.safe_mode != 'false' && 'safe' || 'force' }}"
           git commit -m "chore(e2e): update calendar visual baselines (${MODE})"
-          git push origin HEAD:${{ github.event.inputs.branch }}
+          git push origin HEAD:${{ github.event.inputs.branch || github.ref_name }}
