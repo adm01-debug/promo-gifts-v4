@@ -445,7 +445,7 @@ export default function QuoteBuilderPage() {
                       <SelectTrigger
                         data-testid="payment-terms-select"
                         className={cn(
-                          'h-8 text-xs',
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left',
                           s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
                         )}
                       >
