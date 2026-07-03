@@ -31,17 +31,15 @@ const REQUIRED = [
   /hover:bg-accent/,
   /invisible/,
   /flex-1/,
-  /(?:^|\s|')h-9(?:\s|'|$)/,
+  /aspect-square/,
   /h-6 w-6/,
   /h-3\.5 w-3\.5/,
   /p-1\.5/,
   /space-y-1\.5/,
   /gap-0/,
-  /mt-1/,
-
 ];
-const REQUIRED_LITERALS = [`cell: 'flex-1 h-9`, `row: 'flex w-full gap-0 mt-1`];
-const FORBIDDEN_LITERALS = [`aspect-square`];
+const REQUIRED_LITERALS = [`cell: 'flex-1 aspect-square`, `row: 'flex w-full gap-0'`];
+const FORBIDDEN_LITERALS = [`cell: 'flex-1 h-9`, `mt-1`];
 
 
 

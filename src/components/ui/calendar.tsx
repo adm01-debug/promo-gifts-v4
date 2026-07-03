@@ -55,9 +55,9 @@ function Calendar({
         table: 'w-full border-collapse',
         head_row: 'flex w-full gap-0',
         head_cell:
-          'flex-1 h-6 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
-        row: 'flex w-full gap-0 mt-1',
-        cell: 'flex-1 h-9 text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
+          'flex-1 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
+        row: 'flex w-full gap-0',
+        cell: 'flex-1 aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
         day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
