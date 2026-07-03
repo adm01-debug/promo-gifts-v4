@@ -8,7 +8,7 @@
  *  - shippingType padrão cif: grid com 1 coluna preenchida
  *  - shippingType fob (repassado): grid com 1 coluna, sem Valor R$
  *  - shippingType fob_pre: grid com 2 colunas (trigger + Valor R$)
- *  - viewports: mobile (375) e md (900) — validam quebra responsiva
+ *  - viewports: mobile (375), md (900) e xl (1280) — validam quebra responsiva
  */
 import { test, expect } from '@playwright/test';
 import { gotoAndSettle } from '../helpers/nav';
@@ -16,6 +16,7 @@ import { gotoAndSettle } from '../helpers/nav';
 const VIEWPORTS = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'md', width: 900, height: 1000 },
+  { name: 'xl', width: 1280, height: 1000 },
 ] as const;
 
 const NON_PRE_MODES = [
