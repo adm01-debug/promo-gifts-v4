@@ -49,16 +49,17 @@ describe('Calendar — distribuição interna dos números', () => {
     }
   });
 
-  it('células ocupam exatamente 1/7 da linha e preservam aspect-square', () => {
+  it('células mantêm tamanho compacto fixo e preservam aspect-square', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const cells = Array.from(
-      container.querySelectorAll<HTMLElement>('[class*="w-[14.285714%]"][class*="aspect-square"]'),
+      container.querySelectorAll<HTMLElement>('[class*="h-[18px]"][class*="w-[18px]"][class*="aspect-square"]'),
     );
 
     expect(cells.length).toBeGreaterThanOrEqual(28);
     for (const cell of cells.slice(0, 14)) {
       const c = classes(cell);
-      expect(c).toMatch(/w-\[14\.285714%\]/);
+      expect(c).toMatch(/h-\[18px\]/);
+      expect(c).toMatch(/w-\[18px\]/);
       expect(c).toMatch(/shrink-0/);
       expect(c).toMatch(/aspect-square/);
       expect(c).not.toMatch(/(^|\s)(h|w)-(9|10)(\s|$)/);

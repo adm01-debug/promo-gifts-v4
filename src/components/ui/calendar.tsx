@@ -58,9 +58,9 @@ function Calendar({
         tbody: 'flex w-full flex-col justify-between',
         head_row: 'flex w-full justify-between gap-0',
         head_cell:
-          'w-[14.285714%] shrink-0 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
+          'h-[18px] w-[18px] shrink-0 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
         row: 'flex w-full justify-between gap-0',
-        cell: 'w-[14.285714%] shrink-0 aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
+        cell: 'h-[18px] w-[18px] shrink-0 aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
         day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',

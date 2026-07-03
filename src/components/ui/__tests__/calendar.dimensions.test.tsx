@@ -40,15 +40,16 @@ describe('Calendar shrink 50% — dimensions contract', () => {
     expect(nav).toBeTruthy();
   });
 
-  it('cell usa sétimos percentuais + aspect-square (largura fluida, sem altura fixa h-9/h-10)', () => {
+  it('cell usa tamanho fixo compacto + aspect-square (sem altura grande h-9/h-10)', () => {
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const cells = Array.from(
-      container.querySelectorAll<HTMLElement>('[class*="w-[14.285714%]"][class*="aspect-square"]'),
+      container.querySelectorAll<HTMLElement>('[class*="h-[18px]"][class*="w-[18px]"][class*="aspect-square"]'),
     );
     expect(cells.length).toBeGreaterThanOrEqual(20);
     for (const c of cells) {
       const cls = classes(c);
-      expect(cls).toMatch(/w-\[14\.285714%\]/);
+      expect(cls).toMatch(/h-\[18px\]/);
+      expect(cls).toMatch(/w-\[18px\]/);
       expect(cls).toMatch(/shrink-0/);
       expect(cls).toMatch(/aspect-square/);
       expect(cls).not.toMatch(/(?:^|\s)h-9(?:\s|$)/);
@@ -97,6 +98,8 @@ describe('Calendar shrink 50% — dimensions contract', () => {
     expect(heads.length).toBeGreaterThanOrEqual(7);
     for (const h of heads.slice(0, 7)) {
       expect(classes(h)).toMatch(/text-\[10px\]/);
+      expect(classes(h)).toMatch(/h-\[18px\]/);
+      expect(classes(h)).toMatch(/w-\[18px\]/);
     }
 
     const dayBtns = Array.from(container.querySelectorAll<HTMLElement>('button[name="day"]'));
