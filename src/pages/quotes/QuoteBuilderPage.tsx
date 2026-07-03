@@ -604,7 +604,7 @@ export default function QuoteBuilderPage() {
                           data-testid="shipping-type-select"
                           aria-label="Modalidade de frete"
                           className={cn(
-                            'h-8 text-xs',
+                            'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
                             s.validationErrors.includes('frete') && 'border-destructive',
                           )}
                         >
