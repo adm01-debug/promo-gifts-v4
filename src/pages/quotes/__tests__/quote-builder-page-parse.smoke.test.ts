@@ -1,4 +1,6 @@
 /**
+ * @vitest-environment node
+ *
  * Smoke: garante que QuoteBuilderPage.tsx compila (parseia via esbuild).
  * Objetivo: detectar erros como "Unexpected token" ANTES do build de deploy.
  */
