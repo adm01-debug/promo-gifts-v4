@@ -18,15 +18,22 @@ import { act } from 'react';
 // Mocks — precisam vir antes do import do componente.
 const setCollapsedMock = vi.fn();
 let collapsedState = false;
-vi.mock('@/hooks/customization/useCustomizationCollapsePrefs', () => ({
-  useCustomizationCollapsePrefs: () => ({
-    collapsed: collapsedState,
-    setCollapsed: (id: string, v: boolean) => {
-      setCollapsedMock(id, v);
-      collapsedState = v;
+vi.mock('@/hooks/customization/useCustomizationCollapsePrefs', async () => {
+  const React = await import('react');
+  return {
+    useCustomizationCollapsePrefs: () => {
+      const [c, setC] = React.useState<boolean>(collapsedState);
+      return {
+        collapsed: c,
+        setCollapsed: (id: string, v: boolean) => {
+          setCollapsedMock(id, v);
+          collapsedState = v;
+          setC(v);
+        },
+      };
     },
-  }),
-}));
+  };
+});
 
 vi.mock('@/hooks/simulation', () => ({
   useCustomizationPriceReactive: () => ({
