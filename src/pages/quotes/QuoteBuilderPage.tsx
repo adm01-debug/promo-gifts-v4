@@ -591,26 +591,30 @@ export default function QuoteBuilderPage() {
                   >
                     Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
                   </Label>
-                  <Select
-                    data-testid="shipping-type-select-root"
-                    value={s.shippingType}
-                    onValueChange={s.setShippingType}
-                  >
-                    <SelectTrigger
-                      data-testid="shipping-type-select"
-                      className={cn(
-                        'h-8 text-xs',
-                        s.validationErrors.includes('frete') && 'border-destructive',
-                      )}
-                    >
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cif">CIF | Frete grátis</SelectItem>
-                      <SelectItem value="fob">FOB | Repassado ao cliente</SelectItem>
-                      <SelectItem value="fob_pre">FOB | Valor pré negociado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Select
+                        data-testid="shipping-type-select-root"
+                        value={s.shippingType}
+                        onValueChange={s.setShippingType}
+                      >
+                        <SelectTrigger
+                          data-testid="shipping-type-select"
+                          className={cn(
+                            'h-8 text-xs',
+                            s.validationErrors.includes('frete') && 'border-destructive',
+                          )}
+                        >
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cif">CIF | Frete grátis</SelectItem>
+                          <SelectItem value="fob">FOB | Repassado ao cliente</SelectItem>
+                          <SelectItem value="fob_pre">FOB | Valor pré negociado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   {s.validationErrors.includes('frete') && (
                     <p className="mt-0.5 flex items-center gap-1 text-[10px] text-destructive">
                       <AlertTriangle className="h-3 w-3" />
