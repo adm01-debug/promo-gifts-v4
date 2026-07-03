@@ -22,16 +22,25 @@ function check(width, seed) {
   const cellMatch = CAL.match(/(?:^|\s)cell:\s*['"`]([^'"`]+)['"`]/);
   const headCellMatch = CAL.match(/head_cell:\s*[\s\S]{0,200}?['"`]([^'"`]+)['"`]/);
   const headRowMatch = CAL.match(/head_row:\s*['"`]([^'"`]+)['"`]/);
+  const rowMatch = CAL.match(/(?:^|\s)row:\s*['"`]([^'"`]+)['"`]/);
   const capMatch = CAL.match(/caption_label:\s*['"`]([^'"`]+)['"`]/);
 
   const cell = cellMatch?.[1] ?? '';
   const headCell = headCellMatch?.[1] ?? '';
   const headRow = headRowMatch?.[1] ?? '';
+  const row = rowMatch?.[1] ?? '';
   const cap = capMatch?.[1] ?? '';
 
-  if (!cell.includes('flex-1') || !cell.includes('aspect-square')) {
-    return `w=${width} seed=${seed}: cell sem flex-1/aspect-square`;
+  if (!cell.includes('flex-1') || !/\bh-9\b/.test(cell)) {
+    return `w=${width} seed=${seed}: cell sem flex-1/h-9 (${cell})`;
   }
+  if (cell.includes('aspect-square')) {
+    return `w=${width} seed=${seed}: cell ainda com aspect-square`;
+  }
+  if (!row.includes('mt-1')) {
+    return `w=${width} seed=${seed}: row sem mt-1 (${row})`;
+  }
+
   if (/(?:^|\s)h-\d+\s+w-\d+(?:\s|$)/.test(cell)) {
     return `w=${width} seed=${seed}: cell com dimensão fixa (${cell})`;
   }

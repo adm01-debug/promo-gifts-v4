@@ -31,15 +31,18 @@ const REQUIRED = [
   /hover:bg-accent/,
   /invisible/,
   /flex-1/,
-  /aspect-square/,
+  /(?:^|\s|')h-9(?:\s|'|$)/,
   /h-6 w-6/,
   /h-3\.5 w-3\.5/,
   /p-1\.5/,
   /space-y-1\.5/,
   /gap-0/,
+  /mt-1/,
 
 ];
-const REQUIRED_LITERALS = [`cell: 'flex-1 aspect-square`];
+const REQUIRED_LITERALS = [`cell: 'flex-1 h-9`, `row: 'flex w-full gap-0 mt-1`];
+const FORBIDDEN_LITERALS = [`aspect-square`];
+
 
 
 let pass = 0;
@@ -67,6 +70,14 @@ for (let i = 0; i < 500; i++) {
       gaps.push(`iter ${i}: literal faltando ${lit}`);
     }
   }
+  for (const lit of FORBIDDEN_LITERALS) {
+    if (slice.includes(lit)) {
+      ok = false;
+      gaps.push(`iter ${i}: literal proibido ${lit}`);
+    }
+  }
+
+
 
   ok ? pass++ : fail++;
 }
