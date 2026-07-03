@@ -28,11 +28,11 @@ describe('Calendar iOS redesign', () => {
     expect(caption!.textContent?.toLowerCase()).toMatch(/julho.*2026/);
   });
 
-  it('caption tem text-base + font-bold + tracking-tight', () => {
+  it('caption tem text-[15px] + font-bold + tracking-tight', () => {
     render(<Calendar mode="single" defaultMonth={REF} />);
     const cap = byClass('capitalize');
     const c = classes(cap);
-    expect(c).toMatch(/text-base/);
+    expect(c).toMatch(/text-\[15px\]/);
     expect(c).toMatch(/font-bold/);
     expect(c).toMatch(/tracking-tight/);
   });
