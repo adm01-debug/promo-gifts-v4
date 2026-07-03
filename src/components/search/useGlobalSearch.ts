@@ -106,7 +106,7 @@ export function useGlobalSearch() {
   // fix_version: word-magic-search-2026-07-03
   // ANTI-REGRESSÃO: isGlobalAIMode aplica ai_title nos resultados de busca quando Word Magic está ON
   const isGlobalAIMode = useWordMagicStore((s) => s.isGlobalAIMode);
-    const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
