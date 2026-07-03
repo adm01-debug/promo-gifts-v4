@@ -580,26 +580,29 @@ export default function QuoteBuilderPage() {
                 </div>
 
                 {/* Frete */}
-                <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
-                  <Label
-                    className={cn(
-                      'text-xs',
-                      s.validationErrors.includes('frete')
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
-                  </Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                    <div>
+                <div className="mt-1 border-t border-border/30 pt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" data-testid="freight-grid">
+                    <div className="space-y-1" data-testid="freight-grid-col-1">
+                      <Label
+                        htmlFor="freight-select"
+                        className={cn(
+                          'text-xs',
+                          s.validationErrors.includes('frete')
+                            ? 'text-destructive'
+                            : 'text-muted-foreground',
+                        )}
+                      >
+                        Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
+                      </Label>
                       <Select
                         data-testid="shipping-type-select-root"
                         value={s.shippingType}
                         onValueChange={s.setShippingType}
                       >
                         <SelectTrigger
+                          id="freight-select"
                           data-testid="shipping-type-select"
+                          aria-label="Modalidade de frete"
                           className={cn(
                             'h-8 text-xs',
                             s.validationErrors.includes('frete') && 'border-destructive',
@@ -615,8 +618,9 @@ export default function QuoteBuilderPage() {
                       </Select>
                     </div>
                     {s.shippingType === 'fob_pre' && (
-                      <div className="space-y-1">
+                      <div className="space-y-1" data-testid="freight-grid-col-2">
                         <Label
+                          htmlFor="freight-value"
                           className={cn(
                             'text-xs',
                             s.validationErrors.includes('valor_frete')
@@ -632,7 +636,9 @@ export default function QuoteBuilderPage() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs text-muted-foreground">R$</span>
                           <CurrencyInput
+                            id="freight-value"
                             data-testid="shipping-cost-input"
+                            aria-label="Valor do frete em reais"
                             value={s.shippingCost || 0}
                             onChange={(n) => s.setShippingCost(Math.max(0, n))}
                             className={cn(
