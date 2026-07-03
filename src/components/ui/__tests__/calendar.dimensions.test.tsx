@@ -69,5 +69,30 @@ describe('Calendar shrink 50% — dimensions contract', () => {
       /h-6\s+w-6/.test(b.getAttribute('class') ?? ''),
     );
     expect(classes(navBtn)).toMatch(/focus-visible:ring-2/);
+
+  it('shrink extra: month tem space-y-1.5, rows tem gap-0, weekdays text-[10px], days text-[11px]', () => {
+    const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
+    const month = container.querySelector('[class*="space-y-1.5"]');
+    expect(month, 'month container com space-y-1.5').toBeTruthy();
+
+    const rows = Array.from(container.querySelectorAll<HTMLElement>('[class*="w-full"]'))
+      .map((el) => classes(el))
+      .filter((c) => /(^|\s)flex(\s|$)/.test(c) && /w-full/.test(c));
+    const hasGap0Row = rows.some((c) => /(^|\s)gap-0(\s|$)/.test(c));
+    expect(hasGap0Row, 'ao menos uma row com gap-0').toBe(true);
+
+    const heads = Array.from(container.querySelectorAll<HTMLElement>('th, [role="columnheader"]'))
+      .filter((h) => (h.textContent ?? '').trim().length > 0);
+    expect(heads.length).toBeGreaterThanOrEqual(7);
+    for (const h of heads.slice(0, 7)) {
+      expect(classes(h)).toMatch(/text-\[10px\]/);
+    }
+
+    const dayBtns = Array.from(container.querySelectorAll<HTMLElement>('button[name="day"]'));
+    expect(dayBtns.length).toBeGreaterThan(20);
+    for (const b of dayBtns.slice(0, 10)) {
+      expect(classes(b)).toMatch(/text-\[11px\]/);
+    }
   });
 });
+
