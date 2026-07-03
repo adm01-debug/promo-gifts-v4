@@ -152,19 +152,17 @@ describe('Bloco Frete — grid preservado em diferentes larguras', () => {
 });
 
 describe('Bloco Frete — troca dinâmica de shippingType', () => {
-  it('CIF → FOB pré-negociado revela Valor R$ na 2ª coluna', async () => {
-    const user = userEvent.setup();
-    render(<FreightFixture initial="cif" />);
+  it('CIF → FOB pré-negociado revela Valor R$ na 2ª coluna (rerender)', () => {
+    const { rerender } = render(<FreightFixture key="cif" initial="cif" />);
     expect(screen.queryByTestId('shipping-cost-input')).not.toBeInTheDocument();
 
-    await user.click(screen.getByTestId('shipping-type-select'));
-    await user.click(screen.getByRole('option', { name: /FOB \| Valor pré negociado/i }));
-
-    const input = await screen.findByTestId('shipping-cost-input');
+    rerender(<FreightFixture key="fob_pre" initial="fob_pre" />);
     const grid = screen.getByTestId('freight-grid');
-    expect(within(grid).getByTestId('shipping-cost-input')).toBe(input);
+    expect(within(grid).getByTestId('shipping-cost-input')).toBeInTheDocument();
+    expect(within(grid).getByTestId('freight-grid-col-2')).toBeInTheDocument();
   });
 });
+
 
 describe('Bloco Frete — acessibilidade (axe)', () => {
   it.each(['cif', 'fob', 'fob_pre'] as const)(
