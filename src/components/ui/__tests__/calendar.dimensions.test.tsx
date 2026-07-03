@@ -69,8 +69,10 @@ describe('Calendar shrink 50% — dimensions contract', () => {
       /h-6\s+w-6/.test(b.getAttribute('class') ?? ''),
     );
     expect(classes(navBtn)).toMatch(/focus-visible:ring-2/);
+  });
 
   it('shrink extra: month tem space-y-1.5, rows tem gap-0, weekdays text-[10px], days text-[11px]', () => {
+
     const { container } = render(<Calendar mode="single" defaultMonth={REF} />);
     const month = container.querySelector('[class*="space-y-1.5"]');
     expect(month, 'month container com space-y-1.5').toBeTruthy();
