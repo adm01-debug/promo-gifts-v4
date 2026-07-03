@@ -166,23 +166,25 @@ describe(`Bloco Frete — hierarquia + testids estáveis (${CASES.length} cenár
     );
     const unique = new Set(testids);
     expect(unique.size).toBe(testids.length);
-  });
+  );
+});
 });
 
 describe('Bloco Frete — estabilidade dos testids ao alternar shippingType', () => {
-  it.each(WIDTHS)('largura %s px: trocar CIF → FOB pré → CIF preserva testids do trigger', (w) => {
+  it.each(WIDTHS)('largura %s px: CIF → FOB pré → CIF preserva ids do trigger', (w) => {
     setViewport(w);
-    const { rerender } = render(<FreightFixture initial="cif" />);
+    // Usamos key remount para simular a mudança real de shippingType via store,
+    // uma vez que o useState local do FreightFixture só lê `initial` no mount.
+    const { rerender } = render(<FreightFixture key="a" initial="cif" />);
     const idCif = screen.getByTestId('shipping-type-select').getAttribute('id');
 
-    rerender(<FreightFixture initial="fob_pre" />);
+    rerender(<FreightFixture key="b" initial="fob_pre" />);
     const idPre = screen.getByTestId('shipping-type-select').getAttribute('id');
     expect(screen.getByTestId('shipping-cost-input').getAttribute('id')).toBe('freight-value');
 
-    rerender(<FreightFixture initial="cif" />);
+    rerender(<FreightFixture key="c" initial="cif" />);
     const idCif2 = screen.getByTestId('shipping-type-select').getAttribute('id');
 
-    // O trigger mantém o mesmo id acessível em todos os estados; input desaparece só em não-fob_pre.
     expect(idCif).toBe('freight-select');
     expect(idPre).toBe('freight-select');
     expect(idCif2).toBe('freight-select');
