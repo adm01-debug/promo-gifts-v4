@@ -109,9 +109,11 @@ describe(`Bloco Frete — hierarquia + testids estáveis (${CASES.length} cenár
     expect(CASES).toHaveLength(32);
   });
 
-  it.each(CASES)('estado=$state @ ${width}px → hierarquia completa preservada', ({ state, width }) => {
-    setViewport(width);
-    const { container } = render(<FreightFixture initial={state} />);
+  it.each(CASES)(
+    'estado=$state @ $width px → hierarquia completa preservada',
+    ({ state, width }) => {
+      setViewport(width);
+      const { container } = render(<FreightFixture key={`${state}-${width}`} initial={state} />);
 
     // 1. freight-block é raiz única e tem exatamente 1 filho direto (o grid).
     const block = screen.getByTestId('freight-block');
