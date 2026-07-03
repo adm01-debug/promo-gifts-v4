@@ -28,8 +28,9 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn('pointer-events-auto p-1.5', className)}
       formatters={{
+        // fix_version: calendar-ios-type-safe-2026-07-03 — cast Day para satisfazer date-fns typings
         formatWeekdayName: (date) => {
-          const narrow = ptBR.localize?.day(date.getDay(), { width: 'narrow' }) ?? '';
+          const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
           return narrow.charAt(0).toUpperCase();
         },
         ...formatters,

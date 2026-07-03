@@ -356,7 +356,7 @@ export default function QuoteBuilderPage() {
                 {!conditionsCollapsed && (
                   <div id="quote-conditions-body" className="space-y-3">
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Validade | Proposta */}
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">
