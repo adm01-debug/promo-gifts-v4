@@ -23,12 +23,18 @@ const REQUIRED = [
   /bg-foreground/,
   /text-background/,
   /text-destructive/,
-  /text-base/,
+  /text-\[15px\]/,
   /font-bold/,
   /tracking-tight/,
   /hover:bg-accent/,
   /invisible/,
+  /flex-1/,
+  /aspect-square/,
+  /h-6 w-6/,
+  /h-3\.5 w-3\.5/,
 ];
+const REQUIRED_LITERALS = [`cell: 'flex-1 aspect-square`];
+
 
 let pass = 0;
 let fail = 0;
@@ -49,6 +55,13 @@ for (let i = 0; i < 500; i++) {
       gaps.push(`iter ${i}: faltou ${r}`);
     }
   }
+  for (const lit of REQUIRED_LITERALS) {
+    if (!slice.includes(lit)) {
+      ok = false;
+      gaps.push(`iter ${i}: literal faltando ${lit}`);
+    }
+  }
+
   ok ? pass++ : fail++;
 }
 
