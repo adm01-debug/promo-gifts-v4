@@ -529,7 +529,7 @@ export default function QuoteBuilderPage() {
                       <SelectTrigger
                         data-testid="delivery-time-select"
                         className={cn(
-                          'h-8 text-xs',
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
                           s.validationErrors.includes('prazo_entrega') && 'border-destructive',
                         )}
                       >
