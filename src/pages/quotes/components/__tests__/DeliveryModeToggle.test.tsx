@@ -2,6 +2,7 @@
  * Teste RTL isolado do toggle Contar dias / Data fixa.
  * Não depende do QuoteBuilderPage inteiro (auth, providers, external DB).
  */
+import { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -72,13 +73,9 @@ describe('<DeliveryModeToggle />', () => {
   // -------------------------------------------------------------------------
   it('alterna aria-selected quando o pai atualiza o value após onChange', async () => {
     function Host() {
-      const [mode, setMode] = (globalThis as unknown as { React: typeof import('react') })
-        .React.useState<DeliveryMode>('prazo');
+      const [mode, setMode] = useState<DeliveryMode>('prazo');
       return <DeliveryModeToggle value={mode} onChange={setMode} />;
     }
-    // usar React real
-    const React = await import('react');
-    (globalThis as unknown as { React: typeof React }).React = React;
 
     render(<Host />);
     const contar = screen.getByRole('tab', { name: 'Contar dias' });
