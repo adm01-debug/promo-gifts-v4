@@ -20,6 +20,7 @@ import { useSlashCommands } from '@/hooks/ui/useSlashCommands';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
 
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
+import { useWordMagicStore } from '@/stores/useWordMagicStore'; // fix_version: word-magic-search-2026-07-03
 import type { PromobrindProduct } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
 
@@ -102,7 +103,10 @@ function redactPii(query: string): string {
 export function useGlobalSearch() {
   const { open, setOpen, voiceOverlayOpen, setVoiceOverlayOpen } = useSearchStore();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  // fix_version: word-magic-search-2026-07-03
+  // ANTI-REGRESSÃO: isGlobalAIMode aplica ai_title nos resultados de busca quando Word Magic está ON
+  const isGlobalAIMode = useWordMagicStore((s) => s.isGlobalAIMode);
+    const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
@@ -377,9 +381,11 @@ export function useGlobalSearch() {
 
           const fuse = new Fuse(filteredProducts, createProductFuseOptions<PromobrindProduct>());
           rankProductSearchResults(filteredProducts, productQuery, fuse).forEach((p) => {
+            // Word Magic: usa ai_title quando toggle está ON e produto tem título IA
+            const displayTitle = isGlobalAIMode && p.ai_title ? p.ai_title : p.name;
             allResults.push({
               id: p.id,
-              title: p.name,
+              title: displayTitle,
               subtitle: `SKU: ${p.sku} • ${p.category_name || 'Sem categoria'} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.sale_price || p.base_price || 0)}`,
               type: 'product',
               href: `/produto/${p.id}`,
