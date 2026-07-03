@@ -1,0 +1,65 @@
+name: E2E Quote Freight Block (visual)
+
+# Regressão visual do bloco Frete no QuoteBuilderPage.
+# Falha se as screenshots divergirem além de maxDiffPixelRatio 0.02
+# e sobe o diff/report como artefato para inspeção.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/QuoteBuilderPage.tsx'
+      - 'e2e/visual/quote-freight-block.spec.ts'
+      - '.github/workflows/e2e-quote-freight-block.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/QuoteBuilderPage.tsx'
+      - 'e2e/visual/quote-freight-block.spec.ts'
+      - '.github/workflows/e2e-quote-freight-block.yml'
+  workflow_dispatch:
+
+jobs:
+  freight-block-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run freight block visual spec (${{ matrix.browser }})
+        run: |
+          npx playwright test \
+            e2e/visual/quote-freight-block.spec.ts \
+            --project=${{ matrix.browser }}-public \
+            --reporter=line
+
+      - name: Upload report + snapshots + diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-freight-block-${{ matrix.browser }}
+          path: |
+            playwright-report
+            test-results
+            e2e/visual/quote-freight-block.spec.ts-snapshots
+          retention-days: 14
