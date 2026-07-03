@@ -2,22 +2,42 @@ name: E2E Quote Freight Block (visual)
 
 # Regressão visual do bloco Frete no QuoteBuilderPage.
 # Falha se as screenshots divergirem além de maxDiffPixelRatio 0.02
-# e sobe o diff/report como artefato para inspeção.
+# e sobe o diff/report como artefato + comenta o PR com o link.
 
 on:
   push:
     branches: [main]
     paths:
       - 'src/pages/quotes/QuoteBuilderPage.tsx'
+      - 'src/components/ui/label.tsx'
+      - 'src/components/ui/select.tsx'
+      - 'src/components/ui/currency-input.tsx'
+      - 'src/index.css'
+      - 'src/styles/brand-tokens.css'
+      - 'tailwind.config.ts'
       - 'e2e/visual/quote-freight-block.spec.ts'
+      - 'e2e/visual/quote-freight-block.spec.ts-snapshots/**'
+      - 'e2e/helpers/nav.ts'
       - '.github/workflows/e2e-quote-freight-block.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/pages/quotes/QuoteBuilderPage.tsx'
+      - 'src/components/ui/label.tsx'
+      - 'src/components/ui/select.tsx'
+      - 'src/components/ui/currency-input.tsx'
+      - 'src/index.css'
+      - 'src/styles/brand-tokens.css'
+      - 'tailwind.config.ts'
       - 'e2e/visual/quote-freight-block.spec.ts'
+      - 'e2e/visual/quote-freight-block.spec.ts-snapshots/**'
+      - 'e2e/helpers/nav.ts'
       - '.github/workflows/e2e-quote-freight-block.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   freight-block-visual:
@@ -47,14 +67,16 @@ jobs:
       - run: npx playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run freight block visual spec (${{ matrix.browser }})
+        id: run
         run: |
           npx playwright test \
             e2e/visual/quote-freight-block.spec.ts \
             --project=${{ matrix.browser }}-public \
-            --reporter=line
+            --reporter=line,html
 
       - name: Upload report + snapshots + diffs
         if: always()
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: quote-freight-block-${{ matrix.browser }}
@@ -63,3 +85,57 @@ jobs:
             test-results
             e2e/visual/quote-freight-block.spec.ts-snapshots
           retention-days: 14
+
+      - name: Comentar diff no PR (em caso de falha)
+        if: ${{ failure() && github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactUrl = `${runUrl}#artifacts`;
+            const body = [
+              '### 🖼️ Regressão visual do bloco Frete falhou',
+              '',
+              `**Browser:** \`${{ matrix.browser }}\``,
+              `**Run:** ${runUrl}`,
+              `**Artefato (report + diffs + snapshots):** ${artifactUrl}`,
+              '',
+              'Passos:',
+              '1. Baixe o artefato `quote-freight-block-${{ matrix.browser }}`',
+              '2. Abra `playwright-report/index.html` para ver os diffs pixel-a-pixel',
+              '3. Se a mudança visual for intencional, dispare o workflow **E2E · Update Quote Freight snapshots** para regenerar os baselines',
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '### 🖼️ Regressão visual do bloco Frete falhou';
+            const existing = comments.find(c => c.body?.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Resumo no summary do run
+        if: always()
+        run: |
+          {
+            echo "## 🖼️ Regressão visual do bloco Frete"
+            echo ""
+            echo "- Browser: \`${{ matrix.browser }}\`"
+            echo "- Resultado: **${{ steps.run.outcome }}**"
+            echo "- Artefato: [quote-freight-block-${{ matrix.browser }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)"
+          } >> "$GITHUB_STEP_SUMMARY"
