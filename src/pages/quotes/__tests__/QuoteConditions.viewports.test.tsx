@@ -130,7 +130,11 @@ describe('QuoteBuilder — Condições · alinhamento em 320/768/1280', () => {
         expect(directChildren.length).toBeGreaterThanOrEqual(2);
         expect(directChildren[0].tagName.toLowerCase()).toBe('span');
         const chevron = directChildren[directChildren.length - 1];
-        expect(chevron.querySelector('svg'), `[${vp.name}] "${id}" chevron`).toBeTruthy();
+        // chevron pode ser <svg> direto (asChild) ou wrapper contendo <svg>
+        expect(
+          chevron.tagName.toLowerCase() === 'svg' || chevron.querySelector('svg') !== null,
+          `[${vp.name}] "${id}" chevron ausente`,
+        ).toBe(true);
       }
     });
   }
