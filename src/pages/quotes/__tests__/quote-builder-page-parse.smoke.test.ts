@@ -17,7 +17,16 @@ const SRC = readFileSync(resolve(__dirname, '../QuoteBuilderPage.tsx'), 'utf8');
 describe('QuoteBuilderPage — bloco Frete: layout responsivo', () => {
   it('usa grid grid-cols-1 md:grid-cols-3 gap-3 items-end (empilha em mobile, 3 col em md+)', () => {
     expect(SRC).toMatch(
-      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">\s*<div>\s*<Select\s+data-testid="shipping-type-select-root"/,
+      /<div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" data-testid="freight-grid">\s*<div className="space-y-1" data-testid="freight-grid-col-1">[^]*?<Select\s+data-testid="shipping-type-select-root"/,
+    );
+  });
+
+  it('labels Frete e Valor R$ vivem dentro das células do grid para não aumentar o container só no fob_pre', () => {
+    expect(SRC).toMatch(
+      /data-testid="freight-grid-col-1"[^]*?>[^]*?<Label[^]*?>[^]*?Frete[^]*?<\/Label>[^]*?shipping-type-select-root/,
+    );
+    expect(SRC).toMatch(
+      /data-testid="freight-grid-col-2"[^]*?>[^]*?<Label[^]*?>[^]*?Valor R\$[^]*?<\/Label>[^]*?shipping-cost-input/,
     );
   });
 
