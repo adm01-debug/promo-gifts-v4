@@ -39,11 +39,13 @@ const CHECKS = [
     },
   },
   {
-    name: 'trigger "Prazo | Entrega" em md:w-1/3',
-    fn: (s) => /w-full md:w-1\/3/.test(s),
+    // Após refatoração: célula "Prazo | Entrega" mora em grid md:grid-cols-3,
+    // então cada coluna vale 1/3 automaticamente — sem precisar de md:w-1/3.
+    name: 'bloco "Prazo | Entrega" usa grid md:grid-cols-3',
+    fn: (s) => /grid grid-cols-1 md:grid-cols-3 gap-3/.test(s),
   },
   {
-    name: 'trigger "Prazo | Entrega" sem larguras legadas',
+    name: 'bloco "Prazo | Entrega" sem larguras legadas hardcoded',
     fn: (s) => !/md:w-2\/5/.test(s) && !/w-full md:w-1\/2(?![0-9])/.test(s),
   },
 ];
