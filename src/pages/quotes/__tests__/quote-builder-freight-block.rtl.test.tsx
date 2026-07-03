@@ -256,9 +256,9 @@ describe('Bloco Frete — navegação por teclado', () => {
         const label = within(col2).getByText('Valor R$');
         const input = within(col2).getByTestId('shipping-cost-input');
 
-        // Label é filho direto da célula (space-y-1), input também — mesmo eixo X.
+        // Label é filho direto da célula; input está contido (CurrencyInput pode envolver).
         expect(label.parentElement).toBe(col2);
-        expect(input.parentElement).toBe(col2);
+        expect(col2.contains(input)).toBe(true);
 
         // Nenhum <span> irmão com "R$" duplicando o cifrão do label.
         const spans = col2.querySelectorAll('span');
