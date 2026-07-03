@@ -6,6 +6,7 @@
  * validando:
  *  - hierarquia + data-testid do grid em cada shippingType (cif / fob / fob_pre)
  *  - grid grid-cols-1 md:grid-cols-3 gap-3 items-end presente em qualquer largura
+ *  - labels dentro das colunas do grid, evitando crescimento vertical só no fob_pre
  *  - acessibilidade (axe) sem violações
  *  - navegação por teclado (Tab visita Select -> Input R$ quando fob_pre)
  *
@@ -36,21 +37,21 @@ function FreightFixture({ initial = 'cif' as Shipping }) {
   const validationErrors: string[] = [];
 
   return (
-    <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3" data-testid="freight-block">
-      <Label
-        htmlFor="freight-select"
-        className={cn(
-          'text-xs',
-          validationErrors.includes('frete') ? 'text-destructive' : 'text-muted-foreground',
-        )}
-      >
-        Frete
-      </Label>
+    <div className="mt-1 border-t border-border/30 pt-3" data-testid="freight-block">
       <div
         data-testid="freight-grid"
         className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
       >
-        <div data-testid="freight-grid-col-1">
+        <div className="space-y-1" data-testid="freight-grid-col-1">
+          <Label
+            htmlFor="freight-select"
+            className={cn(
+              'text-xs',
+              validationErrors.includes('frete') ? 'text-destructive' : 'text-muted-foreground',
+            )}
+          >
+            Frete
+          </Label>
           <Select
             data-testid="shipping-type-select-root"
             value={shippingType}
@@ -131,6 +132,18 @@ describe('Bloco Frete — hierarquia + data-testid do grid', () => {
     expect(cols[0]).toHaveAttribute('data-testid', 'freight-grid-col-1');
     expect(cols[1]).toHaveAttribute('data-testid', 'freight-grid-col-2');
     expect(within(grid).getByTestId('shipping-cost-input')).toBeInTheDocument();
+  });
+
+  it('shippingType="fob_pre": labels Frete e Valor R$ ficam dentro das colunas do mesmo grid', () => {
+    render(<FreightFixture initial="fob_pre" />);
+    const grid = screen.getByTestId('freight-grid');
+    const col1 = within(grid).getByTestId('freight-grid-col-1');
+    const col2 = within(grid).getByTestId('freight-grid-col-2');
+
+    expect(within(col1).getByText('Frete')).toBeInTheDocument();
+    expect(within(col1).getByTestId('shipping-type-select')).toBeInTheDocument();
+    expect(within(col2).getByText('Valor R$')).toBeInTheDocument();
+    expect(within(col2).getByTestId('shipping-cost-input')).toBeInTheDocument();
   });
 });
 
