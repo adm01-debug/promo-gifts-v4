@@ -371,7 +371,7 @@ export default function QuoteBuilderPage() {
                         );
                       }}
                     >
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-8 text-xs [&>span]:flex-1 [&>span]:text-left">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
