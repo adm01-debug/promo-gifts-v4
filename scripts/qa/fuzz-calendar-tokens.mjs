@@ -54,6 +54,7 @@ for (let i = 0; i < 500; i++) {
       ok = false;
       gaps.push(`iter ${i}: faltou ${r}`);
     }
+  }
   for (const lit of REQUIRED_LITERALS) {
     if (!slice.includes(lit)) {
       ok = false;
