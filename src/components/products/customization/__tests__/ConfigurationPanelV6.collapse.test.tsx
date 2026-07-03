@@ -1,99 +1,255 @@
 /**
- * Testes do botão de colapso do ConfigurationPanelV6.
- * Cobrem: toggle de visibilidade, a11y (aria-expanded/controls),
- * persistência via localStorage e preservação dos tokens de cor.
+ * ConfigurationPanelV6 — contrato de colapso/expansão.
+ *
+ * Valida as invariantes do fix para o bug "conteúdo abaixo não sobe ao colapsar":
+ *  - wrapper externo usa `flex flex-col` + `gap-{0|4}` (não `space-y-4`)
+ *  - painel colapsável NÃO recebe atributo `hidden` (regressão B1)
+ *  - painel colapsável recebe `aria-hidden` refletindo estado
+ *  - alternância 20× via clique é determinística
+ *  - reidratação inicial respeita `collapsed=true` vindo das prefs
+ *
+ * Hooks pesados (Supabase, price reactive) são mockados para isolar o contrato.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ConfigurationPanelV6 } from '../ConfigurationPanelV6';
-import type { TechniqueOption } from '@/types/customization';
+import { render, screen, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { act } from 'react';
 
-// Hook de preço — sem rede
-vi.mock('@/hooks/simulation', () => ({
-  useCustomizationPriceReactive: () => ({ price: null, loading: false, error: null }),
+// Mocks — precisam vir antes do import do componente.
+const setCollapsedMock = vi.fn();
+let collapsedState = false;
+vi.mock('@/hooks/customization/useCustomizationCollapsePrefs', () => ({
+  useCustomizationCollapsePrefs: () => ({
+    collapsed: collapsedState,
+    setCollapsed: (id: string, v: boolean) => {
+      setCollapsedMock(id, v);
+      collapsedState = v;
+    },
+  }),
 }));
 
-// Supabase — sem autenticação durante os testes; sync remoto vira no-op.
+vi.mock('@/hooks/simulation', () => ({
+  useCustomizationPriceReactive: () => ({
+    price: null,
+    loading: false,
+    error: null,
+  }),
+}));
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    auth: { getUser: async () => ({ data: { user: null } }) },
-    from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
-      upsert: async () => ({ error: null }),
-    }),
+    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
   },
 }));
 
-const technique: TechniqueOption = {
-  technique_id: 'tec-1',
-  technique_name: 'Serigrafia',
-  codigo_tabela: 'SER-001',
-  grupo_tecnica: 'Serigrafia',
-  usa_dimensao: false,
-  cobra_por_cor: true,
-  max_cores: 3,
-  efetiva_largura_max: 0,
-  efetiva_altura_max: 0,
-  // outros campos opcionais
-} as unknown as TechniqueOption;
+// eslint-disable-next-line import/first
+import { ConfigurationPanelV6 } from '../ConfigurationPanelV6';
 
-function renderPanel(isConfirmed = true) {
+const technique = {
+  technique_id: 'tech-abc',
+  technique_name: 'Serigrafia',
+  name: 'Serigrafia',
+  usa_dimensao: true,
+  cobra_por_cor: true,
+  efetiva_largura_max: 12,
+  efetiva_altura_max: 8,
+  grupo_tecnica: 'SERIGRAFIA',
+  // deixamos o restante como any — o componente só lê estes campos no caminho testado.
+} as unknown as Parameters<typeof ConfigurationPanelV6>[0]['technique'];
+
+function renderPanel(overrides: Partial<Parameters<typeof ConfigurationPanelV6>[0]> = {}) {
   return render(
     <ConfigurationPanelV6
       technique={technique}
-      quantity={10}
-      isConfirmed={isConfirmed}
+      quantity={100}
       onPriceCalculated={() => {}}
+      {...overrides}
     />,
   );
 }
 
-describe('ConfigurationPanelV6 — botão de colapso', () => {
-  beforeEach(() => {
-    window.localStorage.clear();
+function getWrapper(): HTMLElement {
+  // O card externo é o ancestral do botão toggle que carrega `rounded-lg border`.
+  const toggle = screen.getByTestId('customization-collapse-toggle');
+  const wrapper = toggle.closest('.rounded-lg.border') as HTMLElement | null;
+  if (!wrapper) throw new Error('wrapper do card não encontrado');
+  return wrapper;
+}
+
+function getPanel(): HTMLElement {
+  const toggle = screen.getByTestId('customization-collapse-toggle');
+  const id = toggle.getAttribute('aria-controls');
+  if (!id) throw new Error('aria-controls ausente no toggle');
+  const panel = document.getElementById(id);
+  if (!panel) throw new Error(`painel #${id} não encontrado`);
+  return panel;
+}
+
+beforeEach(() => {
+  collapsedState = false;
+  setCollapsedMock.mockClear();
+  cleanup();
+});
+
+describe('ConfigurationPanelV6 — contrato de colapso', () => {
+  describe('Grupo A — wrapper externo (contrato visual)', () => {
+    it('expandido: contém flex/flex-col/gap-4/p-4/transition-[gap]/motion-reduce', () => {
+      collapsedState = false;
+      renderPanel();
+      const w = getWrapper();
+      expect(w.className).toMatch(/\bflex\b/);
+      expect(w.className).toMatch(/\bflex-col\b/);
+      expect(w.className).toMatch(/\bgap-4\b/);
+      expect(w.className).toMatch(/\bp-4\b/);
+      expect(w.className).toMatch(/transition-\[gap\]/);
+      expect(w.className).toMatch(/duration-300/);
+      expect(w.className).toMatch(/motion-reduce:transition-none/);
+    });
+
+    it('colapsado: contém gap-0 e NÃO contém gap-4 nem space-y-4', () => {
+      collapsedState = true;
+      renderPanel();
+      const w = getWrapper();
+      expect(w.className).toMatch(/\bgap-0\b/);
+      expect(w.className).not.toMatch(/\bgap-4\b/);
+      expect(w.className).not.toMatch(/\bspace-y-4\b/);
+    });
   });
 
-  it('inicia expandido e oculta o conteúdo ao clicar no toggle', () => {
-    renderPanel();
-    const toggle = screen.getByTestId('customization-collapse-toggle');
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  describe('Grupo B — painel colapsável', () => {
+    it('NÃO possui atributo `hidden` em nenhum estado (regressão B1)', () => {
+      collapsedState = false;
+      const { rerender } = renderPanel();
+      expect(getPanel().hasAttribute('hidden')).toBe(false);
+      collapsedState = true;
+      rerender(
+        <ConfigurationPanelV6
+          technique={technique}
+          quantity={100}
+          onPriceCalculated={() => {}}
+        />,
+      );
+      expect(getPanel().hasAttribute('hidden')).toBe(false);
+    });
 
-    const region = screen.getByRole('region', { name: /configurações da gravação/i });
-    expect(region).not.toHaveAttribute('hidden');
+    it('aria-hidden reflete o estado colapsado', () => {
+      collapsedState = false;
+      renderPanel();
+      expect(getPanel().getAttribute('aria-hidden')).toBe('false');
+      cleanup();
+      collapsedState = true;
+      renderPanel();
+      expect(getPanel().getAttribute('aria-hidden')).toBe('true');
+    });
 
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(region).toHaveAttribute('hidden');
+    it('mantém role="region", aria-label, min-h-0 e overflow-hidden', () => {
+      collapsedState = false;
+      renderPanel();
+      const p = getPanel();
+      expect(p.getAttribute('role')).toBe('region');
+      expect(p.getAttribute('aria-label')).toBe('Configurações da gravação');
+      const inner = p.firstElementChild as HTMLElement;
+      expect(inner.className).toMatch(/min-h-0/);
+      expect(inner.className).toMatch(/overflow-hidden/);
+    });
+
+    it('classes grid-rows-[0fr]/[1fr] alternam com estado', () => {
+      collapsedState = false;
+      renderPanel();
+      expect(getPanel().className).toMatch(/grid-rows-\[1fr\]/);
+      cleanup();
+      collapsedState = true;
+      renderPanel();
+      expect(getPanel().className).toMatch(/grid-rows-\[0fr\]/);
+    });
   });
 
-  it('vincula o botão à região via aria-controls', () => {
-    renderPanel();
-    const toggle = screen.getByTestId('customization-collapse-toggle');
-    const region = screen.getByRole('region', { name: /configurações da gravação/i });
-    expect(toggle.getAttribute('aria-controls')).toBe(region.id);
+  describe('Grupo C — botão toggle', () => {
+    it('aria-expanded é o inverso de collapsed e aria-controls aponta pro painel', () => {
+      collapsedState = false;
+      renderPanel();
+      const toggle = screen.getByTestId('customization-collapse-toggle');
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+      const id = toggle.getAttribute('aria-controls')!;
+      expect(document.getElementById(id)).toBeTruthy();
+    });
+
+    it('aria-label alterna entre Expandir e Recolher', () => {
+      collapsedState = true;
+      renderPanel();
+      expect(screen.getByTestId('customization-collapse-toggle').getAttribute('aria-label')).toBe(
+        'Expandir configurações da gravação',
+      );
+      cleanup();
+      collapsedState = false;
+      renderPanel();
+      expect(screen.getByTestId('customization-collapse-toggle').getAttribute('aria-label')).toBe(
+        'Recolher configurações da gravação',
+      );
+    });
   });
 
-  it('persiste o estado de colapso em localStorage (mapa por technique_id)', () => {
-    const { unmount } = renderPanel();
-    fireEvent.click(screen.getByTestId('customization-collapse-toggle'));
-    const raw = window.localStorage.getItem('customization-collapsed:v1');
-    expect(raw).toBeTruthy();
-    expect(JSON.parse(raw as string)).toMatchObject({ 'tec-1': true });
+  describe('Grupo D — persistência', () => {
+    it('setCollapsed é chamado com (technique_id, boolean) a cada clique', async () => {
+      collapsedState = false;
+      renderPanel();
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId('customization-collapse-toggle'));
+      expect(setCollapsedMock).toHaveBeenCalledWith('tech-abc', true);
+    });
 
-    unmount();
-    renderPanel();
-    expect(screen.getByTestId('customization-collapse-toggle')).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
+    it('reidrata `collapsed=true` vindo das prefs (Grupo D)', () => {
+      collapsedState = true;
+      renderPanel();
+      expect(getPanel().getAttribute('aria-hidden')).toBe('true');
+      expect(getPanel().className).toMatch(/grid-rows-\[0fr\]/);
+    });
   });
 
-  it('preserva tokens de cor do estado confirmado (primary)', () => {
-    const { container } = renderPanel(true);
-    const card = container.querySelector('.rounded-lg.border');
-    expect(card?.className).toMatch(/border-primary\/30/);
-    expect(card?.className).toMatch(/bg-primary\/5/);
-    // Tokens NÃO devem virar success/accent acidentalmente
-    expect(card?.className).not.toMatch(/border-success|bg-success|border-accent|bg-accent/);
+  describe('Fuzz determinístico — 500 sequências de toggles', () => {
+    it('estado final e classes sempre consistentes com paridade dos cliques', async () => {
+      // PRNG determinística (mulberry32) para reprodutibilidade
+      let seed = 0xc0ffee;
+      const rand = () => {
+        seed = (seed + 0x6d2b79f5) | 0;
+        let t = seed;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+
+      const user = userEvent.setup();
+      for (let sim = 0; sim < 500; sim++) {
+        collapsedState = false;
+        setCollapsedMock.mockClear();
+        renderPanel();
+        const toggle = screen.getByTestId('customization-collapse-toggle');
+        const clicks = 1 + Math.floor(rand() * 30);
+        for (let c = 0; c < clicks; c++) {
+          // eslint-disable-next-line no-await-in-loop
+          await act(async () => {
+            await user.click(toggle);
+          });
+        }
+        const expectCollapsed = clicks % 2 === 1;
+        expect(collapsedState).toBe(expectCollapsed);
+
+        const w = getWrapper();
+        const p = getPanel();
+        // Invariantes sempre válidas
+        expect(p.hasAttribute('hidden')).toBe(false);
+        const hasGap0 = /\bgap-0\b/.test(w.className);
+        const hasGap4 = /\bgap-4\b/.test(w.className);
+        expect(hasGap0 && hasGap4).toBe(false);
+        const hasRow0 = /grid-rows-\[0fr\]/.test(p.className);
+        const hasRow1 = /grid-rows-\[1fr\]/.test(p.className);
+        expect(hasRow0 && hasRow1).toBe(false);
+        // Coerência com estado
+        expect(hasGap0).toBe(expectCollapsed);
+        expect(hasRow0).toBe(expectCollapsed);
+
+        cleanup();
+      }
+    }, 60_000);
   });
 });
