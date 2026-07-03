@@ -25,20 +25,37 @@ const NON_PRE_MODES = [
 
 test.describe('QuoteBuilder — bloco Frete (visual regression)', () => {
   for (const vp of VIEWPORTS) {
-    test(`@${vp.name}: bloco Frete padrão (cif) — snapshot`, async ({ page }) => {
-      await page.setViewportSize({ width: vp.width, height: vp.height });
-      await gotoAndSettle(page, '/orcamentos/novo');
+    for (const mode of NON_PRE_MODES) {
+      test(`@${vp.name}: bloco Frete padrão (${mode.slug}) — snapshot + geometria`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await gotoAndSettle(page, '/orcamentos/novo');
 
-      const trigger = page.getByTestId('shipping-type-select');
-      await expect(trigger).toBeVisible({ timeout: 15_000 });
+        const trigger = page.getByTestId('shipping-type-select');
+        await expect(trigger).toBeVisible({ timeout: 15_000 });
 
-      // Enquadra o container do grid (pai do trigger) — evita ruído do restante da página.
-      const grid = trigger.locator('xpath=ancestor::div[contains(@class,"grid-cols-1") and contains(@class,"md:grid-cols-3")][1]');
-      await expect(grid).toBeVisible();
-      await expect(grid).toHaveScreenshot(`freight-grid-default-${vp.name}.png`, {
-        maxDiffPixelRatio: 0.02,
+        if (mode.key !== 'cif') {
+          await trigger.click();
+          await page.getByRole('option', { name: mode.label }).click();
+        }
+
+        // Valor R$ NUNCA aparece fora de fob_pre.
+        await expect(page.getByTestId('shipping-cost-input')).toHaveCount(0);
+
+        const grid = trigger.locator(
+          'xpath=ancestor::div[contains(@class,"grid-cols-1") and contains(@class,"md:grid-cols-3")][1]',
+        );
+        await expect(grid).toBeVisible();
+        await expect(grid).toHaveScreenshot(`freight-grid-default-${mode.slug}-${vp.name}.png`, {
+          maxDiffPixelRatio: 0.02,
+        });
+
+        // Geometria: apenas col-1 presente; ausência de col-2.
+        await expect(grid.locator('[data-testid="freight-grid-col-1"]')).toBeVisible();
+        await expect(grid.locator('[data-testid="freight-grid-col-2"]')).toHaveCount(0);
       });
-    });
+    }
 
     test(`@${vp.name}: bloco Frete com fob_pre exibe Valor R$ na 2ª coluna — snapshot`, async ({
       page,
