@@ -15,7 +15,8 @@
  * Este arquivo cobre a camada comportamental + a11y.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -193,6 +194,56 @@ describe('Bloco Frete — acessibilidade (axe)', () => {
     // Input tem aria-label explícito.
     expect(screen.getByTestId('shipping-cost-input')).toHaveAccessibleName(
       /valor do frete em reais/i,
+  );
+});
+
+describe('Bloco Frete — navegação por teclado', () => {
+  it('Tab visita SelectTrigger e depois o Input Valor R$ quando fob_pre', async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <button type="button" data-testid="before">antes</button>
+        <FreightFixture initial="fob_pre" />
+        <button type="button" data-testid="after">depois</button>
+      </div>,
     );
+
+    screen.getByTestId('before').focus();
+    expect(document.activeElement).toBe(screen.getByTestId('before'));
+
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByTestId('shipping-type-select'));
+
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByTestId('shipping-cost-input'));
+
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByTestId('after'));
   });
+
+  it('Shift+Tab volta do Input Valor R$ para o SelectTrigger', async () => {
+    const user = userEvent.setup();
+    render(<FreightFixture initial="fob_pre" />);
+    const input = screen.getByTestId('shipping-cost-input') as HTMLElement;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(screen.getByTestId('shipping-type-select'));
+  });
+
+  it('foco no SelectTrigger sobrevive a rerender CIF → FOB pré-negociado', () => {
+    const { rerender } = render(<FreightFixture initial="cif" />);
+    const triggerBefore = screen.getByTestId('shipping-type-select') as HTMLElement;
+    act(() => triggerBefore.focus());
+    expect(document.activeElement).toBe(triggerBefore);
+
+    rerender(<FreightFixture initial="fob_pre" />);
+    const triggerAfter = screen.getByTestId('shipping-type-select');
+    // O foco permanece no trigger (mesma identidade de elemento entre rerenders do FreightFixture),
+    // NÃO cai para o body nem "vaza" para o Input recém-montado.
+    expect(document.activeElement).toBe(triggerAfter);
+    expect(document.activeElement).not.toBe(screen.getByTestId('shipping-cost-input'));
+  });
+});
 });
