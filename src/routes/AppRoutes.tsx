@@ -32,6 +32,9 @@ const QuoteItemEditorSheetHarness = import.meta.env.DEV
 const QuoteAddProductButtonHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/QuoteAddProductButtonHarness'))
   : null;
+const CalendarHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/CalendarHarness'))
+  : null;
 
 
 
@@ -146,6 +149,9 @@ export function AppRoutes() {
             path="/__visual/quote-add-product-button"
             element={<QuoteAddProductButtonHarness />}
           />
+        )}
+        {CalendarHarness && (
+          <Route path="/__visual/calendar" element={<CalendarHarness />} />
         )}
 
 

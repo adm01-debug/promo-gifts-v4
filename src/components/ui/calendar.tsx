@@ -44,8 +44,8 @@ function Calendar({
         ...modifiersClassNames,
       }}
       classNames={{
-        months: 'flex flex-col sm:flex-row gap-4',
-        month: 'flex flex-col',
+        months: 'flex w-full flex-col sm:flex-row gap-4',
+        month: 'flex w-full flex-col',
         caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-1.5 mb-1',
         caption_label: 'text-[15px] font-bold tracking-tight leading-none text-foreground capitalize',
         nav: 'flex items-center gap-0.5',
@@ -53,12 +53,14 @@ function Calendar({
           'inline-flex h-6 w-6 items-center justify-center rounded-full bg-transparent p-0 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         nav_button_previous: 'static',
         nav_button_next: 'static',
-        table: 'w-full border-collapse',
-        head_row: 'flex w-full justify-between',
+        table: 'flex w-full min-w-0 flex-col border-collapse',
+        head: 'block w-full',
+        tbody: 'flex w-full flex-col justify-between',
+        head_row: 'flex w-full justify-between gap-0',
         head_cell:
-          'flex-1 font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
-        row: 'flex w-full justify-between',
-        cell: 'flex-1 aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
+          'flex-1 sm:flex-none sm:h-[18.571428px] sm:w-[18.571428px] font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
+        row: 'flex w-full justify-between gap-0',
+        cell: 'flex-1 sm:flex-none sm:h-[18.571428px] sm:w-[18.571428px] aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
         day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
