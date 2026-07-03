@@ -88,11 +88,12 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     );
   });
 
-  it('sort total sem perdas: |filteredQuotes| === |quotes| quando sem filtros', () => {
+  it('sort total sem perdas: |filteredQuotes| === |quotes| quando sem filtros (exceto "expiring", que filtra por design)', () => {
     fc.assert(
       fc.property(
         fc.array(quoteArb, { minLength: 1, maxLength: 15 }),
-        fc.constantFrom('newest', 'oldest', 'highest', 'lowest', 'expiring'),
+        // 'expiring' é filtrante por design (remove sem valid_until / expirados)
+        fc.constantFrom('newest', 'oldest', 'highest', 'lowest'),
         (quotes, sortBy) => {
           mockQuotes = quotes;
           const { result } = renderHook(() => useQuotesListPage());
@@ -105,6 +106,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
       { numRuns: 60 },
     );
   });
+
 
   it('handleClearFilters reseta busca/status/sort', () => {
     fc.assert(
