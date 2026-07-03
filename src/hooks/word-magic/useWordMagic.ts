@@ -16,19 +16,21 @@ interface WordMagicResult {
   hasEnrichment: boolean;   // produto tem texto IA no banco
 }
 
-export function useWordMagic(product: Product): WordMagicResult {
+export function useWordMagic(product: Product | null): WordMagicResult {
+  // fix_version: word-magic-null-safe-2026-07-03 — aceita null para ProductQuickView (hook antes do early-return)
+  // ANTI-REGRESSÃO: não remover suporte a null; ProductQuickView chama antes do "if(!product) return null"
   const isGlobalAIMode = useWordMagicStore((s) => s.isGlobalAIMode);
 
   const hasEnrichment = Boolean(
-    product.aiVersion && product.aiVersion > 0 && product.aiTitle,
+    product?.aiVersion && product.aiVersion > 0 && product?.aiTitle,
   );
 
   const isAIActive = isGlobalAIMode && hasEnrichment;
 
   return {
-    displayName:        isAIActive && product.aiTitle       ? product.aiTitle       : product.name,
-    displayDescription: isAIActive && product.aiDescription ? product.aiDescription : (product.description ?? null),
-    displaySummary:     isAIActive && product.aiSummary     ? product.aiSummary     : null,
+    displayName:        product ? (isAIActive && product.aiTitle       ? product.aiTitle       : product.name) : '',
+    displayDescription: product ? (isAIActive && product.aiDescription ? product.aiDescription : (product.description ?? null)) : null,
+    displaySummary:     product ? (isAIActive && product.aiSummary     ? product.aiSummary     : null) : null,
     isAIActive,
     hasEnrichment,
   };

@@ -34,6 +34,7 @@ import {
   type ProductColor,
 } from '@/components/products/ProductColorSelector';
 import { type Product } from '@/types/product-catalog';
+import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -99,7 +100,12 @@ export const ProductQuickView = React.memo(
     onAddToCollection,
     initialColorName = null,
   }: ProductQuickViewProps) => {
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    // fix_version: word-magic-quick-view-2026-07-03
+    // Hook chamado ANTES do early-return "if(!product) return null" — regra dos hooks do React
+    // product pode ser null aqui; useWordMagic aceita null e retorna '' para displayName
+    // ANTI-REGRESSÃO: não mover para depois do if(!product) — viola Rules of Hooks
+    const { displayName } = useWordMagic(product);
+        const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
     // imageLoaded removido — transição instantânea sem skeleton intermediário
@@ -487,7 +493,7 @@ export const ProductQuickView = React.memo(
                     {product.brand}
                   </p>
                 )}
-                <h2 className="mt-1 text-xl font-semibold leading-tight">{product.name}</h2>
+                <h2 className="mt-1 text-xl font-semibold leading-tight">{displayName || product.name}</h2>
                 {product.sku && (
                   <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                     SKU: {product.sku}

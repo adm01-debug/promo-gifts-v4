@@ -63,6 +63,7 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { isProductKit } from '@/lib/products/kit-detection';
+import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
 
 // BUG-LIST-04 FIX (2026-06-21): Intl.NumberFormat criado por render por item →
 // com 500 itens na lista, 500 instâncias por render. Módulo-nível: instância única.
@@ -115,6 +116,9 @@ export const ProductListItem = memo(
     const colorsLabelId = `colors-label-${uid}`;
     const priceLabelId = `price-label-${uid}`;
     const detectedIsKit = isProductKit(product);
+    // fix_version: word-magic-list-view-2026-07-03
+    // ANTI-REGRESSÃO: displayName usa ai_title quando Word Magic ON — não reverter para product.name
+    const { displayName } = useWordMagic(product);
     const [collectionModalOpen, setCollectionModalOpen] = useState(false);
     const [collectionVariant, setCollectionVariant] = useState<
       | {
@@ -619,7 +623,7 @@ export const ProductListItem = memo(
               data-testid="product-list-name"
               className="line-clamp-2 break-words font-display text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-[15px]"
             >
-              {product.name}
+              {displayName}
             </h3>
 
             {/* Active color badge */}

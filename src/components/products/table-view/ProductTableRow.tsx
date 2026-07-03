@@ -34,6 +34,7 @@ import { PriceFreshnessBadge } from '@/components/products/PriceFreshnessBadge';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { TableRowActions } from './TableRowActions';
 import type { Product } from '@/types/product-catalog';
+import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
 import type { VariantActionMode } from '@/components/products/VariantPickerDialog';
 
 const rowPriceFormatter = new Intl.NumberFormat('pt-BR', {
@@ -117,6 +118,9 @@ export const ProductTableRow = memo(
     collectionModalOpen,
     shareDialogOpen,
   }: ProductTableRowProps) => {
+  // fix_version: word-magic-table-view-2026-07-03
+  // ANTI-REGRESSÃO: displayName respeita o toggle Word Magic — não reverter para product.name
+  const { displayName } = useWordMagic(product);
     // Cor selecionada manualmente nesta linha — lida do store global (SSOT)
     const userSelectedColorName =
       useProductSelectionStore((s) => s.selectedColors[product.id]) ?? null;
@@ -266,7 +270,7 @@ export const ProductTableRow = memo(
         {/* Nome + badge cor */}
         <div className="min-w-0 flex-1 px-3">
           <p className="truncate text-[13px] font-medium text-foreground transition-colors group-hover:text-primary">
-            {product.name}
+            {displayName}
           </p>
           <div className="flex items-center gap-2">
             <p className="text-[10px] text-muted-foreground md:hidden">{product.sku}</p>
