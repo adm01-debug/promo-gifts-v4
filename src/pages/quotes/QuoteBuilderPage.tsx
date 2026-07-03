@@ -633,20 +633,17 @@ export default function QuoteBuilderPage() {
                             <span className="ml-1">*</span>
                           )}
                         </Label>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">R$</span>
-                          <CurrencyInput
-                            id="freight-value"
-                            data-testid="shipping-cost-input"
-                            aria-label="Valor do frete em reais"
-                            value={s.shippingCost || 0}
-                            onChange={(n) => s.setShippingCost(Math.max(0, n))}
-                            className={cn(
-                              'h-8 text-xs',
-                              s.validationErrors.includes('valor_frete') && 'border-destructive',
-                            )}
-                          />
-                        </div>
+                        <CurrencyInput
+                          id="freight-value"
+                          data-testid="shipping-cost-input"
+                          aria-label="Valor do frete em reais"
+                          value={s.shippingCost || 0}
+                          onChange={(n) => s.setShippingCost(Math.max(0, n))}
+                          className={cn(
+                            'h-8 text-xs',
+                            s.validationErrors.includes('valor_frete') && 'border-destructive',
+                          )}
+                        />
                       </div>
                     )}
                   </div>
