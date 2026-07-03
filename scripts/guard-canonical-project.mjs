@@ -7,14 +7,33 @@ const FORBIDDEN_ID = 'pqpdolkaeqlyzpdpbizo';
 
 console.log(`[CI Guard] Checking for forbidden project ID: ${FORBIDDEN_ID}...`);
 
-try {
-  // Use ripgrep (rg) if available, or fallback to grep
-  let output;
+function hasCommand(cmd) {
   try {
-    output = execSync(`rg "${FORBIDDEN_ID}" --glob "!node_modules/*" --glob "!.git/*" --glob "!.agents/*"`, { encoding: 'utf8' });
+    execSync(`command -v ${cmd}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+try {
+  let output = '';
+  const excludes = [
+    '--exclude-dir=node_modules',
+    '--exclude-dir=.git',
+    '--exclude-dir=.agents',
+    '--exclude-dir=dist',
+    '--exclude-dir=.next',
+  ].join(' ');
+
+  const runner = hasCommand('rg')
+    ? `rg "${FORBIDDEN_ID}" --glob "!node_modules/*" --glob "!.git/*" --glob "!.agents/*" --glob "!dist/*"`
+    : `grep -rIn ${excludes} "${FORBIDDEN_ID}" .`;
+
+  try {
+    output = execSync(runner, { encoding: 'utf8' });
   } catch (e) {
-    // If rg finds nothing it exits with code 1, which is what we want for success.
-    // If it finds something, output will be populated.
+    // Both rg and grep exit 1 when no matches — treat as success.
     output = e.stdout || '';
   }
 
@@ -26,6 +45,7 @@ try {
   }
 
   console.log('\x1b[32m[OK]\x1b[0m No legacy project references found.');
+
 
   // Also verify that the canonical ID is present in critical files
   const criticalFiles = [
