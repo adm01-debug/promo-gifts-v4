@@ -35,10 +35,16 @@ const RATIOS = (args.get("ratios") ?? "0.005,0.01,0.015,0.02,0.03")
   .map(Number)
   .filter((n) => !Number.isNaN(n));
 
+const DRY_RUN = args.has("dry-run") || process.env.CALIBRATE_DRY_RUN === "1";
+
 const OUT_DIR = "visual-diff-report";
 mkdirSync(OUT_DIR, { recursive: true });
 
-console.log("▶ Rodando o spec de colapso para gerar -actual.png / -diff.png…");
+console.log(
+  DRY_RUN
+    ? "▶ [dry-run] Rodando spec (falhas não abortam) para gerar -actual.png / -diff.png…"
+    : "▶ Rodando o spec de colapso para gerar -actual.png / -diff.png…",
+);
 const run = spawnSync(
   "npx",
   [
@@ -48,9 +54,12 @@ const run = spawnSync(
     "--project=chromium-authed",
     "--reporter=list",
   ],
-  { stdio: "inherit", env: { ...process.env, CI: "true" } },
+  {
+    stdio: "inherit",
+    env: { ...process.env, CI: "true", ...(DRY_RUN ? { PW_FORCE_UPDATE: "0" } : {}) },
+  },
 );
-if (run.status !== 0) {
+if (run.status !== 0 && !DRY_RUN) {
   console.warn("⚠ spec retornou não-zero (esperado se houver diffs). Continuando…");
 }
 
@@ -137,14 +146,29 @@ const md = [
 writeFileSync(join(OUT_DIR, "calibration.md"), md, "utf8");
 writeFileSync(
   join(OUT_DIR, "calibration.json"),
-  JSON.stringify({ diffs: diffs.length, combos }, null, 2),
+  JSON.stringify({ diffs: diffs.length, combos, dryRun: DRY_RUN }, null, 2),
   "utf8",
 );
 
+// Um CSV por viewport com contagem de diffs por combinação.
+for (const vp of ["mobile", "tablet", "desktop"]) {
+  const lines = ["threshold,maxDiffPixelRatio,failures"];
+  for (const c of combos) {
+    lines.push(`${c.threshold},${c.ratio},${c.perViewport[vp] ?? 0}`);
+  }
+  writeFileSync(join(OUT_DIR, `calibration-${vp}.csv`), lines.join("\n"), "utf8");
+}
+
 console.log(`\n✓ Relatório: ${OUT_DIR}/calibration.md`);
 console.log(`✓ Dados brutos: ${OUT_DIR}/calibration.json`);
+console.log(`✓ CSVs por viewport: ${OUT_DIR}/calibration-{mobile,tablet,desktop}.csv`);
+if (DRY_RUN) {
+  console.log("ℹ️  Modo dry-run: exit 0 mesmo com diffs (nada falhou o job).");
+}
 if (combos[0]) {
   console.log(
     `\n💡 Menor combinação com ${combos[0].total} falha(s): threshold=${combos[0].threshold}, maxDiffPixelRatio=${combos[0].ratio}`,
   );
 }
+// Em dry-run sempre saímos 0.
+if (DRY_RUN) process.exit(0);

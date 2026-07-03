@@ -235,10 +235,20 @@ jobs:
             };
 
             const vps = ['mobile', 'tablet', 'desktop'];
+
+            // Config efetiva (thresholds/masks por viewport) publicada pelo spec.
+            let cfg = { thresholds: {}, masks: [] };
+            try {
+              cfg = JSON.parse(fs.readFileSync('visual-diff-report/collapse-config.json', 'utf8'));
+            } catch { /* opcional */ }
+
             const rows = vps.map(vp => {
               const d = countPngs('test-results', '-diff.png', vp);
               const a = countPngs('test-results', '-actual.png', vp);
-              return `| \`${vp}\` | ${d} | ${a} |`;
+              const t = cfg.thresholds?.[vp];
+              const th = t ? t.threshold : '—';
+              const ra = t ? t.maxDiffPixelRatio : '—';
+              return `| \`${vp}\` | ${d} | ${a} | ${th} | ${ra} |`;
             });
             const totalDiffs = vps.reduce((s, vp) => s + countPngs('test-results', '-diff.png', vp), 0);
             const status = totalDiffs === 0 ? '✅ Nenhum diff visual detectado' : `⚠️ **${totalDiffs}** diff(s) visual(is) detectado(s)`;
@@ -246,22 +256,27 @@ jobs:
               ? `📦 [Baixar artifact \`customization-collapse-e2e\`](${process.env.ARTIFACT_URL})`
               : `📦 Artifact \`customization-collapse-e2e\` disponível na aba Artifacts deste run.`;
 
+            const maskLine = cfg.masks?.length
+              ? `<sub>🎭 ${cfg.masks.length} região(ões) dinâmica(s) mascarada(s). Ajuste via \`COLLAPSE_MASK_EXTRA\` / \`COLLAPSE_MASK_DISABLE\` ou edite \`e2e/customization/mask-config.ts\`.</sub>`
+              : '';
+
             const body = [
               marker,
               '## 🖼️ Colapso do LocationPanel — reflow visual',
               '',
               status,
               '',
-              '| Viewport | Diffs | Screenshots atuais |',
-              '| --- | ---: | ---: |',
+              '| Viewport | Diffs | Screenshots | threshold | maxDiffPixelRatio |',
+              '| --- | ---: | ---: | ---: | ---: |',
               ...rows,
               '',
               artifactLine,
               '',
               'Após baixar, abra `visual-diff-report/index.html` para os diffs lado a lado e `playwright-report/index.html` para traces/vídeos.',
               '',
+              maskLine,
               '<sub>Se os diffs forem intencionais, rode `npm run e2e:collapse:update:<viewport>` localmente e faça commit das baselines.</sub>',
-            ].join('\n');
+            ].filter(Boolean).join('\n');
 
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;

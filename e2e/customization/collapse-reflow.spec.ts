@@ -17,9 +17,10 @@ import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { TID } from "../fixtures/selectors";
 import type { Locator, Page } from "@playwright/test";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { describeConfig, getMaskSelectors, getThresholds } from "./mask-config";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAPSHOT_DIR = join(__dirname, "collapse-reflow.spec.ts-snapshots");
@@ -106,31 +107,30 @@ for (const vp of VIEWPORTS) {
       const shell = page.locator(SHELL).first();
       await expect(shell).toBeVisible();
 
-      // Regiões dinâmicas mascaradas: timers, badges de contagem, preços que
-      // pulsam e toasts. O diff pixel a pixel foca somente no reflow.
-      const DYNAMIC_MASK_SELECTORS = [
-        '[data-testid*="timer"]',
-        '[data-testid*="countdown"]',
-        '[data-testid*="badge-count"]',
-        '[data-testid="quote-total-personalization"]',
-        '[data-dynamic="true"]',
-        '[data-live-region="true"]',
-        '[aria-live="polite"]',
-        '[aria-live="assertive"]',
-        '.sonner-toast',
-      ];
-      const masks = DYNAMIC_MASK_SELECTORS.map((sel) => page.locator(sel));
+      // Selectors e limiares vêm de `mask-config.ts` (com override por env).
+      const masks = getMaskSelectors().map((sel) => page.locator(sel));
+      const { threshold, maxDiffPixelRatio } = getThresholds(vp.label);
 
-      // Tolerância: até 1.5% de pixels diferentes e threshold antialiasing 0.25.
-      // Cobre variações de sub-pixel/font-rendering entre runners sem esconder
-      // regressões reais do reflow.
       const SCREENSHOT_OPTS = {
-        maxDiffPixelRatio: 0.015,
-        threshold: 0.25,
+        maxDiffPixelRatio,
+        threshold,
         animations: "disabled" as const,
         mask: masks,
         maskColor: "#FF00FF",
       };
+
+      // Publica config efetiva num JSON consumido pelo PR-comment step do CI.
+      try {
+        const outDir = join(process.cwd(), "visual-diff-report");
+        mkdirSync(outDir, { recursive: true });
+        writeFileSync(
+          join(outDir, "collapse-config.json"),
+          JSON.stringify(describeConfig(), null, 2),
+          "utf8",
+        );
+      } catch {
+        /* best-effort */
+      }
 
       // PRE-CHECK: baselines devem existir antes de rodar (só quando não estamos
       // em modo --update-snapshots). Falhamos com mensagem clara e comando npm.
