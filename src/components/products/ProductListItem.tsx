@@ -697,11 +697,8 @@ export const ProductListItem = memo(
               sem cortar o glow.
             */}
             <div
-              className="w-full overflow-hidden md:[--swatch-rows:3] lg:[--swatch-rows:2]"
-              style={{
-                maxHeight:
-                  'calc(var(--swatch-size-sm) * var(--swatch-rows, 2) + var(--swatch-gap-y) * (var(--swatch-rows, 2) - 1) + var(--swatch-container-py) * 2 + 6px)',
-              }}
+              className="w-full md:[--swatch-rows:3] lg:[--swatch-rows:2]" /* fix_version: swatch-ancestor-unclip-2026-07-03 — removido overflow-hidden que clipava swatches em unbounded mode após PR #1539 */
+              // style maxHeight removido: fix_version swatch-ancestor-unclip-2026-07-03
             >
               {useSwatchesV2 ? (
                 <ColorSwatchPicker
