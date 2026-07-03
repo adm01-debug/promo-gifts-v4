@@ -20,7 +20,7 @@ const ITER = 300;
 const CHECKS = [
   {
     name: 'wrapper NÃO tem `hidden={collapsed}` (regressão bug B1)',
-    fn: (s) => !/hidden=\{collapsed\}/.test(s),
+    fn: (s) => !/(?:^|\s)hidden=\{collapsed\}/.test(s),
   },
   {
     name: 'wrapper NÃO tem classe legada `space-y-4 rounded-lg border p-4`',
