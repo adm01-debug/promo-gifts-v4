@@ -245,7 +245,7 @@ export function ConfigurationPanelV6({
           id={contentId}
           role="region"
           aria-label="Configurações da gravação"
-          hidden={collapsed}
+          aria-hidden={collapsed}
           className={cn(
             'grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none',
             collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
