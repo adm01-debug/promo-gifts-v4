@@ -288,4 +288,6 @@ describe('Bloco Frete — navegação por teclado', () => {
     });
   });
 });
+});
+
 
