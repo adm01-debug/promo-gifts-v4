@@ -35,6 +35,7 @@
     "e2e:collapse:update:desktop": "playwright test e2e/customization/collapse-reflow.spec.ts --project=chromium-authed --grep \"\\[desktop\\]\" --update-snapshots",
     "e2e:collapse:update:all": "playwright test e2e/customization/collapse-reflow.spec.ts --project=chromium-authed --update-snapshots --reporter=list",
     "e2e:collapse:seed": "npx playwright test --project=setup && npm run e2e:collapse:update:all",
+    "e2e:collapse:calibrate": "node scripts/qa/calibrate-collapse-thresholds.mjs",
     "e2e:visual-diff-report": "node scripts/build-visual-diff-report.mjs --results test-results --out visual-diff-report/index.html --title 'Visual diffs'",
     "e2e:bootstrap": "bun install --frozen-lockfile && npm run e2e:install",
     "dev": "npm run e2e:generate-fixtures && vite",

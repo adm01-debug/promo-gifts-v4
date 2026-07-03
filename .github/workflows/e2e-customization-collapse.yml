@@ -212,4 +212,65 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Comment PR with visual diff summary
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const marker = '<!-- collapse-visual-diff-report -->';
+
+            const countPngs = (dir, suffix, vp) => {
+              if (!fs.existsSync(dir)) return 0;
+              let n = 0;
+              for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, e.name);
+                if (e.isDirectory()) n += countPngs(full, suffix, vp);
+                else if (e.name.endsWith(suffix) && (!vp || e.name.includes(vp))) n++;
+              }
+              return n;
+            };
+
+            const vps = ['mobile', 'tablet', 'desktop'];
+            const rows = vps.map(vp => {
+              const d = countPngs('test-results', '-diff.png', vp);
+              const a = countPngs('test-results', '-actual.png', vp);
+              return `| \`${vp}\` | ${d} | ${a} |`;
+            });
+            const totalDiffs = vps.reduce((s, vp) => s + countPngs('test-results', '-diff.png', vp), 0);
+            const status = totalDiffs === 0 ? '✅ Nenhum diff visual detectado' : `⚠️ **${totalDiffs}** diff(s) visual(is) detectado(s)`;
+            const artifactLine = process.env.ARTIFACT_URL
+              ? `📦 [Baixar artifact \`customization-collapse-e2e\`](${process.env.ARTIFACT_URL})`
+              : `📦 Artifact \`customization-collapse-e2e\` disponível na aba Artifacts deste run.`;
+
+            const body = [
+              marker,
+              '## 🖼️ Colapso do LocationPanel — reflow visual',
+              '',
+              status,
+              '',
+              '| Viewport | Diffs | Screenshots atuais |',
+              '| --- | ---: | ---: |',
+              ...rows,
+              '',
+              artifactLine,
+              '',
+              'Após baixar, abra `visual-diff-report/index.html` para os diffs lado a lado e `playwright-report/index.html` para traces/vídeos.',
+              '',
+              '<sub>Se os diffs forem intencionais, rode `npm run e2e:collapse:update:<viewport>` localmente e faça commit das baselines.</sub>',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
 
