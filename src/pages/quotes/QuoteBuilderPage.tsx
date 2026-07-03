@@ -650,6 +650,8 @@ export default function QuoteBuilderPage() {
                       Selecione a modalidade de frete
                     </p>
                   )}
+                </div>
+
 
                 {s.companyInfo?.id && (
                   <a
