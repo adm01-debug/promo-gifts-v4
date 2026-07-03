@@ -789,21 +789,23 @@ colapsar, sem gap residual causado por `min-h-[260px]`).
 **Comandos:**
 
 ```bash
-# 1) Gerar sessão autenticada (uma vez por máquina / expiração):
-npx playwright test --project=setup
+# 1) Semear baselines pela primeira vez (login + gera PNGs mobile+desktop):
+npm run e2e:collapse:seed
 
-# 2) Rodar comportamento + reflow visual:
-npx playwright test \
-  e2e/flows/04d-customization-collapse.spec.ts \
-  e2e/customization/collapse-reflow.spec.ts \
-  --project=chromium-authed
+# 2) Rodar comportamento + reflow visual (mobile 390x844 e desktop 1440x900):
+npm run e2e:collapse
 
-# 3) Atualizar baselines visuais (após mudança intencional de UI):
-npx playwright test e2e/customization/collapse-reflow.spec.ts \
-  --project=chromium-authed --update-snapshots
+# 3) Atualizar baselines após mudança intencional de UI:
+npm run e2e:collapse:update
 git add e2e/customization/collapse-reflow.spec.ts-snapshots
 git commit -m "test(e2e): atualiza baselines do colapso do LocationPanel"
 ```
+
+O spec estabiliza o frame com `requestAnimationFrame` duplo + `waitForFunction`
+até a altura do shell ficar estável entre 2 medições, garantindo que o
+screenshot capture o estado final da transição de 300ms (nunca um frame
+intermediário).
+
 
 **No CI:** o workflow
 [`.github/workflows/e2e-customization-collapse.yml`](.github/workflows/e2e-customization-collapse.yml)

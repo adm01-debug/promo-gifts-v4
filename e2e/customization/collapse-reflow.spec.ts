@@ -1,77 +1,102 @@
 /**
  * E2E — Regressão visual do reflow do ConfigurationPanelV6 / LocationPanel.
  *
- * Objetivo: garantir que o card de gravação encolhe suavemente e o conteúdo
- * abaixo (TOTAL PERSONALIZAÇÃO etc.) sobe/desce sem "gap" residual.
+ * Roda em MOBILE (390x844) e DESKTOP (1440x900) para validar que o reflow
+ * é consistente nos dois breakpoints.
  *
- * Estratégia:
- *   1. Captura screenshot do wrapper de personalização EXPANDIDO.
- *   2. Colapsa e aguarda a transição (300ms + folga).
- *   3. Captura screenshot COLAPSADO.
- *   4. Compara altura (colapsado < expandido) e valida snapshots visuais.
- *   5. Garante que o shell não retém `min-h-[260px]` no estado colapsado.
+ * Estabilização de frame:
+ *   - Aguardamos `requestAnimationFrame` duas vezes + `waitForFunction` sobre
+ *     `getBoundingClientRect().height` estabilizada entre 2 rAFs (garante que
+ *     a transição de 300ms terminou antes do screenshot).
  *
- * Para atualizar baselines locais:
- *   npx playwright test e2e/customization/collapse-reflow.spec.ts \
- *     --project=chromium-authed --update-snapshots
- *
- * No CI use o workflow "E2E — Customization Collapse (LocationPanel)"
- * com o input `update_snapshots=true` (workflow_dispatch).
+ * Comandos:
+ *   npm run e2e:collapse             # roda os testes (mobile + desktop)
+ *   npm run e2e:collapse:update      # semeia/atualiza baselines (usar 1x)
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { TID } from "../fixtures/selectors";
+import type { Locator, Page } from "@playwright/test";
 
 const TOGGLE = TID("customization-collapse-toggle");
 const SHELL = '[data-testid="customization-config-shell"]';
 
-test.describe("ConfigurationPanelV6 — reflow visual", () => {
-  test.beforeEach(() => requireAuth());
+const VIEWPORTS = [
+  { label: "mobile", width: 390, height: 844 },
+  { label: "desktop", width: 1440, height: 900 },
+] as const;
 
-  test("colapsar reduz altura e não deixa gap residual (antes/depois)", async ({ page }) => {
-    await gotoAndSettle(page, "/orcamentos/novo");
+/**
+ * Aguarda a UI parar de animar: 2× rAF + altura estável entre 2 medições
+ * consecutivas. Evita capturar frame intermediário da transição de 300ms.
+ */
+async function waitForStableHeight(page: Page, locator: Locator): Promise<number> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  const handle = await locator.elementHandle();
+  if (!handle) throw new Error("shell handle indisponível");
+  await page.waitForFunction(
+    (el) =>
+      new Promise<boolean>((resolve) => {
+        const h1 = (el as HTMLElement).getBoundingClientRect().height;
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const h2 = (el as HTMLElement).getBoundingClientRect().height;
+            resolve(Math.abs(h1 - h2) < 0.5);
+          }),
+        );
+      }),
+    handle,
+    { timeout: 2_000 },
+  );
+  const box = await locator.boundingBox();
+  return box?.height ?? 0;
+}
 
-    const toggle = page.locator(TOGGLE).first();
-    if (!(await toggle.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip(true, "Painel de personalização indisponível neste ambiente.");
-      return;
-    }
+for (const vp of VIEWPORTS) {
+  test.describe(`ConfigurationPanelV6 — reflow visual (${vp.label})`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+    test.beforeEach(() => requireAuth());
 
-    const shell = page.locator(SHELL).first();
-    await expect(shell).toBeVisible();
+    test(`colapsar reduz altura e não deixa gap residual [${vp.label}]`, async ({ page }) => {
+      await gotoAndSettle(page, "/orcamentos/novo");
 
-    // Garante estado inicial expandido (idempotente).
-    if ((await toggle.getAttribute("aria-expanded")) === "false") {
+      const toggle = page.locator(TOGGLE).first();
+      if (!(await toggle.isVisible({ timeout: 5_000 }).catch(() => false))) {
+        test.skip(true, "Painel de personalização indisponível neste ambiente.");
+        return;
+      }
+
+      const shell = page.locator(SHELL).first();
+      await expect(shell).toBeVisible();
+
+      if ((await toggle.getAttribute("aria-expanded")) === "false") {
+        await toggle.click();
+        await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      }
+
+      const expandedHeight = await waitForStableHeight(page, shell);
+      await expect(shell).toHaveScreenshot(`location-panel-expanded-${vp.label}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: "disabled",
+      });
+
       await toggle.click();
-      await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    }
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
 
-    // Estabiliza layout antes da baseline.
-    await page.waitForTimeout(400);
-    const expandedBox = await shell.boundingBox();
-    expect(expandedBox).not.toBeNull();
+      const collapsedHeight = await waitForStableHeight(page, shell);
 
-    await expect(shell).toHaveScreenshot("location-panel-expanded.png", {
-      maxDiffPixelRatio: 0.02,
-      animations: "disabled",
-    });
+      await expect(shell).not.toHaveClass(/min-h-\[260px\]/);
+      expect(collapsedHeight).toBeLessThan(expandedHeight);
 
-    // Colapsa e aguarda transição de 300ms + gap-{0|4} + min-height.
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await page.waitForTimeout(500);
-
-    // Regra crítica: o shell não pode reter min-h-[260px] quando colapsado
-    // (senão o conteúdo abaixo não sobe — bug corrigido em LocationPanel.tsx).
-    await expect(shell).not.toHaveClass(/min-h-\[260px\]/);
-
-    const collapsedBox = await shell.boundingBox();
-    expect(collapsedBox).not.toBeNull();
-    expect(collapsedBox!.height).toBeLessThan(expandedBox!.height);
-
-    await expect(shell).toHaveScreenshot("location-panel-collapsed.png", {
-      maxDiffPixelRatio: 0.02,
-      animations: "disabled",
+      await expect(shell).toHaveScreenshot(`location-panel-collapsed-${vp.label}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: "disabled",
+      });
     });
   });
-});
+}
