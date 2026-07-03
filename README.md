@@ -576,6 +576,70 @@ Projeto proprietário — todos os direitos reservados.
 
 ---
 
+## 🗓 Playwright — Snapshots visuais do Calendário ("Condições")
+
+O componente `src/components/ui/calendar.tsx` (usado na seção **"Condições"**
+do Orçamento) é protegido por baseline visual nos viewports **320 / 768 / 1280**.
+
+### Onde ficam os PNGs
+
+```
+e2e/ui/calendar-visual.spec.ts-snapshots/
+  ├─ calendar-mobile-*.png     # 320px
+  ├─ calendar-md-*.png         # 768px
+  └─ calendar-xl-*.png         # 1280px
+```
+
+O harness renderizado pelo spec vive em `src/pages/__visual/CalendarHarness.tsx`
+e é servido em `/__visual/calendar`.
+
+### Rodar / atualizar localmente
+
+```bash
+# Rodar o spec contra o baseline atual (falha se divergir)
+npm run e2e:calendar
+
+# Regenerar os PNGs (usa a flag --update-snapshots do Playwright)
+npm run e2e:calendar:update
+```
+
+Depois de rodar `:update`, revise o diff e comite os PNGs alterados:
+
+```bash
+git add e2e/ui/calendar-visual.spec.ts-snapshots
+git commit -m "chore(e2e): update calendar visual baselines"
+git push
+```
+
+### Disparar o workflow no CI (manual)
+
+1. GitHub → **Actions** → workflow **"E2E · Update Calendar snapshots"**
+2. Botão **Run workflow** → escolha a branch → **Run**
+3. Deixe `safe_mode = true` para só reescrever baselines quando houver diff
+   visual real (falhas não-visuais abortam o rewrite). Desmarque apenas para
+   forçar `--update-snapshots`.
+4. O job comita os PNGs de volta na branch escolhida como
+   `chore(e2e): update calendar visual baselines (safe|force)`.
+
+Ou via `gh` CLI:
+
+```bash
+gh workflow run e2e-update-calendar-snapshots.yml --ref main
+gh run watch
+```
+
+### Gates automáticos
+
+- **Push em `main`** que altere `calendar.tsx`, o harness ou o spec dispara
+  automaticamente o **update** em modo safe.
+- **Pull Request** que toque os mesmos arquivos dispara
+  **"E2E · Check Calendar snapshots"**, que roda o spec **sem**
+  `--update-snapshots` e **falha o CI** em qualquer divergência de baseline
+  (diffs vão para o artefato `calendar-visual-diffs`).
+
+---
+
+
 ## 🧪 Playwright — Snapshots visuais (quote-number-subtitle)
 
 O spec `e2e/quotes/quote-number-subtitle.spec.ts` valida que o subtítulo do
