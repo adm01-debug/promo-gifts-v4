@@ -641,9 +641,15 @@ export default function QuoteBuilderPage() {
                             )}
                           />
                         </div>
-                    </div>
+                      </div>
+                    )}
+                  </div>
+                  {s.validationErrors.includes('frete') && (
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      Selecione a modalidade de frete
+                    </p>
                   )}
-                </div>
 
                 {s.companyInfo?.id && (
                   <a
