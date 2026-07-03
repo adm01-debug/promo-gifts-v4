@@ -23,6 +23,7 @@ const SHELL = '[data-testid="customization-config-shell"]';
 
 const VIEWPORTS = [
   { label: "mobile", width: 390, height: 844 },
+  { label: "tablet", width: 768, height: 1024 },
   { label: "desktop", width: 1440, height: 900 },
 ] as const;
 
