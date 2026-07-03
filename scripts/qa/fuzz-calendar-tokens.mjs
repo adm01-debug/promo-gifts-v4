@@ -24,6 +24,8 @@ const REQUIRED = [
   /text-background/,
   /text-destructive/,
   /text-\[15px\]/,
+  /text-\[11px\]/,
+  /text-\[10px\]/,
   /font-bold/,
   /tracking-tight/,
   /hover:bg-accent/,
@@ -32,6 +34,10 @@ const REQUIRED = [
   /aspect-square/,
   /h-6 w-6/,
   /h-3\.5 w-3\.5/,
+  /p-1\.5/,
+  /space-y-1\.5/,
+  /gap-0/,
+
 ];
 const REQUIRED_LITERALS = [`cell: 'flex-1 aspect-square`];
 
