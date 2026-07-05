@@ -328,11 +328,12 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                                 <td
                                   style={{
                                     backgroundColor: '#e0f2f1',
-                                    padding: '3px 7px',
+                                    padding: '1px 7px',
                                     borderRadius: '0 4px 4px 0',
+                                    lineHeight: 1.2,
                                   }}
                                 >
-                                  <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 600 }}>
+                                  <span style={{ fontSize: '9px', color: '#00796b', fontWeight: 600, lineHeight: 1.2 }}>
                                     ✦ {g}
                                   </span>
                                 </td>
