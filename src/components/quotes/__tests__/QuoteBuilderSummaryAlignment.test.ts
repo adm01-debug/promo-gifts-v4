@@ -21,7 +21,7 @@ describe('QuoteBuilderSummaryColumn — alinhamento vertical dos botões', () =>
   });
 
   it('nome aplica pr-1 para evitar sobreposição com a coluna de ações', () => {
-    expect(SRC).toMatch(/pr-1 text-sm font-medium/);
+    expect(SRC).toMatch(/pr-2 text-sm font-medium/);
   });
 
 
