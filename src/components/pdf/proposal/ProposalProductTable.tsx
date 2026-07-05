@@ -11,6 +11,7 @@ import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
 import { formatPersonalizationSummary } from '@/lib/quotes/personalizationSummary';
 import { getProposalImageUrl } from '@/utils/image-utils';
+import { PDF_TOKENS } from '../ProposalStyles';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
   // FIX #3b: inicializar com src (não "") para que img.complete só retorne true
