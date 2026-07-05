@@ -150,7 +150,7 @@ export function NegotiationMarkupCard({
       <div
         data-testid="negotiation-markup-card"
         className={cn(
-          'space-y-3 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-3',
+          'space-y-2 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-2.5',
           className,
         )}
       >
@@ -190,7 +190,7 @@ export function NegotiationMarkupCard({
         {enabled && (
           <>
             {/* Slider */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-baseline justify-between">
                 <span className="text-[11px] text-muted-foreground">
                   Acréscimo no preço apresentado
@@ -227,7 +227,7 @@ export function NegotiationMarkupCard({
 
 
             {/* Final price + status */}
-            <div className="flex items-center justify-between border-t border-border/40 pt-2">
+            <div className="flex items-center justify-between border-t border-border/40 pt-1.5">
               <span className="text-[11px] text-muted-foreground">Preço final (cliente paga)</span>
               <span className="text-sm font-bold tabular-nums">{formatCurrency(finalPrice)}</span>
             </div>
