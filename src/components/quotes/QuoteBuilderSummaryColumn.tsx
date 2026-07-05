@@ -1442,7 +1442,7 @@ export function QuoteBuilderSummaryColumn({
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+                      Salvar Rascunho
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs text-xs">
