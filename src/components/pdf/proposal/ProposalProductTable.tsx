@@ -312,28 +312,35 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                         )}
                       </div>
                     )}
-                    {gravacao && (
-                      <table style={{ borderCollapse: 'collapse', marginTop: '3px' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
-                            <td
-                              style={{
-                                backgroundColor: '#e0f2f1',
-                                padding: '3px 7px',
-                                borderRadius: '0 4px 4px 0',
-                              }}
-                            >
-                              <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 700 }}>
-                                ✦ Gravação:{' '}
-                              </span>
-                              <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 500 }}>
-                                {gravacao}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    {gravacaoBadges.length > 0 && (
+                      <div style={{ marginTop: '3px', display: 'block' }}>
+                        {gravacaoBadges.map((g, i) => (
+                          <table
+                            key={i}
+                            style={{
+                              borderCollapse: 'collapse',
+                              marginTop: i === 0 ? 0 : '2px',
+                            }}
+                          >
+                            <tbody>
+                              <tr>
+                                <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
+                                <td
+                                  style={{
+                                    backgroundColor: '#e0f2f1',
+                                    padding: '3px 7px',
+                                    borderRadius: '0 4px 4px 0',
+                                  }}
+                                >
+                                  <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 600 }}>
+                                    ✦ {g}
+                                  </span>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td
