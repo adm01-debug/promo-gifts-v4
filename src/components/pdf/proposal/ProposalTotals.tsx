@@ -67,18 +67,6 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                     <span style={{ fontWeight: 800, fontSize: '15px', color: '#2e7d32' }}>
                       − {fmt(data.discount)}
                     </span>
-                    {data.subtotal > 0 && (
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontSize: '11px',
-                          color: '#43a047',
-                          marginLeft: '6px',
-                        }}
-                      >
-                        ({Math.round((data.discount / data.subtotal) * 100)}%)
-                      </span>
-                    )}
                   </td>
                 </tr>
               </tbody>
