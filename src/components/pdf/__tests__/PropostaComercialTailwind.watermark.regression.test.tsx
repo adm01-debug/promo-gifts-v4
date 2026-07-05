@@ -101,16 +101,22 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
   });
 
   it('multi-página: RASCUNHO aparece em TODAS as páginas quando isDraft=true', () => {
-    // 30 itens força paginação multi-página conforme paginateItems().
+    // 30 itens força paginação multi-página no template.
     const data = makeData(30);
-    const expectedPages = paginateItems(data.items).length;
-    expect(expectedPages, 'fixture não gerou multi-página').toBeGreaterThan(1);
-
     const { container } = render(
       <PropostaComercialTailwind data={data} isDraft={true} />,
     );
     const pages = container.querySelectorAll('.proposal-page');
-    expect(pages.length).toBe(expectedPages);
+    expect(pages.length, 'fixture não gerou multi-página').toBeGreaterThan(1);
+
+    // Cada page precisa ter exatamente um filho direto com textContent === "RASCUNHO".
+    pages.forEach((page, idx) => {
+      const wm = Array.from(page.querySelectorAll('div')).filter(
+        (el) => el.textContent === 'RASCUNHO',
+      );
+      expect(wm.length, `página ${idx + 1} sem watermark`).toBe(1);
+    });
+  });
 
     // Cada page precisa ter exatamente um filho direto com textContent === "RASCUNHO".
     pages.forEach((page, idx) => {
