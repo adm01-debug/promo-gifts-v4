@@ -14,7 +14,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-      <div style={{ width: '288px' }}>
+      <div style={{ width: '230px' }}>
         {/* Subtotal row */}
         <table
           style={{ width: '100%', borderCollapse: 'collapse', borderBottom: '1px solid #f0f0f0' }}
