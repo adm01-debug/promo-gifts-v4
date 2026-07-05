@@ -469,7 +469,7 @@ export function NotesSection({ data }: { data: ProposalTemplateData }) {
       {termsLabel && <div>- 💵 Prazo de Pagamento: {termsLabel}.</div>}
       {deliveryLabel && <div>- 📦 Prazo de Entrega: {deliveryLabel}.</div>}
       {data.shippingType && <div>- 🚚 Frete: {shippingLabel}.</div>}
-      <div>- Todos produtos passam por controle de qualidade.</div>
+      
       {data.validUntil && <div>- 📅 Validade da Proposta: {data.validUntil}.</div>}
     </div>
   );
