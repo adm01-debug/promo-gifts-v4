@@ -51,6 +51,10 @@ interface Pair {
 
 const PAIRS: Pair[] = [
   { label: 'Header — texto preto sobre GREEN', fg: PDF_TOKENS.textOnGreen, bg: GREEN, min: WCAG_AA_TEXT, kind: 'text' },
+  // labelOnGreen: rótulo Montserrat 700 uppercase 13-15px sobre GREEN.
+  // Avaliado no threshold "large text / UI" (3.0:1) por ser bold destacado —
+  // NÃO atende AA para texto normal (4.5:1) por decisão de design (cinza claro).
+  { label: 'Header — rótulo (labelOnGreen) sobre GREEN', fg: PDF_TOKENS.labelOnGreen, bg: GREEN, min: WCAG_AA_UI, kind: 'ui' },
   { label: 'Corpo — texto sobre linha par (branca)', fg: PDF_TOKENS.textBody, bg: PDF_TOKENS.rowEven, min: WCAG_AA_TEXT, kind: 'text' },
   { label: 'Corpo — texto sobre linha ímpar (cinza claro)', fg: PDF_TOKENS.textBody, bg: PDF_TOKENS.rowOdd, min: WCAG_AA_TEXT, kind: 'text' },
   { label: 'Swatch — borda sobre linha par', fg: PDF_TOKENS.swatchBorder, bg: PDF_TOKENS.rowEven, min: WCAG_AA_UI, kind: 'ui' },
