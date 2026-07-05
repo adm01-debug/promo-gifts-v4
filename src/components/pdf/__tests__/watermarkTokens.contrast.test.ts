@@ -43,16 +43,17 @@ describe('watermarkTokens · contraste e legibilidade', () => {
 
   it('RGB efetivo mantém dominância do vermelho (semântica de aviso)', () => {
     const composed = composeWatermarkOverWhite();
-    // Vermelho DEVE ser menor que verde/azul (composto sobre branco, R cai mais
-    // porque foreground R=200 é menor que 255; G/B ficam próximos de 255).
-    // Diferença R vs média(G,B) captura o "tom rosado" perceptível.
+    // Sobre branco, foreground (200,0,0) puxa G/B para baixo mais que R.
+    // Diferença R − média(G,B) captura o "tom rosado" perceptível.
     const avgGB = (composed.g + composed.b) / 2;
     expect(
-      avgGB - composed.r,
+      composed.r - avgGB,
       `sem dominância vermelha visível (composed=${JSON.stringify(composed)})`,
     ).toBeGreaterThan(3);
-    // E não pode ser saturado a ponto de virar bloco vermelho denso.
-    expect(composed.r).toBeGreaterThan(200);
+    // Vermelho não pode saturar em bloco denso (fica < 255) e não pode desbotar
+    // até quase branco puro (fica ≥ 240, senão o aviso some).
+    expect(composed.r).toBeLessThan(255);
+    expect(composed.r).toBeGreaterThanOrEqual(240);
   });
 
   it('cores base do token não foram alteradas silenciosamente', () => {
