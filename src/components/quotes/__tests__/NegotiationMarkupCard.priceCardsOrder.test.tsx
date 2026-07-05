@@ -126,4 +126,27 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
     expect(screen.queryByText(/preço final/i)).toBeNull();
     expect(screen.queryByText(/cliente paga/i)).toBeNull();
   });
+
+  it('bloco do slider mantém pt-4 (mobile) e sm:pt-3 (desktop) para respiro', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const label = screen.getByText('Acréscimo no preço apresentado');
+    const sliderBlock = label.closest('div')?.parentElement;
+    expect(sliderBlock).not.toBeNull();
+    expect(sliderBlock!.className).toMatch(/\bpt-4\b/);
+    expect(sliderBlock!.className).toMatch(/\bsm:pt-3\b/);
+    expect(sliderBlock!.className).toMatch(/\bspace-y-1\.5\b/);
+    expect(sliderBlock!.className).toMatch(/\bsm:space-y-1\b/);
+  });
+
+  it('a11y: slider expõe aria-label e aria-valuenow; ruler é aria-hidden', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const slider = screen.getByRole('slider');
+    expect(slider).toHaveAttribute('aria-valuenow', '10');
+    const ruler = screen.getByText('0%').parentElement;
+    expect(ruler).toHaveAttribute('aria-hidden', 'true');
+    // aria-label vai no root do Slider (irmão do thumb)
+    expect(
+      document.querySelector('[aria-label="Margem de negociação em porcentagem"]'),
+    ).not.toBeNull();
+  });
 });

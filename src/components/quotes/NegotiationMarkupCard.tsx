@@ -150,7 +150,8 @@ export function NegotiationMarkupCard({
       <div
         data-testid="negotiation-markup-card"
         className={cn(
-          'space-y-1.5 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 px-2.5 py-2',
+          // Escala de spacing padronizada (mobile → desktop) para todo o card
+          'space-y-2 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 px-3 py-2.5 sm:space-y-1.5 sm:px-2.5 sm:py-2',
           className,
         )}
       >
@@ -158,13 +159,13 @@ export function NegotiationMarkupCard({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <div className="shrink-0 rounded-lg bg-primary/10 p-1.5">
-              <ChartNoAxesCombined className="h-3.5 w-3.5 text-primary" />
+              <ChartNoAxesCombined className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
             </div>
             <h4 className="truncate text-sm font-semibold leading-tight">Margem de Negociação</h4>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button type="button" aria-label="Sobre margem de negociação" className="shrink-0">
-                  <Info className="h-3 w-3 text-muted-foreground/60" />
+                  <Info className="h-3 w-3 text-muted-foreground/60" aria-hidden="true" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top">
@@ -177,7 +178,7 @@ export function NegotiationMarkupCard({
               variant="outline"
               className="h-4 shrink-0 gap-1 border-warning/30 bg-warning/10 text-[9px] text-warning"
             >
-              <EyeOff className="h-2.5 w-2.5" /> Uso interno
+              <EyeOff className="h-2.5 w-2.5" aria-hidden="true" /> Uso interno
             </Badge>
           </div>
           <Switch
@@ -190,24 +191,36 @@ export function NegotiationMarkupCard({
         {enabled && (
           <>
             {/* Slider */}
-            <div className="space-y-1 pt-3">
+            <div className="space-y-1.5 pt-4 sm:space-y-1 sm:pt-3">
               <div className="flex items-baseline justify-between">
-                <span className="text-[11px] text-muted-foreground">
+                <label
+                  htmlFor="negotiation-markup-slider"
+                  className="text-[11px] text-muted-foreground"
+                >
                   Acréscimo no preço apresentado
-                </span>
-                <span className="text-sm font-bold tabular-nums text-primary">
+                </label>
+                <span
+                  className="text-sm font-bold tabular-nums text-primary"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
                   +{value.toFixed(0)}%
                 </span>
               </div>
               <Slider
+                id="negotiation-markup-slider"
                 value={[value]}
                 min={0}
                 max={MAX_MARKUP}
                 step={1}
                 onValueChange={(v) => onChange(v[0] ?? 0)}
                 aria-label="Margem de negociação em porcentagem"
+                
               />
-              <div className="flex justify-between text-[9px] text-muted-foreground/60">
+              <div
+                className="flex justify-between text-[9px] text-muted-foreground/60"
+                aria-hidden="true"
+              >
                 <span>0%</span>
                 <span>{MAX_MARKUP}%</span>
               </div>
