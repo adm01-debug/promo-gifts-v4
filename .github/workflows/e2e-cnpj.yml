@@ -35,8 +35,10 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci
-      - name: Unit — CNPJ exhaustive + callsites audit
-        run: npx vitest run src/utils/masks.test.ts src/utils/cnpj-schema.test.ts "src/utils/__tests__/cnpj-*.test.ts"
+      - name: Gate — render de CNPJ mascarado (B1/B6)
+        run: node scripts/check-cnpj-render.mjs
+      - name: Unit — CNPJ exhaustive + callsites audit + display contract + fuzz
+        run: npx vitest run src/utils/masks.test.ts src/utils/cnpj-schema.test.ts "src/utils/__tests__/cnpj-" src/components/__tests__/cnpj-render.test.tsx
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
       - name: E2E — CNPJ specs
