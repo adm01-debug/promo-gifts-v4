@@ -15,10 +15,11 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import {
-  PropostaComercialTailwind,
-  paginateItems,
-} from '../PropostaComercialTailwind';
+import { PropostaComercialTailwind } from '../PropostaComercialTailwind';
+import type {
+  ProposalTemplateData,
+  ProposalItem,
+} from '../ProposalHtmlTemplate';
 import type {
   ProposalTemplateData,
   ProposalItem,
