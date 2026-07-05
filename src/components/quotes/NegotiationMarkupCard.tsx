@@ -131,7 +131,7 @@ export function NegotiationMarkupCard({
             </div>
 
             {/* Comparison preview */}
-            <div className="grid grid-cols-1 gap-2 border-t border-border/40 pt-2">
+            <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
               {/* Real (interno) */}
               <div className="space-y-1 rounded-lg bg-muted/40 p-2">
                 <p className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">

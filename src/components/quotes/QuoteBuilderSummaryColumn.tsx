@@ -1199,7 +1199,7 @@ export function QuoteBuilderSummaryColumn({
           {/* Negotiation Markup */}
           {items.length > 0 && setNegotiationMarkup && (
             <div className="px-4 pt-3">
-              <div className="w-2/5 min-w-[220px]">
+              <div className="w-3/5 min-w-[320px]">
                 <NegotiationMarkupCard
                   value={negotiationMarkup}
                   onChange={setNegotiationMarkup}
