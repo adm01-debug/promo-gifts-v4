@@ -110,7 +110,20 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
       expect(grid.className).toMatch(/\bflex-col\b/);
       expect(grid.className).not.toMatch(/\bgrid-cols-2\b/);
 
+      // Bloco "Preço final" removido — informação vive no rodapé do resumo
+      expect(card.textContent ?? '').not.toMatch(/preço final/i);
+      expect(card.textContent ?? '').not.toMatch(/cliente paga/i);
+
       unmount();
     },
   );
+
+  it('não renderiza nenhum rótulo ou seção de "Preço final" no card', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const card = screen.getByTestId('negotiation-markup-card');
+    expect(card.textContent ?? '').not.toMatch(/preço final/i);
+    expect(card.textContent ?? '').not.toMatch(/cliente paga/i);
+    expect(screen.queryByText(/preço final/i)).toBeNull();
+    expect(screen.queryByText(/cliente paga/i)).toBeNull();
+  });
 });
