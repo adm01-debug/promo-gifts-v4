@@ -797,8 +797,21 @@ export function QuoteBuilderSummaryColumn({
                                          </div>
                                        )}
                                      </div>
-                                   </div>
-                                   <div className="flex h-[1.125rem] shrink-0 items-center gap-0.5">
+                                    </div>
+                                    {isCollapsed && (
+                                      <div
+                                        data-testid={`quote-summary-collapsed-price-${idx}`}
+                                        className="flex shrink-0 items-center gap-1.5 text-xs tabular-nums"
+                                      >
+                                        <span className="text-muted-foreground">
+                                          Qtd {item.quantity} × {formatCurrency(item.unit_price)}
+                                        </span>
+                                        <span className="font-semibold text-foreground">
+                                          {formatCurrency(item.quantity * item.unit_price)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className="flex h-[1.125rem] shrink-0 items-center gap-0.5">
                                     <TooltipProvider delayDuration={200}>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
