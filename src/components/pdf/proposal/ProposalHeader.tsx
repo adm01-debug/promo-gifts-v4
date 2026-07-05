@@ -131,7 +131,7 @@ export function ProposalHeader({ data, isContinuation }: Props) {
           position: 'absolute',
           zIndex: 10,
           textAlign: 'right',
-          color: '#ffffff',
+          color: '#111',
           top: '0',
           bottom: '0',
           right: '32px',
