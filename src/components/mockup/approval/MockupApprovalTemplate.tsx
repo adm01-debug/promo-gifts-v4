@@ -410,7 +410,7 @@ function ClientSection({ client }: { client: MockupApprovalData['client'] }) {
         </p>
         {client.cnpj && (
           <p style={{ fontSize: '11px', color: '#666', margin: '3px 0 0 0', fontWeight: 700 }}>
-            CNPJ: {client.cnpj}
+            CNPJ: {maskCnpj(client.cnpj)}
           </p>
         )}
         {client.phone && (
