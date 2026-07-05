@@ -55,7 +55,7 @@ function makeData(
 }
 
 describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
-  it('isDraft=true renderiza exatamente 1 "RASCUNHO" por página', () => {
+  it(`isDraft=true renderiza exatamente 1 "${WATERMARK_TEXT}" por página`, () => {
     const { container } = render(
       <PropostaComercialTailwind data={makeData()} isDraft={true} />,
     );
@@ -63,7 +63,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
     expect(pageCount, 'documento sem páginas renderizadas').toBeGreaterThan(0);
 
     const watermarks = Array.from(container.querySelectorAll('div')).filter(
-      (el) => el.textContent === 'RASCUNHO',
+      (el) => el.textContent === WATERMARK_TEXT,
     );
     expect(watermarks.length).toBe(pageCount);
   });
