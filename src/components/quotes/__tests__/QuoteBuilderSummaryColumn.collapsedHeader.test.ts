@@ -166,10 +166,11 @@ describe('QuoteBuilderSummaryColumn — a11y de teclado no cartão recolhido', (
   });
 
   it('ordem de foco por Tab segue DOM: drag → editar → excluir → toggle', () => {
-    const drag = slice.indexOf('aria-label="Arrastar para reordenar"');
-    const edit = slice.indexOf('aria-label="Editar"');
-    const del = slice.indexOf('aria-label="Excluir"');
-    const toggle = slice.indexOf("aria-label={isCollapsed ? 'Expandir' : 'Recolher'}");
+    const drag = SOURCE.indexOf('aria-label="Arrastar para reordenar"');
+    const edit = SOURCE.indexOf('aria-label="Editar"');
+    const del = SOURCE.indexOf('aria-label="Excluir"');
+    const toggle = SOURCE.indexOf("aria-label={isCollapsed ? 'Expandir' : 'Recolher'}");
+    expect(drag).toBeGreaterThan(-1);
     expect(drag).toBeLessThan(edit);
     expect(edit).toBeLessThan(del);
     expect(del).toBeLessThan(toggle);
