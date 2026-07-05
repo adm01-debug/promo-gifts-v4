@@ -99,7 +99,12 @@ jobs:
         env:
           E2E_BASE_URL: http://localhost:8080
 
+      - name: Check baselines exist (mobile/tablet/desktop)
+        if: steps.auth.outputs.authed == 'true' && inputs.update_snapshots != true
+        run: node scripts/qa/check-collapse-baselines.mjs
+
       - name: Run collapse E2E (behavior + visual reflow)
+
         if: steps.auth.outputs.authed == 'true'
         run: |
           UPDATE_FLAG=""
@@ -260,6 +265,23 @@ jobs:
               ? `<sub>🎭 ${cfg.masks.length} região(ões) dinâmica(s) mascarada(s). Ajuste via \`COLLAPSE_MASK_EXTRA\` / \`COLLAPSE_MASK_DISABLE\` ou edite \`e2e/customization/mask-config.ts\`.</sub>`
               : '';
 
+            // Lista arquivos do report que existirem, para linkar no corpo do PR.
+            const reportFiles = [
+              ['visual-diff-report/collapse-config.json', 'collapse-config.json (thresholds + máscaras efetivas)'],
+              ['visual-diff-report/calibration.md', 'calibration.md (relatório de calibragem)'],
+              ['visual-diff-report/calibration.json', 'calibration.json (dados brutos)'],
+              ['visual-diff-report/calibration-mobile.csv', 'calibration-mobile.csv'],
+              ['visual-diff-report/calibration-tablet.csv', 'calibration-tablet.csv'],
+              ['visual-diff-report/calibration-desktop.csv', 'calibration-desktop.csv'],
+            ];
+            const filesBlock = reportFiles
+              .filter(([p]) => fs.existsSync(p))
+              .map(([p, label]) => `- \`${p}\` — ${label}`)
+              .join('\n');
+            const filesSection = filesBlock
+              ? ['', '### 📄 Arquivos no artifact', filesBlock].join('\n')
+              : '';
+
             const body = [
               marker,
               '## 🖼️ Colapso do LocationPanel — reflow visual',
@@ -271,12 +293,14 @@ jobs:
               ...rows,
               '',
               artifactLine,
+              filesSection,
               '',
-              'Após baixar, abra `visual-diff-report/index.html` para os diffs lado a lado e `playwright-report/index.html` para traces/vídeos.',
+              'Após baixar, abra `visual-diff-report/index.html` para os diffs lado a lado e `playwright-report/index.html` para traces/vídeos. Os CSVs `calibration-*.csv` e o `collapse-config.json` estão no mesmo artifact.',
               '',
               maskLine,
-              '<sub>Se os diffs forem intencionais, rode `npm run e2e:collapse:update:<viewport>` localmente e faça commit das baselines.</sub>',
+              '<sub>Se os diffs forem intencionais, rode `npm run e2e:collapse:update:<viewport>` localmente e faça commit das baselines. Baseline ausente? `npm run e2e:collapse:check-baselines` mostra qual gerar.</sub>',
             ].filter(Boolean).join('\n');
+
 
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;

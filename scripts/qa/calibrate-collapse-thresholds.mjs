@@ -150,13 +150,64 @@ writeFileSync(
   "utf8",
 );
 
-// Um CSV por viewport com contagem de diffs por combinação.
+// Um CSV enriquecido por viewport com métricas por combinação.
+// Colunas:
+//   threshold | maxDiffPixelRatio | failures        (falhas simuladas neste vp)
+//   total_failures                                  (soma em todos os vp)
+//   diffs_in_viewport                               (nº de diff.png do vp bruto)
+//   avg_diff_bytes | avg_pct_pixels                 (média das métricas dos diffs)
+//   artifacts_dir                                   (onde inspecionar os PNGs)
 for (const vp of ["mobile", "tablet", "desktop"]) {
-  const lines = ["threshold,maxDiffPixelRatio,failures"];
+  const vpDiffs = diffs.filter((d) => d.viewport === vp);
+  const avgBytes = vpDiffs.length
+    ? Math.round(vpDiffs.reduce((s, d) => s + d.diffBytes, 0) / vpDiffs.length)
+    : 0;
+  // Aproximação: pixels alterados ≈ bytes do diff PNG / 4 (RGBA) — heurística
+  // consistente entre viewports; % relativa à área ~1MP usada em simulate().
+  const avgPct = vpDiffs.length ? (avgBytes / 4 / 1_000_000) * 100 : 0;
+  const artifactsDir = DRY_RUN
+    ? `visual-diff-report/dry-run/${vp}/`
+    : `test-results/ (filtrar por *${vp}*)`;
+  const lines = [
+    "threshold,maxDiffPixelRatio,failures,total_failures,diffs_in_viewport,avg_diff_bytes,avg_pct_pixels,artifacts_dir",
+  ];
   for (const c of combos) {
-    lines.push(`${c.threshold},${c.ratio},${c.perViewport[vp] ?? 0}`);
+    lines.push(
+      [
+        c.threshold,
+        c.ratio,
+        c.perViewport[vp] ?? 0,
+        c.total,
+        vpDiffs.length,
+        avgBytes,
+        avgPct.toFixed(4),
+        `"${artifactsDir}"`,
+      ].join(","),
+    );
   }
   writeFileSync(join(OUT_DIR, `calibration-${vp}.csv`), lines.join("\n"), "utf8");
+}
+
+// DRY-RUN: espelha os PNGs (actual + diff + expected) em visual-diff-report/
+// para que o artifact publicado permita inspeção visual sem quebrar o job.
+if (DRY_RUN && diffs.length > 0) {
+  const { copyFileSync } = await import("node:fs");
+  for (const d of diffs) {
+    const vpDir = join(OUT_DIR, "dry-run", d.viewport);
+    mkdirSync(vpDir, { recursive: true });
+    const copy = (src, name) => {
+      try {
+        if (existsSync(src)) copyFileSync(src, join(vpDir, name));
+      } catch {
+        /* best-effort */
+      }
+    };
+    const base = basename(d.diff).replace(/-diff\.png$/, "");
+    copy(d.diff, `${base}-diff.png`);
+    copy(d.actual, `${base}-actual.png`);
+    copy(d.expected, `${base}-expected.png`);
+  }
+  console.log(`✓ Dry-run: PNGs espelhados em ${OUT_DIR}/dry-run/{mobile,tablet,desktop}/`);
 }
 
 console.log(`\n✓ Relatório: ${OUT_DIR}/calibration.md`);
@@ -172,3 +223,4 @@ if (combos[0]) {
 }
 // Em dry-run sempre saímos 0.
 if (DRY_RUN) process.exit(0);
+

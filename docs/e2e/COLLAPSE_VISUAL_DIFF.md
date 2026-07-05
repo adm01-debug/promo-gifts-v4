@@ -86,3 +86,58 @@ esperadas sem esconder regressões conhecidas.
 
 O spec detecta baselines faltando e falha com mensagem clara indicando o comando
 `npm run e2e:collapse:update:<viewport>` correspondente. Veja `PRE-CHECK` no spec.
+
+## 7. Overrides via variáveis de ambiente
+
+Todos os envs abaixo são opcionais e sobrescrevem os defaults de
+`e2e/customization/mask-config.ts`. Copie o exemplo pronto em
+[`docs/e2e/collapse.env.example`](./collapse.env.example) para o seu
+`.env.local`.
+
+| Env | Efeito |
+| --- | --- |
+| `COLLAPSE_MASK_EXTRA` | CSVs de selectors CSS extras a mascarar |
+| `COLLAPSE_MASK_DISABLE` | CSVs de selectors do baseline a desativar |
+| `COLLAPSE_THRESHOLD_MOBILE/TABLET/DESKTOP` | Tolerância a antialiasing (0–1) |
+| `COLLAPSE_RATIO_MOBILE/TABLET/DESKTOP` | Fração máxima de pixels diferentes (0–1) |
+| `CALIBRATE_DRY_RUN=1` | Idem `--dry-run` no script de calibragem |
+
+Exemplo rápido — mascarar dois selectors novos e afrouxar o tablet:
+
+```bash
+export COLLAPSE_MASK_EXTRA='[data-testid="novo-badge"],[data-testid="contador-live"]'
+export COLLAPSE_THRESHOLD_TABLET=0.30
+export COLLAPSE_RATIO_TABLET=0.02
+npm run e2e:collapse
+```
+
+## 8. Baseline check standalone
+
+Além do PRE-CHECK do spec, há um script standalone que valida a existência
+de todas as baselines PNG e falha com a instrução exata do npm a rodar:
+
+```bash
+npm run e2e:collapse:check-baselines             # todos os viewports
+npm run e2e:collapse:check-baselines:tablet      # só tablet
+```
+
+O CI roda esse check ANTES do `playwright test` — se algum PNG de tablet
+sumir, o job falha imediatamente sugerindo `npm run e2e:collapse:update:tablet`.
+
+## 9. CSV enriquecido (`calibration-<vp>.csv`)
+
+O script de calibragem produz um CSV por viewport com as colunas:
+
+| Coluna | Significado |
+| --- | --- |
+| `threshold`, `maxDiffPixelRatio` | Par testado |
+| `failures` | Falhas simuladas NESTE viewport |
+| `total_failures` | Falhas somadas em todos os viewports |
+| `diffs_in_viewport` | Quantos `-diff.png` foram encontrados para este vp |
+| `avg_diff_bytes` | Bytes médios dos diffs (proxy de área alterada) |
+| `avg_pct_pixels` | Percentual médio de pixels diferentes (relativo a ~1MP) |
+| `artifacts_dir` | Onde inspecionar os PNGs (test-results/ ou visual-diff-report/dry-run/) |
+
+Em modo `--dry-run`, os PNGs (`-actual`, `-diff`, `-expected`) são espelhados
+em `visual-diff-report/dry-run/<viewport>/` para inspeção visual sem quebrar
+o job — o mesmo artifact do CI já publica esses arquivos.
