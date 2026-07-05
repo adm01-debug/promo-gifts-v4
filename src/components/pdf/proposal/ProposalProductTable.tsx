@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
-import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
+import { formatPersonalizationSummary } from '@/lib/quotes/personalizationSummary';
 import { getProposalImageUrl } from '@/utils/image-utils';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
