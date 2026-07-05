@@ -60,7 +60,7 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
     // Grid dos preços também está dentro do mesmo card
     expect(card).toContainElement(grid);
     // Espaçamento vertical uniforme entre header/slider/grid/preço final
-    expect(card.className).toMatch(/\bspace-y-2\b/);
+    expect(card.className).toMatch(/\bspace-y-1\.5\b/);
   });
 
   it('grid usa grid-cols-2 fixo + gap-2 + borda superior de separação', () => {
