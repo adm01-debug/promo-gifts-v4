@@ -1461,7 +1461,17 @@ export function QuoteBuilderSummaryColumn({
       </div>
 
       {/* Confirmação — Salvar Alterações do orçamento inteiro */}
-      <Dialog open={confirmSaveDraftOpen} onOpenChange={setConfirmSaveDraftOpen}>
+      <Dialog
+        open={confirmSaveDraftOpen}
+        onOpenChange={(open) => {
+          setConfirmSaveDraftOpen(open);
+          // Restaura foco no botão que abriu o modal (Cancelar / Escape / clique fora)
+          if (!open) {
+            requestAnimationFrame(() => saveDraftBtnRef.current?.focus());
+          }
+        }}
+      >
+
         <DialogContent data-testid="quote-save-draft-confirm-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
