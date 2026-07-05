@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { searchCrm, selectCrm } from '@/lib/crm-db';
 import { type CrmContact, type CrmContactEmail, type CrmContactPhone } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 interface CompanyOption {
   id: string;
