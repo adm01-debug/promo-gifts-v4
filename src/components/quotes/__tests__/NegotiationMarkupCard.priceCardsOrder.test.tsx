@@ -28,17 +28,16 @@ describe('NegotiationMarkupCard — ordem dos cards de preço', () => {
     expect(real.compareDocumentPosition(cliente) & 4).toBeTruthy();
   });
 
-  it('usa grid-cols-1 (empilhamento vertical em qualquer viewport)', () => {
+  it('usa grid-cols-2 (layout horizontal lado a lado)', () => {
     const { container } = render(<NegotiationMarkupCard {...props} />);
-    const grid = container.querySelector('.grid.grid-cols-1');
+    const grid = container.querySelector('.grid.grid-cols-2');
     expect(grid).not.toBeNull();
-    // Sem variante responsiva sm:/md:/lg: que quebre em 2 colunas
-    expect(grid?.className).not.toMatch(/grid-cols-2/);
+    expect(grid?.className).not.toMatch(/grid-cols-1(?!\d)/);
   });
 
   it('os dois cards são filhos diretos do mesmo grid (mesmo alinhamento)', () => {
     const { container } = render(<NegotiationMarkupCard {...props} />);
-    const grid = container.querySelector('.grid.grid-cols-1') as HTMLElement;
+    const grid = container.querySelector('.grid.grid-cols-2') as HTMLElement;
     const real = screen.getByText(/Real \(interno\)/i).closest('div.rounded-lg');
     const cliente = screen.getByText(/Cliente vê/i).closest('div.rounded-lg');
     expect(real?.parentElement).toBe(grid);
