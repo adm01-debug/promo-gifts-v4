@@ -158,7 +158,7 @@ export function NegotiationMarkupCard({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <div className="shrink-0 rounded-lg bg-primary/10 p-1.5">
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              <ChartNoAxesCombined className="h-3.5 w-3.5 text-primary" />
             </div>
             <h4 className="truncate text-sm font-semibold leading-tight">Margem de Negociação</h4>
             <Tooltip>
