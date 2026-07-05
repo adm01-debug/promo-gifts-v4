@@ -125,6 +125,7 @@ export function NegotiationMarkupCard({
   realDiscountPercent,
   maxDiscountPercent,
   className,
+  hidePriceComparison = false,
 }: Props) {
   const [enabled, setEnabled] = useState(value > 0);
 
@@ -212,62 +213,18 @@ export function NegotiationMarkupCard({
               </div>
             </div>
 
-            {/* Comparison preview */}
-            <div
-              data-testid="negotiation-price-grid"
-              className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2"
-            >
-              {/* Real (interno) */}
-              <div
-                data-testid="price-card-real"
-                className="space-y-1 rounded-lg bg-muted/40 p-2"
-              >
-                <p className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <ShieldCheck className="h-2.5 w-2.5" /> Real (interno)
-                </p>
-                <div className="space-y-0.5 text-[10px]">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium tabular-nums">{formatCurrency(realSubtotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Desconto:</span>
-                    <span
-                      className={cn(
-                        'font-bold tabular-nums',
-                        isOverLimit ? 'text-warning' : 'text-success',
-                      )}
-                    >
-                      {realDiscountPercent.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
+            {/* Comparison preview (interno) — pode ser suprimido quando renderizado ao lado via <NegotiationPriceComparison /> */}
+            {!hidePriceComparison && (
+              <NegotiationPriceComparison
+                realSubtotal={realSubtotal}
+                apparentDiscountPercent={apparentDiscountPercent}
+                realDiscountPercent={realDiscountPercent}
+                presentedSubtotal={presentedSubtotal}
+                isOverLimit={isOverLimit}
+                className="border-t border-border/40 pt-2"
+              />
+            )}
 
-              {/* Cliente vê */}
-              <div
-                data-testid="price-card-client"
-                className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2"
-              >
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-primary">
-                  Cliente vê
-                </p>
-                <div className="space-y-0.5 text-[10px]">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium tabular-nums">
-                      {formatCurrency(presentedSubtotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Desconto:</span>
-                    <span className="font-bold tabular-nums text-primary">
-                      {apparentDiscountPercent.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Final price + status */}
             <div className="flex items-center justify-between border-t border-border/40 pt-2">
