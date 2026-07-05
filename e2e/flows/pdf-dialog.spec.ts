@@ -213,16 +213,6 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
       expect(insideDialog, `Foco escapou do dialog após Tab #${i + 1}`).toBe(true);
     }
 
-    // Focus trap (Radix Dialog): Tab N vezes nunca deve escapar para <body>.
-    await confirm.focus();
-    for (let i = 0; i < 12; i++) {
-      await page.keyboard.press('Tab');
-      const insideDialog = await page.evaluate(() => {
-        const el = document.activeElement;
-        return !!el && !!el.closest('[role="dialog"]');
-      });
-      expect(insideDialog, `Foco escapou do dialog após Tab #${i + 1}`).toBe(true);
-    }
     // Shift+Tab também mantém preso.
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press('Shift+Tab');
@@ -231,6 +221,7 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
       );
       expect(insideDialog).toBe(true);
     }
+
 
     // Enter no confirm dispara a geração (loader ou download).
     await confirm.focus();
