@@ -224,6 +224,8 @@ export function QuoteBuilderSummaryColumn({
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+  const [confirmSaveDraftOpen, setConfirmSaveDraftOpen] = useState(false);
+
 
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
@@ -1411,21 +1413,39 @@ export function QuoteBuilderSummaryColumn({
                   {isEditMode ? 'Salvar' : 'Criar'}
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-12 flex-1"
-                data-testid="quote-save-draft"
-                onClick={() => onSave('draft')}
-                disabled={quotesLoading || !isDraftValid}
-              >
-                {quotesLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
-              </Button>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="h-12 flex-1"
+                      data-testid="quote-save-draft"
+                      onClick={() => {
+                        if (isEditMode) {
+                          setConfirmSaveDraftOpen(true);
+                        } else {
+                          onSave('draft');
+                        }
+                      }}
+                      disabled={quotesLoading || !isDraftValid}
+                    >
+                      {quotesLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-xs">
+                    {isEditMode
+                      ? 'Grava o orçamento inteiro no banco (itens, descontos e notas). Não envia para aprovação.'
+                      : 'Cria um rascunho do orçamento no banco para você continuar depois.'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
             </div>
               );
             })()}
@@ -1436,7 +1456,50 @@ export function QuoteBuilderSummaryColumn({
         </div>
       </div>
 
+      {/* Confirmação — Salvar Alterações do orçamento inteiro */}
+      <Dialog open={confirmSaveDraftOpen} onOpenChange={setConfirmSaveDraftOpen}>
+        <DialogContent data-testid="quote-save-draft-confirm-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Save className="h-5 w-5 text-primary" />
+              Salvar alterações do orçamento?
+            </DialogTitle>
+            <DialogDescription>
+              Todas as alterações feitas neste orçamento (itens, quantidades, descontos,
+              markup e notas) serão gravadas no banco. O orçamento{' '}
+              <span className="font-semibold text-foreground">não</span> será enviado para
+              aprovação nem para o cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmSaveDraftOpen(false)}
+              disabled={quotesLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmSaveDraftOpen(false);
+                onSave('draft');
+              }}
+              disabled={quotesLoading}
+              data-testid="quote-save-draft-confirm"
+            >
+              {quotesLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Approval Request Dialog — SCROLL-FIX-03 via handleApprovalDialogChange */}
+
       <Dialog open={approvalDialogOpen} onOpenChange={handleApprovalDialogChange}>
         <DialogContent data-testid="quote-approval-dialog">
           <DialogHeader>
