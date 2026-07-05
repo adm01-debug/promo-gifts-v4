@@ -225,14 +225,14 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                   return (
                     <span
                       key={pIdx}
-                      className="flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] leading-tight"
+                      className="flex flex-col gap-0.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-1 text-[11px] leading-tight"
                       title={`${displayName} — ${meta}`}
                     >
-                      <span className="font-semibold text-primary whitespace-nowrap">
+                      <span className="font-semibold text-primary">
                         ✦ {displayName}
                       </span>
                       {meta && (
-                        <span className="text-muted-foreground">{meta}</span>
+                        <span className="text-[10px] text-muted-foreground">{meta}</span>
                       )}
                     </span>
                   );
