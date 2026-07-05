@@ -26,7 +26,8 @@ describe('PDF totais — paridade de largura', () => {
     expect(html).toContain(`width:${TOTALS_BLOCK_WIDTH_PX}px`);
   });
 
-  it('constante reflete a redução de 20% (valor atual = 230px)', () => {
-    expect(TOTALS_BLOCK_WIDTH_PX).toBe(230);
+  it('constante reflete o aumento de 20% (valor atual = 276px)', () => {
+    expect(TOTALS_BLOCK_WIDTH_PX).toBe(276);
   });
+
 });
