@@ -99,7 +99,12 @@ jobs:
         env:
           E2E_BASE_URL: http://localhost:8080
 
+      - name: Check baselines exist (mobile/tablet/desktop)
+        if: steps.auth.outputs.authed == 'true' && inputs.update_snapshots != true
+        run: node scripts/qa/check-collapse-baselines.mjs
+
       - name: Run collapse E2E (behavior + visual reflow)
+
         if: steps.auth.outputs.authed == 'true'
         run: |
           UPDATE_FLAG=""
