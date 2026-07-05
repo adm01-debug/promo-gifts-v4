@@ -1463,7 +1463,7 @@ export function QuoteBuilderSummaryColumn({
         </div>
       </div>
 
-      {/* Confirmação — Salvar Alterações do orçamento inteiro */}
+      {/* Confirmação — Salvar Rascunho do orçamento inteiro */}
       <Dialog
         open={confirmSaveDraftOpen}
         onOpenChange={(open) => {
