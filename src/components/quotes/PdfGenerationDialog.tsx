@@ -237,24 +237,19 @@ export function PdfGenerationDialog({
               </div>
 
               {/* Actions footer */}
-              <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-6 py-4">
-                <div className="flex items-center gap-2.5 rounded-full border border-warning/25 bg-warning/5 px-4 py-1.5 text-warning">
-                  <Info className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
-                  <p className="text-xs font-medium tracking-wide">Confira as informações antes de enviar</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="lg"
-                    className="gap-2 px-8"
-                    onClick={handleGenerate}
-                    data-testid="pdf-generate-confirm"
-                    aria-label="Gerar e baixar PDF da proposta"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Gerar PDF
-                  </Button>
-                </div>
+              <div className="flex items-center justify-end gap-3 border-t border-border bg-card px-6 py-4">
+                <Button
+                  size="lg"
+                  className="gap-2 px-8"
+                  onClick={handleGenerate}
+                  data-testid="pdf-generate-confirm"
+                  aria-label="Gerar e baixar PDF da proposta"
+                >
+                  <FileText className="h-4 w-4" />
+                  Gerar PDF
+                </Button>
               </div>
+
             </div>
           )}
 
