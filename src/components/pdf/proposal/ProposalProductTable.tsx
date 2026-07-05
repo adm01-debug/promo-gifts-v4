@@ -279,43 +279,35 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                             ·
                           </span>
                         )}
-                        {item.color && (() => {
-                          const bgColor = item.colorHex || '#e5e7eb';
-                          const hex = bgColor.replace('#', '');
-                          const r = parseInt(hex.substring(0, 2), 16) || 0;
-                          const g = parseInt(hex.substring(2, 4), 16) || 0;
-                          const b = parseInt(hex.substring(4, 6), 16) || 0;
-                          const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                          const textColor = luminance > 0.5 ? '#1a1a1a' : '#ffffff';
-                          return (
+                        {item.color && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              fontSize: '10px',
+                              color: '#555',
+                              fontWeight: 600,
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            Cor:{' '}
                             <span
                               style={{
                                 display: 'inline-block',
-                                fontSize: '10px',
-                                color: '#555',
-                                fontWeight: 600,
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '2px',
+                                background: item.colorHex || '#ccc',
+                                border: '1px solid #bbb',
                                 verticalAlign: 'middle',
+                                marginRight: '4px',
+                                marginBottom: '1px',
                               }}
-                            >
-                              Cor:{' '}
-                              <span
-                                style={{
-                                  display: 'inline-block',
-                                  background: bgColor,
-                                  color: textColor,
-                                  padding: '1px 6px',
-                                  borderRadius: '3px',
-                                  fontWeight: 700,
-                                  fontSize: '10px',
-                                  border: luminance > 0.85 ? '1px solid #ccc' : '1px solid transparent',
-                                  verticalAlign: 'middle',
-                                }}
-                              >
-                                {item.color}
-                              </span>
+                            />
+                            <span style={{ fontWeight: 500, color: '#333', verticalAlign: 'middle' }}>
+                              {item.color}
                             </span>
-                          );
-                        })()}
+                          </span>
+                        )}
                       </div>
                     )}
                     {gravacaoBadges.length > 0 && (
