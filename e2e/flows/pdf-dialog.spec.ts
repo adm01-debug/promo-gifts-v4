@@ -31,15 +31,26 @@ const AUTHED_PROJECTS = new Set([
 
 const MIN_PDF_BYTES = 1024; // 1 KB — abaixo disso quase certamente é erro.
 
-async function openPdfDialog(page: import('@playwright/test').Page) {
-  const ok = await gotoQuoteScenario(page, 'enviada');
-  if (!ok) test.skip(true, 'Sem orçamento enviado no ambiente.');
+async function openPdfDialog(
+  page: import('@playwright/test').Page,
+  scenario: 'enviada' | 'rascunho' = 'enviada',
+) {
+  const ok = await gotoQuoteScenario(page, scenario);
+  if (!ok) test.skip(true, `Sem orçamento no estado "${scenario}" no ambiente.`);
   const trigger = page.getByTestId('pdf-preview-trigger');
   await expect(trigger).toBeVisible();
   await trigger.click();
   const confirm = page.getByTestId('pdf-generate-confirm');
   await expect(confirm).toBeVisible({ timeout: 10_000 });
   return { trigger, confirm };
+}
+
+/** Extrai texto por página via pdftotext. Retorna null se a lib faltar. */
+async function extractPdfPages(pdfPath: string): Promise<string[] | null> {
+  const { spawnSync } = await import('node:child_process');
+  const res = spawnSync('pdftotext', ['-layout', pdfPath, '-'], { encoding: 'utf-8' });
+  if (res.status !== 0 || !res.stdout) return null;
+  return res.stdout.split('\f').filter((p) => p.trim().length > 0);
 }
 
 test.describe('PdfGenerationDialog · fluxo completo', () => {
@@ -383,4 +394,84 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
       timeout: 15_000,
     });
   });
+
+  test('RASCUNHO — orçamento em rascunho gera PDF com marca d\'água em TODAS as páginas', async ({
+    page,
+  }, testInfo) => {
+    const { confirm } = await openPdfDialog(page, 'rascunho');
+
+    const downloadPromise = page
+      .waitForEvent('download', { timeout: 20_000 })
+      .catch(() => null);
+    await confirm.click();
+    const download = await downloadPromise;
+    if (!download) test.skip(true, 'Download não disparou no ambiente.');
+
+    const pdfPath = await download!.path();
+    if (!pdfPath) test.skip(true, 'PDF sem path resolvível.');
+
+    const pages = await extractPdfPages(pdfPath!);
+    if (!pages) {
+      testInfo.annotations.push({
+        type: 'pdftotext-missing',
+        description: 'pdftotext ausente — asserção de RASCUNHO pulada localmente.',
+      });
+      test.skip(true, 'pdftotext indisponível.');
+    }
+
+    // Contrato: RASCUNHO deve aparecer em CADA página (não só na primeira).
+    // pdftotext preserva espaçamento entre letras causado pelo letter-spacing
+    // do watermark ("R A S C U N H O") — normalizamos removendo whitespace.
+    const missing: number[] = [];
+    (pages ?? []).forEach((p, idx) => {
+      const compact = p.replace(/\s+/g, '').toUpperCase();
+      if (!compact.includes('RASCUNHO')) missing.push(idx + 1);
+    });
+    expect(
+      missing,
+      `RASCUNHO ausente nas páginas ${JSON.stringify(missing)} de ${pages?.length}`,
+    ).toEqual([]);
+
+    testInfo.annotations.push({
+      type: 'rascunho-coverage',
+      description: `RASCUNHO presente em ${pages?.length} de ${pages?.length} páginas`,
+    });
+  });
+
+  test('RASCUNHO — orçamento NÃO-rascunho (enviado) gera PDF SEM marca d\'água (evita falso positivo)', async ({
+    page,
+  }, testInfo) => {
+    const { confirm } = await openPdfDialog(page, 'enviada');
+
+    const downloadPromise = page
+      .waitForEvent('download', { timeout: 20_000 })
+      .catch(() => null);
+    await confirm.click();
+    const download = await downloadPromise;
+    if (!download) test.skip(true, 'Download não disparou no ambiente.');
+
+    const pdfPath = await download!.path();
+    if (!pdfPath) test.skip(true, 'PDF sem path resolvível.');
+
+    const pages = await extractPdfPages(pdfPath!);
+    if (!pages) {
+      testInfo.annotations.push({
+        type: 'pdftotext-missing',
+        description: 'pdftotext ausente — asserção negativa pulada localmente.',
+      });
+      test.skip(true, 'pdftotext indisponível.');
+    }
+
+    // Contrato negativo: NENHUMA página pode conter RASCUNHO.
+    const contaminated: number[] = [];
+    (pages ?? []).forEach((p, idx) => {
+      const compact = p.replace(/\s+/g, '').toUpperCase();
+      if (compact.includes('RASCUNHO')) contaminated.push(idx + 1);
+    });
+    expect(
+      contaminated,
+      `PDF enviado contaminado com RASCUNHO nas páginas ${JSON.stringify(contaminated)}`,
+    ).toEqual([]);
+  });
 });
+
