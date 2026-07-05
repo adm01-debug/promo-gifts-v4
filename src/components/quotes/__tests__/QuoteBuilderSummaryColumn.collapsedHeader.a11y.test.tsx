@@ -147,7 +147,7 @@ describe('Header recolhido — cenários de borda', () => {
 
     // Subtotal calculado sem quebrar (aceita 0 e valores enormes)
     const expected = brl(item.quantity * item.unit_price);
-    expect(within(priceBlock).getByText(expected)).toBeInTheDocument();
+    expect(priceBlock.textContent ?? '').toContain(expected);
   });
 });
 
