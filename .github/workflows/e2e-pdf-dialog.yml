@@ -64,9 +64,29 @@ jobs:
         run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+      - name: Install poppler-utils (pdftotext) para extração textual do PDF
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
       - name: Playwright — pdf-dialog spec
-        run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=${{ matrix.project }}
-      - name: Upload artifacts
+        run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=${{ matrix.project }} --reporter=list,html
+      - name: Coletar diffs visuais (baseline vs atual + .diff.png)
+        if: always()
+        run: |
+          set -e
+          mkdir -p visual-diff/${{ matrix.project }}
+          # Playwright grava *-actual.png, *-expected.png e *-diff.png em test-results/
+          # quando há falha de snapshot. Copiamos toda essa tríade para um bundle enxuto.
+          if [ -d test-results ]; then
+            find test-results -type f \
+              \( -name "*-actual.png" -o -name "*-expected.png" -o -name "*-diff.png" \) \
+              -exec cp --parents {} visual-diff/${{ matrix.project }}/ \;
+          fi
+          # Também copiamos as baselines commitadas para o mesmo bundle.
+          if [ -d e2e/flows/pdf-dialog.spec.ts-snapshots ]; then
+            mkdir -p visual-diff/${{ matrix.project }}/baselines
+            cp -r e2e/flows/pdf-dialog.spec.ts-snapshots/. visual-diff/${{ matrix.project }}/baselines/
+          fi
+          ls -R visual-diff || true
+      - name: Upload artifacts (relatório + resultados brutos)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -76,3 +96,12 @@ jobs:
             test-results/
           retention-days: 14
           if-no-files-found: ignore
+      - name: Upload diffs visuais (baseline + actual + diff)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diff-pdf-dialog-${{ matrix.project }}
+          path: visual-diff/${{ matrix.project }}/
+          retention-days: 14
+          if-no-files-found: ignore
+
