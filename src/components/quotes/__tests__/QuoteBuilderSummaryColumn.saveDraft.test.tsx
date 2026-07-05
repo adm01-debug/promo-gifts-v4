@@ -1,5 +1,5 @@
 /**
- * Testes de comportamento e acessibilidade do fluxo "Salvar Alterações" no
+ * Testes de comportamento e acessibilidade do fluxo "Salvar Rascunho" no
  * QuoteBuilderSummaryColumn: modal só abre em isEditMode, cancelar bloqueia
  * onSave, confirmar dispara onSave('draft') uma única vez, e navegação por
  * teclado no Dialog está OK (Radix + shadcn).
@@ -46,6 +46,7 @@ function SaveDraftHarness({
               variant="outline"
               size="lg"
               data-testid="quote-save-draft"
+              aria-label="Salvar Rascunho"
               onClick={() => (isEditMode ? setOpen(true) : onSave('draft'))}
             >
               <Save className="mr-2 h-4 w-4" />
@@ -76,12 +77,13 @@ function SaveDraftHarness({
             </Button>
             <Button
               data-testid="quote-save-draft-confirm"
+              aria-label="Salvar Rascunho"
               onClick={() => {
                 setOpen(false);
                 onSave('draft');
               }}
             >
-              Salvar rascunho
+              Salvar Rascunho
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -129,11 +131,25 @@ describe('QuoteBuilderSummaryColumn — fluxo Salvar Rascunho', () => {
     expect(onSave).toHaveBeenCalledWith('draft');
   });
 
-  it('label do botão é sempre "Salvar Rascunho" independente de isEditMode', () => {
+  it('label + aria-label do botão são sempre "Salvar Rascunho" independente de isEditMode', () => {
     const { rerender } = render(<SaveDraftHarness isEditMode onSave={vi.fn()} />);
-    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/^Salvar Rascunho$/);
+    const btnEdit = screen.getByTestId('quote-save-draft');
+    expect(btnEdit).toHaveTextContent(/^Salvar Rascunho$/);
+    expect(btnEdit).toHaveAttribute('aria-label', 'Salvar Rascunho');
     rerender(<SaveDraftHarness isEditMode={false} onSave={vi.fn()} />);
-    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/^Salvar Rascunho$/);
+    const btnNew = screen.getByTestId('quote-save-draft');
+    expect(btnNew).toHaveTextContent(/^Salvar Rascunho$/);
+    expect(btnNew).toHaveAttribute('aria-label', 'Salvar Rascunho');
+  });
+
+  it('modo edição: botão de confirmação do Dialog usa "Salvar Rascunho" (texto + aria-label)', async () => {
+    render(<SaveDraftHarness isEditMode onSave={vi.fn()} />);
+    await userEvent.click(screen.getByTestId('quote-save-draft'));
+    const confirm = screen.getByTestId('quote-save-draft-confirm');
+    expect(confirm).toHaveTextContent(/^Salvar Rascunho$/);
+    expect(confirm).toHaveAttribute('aria-label', 'Salvar Rascunho');
+    // Título do Dialog explicita "rascunho do orçamento" (mensagem consistente).
+    expect(screen.getByText(/Salvar rascunho do orçamento\?/i)).toBeInTheDocument();
   });
 
   it('Escape fecha o Dialog sem disparar onSave (acessibilidade teclado)', async () => {
