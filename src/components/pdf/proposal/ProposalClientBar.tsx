@@ -1,4 +1,5 @@
 import type { ProposalTemplateData } from '../ProposalHtmlTemplate';
+import { maskCnpj } from '@/utils/masks';
 
 export function ProposalClientBar({ data }: { data: ProposalTemplateData }) {
   const company = data.client.company || data.client.name;
@@ -34,7 +35,7 @@ export function ProposalClientBar({ data }: { data: ProposalTemplateData }) {
         <p style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a', margin: 0 }}>{company}</p>
         {data.client.cnpj && (
           <p style={{ fontSize: '11px', color: '#666', margin: '3px 0 0 0', fontWeight: 700 }}>
-            CNPJ: {data.client.cnpj}
+            CNPJ: {maskCnpj(data.client.cnpj)}
           </p>
         )}
         {data.client.phone && (

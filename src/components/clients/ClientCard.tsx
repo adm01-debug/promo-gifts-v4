@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, MapPin } from 'lucide-react';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 interface ClientCardProps {
   client: CrmCompany;
@@ -50,7 +51,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
                 {location}
               </>
             )}
-            {client.cnpj && <span className="ml-1 font-mono">· {client.cnpj}</span>}
+            {client.cnpj && <span className="ml-1 font-mono">· {maskCnpj(client.cnpj)}</span>}
           </p>
         </div>
         <div className="flex flex-shrink-0 flex-wrap justify-end gap-1">

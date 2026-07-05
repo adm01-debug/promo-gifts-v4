@@ -13,6 +13,7 @@ import { useCrmInfiniteCompanySelector } from '@/hooks/crm';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
+import { maskCnpj } from '@/utils/masks';
 import type { MockupClient } from './MockupConfigPanel';
 
 interface MockupClientSelectorProps {
@@ -131,7 +132,7 @@ export function MockupClientSelector({
               <>
                 {selectedClient.ramo && <span className="text-xs text-muted-foreground">·</span>}
                 <span className="font-mono text-xs text-muted-foreground">
-                  {selectedClient.cnpj}
+                  {maskCnpj(selectedClient.cnpj)}
                 </span>
               </>
             )}
@@ -327,7 +328,7 @@ export function MockupClientSelector({
                                   <span className="text-xs text-muted-foreground/50">·</span>
                                 )}
                                 <span className="truncate font-mono text-[11px] text-muted-foreground/70">
-                                  {company.cnpj}
+                                  {maskCnpj(company.cnpj)}
                                 </span>
                               </>
                             )}

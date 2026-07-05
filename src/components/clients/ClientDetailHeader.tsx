@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
+import { maskCnpj } from '@/utils/masks';
 
 interface ClientDetailHeaderProps {
   client: CrmCompany;
@@ -48,7 +49,7 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
             {name}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            {client.cnpj && <span className="font-mono">{client.cnpj}</span>}
+            {client.cnpj && <span className="font-mono">{maskCnpj(client.cnpj)}</span>}
             {location && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />

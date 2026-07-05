@@ -10,6 +10,7 @@ import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
 import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
 import { AvatarLogo } from '@/components/shared/AvatarLogo';
 import { normalizeCnpj, type LogoByCnpj } from '@/hooks/quotes/useQuoteClientLogos';
+import { maskCnpj } from '@/utils/masks';
 import type { Quote } from '@/hooks/quotes';
 import { computeExpiration } from '@/lib/quotes/expiration';
 
@@ -55,7 +56,7 @@ export function renderQuoteCell(
             </span>
             {quote.client_cnpj && (
               <span className="truncate font-mono text-[10px] tabular-nums text-muted-foreground/60">
-                {quote.client_cnpj}
+                {maskCnpj(quote.client_cnpj)}
               </span>
             )}
           </div>
