@@ -224,6 +224,8 @@ export function QuoteBuilderSummaryColumn({
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+  const [confirmSaveDraftOpen, setConfirmSaveDraftOpen] = useState(false);
+
 
   const [showOnlyStale, setShowOnlyStale] = useState(false);
   const [groupedByProduct, setGroupedByProduct] = useState(false);
