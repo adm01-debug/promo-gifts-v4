@@ -185,9 +185,10 @@ describe('QuoteBuilderSummaryColumn — a11y de teclado no cartão recolhido', (
 describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', () => {
   const slice = headerSlice();
 
-  it('nome tem pr-1 (respiro à direita) para não colar no bloco de preço/ações', () => {
-    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/);
-    expect(namePara?.[0] ?? '').toMatch(/\bpr-1\b/);
+  it('nome tem pr-2 (respiro à direita) para não colar no bloco de preço/ações', () => {
+    const namePara = SRC.match(/<p[\s\S]*?\{item\.product_name\}/);
+    expect(namePara?.[0] ?? '').toMatch(/\bpr-2\b/);
+
   });
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
