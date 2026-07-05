@@ -126,8 +126,6 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
             marginBottom: '8px',
           }}
         >
-          <div>- Todos os valores incluem personalização conforme descrição.</div>
-          <div>- Todos os produtos passam por controle de qualidade.</div>
           {data.notes && <div>- {data.notes}</div>}
         </div>
 
