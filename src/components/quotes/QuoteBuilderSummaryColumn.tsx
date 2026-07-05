@@ -1413,21 +1413,39 @@ export function QuoteBuilderSummaryColumn({
                   {isEditMode ? 'Salvar' : 'Criar'}
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-12 flex-1"
-                data-testid="quote-save-draft"
-                onClick={() => onSave('draft')}
-                disabled={quotesLoading || !isDraftValid}
-              >
-                {quotesLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
-              </Button>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="h-12 flex-1"
+                      data-testid="quote-save-draft"
+                      onClick={() => {
+                        if (isEditMode) {
+                          setConfirmSaveDraftOpen(true);
+                        } else {
+                          onSave('draft');
+                        }
+                      }}
+                      disabled={quotesLoading || !isDraftValid}
+                    >
+                      {quotesLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-xs">
+                    {isEditMode
+                      ? 'Grava o orçamento inteiro no banco (itens, descontos e notas). Não envia para aprovação.'
+                      : 'Cria um rascunho do orçamento no banco para você continuar depois.'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
             </div>
               );
             })()}
