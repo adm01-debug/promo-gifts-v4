@@ -249,7 +249,7 @@
     "jspdf-autotable": "5.0.7",
     "lint-staged": "^17.0.4",
     "lovable-tagger": "^1.1.13",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "1.23.0",
     "nprogress": "^0.2.0",
     "otpauth": "^9.2.2",
     "pptxgenjs": "^4.0.1",
