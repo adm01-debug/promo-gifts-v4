@@ -138,14 +138,15 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
     expect(sliderBlock!.className).toMatch(/\bsm:space-y-1\b/);
   });
 
-  it('a11y: slider tem aria-label e aria-valuetext descritivos; ruler é aria-hidden', () => {
+  it('a11y: slider expõe aria-label e aria-valuenow; ruler é aria-hidden', () => {
     render(<NegotiationMarkupCard {...baseProps} />);
     const slider = screen.getByRole('slider');
-    expect(slider).toHaveAttribute(
-      'aria-valuetext',
-      expect.stringMatching(/por cento de acréscimo/i),
-    );
+    expect(slider).toHaveAttribute('aria-valuenow', '10');
     const ruler = screen.getByText('0%').parentElement;
     expect(ruler).toHaveAttribute('aria-hidden', 'true');
+    // aria-label vai no root do Slider (irmão do thumb)
+    expect(
+      document.querySelector('[aria-label="Margem de negociação em porcentagem"]'),
+    ).not.toBeNull();
   });
 });
