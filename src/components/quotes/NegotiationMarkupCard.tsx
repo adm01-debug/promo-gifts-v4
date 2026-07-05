@@ -66,6 +66,7 @@ export function NegotiationMarkupCard({
   return (
     <TooltipProvider>
       <div
+        data-testid="negotiation-markup-card"
         className={cn(
           'space-y-3 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/20 p-3',
           className,
@@ -131,9 +132,15 @@ export function NegotiationMarkupCard({
             </div>
 
             {/* Comparison preview */}
-            <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2">
+            <div
+              data-testid="negotiation-price-grid"
+              className="grid grid-cols-2 gap-2 border-t border-border/40 pt-2"
+            >
               {/* Real (interno) */}
-              <div className="space-y-1 rounded-lg bg-muted/40 p-2">
+              <div
+                data-testid="price-card-real"
+                className="space-y-1 rounded-lg bg-muted/40 p-2"
+              >
                 <p className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <ShieldCheck className="h-2.5 w-2.5" /> Real (interno)
                 </p>
@@ -157,7 +164,10 @@ export function NegotiationMarkupCard({
               </div>
 
               {/* Cliente vê */}
-              <div className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2">
+              <div
+                data-testid="price-card-client"
+                className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2"
+              >
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-primary">
                   Cliente vê
                 </p>
