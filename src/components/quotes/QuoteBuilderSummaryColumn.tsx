@@ -773,10 +773,10 @@ export function QuoteBuilderSummaryColumn({
                                     data-testid="quote-summary-thumb"
                                   />
                                    <div className="min-w-0 flex-1">
-                                     <p className="truncate pr-1 text-sm font-medium leading-[1.125rem]">
+                                     <p className="line-clamp-2 pr-1 text-sm font-medium leading-[1.125rem]">
                                        {item.product_name}
                                      </p>
-                                     <div className="mt-1 flex items-center gap-1.5">
+                                     <div className="mt-1 flex flex-col items-start gap-0.5">
                                        <Badge
                                          variant="secondary"
                                          className="h-4 px-1.5 py-0 font-mono text-[10px]"
@@ -797,7 +797,7 @@ export function QuoteBuilderSummaryColumn({
                                          </div>
                                        )}
                                      </div>
-                                    </div>
+                                   </div>
                                     {isCollapsed && (
                                       <div
                                         data-testid={`quote-summary-collapsed-price-${idx}`}
