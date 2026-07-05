@@ -68,12 +68,13 @@ describe('PdfGenerationDialog — botão "Gerar PDF" (footer)', () => {
     expect(svg).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('click dispara geração (stage muda para "generating")', async () => {
+  it('click aciona o gerador de PDF', async () => {
     const user = userEvent.setup();
+    const { generateProposalPDFv2 } = await import('@/utils/proposalPdfReactGenerator');
     const btn = await openAndGetGenerateBtn();
     await user.click(btn);
-    // Loader aparece
-    const loader = await screen.findByText(/montando layout|renderizando|finalizando/i, {}, { timeout: 2000 });
-    expect(loader).toBeInTheDocument();
+    // Aguarda microtasks/timers: mock resolve rápido → função foi chamada
+    await new Promise((r) => setTimeout(r, 50));
+    expect(generateProposalPDFv2).toHaveBeenCalled();
   });
 });
