@@ -129,11 +129,11 @@ describe('QuoteBuilderSummaryColumn — fluxo Salvar Rascunho', () => {
     expect(onSave).toHaveBeenCalledWith('draft');
   });
 
-  it('label do botão alterna entre "Salvar Alterações" e "Salvar Rascunho" conforme isEditMode', () => {
+  it('label do botão é sempre "Salvar Rascunho" independente de isEditMode', () => {
     const { rerender } = render(<SaveDraftHarness isEditMode onSave={vi.fn()} />);
-    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/Salvar Alterações/);
+    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/^Salvar Rascunho$/);
     rerender(<SaveDraftHarness isEditMode={false} onSave={vi.fn()} />);
-    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/Salvar Rascunho/);
+    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/^Salvar Rascunho$/);
   });
 
   it('Escape fecha o Dialog sem disparar onSave (acessibilidade teclado)', async () => {
