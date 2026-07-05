@@ -63,7 +63,7 @@ function SaveDraftHarness({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent data-testid="quote-save-draft-confirm-dialog">
           <DialogHeader>
-            <DialogTitle>Salvar alterações do orçamento?</DialogTitle>
+            <DialogTitle>Salvar rascunho do orçamento?</DialogTitle>
             <DialogDescription>
               Todas as alterações feitas neste orçamento (itens, quantidades, descontos,
               markup e notas) serão gravadas no banco. O orçamento não será enviado para
