@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, MapPin } from 'lucide-react';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 interface ClientCardProps {
   client: CrmCompany;
