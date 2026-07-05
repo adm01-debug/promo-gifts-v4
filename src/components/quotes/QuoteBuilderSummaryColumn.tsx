@@ -1509,7 +1509,7 @@ export function QuoteBuilderSummaryColumn({
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              Salvar alterações
+              Salvar rascunho
             </Button>
           </DialogFooter>
         </DialogContent>
