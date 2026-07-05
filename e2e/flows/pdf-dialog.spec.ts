@@ -526,5 +526,76 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
       `preview DOM do enviado contaminado com RASCUNHO nas páginas ${JSON.stringify(contaminated)}`,
     ).toEqual([]);
   });
+
+  test('RASCUNHO — pixel-diff dedicado do watermark em cada página do preview (conteúdo mascarado)', async ({
+    page,
+  }, testInfo) => {
+    const isMobile = testInfo.project.name.startsWith('mobile-');
+    // Snapshot desktop-only para reduzir flakiness (fontes/DPR variam em mobile).
+    test.skip(isMobile, 'Pixel-diff do watermark é validado apenas em desktop.');
+
+    await openPdfDialog(page, 'rascunho');
+
+    // Estabiliza rendering (fontes, animações, transições) — snapshot determinístico.
+    await page.addStyleTag({
+      content: `
+        *, *::before, *::after {
+          animation: none !important;
+          transition: none !important;
+          caret-color: transparent !important;
+        }
+      `,
+    });
+    await page.evaluate(() => document.fonts?.ready).catch(() => undefined);
+    await page.waitForTimeout(300);
+
+    const pages = page.locator('[role="dialog"] .proposal-page');
+    await expect(pages.first()).toBeVisible({ timeout: 10_000 });
+    const total = await pages.count();
+    expect(total, 'preview sem páginas renderizadas').toBeGreaterThan(0);
+
+    // Para cada página: pixel-diff do watermark isolado, mascarando todo o
+    // conteúdo (header/tabelas/rodapé) — reduz flakiness a variações de dados
+    // do orçamento e foca exclusivamente na aparência (cor/opacidade/tamanho/
+    // rotação) do "RASCUNHO".
+    for (let i = 0; i < total; i++) {
+      const proposalPage = pages.nth(i);
+      const watermark = proposalPage.locator('[data-testid="proposal-watermark"]');
+      await expect(
+        watermark,
+        `watermark ausente na página ${i + 1} do preview`,
+      ).toBeVisible();
+      // Confirma legibilidade — texto exato do SSOT.
+      await expect(watermark).toHaveText('RASCUNHO');
+
+      // Screenshot só do elemento do watermark: bounding box já exclui o
+      // conteúdo da página. maxDiffPixelRatio pequeno tolera antialiasing.
+      await expect(watermark).toHaveScreenshot(`proposal-watermark-page-${i + 1}.png`, {
+        maxDiffPixelRatio: 0.02,
+        animations: 'disabled',
+        timeout: 15_000,
+      });
+    }
+
+    // Complementar: snapshot da página inteira COM o conteúdo mascarado —
+    // valida posição e escala do watermark relativa à moldura da página,
+    // sem depender do texto/dados dinâmicos do orçamento.
+    const firstPage = pages.first();
+    const contentMasks = [
+      firstPage.locator('header, table, tbody, thead, tfoot, footer'),
+      firstPage.locator('img'),
+    ];
+    await expect(firstPage).toHaveScreenshot('proposal-page-watermark-framed.png', {
+      mask: contentMasks,
+      maxDiffPixelRatio: 0.03,
+      animations: 'disabled',
+      timeout: 15_000,
+    });
+
+    testInfo.annotations.push({
+      type: 'watermark-pixel-diff',
+      description: `Pixel-diff do watermark validado em ${total} página(s).`,
+    });
+  });
 });
 
