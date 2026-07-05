@@ -217,6 +217,18 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
     expect(slice).toMatch(/flex h-\[1\.125rem\] shrink-0 items-center gap-0\.5/); // ações
   });
 
+  it('cada coluna do bloco de preço usa gap-2 vertical entre rótulo e valor (respiro clean)', () => {
+    // 3 colunas: Qtd (items-center), Vl Unitário e Subtotal (items-end) — todas com gap-2
+    expect(slice).toMatch(/flex flex-col items-center gap-2"/);
+    const endCols = slice.match(/flex flex-col items-end gap-2"/g) ?? [];
+    expect(endCols.length).toBeGreaterThanOrEqual(2);
+    // Regressão: gap-1 colava título ao valor — não pode voltar
+    expect(slice).not.toMatch(/flex flex-col items-center gap-1"/);
+    expect(slice).not.toMatch(/flex flex-col items-end gap-1"/);
+  });
+
+
+
 
   it('valores numéricos (Qtd, unit_price, subtotal) usam tabular-nums para largura estável', () => {
     // Tabular-nums no wrapper garante largura consistente independente do valor
