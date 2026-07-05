@@ -33,8 +33,9 @@ const ALLOWLIST_PATTERNS = [
 ];
 
 const RENDER_PATTERNS = [
-  // {something.cnpj} ou {x.client_cnpj} ou {x.branch_cnpj} em JSX
-  /\{\s*[a-zA-Z_$][\w.?]*\.(?:cnpj|client_cnpj|branch_cnpj)\s*\}/,
+  // {something.cnpj} ou {x.client_cnpj} ou {x.branch_cnpj} em JSX (posição texto)
+  // NÃO conta como render se for atribuição JSX (prop={x.cnpj}) — o receiver mascara.
+  /(^|[^=\w])\{\s*[a-zA-Z_$][\w.?]*\.(?:cnpj|client_cnpj|branch_cnpj)\s*\}/,
   // `CNPJ: ${x.cnpj}` (template string)
   /`[^`]*CNPJ[^`]*\$\{[^}]*\.(?:cnpj|client_cnpj|branch_cnpj)[^}]*\}[^`]*`/,
   // "CNPJ: " + x.cnpj
