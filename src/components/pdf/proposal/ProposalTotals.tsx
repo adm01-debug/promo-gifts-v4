@@ -1,3 +1,4 @@
+// Totals block — label "Total:" (sem "Valor"), largura 288px
 import { type ProposalTemplateData, formatShipping } from '../ProposalHtmlTemplate';
 
 function fmt(v: number): string {
