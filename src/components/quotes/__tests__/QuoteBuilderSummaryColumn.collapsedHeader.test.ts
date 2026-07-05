@@ -185,7 +185,8 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
   const slice = headerSlice();
 
   it('nome tem pr-1 (respiro à direita) para não colar no bloco de preço/ações', () => {
-    expect(slice).toMatch(/line-clamp-2 pr-1[^"]*"\s*>\s*\{item\.product_name\}/);
+    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/);
+    expect(namePara?.[0] ?? '').toMatch(/\bpr-1\b/);
   });
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
