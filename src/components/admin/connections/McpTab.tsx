@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plug, Copy, Trash2, Plus, Github, ShieldAlert } from 'lucide-react';
+import { Plug, Copy, Trash2, Plus, Plug2, ShieldAlert } from 'lucide-react';
 import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -137,7 +137,7 @@ export function McpTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Github className="h-5 w-5 text-primary" />
+            <Plug2 className="h-5 w-5 text-primary" />
             <CardTitle>GitHub — código-fonte do app</CardTitle>
           </div>
           <CardDescription>
