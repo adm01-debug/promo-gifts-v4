@@ -137,7 +137,7 @@ export function McpTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Github className="h-5 w-5 text-primary" />
+            <Plug2 className="h-5 w-5 text-primary" />
             <CardTitle>GitHub — código-fonte do app</CardTitle>
           </div>
           <CardDescription>
