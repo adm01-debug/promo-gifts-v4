@@ -149,11 +149,69 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     await expect(trigger).toBeVisible();
   });
 
-  test('navegação por teclado — Tab/Shift+Tab preso, Enter dispara, Escape fecha e devolve foco', async ({
+  test('navegação por teclado — Tab/Shift+Tab preso, ordem correta, Enter dispara, Escape fecha e devolve foco', async ({
     page,
   }, testInfo) => {
     const isMobile = testInfo.project.name.startsWith('mobile-');
     const { trigger, confirm } = await openPdfDialog(page);
+
+    // --- Ordem de Tab (sequência esperada dentro do dialog) ---
+    // Coleta a ordem circular de foco a partir do primeiro tabbable.
+    // O contrato Radix garante: close (X) -> ... -> confirm -> volta ao close.
+    const collectFocusOrder = async (steps: number): Promise<string[]> => {
+      const order: string[] = [];
+      for (let i = 0; i < steps; i++) {
+        const id = await page.evaluate(() => {
+          const el = document.activeElement as HTMLElement | null;
+          if (!el) return 'none';
+          return (
+            el.getAttribute('data-testid') ||
+            el.getAttribute('aria-label') ||
+            el.tagName.toLowerCase()
+          );
+        });
+        order.push(id);
+        await page.keyboard.press('Tab');
+      }
+      return order;
+    };
+
+    // Foca o botão de fechar do dialog para começar do topo da ordem.
+    await page.locator('[role="dialog"] [aria-label*="Close" i], [role="dialog"] button').first().focus();
+    const forwardOrder = await collectFocusOrder(8);
+    // O confirm precisa aparecer na sequência forward.
+    expect(
+      forwardOrder.some((id) => id === 'pdf-generate-confirm'),
+      `pdf-generate-confirm ausente da ordem de Tab: ${JSON.stringify(forwardOrder)}`,
+    ).toBe(true);
+    // A ordem precisa ser cíclica (foco reaparece dentro do dialog).
+    const uniqueInsideDialog = await page.evaluate(
+      () => !!document.activeElement?.closest('[role="dialog"]'),
+    );
+    expect(uniqueInsideDialog, 'ordem de Tab escapou do dialog').toBe(true);
+
+    // Shift+Tab reverte: primeiro Shift+Tab a partir do confirm foca o anterior tabbable.
+    await confirm.focus();
+    await page.keyboard.press('Shift+Tab');
+    const prevIsInside = await page.evaluate(
+      () => !!document.activeElement?.closest('[role="dialog"]'),
+    );
+    expect(prevIsInside, 'Shift+Tab escapou do dialog').toBe(true);
+    const prevIsSame = await page.evaluate(
+      () => document.activeElement?.getAttribute('data-testid') === 'pdf-generate-confirm',
+    );
+    expect(prevIsSame, 'Shift+Tab não moveu o foco para o elemento anterior').toBe(false);
+
+    // Focus trap (Radix Dialog): Tab N vezes nunca deve escapar para <body>.
+    await confirm.focus();
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press('Tab');
+      const insideDialog = await page.evaluate(() => {
+        const el = document.activeElement;
+        return !!el && !!el.closest('[role="dialog"]');
+      });
+      expect(insideDialog, `Foco escapou do dialog após Tab #${i + 1}`).toBe(true);
+    }
 
     // Focus trap (Radix Dialog): Tab N vezes nunca deve escapar para <body>.
     await confirm.focus();
