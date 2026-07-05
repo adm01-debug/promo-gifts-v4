@@ -12,6 +12,7 @@ import {
   thStyle,
   tdStyle,
   totalsRowStyle,
+  TOTALS_BLOCK_WIDTH_PX,
 } from './ProposalStyles';
 import { maskCnpj } from '@/utils/masks';
 import { getProposalImageUrl } from '@/utils/image-utils';
