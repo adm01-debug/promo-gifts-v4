@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { qvSpacing, qvType } from './quote-view-typography';
 import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 import { SectionEyebrow } from './SectionEyebrow';
+import { EngravingBadge } from './EngravingBadge';
 import {
   Tooltip,
   TooltipContent,
@@ -223,18 +224,11 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     fallback: 'Gravação',
                   });
                   return (
-                    <span
+                    <EngravingBadge
                       key={pIdx}
-                      className="flex flex-col gap-0.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-1 text-[11px] leading-tight"
-                      title={`${displayName} — ${meta}`}
-                    >
-                      <span className="font-semibold text-primary">
-                        ✦ {displayName}
-                      </span>
-                      {meta && (
-                        <span className="text-[10px] text-muted-foreground">{meta}</span>
-                      )}
-                    </span>
+                      title={displayName}
+                      meta={meta}
+                    />
                   );
                 })}
               </div>
