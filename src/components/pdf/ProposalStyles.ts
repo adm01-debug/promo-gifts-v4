@@ -14,8 +14,10 @@ export const BLUE = '#0085ca';
  * consistência e permitir verificação automática de contraste WCAG.
  */
 export const PDF_TOKENS = {
-  /** Texto sobre header verde e sobre linhas totais. */
+  /** Texto sobre header verde e sobre linhas totais (valor em destaque). */
   textOnGreen: '#111',
+  /** Rótulo secundário sobre o header verde (ex.: "Valor Total:") — cinza escuro para leveza visual mantendo WCAG AA (~6:1). */
+  labelOnGreen: '#333',
   /** Texto padrão em células de conteúdo. */
   textBody: '#333',
   /** Fundo do swatch de cor quando `colorHex` está ausente. */

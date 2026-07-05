@@ -1,6 +1,6 @@
 # Relatório WCAG — PDF da Proposta
 
-Gerado por `pdfContrastReport.test.ts` em 2026-07-05T16:53:28.057Z.
+Gerado por `pdfContrastReport.test.ts` em 2026-07-05T17:17:16.315Z.
 
 **Total:** 7 pares · **Falharam:** 0
 

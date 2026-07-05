@@ -17,6 +17,6 @@
     "src/components/pdf/proposal/ProposalNotes.tsx": ["#00c853", "#333", "#555", "#777", "#888", "#e0e0e0", "#e8f5e9", "#fafafa"],
     "src/components/pdf/proposal/ProposalProductTable.tsx": ["#00796b", "#00c853", "#111", "#222", "#2e7d32", "#333", "#555", "#666", "#999", "#ccc", "#e0f2f1", "#e53935", "#e8f5e9", "#eef0f2"],
     "src/components/pdf/proposal/ProposalSellerSignature.tsx": ["#1a1a1a", "#333", "#777", "#999"],
-    "src/components/pdf/proposal/ProposalTotals.tsx": ["#00c853", "#111", "#2e7d32", "#43a047", "#555", "#c8e6c9", "#f0f0f0", "#f1f8e9"]
+    "src/components/pdf/proposal/ProposalTotals.tsx": ["#00c853", "#111", "#2e7d32", "#333", "#43a047", "#555", "#c8e6c9", "#f0f0f0", "#f1f8e9"]
   }
 }

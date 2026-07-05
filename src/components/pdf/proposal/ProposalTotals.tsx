@@ -122,7 +122,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       fontSize: '13px',
-                      color: '#111',
+                      color: '#333',
                       letterSpacing: '0.5px',
                     }}
                   >
