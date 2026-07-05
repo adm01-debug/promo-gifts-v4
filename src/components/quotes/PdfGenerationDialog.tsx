@@ -274,13 +274,13 @@ export function PdfGenerationDialog({
               {/* Actions footer */}
               <div className="flex items-center justify-end gap-3 border-t border-border bg-card px-6 py-4">
                 <Button
-                  size="lg"
-                  className="gap-2 px-8"
+                  size="default"
+                  className="gap-2 px-6 text-sm"
                   onClick={handleGenerate}
                   data-testid="pdf-generate-confirm"
                   aria-label="Gerar e baixar PDF da proposta"
                 >
-                  <FileText className="h-4 w-4" />
+                  <FileText className="h-3.5 w-3.5" />
                   Gerar PDF
                 </Button>
               </div>
