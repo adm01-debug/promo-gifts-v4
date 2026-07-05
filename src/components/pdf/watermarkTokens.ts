@@ -10,7 +10,7 @@
  *   - alpha DEVE ficar dentro de `WATERMARK_ALPHA_BOUNDS` — abaixo do min a
  *     marca some (risco de rascunho ser enviado como final); acima do max
  *     fica agressivo e prejudica leitura do conteúdo.
- *   - fundo canônico do PDF é branco puro (#ffffff). O cálculo de contraste
+ *   - fundo canônico do PDF é branco puro (rgb 255,255,255). O cálculo de contraste
  *     assume esse background — se algum dia mudarmos o fundo, revisar aqui.
  */
 
