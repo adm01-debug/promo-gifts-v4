@@ -783,27 +783,28 @@ export function QuoteBuilderSummaryColumn({
                                      >
                                        {item.product_name}
                                      </p>
-                                     <div className="mt-1 flex flex-col items-start gap-0.5">
-                                       <Badge
-                                         variant="secondary"
-                                         className="h-4 px-1.5 py-0 font-mono text-[10px]"
-                                       >
-                                         {item.product_sku}
-                                       </Badge>
-                                       {item.color_name && (
-                                         <div className="flex items-center gap-1">
-                                           <div
-                                             className="h-2.5 w-2.5 rounded-full border border-border/50"
-                                             style={{
-                                               backgroundColor: item.color_hex || '#CCC',
-                                             }}
-                                           />
-                                           <span className="text-[10px] text-muted-foreground">
-                                             {item.color_name}
-                                           </span>
-                                         </div>
-                                       )}
-                                     </div>
+                                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                        <Badge
+                                          variant="secondary"
+                                          className="h-4 px-1.5 py-0 font-mono text-[10px]"
+                                        >
+                                          {item.product_sku}
+                                        </Badge>
+                                        {item.color_name && (
+                                          <div className="flex items-center gap-1">
+                                            <div
+                                              className="h-2.5 w-2.5 rounded-full border border-border/50"
+                                              style={{
+                                                backgroundColor: item.color_hex || '#CCC',
+                                              }}
+                                            />
+                                            <span className="text-[10px] text-muted-foreground">
+                                              {item.color_name}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+
                                    </div>
                                      {isCollapsed && (
                                        <div
