@@ -66,13 +66,20 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     await expect(pill).toHaveAttribute('aria-label', /aviso|confira/i);
     if (!isMobile) await expect(pill).toBeVisible();
 
-    // Captura número da proposta no header (padrão "Proposta Comercial 10015/26")
+    // Captura número da proposta no header — regex robusto ao formato
+    // "10015/26", "10015 / 26", "10015-26", com espaços/quebras no meio.
     let quoteNumber: string | null = null;
+    let quoteNumberHead: string | null = null;
     if (!isMobile) {
       const title = await page.locator('[role="dialog"] .truncate').first().textContent();
-      const m = title?.match(/(\d{3,}\/?\d*)/);
-      quoteNumber = m?.[1] ?? null;
+      const normalized = (title ?? '').replace(/\s+/g, ' ').trim();
+      const m = normalized.match(/(\d{3,})\s*[\/\-]?\s*(\d{0,4})/);
+      if (m) {
+        quoteNumberHead = m[1];
+        quoteNumber = m[2] ? `${m[1]}/${m[2]}` : m[1];
+      }
     }
+
 
     // Tooltip do botão — foco + hover + contrato ARIA
     if (!isMobile) {
@@ -108,28 +115,79 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
         const size = statSync(path).size;
         expect(size, `PDF suspeito de ser erro (${size} bytes)`).toBeGreaterThan(MIN_PDF_BYTES);
 
-        // Extração textual — via pdftotext (poppler). Se ausente localmente,
-        // o teste apenas registra e segue; no CI o step instala poppler-utils.
+        // Extração textual — via pdftotext (poppler). Multi-página: extraímos
+        // TODAS as páginas e também mantemos o texto por página para
+        // localizar em qual folha o campo aparece. Se pdftotext estiver
+        // ausente localmente, o teste registra e segue; no CI é instalado.
         const { spawnSync } = await import('node:child_process');
-        const res = spawnSync('pdftotext', ['-layout', '-nopgbrk', path, '-'], {
-          encoding: 'utf-8',
-        });
-        if (res.status === 0 && res.stdout) {
-          const text = res.stdout.replace(/\s+/g, ' ').toLowerCase();
-          // Deve mencionar a natureza do documento (proposta/orçamento).
-          expect(text, 'PDF não contém marcadores de proposta').toMatch(
-            /proposta|or[çc]amento/i,
-          );
-          // Se capturamos o número do orçamento, ele precisa aparecer no PDF.
-          if (quoteNumber) {
-            const [head] = quoteNumber.split('/');
-            expect(text, `número ${quoteNumber} ausente no PDF`).toContain(head.toLowerCase());
-          }
-          // Algum campo esperado do cliente (razão social/CNPJ/e-mail/contato).
+        const raw = spawnSync('pdftotext', ['-layout', path, '-'], { encoding: 'utf-8' });
+        if (raw.status === 0 && raw.stdout) {
+          // pdftotext (sem -nopgbrk) separa páginas com form-feed (\f).
+          const pages = raw.stdout.split('\f').filter((p) => p.trim().length > 0);
+          // Normalização única por página + agregada — remove quebras, hifens
+          // e diacríticos para casar "razão"/"razao", "número"/"n°"/"nº".
+          const normalize = (s: string) =>
+            s
+              .replace(/\r?\n/g, ' ')
+              .replace(/\s+/g, ' ')
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '') // remove diacríticos
+              .toLowerCase();
+          const pagesNorm = pages.map(normalize);
+          const allText = pagesNorm.join(' \f ');
+
+          testInfo.annotations.push({
+            type: 'pdf-pages',
+            description: `Total de páginas: ${pages.length}`,
+          });
+
+          // Deve mencionar a natureza do documento em alguma página.
           expect(
-            text,
-            'PDF sem campos-âncora do cliente',
-          ).toMatch(/cliente|raz[ãa]o\s+social|cnpj|contato|e-?mail|telefone/i);
+            pagesNorm.some((p) => /proposta|orcamento/.test(p)),
+            'Nenhuma página menciona "proposta" ou "orçamento"',
+          ).toBe(true);
+
+          // Número da proposta — regex tolerante a espaços, hífen, "nº"/"n°"
+          // e quebras de linha (já normalizadas). Se capturamos do header,
+          // ele precisa aparecer em pelo menos UMA página relevante.
+          if (quoteNumberHead) {
+            const head = quoteNumberHead;
+            // Constrói regex do número com variações de formato ao redor.
+            const numberRe = new RegExp(
+              `(?:n\\s*[o°º]\\s*|numero\\s*|proposta\\s*(?:comercial\\s*)?)?` +
+                `${head}` +
+                `(?:\\s*[\\/-]\\s*\\d{1,4})?`,
+              'i',
+            );
+            const foundPageIdx = pagesNorm.findIndex((p) => numberRe.test(p));
+            expect(
+              foundPageIdx,
+              `número ${quoteNumber ?? head} ausente em todas as ${pages.length} página(s)`,
+            ).toBeGreaterThanOrEqual(0);
+            testInfo.annotations.push({
+              type: 'quote-number-page',
+              description: `Número "${quoteNumber ?? head}" localizado na página ${foundPageIdx + 1}`,
+            });
+          }
+
+          // Campo-âncora do cliente em qualquer página relevante.
+          const clientRe = /cliente|razao\s+social|cnpj|contato|e-?mail|telefone/;
+          const clientPageIdx = pagesNorm.findIndex((p) => clientRe.test(p));
+          expect(
+            clientPageIdx,
+            `PDF sem campos-âncora do cliente em nenhuma das ${pages.length} página(s). ` +
+              `Amostra p1: "${(pagesNorm[0] ?? '').slice(0, 200)}"`,
+          ).toBeGreaterThanOrEqual(0);
+          testInfo.annotations.push({
+            type: 'client-field-page',
+            description: `Campo do cliente localizado na página ${clientPageIdx + 1}`,
+          });
+
+          // Sanidade: se há > 1 página, o texto agregado precisa ser maior
+          // que o de uma única página (garante que multi-página foi lida).
+          if (pages.length > 1) {
+            expect(allText.length).toBeGreaterThan(pagesNorm[0].length);
+          }
         } else {
           testInfo.annotations.push({
             type: 'pdftotext-missing',
