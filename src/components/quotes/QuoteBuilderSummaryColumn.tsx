@@ -773,7 +773,14 @@ export function QuoteBuilderSummaryColumn({
                                     data-testid="quote-summary-thumb"
                                   />
                                    <div className="min-w-0 flex-1">
-                                     <p className="line-clamp-2 pr-1 text-sm font-medium leading-[1.125rem]">
+                                     <p
+                                       className="pr-1 text-sm font-medium leading-[1.125rem] break-words whitespace-normal overflow-hidden"
+                                       style={{
+                                         display: '-webkit-box',
+                                         WebkitLineClamp: 2,
+                                         WebkitBoxOrient: 'vertical',
+                                       }}
+                                     >
                                        {item.product_name}
                                      </p>
                                      <div className="mt-1 flex flex-col items-start gap-0.5">
