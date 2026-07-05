@@ -92,7 +92,7 @@ export function HeaderSection({ data }: { data: ProposalTemplateData }) {
           position: 'absolute',
           zIndex: 10,
           textAlign: 'right',
-          color: '#ffffff',
+          color: '#111',
           top: '50%',
           right: '32px',
           transform: 'translateY(-60%)',
