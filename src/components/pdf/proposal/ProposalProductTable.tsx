@@ -203,37 +203,6 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                     </td>
                   )}
                   <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                    {(item.composedCode || item.sku) &&
-                      (() => {
-                        const bgColor = item.colorHex || '#2e7d32';
-                        const hex = bgColor.replace('#', '');
-                        const r = parseInt(hex.substring(0, 2), 16);
-                        const g = parseInt(hex.substring(2, 4), 16);
-                        const b = parseInt(hex.substring(4, 6), 16);
-                        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                        const textColor = luminance > 0.5 ? '#1a1a1a' : '#ffffff';
-                        return (
-                          <div style={{ display: 'block', marginBottom: '4px' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                background: bgColor,
-                                color: textColor,
-                                fontSize: '9px',
-                                padding: '2px 7px',
-                                borderRadius: '3px',
-                                fontWeight: 700,
-                                fontFamily: "'Roboto', sans-serif",
-                                whiteSpace: 'nowrap',
-                                border:
-                                  luminance > 0.85 ? '1px solid #ccc' : '1px solid transparent',
-                              }}
-                            >
-                              {item.composedCode || item.sku}
-                            </span>
-                          </div>
-                        );
-                      })()}
                     <div
                       style={{
                         fontWeight: 800,
@@ -267,22 +236,78 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                           : item.description}
                       </span>
                     )}
-                    {/* FIX P0 #4: Cor e Gravação exibidas JUNTAS quando ambas existem.
-                        Antes, `{!gravacao && item.color}` OCULTAVA a cor sempre que
-                        havia gravação → metadados inconsistentes entre itens.
-                        @fix_version proposal-metadata-color-and-engraving-2026-06 */}
-                    {item.color && (
-                      <span
+                    {/* Rediagramação 2026-07: SKU + Cor na MESMA linha, abaixo do nome/descrição.
+                        Ordem: [badge SKU] · Cor: LARANJA
+                        @fix_version proposal-sku-color-inline-2026-07 */}
+                    {((item.composedCode || item.sku) || item.color) && (
+                      <div
                         style={{
                           display: 'block',
-                          fontSize: '10px',
-                          color: '#555',
                           marginTop: '2px',
-                          fontWeight: 600,
+                          marginBottom: '2px',
+                          lineHeight: '1.4',
                         }}
                       >
-                        Cor: <span style={{ fontWeight: 500, color: '#333' }}>{item.color}</span>
-                      </span>
+                        {(item.composedCode || item.sku) &&
+                          (() => {
+                            const bgColor = item.colorHex || '#2e7d32';
+                            const hex = bgColor.replace('#', '');
+                            const r = parseInt(hex.substring(0, 2), 16);
+                            const g = parseInt(hex.substring(2, 4), 16);
+                            const b = parseInt(hex.substring(4, 6), 16);
+                            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                            const textColor = luminance > 0.5 ? '#1a1a1a' : '#ffffff';
+                            return (
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  background: bgColor,
+                                  color: textColor,
+                                  fontSize: '9px',
+                                  padding: '2px 7px',
+                                  borderRadius: '3px',
+                                  fontWeight: 700,
+                                  fontFamily: "'Roboto', sans-serif",
+                                  whiteSpace: 'nowrap',
+                                  border:
+                                    luminance > 0.85
+                                      ? '1px solid #ccc'
+                                      : '1px solid transparent',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                {item.composedCode || item.sku}
+                              </span>
+                            );
+                          })()}
+                        {(item.composedCode || item.sku) && item.color && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              margin: '0 6px',
+                              color: '#999',
+                              fontSize: '10px',
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            ·
+                          </span>
+                        )}
+                        {item.color && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              fontSize: '10px',
+                              color: '#555',
+                              fontWeight: 600,
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            Cor:{' '}
+                            <span style={{ fontWeight: 500, color: '#333' }}>{item.color}</span>
+                          </span>
+                        )}
+                      </div>
                     )}
                     {gravacao && (
                       <table style={{ borderCollapse: 'collapse', marginTop: '3px' }}>
