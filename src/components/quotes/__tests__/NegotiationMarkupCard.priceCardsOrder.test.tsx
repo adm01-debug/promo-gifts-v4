@@ -6,7 +6,7 @@ import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard
  * Regressão estrutural do trio (Margem de Negociação + REAL + CLIENTE VÊ):
  *
  * - Presença e ordem dos cards de preço (REAL → CLIENTE VÊ)
- * - Layout horizontal (`grid-cols-2`) preservado em qualquer viewport
+ * - Layout vertical empilhado (`flex flex-col`) preservado em qualquer viewport
  *   (JSDOM não aplica media queries — a fixação do token garante que
  *   variantes `sm:`/`md:`/`lg:`/`xl:` não introduzam quebra de coluna)
  * - Espaçamento consistente (`gap-2`, `pt-2`, borda superior de separação)
