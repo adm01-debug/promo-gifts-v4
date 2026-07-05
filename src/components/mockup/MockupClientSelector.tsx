@@ -13,6 +13,7 @@ import { useCrmInfiniteCompanySelector } from '@/hooks/crm';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
+import { maskCnpj } from '@/utils/masks';
 import type { MockupClient } from './MockupConfigPanel';
 
 interface MockupClientSelectorProps {
