@@ -1427,6 +1427,7 @@ export function QuoteBuilderSummaryColumn({
                       size="lg"
                       className="h-12 flex-1"
                       data-testid="quote-save-draft"
+                      aria-label="Salvar Rascunho"
                       onClick={() => {
 
                         if (isEditMode) {
@@ -1503,13 +1504,14 @@ export function QuoteBuilderSummaryColumn({
               }}
               disabled={quotesLoading}
               data-testid="quote-save-draft-confirm"
+              aria-label="Salvar Rascunho"
             >
               {quotesLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              Salvar rascunho
+              Salvar Rascunho
             </Button>
           </DialogFooter>
         </DialogContent>

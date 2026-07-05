@@ -300,6 +300,8 @@ export const PropostaComercialTailwind = forwardRef<
             {/* Watermark for drafts — cor/texto vêm de watermarkTokens (SSOT) */}
             {isDraft && (
               <div
+                data-testid="proposal-watermark"
+                aria-hidden="true"
                 style={{
                   position: 'absolute',
                   top: '50%',
