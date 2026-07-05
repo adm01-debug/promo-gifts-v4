@@ -257,4 +257,28 @@ describe('handleSyncBitrix', () => {
     // setQuote still called — optimistic update is correct (Bitrix side committed)
     expect(mockSetQuote).toHaveBeenCalled();
   });
+
+  it('nao sincroniza quando status e draft (regra de negocio)', async () => {
+    const { toast } = await import('sonner');
+    const draftQuote = { ...mockQuote, status: 'draft' } as Quote;
+
+    await handleSyncBitrix({
+      quote: draftQuote,
+      proposalData: mockProposalData,
+      bitrixCompanyId: 'b-123',
+      userEmail: 'seller@test.com',
+      logQuoteHistory: mockLogQuoteHistory,
+      setQuote: mockSetQuote,
+      selectCrmById: mockSelectCrmById,
+    });
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      'Rascunho não pode ser sincronizado',
+      expect.objectContaining({
+        description: expect.stringContaining('Promova o orçamento'),
+      }),
+    );
+    expect(mockSetQuote).not.toHaveBeenCalled();
+    expect(mockSelectCrmById).not.toHaveBeenCalled();
+  });
 });
