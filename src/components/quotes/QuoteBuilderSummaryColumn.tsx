@@ -973,45 +973,47 @@ export function QuoteBuilderSummaryColumn({
                                     </span>
                                   </div>
                                   <div className="space-y-1">
-                                    {item.personalizations.map((p, pIdx) => (
-                                      <div
-                                        key={`${p.technique_id || p.technique_name}-${pIdx}`}
-                                        className="flex items-center justify-between gap-1 rounded-lg border border-border/40 bg-card px-2 py-1 text-xs"
-                                      >
-                                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                                          <Badge
-                                            variant="secondary"
-                                            className="h-4 shrink-0 px-1 py-0 text-[9px] font-bold"
-                                          >
-                                            {pIdx + 1}
-                                          </Badge>
-                                          <div className="min-w-0">
-                                            <span className="block truncate text-[11px] font-medium text-primary">
-                                              {p.location_name ? (
-                                                <span className="mr-1 rounded bg-primary/15 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-primary">
-                                                  {p.location_name}
-                                                </span>
-                                              ) : null}
-                                              {formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
-                                            </span>
-                                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9px] text-muted-foreground">
-                                              {formatArea(p.width_cm, p.height_cm) && (
-                                                <span>
-                                                  Área {formatArea(p.width_cm, p.height_cm)}
-                                                </span>
-                                              )}
-                                              <span>• {formatColors(p.colors_count)}</span>
-                                              {p.personalized_quantity && (
-                                                <span>• {p.personalized_quantity} pç(s)</span>
-                                              )}
-                                            </div>
+                                    {item.personalizations.map((p, pIdx) => {
+                                      const metaParts = [
+                                        formatArea(p.width_cm, p.height_cm)
+                                          ? `Área ${formatArea(p.width_cm, p.height_cm)}`
+                                          : null,
+                                        formatColors(p.colors_count),
+                                        p.personalized_quantity
+                                          ? `${p.personalized_quantity} pç(s)`
+                                          : null,
+                                      ].filter(Boolean) as string[];
+                                      const meta = metaParts.join(' · ');
+                                      return (
+                                        <div
+                                          key={`${p.technique_id || p.technique_name}-${pIdx}`}
+                                          className="flex items-center justify-between gap-1 rounded-lg border border-border/40 bg-card px-2 py-1 text-xs"
+                                        >
+                                          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                            <Badge
+                                              variant="secondary"
+                                              className="h-4 shrink-0 px-1 py-0 text-[9px] font-bold"
+                                            >
+                                              {pIdx + 1}
+                                            </Badge>
+                                            <EngravingBadge
+                                              variant="plain"
+                                              title={formatEngravingTitle({
+                                                nomeTabela: p.technique_name,
+                                                fallback: 'Gravação',
+                                              })}
+                                              location={p.location_name || null}
+                                              meta={meta || null}
+                                              className="min-w-0 flex-1"
+                                              data-testid="summary-engraving-badge"
+                                            />
                                           </div>
+                                          <span className="shrink-0 font-bold tabular-nums text-foreground">
+                                            {formatCurrency(p.total_cost || 0)}
+                                          </span>
                                         </div>
-                                        <span className="shrink-0 font-bold tabular-nums text-foreground">
-                                          {formatCurrency(p.total_cost || 0)}
-                                        </span>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}
