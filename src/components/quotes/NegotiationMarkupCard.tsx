@@ -190,7 +190,7 @@ export function NegotiationMarkupCard({
         {enabled && (
           <>
             {/* Slider */}
-            <div className="space-y-0.5 pt-1.5">
+            <div className="space-y-1 pt-3">
               <div className="flex items-baseline justify-between">
                 <span className="text-[11px] text-muted-foreground">
                   Acréscimo no preço apresentado
