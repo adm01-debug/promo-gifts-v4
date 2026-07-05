@@ -296,7 +296,7 @@ export const PropostaComercialTailwind = forwardRef<
               pageBreakAfter: isLast ? 'auto' : 'always',
             }}
           >
-            {/* Watermark for drafts */}
+            {/* Watermark for drafts — cor/texto vêm de watermarkTokens (SSOT) */}
             {isDraft && (
               <div
                 style={{
@@ -306,7 +306,7 @@ export const PropostaComercialTailwind = forwardRef<
                   transform: 'translate(-50%, -50%) rotate(-35deg)',
                   fontSize: '80px',
                   fontWeight: 900,
-                  color: 'rgba(200, 0, 0, 0.0805)',
+                  color: WATERMARK_COLOR_CSS,
                   letterSpacing: '0.3em',
                   textTransform: 'uppercase',
                   pointerEvents: 'none',
@@ -314,7 +314,7 @@ export const PropostaComercialTailwind = forwardRef<
                   userSelect: 'none',
                 }}
               >
-                RASCUNHO
+                {WATERMARK_TEXT}
               </div>
             )}
             <ProposalHeader data={data} isContinuation={!isFirst} />
