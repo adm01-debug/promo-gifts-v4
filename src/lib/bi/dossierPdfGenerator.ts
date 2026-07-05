@@ -12,6 +12,7 @@ import type { IndustryTrendsResult } from '@/hooks/bi/useIndustryTrends';
 import type { SeasonalityResult } from '@/hooks/bi/useClientSeasonality';
 import type { IndustryRecommendation } from '@/lib/bi/industryRecommendations';
 import type { CategorySection } from '@/lib/bi/executive-summary';
+import { maskCnpj } from '@/utils/masks';
 
 export interface DossierClient {
   name: string;
