@@ -36,7 +36,7 @@ export const PDF_TOKENS = {
  * visual entre as duas variações. Valor atual reflete redução de 20%
  * aplicada em 2026-07 sobre a largura anterior (288px/304px).
  */
-export const TOTALS_BLOCK_WIDTH_PX = 230;
+export const TOTALS_BLOCK_WIDTH_PX = 276;
 
 
 export function fmt(v: number): string {
