@@ -810,7 +810,7 @@ export function QuoteBuilderSummaryColumn({
                                      {isCollapsed && (
                                        <div
                                          data-testid={`quote-summary-collapsed-price-${idx}`}
-                                         className="flex shrink-0 items-start gap-4 tabular-nums"
+                                         className="flex shrink-0 items-start gap-6 tabular-nums"
                                        >
                                          <div className="flex flex-col items-center gap-1">
                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">

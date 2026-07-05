@@ -111,7 +111,7 @@ describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () 
     // Card interno preserva o padding vertical p-3 (respiro consistente)
     expect(SOURCE).toMatch(/<div className="space-y-2 p-3">/);
     // Guard: bloco recolhido é shrink-0 para não empurrar o nome
-    expect(slice).toMatch(/flex shrink-0 items-start gap-4 tabular-nums/);
+    expect(slice).toMatch(/flex shrink-0 items-start gap-6 tabular-nums/);
   });
 });
 
@@ -205,7 +205,7 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
 
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
-    expect(slice).toMatch(/flex shrink-0 items-start gap-4 tabular-nums/); // preço
+    expect(slice).toMatch(/flex shrink-0 items-start gap-6 tabular-nums/); // preço
     expect(slice).toMatch(/flex h-\[1\.125rem\] shrink-0 items-center gap-0\.5/); // ações
   });
 
