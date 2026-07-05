@@ -14,7 +14,7 @@ export function fmt(v: number): string {
 
 export const thStyle: React.CSSProperties = {
   backgroundColor: GREEN,
-  color: '#fff',
+  color: '#111',
   padding: '15px 12px',
   fontSize: '13px',
   fontFamily: "'Montserrat', sans-serif",

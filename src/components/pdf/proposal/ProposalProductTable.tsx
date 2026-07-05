@@ -297,7 +297,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                                 height: '10px',
                                 borderRadius: '2px',
                                 background: item.colorHex || '#ccc',
-                                border: '1px solid #bbb',
+                                border: '1px solid #666',
                                 verticalAlign: 'middle',
                                 marginRight: '4px',
                                 marginBottom: '1px',
