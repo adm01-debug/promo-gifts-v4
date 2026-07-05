@@ -166,7 +166,7 @@ export function QuoteItemEditorSheet({
               {unsavedChangesMessage}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2">
+          <AlertDialogFooter className="gap-2 sm:gap-2 sm:justify-center justify-center">
             <AlertDialogCancel
               data-testid="quote-editor-unsaved-cancel"
               aria-label="Continuar editando"
