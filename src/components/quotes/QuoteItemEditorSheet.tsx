@@ -159,15 +159,19 @@ export function QuoteItemEditorSheet({
           className="!max-w-[358px] w-[92vw]"
         >
           <AlertDialogHeader>
-            <AlertDialogTitle>Descartar alterações?</AlertDialogTitle>
-            <AlertDialogDescription>{unsavedChangesMessage}</AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-semibold tracking-tight">
+              Descartar alterações?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              {unsavedChangesMessage}
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
             <AlertDialogCancel
               data-testid="quote-editor-unsaved-cancel"
               aria-label="Continuar editando"
               title="Continuar editando"
-              className="whitespace-nowrap"
+              className="whitespace-nowrap h-8 px-3 text-xs rounded-md border-border/60 shadow-none"
             >
               <span className="min-[220px]:hidden">Continuar</span>
               <span className="hidden min-[220px]:inline">Continuar editando</span>
@@ -180,7 +184,7 @@ export function QuoteItemEditorSheet({
               }}
               aria-label="Descartar e fechar"
               title="Descartar e fechar"
-              className="whitespace-nowrap bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="whitespace-nowrap h-8 px-3 text-xs rounded-md bg-destructive/90 text-destructive-foreground hover:bg-destructive shadow-none"
             >
               <span className="min-[220px]:hidden">Descartar</span>
               <span className="hidden min-[220px]:inline">Descartar e fechar</span>
