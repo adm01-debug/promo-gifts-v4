@@ -6,7 +6,7 @@ import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard
  * Regressão estrutural do trio (Margem de Negociação + REAL + CLIENTE VÊ):
  *
  * - Presença e ordem dos cards de preço (REAL → CLIENTE VÊ)
- * - Layout horizontal (`grid-cols-2`) preservado em qualquer viewport
+ * - Layout vertical empilhado (`flex flex-col`) preservado em qualquer viewport
  *   (JSDOM não aplica media queries — a fixação do token garante que
  *   variantes `sm:`/`md:`/`lg:`/`xl:` não introduzam quebra de coluna)
  * - Espaçamento consistente (`gap-2`, `pt-2`, borda superior de separação)
@@ -63,15 +63,13 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
     expect(card.className).toMatch(/\bspace-y-1\.5\b/);
   });
 
-  it('grid usa grid-cols-2 fixo + gap-2 + borda superior de separação', () => {
+  it('grid empilha REAL sobre CLIENTE com flex-col + gap-1.5 + borda superior', () => {
     render(<NegotiationMarkupCard {...baseProps} />);
     const grid = screen.getByTestId('negotiation-price-grid');
-    expect(grid.className).toMatch(/\bgrid-cols-2\b/);
-    expect(grid.className).toMatch(/\bgap-2\b/);
+    expect(grid.className).toMatch(/\bflex-col\b/);
+    expect(grid.className).toMatch(/\bgap-1\.5\b/);
     expect(grid.className).toMatch(/\bpt-2\b/);
     expect(grid.className).toMatch(/border-t/);
-    // Nenhuma variante responsiva pode reintroduzir grid-cols-1
-    expect(grid.className).not.toMatch(/(sm|md|lg|xl|2xl):grid-cols-1\b/);
   });
 
   it('REAL e CLIENTE VÊ são filhos DIRETOS do grid (mesma linha, mesmo alinhamento)', () => {
@@ -108,9 +106,9 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
       expect(grid.children[0]).toBe(real);
       expect(grid.children[1]).toBe(cliente);
 
-      // Layout horizontal preservado
-      expect(grid.className).toMatch(/\bgrid-cols-2\b/);
-      expect(grid.className).not.toMatch(/\bgrid-cols-1\b/);
+      // Layout vertical empilhado preservado
+      expect(grid.className).toMatch(/\bflex-col\b/);
+      expect(grid.className).not.toMatch(/\bgrid-cols-2\b/);
 
       unmount();
     },
