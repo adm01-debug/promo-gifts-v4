@@ -155,7 +155,8 @@ describe('QuoteBuilderSummaryColumn — a11y de teclado no cartão recolhido', (
     expect(slice).toMatch(/aria-label="Editar"/);
     expect(slice).toMatch(/aria-label="Excluir"/);
     expect(slice).toMatch(/aria-label=\{isCollapsed \? 'Expandir' : 'Recolher'\}/);
-    expect(slice).toMatch(/aria-label="Arrastar para reordenar"/);
+    // Drag handle vive fora do slice do header (antes do ProductThumb) — checar no SOURCE
+    expect(SOURCE).toMatch(/aria-label="Arrastar para reordenar"/);
   });
 
   it('botão de toggle expõe aria-expanded e aria-pressed sincronizados com isCollapsed', () => {
