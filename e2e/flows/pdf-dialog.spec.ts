@@ -66,13 +66,20 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     await expect(pill).toHaveAttribute('aria-label', /aviso|confira/i);
     if (!isMobile) await expect(pill).toBeVisible();
 
-    // Captura número da proposta no header (padrão "Proposta Comercial 10015/26")
+    // Captura número da proposta no header — regex robusto ao formato
+    // "10015/26", "10015 / 26", "10015-26", com espaços/quebras no meio.
     let quoteNumber: string | null = null;
+    let quoteNumberHead: string | null = null;
     if (!isMobile) {
       const title = await page.locator('[role="dialog"] .truncate').first().textContent();
-      const m = title?.match(/(\d{3,}\/?\d*)/);
-      quoteNumber = m?.[1] ?? null;
+      const normalized = (title ?? '').replace(/\s+/g, ' ').trim();
+      const m = normalized.match(/(\d{3,})\s*[\/\-]?\s*(\d{0,4})/);
+      if (m) {
+        quoteNumberHead = m[1];
+        quoteNumber = m[2] ? `${m[1]}/${m[2]}` : m[1];
+      }
     }
+
 
     // Tooltip do botão — foco + hover + contrato ARIA
     if (!isMobile) {
