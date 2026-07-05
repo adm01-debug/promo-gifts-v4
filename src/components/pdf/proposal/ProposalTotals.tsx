@@ -1,5 +1,8 @@
-// Totals block — label "Total:" (sem "Valor"), largura 288px
+// Totals block — label "Total:" (sem "Valor"). Largura vem do SSOT
+// `TOTALS_BLOCK_WIDTH_PX` em `../ProposalStyles` para manter paridade
+// com `TotalsSection` do PDF interno.
 import { type ProposalTemplateData, formatShipping } from '../ProposalHtmlTemplate';
+import { TOTALS_BLOCK_WIDTH_PX } from '../ProposalStyles';
 
 function fmt(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -14,7 +17,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-      <div style={{ width: '230px' }}>
+      <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         {/* Subtotal row */}
         <table
           style={{ width: '100%', borderCollapse: 'collapse', borderBottom: '1px solid #f0f0f0' }}
