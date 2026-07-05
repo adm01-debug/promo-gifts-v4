@@ -23,6 +23,7 @@ import { DeleteConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSupplierFiscalData, type FiscalOverrideInput } from '@/hooks/products';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { maskCnpj } from '@/utils/masks';
 
 interface Props {
   productId: string | undefined;
