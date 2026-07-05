@@ -20,10 +20,6 @@ import type {
   ProposalTemplateData,
   ProposalItem,
 } from '../ProposalHtmlTemplate';
-import type {
-  ProposalTemplateData,
-  ProposalItem,
-} from '../ProposalHtmlTemplate';
 
 const WATERMARK_COLOR = 'rgba(200, 0, 0, 0.0805)';
 
