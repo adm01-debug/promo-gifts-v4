@@ -46,6 +46,7 @@ import { useSeasonalPeakNotifications } from '@/hooks/bi/useSeasonalPeakNotifica
 import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
 import { useCrmCompany } from '@/hooks/crm';
 import { getCompanyDisplayName } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 export default function BusinessIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
