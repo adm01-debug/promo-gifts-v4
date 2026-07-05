@@ -38,7 +38,7 @@ function ProposalClientBarCompact({ data }: { data: ProposalTemplateData }) {
     >
       <span>
         <strong style={{ color: '#333' }}>{company}</strong>
-        {data.client.cnpj ? ` — CNPJ: ${data.client.cnpj}` : ''}
+        {data.client.cnpj ? ` — CNPJ: ${maskCnpj(data.client.cnpj)}` : ''}
       </span>
       {contact && (
         <span>
