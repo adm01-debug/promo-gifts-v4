@@ -175,35 +175,42 @@ export function PdfGenerationDialog({
       >
         {/* Header */}
         <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-lg font-bold">
+          <div className="flex items-center justify-between gap-3 pr-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <DialogTitle className="truncate text-lg font-bold">
                 Proposta Comercial {quoteNumber}
               </DialogTitle>
               {isDraft && (
                 <Badge
                   variant="secondary"
-                  className="border-warning/30 bg-warning/10 text-xs text-warning"
+                  className="shrink-0 border-warning/30 bg-warning/10 text-xs text-warning"
                 >
                   Rascunho
                 </Badge>
               )}
               {pdfVersion > 1 && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="shrink-0 text-xs">
                   v{pdfVersion}
                 </Badge>
               )}
             </div>
             {stage === 'preview' && (
-              <div className="mr-8 flex items-center gap-2 rounded-full border border-warning/25 bg-warning/5 px-3.5 py-1.5 text-warning">
-                <Info className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label="Aviso: confira as informações antes de enviar"
+                className="hidden shrink-0 items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3.5 py-1.5 text-warning sm:inline-flex"
+              >
+                <Info className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden="true" />
                 <p className="text-xs font-medium tracking-wide">
-                  Confira as informações antes de enviar
+                  <span className="hidden md:inline">Confira as informações antes de enviar</span>
+                  <span className="md:hidden">Confira antes de enviar</span>
                 </p>
               </div>
             )}
           </div>
         </DialogHeader>
+
 
 
         {/* Content */}
