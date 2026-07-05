@@ -1,0 +1,78 @@
+name: PdfGenerationDialog · Vitest + Playwright (multi-engine)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/PdfGenerationDialog.tsx'
+      - 'src/components/quotes/__tests__/PdfGenerationDialog.*'
+      - 'e2e/flows/pdf-dialog.spec.ts'
+      - 'e2e/quotes/**'
+      - '.github/workflows/e2e-pdf-dialog.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/PdfGenerationDialog.tsx'
+      - 'src/components/quotes/__tests__/PdfGenerationDialog.*'
+      - 'e2e/flows/pdf-dialog.spec.ts'
+      - 'e2e/quotes/**'
+      - '.github/workflows/e2e-pdf-dialog.yml'
+
+jobs:
+  vitest:
+    name: Vitest — PdfGenerationDialog (unit + a11y jest-axe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Vitest — unit + a11y
+        run: |
+          npx vitest run \
+            src/components/quotes/__tests__/PdfGenerationDialog.headerWarning.test.tsx \
+            src/components/quotes/__tests__/PdfGenerationDialog.footerButton.test.tsx \
+            src/components/quotes/__tests__/PdfGenerationDialog.a11y.test.tsx
+        env:
+          TZ: America/Sao_Paulo
+
+  playwright:
+    name: Playwright · ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: vitest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Multi-engine + mobile — cobre foco/hover no desktop (chromium/firefox)
+        # e responsividade no viewport mobile (Pixel 5).
+        project: [chromium-authed, firefox-authed, mobile-chrome]
+    env:
+      CI: 'true'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Playwright — pdf-dialog spec
+        run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=${{ matrix.project }}
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-pdf-dialog-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
