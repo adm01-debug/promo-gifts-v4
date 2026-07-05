@@ -16,6 +16,7 @@ import {
 import { qvType, qvSpacing } from './quote-view-typography';
 import { ProductThumb } from './ProductThumb';
 import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
+import { EngravingBadge } from './EngravingBadge';
 
 
 const QUANTITY_TIERS = [
