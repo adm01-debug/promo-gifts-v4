@@ -1196,25 +1196,52 @@ export function QuoteBuilderSummaryColumn({
             </div>
           )}
 
-          {/* Negotiation Markup */}
+          {/* Negotiation Markup + Price Comparison (lado a lado) */}
           {items.length > 0 && setNegotiationMarkup && (
             <div className="px-4 pt-3">
-              <div className="w-3/5 min-w-[320px]">
-                <NegotiationMarkupCard
-                  value={negotiationMarkup}
-                  onChange={setNegotiationMarkup}
-                  realSubtotal={realSubtotal}
-                  apparentDiscountPercent={
-                    discountType === 'percent'
-                      ? discountValue
-                      : realSubtotal > 0
-                        ? (discountAmount / (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) *
-                          100
-                        : 0
-                  }
-                  realDiscountPercent={realDiscountPercent}
-                  maxDiscountPercent={maxDiscountPercent ?? null}
-                />
+              <div className="flex flex-wrap items-start gap-3">
+                <div className="min-w-[280px] flex-1">
+                  <NegotiationMarkupCard
+                    value={negotiationMarkup}
+                    onChange={setNegotiationMarkup}
+                    realSubtotal={realSubtotal}
+                    apparentDiscountPercent={
+                      discountType === 'percent'
+                        ? discountValue
+                        : realSubtotal > 0
+                          ? (discountAmount /
+                              (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) *
+                            100
+                          : 0
+                    }
+                    realDiscountPercent={realDiscountPercent}
+                    maxDiscountPercent={maxDiscountPercent ?? null}
+                    hidePriceComparison
+                  />
+                </div>
+                {negotiationMarkup > 0 && (
+                  <div className="min-w-[280px] flex-1">
+                    <NegotiationPriceComparison
+                      realSubtotal={realSubtotal}
+                      apparentDiscountPercent={
+                        discountType === 'percent'
+                          ? discountValue
+                          : realSubtotal > 0
+                            ? (discountAmount /
+                                (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) *
+                              100
+                            : 0
+                      }
+                      realDiscountPercent={realDiscountPercent}
+                      presentedSubtotal={realSubtotal * (1 + negotiationMarkup / 100)}
+                      isOverLimit={
+                        maxDiscountPercent !== null &&
+                        maxDiscountPercent !== undefined &&
+                        realDiscountPercent > maxDiscountPercent
+                      }
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
