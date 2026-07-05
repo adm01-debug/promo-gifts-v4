@@ -6,6 +6,7 @@
 import { forwardRef } from 'react';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { LogoWithTransparentBg } from '@/components/pdf/proposal/LogoWithTransparentBg';
+import { maskCnpj } from '@/utils/masks';
 
 const GREEN = '#00c853';
 const DARK = '#000000';
