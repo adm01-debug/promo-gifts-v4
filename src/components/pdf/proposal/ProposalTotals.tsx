@@ -135,7 +135,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontFamily: "'Montserrat', sans-serif",
                       fontWeight: 800,
                       fontSize: '19px',
-                      color: '#ffffff',
+                      color: '#111',
                     }}
                   >
                     {fmt(data.total)}
