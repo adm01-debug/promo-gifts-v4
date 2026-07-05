@@ -37,8 +37,8 @@ describe('NegotiationMarkupCard — snapshots visuais por viewport', () => {
     expect(card.textContent ?? '').not.toMatch(/cliente paga/i);
 
     // Bloco do slider preserva alinhamento e respiro
-    const slider = screen.getByRole('slider');
-    const block = slider.closest('div')?.parentElement;
+    const label = screen.getByText('Acréscimo no preço apresentado');
+    const block = label.closest('div')?.parentElement;
     expect(block?.className).toMatch(/pt-4/);
     expect(block?.className).toMatch(/sm:pt-3/);
 
