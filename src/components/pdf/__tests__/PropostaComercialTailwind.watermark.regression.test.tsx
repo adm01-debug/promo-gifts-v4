@@ -20,8 +20,11 @@ import type {
   ProposalTemplateData,
   ProposalItem,
 } from '../ProposalHtmlTemplate';
-
-const WATERMARK_COLOR = 'rgba(200, 0, 0, 0.0805)';
+import {
+  WATERMARK_TEXT,
+  WATERMARK_RGB,
+  WATERMARK_ALPHA,
+} from '../watermarkTokens';
 
 function makeItem(overrides: Partial<ProposalItem> = {}): ProposalItem {
   return {
@@ -52,7 +55,7 @@ function makeData(
 }
 
 describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
-  it('isDraft=true renderiza exatamente 1 "RASCUNHO" por página', () => {
+  it(`isDraft=true renderiza exatamente 1 "${WATERMARK_TEXT}" por página`, () => {
     const { container } = render(
       <PropostaComercialTailwind data={makeData()} isDraft={true} />,
     );
@@ -60,7 +63,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
     expect(pageCount, 'documento sem páginas renderizadas').toBeGreaterThan(0);
 
     const watermarks = Array.from(container.querySelectorAll('div')).filter(
-      (el) => el.textContent === 'RASCUNHO',
+      (el) => el.textContent === WATERMARK_TEXT,
     );
     expect(watermarks.length).toBe(pageCount);
   });
@@ -77,19 +80,23 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
     expect(container.textContent).not.toContain('RASCUNHO');
   });
 
-  it('marca d\'água usa o tom vermelho legível (rgba 200,0,0,0.0805)', () => {
+  it("marca d'água usa os tokens SSOT (cor derivada de watermarkTokens)", () => {
     const { container } = render(
       <PropostaComercialTailwind data={makeData()} isDraft={true} />,
     );
     const watermark = Array.from(container.querySelectorAll('div')).find(
-      (el) => el.textContent === 'RASCUNHO',
+      (el) => el.textContent === WATERMARK_TEXT,
     );
     expect(watermark, 'watermark não encontrado').toBeTruthy();
-    // Cor exata do design: vermelho profundo (200,0,0) com alpha ~0.08 (0.0805).
-    // jsdom arredonda o alpha para 3 casas, então aceitamos 0.08 ou 0.081.
+    // Cor derivada dos tokens: aceita tolerância de arredondamento do jsdom no alpha
+    // (0.0805 → normalmente serializado como "0.08" ou "0.081").
     const color = (watermark as HTMLElement).style.color.replace(/\s/g, '');
-    expect(color).toMatch(/^rgba\(200,0,0,0\.08\d?\)$/);
-    // Contrato visual mínimo: rotacionado, uppercase, pointer-events none (não intercepta clique).
+    const alphaRounded = Number(WATERMARK_ALPHA.toFixed(2)); // 0.08
+    const alphaPattern = new RegExp(
+      `^rgba\\(${WATERMARK_RGB.r},${WATERMARK_RGB.g},${WATERMARK_RGB.b},${alphaRounded}\\d?\\)$`,
+    );
+    expect(color).toMatch(alphaPattern);
+    // Contrato visual mínimo: rotacionado, uppercase, pointer-events none.
     const st = (watermark as HTMLElement).style;
     expect(st.textTransform).toBe('uppercase');
     expect(st.pointerEvents).toBe('none');

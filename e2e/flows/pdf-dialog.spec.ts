@@ -473,5 +473,58 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
       `PDF enviado contaminado com RASCUNHO nas páginas ${JSON.stringify(contaminated)}`,
     ).toEqual([]);
   });
+
+  // Cobertura extra: valida o preview HTML in-page (antes do download do PDF).
+  // Diferente dos testes acima, este NÃO depende de pdftotext e inspeciona o
+  // DOM real que será convertido em PDF — cobre variabilidade de densidade
+  // (número de páginas muda conforme dados do orçamento carregado).
+  test('RASCUNHO — preview DOM do rascunho mostra marca em TODAS as páginas renderizadas', async ({
+    page,
+  }, testInfo) => {
+    await openPdfDialog(page, 'rascunho');
+
+    // Cada .proposal-page é uma página do PDF. Contamos e validamos por página.
+    const pages = page.locator('[role="dialog"] .proposal-page');
+    await expect(pages.first()).toBeVisible({ timeout: 10_000 });
+    const total = await pages.count();
+    expect(total, 'preview sem páginas renderizadas').toBeGreaterThan(0);
+
+    const missing: number[] = [];
+    for (let i = 0; i < total; i++) {
+      const hasWatermark = await pages.nth(i).locator('text=RASCUNHO').count();
+      if (hasWatermark === 0) missing.push(i + 1);
+    }
+    expect(
+      missing,
+      `RASCUNHO ausente no preview DOM nas páginas ${JSON.stringify(missing)} de ${total}`,
+    ).toEqual([]);
+
+    testInfo.annotations.push({
+      type: 'rascunho-preview-dom',
+      description: `Marca d'água validada em ${total} página(s) do preview.`,
+    });
+  });
+
+  test('RASCUNHO — preview DOM do enviado NÃO contém marca em nenhuma página', async ({
+    page,
+  }) => {
+    await openPdfDialog(page, 'enviada');
+
+    const pages = page.locator('[role="dialog"] .proposal-page');
+    await expect(pages.first()).toBeVisible({ timeout: 10_000 });
+    const total = await pages.count();
+    expect(total).toBeGreaterThan(0);
+
+    // Nenhum .proposal-page pode ter descendente com texto exato "RASCUNHO".
+    const contaminated: number[] = [];
+    for (let i = 0; i < total; i++) {
+      const hasWatermark = await pages.nth(i).locator('text=RASCUNHO').count();
+      if (hasWatermark > 0) contaminated.push(i + 1);
+    }
+    expect(
+      contaminated,
+      `preview DOM do enviado contaminado com RASCUNHO nas páginas ${JSON.stringify(contaminated)}`,
+    ).toEqual([]);
+  });
 });
 
