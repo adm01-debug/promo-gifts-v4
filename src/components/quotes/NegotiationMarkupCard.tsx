@@ -32,9 +32,90 @@ interface Props {
   /** Limite de desconto do vendedor; null = sem limite definido */
   maxDiscountPercent: number | null;
   className?: string;
+  /**
+   * Oculta o grid interno REAL/CLIENTE VÊ para que os cards possam ser
+   * renderizados externamente via `<NegotiationPriceComparison />`.
+   */
+  hidePriceComparison?: boolean;
 }
 
 const MAX_MARKUP = 50;
+
+interface PriceComparisonProps {
+  realSubtotal: number;
+  apparentDiscountPercent: number;
+  realDiscountPercent: number;
+  presentedSubtotal: number;
+  isOverLimit: boolean;
+  className?: string;
+}
+
+/**
+ * Grid REAL (interno) + CLIENTE VÊ — extraído para permitir renderização
+ * ao lado do card de Margem no `QuoteBuilderSummaryColumn` (mesma linha).
+ */
+export function NegotiationPriceComparison({
+  realSubtotal,
+  apparentDiscountPercent,
+  realDiscountPercent,
+  presentedSubtotal,
+  isOverLimit,
+  className,
+}: PriceComparisonProps) {
+  return (
+    <div
+      data-testid="negotiation-price-grid"
+      className={cn('grid grid-cols-2 gap-2', className)}
+    >
+      <div
+        data-testid="price-card-real"
+        className="space-y-1 rounded-lg bg-muted/40 p-2"
+      >
+        <p className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <ShieldCheck className="h-2.5 w-2.5" /> Real (interno)
+        </p>
+        <div className="space-y-0.5 text-[10px]">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal:</span>
+            <span className="font-medium tabular-nums">{formatCurrency(realSubtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Desconto:</span>
+            <span
+              className={cn(
+                'font-bold tabular-nums',
+                isOverLimit ? 'text-warning' : 'text-success',
+              )}
+            >
+              {realDiscountPercent.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        data-testid="price-card-client"
+        className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2"
+      >
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-primary">
+          Cliente vê
+        </p>
+        <div className="space-y-0.5 text-[10px]">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal:</span>
+            <span className="font-medium tabular-nums">{formatCurrency(presentedSubtotal)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Desconto:</span>
+            <span className="font-bold tabular-nums text-primary">
+              {apparentDiscountPercent.toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function NegotiationMarkupCard({
   value,
