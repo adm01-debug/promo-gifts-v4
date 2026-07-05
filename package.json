@@ -39,7 +39,6 @@
     "e2e:collapse:calibrate:dry-run": "node scripts/qa/calibrate-collapse-thresholds.mjs --dry-run",
     "e2e:collapse:check-baselines": "node scripts/qa/check-collapse-baselines.mjs",
     "e2e:collapse:check-baselines:tablet": "node scripts/qa/check-collapse-baselines.mjs --viewport tablet",
-
     "e2e:visual-diff-report": "node scripts/build-visual-diff-report.mjs --results test-results --out visual-diff-report/index.html --title 'Visual diffs'",
     "e2e:bootstrap": "bun install --frozen-lockfile && npm run e2e:install",
     "dev": "npm run e2e:generate-fixtures && vite",
@@ -176,7 +175,9 @@
     "drafts:status:check": "node scripts/map-drafts-to-migrations.mjs --check",
     "draft:promote": "node scripts/promote-draft-migration.mjs",
     "drafts:target:check": "node scripts/check-draft-canonical-target.mjs",
-    "drafts:pr-comment": "node scripts/build-drafts-pr-comment.mjs"
+    "drafts:pr-comment": "node scripts/build-drafts-pr-comment.mjs",
+    "check:cnpj-render": "node scripts/check-cnpj-render.mjs",
+    "test:cnpj": "vitest run src/utils/masks.test.ts src/utils/cnpj-schema.test.ts \"src/utils/__tests__/cnpj-\" src/components/__tests__/cnpj-render.test.tsx"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
