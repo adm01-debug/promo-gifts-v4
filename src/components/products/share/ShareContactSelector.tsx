@@ -310,7 +310,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                   <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{c.name}</p>
-                    {c.cnpj && <p className="text-xs text-muted-foreground">{c.cnpj}</p>}
+                    {c.cnpj && <p className="text-xs text-muted-foreground font-mono">{maskCnpj(c.cnpj)}</p>}
                   </div>
                 </button>
               ))}
