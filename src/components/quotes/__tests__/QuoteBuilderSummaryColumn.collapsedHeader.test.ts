@@ -194,12 +194,16 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
     expect(slice).toMatch(/<div className="min-w-0 flex-1 pr-4">/);
   });
 
-  it('nome mantém line-clamp=2 + overflow-hidden (truncamento controlado sem colar em QTD)', () => {
+  it('nome mantém line-clamp=2 + overflow-hidden + leading-[1.125rem] (respiro entre linhas)', () => {
     const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/)?.[0] ?? '';
     expect(namePara).toMatch(/WebkitLineClamp:\s*2/);
     expect(namePara).toMatch(/overflow-hidden/);
+    expect(namePara).toMatch(/leading-\[1\.125rem\]/); // ~18px: garante que 2 linhas não colam
     expect(namePara).not.toMatch(/\btruncate\b/); // truncate em 1 linha quebraria layout multi-linha
+    // SKU/cor entram com mt-1 para não colar na 2ª linha do nome
+    expect(slice).toMatch(/mt-1 flex flex-wrap items-center gap-x-2 gap-y-0\.5/);
   });
+
 
   it('bloco de preço recolhido usa gap-8 entre Qtd / Vl Unitário / Subtotal (respiro suficiente)', () => {
     expect(slice).toMatch(/flex shrink-0 items-start gap-8 tabular-nums/);
