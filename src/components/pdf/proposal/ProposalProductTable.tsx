@@ -171,7 +171,10 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
               const lineTotal = item.quantity * item.unitPrice + persTotal - itemDiscount;
               const isEven = globalIdx % 2 === 0;
 
-              const gravacao = formatPersonalizationsList(item.personalizations ?? []);
+              const personalizations = item.personalizations ?? [];
+              const gravacaoBadges = personalizations
+                .map((p) => formatPersonalizationSummary(p))
+                .filter((s): s is string => Boolean(s && s.trim().length > 0));
 
               return (
                 <tr
