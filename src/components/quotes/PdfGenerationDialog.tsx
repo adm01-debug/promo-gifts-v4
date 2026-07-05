@@ -23,7 +23,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { type ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
