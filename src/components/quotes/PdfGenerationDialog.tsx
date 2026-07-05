@@ -257,23 +257,8 @@ export function PdfGenerationDialog({
               <div className="flex-1 overflow-auto bg-muted/30 p-4" style={PREVIEW_SCROLL_STYLE}>
                 <div className="mx-auto" style={{ maxWidth: '794px' }}>
                   <div className="relative overflow-hidden rounded-lg bg-white shadow-lg">
-                    {/* Watermark for drafts */}
-                    {isDraft && (
-                      <div
-                        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-                        style={{ transform: 'rotate(-35deg)' }}
-                      >
-                        <span
-                          className="select-none text-[80px] font-black uppercase tracking-[0.3em]"
-                          style={{
-                            color: 'rgba(200, 0, 0, 0.08)',
-                            letterSpacing: '0.3em',
-                          }}
-                        >
-                          RASCUNHO
-                        </span>
-                      </div>
-                    )}
+                    {/* Watermark de rascunho é renderizado por PropostaComercialTailwind
+                        (uma vez por página, no meio). Não duplicar aqui. */}
                     <PropostaComercialTailwind data={proposalData} isDraft={isDraft} />
                   </div>
                 </div>
