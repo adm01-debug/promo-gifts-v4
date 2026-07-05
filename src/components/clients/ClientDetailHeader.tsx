@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
+import { maskCnpj } from '@/utils/masks';
 
 interface ClientDetailHeaderProps {
   client: CrmCompany;
