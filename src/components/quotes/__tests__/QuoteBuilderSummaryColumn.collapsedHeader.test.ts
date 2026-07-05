@@ -111,7 +111,7 @@ describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () 
     // Card interno preserva o padding vertical p-3 (respiro consistente)
     expect(SOURCE).toMatch(/<div className="space-y-2 p-3">/);
     // Guard: bloco recolhido é shrink-0 para não empurrar o nome
-    expect(slice).toMatch(/flex shrink-0 items-start gap-6 tabular-nums/);
+    expect(slice).toMatch(/flex shrink-0 items-start gap-8 tabular-nums/);
   });
 });
 
@@ -201,13 +201,18 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
     expect(namePara).not.toMatch(/\btruncate\b/); // truncate em 1 linha quebraria layout multi-linha
   });
 
-
-
+  it('bloco de preço recolhido usa gap-8 entre Qtd / Vl Unitário / Subtotal (respiro suficiente)', () => {
+    expect(slice).toMatch(/flex shrink-0 items-start gap-8 tabular-nums/);
+    // Regressão: gap-4/gap-6 encostavam as colunas — não pode voltar
+    expect(slice).not.toMatch(/items-start gap-4 tabular-nums/);
+    expect(slice).not.toMatch(/items-start gap-6 tabular-nums/);
+  });
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
-    expect(slice).toMatch(/flex shrink-0 items-start gap-6 tabular-nums/); // preço
+    expect(slice).toMatch(/flex shrink-0 items-start gap-8 tabular-nums/); // preço
     expect(slice).toMatch(/flex h-\[1\.125rem\] shrink-0 items-center gap-0\.5/); // ações
   });
+
 
   it('valores numéricos (Qtd, unit_price, subtotal) usam tabular-nums para largura estável', () => {
     // Tabular-nums no wrapper garante largura consistente independente do valor
