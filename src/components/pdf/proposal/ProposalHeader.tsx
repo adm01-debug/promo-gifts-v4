@@ -40,7 +40,7 @@ export function ProposalHeader({ data, isContinuation }: Props) {
           <div
             style={{
               textAlign: 'right',
-              color: '#fff',
+              color: '#111',
               display: 'flex',
               alignItems: 'center',
               gap: '16px',
