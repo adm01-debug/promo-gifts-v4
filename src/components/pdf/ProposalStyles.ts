@@ -8,6 +8,26 @@ export const GREEN_DARK = '#009e41';
 export const DARK = '#333333';
 export const BLUE = '#0085ca';
 
+/**
+ * Design tokens do PDF da proposta (SSOT).
+ * Centraliza cores usadas em headers/totais/swatches para garantir
+ * consistência e permitir verificação automática de contraste WCAG.
+ */
+export const PDF_TOKENS = {
+  /** Texto sobre header verde e sobre linhas totais. */
+  textOnGreen: '#111',
+  /** Texto padrão em células de conteúdo. */
+  textBody: '#333',
+  /** Fundo do swatch de cor quando `colorHex` está ausente. */
+  swatchFallback: '#ccc',
+  /** Borda do swatch — reforçada para contrastar com texto preto adjacente. */
+  swatchBorder: '#666',
+  /** Fundo linhas pares / ímpares. */
+  rowEven: '#ffffff',
+  rowOdd: '#f9fafb',
+} as const;
+
+
 export function fmt(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
