@@ -85,10 +85,10 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
       (el) => el.textContent === 'RASCUNHO',
     );
     expect(watermark, 'watermark não encontrado').toBeTruthy();
-    // inline style — cor exata do design (não pode virar 0.0 nem escurecer sem revisão de UX)
-    expect((watermark as HTMLElement).style.color.replace(/\s/g, '')).toBe(
-      WATERMARK_COLOR.replace(/\s/g, ''),
-    );
+    // Cor exata do design: vermelho profundo (200,0,0) com alpha ~0.08 (0.0805).
+    // jsdom arredonda o alpha para 3 casas, então aceitamos 0.08 ou 0.081.
+    const color = (watermark as HTMLElement).style.color.replace(/\s/g, '');
+    expect(color).toMatch(/^rgba\(200,0,0,0\.08\d?\)$/);
     // Contrato visual mínimo: rotacionado, uppercase, pointer-events none (não intercepta clique).
     const st = (watermark as HTMLElement).style;
     expect(st.textTransform).toBe('uppercase');
