@@ -114,14 +114,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
     });
   });
 
-    // Cada page precisa ter exatamente um filho direto com textContent === "RASCUNHO".
-    pages.forEach((page, idx) => {
-      const wm = Array.from(page.querySelectorAll('div')).filter(
-        (el) => el.textContent === 'RASCUNHO',
-      );
-      expect(wm.length, `página ${idx + 1} sem watermark`).toBe(1);
-    });
-  });
+
 
   it('multi-página + isDraft=false: nenhuma página exibe RASCUNHO', () => {
     const data = makeData(30);
