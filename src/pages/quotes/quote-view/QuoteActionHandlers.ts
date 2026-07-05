@@ -81,6 +81,12 @@ export async function handleSyncBitrix(params: {
     toast.error('Orçamento sem identificador válido');
     return;
   }
+  if (quote.status === 'draft') {
+    toast.error('Rascunho não pode ser sincronizado', {
+      description: 'Promova o orçamento a proposta antes de sincronizar com o CRM.',
+    });
+    return;
+  }
   const quoteId = quote.id;
 
   let effectiveBitrixCompanyId = params.bitrixCompanyId;

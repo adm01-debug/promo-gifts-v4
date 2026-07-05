@@ -45,11 +45,20 @@ vi.mock('@/lib/quote-status-config', () => ({
   QUOTE_STATUS_CONFIG: {},
 }));
 
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+  },
+}));
+
 // Quote with one item that HAS a bitrix_product_id (required for itensSincronizaveis check)
 const mockQuote: Quote = {
   id: 'q-001',
   quote_number: 'ORC-001',
-  status: 'draft',
+  status: 'pending',
   client_id: 'c-001',
   client_name: 'Test Client',
   client_email: 'client@test.com',
@@ -247,5 +256,29 @@ describe('handleSyncBitrix', () => {
 
     // setQuote still called — optimistic update is correct (Bitrix side committed)
     expect(mockSetQuote).toHaveBeenCalled();
+  });
+
+  it('nao sincroniza quando status e draft (regra de negocio)', async () => {
+    const { toast } = await import('sonner');
+    const draftQuote = { ...mockQuote, status: 'draft' } as Quote;
+
+    await handleSyncBitrix({
+      quote: draftQuote,
+      proposalData: mockProposalData,
+      bitrixCompanyId: 'b-123',
+      userEmail: 'seller@test.com',
+      logQuoteHistory: mockLogQuoteHistory,
+      setQuote: mockSetQuote,
+      selectCrmById: mockSelectCrmById,
+    });
+
+    expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+      'Rascunho não pode ser sincronizado',
+      expect.objectContaining({
+        description: expect.stringContaining('Promova o orçamento'),
+      }),
+    );
+    expect(mockSetQuote).not.toHaveBeenCalled();
+    expect(mockSelectCrmById).not.toHaveBeenCalled();
   });
 });

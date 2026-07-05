@@ -226,7 +226,7 @@ export default function QuoteViewPage() {
               />
             )}
 
-            {quote.status !== 'pending_approval' && (
+            {quote.status !== 'pending_approval' && quote.status !== 'draft' && (
               <div className="hidden items-center gap-2 md:flex">
                 <Button
                   variant="outline"
@@ -459,7 +459,7 @@ export default function QuoteViewPage() {
       <QuoteMobileActionBar
         onDownloadPDF={handleDownloadPDF}
         onWhatsApp={handleWhatsAppShare}
-        onSync={handleSyncBitrix}
+        onSync={quote.status === 'draft' ? undefined : handleSyncBitrix}
         isSyncing={isSyncing}
         onShare={handleShareLink}
         isGeneratingPDF={isGeneratingPDF}
