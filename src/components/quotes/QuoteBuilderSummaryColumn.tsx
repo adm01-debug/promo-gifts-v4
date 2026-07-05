@@ -225,6 +225,8 @@ export function QuoteBuilderSummaryColumn({
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [confirmSaveDraftOpen, setConfirmSaveDraftOpen] = useState(false);
+  const saveDraftBtnRef = useRef<HTMLButtonElement>(null);
+
 
 
   const [showOnlyStale, setShowOnlyStale] = useState(false);
