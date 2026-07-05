@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { qvSpacing, qvType } from './quote-view-typography';
 import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 import { SectionEyebrow } from './SectionEyebrow';
+import { EngravingBadge } from './EngravingBadge';
 import {
   Tooltip,
   TooltipContent,
