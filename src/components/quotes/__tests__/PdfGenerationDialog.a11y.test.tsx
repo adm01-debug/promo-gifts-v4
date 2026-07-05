@@ -10,7 +10,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { toHaveNoViolations } from 'jest-axe';
-import { axe } from '@/../tests/a11y/axe-helper';
+import { axe } from '../../../../tests/a11y/axe-helper';
 import { PdfGenerationDialog } from '../PdfGenerationDialog';
 import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures';
 
