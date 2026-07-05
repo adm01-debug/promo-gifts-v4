@@ -33,7 +33,7 @@ const NAME_PR_PX = 4; // pr-1
 // Sanity: garante que os tokens continuam batendo com o JSX
 expect(SRC).toMatch(/leading-\[1\.125rem\]/);
 expect(SRC).toMatch(/h-\[1\.125rem\] shrink-0 items-center/);
-expect(SRC).toMatch(/pr-1 text-sm font-medium/);
+expect(SRC).toMatch(/pr-2 text-sm font-medium/);
 
 // --- Helpers --------------------------------------------------------------
 const VIEWPORTS = [375, 414, 640, 768, 1024, 1280, 1440, 1920] as const;
