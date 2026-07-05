@@ -772,9 +772,10 @@ export function QuoteBuilderSummaryColumn({
                                     roundedClassName="rounded-lg"
                                     data-testid="quote-summary-thumb"
                                   />
-                                   <div className="min-w-0 flex-1">
+                                   <div className="min-w-0 flex-1 pr-4">
                                      <p
-                                       className="pr-1 text-sm font-medium leading-[1.125rem] break-words whitespace-normal overflow-hidden"
+                                       className="pr-2 text-sm font-medium leading-[1.125rem] break-words whitespace-normal overflow-hidden"
+
                                        style={{
                                          display: '-webkit-box',
                                          WebkitLineClamp: 2,
