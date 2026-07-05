@@ -57,13 +57,22 @@ export function getMaskSelectors(): string[] {
 /** Limiares efetivos por viewport (env sobrescreve default). */
 export function getThresholds(vp: ViewportLabel): ThresholdConfig {
   const base = DEFAULT_THRESHOLDS[vp];
-  const t = Number(process.env[`COLLAPSE_THRESHOLD_${vp.toUpperCase()}`]);
-  const r = Number(process.env[`COLLAPSE_RATIO_${vp.toUpperCase()}`]);
+  // GAP-B1: `Number("")` e `Number("   ")` retornam 0 (não NaN), o que
+  // silenciosamente aceitava env vazio/whitespace como threshold=0 —
+  // ignorando o default. Normalizamos com trim + guard de string vazia.
+  const parse = (raw: string | undefined, fallback: number): number => {
+    if (raw === undefined) return fallback;
+    const trimmed = raw.trim();
+    if (trimmed === "") return fallback;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : fallback;
+  };
   return {
-    threshold: Number.isFinite(t) ? t : base.threshold,
-    maxDiffPixelRatio: Number.isFinite(r) ? r : base.maxDiffPixelRatio,
+    threshold: parse(process.env[`COLLAPSE_THRESHOLD_${vp.toUpperCase()}`], base.threshold),
+    maxDiffPixelRatio: parse(process.env[`COLLAPSE_RATIO_${vp.toUpperCase()}`], base.maxDiffPixelRatio),
   };
 }
+
 
 /** Snapshot serializável (útil para relatórios/PR comment). */
 export function describeConfig() {
