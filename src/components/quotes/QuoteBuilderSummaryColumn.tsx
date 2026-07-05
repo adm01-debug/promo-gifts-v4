@@ -1199,21 +1199,23 @@ export function QuoteBuilderSummaryColumn({
           {/* Negotiation Markup */}
           {items.length > 0 && setNegotiationMarkup && (
             <div className="px-4 pt-3">
-              <NegotiationMarkupCard
-                value={negotiationMarkup}
-                onChange={setNegotiationMarkup}
-                realSubtotal={realSubtotal}
-                apparentDiscountPercent={
-                  discountType === 'percent'
-                    ? discountValue
-                    : realSubtotal > 0
-                      ? (discountAmount / (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) *
-                        100
-                      : 0
-                }
-                realDiscountPercent={realDiscountPercent}
-                maxDiscountPercent={maxDiscountPercent ?? null}
-              />
+              <div className="w-2/5 min-w-[220px]">
+                <NegotiationMarkupCard
+                  value={negotiationMarkup}
+                  onChange={setNegotiationMarkup}
+                  realSubtotal={realSubtotal}
+                  apparentDiscountPercent={
+                    discountType === 'percent'
+                      ? discountValue
+                      : realSubtotal > 0
+                        ? (discountAmount / (realSubtotal * (1 + (negotiationMarkup || 0) / 100))) *
+                          100
+                        : 0
+                  }
+                  realDiscountPercent={realDiscountPercent}
+                  maxDiscountPercent={maxDiscountPercent ?? null}
+                />
+              </div>
             </div>
           )}
 
