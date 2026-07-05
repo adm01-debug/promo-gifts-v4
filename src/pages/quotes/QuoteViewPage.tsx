@@ -226,7 +226,7 @@ export default function QuoteViewPage() {
               />
             )}
 
-            {quote.status !== 'pending_approval' && (
+            {quote.status !== 'pending_approval' && quote.status !== 'draft' && (
               <div className="hidden items-center gap-2 md:flex">
                 <Button
                   variant="outline"
