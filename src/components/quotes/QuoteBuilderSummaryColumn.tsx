@@ -805,35 +805,35 @@ export function QuoteBuilderSummaryColumn({
                                        )}
                                      </div>
                                    </div>
-                                    {isCollapsed && (
-                                      <div
-                                        data-testid={`quote-summary-collapsed-price-${idx}`}
-                                        className="flex shrink-0 items-end gap-3 tabular-nums"
-                                      >
-                                        <div className="flex flex-col items-center leading-tight">
-                                          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                            Qtd
-                                          </span>
-                                          <span className="text-xs font-medium">{item.quantity}</span>
-                                        </div>
-                                        <div className="flex flex-col items-end leading-tight">
-                                          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                            Vl Unitário
-                                          </span>
-                                          <span className="text-xs font-medium">
-                                            {formatCurrency(item.unit_price)}
-                                          </span>
-                                        </div>
-                                        <div className="flex flex-col items-end leading-tight">
-                                          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                            Subtotal
-                                          </span>
-                                          <span className="text-xs font-semibold text-foreground">
-                                            {formatCurrency(item.quantity * item.unit_price)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    )}
+                                     {isCollapsed && (
+                                       <div
+                                         data-testid={`quote-summary-collapsed-price-${idx}`}
+                                         className="flex shrink-0 items-start gap-4 tabular-nums"
+                                       >
+                                         <div className="flex flex-col items-center gap-1">
+                                           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                             Qtd
+                                           </span>
+                                           <span className="text-xs font-medium leading-none">{item.quantity}</span>
+                                         </div>
+                                         <div className="flex flex-col items-end gap-1">
+                                           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                             Vl Unitário
+                                           </span>
+                                           <span className="text-xs font-medium leading-none">
+                                             {formatCurrency(item.unit_price)}
+                                           </span>
+                                         </div>
+                                         <div className="flex flex-col items-end gap-1">
+                                           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                             Subtotal
+                                           </span>
+                                           <span className="text-xs font-semibold leading-none text-foreground">
+                                             {formatCurrency(item.quantity * item.unit_price)}
+                                           </span>
+                                         </div>
+                                       </div>
+                                     )}
                                     <div className="flex h-[1.125rem] shrink-0 items-center gap-0.5">
                                     <TooltipProvider delayDuration={200}>
                                       <Tooltip>

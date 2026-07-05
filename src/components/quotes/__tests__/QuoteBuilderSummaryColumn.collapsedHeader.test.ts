@@ -110,7 +110,7 @@ describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () 
     // Card interno preserva o padding vertical p-3 (respiro consistente)
     expect(SOURCE).toMatch(/<div className="space-y-2 p-3">/);
     // Guard: bloco recolhido é shrink-0 para não empurrar o nome
-    expect(slice).toMatch(/flex shrink-0 items-end gap-3 tabular-nums/);
+    expect(slice).toMatch(/flex shrink-0 items-start gap-4 tabular-nums/);
   });
 });
 
@@ -190,7 +190,7 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
   });
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
-    expect(slice).toMatch(/flex shrink-0 items-end gap-3 tabular-nums/); // preço
+    expect(slice).toMatch(/flex shrink-0 items-start gap-4 tabular-nums/); // preço
     expect(slice).toMatch(/flex h-\[1\.125rem\] shrink-0 items-center gap-0\.5/); // ações
   });
 
@@ -198,11 +198,11 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
     // Tabular-nums no wrapper garante largura consistente independente do valor
     expect(slice).toMatch(/tabular-nums/);
     // Subtotal é font-semibold para destaque visual sem alterar altura de linha
-    expect(slice).toMatch(/text-xs font-semibold text-foreground/);
+    expect(slice).toMatch(/text-xs font-semibold leading-none text-foreground/);
   });
 
-  it('rótulos das 3 colunas usam text-[9px] uppercase (altura consistente entre variações)', () => {
-    const labels = slice.match(/text-\[9px\] font-semibold uppercase tracking-wider/g) ?? [];
+  it('rótulos das 3 colunas usam text-[10px] uppercase (altura consistente entre variações)', () => {
+    const labels = slice.match(/text-\[10px\] font-semibold uppercase tracking-wider/g) ?? [];
     // Um por coluna: Qtd, Vl Unitário, Subtotal
     expect(labels.length).toBeGreaterThanOrEqual(3);
   });
