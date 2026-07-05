@@ -106,9 +106,9 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
       expect(grid.children[0]).toBe(real);
       expect(grid.children[1]).toBe(cliente);
 
-      // Layout horizontal preservado
-      expect(grid.className).toMatch(/\bgrid-cols-2\b/);
-      expect(grid.className).not.toMatch(/\bgrid-cols-1\b/);
+      // Layout vertical empilhado preservado
+      expect(grid.className).toMatch(/\bflex-col\b/);
+      expect(grid.className).not.toMatch(/\bgrid-cols-2\b/);
 
       unmount();
     },
