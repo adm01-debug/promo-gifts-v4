@@ -24,7 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-import { Separator } from '@/components/ui/separator';
+
 import { cn } from '@/lib/utils';
 import { type ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
 import { PropostaComercialTailwind } from '@/components/pdf/PropostaComercialTailwind';
@@ -167,7 +167,7 @@ export function PdfGenerationDialog({
       <DialogContent
         className={cn(
           'flex flex-col gap-0 p-0 transition-[max-width] duration-300',
-          stage === 'generating'
+          stage === 'generating' || stage === 'ready'
             ? 'max-h-none max-w-sm border-white/10 bg-card shadow-[0_20px_50px_hsl(var(--background)/0.7)]'
             : 'max-h-[90vh] max-w-4xl',
         )}
@@ -179,8 +179,8 @@ export function PdfGenerationDialog({
           if (stage === 'generating') e.preventDefault();
         }}
       >
-        {/* Header — oculto no stage "generating" para o card ficar realmente compacto */}
-        {stage !== 'generating' && (
+        {/* Header — oculto nos stages compactos (generating/ready) */}
+        {stage !== 'generating' && stage !== 'ready' && (
           <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
           <div className="flex items-center justify-between gap-3 pr-8">
             <div className="flex min-w-0 items-center gap-3">
@@ -385,35 +385,83 @@ export function PdfGenerationDialog({
           )}
 
           {stage === 'ready' && (
-            <div className="flex flex-col items-center gap-8 px-6 py-12">
-              {/* Success indicator */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                  <Check className="h-8 w-8 text-primary" />
-                </div>
-                <p className="text-lg font-semibold">PDF pronto!</p>
-              </div>
-
-              {/* Action Grid */}
-              <div className="flex w-full max-w-lg justify-center">
-                <ActionButton
-                  icon={<Download className="h-5 w-5" />}
-                  label="Baixar"
-                  onClick={handleDownload}
-                  variant="primary"
+            /* v3 — Minimalista denso: mesmo vocabulário visual do stage "generating".
+               Anel estático com Check, barra 100% + 3 tracks todos concluídos,
+               botão primário compacto e ações ghost inline. */
+            <div
+              className="flex flex-col items-center gap-6 p-8 text-center animate-fade-in"
+              role="status"
+              aria-live="polite"
+              aria-label="PDF pronto para download"
+            >
+              {/* Success indicator — anel duplo estático com Check e glow */}
+              <div className="relative flex h-12 w-12 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
+                <Check
+                  className="h-6 w-6 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
+                  strokeWidth={2.5}
+                  aria-hidden="true"
                 />
               </div>
 
-              <Separator className="w-full max-w-lg" />
+              {/* Título */}
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                PDF pronto
+              </h2>
 
-              {/* Secondary actions */}
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" className="gap-2" onClick={handlePrint}>
-                  <Printer className="h-4 w-4" />
+              {/* Progress 100% + 3 micro-steps concluídos (espelha o generating) */}
+              <div className="w-full space-y-4">
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="absolute inset-y-0 left-0 w-full rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.6)]" />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {(['Layout', 'Páginas', 'PDF'] as const).map((label, i) => {
+                    const align =
+                      i === 0 ? 'items-start' : i === 1 ? 'items-center' : 'items-end';
+                    return (
+                      <div key={label} className={cn('flex flex-col gap-1.5', align)}>
+                        <div className="h-1 w-full rounded-full bg-primary" />
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-primary/80">
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Ação principal */}
+              <Button
+                size="sm"
+                onClick={handleDownload}
+                className="h-9 w-full gap-2 px-5 shadow-sm transition-all hover:shadow-md hover:brightness-110 active:brightness-95 active:scale-[0.98]"
+                data-testid="pdf-download-button"
+                aria-label="Baixar PDF gerado"
+              >
+                <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Baixar</span>
+              </Button>
+
+              {/* Ações secundárias inline */}
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handlePrint}
+                >
+                  <Printer className="h-3 w-3" aria-hidden="true" />
                   Imprimir
                 </Button>
-                <Button variant="ghost" size="sm" className="gap-2" onClick={handleGenerate}>
-                  <FileText className="h-4 w-4" />
+                <span aria-hidden="true" className="text-muted-foreground/40">·</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleGenerate}
+                >
+                  <FileText className="h-3 w-3" aria-hidden="true" />
                   Regenerar
                 </Button>
               </div>
@@ -422,37 +470,5 @@ export function PdfGenerationDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-// FIX #9: variante 'whatsapp' removida — era idêntica a 'primary' (código morto)
-function ActionButton({
-  icon,
-  label,
-  onClick,
-  variant = 'default',
-  disabled = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-  variant?: 'default' | 'primary';
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        'flex flex-col items-center gap-2 rounded-xl border p-4 transition-all duration-200',
-        'hover:scale-105 active:scale-95 disabled:pointer-events-none disabled:opacity-40',
-        variant === 'primary' && 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20',
-        variant === 'default' && 'border-border bg-card text-foreground hover:bg-accent',
-      )}
-    >
-      {icon}
-      <span className="text-xs font-medium">{label}</span>
-    </button>
   );
 }
