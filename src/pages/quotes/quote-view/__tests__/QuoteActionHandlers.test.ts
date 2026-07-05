@@ -49,7 +49,7 @@ vi.mock('@/lib/quote-status-config', () => ({
 const mockQuote: Quote = {
   id: 'q-001',
   quote_number: 'ORC-001',
-  status: 'draft',
+  status: 'pending',
   client_id: 'c-001',
   client_name: 'Test Client',
   client_email: 'client@test.com',
