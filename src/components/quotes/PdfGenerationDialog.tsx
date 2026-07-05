@@ -165,7 +165,12 @@ export function PdfGenerationDialog({
         )}
       </DialogTrigger>
       <DialogContent
-        className="flex max-h-[90vh] max-w-4xl flex-col gap-0 p-0"
+        className={cn(
+          'flex flex-col gap-0 p-0 transition-[max-width] duration-300',
+          stage === 'generating'
+            ? 'max-h-none max-w-sm border-white/10 bg-card shadow-[0_20px_50px_hsl(var(--background)/0.7)]'
+            : 'max-h-[90vh] max-w-4xl',
+        )}
         // FIX #4: Bloquear interações fora do dialog durante geração
         onInteractOutside={(e) => {
           if (stage === 'generating') e.preventDefault();
@@ -174,6 +179,8 @@ export function PdfGenerationDialog({
           if (stage === 'generating') e.preventDefault();
         }}
       >
+        {/* Header — oculto no stage "generating" para o card ficar realmente compacto */}
+        {stage !== 'generating' && (
         {/* Header */}
         <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
           <div className="flex items-center justify-between gap-3 pr-8">
