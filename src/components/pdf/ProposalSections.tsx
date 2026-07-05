@@ -464,7 +464,7 @@ export function NotesSection({ data }: { data: ProposalTemplateData }) {
       <div style={{ fontWeight: 700, fontSize: '13px', color: '#333', marginBottom: '8px' }}>
         Informações Relevantes:
       </div>
-      <div>- Todos os valores são para produtos já personalizados conforme descrição.</div>
+      
       {methodLabel && <div>- 💳 Forma de Pagamento: {methodLabel}.</div>}
       {termsLabel && <div>- 💵 Prazo de Pagamento: {termsLabel}.</div>}
       {deliveryLabel && <div>- 📦 Prazo de Entrega: {deliveryLabel}.</div>}
