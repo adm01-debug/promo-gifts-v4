@@ -328,7 +328,7 @@ export function MockupClientSelector({
                                   <span className="text-xs text-muted-foreground/50">·</span>
                                 )}
                                 <span className="truncate font-mono text-[11px] text-muted-foreground/70">
-                                  {company.cnpj}
+                                  {maskCnpj(company.cnpj)}
                                 </span>
                               </>
                             )}
