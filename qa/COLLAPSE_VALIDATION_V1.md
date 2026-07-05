@@ -19,9 +19,23 @@
 
 ---
 
-## Gaps e observações (INFO — não bloqueantes)
+## Gaps encontrados e correções aplicadas
 
-### B4-1 — INFO: matriz por viewport implícita
+### 🔴 GAP-B1 (CRÍTICO — CORRIGIDO): env whitespace/vazio virava `threshold=0`
+`getThresholds()` usava `Number(process.env[...])` direto. Como
+`Number("")` e `Number("   ")` retornam **0** (não `NaN`), o guard
+`Number.isFinite(t)` aceitava a leitura, sobrescrevendo o default para
+`threshold: 0, maxDiffPixelRatio: 0`. Em CI, um secret env acidentalmente
+vazio faria o diff visual passar sempre (0 tolerância vira "qualquer
+pixel diferente falha"… mas na prática `pixelmatch` compara `>0` e o
+comportamento fica imprevisível entre viewports).
+
+**Fix:** `e2e/customization/mask-config.ts` agora normaliza com
+`trim()` + guard de string vazia antes de `Number()`. Coberto pelos
+17 asserts de `mask-config — getThresholds`.
+
+### INFO — não bloqueantes
+
 O workflow roda os 3 viewports em um único `playwright test` (sem matrix
 GH Actions). Isso é intencional (Playwright faz o loop internamente via
 `test.describe` × `test.use({ viewport })`), mas artefatos ficam agrupados
