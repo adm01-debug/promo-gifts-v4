@@ -1419,11 +1419,13 @@ export function QuoteBuilderSummaryColumn({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      ref={saveDraftBtnRef}
                       variant="outline"
                       size="lg"
                       className="h-12 flex-1"
                       data-testid="quote-save-draft"
                       onClick={() => {
+
                         if (isEditMode) {
                           setConfirmSaveDraftOpen(true);
                         } else {
