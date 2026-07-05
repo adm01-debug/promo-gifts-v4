@@ -49,14 +49,14 @@ describe('B4.P3 — saída sempre ≤ 18 chars [500 runs]', () => {
 });
 
 describe('B4.P4 — Unicode adversarial (NBSP/ZWSP/RTL/emoji) [500 runs]', () => {
-  const adversarial = fc.stringOf(
-    fc.constantFrom(
-      '0','1','2','3','4','5','6','7','8','9',
-      '.', '-', '/', ' ',
-      '\u00A0', '\u200B', '\u200D', '\u202E', '💥', 'a', 'X', '#',
-    ),
-    { maxLength: 32 },
-  );
+  const CHARS = [
+    '0','1','2','3','4','5','6','7','8','9',
+    '.', '-', '/', ' ',
+    '\u00A0', '\u200B', '\u200D', '\u202E', '💥', 'a', 'X', '#',
+  ];
+  const adversarial = fc
+    .array(fc.constantFrom(...CHARS), { maxLength: 32 })
+    .map((arr) => arr.join(''));
   it('propriedade', () => {
     fc.assert(
       fc.property(adversarial, (s) => {
