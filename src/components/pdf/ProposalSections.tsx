@@ -181,7 +181,7 @@ export function ClientBar({
         <div style={{ fontWeight: 600, fontSize: '16px', color: '#222' }}>{company}</div>
         {cnpj && (
           <div style={{ fontSize: '11px', color: '#666', marginTop: '3px', fontWeight: 700 }}>
-            CNPJ: {cnpj}
+            CNPJ: {maskCnpj(cnpj)}
           </div>
         )}
       </div>
