@@ -281,9 +281,10 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                         <div className={qvSpacing.techCard}>
                           {/* Technique */}
                           <div className="flex items-center gap-2">
-                            <Badge className="border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] font-medium text-primary hover:bg-primary/10">
-                              ✦ {formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
-                            </Badge>
+                            <EngravingBadge
+                              title={formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
+                              data-testid="detail-engraving-badge"
+                            />
                           </div>
 
                           <div className={`grid grid-cols-2 gap-1.5 ${qvType.techGridItem}`}>
