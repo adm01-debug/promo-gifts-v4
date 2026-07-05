@@ -96,7 +96,7 @@ describe('QuoteBuilderSummaryColumn — fluxo Salvar Rascunho', () => {
     render(<SaveDraftHarness isEditMode onSave={onSave} />);
     await userEvent.click(screen.getByTestId('quote-save-draft'));
     expect(screen.getByTestId('quote-save-draft-confirm-dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Salvar alterações do orçamento\?/)).toBeInTheDocument();
+    expect(screen.getByText(/Salvar rascunho do orçamento\?/)).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
   });
 
