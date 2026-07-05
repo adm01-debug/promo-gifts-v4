@@ -107,7 +107,10 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#00c853' }}>
             <tbody>
               <tr>
-                <td style={{ padding: '10px 18px' }}>
+                {/* verticalAlign: middle garante alinhamento do rótulo "Total:" (13px)
+                    com o valor (19px) — sem isso o baseline default deixa o label
+                    ~2px acima da linha central após a redução de largura. */}
+                <td style={{ padding: '10px 18px', verticalAlign: 'middle' }}>
                   <span
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
@@ -121,7 +124,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                     Total:
                   </span>
                 </td>
-                <td style={{ padding: '10px 18px', textAlign: 'right' }}>
+                <td style={{ padding: '10px 18px', textAlign: 'right', verticalAlign: 'middle' }}>
                   <strong
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
