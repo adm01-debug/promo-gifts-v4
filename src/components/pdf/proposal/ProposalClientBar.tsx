@@ -1,4 +1,5 @@
 import type { ProposalTemplateData } from '../ProposalHtmlTemplate';
+import { maskCnpj } from '@/utils/masks';
 
 export function ProposalClientBar({ data }: { data: ProposalTemplateData }) {
   const company = data.client.company || data.client.name;
