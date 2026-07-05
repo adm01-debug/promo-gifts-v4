@@ -201,8 +201,8 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
     expect(slice).toMatch(/text-xs font-semibold leading-none text-foreground/);
   });
 
-  it('rótulos das 3 colunas usam text-[9px] uppercase (altura consistente entre variações)', () => {
-    const labels = slice.match(/text-\[9px\] font-semibold uppercase tracking-wider/g) ?? [];
+  it('rótulos das 3 colunas usam text-[10px] uppercase (altura consistente entre variações)', () => {
+    const labels = slice.match(/text-\[10px\] font-semibold uppercase tracking-wider/g) ?? [];
     // Um por coluna: Qtd, Vl Unitário, Subtotal
     expect(labels.length).toBeGreaterThanOrEqual(3);
   });
