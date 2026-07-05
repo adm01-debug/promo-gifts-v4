@@ -69,7 +69,7 @@ export function NegotiationPriceComparison({
     >
       <div
         data-testid="price-card-real"
-        className="space-y-1 rounded-lg bg-muted/40 p-2"
+        className="space-y-1 rounded-lg bg-muted/40 px-2 py-2.5"
       >
         <p className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
           <ShieldCheck className="h-2.5 w-2.5" /> Real (interno)
@@ -95,7 +95,7 @@ export function NegotiationPriceComparison({
 
       <div
         data-testid="price-card-client"
-        className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2"
+        className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2 py-2.5"
       >
         <p className="text-[9px] font-semibold uppercase tracking-wider text-primary">
           Cliente vê
