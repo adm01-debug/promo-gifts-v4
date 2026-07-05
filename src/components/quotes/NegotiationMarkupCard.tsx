@@ -135,7 +135,7 @@ export function NegotiationMarkupCard({
   }, [value]);
 
   const presentedSubtotal = realSubtotal * (1 + value / 100);
-  const finalPrice = presentedSubtotal * (1 - apparentDiscountPercent / 100);
+  const finalPrice = Math.max(0, presentedSubtotal * (1 - apparentDiscountPercent / 100));
   const isOverLimit = maxDiscountPercent !== null && realDiscountPercent > maxDiscountPercent;
   const realFitsLimit = maxDiscountPercent !== null && realDiscountPercent <= maxDiscountPercent;
 
