@@ -72,7 +72,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { QuoteItem } from '@/hooks/quotes';
-import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
+import { NegotiationMarkupCard, NegotiationPriceComparison } from '@/components/quotes/NegotiationMarkupCard';
 import { ProductThumb } from '@/components/quotes/ProductThumb';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import {
