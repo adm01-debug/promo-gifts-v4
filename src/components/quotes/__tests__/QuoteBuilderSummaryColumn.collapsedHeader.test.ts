@@ -49,10 +49,10 @@ describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () 
     expect(namePara?.[0] ?? '').toMatch(/\bbreak-words\b/);
   });
 
-  it('SKU e cor ficam empilhados verticalmente (flex-col), cor abaixo do código', () => {
+  it('SKU e cor ficam na mesma linha (flex-wrap items-center), cor logo após o código', () => {
     const slice = headerSlice();
-    // Container do SKU+cor deve usar flex-col
-    expect(slice).toMatch(/mt-1 flex flex-col items-start gap-0\.5/);
+    // Container do SKU+cor deve usar flex-wrap na mesma linha
+    expect(slice).toMatch(/mt-1 flex flex-wrap items-center gap-x-2 gap-y-0\.5/);
     // Ordem DOM: SKU (Badge com product_sku) aparece ANTES da cor (color_name)
     const skuIdx = slice.indexOf('{item.product_sku}');
     const colorIdx = slice.indexOf('{item.color_name}');
@@ -60,6 +60,7 @@ describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () 
     expect(colorIdx).toBeGreaterThan(-1);
     expect(skuIdx).toBeLessThan(colorIdx);
   });
+
 
   it('bloco recolhido exibe Qtd / Vl Unitário / Subtotal empilhados com rótulos uppercase', () => {
     const slice = headerSlice();
