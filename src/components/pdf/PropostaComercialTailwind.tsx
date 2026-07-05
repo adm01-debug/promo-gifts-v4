@@ -306,7 +306,7 @@ export const PropostaComercialTailwind = forwardRef<
                   transform: 'translate(-50%, -50%) rotate(-35deg)',
                   fontSize: '80px',
                   fontWeight: 900,
-                  color: 'rgba(200, 0, 0, 0.07)',
+                  color: 'rgba(200, 0, 0, 0.0805)',
                   letterSpacing: '0.3em',
                   textTransform: 'uppercase',
                   pointerEvents: 'none',
