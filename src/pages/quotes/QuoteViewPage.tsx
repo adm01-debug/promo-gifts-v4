@@ -459,7 +459,7 @@ export default function QuoteViewPage() {
       <QuoteMobileActionBar
         onDownloadPDF={handleDownloadPDF}
         onWhatsApp={handleWhatsAppShare}
-        onSync={handleSyncBitrix}
+        onSync={quote.status === 'draft' ? undefined : handleSyncBitrix}
         isSyncing={isSyncing}
         onShare={handleShareLink}
         isGeneratingPDF={isGeneratingPDF}
