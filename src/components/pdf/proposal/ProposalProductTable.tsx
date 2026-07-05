@@ -57,7 +57,7 @@ function fmt(v: number): string {
 
 const thBase: React.CSSProperties = {
   backgroundColor: '#00c853',
-  color: '#fff',
+  color: '#111',
   padding: '10px 10px',
   fontSize: '11px',
   fontFamily: "'Montserrat', sans-serif",
