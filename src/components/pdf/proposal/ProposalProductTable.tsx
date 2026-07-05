@@ -181,7 +181,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                 <tr
                   key={item.sku || globalIdx}
                   style={{
-                    backgroundColor: isEven ? '#ffffff' : '#f9fafb',
+                    backgroundColor: isEven ? PDF_TOKENS.rowEven : PDF_TOKENS.rowOdd,
                     borderBottom: '1px solid #eef0f2',
                   }}
                 >
@@ -297,8 +297,8 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                                 width: '10px',
                                 height: '10px',
                                 borderRadius: '2px',
-                                background: item.colorHex || '#ccc',
-                                border: '1px solid #666',
+                                background: item.colorHex || PDF_TOKENS.swatchFallback,
+                                border: `1px solid ${PDF_TOKENS.swatchBorder}`,
                                 verticalAlign: 'middle',
                                 marginRight: '4px',
                                 marginBottom: '1px',
