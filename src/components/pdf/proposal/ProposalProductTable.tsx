@@ -251,38 +251,21 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                           lineHeight: '1.4',
                         }}
                       >
-                        {(item.composedCode || item.sku) &&
-                          (() => {
-                            const bgColor = item.colorHex || '#2e7d32';
-                            const hex = bgColor.replace('#', '');
-                            const r = parseInt(hex.substring(0, 2), 16);
-                            const g = parseInt(hex.substring(2, 4), 16);
-                            const b = parseInt(hex.substring(4, 6), 16);
-                            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                            const textColor = luminance > 0.5 ? '#1a1a1a' : '#ffffff';
-                            return (
-                              <span
-                                style={{
-                                  display: 'inline-block',
-                                  background: bgColor,
-                                  color: textColor,
-                                  fontSize: '9px',
-                                  padding: '2px 7px',
-                                  borderRadius: '3px',
-                                  fontWeight: 700,
-                                  fontFamily: "'Roboto', sans-serif",
-                                  whiteSpace: 'nowrap',
-                                  border:
-                                    luminance > 0.85
-                                      ? '1px solid #ccc'
-                                      : '1px solid transparent',
-                                  verticalAlign: 'middle',
-                                }}
-                              >
-                                {item.composedCode || item.sku}
-                              </span>
-                            );
-                          })()}
+                        {(item.composedCode || item.sku) && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              color: '#111',
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              fontFamily: "'Roboto', sans-serif",
+                              whiteSpace: 'nowrap',
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            {item.composedCode || item.sku}
+                          </span>
+                        )}
                         {(item.composedCode || item.sku) && item.color && (
                           <span
                             style={{
@@ -307,7 +290,22 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                             }}
                           >
                             Cor:{' '}
-                            <span style={{ fontWeight: 500, color: '#333' }}>{item.color}</span>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '2px',
+                                background: item.colorHex || '#ccc',
+                                border: '1px solid #bbb',
+                                verticalAlign: 'middle',
+                                marginRight: '4px',
+                                marginBottom: '1px',
+                              }}
+                            />
+                            <span style={{ fontWeight: 500, color: '#333', verticalAlign: 'middle' }}>
+                              {item.color}
+                            </span>
                           </span>
                         )}
                       </div>
