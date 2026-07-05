@@ -190,6 +190,19 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
     expect(namePara?.[0] ?? '').toMatch(/\bpr-2\b/);
   });
 
+  it('wrapper do nome (min-w-0 flex-1) tem pr-4 para separar da coluna QTD', () => {
+    expect(slice).toMatch(/<div className="min-w-0 flex-1 pr-4">/);
+  });
+
+  it('nome mantém line-clamp=2 + overflow-hidden (truncamento controlado sem colar em QTD)', () => {
+    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/)?.[0] ?? '';
+    expect(namePara).toMatch(/WebkitLineClamp:\s*2/);
+    expect(namePara).toMatch(/overflow-hidden/);
+    expect(namePara).not.toMatch(/\btruncate\b/); // truncate em 1 linha quebraria layout multi-linha
+  });
+
+
+
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
     expect(slice).toMatch(/flex shrink-0 items-start gap-4 tabular-nums/); // preço
