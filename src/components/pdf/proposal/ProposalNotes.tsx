@@ -117,20 +117,23 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           </tbody>
         </table>
 
-        <div
-          style={{
-            fontSize: '9px',
-            color: '#777',
-            lineHeight: '1.5',
-            paddingTop: '6px',
-            marginBottom: '8px',
-          }}
-        >
-          {data.notes && <div>- {data.notes}</div>}
-        </div>
+        {data.notes && (
+          <div
+            style={{
+              fontSize: '9px',
+              color: '#777',
+              lineHeight: '1.5',
+              paddingTop: '2px',
+              marginBottom: '2px',
+            }}
+          >
+            <div>- {data.notes}</div>
+          </div>
+        )}
 
         {/* Termos de Aceite */}
-        <div style={{ paddingTop: '8px' }}>
+        <div style={{ paddingTop: '2px' }}>
+
           <div
             style={{
               fontFamily: "'Montserrat', sans-serif",
