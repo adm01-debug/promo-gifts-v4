@@ -35,6 +35,9 @@ const QuoteAddProductButtonHarness = import.meta.env.DEV
 const CalendarHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/CalendarHarness'))
   : null;
+const NegotiationMarkupCardHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/NegotiationMarkupCardHarness'))
+  : null;
 
 
 
@@ -152,6 +155,12 @@ export function AppRoutes() {
         )}
         {CalendarHarness && (
           <Route path="/__visual/calendar" element={<CalendarHarness />} />
+        )}
+        {NegotiationMarkupCardHarness && (
+          <Route
+            path="/__visual/negotiation-markup-card"
+            element={<NegotiationMarkupCardHarness />}
+          />
         )}
 
 
