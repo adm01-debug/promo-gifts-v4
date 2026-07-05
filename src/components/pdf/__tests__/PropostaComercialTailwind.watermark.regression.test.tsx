@@ -20,8 +20,11 @@ import type {
   ProposalTemplateData,
   ProposalItem,
 } from '../ProposalHtmlTemplate';
-
-const WATERMARK_COLOR = 'rgba(200, 0, 0, 0.0805)';
+import {
+  WATERMARK_TEXT,
+  WATERMARK_RGB,
+  WATERMARK_ALPHA,
+} from '../watermarkTokens';
 
 function makeItem(overrides: Partial<ProposalItem> = {}): ProposalItem {
   return {
