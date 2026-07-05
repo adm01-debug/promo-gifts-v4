@@ -273,17 +273,32 @@ export function PdfGenerationDialog({
               </div>
 
               {/* Actions footer */}
-              <div className="flex items-center justify-end gap-3 border-t border-border bg-card px-6 py-4">
-                <Button
-                  size="default"
-                  className="gap-2 px-6 text-sm"
-                  onClick={handleGenerate}
-                  data-testid="pdf-generate-confirm"
-                  aria-label="Gerar e baixar PDF da proposta"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Gerar PDF
-                </Button>
+              <div className="flex items-center justify-end gap-3 border-t border-border bg-card px-4 py-3 sm:px-6 sm:py-4">
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="default"
+                        className={cn(
+                          'gap-2 text-sm min-h-11',
+                          'px-5 sm:px-6 md:px-7',
+                          'shadow-sm transition-all',
+                          'hover:shadow-md hover:brightness-110 active:brightness-95 active:scale-[0.98]',
+                          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                        )}
+                        onClick={handleGenerate}
+                        data-testid="pdf-generate-confirm"
+                        aria-label="Gerar e baixar PDF da proposta"
+                      >
+                        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Gerar PDF</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="end">
+                      Gera e baixa o PDF final da proposta
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
             </div>
