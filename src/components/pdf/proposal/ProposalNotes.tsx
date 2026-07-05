@@ -38,7 +38,7 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
         </div>
 
         {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '8px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2px' }}>
           <tbody>
             <tr>
               <td style={{ width: '25%', padding: '0 8px 0 0', verticalAlign: 'top' }}>
