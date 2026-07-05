@@ -120,7 +120,7 @@ export function generateBIDossierPDF(data: DossierData): Blob {
 
   const meta: string[] = [];
   if (data.client.ramo) meta.push(`Ramo: ${data.client.ramo}`);
-  if (data.client.cnpj) meta.push(`CNPJ: ${data.client.cnpj}`);
+  if (data.client.cnpj) meta.push(`CNPJ: ${maskCnpj(data.client.cnpj)}`);
   if (data.client.cidade) {
     meta.push(
       `Localidade: ${data.client.cidade}${data.client.estado ? `/${data.client.estado}` : ''}`,
