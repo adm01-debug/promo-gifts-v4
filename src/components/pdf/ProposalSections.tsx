@@ -430,7 +430,7 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
               color: '#555',
             }}
           >
-            Valor Total:
+            Total:
           </span>
           <strong
             style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: '24px' }}

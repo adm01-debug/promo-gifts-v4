@@ -114,7 +114,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       letterSpacing: '0.5px',
                     }}
                   >
-                    Valor Total:
+                    Total:
                   </span>
                 </td>
                 <td style={{ padding: '10px 18px', textAlign: 'right' }}>
