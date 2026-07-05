@@ -28,8 +28,8 @@ export function ProposalSellerSignature({ data }: Props) {
       <div
         style={{
           textAlign: 'center',
-          minWidth: '220px',
-          maxWidth: '280px',
+          minWidth: '187px',
+          maxWidth: '238px',
         }}
       >
         {/* Signature: PNG image or Sacramento font fallback */}
