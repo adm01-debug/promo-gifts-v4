@@ -72,6 +72,7 @@ describe('SSOT — TOTALS_BLOCK_WIDTH_PX', () => {
     // Se o teste falhar aqui, rode `bunx vitest run exportSampleProposal -u`
     // (ou o helper `scripts/qa/generate-proposal-pdf.mjs`) para regenerar.
     const forbidden = [/width:230px/, /width:243px/, /width:288px/, /width:304px/]
+
       .map((r) => r.source)
       .filter((s) => s !== `width:${TOTALS_BLOCK_WIDTH_PX}px`);
 
