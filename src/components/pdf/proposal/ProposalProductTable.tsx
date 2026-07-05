@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
-import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
+import { formatPersonalizationSummary } from '@/lib/quotes/personalizationSummary';
 import { getProposalImageUrl } from '@/utils/image-utils';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
@@ -171,7 +171,10 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
               const lineTotal = item.quantity * item.unitPrice + persTotal - itemDiscount;
               const isEven = globalIdx % 2 === 0;
 
-              const gravacao = formatPersonalizationsList(item.personalizations ?? []);
+              const personalizations = item.personalizations ?? [];
+              const gravacaoBadges = personalizations
+                .map((p) => formatPersonalizationSummary(p))
+                .filter((s): s is string => Boolean(s && s.trim().length > 0));
 
               return (
                 <tr
@@ -309,28 +312,35 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                         )}
                       </div>
                     )}
-                    {gravacao && (
-                      <table style={{ borderCollapse: 'collapse', marginTop: '3px' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
-                            <td
-                              style={{
-                                backgroundColor: '#e0f2f1',
-                                padding: '3px 7px',
-                                borderRadius: '0 4px 4px 0',
-                              }}
-                            >
-                              <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 700 }}>
-                                ✦ Gravação:{' '}
-                              </span>
-                              <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 500 }}>
-                                {gravacao}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    {gravacaoBadges.length > 0 && (
+                      <div style={{ marginTop: '3px', display: 'block' }}>
+                        {gravacaoBadges.map((g, i) => (
+                          <table
+                            key={i}
+                            style={{
+                              borderCollapse: 'collapse',
+                              marginTop: i === 0 ? 0 : '2px',
+                            }}
+                          >
+                            <tbody>
+                              <tr>
+                                <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
+                                <td
+                                  style={{
+                                    backgroundColor: '#e0f2f1',
+                                    padding: '3px 7px',
+                                    borderRadius: '0 4px 4px 0',
+                                  }}
+                                >
+                                  <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 600 }}>
+                                    ✦ {g}
+                                  </span>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td
