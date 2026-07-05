@@ -37,12 +37,16 @@ function headerSlice(): string {
 }
 
 describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () => {
-  it('nome do produto usa line-clamp-2 (2 linhas) e não usa truncate', () => {
+  it('nome do produto força quebra em até 2 linhas (webkit-box + WebkitLineClamp) e não usa truncate', () => {
     const slice = headerSlice();
-    expect(slice).toMatch(/line-clamp-2[^"]*"\s*>\s*\{item\.product_name\}/);
-    // Garante que o parágrafo do nome NÃO voltou para truncate
-    const namePara = slice.match(/<p[^>]*>\s*\{item\.product_name\}/);
+    // Inline style com WebkitLineClamp:2 + display:-webkit-box (garante 2 linhas
+    // mesmo quando o Tailwind purge/plugin não injeta line-clamp).
+    expect(slice).toMatch(/WebkitLineClamp:\s*2/);
+    expect(slice).toMatch(/display:\s*['"]-webkit-box['"]/);
+    expect(slice).toMatch(/WebkitBoxOrient:\s*['"]vertical['"]/);
+    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/);
     expect(namePara?.[0] ?? '').not.toMatch(/\btruncate\b/);
+    expect(namePara?.[0] ?? '').toMatch(/\bbreak-words\b/);
   });
 
   it('SKU e cor ficam empilhados verticalmente (flex-col), cor abaixo do código', () => {
@@ -181,7 +185,8 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
   const slice = headerSlice();
 
   it('nome tem pr-1 (respiro à direita) para não colar no bloco de preço/ações', () => {
-    expect(slice).toMatch(/line-clamp-2 pr-1[^"]*"\s*>\s*\{item\.product_name\}/);
+    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/);
+    expect(namePara?.[0] ?? '').toMatch(/\bpr-1\b/);
   });
 
   it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
