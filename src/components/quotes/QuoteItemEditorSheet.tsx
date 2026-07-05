@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { Check, Package } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import {
   AlertDialog,
   AlertDialogAction,
