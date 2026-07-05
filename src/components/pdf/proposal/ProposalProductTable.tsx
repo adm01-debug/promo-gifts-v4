@@ -332,7 +332,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                                   }}
                                 >
                                   <span style={{ fontSize: '9px', color: '#00796b', fontWeight: 600, lineHeight: 1.2 }}>
-                                    ✦ {g}
+                                    {g}
                                   </span>
                                 </td>
                               </tr>
