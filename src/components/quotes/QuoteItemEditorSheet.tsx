@@ -115,7 +115,7 @@ export function QuoteItemEditorSheet({
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs text-xs">
                   Confirma as escolhas deste produto (cor, quantidade, personalização) e fecha o
-                  editor. Não grava o orçamento no banco — use “Salvar Alterações” no resumo para isso.
+                  editor. Não grava o orçamento no banco — use “Salvar Rascunho” no resumo para isso.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

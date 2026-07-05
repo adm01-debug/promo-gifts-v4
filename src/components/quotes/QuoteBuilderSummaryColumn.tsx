@@ -1442,7 +1442,7 @@ export function QuoteBuilderSummaryColumn({
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+                      Salvar Rascunho
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs text-xs">
@@ -1463,7 +1463,7 @@ export function QuoteBuilderSummaryColumn({
         </div>
       </div>
 
-      {/* Confirmação — Salvar Alterações do orçamento inteiro */}
+      {/* Confirmação — Salvar Rascunho do orçamento inteiro */}
       <Dialog
         open={confirmSaveDraftOpen}
         onOpenChange={(open) => {
@@ -1479,7 +1479,7 @@ export function QuoteBuilderSummaryColumn({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Save className="h-5 w-5 text-primary" />
-              Salvar alterações do orçamento?
+              Salvar rascunho do orçamento?
             </DialogTitle>
             <DialogDescription>
               Todas as alterações feitas neste orçamento (itens, quantidades, descontos,
@@ -1509,7 +1509,7 @@ export function QuoteBuilderSummaryColumn({
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              Salvar alterações
+              Salvar rascunho
             </Button>
           </DialogFooter>
         </DialogContent>

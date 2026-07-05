@@ -49,7 +49,7 @@ function SaveDraftHarness({
               onClick={() => (isEditMode ? setOpen(true) : onSave('draft'))}
             >
               <Save className="mr-2 h-4 w-4" />
-              {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+              Salvar Rascunho
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -63,7 +63,7 @@ function SaveDraftHarness({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent data-testid="quote-save-draft-confirm-dialog">
           <DialogHeader>
-            <DialogTitle>Salvar alterações do orçamento?</DialogTitle>
+            <DialogTitle>Salvar rascunho do orçamento?</DialogTitle>
             <DialogDescription>
               Todas as alterações feitas neste orçamento (itens, quantidades, descontos,
               markup e notas) serão gravadas no banco. O orçamento não será enviado para
@@ -81,7 +81,7 @@ function SaveDraftHarness({
                 onSave('draft');
               }}
             >
-              Salvar alterações
+              Salvar rascunho
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -90,13 +90,13 @@ function SaveDraftHarness({
   );
 }
 
-describe('QuoteBuilderSummaryColumn — fluxo Salvar Alterações', () => {
+describe('QuoteBuilderSummaryColumn — fluxo Salvar Rascunho', () => {
   it('modo edição: clique abre o Dialog e NÃO chama onSave direto', async () => {
     const onSave = vi.fn();
     render(<SaveDraftHarness isEditMode onSave={onSave} />);
     await userEvent.click(screen.getByTestId('quote-save-draft'));
     expect(screen.getByTestId('quote-save-draft-confirm-dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Salvar alterações do orçamento\?/)).toBeInTheDocument();
+    expect(screen.getByText(/Salvar rascunho do orçamento\?/)).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
   });
 
@@ -129,11 +129,11 @@ describe('QuoteBuilderSummaryColumn — fluxo Salvar Alterações', () => {
     expect(onSave).toHaveBeenCalledWith('draft');
   });
 
-  it('label do botão alterna entre "Salvar Alterações" e "Salvar Rascunho" conforme isEditMode', () => {
+  it('label do botão é sempre "Salvar Rascunho" independente de isEditMode', () => {
     const { rerender } = render(<SaveDraftHarness isEditMode onSave={vi.fn()} />);
-    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/Salvar Alterações/);
+    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/^Salvar Rascunho$/);
     rerender(<SaveDraftHarness isEditMode={false} onSave={vi.fn()} />);
-    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/Salvar Rascunho/);
+    expect(screen.getByTestId('quote-save-draft')).toHaveTextContent(/^Salvar Rascunho$/);
   });
 
   it('Escape fecha o Dialog sem disparar onSave (acessibilidade teclado)', async () => {
