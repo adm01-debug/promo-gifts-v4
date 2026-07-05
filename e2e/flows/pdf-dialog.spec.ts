@@ -49,7 +49,7 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
   );
   test.beforeEach(() => requireAuth());
 
-  test('abre, valida aviso + tooltip, gera PDF (nome + tamanho) e fecha limpo', async ({
+  test('abre, valida aviso + tooltip, gera PDF (nome + tamanho + conteúdo) e fecha limpo', async ({
     page,
   }, testInfo) => {
     const isMobile = testInfo.project.name.startsWith('mobile-');
@@ -66,16 +66,35 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     await expect(pill).toHaveAttribute('aria-label', /aviso|confira/i);
     if (!isMobile) await expect(pill).toBeVisible();
 
-    // Tooltip do botão — só desktop (touch não abre por hover)
+    // Captura número da proposta no header (padrão "Proposta Comercial 10015/26")
+    let quoteNumber: string | null = null;
     if (!isMobile) {
-      await confirm.focus();
-      await confirm.hover();
-      await expect(
-        page.getByRole('tooltip', { name: /gera e baixa o pdf final da proposta/i }),
-      ).toBeVisible({ timeout: 3_000 });
+      const title = await page.locator('[role="dialog"] .truncate').first().textContent();
+      const m = title?.match(/(\d{3,}\/?\d*)/);
+      quoteNumber = m?.[1] ?? null;
     }
 
-    // Download — nome + tamanho mínimo
+    // Tooltip do botão — foco + hover + contrato ARIA
+    if (!isMobile) {
+      await confirm.focus();
+      // Ao focar, Radix Tooltip abre e liga aria-describedby ao content.
+      const tooltip = page.getByRole('tooltip', {
+        name: /gera e baixa o pdf final da proposta/i,
+      });
+      await expect(tooltip).toBeVisible({ timeout: 3_000 });
+      const describedBy = await confirm.getAttribute('aria-describedby');
+      expect(describedBy, 'confirm sem aria-describedby quando tooltip aberta').toBeTruthy();
+      if (describedBy) {
+        const tooltipId = await tooltip.getAttribute('id');
+        expect(describedBy.split(/\s+/)).toContain(tooltipId);
+      }
+      // Blur remove tooltip e limpa aria-describedby (contrato Radix).
+      await page.locator('body').click({ position: { x: 5, y: 5 } }).catch(() => undefined);
+      await confirm.evaluate((el: HTMLElement) => el.blur());
+      await expect(tooltip).toBeHidden({ timeout: 3_000 });
+    }
+
+    // Download — nome + tamanho mínimo + conteúdo textual
     const downloadPromise = page
       .waitForEvent('download', { timeout: 20_000 })
       .catch(() => null);
@@ -88,6 +107,36 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
         const { statSync } = await import('node:fs');
         const size = statSync(path).size;
         expect(size, `PDF suspeito de ser erro (${size} bytes)`).toBeGreaterThan(MIN_PDF_BYTES);
+
+        // Extração textual — via pdftotext (poppler). Se ausente localmente,
+        // o teste apenas registra e segue; no CI o step instala poppler-utils.
+        const { spawnSync } = await import('node:child_process');
+        const res = spawnSync('pdftotext', ['-layout', '-nopgbrk', path, '-'], {
+          encoding: 'utf-8',
+        });
+        if (res.status === 0 && res.stdout) {
+          const text = res.stdout.replace(/\s+/g, ' ').toLowerCase();
+          // Deve mencionar a natureza do documento (proposta/orçamento).
+          expect(text, 'PDF não contém marcadores de proposta').toMatch(
+            /proposta|or[çc]amento/i,
+          );
+          // Se capturamos o número do orçamento, ele precisa aparecer no PDF.
+          if (quoteNumber) {
+            const [head] = quoteNumber.split('/');
+            expect(text, `número ${quoteNumber} ausente no PDF`).toContain(head.toLowerCase());
+          }
+          // Algum campo esperado do cliente (razão social/CNPJ/e-mail/contato).
+          expect(
+            text,
+            'PDF sem campos-âncora do cliente',
+          ).toMatch(/cliente|raz[ãa]o\s+social|cnpj|contato|e-?mail|telefone/i);
+        } else {
+          testInfo.annotations.push({
+            type: 'pdftotext-missing',
+            description:
+              'pdftotext não disponível — extração textual pulada. Em CI o step instala poppler-utils.',
+          });
+        }
       }
     }
 
