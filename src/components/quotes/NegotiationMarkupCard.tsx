@@ -164,7 +164,10 @@ export function NegotiationMarkupCard({
               </div>
 
               {/* Cliente vê */}
-              <div className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2">
+              <div
+                data-testid="price-card-client"
+                className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 p-2"
+              >
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-primary">
                   Cliente vê
                 </p>

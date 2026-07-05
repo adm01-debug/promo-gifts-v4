@@ -3,46 +3,116 @@ import { render, screen } from '@testing-library/react';
 import { NegotiationMarkupCard } from '@/components/quotes/NegotiationMarkupCard';
 
 /**
- * Regressão estrutural: quando o markup está ativo, os cards de preço
- * (REAL e CLIENTE VÊ) devem aparecer logo após o header "Margem de Negociação",
- * empilhados em coluna única (grid-cols-1) — REAL primeiro, CLIENTE VÊ depois —
- * em todas as larguras de tela.
+ * Regressão estrutural do trio (Margem de Negociação + REAL + CLIENTE VÊ):
+ *
+ * - Presença e ordem dos cards de preço (REAL → CLIENTE VÊ)
+ * - Layout horizontal (`grid-cols-2`) preservado em qualquer viewport
+ *   (JSDOM não aplica media queries — a fixação do token garante que
+ *   variantes `sm:`/`md:`/`lg:`/`xl:` não introduzam quebra de coluna)
+ * - Espaçamento consistente (`gap-2`, `pt-2`, borda superior de separação)
+ * - Alinhamento vertical do trio via `space-y-3` no container do card
+ * - data-testids estáveis (`negotiation-markup-card`, `price-card-real`,
+ *   `price-card-client`, `negotiation-price-grid`)
  */
-describe('NegotiationMarkupCard — ordem dos cards de preço', () => {
-  const props = {
-    value: 10, // ativa o preview
-    onChange: () => {},
-    realSubtotal: 1000,
-    apparentDiscountPercent: 10,
-    realDiscountPercent: 5,
-    maxDiscountPercent: 20,
-  };
+
+const baseProps = {
+  value: 10, // ativa o preview de preços
+  onChange: () => {},
+  realSubtotal: 1000,
+  apparentDiscountPercent: 10,
+  realDiscountPercent: 5,
+  maxDiscountPercent: 20,
+};
+
+const VIEWPORT_WRAPPERS: Array<{ label: string; width: string }> = [
+  { label: 'mobile (320px)', width: '320px' },
+  { label: 'sm (640px)', width: '640px' },
+  { label: 'md (768px)', width: '768px' },
+  { label: 'lg (1024px)', width: '1024px' },
+  { label: 'xl (1440px)', width: '1440px' },
+];
+
+describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
+  it('expõe data-testid nos três alvos (card raiz + REAL + CLIENTE VÊ)', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    expect(screen.getByTestId('negotiation-markup-card')).toBeInTheDocument();
+    expect(screen.getByTestId('negotiation-price-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('price-card-real')).toBeInTheDocument();
+    expect(screen.getByTestId('price-card-client')).toBeInTheDocument();
+  });
 
   it('renderiza REAL antes de CLIENTE VÊ na ordem do DOM', () => {
-    render(<NegotiationMarkupCard {...props} />);
-    const real = screen.getByText(/Real \(interno\)/i);
-    const cliente = screen.getByText(/Cliente vê/i);
-    expect(real).toBeInTheDocument();
-    expect(cliente).toBeInTheDocument();
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const real = screen.getByTestId('price-card-real');
+    const cliente = screen.getByTestId('price-card-client');
     // Node.DOCUMENT_POSITION_FOLLOWING = 4
     expect(real.compareDocumentPosition(cliente) & 4).toBeTruthy();
   });
 
-  it('usa grid-cols-2 (layout horizontal lado a lado)', () => {
-    const { container } = render(<NegotiationMarkupCard {...props} />);
-    const grid = container.querySelector('.grid.grid-cols-2');
-    expect(grid).not.toBeNull();
-    expect(grid?.className).not.toMatch(/grid-cols-1(?!\d)/);
+  it('trio compartilha o mesmo container do card (alinhamento visual)', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const card = screen.getByTestId('negotiation-markup-card');
+    const grid = screen.getByTestId('negotiation-price-grid');
+    // Header "Margem de Negociação" é filho direto do card
+    const header = card.querySelector('h4');
+    expect(header?.textContent).toMatch(/Margem de Negociação/i);
+    expect(card).toContainElement(header as HTMLElement);
+    // Grid dos preços também está dentro do mesmo card
+    expect(card).toContainElement(grid);
+    // Espaçamento vertical uniforme entre header/slider/grid/preço final
+    expect(card.className).toMatch(/\bspace-y-3\b/);
   });
 
-  it('os dois cards são filhos diretos do mesmo grid (mesmo alinhamento)', () => {
-    const { container } = render(<NegotiationMarkupCard {...props} />);
-    const grid = container.querySelector('.grid.grid-cols-2') as HTMLElement;
-    const real = screen.getByText(/Real \(interno\)/i).closest('div.rounded-lg');
-    const cliente = screen.getByText(/Cliente vê/i).closest('div.rounded-lg');
-    expect(real?.parentElement).toBe(grid);
-    expect(cliente?.parentElement).toBe(grid);
+  it('grid usa grid-cols-2 fixo + gap-2 + borda superior de separação', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const grid = screen.getByTestId('negotiation-price-grid');
+    expect(grid.className).toMatch(/\bgrid-cols-2\b/);
+    expect(grid.className).toMatch(/\bgap-2\b/);
+    expect(grid.className).toMatch(/\bpt-2\b/);
+    expect(grid.className).toMatch(/border-t/);
+    // Nenhuma variante responsiva pode reintroduzir grid-cols-1
+    expect(grid.className).not.toMatch(/(sm|md|lg|xl|2xl):grid-cols-1\b/);
+  });
+
+  it('REAL e CLIENTE VÊ são filhos DIRETOS do grid (mesma linha, mesmo alinhamento)', () => {
+    render(<NegotiationMarkupCard {...baseProps} />);
+    const grid = screen.getByTestId('negotiation-price-grid');
+    const real = screen.getByTestId('price-card-real');
+    const cliente = screen.getByTestId('price-card-client');
+    expect(real.parentElement).toBe(grid);
+    expect(cliente.parentElement).toBe(grid);
+    expect(grid.children).toHaveLength(2);
     expect(grid.children[0]).toBe(real);
     expect(grid.children[1]).toBe(cliente);
   });
+
+  it.each(VIEWPORT_WRAPPERS)(
+    'mantém ordem, presença e horizontalidade do trio em $label',
+    ({ width }) => {
+      const { unmount } = render(
+        <div style={{ width }} data-testid="viewport-wrapper">
+          <NegotiationMarkupCard {...baseProps} />
+        </div>,
+      );
+      const card = screen.getByTestId('negotiation-markup-card');
+      const grid = screen.getByTestId('negotiation-price-grid');
+      const real = screen.getByTestId('price-card-real');
+      const cliente = screen.getByTestId('price-card-client');
+
+      // Presença
+      expect(card).toBeInTheDocument();
+      expect(real).toBeInTheDocument();
+      expect(cliente).toBeInTheDocument();
+
+      // Ordem (REAL → CLIENTE VÊ)
+      expect(grid.children[0]).toBe(real);
+      expect(grid.children[1]).toBe(cliente);
+
+      // Layout horizontal preservado
+      expect(grid.className).toMatch(/\bgrid-cols-2\b/);
+      expect(grid.className).not.toMatch(/\bgrid-cols-1\b/);
+
+      unmount();
+    },
+  );
 });
