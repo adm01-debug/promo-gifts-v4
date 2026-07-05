@@ -81,7 +81,7 @@ function SaveDraftHarness({
                 onSave('draft');
               }}
             >
-              Salvar alterações
+              Salvar rascunho
             </Button>
           </DialogFooter>
         </DialogContent>
