@@ -1479,7 +1479,7 @@ export function QuoteBuilderSummaryColumn({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Save className="h-5 w-5 text-primary" />
-              Salvar alterações do orçamento?
+              Salvar rascunho do orçamento?
             </DialogTitle>
             <DialogDescription>
               Todas as alterações feitas neste orçamento (itens, quantidades, descontos,
