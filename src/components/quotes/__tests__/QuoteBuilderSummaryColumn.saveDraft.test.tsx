@@ -49,7 +49,7 @@ function SaveDraftHarness({
               onClick={() => (isEditMode ? setOpen(true) : onSave('draft'))}
             >
               <Save className="mr-2 h-4 w-4" />
-              {isEditMode ? 'Salvar Alterações' : 'Salvar Rascunho'}
+              Salvar Rascunho
             </Button>
           </TooltipTrigger>
           <TooltipContent>
