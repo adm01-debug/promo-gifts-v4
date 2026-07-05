@@ -123,3 +123,86 @@ describe('QuoteBuilderSummaryColumn ↔ NegotiationMarkupCard — paridade de sp
     expect(NEGOTIATION_SOURCE).toMatch(/border-t border-border\/40 pt-2/);
   });
 });
+
+describe('QuoteBuilderSummaryColumn — modo Expandido inalterado', () => {
+  it('bloco expandido (Qtd: X × R$ Y ... Total) permanece gated por !isCollapsed', () => {
+    // A mudança do nome para 2 linhas não pode ter mexido no bloco expandido.
+    expect(SOURCE).toMatch(/\{!isCollapsed && \(/);
+    expect(SOURCE).toMatch(/<span className="text-muted-foreground">\s*Qtd:\s*<\/span>/);
+    expect(SOURCE).toMatch(/formatCurrency\(item\.unit_price\)/);
+    expect(SOURCE).toMatch(/formatCurrency\(item\.quantity \* item\.unit_price\)/);
+    // "×" separador entre Qtd e unit_price no bloco expandido
+    expect(SOURCE).toMatch(/<span className="text-muted-foreground">×<\/span>/);
+  });
+
+  it('bloco recolhido é mutuamente exclusivo do expandido (isCollapsed vs !isCollapsed)', () => {
+    const collapsedIdx = SOURCE.indexOf('{isCollapsed && (');
+    const expandedIdx = SOURCE.indexOf('{!isCollapsed && (');
+    expect(collapsedIdx).toBeGreaterThan(-1);
+    expect(expandedIdx).toBeGreaterThan(collapsedIdx);
+  });
+});
+
+describe('QuoteBuilderSummaryColumn — a11y de teclado no cartão recolhido', () => {
+  const slice = headerSlice();
+
+  it('nenhum botão do header força tabIndex negativo (ordem natural de foco preservada)', () => {
+    expect(slice).not.toMatch(/tabIndex=\{-1\}/);
+    expect(slice).not.toMatch(/tabindex="-1"/i);
+  });
+
+  it('cada botão de ação expõe aria-label descritivo em PT-BR', () => {
+    expect(slice).toMatch(/aria-label="Editar"/);
+    expect(slice).toMatch(/aria-label="Excluir"/);
+    expect(slice).toMatch(/aria-label=\{isCollapsed \? 'Expandir' : 'Recolher'\}/);
+    // Drag handle vive fora do slice do header (antes do ProductThumb) — checar no SOURCE
+    expect(SOURCE).toMatch(/aria-label="Arrastar para reordenar"/);
+  });
+
+  it('botão de toggle expõe aria-expanded e aria-pressed sincronizados com isCollapsed', () => {
+    expect(slice).toMatch(/aria-expanded=\{!isCollapsed\}/);
+    expect(slice).toMatch(/aria-pressed=\{isCollapsed\}/);
+    expect(slice).toMatch(/data-collapsed=\{isCollapsed\}/);
+  });
+
+  it('ordem de foco por Tab segue DOM: drag → editar → excluir → toggle', () => {
+    const drag = SOURCE.indexOf('aria-label="Arrastar para reordenar"');
+    const edit = SOURCE.indexOf('aria-label="Editar"');
+    const del = SOURCE.indexOf('aria-label="Excluir"');
+    const toggle = SOURCE.indexOf("aria-label={isCollapsed ? 'Expandir' : 'Recolher'}");
+    expect(drag).toBeGreaterThan(-1);
+    expect(drag).toBeLessThan(edit);
+    expect(edit).toBeLessThan(del);
+    expect(del).toBeLessThan(toggle);
+  });
+});
+
+describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', () => {
+  const slice = headerSlice();
+
+  it('nome tem pr-1 (respiro à direita) para não colar no bloco de preço/ações', () => {
+    expect(slice).toMatch(/line-clamp-2 pr-1[^"]*"\s*>\s*\{item\.product_name\}/);
+  });
+
+  it('bloco de preço recolhido e ações são shrink-0 (não são comprimidos pelo nome longo)', () => {
+    expect(slice).toMatch(/flex shrink-0 items-end gap-3 tabular-nums/); // preço
+    expect(slice).toMatch(/flex h-\[1\.125rem\] shrink-0 items-center gap-0\.5/); // ações
+  });
+
+  it('valores numéricos (Qtd, unit_price, subtotal) usam tabular-nums para largura estável', () => {
+    // Tabular-nums no wrapper garante largura consistente independente do valor
+    expect(slice).toMatch(/tabular-nums/);
+    // Subtotal é font-semibold para destaque visual sem alterar altura de linha
+    expect(slice).toMatch(/text-xs font-semibold text-foreground/);
+  });
+
+  it('rótulos das 3 colunas usam text-[9px] uppercase (altura consistente entre variações)', () => {
+    const labels = slice.match(/text-\[9px\] font-semibold uppercase tracking-wider/g) ?? [];
+    // Um por coluna: Qtd, Vl Unitário, Subtotal
+    expect(labels.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('container do row usa items-start + gap-2 (nomes de 2 linhas alinham pelo topo, sem colisão)', () => {
+    expect(SOURCE).toMatch(/<div className="flex items-start gap-2">/);
+  });
+});
