@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { Download, FileText, Loader2, Check, Printer, Info } from 'lucide-react';
+import { Download, FileText, Check, Printer, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
