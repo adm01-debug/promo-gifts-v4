@@ -393,7 +393,7 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
       : 'Cortesia';
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-      <div style={{ width: '380px' }}>
+      <div style={{ width: '304px' }}>
         <div style={totalsRowStyle}>
           <span>Subtotal:</span>
           <span style={{ fontWeight: 500 }}>{fmt(data.subtotal)}</span>
