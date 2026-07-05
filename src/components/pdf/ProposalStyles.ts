@@ -29,6 +29,15 @@ export const PDF_TOKENS = {
   rowOdd: '#f9fafb',
 } as const;
 
+/**
+ * Largura canônica do bloco de totais (SSOT).
+ * Compartilhada entre `ProposalSections.TotalsSection` (PDF interno) e
+ * `proposal/ProposalTotals` (proposta exportada) para evitar divergência
+ * visual entre as duas variações. Valor atual reflete redução de 20%
+ * aplicada em 2026-07 sobre a largura anterior (288px/304px).
+ */
+export const TOTALS_BLOCK_WIDTH_PX = 230;
+
 
 export function fmt(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

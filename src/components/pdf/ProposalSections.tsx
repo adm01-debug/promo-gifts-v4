@@ -12,6 +12,7 @@ import {
   thStyle,
   tdStyle,
   totalsRowStyle,
+  TOTALS_BLOCK_WIDTH_PX,
 } from './ProposalStyles';
 import { maskCnpj } from '@/utils/masks';
 import { getProposalImageUrl } from '@/utils/image-utils';
@@ -393,7 +394,7 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
       : 'Cortesia';
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-      <div style={{ width: '243px' }}>
+      <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         <div style={totalsRowStyle}>
           <span>Subtotal:</span>
           <span style={{ fontWeight: 500 }}>{fmt(data.subtotal)}</span>

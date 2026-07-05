@@ -1,5 +1,8 @@
-// Totals block — label "Total:" (sem "Valor"), largura 288px
+// Totals block — label "Total:" (sem "Valor"). Largura vem do SSOT
+// `TOTALS_BLOCK_WIDTH_PX` em `../ProposalStyles` para manter paridade
+// com `TotalsSection` do PDF interno.
 import { type ProposalTemplateData, formatShipping } from '../ProposalHtmlTemplate';
+import { TOTALS_BLOCK_WIDTH_PX } from '../ProposalStyles';
 
 function fmt(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -14,7 +17,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-      <div style={{ width: '230px' }}>
+      <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         {/* Subtotal row */}
         <table
           style={{ width: '100%', borderCollapse: 'collapse', borderBottom: '1px solid #f0f0f0' }}
@@ -104,7 +107,10 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#00c853' }}>
             <tbody>
               <tr>
-                <td style={{ padding: '10px 18px' }}>
+                {/* verticalAlign: middle garante alinhamento do rótulo "Total:" (13px)
+                    com o valor (19px) — sem isso o baseline default deixa o label
+                    ~2px acima da linha central após a redução de largura. */}
+                <td style={{ padding: '10px 18px', verticalAlign: 'middle' }}>
                   <span
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
@@ -118,7 +124,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                     Total:
                   </span>
                 </td>
-                <td style={{ padding: '10px 18px', textAlign: 'right' }}>
+                <td style={{ padding: '10px 18px', textAlign: 'right', verticalAlign: 'middle' }}>
                   <strong
                     style={{
                       fontFamily: "'Montserrat', sans-serif",
