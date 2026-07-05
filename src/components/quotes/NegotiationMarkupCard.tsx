@@ -215,7 +215,7 @@ export function NegotiationMarkupCard({
                 step={1}
                 onValueChange={(v) => onChange(v[0] ?? 0)}
                 aria-label="Margem de negociação em porcentagem"
-                aria-valuetext={`${value.toFixed(0)} por cento de acréscimo no preço apresentado`}
+                
               />
               <div
                 className="flex justify-between text-[9px] text-muted-foreground/60"
