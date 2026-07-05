@@ -95,7 +95,10 @@ export function PdfGenerationDialog({
       });
       setProgress(50);
 
-      const blob = await generateProposalPDFv2(proposalData);
+      // CRÍTICO: propagar isDraft para que a marca d'água RASCUNHO
+      // seja renderizada em cada página do PDF. Sem isso o rascunho sai
+      // idêntico a uma proposta final → risco operacional grave.
+      const blob = await generateProposalPDFv2(proposalData, { isDraft });
 
       // Step 3: Finalizando
       setProgress(PROGRESS_STEPS[1].pct);
