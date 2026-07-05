@@ -90,7 +90,7 @@ function SaveDraftHarness({
   );
 }
 
-describe('QuoteBuilderSummaryColumn — fluxo Salvar Alterações', () => {
+describe('QuoteBuilderSummaryColumn — fluxo Salvar Rascunho', () => {
   it('modo edição: clique abre o Dialog e NÃO chama onSave direto', async () => {
     const onSave = vi.fn();
     render(<SaveDraftHarness isEditMode onSave={onSave} />);
