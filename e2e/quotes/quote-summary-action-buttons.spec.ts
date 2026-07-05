@@ -74,6 +74,11 @@ test.describe('QuoteBuilderSummaryColumn — botões Criar / Rascunho lado a lad
     await expect(criar).toBeVisible();
     await expect(rascunho).toBeVisible();
 
+    // Contrato de label + a11y — mesmo em modo "novo rascunho" (rota /orcamentos/novo),
+    // o botão deve exibir exatamente "Salvar Rascunho" e ter aria-label idêntico.
+    await expect(rascunho).toHaveText(/^Salvar Rascunho$/);
+    await expect(rascunho).toHaveAttribute('aria-label', 'Salvar Rascunho');
+
     const cBox = await criar.boundingBox();
     const rBox = await rascunho.boundingBox();
     expect(cBox && rBox).toBeTruthy();
