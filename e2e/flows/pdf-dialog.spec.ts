@@ -31,15 +31,26 @@ const AUTHED_PROJECTS = new Set([
 
 const MIN_PDF_BYTES = 1024; // 1 KB — abaixo disso quase certamente é erro.
 
-async function openPdfDialog(page: import('@playwright/test').Page) {
-  const ok = await gotoQuoteScenario(page, 'enviada');
-  if (!ok) test.skip(true, 'Sem orçamento enviado no ambiente.');
+async function openPdfDialog(
+  page: import('@playwright/test').Page,
+  scenario: 'enviada' | 'rascunho' = 'enviada',
+) {
+  const ok = await gotoQuoteScenario(page, scenario);
+  if (!ok) test.skip(true, `Sem orçamento no estado "${scenario}" no ambiente.`);
   const trigger = page.getByTestId('pdf-preview-trigger');
   await expect(trigger).toBeVisible();
   await trigger.click();
   const confirm = page.getByTestId('pdf-generate-confirm');
   await expect(confirm).toBeVisible({ timeout: 10_000 });
   return { trigger, confirm };
+}
+
+/** Extrai texto por página via pdftotext. Retorna null se a lib faltar. */
+async function extractPdfPages(pdfPath: string): Promise<string[] | null> {
+  const { spawnSync } = await import('node:child_process');
+  const res = spawnSync('pdftotext', ['-layout', pdfPath, '-'], { encoding: 'utf-8' });
+  if (res.status !== 0 || !res.stdout) return null;
+  return res.stdout.split('\f').filter((p) => p.trim().length > 0);
 }
 
 test.describe('PdfGenerationDialog · fluxo completo', () => {
