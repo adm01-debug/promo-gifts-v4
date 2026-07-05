@@ -225,13 +225,6 @@ export function NegotiationMarkupCard({
               />
             )}
 
-
-            {/* Final price + status */}
-            <div className="flex items-center justify-between border-t border-border/40 pt-1">
-              <span className="text-[11px] text-muted-foreground">Preço final (cliente paga)</span>
-              <span className="text-sm font-bold tabular-nums">{formatCurrency(finalPrice)}</span>
-            </div>
-
             {/* Status badge */}
             {maxDiscountPercent !== null &&
               (isOverLimit ? (
