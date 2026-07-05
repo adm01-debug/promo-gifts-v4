@@ -312,29 +312,75 @@ export function PdfGenerationDialog({
           )}
 
           {stage === 'generating' && (
-            <div className="flex flex-col items-center justify-center gap-6 px-6 py-20">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            /* v3 — Minimalista denso: card compacto ~50% menor, anel duplo,
+               barra fina com glow, 3 micro-steps (LAYOUT / PÁGINAS / PDF) e
+               aviso discreto com ícone. Respeita prefers-reduced-motion. */
+            <div
+              className="flex flex-col items-center gap-6 p-8 text-center animate-fade-in"
+              role="status"
+              aria-live="polite"
+              aria-label={`Gerando PDF — ${progressLabel}`}
+            >
+              {/* Spinner: anel duplo com ponto pulsante */}
+              <div className="relative flex h-12 w-12 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                <div className="absolute inset-0 animate-spin rounded-full border-2 border-primary border-t-transparent motion-reduce:animate-none" />
+                <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))] motion-safe:animate-pulse" />
               </div>
-              <div className="w-full max-w-md space-y-2 text-center">
-                <p className="text-lg font-semibold">{progressLabel}...</p>
-                <Progress value={progress} className="h-2" />
-                <div className="flex justify-between pt-1 text-xs text-muted-foreground">
-                  {PROGRESS_STEPS.map((step, i) => (
-                    <span
-                      key={i}
-                      className={cn(
-                        'transition-colors',
-                        progress >= step.pct ? 'font-medium text-primary' : '',
-                      )}
-                    >
-                      {step.label}
-                    </span>
-                  ))}
+
+              {/* Heading dinâmico do step atual */}
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                {progressLabel}
+                <span className="text-muted-foreground">…</span>
+              </h2>
+
+              {/* Progress + micro-steps */}
+              <div className="w-full space-y-4">
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.6)] transition-[width] duration-500 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {PROGRESS_STEPS.map((step, i) => {
+                    const active = progress >= step.pct;
+                    const shortLabel =
+                      i === 0 ? 'Layout' : i === 1 ? 'Páginas' : 'PDF';
+                    const align =
+                      i === 0 ? 'items-start' : i === 1 ? 'items-center' : 'items-end';
+                    return (
+                      <div key={step.label} className={cn('flex flex-col gap-1.5', align)}>
+                        <div
+                          className={cn(
+                            'h-1 w-full rounded-full transition-opacity duration-300',
+                            active ? 'bg-primary opacity-100' : 'bg-muted opacity-40',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'text-[10px] font-medium uppercase tracking-wider transition-colors',
+                            active
+                              ? i === 1
+                                ? 'font-bold text-primary'
+                                : 'text-primary/80'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          {shortLabel}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              {/* FIX #4: Feedback visual — usuário sabe que não pode fechar */}
-              <p className="text-xs text-muted-foreground">Aguarde, não feche esta janela</p>
+
+              {/* Aviso discreto — FIX #4 */}
+              <p className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground/70">
+                <Info className="h-3 w-3" aria-hidden="true" />
+                Aguarde, não feche esta janela
+              </p>
             </div>
           )}
 
