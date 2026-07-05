@@ -37,6 +37,9 @@
     "e2e:collapse:seed": "npx playwright test --project=setup && npm run e2e:collapse:update:all",
     "e2e:collapse:calibrate": "node scripts/qa/calibrate-collapse-thresholds.mjs",
     "e2e:collapse:calibrate:dry-run": "node scripts/qa/calibrate-collapse-thresholds.mjs --dry-run",
+    "e2e:collapse:check-baselines": "node scripts/qa/check-collapse-baselines.mjs",
+    "e2e:collapse:check-baselines:tablet": "node scripts/qa/check-collapse-baselines.mjs --viewport tablet",
+
     "e2e:visual-diff-report": "node scripts/build-visual-diff-report.mjs --results test-results --out visual-diff-report/index.html --title 'Visual diffs'",
     "e2e:bootstrap": "bun install --frozen-lockfile && npm run e2e:install",
     "dev": "npm run e2e:generate-fixtures && vite",
