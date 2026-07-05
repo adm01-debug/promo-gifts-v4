@@ -63,15 +63,13 @@ describe('NegotiationMarkupCard — trio (margem + REAL + CLIENTE VÊ)', () => {
     expect(card.className).toMatch(/\bspace-y-1\.5\b/);
   });
 
-  it('grid usa grid-cols-2 fixo + gap-2 + borda superior de separação', () => {
+  it('grid empilha REAL sobre CLIENTE com flex-col + gap-1.5 + borda superior', () => {
     render(<NegotiationMarkupCard {...baseProps} />);
     const grid = screen.getByTestId('negotiation-price-grid');
-    expect(grid.className).toMatch(/\bgrid-cols-2\b/);
-    expect(grid.className).toMatch(/\bgap-2\b/);
+    expect(grid.className).toMatch(/\bflex-col\b/);
+    expect(grid.className).toMatch(/\bgap-1\.5\b/);
     expect(grid.className).toMatch(/\bpt-2\b/);
     expect(grid.className).toMatch(/border-t/);
-    // Nenhuma variante responsiva pode reintroduzir grid-cols-1
-    expect(grid.className).not.toMatch(/(sm|md|lg|xl|2xl):grid-cols-1\b/);
   });
 
   it('REAL e CLIENTE VÊ são filhos DIRETOS do grid (mesma linha, mesmo alinhamento)', () => {
