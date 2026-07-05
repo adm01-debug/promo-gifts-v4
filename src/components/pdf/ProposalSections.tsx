@@ -13,6 +13,7 @@ import {
   tdStyle,
   totalsRowStyle,
 } from './ProposalStyles';
+import { maskCnpj } from '@/utils/masks';
 import { getProposalImageUrl } from '@/utils/image-utils';
 import {
   formatPaymentTerms,
