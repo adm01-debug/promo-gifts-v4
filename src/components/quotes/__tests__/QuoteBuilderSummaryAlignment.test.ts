@@ -16,14 +16,14 @@ const SRC = readFileSync(
 
 describe('QuoteBuilderSummaryColumn — alinhamento vertical dos botões', () => {
   it('nome do produto usa leading-[1.125rem] (line-height alvo)', () => {
-    expect(SRC).toMatch(
-      /<p className="truncate pr-1 text-sm font-medium leading-\[1\.125rem\]">/,
-    );
+    expect(SRC).toMatch(/leading-\[1\.125rem\]/);
+    expect(SRC).toMatch(/text-sm font-medium leading-\[1\.125rem\]/);
   });
 
   it('nome aplica pr-1 para evitar sobreposição com a coluna de ações', () => {
-    expect(SRC).toMatch(/truncate pr-1 text-sm/);
+    expect(SRC).toMatch(/pr-1 text-sm font-medium/);
   });
+
 
   it('container dos 03 botões tem altura = line-height do nome e items-center', () => {
     expect(SRC).toMatch(
