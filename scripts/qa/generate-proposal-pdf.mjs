@@ -1,54 +1,83 @@
 #!/usr/bin/env node
 /**
- * Gera o PDF headless da proposta 10015/26 a partir do HTML de amostra
- * produzido por `exportSampleProposal.test.tsx`.
+ * Gera PDFs headless a partir dos HTMLs de amostra em `qa/exports/`.
  *
- * Entrada:  qa/exports/proposal-10015-26.html
- * Saída:    qa/exports/proposal-10015-26.pdf
+ * Modo padrão: converte TODOS os `proposal-*.html` presentes.
+ * Modo filtrado: `--only=<id>` (ou env `PROPOSAL_FIXTURE_ID`) processa
+ *   apenas `proposal-<id>.html` — usado pelo `workflow_dispatch` do CI.
  *
- * Uso:
- *   1. npx vitest run exportSampleProposal   # (re)gera o HTML
- *   2. node scripts/qa/generate-proposal-pdf.mjs
- *
- * No CI o job `pdf-quality` roda os dois passos em sequência.
+ * Uso local:
+ *   1. npx vitest run exportSampleProposal   # (re)gera HTMLs
+ *   2. node scripts/qa/generate-proposal-pdf.mjs           # todos
+ *   3. node scripts/qa/generate-proposal-pdf.mjs --only=10015-26
  */
 import { chromium } from 'playwright';
-import { existsSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { resolve, join, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const ROOT = process.cwd();
-const HTML = resolve(ROOT, 'qa/exports/proposal-10015-26.html');
-const PDF = resolve(ROOT, 'qa/exports/proposal-10015-26.pdf');
+const OUT_DIR = resolve(ROOT, 'qa/exports');
 
-if (!existsSync(HTML)) {
-  console.error(`[pdf-gen] HTML não encontrado: ${HTML}`);
-  console.error('         Rode antes:  npx vitest run exportSampleProposal');
+const onlyArg = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
+const only = onlyArg ?? process.env.PROPOSAL_FIXTURE_ID ?? '';
+
+if (!existsSync(OUT_DIR)) {
+  console.error(`[pdf-gen] diretório não encontrado: ${OUT_DIR}`);
+  console.error('         rode antes: npx vitest run exportSampleProposal');
+  process.exit(1);
+}
+
+let htmls = readdirSync(OUT_DIR)
+  .filter((f) => f.startsWith('proposal-') && f.endsWith('.html'))
+  .map((f) => join(OUT_DIR, f));
+
+if (only) {
+  const target = join(OUT_DIR, `proposal-${only}.html`);
+  if (!existsSync(target)) {
+    console.error(`[pdf-gen] fixture solicitada não encontrada: proposal-${only}.html`);
+    console.error(`         disponíveis: ${htmls.map(basename).join(', ') || '(nenhuma)'}`);
+    process.exit(1);
+  }
+  htmls = [target];
+}
+
+if (htmls.length === 0) {
+  console.error('[pdf-gen] nenhum proposal-*.html encontrado em qa/exports/');
   process.exit(1);
 }
 
 const browser = await chromium.launch();
+const summary = [];
 try {
   const context = await browser.newContext();
-  const page = await context.newPage();
-  await page.goto(pathToFileURL(HTML).href, { waitUntil: 'networkidle' });
-  // Aguarda fontes (Roboto/Montserrat carregados via Google Fonts) antes de imprimir.
-  await page.evaluate(() => document.fonts?.ready);
-  await page.emulateMedia({ media: 'print' });
-  await page.pdf({
-    path: PDF,
-    format: 'A4',
-    printBackground: true,
-    margin: { top: '0', right: '0', bottom: '0', left: '0' },
-    preferCSSPageSize: true,
-  });
+  for (const html of htmls) {
+    const pdfPath = html.replace(/\.html$/, '.pdf');
+    const page = await context.newPage();
+    await page.goto(pathToFileURL(html).href, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts?.ready);
+    await page.emulateMedia({ media: 'print' });
+    await page.pdf({
+      path: pdfPath,
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
+      preferCSSPageSize: true,
+    });
+    await page.close();
+    const size = statSync(pdfPath).size;
+    summary.push({ pdf: basename(pdfPath), kb: (size / 1024).toFixed(1), size });
+  }
 } finally {
   await browser.close();
 }
 
-const size = statSync(PDF).size;
-console.log(`[pdf-gen] OK · ${PDF} · ${(size / 1024).toFixed(1)} KB`);
-if (size < 5_000) {
-  console.error('[pdf-gen] PDF suspeito de estar vazio (< 5 KB).');
+for (const s of summary) {
+  console.log(`[pdf-gen] OK · ${s.pdf} · ${s.kb} KB`);
+}
+
+const suspicious = summary.filter((s) => s.size < 5_000);
+if (suspicious.length > 0) {
+  console.error(`[pdf-gen] PDFs suspeitos de estar vazios (<5 KB): ${suspicious.map((s) => s.pdf).join(', ')}`);
   process.exit(2);
 }
