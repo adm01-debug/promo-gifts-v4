@@ -186,7 +186,7 @@ export function VideoUploadArea({
           className="flex items-center gap-2 border-t border-border/30 bg-muted/20 px-3 py-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <Youtube className="h-4 w-4 shrink-0 text-destructive" />
+          <Video className="h-4 w-4 shrink-0 text-destructive" />
           <Input
             value={youtubeUrl}
             onChange={(e) => setYoutubeUrl(e.target.value)}
