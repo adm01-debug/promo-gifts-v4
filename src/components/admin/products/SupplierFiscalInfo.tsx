@@ -326,7 +326,7 @@ export function SupplierFiscalInfo({ productId, supplierId }: Props) {
           <span className="text-xs font-medium">{data.branch_name}</span>
           {data.branch_cnpj && (
             <Badge variant="outline" className="h-5 font-mono text-[10px]">
-              {data.branch_cnpj}
+              {maskCnpj(data.branch_cnpj)}
             </Badge>
           )}
           {data.branch_state_uf && (
