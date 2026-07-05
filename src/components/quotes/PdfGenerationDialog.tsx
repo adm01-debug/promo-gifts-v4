@@ -181,8 +181,7 @@ export function PdfGenerationDialog({
       >
         {/* Header — oculto no stage "generating" para o card ficar realmente compacto */}
         {stage !== 'generating' && (
-        {/* Header */}
-        <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
+          <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
           <div className="flex items-center justify-between gap-3 pr-8">
             <div className="flex min-w-0 items-center gap-3">
               <DialogTitle className="truncate text-lg font-bold">
