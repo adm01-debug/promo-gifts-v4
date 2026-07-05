@@ -13,6 +13,7 @@ import { ProposalHeader } from './proposal/ProposalHeader';
 import { ProposalClientBar } from './proposal/ProposalClientBar';
 import { ProposalProductTable } from './proposal/ProposalProductTable';
 import { ProposalTotals } from './proposal/ProposalTotals';
+import { maskCnpj } from '@/utils/masks';
 import { ProposalNotes } from './proposal/ProposalNotes';
 import { ProposalSellerSignature } from './proposal/ProposalSellerSignature';
 import { ProposalFooter } from './proposal/ProposalFooter';
