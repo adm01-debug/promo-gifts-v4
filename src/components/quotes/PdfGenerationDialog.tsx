@@ -175,7 +175,7 @@ export function PdfGenerationDialog({
       >
         {/* Header */}
         <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <DialogTitle className="text-lg font-bold">
                 Proposta Comercial {quoteNumber}
@@ -194,8 +194,17 @@ export function PdfGenerationDialog({
                 </Badge>
               )}
             </div>
+            {stage === 'preview' && (
+              <div className="mr-8 flex items-center gap-2 rounded-full border border-warning/25 bg-warning/5 px-3.5 py-1.5 text-warning">
+                <Info className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                <p className="text-xs font-medium tracking-wide">
+                  Confira as informações antes de enviar
+                </p>
+              </div>
+            )}
           </div>
         </DialogHeader>
+
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
