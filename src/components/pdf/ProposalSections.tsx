@@ -427,7 +427,7 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
               fontWeight: 700,
               textTransform: 'uppercase',
               fontSize: '15px',
-              color: '#333',
+              color: '#555',
             }}
           >
             Valor Total:

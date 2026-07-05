@@ -7,7 +7,7 @@
  * Totals, Notes ou Footer é detectada — não apenas em ProductTable.
  */
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ProposalHeader } from '../ProposalHeader';
 import { ProposalClientBar } from '../ProposalClientBar';
@@ -15,6 +15,18 @@ import { ProposalTotals } from '../ProposalTotals';
 import { ProposalNotes } from '../ProposalNotes';
 import { ProposalFooter } from '../ProposalFooter';
 import { PROPOSAL_10015_26 } from './fixtures/proposal-10015-26';
+
+// Congela o relógio para remover flakiness do ProposalFooter (usa new Date()
+// para renderizar "Impresso em: DD/MM/YYYY, HH:MM"). Sem isso, o snapshot
+// falha quando o minuto muda entre a geração e a comparação.
+const FROZEN_ISO = '2026-03-15T12:34:56.000Z';
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(FROZEN_ISO));
+});
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 describe('PDF regressão visual — seções da proposta', () => {
   it('ProposalHeader (primeira página) — snapshot estável', () => {
