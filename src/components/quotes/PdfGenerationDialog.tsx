@@ -195,18 +195,46 @@ export function PdfGenerationDialog({
               )}
             </div>
             {stage === 'preview' && (
-              <div
-                role="status"
-                aria-live="polite"
-                aria-label="Aviso: confira as informações antes de enviar"
-                className="hidden shrink-0 items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3.5 py-1.5 text-warning sm:inline-flex"
-              >
-                <Info className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden="true" />
-                <p className="text-xs font-medium tracking-wide">
-                  <span className="hidden md:inline">Confira as informações antes de enviar</span>
-                  <span className="md:hidden">Confira antes de enviar</span>
-                </p>
-              </div>
+              <>
+                <style>{`
+                  @keyframes pdfWarnShimmer {
+                    0% { transform: translateX(-120%); }
+                    60% { transform: translateX(220%); }
+                    100% { transform: translateX(220%); }
+                  }
+                  @keyframes pdfWarnGlow {
+                    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--warning) / 0.0), 0 0 12px 0 hsl(var(--warning) / 0.25); }
+                    50% { box-shadow: 0 0 0 3px hsl(var(--warning) / 0.12), 0 0 22px 2px hsl(var(--warning) / 0.45); }
+                  }
+                  .pdf-warn-pill { animation: pdfWarnGlow 2.4s ease-in-out infinite; }
+                  .pdf-warn-shimmer {
+                    position: absolute; inset: 0; overflow: hidden; border-radius: 9999px; pointer-events: none;
+                  }
+                  .pdf-warn-shimmer::before {
+                    content: ""; position: absolute; top: 0; bottom: 0; width: 40%;
+                    background: linear-gradient(90deg, transparent, hsl(var(--warning) / 0.55), transparent);
+                    animation: pdfWarnShimmer 2.8s ease-in-out infinite;
+                    mix-blend-mode: overlay;
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .pdf-warn-pill { animation: none; }
+                    .pdf-warn-shimmer::before { animation: none; opacity: 0; }
+                  }
+                `}</style>
+                <div
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Aviso: confira as informações antes de enviar"
+                  className="pdf-warn-pill relative hidden shrink-0 items-center gap-2 overflow-hidden rounded-full border border-warning/50 bg-warning/10 px-3.5 py-1.5 text-warning sm:inline-flex"
+                >
+                  <span className="pdf-warn-shimmer" aria-hidden="true" />
+                  <Info className="relative h-3.5 w-3.5 shrink-0 drop-shadow-[0_0_6px_hsl(var(--warning)/0.7)]" strokeWidth={2.25} aria-hidden="true" />
+                  <p className="relative text-xs font-medium tracking-wide">
+                    <span className="hidden md:inline">Confira as informações antes de enviar</span>
+                    <span className="md:hidden">Confira antes de enviar</span>
+                  </p>
+                </div>
+              </>
             )}
           </div>
         </DialogHeader>
