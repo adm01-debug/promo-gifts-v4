@@ -73,8 +73,7 @@ describe('PdfGenerationDialog — botão "Gerar PDF" (footer)', () => {
     const { generateProposalPDFv2 } = await import('@/utils/proposalPdfReactGenerator');
     const btn = await openAndGetGenerateBtn();
     await user.click(btn);
-    // Aguarda microtasks/timers: mock resolve rápido → função foi chamada
-    await new Promise((r) => setTimeout(r, 50));
-    expect(generateProposalPDFv2).toHaveBeenCalled();
+    // handleGenerate encadeia ~500ms de setTimeout antes de chamar o gerador
+    await vi.waitFor(() => expect(generateProposalPDFv2).toHaveBeenCalled(), { timeout: 2000 });
   });
 });
