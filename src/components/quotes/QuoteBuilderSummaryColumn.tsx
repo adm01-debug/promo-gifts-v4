@@ -2,7 +2,7 @@
  * QuoteBuilderSummaryColumn — Coluna 3: Resumo com cards de itens, desconto e CTAs
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -225,6 +225,8 @@ export function QuoteBuilderSummaryColumn({
   const [sellerNotes, setSellerNotes] = useState('');
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [confirmSaveDraftOpen, setConfirmSaveDraftOpen] = useState(false);
+  const saveDraftBtnRef = useRef<HTMLButtonElement>(null);
+
 
 
   const [showOnlyStale, setShowOnlyStale] = useState(false);
@@ -1417,11 +1419,13 @@ export function QuoteBuilderSummaryColumn({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      ref={saveDraftBtnRef}
                       variant="outline"
                       size="lg"
                       className="h-12 flex-1"
                       data-testid="quote-save-draft"
                       onClick={() => {
+
                         if (isEditMode) {
                           setConfirmSaveDraftOpen(true);
                         } else {
@@ -1457,7 +1461,17 @@ export function QuoteBuilderSummaryColumn({
       </div>
 
       {/* Confirmação — Salvar Alterações do orçamento inteiro */}
-      <Dialog open={confirmSaveDraftOpen} onOpenChange={setConfirmSaveDraftOpen}>
+      <Dialog
+        open={confirmSaveDraftOpen}
+        onOpenChange={(open) => {
+          setConfirmSaveDraftOpen(open);
+          // Restaura foco no botão que abriu o modal (Cancelar / Escape / clique fora)
+          if (!open) {
+            requestAnimationFrame(() => saveDraftBtnRef.current?.focus());
+          }
+        }}
+      >
+
         <DialogContent data-testid="quote-save-draft-confirm-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
