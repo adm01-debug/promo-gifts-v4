@@ -45,6 +45,15 @@ vi.mock('@/lib/quote-status-config', () => ({
   QUOTE_STATUS_CONFIG: {},
 }));
 
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+  },
+}));
+
 // Quote with one item that HAS a bitrix_product_id (required for itensSincronizaveis check)
 const mockQuote: Quote = {
   id: 'q-001',
