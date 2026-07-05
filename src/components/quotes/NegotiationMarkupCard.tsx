@@ -65,21 +65,21 @@ export function NegotiationPriceComparison({
   return (
     <div
       data-testid="negotiation-price-grid"
-      className={cn('grid grid-cols-2 gap-2', className)}
+      className={cn('flex flex-col gap-1.5', className)}
     >
       <div
         data-testid="price-card-real"
-        className="space-y-1 rounded-lg bg-muted/40 px-2 py-2.5"
+        className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-2.5 py-1.5"
       >
-        <p className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="flex shrink-0 items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
           <ShieldCheck className="h-2.5 w-2.5" /> Real (interno)
         </p>
-        <div className="space-y-0.5 text-[10px]">
-          <div className="flex justify-between">
+        <div className="flex items-center gap-3 text-[10px]">
+          <span className="flex items-center gap-1">
             <span className="text-muted-foreground">Subtotal:</span>
             <span className="font-medium tabular-nums">{formatCurrency(realSubtotal)}</span>
-          </div>
-          <div className="flex justify-between">
+          </span>
+          <span className="flex items-center gap-1">
             <span className="text-muted-foreground">Desconto:</span>
             <span
               className={cn(
@@ -89,28 +89,28 @@ export function NegotiationPriceComparison({
             >
               {realDiscountPercent.toFixed(1)}%
             </span>
-          </div>
+          </span>
         </div>
       </div>
 
       <div
         data-testid="price-card-client"
-        className="space-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2 py-2.5"
+        className="flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5"
       >
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-primary">
+        <p className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-primary">
           Cliente vê
         </p>
-        <div className="space-y-0.5 text-[10px]">
-          <div className="flex justify-between">
+        <div className="flex items-center gap-3 text-[10px]">
+          <span className="flex items-center gap-1">
             <span className="text-muted-foreground">Subtotal:</span>
             <span className="font-medium tabular-nums">{formatCurrency(presentedSubtotal)}</span>
-          </div>
-          <div className="flex justify-between">
+          </span>
+          <span className="flex items-center gap-1">
             <span className="text-muted-foreground">Desconto:</span>
             <span className="font-bold tabular-nums text-primary">
               {apparentDiscountPercent.toFixed(1)}%
             </span>
-          </div>
+          </span>
         </div>
       </div>
     </div>
