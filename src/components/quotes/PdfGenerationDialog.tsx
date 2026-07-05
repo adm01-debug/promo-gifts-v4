@@ -245,6 +245,7 @@ export function PdfGenerationDialog({
             )}
           </div>
         </DialogHeader>
+        )}
 
 
 
