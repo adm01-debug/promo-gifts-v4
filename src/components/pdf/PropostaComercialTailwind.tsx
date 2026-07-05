@@ -17,6 +17,7 @@ import { maskCnpj } from '@/utils/masks';
 import { ProposalNotes } from './proposal/ProposalNotes';
 import { ProposalSellerSignature } from './proposal/ProposalSellerSignature';
 import { ProposalFooter } from './proposal/ProposalFooter';
+import { WATERMARK_COLOR_CSS, WATERMARK_TEXT } from './watermarkTokens';
 
 /* Compact client bar for continuation pages */
 function ProposalClientBarCompact({ data }: { data: ProposalTemplateData }) {
