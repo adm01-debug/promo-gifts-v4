@@ -96,7 +96,7 @@ export function ProposalSellerSignature({ data }: Props) {
         {/* Electronic signature disclaimer */}
         <div
           style={{
-            fontSize: '8px',
+            fontSize: '10px',
             color: '#333',
             marginTop: '6px',
             lineHeight: '1.3',
