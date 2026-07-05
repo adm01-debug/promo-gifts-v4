@@ -38,7 +38,7 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
         </div>
 
         {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '8px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2px' }}>
           <tbody>
             <tr>
               <td style={{ width: '25%', padding: '0 8px 0 0', verticalAlign: 'top' }}>
@@ -117,20 +117,23 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           </tbody>
         </table>
 
-        <div
-          style={{
-            fontSize: '9px',
-            color: '#777',
-            lineHeight: '1.5',
-            paddingTop: '6px',
-            marginBottom: '8px',
-          }}
-        >
-          {data.notes && <div>- {data.notes}</div>}
-        </div>
+        {data.notes && (
+          <div
+            style={{
+              fontSize: '9px',
+              color: '#777',
+              lineHeight: '1.5',
+              paddingTop: '2px',
+              marginBottom: '2px',
+            }}
+          >
+            <div>- {data.notes}</div>
+          </div>
+        )}
 
         {/* Termos de Aceite */}
-        <div style={{ paddingTop: '8px' }}>
+        <div style={{ paddingTop: '2px' }}>
+
           <div
             style={{
               fontFamily: "'Montserrat', sans-serif",
