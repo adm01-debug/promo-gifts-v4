@@ -1,12 +1,16 @@
 // quote-sync-promo-champions: proxy fino chamado pelo frontend.
-// - Valida JWT do vendedor (Modo B seguro)
-// - Injeta x-dispatcher-secret do env e invoca webhook-dispatcher (Modo A)
-// - Payload padronizado + correlation_key p/ dedupe no destino
+// - Valida JWT do vendedor
+// - Assina o payload com PROMO_CHAMPIONS_WEBHOOK_SECRET (HMAC-SHA256)
+// - POSTa direto em receive-quote-sync do Promo Champions
+//   (ref do projeto Champions: rapjswienfhkobhlamxb)
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 
 const cors = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
+
+const CHAMPIONS_URL =
+  "https://rapjswienfhkobhlamxb.supabase.co/functions/v1/receive-quote-sync";
 
 const Body = z.object({
   quote_id: z.string().uuid(),
@@ -21,9 +25,7 @@ const Body = z.object({
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  if (req.method !== "POST") {
-    return json({ error: "method_not_allowed" }, 405);
-  }
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) {
@@ -48,47 +50,129 @@ Deno.serve(async (req) => {
   }
   const q = parsed.data;
 
-  const dispatcherSecret = Deno.env.get("WEBHOOK_DISPATCHER_SECRET");
-  if (!dispatcherSecret) {
-    return json({ error: "service_misconfigured", hint: "WEBHOOK_DISPATCHER_SECRET missing" }, 503);
+  const secret = Deno.env.get("PROMO_CHAMPIONS_WEBHOOK_SECRET");
+  if (!secret) {
+    return json(
+      {
+        error: "service_misconfigured",
+        hint: "PROMO_CHAMPIONS_WEBHOOK_SECRET ausente — configure no cofre do projeto.",
+      },
+      503,
+    );
   }
 
-  const correlationKey = `quote:${q.quote_id}:sent:${q.updated_at ?? ""}`;
+  const correlationKey = `quote:${q.quote_id}:sent:${q.updated_at ?? new Date().toISOString()}`;
 
-  const resp = await fetch(`${supabaseUrl}/functions/v1/webhook-dispatcher`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: anonKey,
-      "x-dispatcher-secret": dispatcherSecret,
+  const bodyObj = {
+    event: "quote.sent",
+    correlation_key: correlationKey,
+    payload: {
+      quote_id: q.quote_id,
+      quote_number: q.quote_number,
+      status: q.status,
+      client_id: q.client_id,
+      client_name: q.client_name,
+      total: q.total,
+      updated_at: q.updated_at,
+      seller_email: q.seller_email,
     },
-    body: JSON.stringify({
-      event: "quote.sent",
-      payload: {
-        quote_id: q.quote_id,
-        quote_number: q.quote_number,
-        status: q.status,
-        client_id: q.client_id,
-        client_name: q.client_name,
-        total: q.total,
-        updated_at: q.updated_at,
-        seller_email: q.seller_email,
-        correlation_key: correlationKey,
-        source: "manual_sync_promo_champions",
-      },
-    }),
-  });
+  };
+  const bodyStr = JSON.stringify(bodyObj);
 
-  const text = await resp.text();
-  if (!resp.ok) {
+  let signatureHex: string;
+  try {
+    signatureHex = await hmacSha256Hex(secret, bodyStr);
+  } catch (err) {
+    console.error("hmac_failed", { message: (err as Error).message });
+    return json({ error: "signature_failed" }, 500);
+  }
+
+  const startedAt = Date.now();
+  let resp: Response;
+  try {
+    resp = await fetch(CHAMPIONS_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-webhook-event": "quote.sent",
+        "x-webhook-signature": `sha256=${signatureHex}`,
+        "x-correlation-key": correlationKey,
+      },
+      body: bodyStr,
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (err) {
+    const duration_ms = Date.now() - startedAt;
+    console.error("champions_fetch_failed", {
+      message: (err as Error).message,
+      quote_id: q.quote_id,
+      correlation_key: correlationKey,
+      duration_ms,
+    });
     return json(
-      { ok: false, error: "dispatcher_failed", status: resp.status, details: text.slice(0, 2000) },
+      { ok: false, error: "champions_unreachable", details: (err as Error).message },
+      502,
+    );
+  }
+
+  const duration_ms = Date.now() - startedAt;
+  const text = await resp.text();
+
+  if (!resp.ok) {
+    console.error("champions_non_2xx", {
+      status: resp.status,
+      quote_id: q.quote_id,
+      correlation_key: correlationKey,
+      duration_ms,
+      details: text.slice(0, 500),
+    });
+    return json(
+      {
+        ok: false,
+        error: "champions_failed",
+        champions_status: resp.status,
+        correlation_key: correlationKey,
+        details: text.slice(0, 2000),
+      },
       resp.status,
     );
   }
 
-  return json({ ok: true, correlation_key: correlationKey, dispatcher_response: safeJson(text) }, 200);
+  console.log("champions_ok", {
+    status: resp.status,
+    quote_id: q.quote_id,
+    correlation_key: correlationKey,
+    duration_ms,
+  });
+
+  return json(
+    {
+      ok: true,
+      correlation_key: correlationKey,
+      champions_status: resp.status,
+      champions_response: safeJson(text),
+    },
+    200,
+  );
 });
+
+async function hmacSha256Hex(secret: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  const bytes = new Uint8Array(sig);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
+}
 
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
