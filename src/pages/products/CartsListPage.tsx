@@ -144,6 +144,61 @@ function CartsListContent() {
 
   const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all';
 
+  const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
+  const selectedCount = selectedIds.size;
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+
+  const clearSelection = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const toggleRow = useCallback((cartId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cartId)) next.delete(cartId);
+      else next.add(cartId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllVisible = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (visibleIds.every((id) => prev.has(id))) {
+        const next = new Set(prev);
+        visibleIds.forEach((id) => next.delete(id));
+        return next;
+      }
+      const next = new Set(prev);
+      visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }, [visibleIds]);
+
+  const confirmBulkDelete = useCallback(() => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      setBulkDeleteOpen(false);
+      return;
+    }
+    ids.forEach((id) => deleteCart(id));
+    toast.success(
+      ids.length === 1
+        ? 'Carrinho excluído.'
+        : `${ids.length} carrinhos excluídos.`,
+    );
+    setBulkDeleteOpen(false);
+    clearSelection();
+  }, [selectedIds, deleteCart, clearSelection]);
+
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
