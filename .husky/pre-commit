@@ -1,1 +1,16 @@
 npx lint-staged
+
+# Regeneração seletiva de fixtures de PDF quando arquivos de layout mudam.
+# Fast-path: nada é executado se nenhum arquivo relevante estiver no stage.
+changed=$(git diff --cached --name-only | grep -E '^(src/components/pdf/|src/lib/pdf/|src/lib/quotes/personalizationSummary\.ts)' || true)
+if [ -n "$changed" ]; then
+  echo "🎨 Layout do PDF alterado — regerando fixtures de proposta..."
+  bunx vitest run exportSampleProposal ProposalSections.snapshots -u --silent >/dev/null 2>&1 || {
+    echo "❌ Falha ao regerar snapshots do PDF. Rode manualmente:"
+    echo "   bunx vitest run exportSampleProposal ProposalSections.snapshots -u"
+    exit 1
+  }
+  git add qa/exports/proposal-*.html \
+          src/components/pdf/**/__snapshots__/*.snap 2>/dev/null || true
+  echo "✅ Snapshots do PDF atualizados e re-adicionados ao commit."
+fi
