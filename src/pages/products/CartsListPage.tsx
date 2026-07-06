@@ -614,6 +614,9 @@ interface CartRowProps {
   isSelected: boolean;
   onToggleSelect: () => void;
   onOpen: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }
 
 function CartRow({
@@ -623,6 +626,9 @@ function CartRow({
   isSelected,
   onToggleSelect,
   onOpen,
+  onEdit,
+  onDuplicate,
+  onDelete,
 }: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
