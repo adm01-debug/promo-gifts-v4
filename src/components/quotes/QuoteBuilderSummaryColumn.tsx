@@ -1476,7 +1476,22 @@ export function QuoteBuilderSummaryColumn({
         }}
       >
 
-        <DialogContent data-testid="quote-save-draft-confirm-dialog">
+        <DialogContent
+          data-testid="quote-save-draft-confirm-dialog"
+          onOpenAutoFocus={(event) => {
+            // Foco inicial no botão de confirmação (ação primária) — reduz
+            // fricção de teclado: Enter confirma imediatamente após abrir.
+            // A11y: aria-label e texto do botão são idênticos ("Salvar Rascunho"),
+            // então leitores de tela anunciam a ação de forma inequívoca.
+            event.preventDefault();
+            requestAnimationFrame(() => {
+              const el = document.querySelector<HTMLButtonElement>(
+                '[data-testid="quote-save-draft-confirm"]',
+              );
+              el?.focus();
+            });
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Save className="h-5 w-5 text-primary" />
