@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy } from 'lucide-react';
+import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -99,6 +99,37 @@ export default function CartsListPage() {
 function CartsListContent() {
   const navigate = useNavigate();
   const { carts, isLoading, deleteCart, duplicateCart } = useSellerCartContext();
+
+  const handleGenerateQuote = useCallback(
+    (cart: SellerCart) => {
+      if (!cart.items || cart.items.length === 0) {
+        toast.error('Carrinho vazio', {
+          description: 'Adicione ao menos um produto antes de gerar o orçamento.',
+        });
+        return;
+      }
+      navigate('/orcamentos/novo', {
+        state: {
+          fromCart: true,
+          companyId: cart.company_id,
+          companyName: cart.company_name,
+          companyLocation: cart.company_location || undefined,
+          items: cart.items.map((i) => ({
+            product_id: i.product_id,
+            product_name: i.product_name,
+            product_sku: i.product_sku || undefined,
+            product_image_url: i.product_image_url || undefined,
+            quantity: i.quantity,
+            unit_price: i.product_price,
+            color_name: i.color_name || undefined,
+            color_hex: i.color_hex || undefined,
+          })),
+        },
+      });
+    },
+    [navigate],
+  );
+
   const { data: crmCompanies } = useCrmCompanies();
   const cnpjByCompanyId = useMemo(() => {
     const map = new Map<string, string>();
@@ -499,6 +530,7 @@ function CartsListContent() {
                     onEdit={() => navigate(`/carrinhos/${cart.id}`)}
                     onDuplicate={() => duplicateCart(cart.id)}
                     onDelete={() => setDeleteConfirmId(cart.id)}
+                    onGenerateQuote={() => handleGenerateQuote(cart)}
                   />
                 ))}
               </TableBody>
@@ -620,6 +652,7 @@ interface CartRowProps {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onGenerateQuote: () => void;
 }
 
 function CartRow({
@@ -632,6 +665,7 @@ function CartRow({
   onEdit,
   onDuplicate,
   onDelete,
+  onGenerateQuote,
 }: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
@@ -760,6 +794,14 @@ function CartRow({
                 data-testid={`cart-row-menu-${cart.id}`}
                 className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
               >
+                <DropdownMenuItem
+                  data-testid={`cart-row-menu-generate-quote-${cart.id}`}
+                  disabled={cart.items.length === 0}
+                  onClick={onGenerateQuote}
+                >
+                  <FileText className="mr-2 h-4 w-4" /> Gerar Orçamento
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   data-testid={`cart-row-menu-edit-${cart.id}`}
                   onClick={onEdit}
