@@ -737,16 +737,48 @@ function CartRow({
         </div>
       </TableCell>
       <TableCell className="px-4 align-middle" onClick={(e) => e.stopPropagation()}>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onOpen}
-          data-testid={`cart-row-open-${cart.id}`}
-          className="gap-1"
-        >
-          Abrir
-          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                aria-label={`Mais opções para o carrinho de ${cart.company_name}`}
+                data-testid={`cart-row-more-${cart.id}`}
+              >
+                <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+              data-testid={`cart-row-menu-${cart.id}`}
+              className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
+            >
+              <DropdownMenuItem
+                data-testid={`cart-row-menu-edit-${cart.id}`}
+                onClick={onEdit}
+              >
+                <Edit className="mr-2 h-4 w-4" /> Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid={`cart-row-menu-duplicate-${cart.id}`}
+                onClick={onDuplicate}
+              >
+                <Copy className="mr-2 h-4 w-4" /> Duplicar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                data-testid={`cart-row-menu-delete-${cart.id}`}
+                className="text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </TableCell>
     </TableRow>
   );
