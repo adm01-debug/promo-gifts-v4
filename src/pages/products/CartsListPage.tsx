@@ -272,8 +272,8 @@ function CartsListContent() {
             <TableHeader>
               <TableRow className="bg-primary/10 hover:bg-primary/10">
                 <TableHead className="w-[80px]">Status</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead className="w-[220px]">Ramo de Atividade</TableHead>
+                <TableHead className="w-[340px]">Empresa</TableHead>
+                <TableHead>Ramo de Atividade</TableHead>
                 <TableHead className="w-[120px] text-center">Itens</TableHead>
                 <TableHead className="w-[160px] text-right">Valor</TableHead>
                 <TableHead className="w-[200px]">Atualizado</TableHead>
