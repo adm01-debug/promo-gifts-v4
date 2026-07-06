@@ -427,33 +427,37 @@ function CartsListContent() {
           ))}
         </div>
       ) : carts.length === 0 ? (
-        <EmptyState
-          variant="cart"
-          title="Nenhum carrinho aberto"
-          description="Crie um carrinho para começar a montar uma proposta para um cliente."
-        >
-          <Button onClick={() => setPickerOpen(true)} className="gap-2">
-            <Plus aria-hidden="true" className="h-4 w-4" /> Novo carrinho
-          </Button>
-        </EmptyState>
-      ) : filteredCarts.length === 0 ? (
-        <EmptyState
-          variant="cart"
-          title="Nenhum carrinho encontrado"
-          description="Ajuste a busca ou os filtros para ver mais carrinhos."
-        >
-          <Button
-            variant="outline"
-            onClick={() => {
-              setQuery('');
-              setStatusFilter('all');
-            }}
-            disabled={!hasActiveFilters}
-            className="gap-2"
+        <div data-testid="carts-empty-none">
+          <EmptyState
+            variant="cart"
+            title="Nenhum carrinho aberto"
+            description="Crie um carrinho para começar a montar uma proposta para um cliente."
           >
-            <X aria-hidden="true" className="h-4 w-4" /> Limpar filtros
-          </Button>
-        </EmptyState>
+            <Button onClick={() => setPickerOpen(true)} className="gap-2">
+              <Plus aria-hidden="true" className="h-4 w-4" /> Novo carrinho
+            </Button>
+          </EmptyState>
+        </div>
+      ) : filteredCarts.length === 0 ? (
+        <div data-testid="carts-empty-filtered">
+          <EmptyState
+            variant="cart"
+            title="Nenhum carrinho encontrado"
+            description="Ajuste a busca ou os filtros para ver mais carrinhos."
+          >
+            <Button
+              variant="outline"
+              onClick={() => {
+                setQuery('');
+                setStatusFilter('all');
+              }}
+              disabled={!hasActiveFilters}
+              className="gap-2"
+            >
+              <X aria-hidden="true" className="h-4 w-4" /> Limpar filtros
+            </Button>
+          </EmptyState>
+        </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm">
           <div className="overflow-x-auto">

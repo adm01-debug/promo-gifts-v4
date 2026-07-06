@@ -323,6 +323,8 @@ export const Sel = {
     rowMenuDelete: (id: string) => TID(`cart-row-menu-delete-${id}`),
     rowDeleteDialog: TID("cart-row-delete-dialog"),
     rowDeleteConfirm: TID("cart-row-delete-confirm"),
+    emptyNone: TID("carts-empty-none"),
+    emptyFiltered: TID("carts-empty-filtered"),
   },
 
 
