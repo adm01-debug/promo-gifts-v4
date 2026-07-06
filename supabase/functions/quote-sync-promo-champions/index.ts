@@ -61,20 +61,86 @@ export const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  const correlationKey = `quote:${q.quote_id}:sent:${q.updated_at ?? q.quote_id}`;
+  // Ownership check: buscar o quote com service_role e validar seller_id.
+  // JWT já foi validado acima (claims.claims.sub = auth.uid do vendedor).
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceKey) {
+    return json(
+      { error: "service_misconfigured", hint: "SUPABASE_SERVICE_ROLE_KEY ausente." },
+      503,
+    );
+  }
+  const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+  const sellerId = claims.claims.sub;
 
+  const { data: quote, error: quoteErr } = await supabaseAdmin
+    .from("quotes")
+    .select(
+      "id, quote_number, status, seller_id, client_id, client_name, client_email, total, updated_at, sent_at",
+    )
+    .eq("id", q.quote_id)
+    .maybeSingle();
+
+  if (quoteErr) {
+    console.error("quote_fetch_failed", { quote_id: q.quote_id, error: quoteErr.message });
+    return json({ error: "quote_fetch_failed", details: quoteErr.message }, 500);
+  }
+  if (!quote) {
+    return json({ error: "quote_not_found", hint: "Orçamento não existe" }, 404);
+  }
+  if (quote.seller_id !== sellerId) {
+    return json({ error: "forbidden", hint: "Este orçamento não pertence a você" }, 403);
+  }
+
+  // Atualiza status para 'sent' (uma vez) — não bloqueia o sync se falhar.
+  if (quote.status !== "sent") {
+    const nowIso = new Date().toISOString();
+    const { error: updateErr } = await supabaseAdmin
+      .from("quotes")
+      .update({ status: "sent", sent_at: nowIso, last_sent_at: nowIso })
+      .eq("id", q.quote_id)
+      .eq("seller_id", sellerId);
+    if (updateErr) {
+      console.error("status_update_failed", {
+        quote_id: q.quote_id,
+        error: updateErr.message,
+      });
+    }
+  } else {
+    // Re-envio: apenas atualiza last_sent_at.
+    const { error: reErr } = await supabaseAdmin
+      .from("quotes")
+      .update({ last_sent_at: new Date().toISOString() })
+      .eq("id", q.quote_id)
+      .eq("seller_id", sellerId);
+    if (reErr) {
+      console.error("last_sent_at_update_failed", {
+        quote_id: q.quote_id,
+        error: reErr.message,
+      });
+    }
+  }
+
+  // correlation_key determinístico. Se o DB tem updated_at (sempre tem), usa ele;
+  // fallback derradeiro é o próprio quote_id (nunca timestamp gerado).
+  const updatedAtSource = quote.updated_at ?? q.updated_at ?? q.quote_id;
+  const correlationKey = `quote:${q.quote_id}:sent:${updatedAtSource}`;
+
+  // Fonte da verdade: dados do DB (não do frontend), com fallback nos campos vindos do body.
   const bodyObj = {
     event: "quote.sent",
     correlation_key: correlationKey,
     payload: {
-      quote_id: q.quote_id,
-      quote_number: q.quote_number,
-      status: q.status,
-      client_id: q.client_id,
-      client_name: q.client_name,
-      total: q.total,
-      updated_at: q.updated_at,
-      seller_email: q.seller_email,
+      quote_id: quote.id,
+      quote_number: q.quote_number ?? quote.quote_number,
+      status: "sent",
+      client_id: q.client_id ?? (quote.client_id ? String(quote.client_id) : null),
+      client_name: q.client_name ?? quote.client_name,
+      total:
+        q.total ??
+        (quote.total !== null && quote.total !== undefined ? Number(quote.total) : null),
+      updated_at: quote.updated_at ?? q.updated_at ?? null,
+      seller_email: q.seller_email ?? null,
     },
   };
   const bodyStr = JSON.stringify(bodyObj);
