@@ -58,7 +58,14 @@ export function useV4Callbacks(filters: CallbackFilters) {
   return useQuery({
     queryKey: ['v4-callbacks', filters, since, limit],
     queryFn: async (): Promise<CallbackEventRow[]> => {
-      let q = supabase
+      // NOTE: `crm_callback_events` vive no banco canônico e não está no types.ts
+      // gerado (que reflete pqp). Cast via any até regenerar tipos do canônico.
+      const client = supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => any;
+        };
+      };
+      let q = client
         .from('crm_callback_events')
         .select(
           'id, external_quote_id, crm_quote_id, event_type, occurred_at, created_at, result, error_message, payload',
