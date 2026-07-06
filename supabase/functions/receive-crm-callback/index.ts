@@ -75,6 +75,11 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 // ---------------------------------------------------------------- handler
+// Limites de defesa em profundidade
+const MAX_BODY_BYTES = 64 * 1024;                    // 64KB: DoS-guard
+const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;            // 5min: clock skew tolerado
+const MAX_PAST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;  // 7d: anti-replay
+
 Deno.serve(async (req) => {
   const preflight = handleCorsPreflight(req, { public: true, extraAllowHeaders: ["x-api-key"] });
   if (preflight) return preflight;
@@ -94,10 +99,23 @@ Deno.serve(async (req) => {
     return log.respond(json(401, { error: "invalid_api_key" }));
   }
 
-  // 2) parse + validate
+  // 2) payload size guard (defense-in-depth vs. DoS)
+  const declaredLen = Number(req.headers.get("content-length") ?? "0");
+  if (declaredLen > MAX_BODY_BYTES) {
+    log.warn("crm_callback_payload_too_large", { declared_len: declaredLen, limit: MAX_BODY_BYTES });
+    return log.respond(json(413, { error: "payload_too_large", limit_bytes: MAX_BODY_BYTES }));
+  }
+  // Leitura crua (fallback caso content-length venha ausente/mentiroso)
+  const rawText = await req.text();
+  if (rawText.length > MAX_BODY_BYTES) {
+    log.warn("crm_callback_payload_too_large", { actual_len: rawText.length, limit: MAX_BODY_BYTES });
+    return log.respond(json(413, { error: "payload_too_large", limit_bytes: MAX_BODY_BYTES }));
+  }
+
+  // 3) parse + validate
   let raw: unknown;
   try {
-    raw = await req.json();
+    raw = JSON.parse(rawText);
   } catch {
     return log.respond(json(400, { error: "invalid_json" }));
   }
