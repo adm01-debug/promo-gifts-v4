@@ -25,8 +25,24 @@ import { z } from "npm:zod@3.23.8";
 import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
+import { RateLimiter } from "../_shared/rate-limiter.ts";
 
 const CORS = buildPublicCorsHeaders({ extraAllowHeaders: ["x-api-key"] });
+
+// Rate limit: 300 req/min por (IP + hash da api-key). Fail-open p/ não
+// derrubar callbacks legítimos quando o storage de rate-limit estiver
+// indisponível — mas ainda bloqueia abuso previsível.
+const rl = new RateLimiter({
+  maxRequests: 300,
+  windowMs: 60 * 1000,
+  keyPrefix: "rl:crm-callback",
+  failClosed: false,
+});
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 // ---------------------------------------------------------------- Zod schema
 const EventTypeEnum = z.enum([
@@ -97,6 +113,30 @@ Deno.serve(async (req) => {
   if (!expected || !provided || !timingSafeEqual(provided, expected)) {
     log.warn("crm_callback_unauthorized", { has_env: expected.length > 0, has_header: provided.length > 0 });
     return log.respond(json(401, { error: "invalid_api_key" }));
+  }
+
+  // 1.b) rate-limit por (IP + hash da api-key). Bloqueia abuso mesmo
+  //      com credencial válida (chave vazada ou caller descontrolado).
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown";
+  const keyHash = (await sha256Hex(provided)).slice(0, 16);
+  const rlKey = `${ip}:${keyHash}`;
+  const rlRes = await rl.check(rlKey);
+  if (!rlRes.allowed) {
+    const retryAfter = Math.max(1, Math.ceil((rlRes.resetAt - Date.now()) / 1000));
+    log.warn("crm_callback_rate_limited", { ip, key_hash: keyHash, reset_at: rlRes.resetAt, retry_after: retryAfter });
+    return log.respond(
+      json(
+        429,
+        { error: "rate_limited", retry_after_seconds: retryAfter },
+        { "retry-after": String(retryAfter) },
+      ),
+    );
+  }
+  if (rlRes.suspicious) {
+    log.warn("crm_callback_rate_suspicious", { ip, key_hash: keyHash, remaining: rlRes.remaining });
   }
 
   // 2) payload size guard (defense-in-depth vs. DoS)
