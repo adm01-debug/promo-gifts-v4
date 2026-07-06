@@ -1,0 +1,79 @@
+name: E2E — PDF Print (cross-browser)
+
+# Valida o fluxo de impressão do PDF nos 3 engines suportados pelo Playwright:
+# Chromium, Firefox e WebKit (Safari). Cobre:
+#   • Chromium/Firefox: iframe.contentWindow.print() executa sem fallback.
+#   • WebKit: detecção via UA → fallback modal com data-reason="safari".
+#   • Cross-browser: window.open bloqueado → fallback data-reason="popup-blocked".
+#
+# O spec não depende de auth nem de dados reais (usa page.setContent com um
+# harness HTML que espelha a lógica do handlePrint). Roda em paralelo por
+# engine via matrix.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'e2e/flows/pdf-print-cross-browser.spec.ts'
+      - 'src/components/quotes/PdfGenerationDialog.tsx'
+      - 'src/components/quotes/PdfPrintHelpDialog.tsx'
+      - '.github/workflows/e2e-pdf-print-cross-browser.yml'
+  pull_request:
+    paths:
+      - 'e2e/flows/pdf-print-cross-browser.spec.ts'
+      - 'src/components/quotes/PdfGenerationDialog.tsx'
+      - 'src/components/quotes/PdfPrintHelpDialog.tsx'
+      - '.github/workflows/e2e-pdf-print-cross-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  print-cross-browser:
+    name: Print fallback (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium-public
+            browser: chromium
+          - project: firefox-public
+            browser: firefox
+          - project: webkit-public
+            browser: webkit
+    env:
+      CI: 'true'
+      # Não precisa de Supabase — spec é 100% cliente-side com setContent.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run print cross-browser spec
+        run: |
+          npx playwright test \
+            e2e/flows/pdf-print-cross-browser.spec.ts \
+            --project=${{ matrix.project }} \
+            --retries=2
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-print-${{ matrix.browser }}-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
