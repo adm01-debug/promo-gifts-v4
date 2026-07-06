@@ -351,7 +351,10 @@ export const PropostaComercialTailwind = forwardRef<
                   >
                     <tbody>
                       <tr>
-                        <td style={{ verticalAlign: 'top', paddingRight: '12px' }}>
+                        {/* paddingTop alinha o topo dos badges com a linha
+                            "Subtotal:" do bloco de totais (10px marginTop +
+                            ~7px padding interno da row = ~17px). */}
+                        <td style={{ verticalAlign: 'top', paddingRight: '12px', paddingTop: '17px' }}>
                           <ProposalConditionsBadges data={data} />
                         </td>
                         <td
