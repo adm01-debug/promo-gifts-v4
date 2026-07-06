@@ -163,7 +163,7 @@ Deno.test("POST sem Authorization: 401 Unauthorized", async () => {
   assertEquals(j.error, "Unauthorized");
 });
 
-Deno.test("POST com body invalido: 400 invalid_body", async () => {
+Deno.test({ name: "POST com body invalido: 400 invalid_body", sanitizeOps: false, sanitizeResources: false }, async () => {
   const stub = installFetchStub({ status: 200, body: { ok: true } });
   try {
     const res = await handler(
@@ -178,7 +178,7 @@ Deno.test("POST com body invalido: 400 invalid_body", async () => {
   }
 });
 
-Deno.test("POST sem PROMO_CHAMPIONS_WEBHOOK_SECRET: 503 service_misconfigured", async () => {
+Deno.test({ name: "POST sem PROMO_CHAMPIONS_WEBHOOK_SECRET: 503 service_misconfigured", sanitizeOps: false, sanitizeResources: false }, async () => {
   const stub = installFetchStub({ status: 200, body: { ok: true } });
   const prev = Deno.env.get("PROMO_CHAMPIONS_WEBHOOK_SECRET");
   Deno.env.delete("PROMO_CHAMPIONS_WEBHOOK_SECRET");
@@ -196,7 +196,7 @@ Deno.test("POST sem PROMO_CHAMPIONS_WEBHOOK_SECRET: 503 service_misconfigured", 
   }
 });
 
-Deno.test("happy path: envia headers/body corretos e devolve resposta ao frontend", async () => {
+Deno.test({ name: "happy path: envia headers/body corretos e devolve resposta ao frontend", sanitizeOps: false, sanitizeResources: false }, async () => {
   const championsResp = { ok: true, received: true, dedupe: "new" };
   const stub = installFetchStub({ status: 200, body: championsResp });
   try {
@@ -247,7 +247,7 @@ Deno.test("happy path: envia headers/body corretos e devolve resposta ao fronten
   }
 });
 
-Deno.test("Champions responde 401: propaga status e error=champions_failed", async () => {
+Deno.test({ name: "Champions responde 401: propaga status e error=champions_failed", sanitizeOps: false, sanitizeResources: false }, async () => {
   const stub = installFetchStub({
     status: 401,
     body: { error: "invalid_signature" },
@@ -267,7 +267,7 @@ Deno.test("Champions responde 401: propaga status e error=champions_failed", asy
   }
 });
 
-Deno.test("updated_at ausente: correlation_key usa timestamp gerado", async () => {
+Deno.test({ name: "updated_at ausente: correlation_key usa timestamp gerado", sanitizeOps: false, sanitizeResources: false }, async () => {
   const stub = installFetchStub({ status: 200, body: { ok: true } });
   try {
     const input = { ...baseBody(), updated_at: null };
