@@ -81,6 +81,7 @@ export function PdfGenerationDialog({
   const [progressLabel, setProgressLabel] = useState('');
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfVersion, setPdfVersion] = useState(1);
+  const [printFallback, setPrintFallback] = useState<PdfPrintFallbackReason | null>(null);
   const blobUrlRef = useRef<string | null>(null);
 
   const isDraft = quoteStatus === 'draft';
