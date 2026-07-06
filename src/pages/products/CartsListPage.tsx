@@ -102,6 +102,10 @@ function CartsListContent() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortKey>('recent');
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const { deleteCart } = useSellerCartContext();
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
