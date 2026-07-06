@@ -23,7 +23,7 @@ const Body = z.object({
   seller_email: z.string().optional().nullable(),
 });
 
-Deno.serve(async (req) => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
