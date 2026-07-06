@@ -374,7 +374,7 @@ function CartRow({ cart, onOpen }: CartRowProps) {
           <AvatarLogo
             name={cart.company_name}
             logoUrl={cart.company_logo_url}
-            size="md"
+            size="lg"
             className="ring-1 ring-border"
           />
           <div className="min-w-0">
