@@ -230,92 +230,53 @@ function CartsListContent() {
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1
-            data-testid="page-title-carrinhos"
-            className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
-          >
-            <ShoppingCart aria-hidden="true" className="h-7 w-7" />
-            Carrinhos
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {totals.count} {totals.count === 1 ? 'carrinho' : 'carrinhos'} · {totals.totalItems}{' '}
-            {totals.totalItems === 1 ? 'item' : 'itens'} ·{' '}
-            <span className="font-semibold text-foreground">
-              {formatCurrency(totals.totalValue)}
-            </span>
-          </p>
-        </div>
-        <Button
-          onClick={() => setPickerOpen(true)}
-          data-testid="carts-list-new"
-          aria-label="Criar novo carrinho"
-          className="gap-2"
-        >
-          <Plus aria-hidden="true" className="h-4 w-4" />
-          Novo carrinho
-        </Button>
-      </header>
-
-      {/* Toolbar: busca + chips de status + ordenação (padrão Orçamentos) */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-sm">
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por empresa…"
-            aria-label="Buscar carrinhos por empresa"
-            data-testid="carts-list-search"
-            className="h-9 pl-9 pr-9"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label="Limpar busca"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+          <div className="shrink-0">
+            <h1
+              data-testid="page-title-carrinhos"
+              className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
             >
-              <X aria-hidden="true" className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+              <ShoppingCart aria-hidden="true" className="h-7 w-7" />
+              Carrinhos
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {totals.count} {totals.count === 1 ? 'carrinho' : 'carrinhos'} · {totals.totalItems}{' '}
+              {totals.totalItems === 1 ? 'item' : 'itens'} ·{' '}
+              <span className="font-semibold text-foreground">
+                {formatCurrency(totals.totalValue)}
+              </span>
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div
-            role="tablist"
-            aria-label="Filtrar por status"
-            className="flex flex-wrap items-center gap-1.5"
-            data-testid="carts-list-status-chips"
-          >
-            <StatusChip
-              active={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-              label="Todos"
-              count={statusCounts.all}
-              testId="carts-list-chip-all"
+          <div className="relative w-full lg:max-w-sm">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             />
-            {(
-              Object.entries(STATUS_CONFIG) as [CartStatus, (typeof STATUS_CONFIG)[CartStatus]][]
-            ).map(([key, cfg]) => (
-              <StatusChip
-                key={key}
-                active={statusFilter === key}
-                onClick={() => setStatusFilter(key)}
-                label={cfg.label}
-                count={statusCounts[key]}
-                testId={`carts-list-chip-${key}`}
-              />
-            ))}
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por empresa…"
+              aria-label="Buscar carrinhos por empresa"
+              data-testid="carts-list-search"
+              className="h-9 pl-9 pr-9"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Limpar busca"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
             <SelectTrigger
-              className="h-9 w-[170px]"
+              className="h-9 w-full lg:w-[170px]"
               data-testid="carts-list-sort"
               aria-label="Ordenar carrinhos"
             >
@@ -329,6 +290,49 @@ function CartsListContent() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <Button
+          onClick={() => setPickerOpen(true)}
+          data-testid="carts-list-new"
+          aria-label="Criar novo carrinho"
+          className="gap-2 lg:shrink-0"
+        >
+          <Plus aria-hidden="true" className="h-4 w-4" />
+          Novo carrinho
+        </Button>
+      </header>
+
+      {/* Toolbar: chips de status + ações de seleção */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+          role="tablist"
+          aria-label="Filtrar por status"
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="carts-list-status-chips"
+        >
+          <StatusChip
+            active={statusFilter === 'all'}
+            onClick={() => setStatusFilter('all')}
+            label="Todos"
+            count={statusCounts.all}
+            testId="carts-list-chip-all"
+          />
+          {(
+            Object.entries(STATUS_CONFIG) as [CartStatus, (typeof STATUS_CONFIG)[CartStatus]][]
+          ).map(([key, cfg]) => (
+            <StatusChip
+              key={key}
+              active={statusFilter === key}
+              onClick={() => setStatusFilter(key)}
+              label={cfg.label}
+              count={statusCounts[key]}
+              testId={`carts-list-chip-${key}`}
+            />
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
 
           <div
             role="group"
