@@ -351,7 +351,7 @@ export const PropostaComercialTailwind = forwardRef<
                   >
                     <tbody>
                       <tr>
-                        <td style={{ verticalAlign: 'top', paddingRight: '12px' }}>
+                        <td style={{ verticalAlign: 'bottom', paddingRight: '12px', paddingBottom: '2px' }}>
                           <ProposalConditionsBadges data={data} />
                         </td>
                         <td
