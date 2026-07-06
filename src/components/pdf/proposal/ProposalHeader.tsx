@@ -183,7 +183,7 @@ export function ProposalHeader({ data, isContinuation }: Props) {
         </p>
         <p
           style={{
-            fontSize: '12px',
+            fontSize: '14px',
             opacity: 0.7,
             margin: 0,
             fontFamily: "'Montserrat', sans-serif",
