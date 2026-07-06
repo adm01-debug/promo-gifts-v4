@@ -499,6 +499,7 @@ function CartsListContent() {
                     onEdit={() => navigate(`/carrinhos/${cart.id}`)}
                     onDuplicate={() => duplicateCart(cart.id)}
                     onDelete={() => setDeleteConfirmId(cart.id)}
+                    onGenerateQuote={() => handleGenerateQuote(cart)}
                   />
                 ))}
               </TableBody>
