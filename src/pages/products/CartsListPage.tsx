@@ -431,6 +431,7 @@ function CartsListContent() {
           variant="cart"
           title="Nenhum carrinho aberto"
           description="Crie um carrinho para começar a montar uma proposta para um cliente."
+          data-testid="carts-empty-none"
         >
           <Button onClick={() => setPickerOpen(true)} className="gap-2">
             <Plus aria-hidden="true" className="h-4 w-4" /> Novo carrinho
@@ -441,6 +442,7 @@ function CartsListContent() {
           variant="cart"
           title="Nenhum carrinho encontrado"
           description="Ajuste a busca ou os filtros para ver mais carrinhos."
+          data-testid="carts-empty-filtered"
         >
           <Button
             variant="outline"
