@@ -186,6 +186,7 @@ function CartsListContent() {
   const confirmBulkDelete = useCallback(() => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) {
+      toast.info('Selecione ao menos um carrinho para excluir.');
       setBulkDeleteOpen(false);
       return;
     }
@@ -198,6 +199,34 @@ function CartsListContent() {
     setBulkDeleteOpen(false);
     clearSelection();
   }, [selectedIds, deleteCart, clearSelection]);
+
+  /**
+   * Atalho: Esc sai do modo de seleção e limpa marcações.
+   * Ignora quando o AlertDialog de exclusão está aberto — nesse caso o
+   * Radix já trata Esc para fechar o dialog, evitando duplo fechamento.
+   * Ignora também quando foco está em input/textarea/contenteditable
+   * (ex.: campo de busca) para não interromper edição de texto.
+   */
+  useEffect(() => {
+    if (!selectionMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (bulkDeleteOpen) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        (target?.isContentEditable ?? false)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      clearSelection();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selectionMode, bulkDeleteOpen, clearSelection]);
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
