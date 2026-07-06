@@ -43,21 +43,16 @@ export async function syncQuoteToPromoChampions({
   // `correlation_key` no payload garante dedupe no destino.
   const correlationKey = `quote:${quoteId}:sent:${quote.updated_at ?? ''}`;
 
-  const { data, error } = await supabase.functions.invoke('webhook-dispatcher', {
+  const { data, error } = await supabase.functions.invoke('quote-sync-promo-champions', {
     body: {
-      event: 'quote.sent',
-      payload: {
-        quote_id: quoteId,
-        quote_number: quote.quote_number,
-        status: quote.status,
-        client_id: quote.client_id,
-        client_name: quote.client_name,
-        total: quote.total,
-        updated_at: quote.updated_at,
-        seller_email: userEmail,
-        correlation_key: correlationKey,
-        source: 'manual_sync_promo_champions',
-      },
+      quote_id: quoteId,
+      quote_number: quote.quote_number,
+      status: quote.status,
+      client_id: quote.client_id,
+      client_name: quote.client_name,
+      total: quote.total,
+      updated_at: quote.updated_at,
+      seller_email: userEmail,
     },
   });
 
