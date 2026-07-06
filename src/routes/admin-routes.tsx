@@ -21,6 +21,7 @@ import {
   AdminSegurancaPage,
   AdminTelemetriaPage,
   EmaHealthPage,
+  AdminV4CallbacksPage,
 
   AdminUsuariosPage,
   DiscountRequestDetailPage,
