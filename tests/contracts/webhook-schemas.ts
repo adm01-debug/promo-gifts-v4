@@ -593,6 +593,27 @@ export const WordMagicSchemaV1 = z.object({
   force_regenerate: z.boolean().optional().default(false),
 });
 
+// ===========================================================================
+// receive-crm-callback
+// ===========================================================================
+export const ReceiveCrmCallbackSchemaV1 = z.object({
+  external_quote_id: z.string().uuid(),
+  crm_quote_id: z.string().uuid().optional(),
+  event_type: z.enum(["approved", "rejected", "order_created", "sent_to_client", "expired"]),
+  status: z.string().optional(),
+  occurred_at: z.string().datetime({ offset: true }),
+  payload: z
+    .object({
+      order_id: z.string().uuid().optional(),
+      order_number: z.string().max(64).optional(),
+      rejection_reason: z.string().max(2000).optional(),
+      approved_by: z.string().max(255).optional(),
+      total_value: z.number().finite().optional(),
+    })
+    .catchall(z.any())
+    .default({}),
+});
+
 export const CONTRACTS: Record<string, ContractDefinition> = {
   "product-webhook": {
     endpoint: "product-webhook",
