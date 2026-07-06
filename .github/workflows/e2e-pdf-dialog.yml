@@ -36,6 +36,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write  # necessário para o comentário sticky de recalibração
+
 
 jobs:
   pdf-dialog:
@@ -108,4 +110,95 @@ jobs:
             e2e/**/__screenshots__/**/proposal-page-watermark-*.png
           retention-days: 30
           if-no-files-found: warn
+
+      # ── Recalibração automática de thresholds ─────────────────────────
+      # Roda em toda execução (incluindo PR). Usa os pares actual/expected
+      # produzidos pelo Playwright em test-results/ como amostras. Em runs
+      # verdes (0 diffs) o script simplesmente sugere manter os thresholds.
+      # Não falha o job aqui — o gate de drift roda no step seguinte.
+      - name: Recalibrar thresholds do watermark (informacional)
+        if: always()
+        id: recalibrate
+        continue-on-error: true
+        run: |
+          mkdir -p qa/reports
+          node scripts/recalibrate-watermark-thresholds.mjs \
+            --samples test-results \
+            --out qa/reports/watermark-threshold-recalibration.md \
+            --json qa/reports/watermark-threshold-recalibration.json || echo "recalibrate_exit=$?" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact de recalibração (report + json + diffs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watermark-threshold-recalibration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            qa/reports/watermark-threshold-recalibration.md
+            qa/reports/watermark-threshold-recalibration.json
+            test-results/**/*-diff.png
+          retention-days: 30
+          if-no-files-found: warn
+
+      # Comentário sticky no PR SOMENTE quando a recalibração sugere
+      # atualização (delta relevante em algum escopo). Em runs verdes sem
+      # divergência, não polui o PR.
+      - name: Comentar recalibração no PR (quando houver sugestão)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const jsonPath = 'qa/reports/watermark-threshold-recalibration.json';
+            const mdPath = 'qa/reports/watermark-threshold-recalibration.md';
+            if (!fs.existsSync(jsonPath) || !fs.existsSync(mdPath)) {
+              core.info('Sem relatório de recalibração — nada a comentar.');
+              return;
+            }
+            const payload = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            // Só comenta se algum escopo sugerir mudança > 5% (evita ruído
+            // em runs verdes que sempre sugerem manter o threshold).
+            const hasSuggestion = Object.values(payload.suggestions)
+              .some((s) => Math.abs(s.delta) > 0.05);
+            if (!hasSuggestion) {
+              core.info('Recalibração não sugere mudança relevante (>5%). Sem comentário.');
+              return;
+            }
+            const body = fs.readFileSync(mdPath, 'utf8');
+            const marker = '<!-- watermark-threshold-recalibration -->';
+            const finalBody = `${marker}\n${body}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+            const existing = comments.data.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: finalBody });
+              core.info(`Comentário sticky atualizado: #${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: finalBody });
+              core.info('Comentário sticky criado.');
+            }
+
+      # Gate de drift — falha o job se a sugestão exceder ±20% em qualquer
+      # escopo. Exit code 2 do script indica exatamente isso. O objetivo é
+      # forçar revisão humana antes que o watermark degrade silenciosamente.
+      - name: Gate de drift de thresholds (> ±20%)
+        if: always()
+        run: |
+          if [ ! -f qa/reports/watermark-threshold-recalibration.json ]; then
+            echo "::warning::JSON de recalibração ausente — pulando gate."
+            exit 0
+          fi
+          node -e "
+            const p = JSON.parse(require('fs').readFileSync('qa/reports/watermark-threshold-recalibration.json','utf8'));
+            const rows = Object.entries(p.suggestions).map(([k,v]) => [k, v.delta]);
+            const bad = rows.filter(([,d]) => Math.abs(d) > p.divergenceAlert);
+            if (bad.length) {
+              console.error('❌ Drift de threshold acima do limite:');
+              for (const [k,d] of bad) console.error('   ' + k + ': ' + (d*100).toFixed(1) + '%');
+              console.error('Ver artifact watermark-threshold-recalibration-* para o relatório completo.');
+              process.exit(1);
+            }
+            console.log('✅ Drift dentro do limite (±' + (p.divergenceAlert*100) + '%).');
+          "
+
 

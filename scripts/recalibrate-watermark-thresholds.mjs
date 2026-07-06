@@ -65,11 +65,12 @@ function parseArgs(argv) {
 }
 const args = parseArgs(process.argv);
 if (!args.samples) {
-  console.error('❌ Uso: --samples <dir> [--out <md>]');
+  console.error('❌ Uso: --samples <dir> [--out <md>] [--json <path>]');
   process.exit(1);
 }
 const SAMPLES_DIR = resolve(args.samples);
 const OUT_PATH = resolve(args.out ?? 'qa/reports/watermark-threshold-recalibration.md');
+const JSON_PATH = args.json ? resolve(args.json) : null;
 
 // ── Coleta pares actual/expected ────────────────────────────────────────
 function walk(dir) {
@@ -241,6 +242,24 @@ console.log(
 console.log(
   `   framed:  ${suggestions.framed.current} → ${suggestions.framed.suggested} (Δ ${(suggestions.framed.delta * 100).toFixed(1)}%)`,
 );
+
+// Emite JSON máquina-legível para consumo do workflow (comentário em PR,
+// gate de drift, artifact). Estrutura estável — consumers dependem dela.
+if (JSON_PATH) {
+  const payload = {
+    generatedAt: now,
+    safety: SAFETY,
+    divergenceAlert: DIVERGENCE_ALERT,
+    anyDivergent,
+    suggestions,
+    totalPairs: measurements.length,
+    errors: measurements.filter((m) => m.ratio == null).length,
+    reportPath: OUT_PATH,
+  };
+  mkdirSync(dirname(JSON_PATH), { recursive: true });
+  writeFileSync(JSON_PATH, JSON.stringify(payload, null, 2), 'utf8');
+  console.log(`📄 JSON gravado em ${JSON_PATH}`);
+}
 
 if (anyDivergent) {
   console.error(
