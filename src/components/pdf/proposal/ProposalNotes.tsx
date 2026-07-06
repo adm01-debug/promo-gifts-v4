@@ -23,18 +23,42 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
       >
         <div
           style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontWeight: 700,
-            fontSize: '10px',
-            color: '#00c853',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: '12px',
             marginBottom: '8px',
             borderBottom: '2px solid #e8f5e9',
             paddingBottom: '4px',
           }}
         >
-          Condições Comerciais
+          <div
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: 700,
+              fontSize: '10px',
+              color: '#00c853',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              flex: '0 0 auto',
+            }}
+          >
+            Condições Comerciais
+          </div>
+          {data.notes && (
+            <div
+              style={{
+                fontSize: '9px',
+                color: '#555',
+                lineHeight: '1.4',
+                flex: '1 1 auto',
+              }}
+            >
+              <span style={{ fontWeight: 700, color: '#888', textTransform: 'uppercase', marginRight: '6px' }}>
+                Observações:
+              </span>
+              {data.notes}
+            </div>
+          )}
         </div>
 
         {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
@@ -117,19 +141,6 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           </tbody>
         </table>
 
-        {data.notes && (
-          <div
-            style={{
-              fontSize: '9px',
-              color: '#777',
-              lineHeight: '1.5',
-              paddingTop: '2px',
-              marginBottom: '2px',
-            }}
-          >
-            <div>- {data.notes}</div>
-          </div>
-        )}
 
         {/* Termos de Aceite */}
         <div style={{ paddingTop: '2px' }}>
