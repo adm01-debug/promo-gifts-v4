@@ -1648,6 +1648,16 @@ html[data-scroll-locked] body {
     background-color: hsl(0 0% 100%) !important;
   }
 
+  /*
+   * Status chip glow — SSOT do halo luminoso usado por todos os chips de status
+   * (Carrinhos, Orçamentos, etc). Cada chip define `--chip-glow` apontando para
+   * um token de cor (ex.: `[--chip-glow:var(--neon-blue)]`); esta classe aplica
+   * o box-shadow padrão. Alterar o raio/opacidade aqui propaga para tudo.
+   */
+  .status-chip-glow {
+    box-shadow: 0 0 12px hsl(var(--chip-glow, var(--primary)) / 0.35);
+  }
+
   /* Card Variants */
   .card-base {
     @apply rounded-xl border border-border bg-card p-[var(--spacing-card)] transition-all duration-200;
