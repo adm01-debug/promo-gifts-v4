@@ -243,6 +243,24 @@ console.log(
   `   framed:  ${suggestions.framed.current} → ${suggestions.framed.suggested} (Δ ${(suggestions.framed.delta * 100).toFixed(1)}%)`,
 );
 
+// Emite JSON máquina-legível para consumo do workflow (comentário em PR,
+// gate de drift, artifact). Estrutura estável — consumers dependem dela.
+if (JSON_PATH) {
+  const payload = {
+    generatedAt: now,
+    safety: SAFETY,
+    divergenceAlert: DIVERGENCE_ALERT,
+    anyDivergent,
+    suggestions,
+    totalPairs: measurements.length,
+    errors: measurements.filter((m) => m.ratio == null).length,
+    reportPath: OUT_PATH,
+  };
+  mkdirSync(dirname(JSON_PATH), { recursive: true });
+  writeFileSync(JSON_PATH, JSON.stringify(payload, null, 2), 'utf8');
+  console.log(`📄 JSON gravado em ${JSON_PATH}`);
+}
+
 if (anyDivergent) {
   console.error(
     `\n⚠️  Divergência > ${(DIVERGENCE_ALERT * 100).toFixed(0)}% em algum escopo — revisão humana obrigatória antes de aplicar.`,
