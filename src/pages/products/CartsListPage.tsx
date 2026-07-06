@@ -795,6 +795,14 @@ function CartRow({
                 className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
               >
                 <DropdownMenuItem
+                  data-testid={`cart-row-menu-generate-quote-${cart.id}`}
+                  disabled={cart.items.length === 0}
+                  onClick={onGenerateQuote}
+                >
+                  <FileText className="mr-2 h-4 w-4" /> Gerar Orçamento
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   data-testid={`cart-row-menu-edit-${cart.id}`}
                   onClick={onEdit}
                 >
