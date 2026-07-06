@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatDeliveryTime } from '@/components/pdf/ProposalHtmlTemplate';
 import { getQuoteRowBadge } from '@/components/quotes/QuotesStatusChips';
-import { AvatarLogo } from '@/components/shared/AvatarLogo';
+import { CompanyListAvatar } from '@/components/shared/CompanyListAvatar';
 import { normalizeCnpj, type LogoByCnpj } from '@/hooks/quotes/useQuoteClientLogos';
 import { maskCnpj } from '@/utils/masks';
 import type { Quote } from '@/hooks/quotes';
