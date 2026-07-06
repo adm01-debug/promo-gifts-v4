@@ -1,18 +1,15 @@
-import {
-  type ProposalTemplateData,
-  formatPaymentTerms,
-  formatDeliveryTime,
-  formatShipping,
-} from '../ProposalHtmlTemplate';
+/**
+ * ProposalNotes — Termos de Aceite e observações livres.
+ *
+ * As 4 badges (Prazo Pagamento, Entrega, Frete, Validade) foram movidas
+ * para `ProposalConditionsBadges` e são renderizadas ao lado do bloco de
+ * totais, para aproveitamento de espaço horizontal na última página.
+ */
+import { type ProposalTemplateData } from '../ProposalHtmlTemplate';
 
 export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
-  const paymentLabel = formatPaymentTerms(data.paymentTerms);
-  const deliveryLabel = formatDeliveryTime(data.deliveryTime);
-  const shippingLabel = formatShipping(data.shippingType, data.shippingCost);
-
   return (
     <div style={{ marginTop: '14px' }}>
-      {/* Bloco de Condições Comerciais */}
       <div
         style={{
           border: '1px solid #e0e0e0',
@@ -21,110 +18,13 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           backgroundColor: '#fafafa',
         }}
       >
-        <div
-          style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontWeight: 700,
-            fontSize: '10px',
-            color: '#00c853',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '8px',
-            borderBottom: '2px solid #e8f5e9',
-            paddingBottom: '4px',
-          }}
-        >
-          Condições Comerciais
-        </div>
-
-        {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2px' }}>
-          <tbody>
-            <tr>
-              <td style={{ width: '25%', padding: '0 8px 0 0', verticalAlign: 'top' }}>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    color: '#888',
-                    textTransform: 'uppercase',
-                    marginBottom: '2px',
-                  }}
-                >
-                  💳 Prazo de Pagamento
-                </div>
-                <div
-                  style={{ fontSize: '10px', color: '#333', fontWeight: 600, lineHeight: '1.4' }}
-                >
-                  {paymentLabel || 'À vista / Boleto / Pix'}
-                </div>
-              </td>
-              <td style={{ width: '25%', padding: '0 8px', verticalAlign: 'top' }}>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    color: '#888',
-                    textTransform: 'uppercase',
-                    marginBottom: '2px',
-                  }}
-                >
-                  📦 Prazo de Entrega
-                </div>
-                <div
-                  style={{ fontSize: '10px', color: '#333', fontWeight: 600, lineHeight: '1.4' }}
-                >
-                  {deliveryLabel || 'A combinar'}
-                </div>
-              </td>
-              <td style={{ width: '25%', padding: '0 8px', verticalAlign: 'top' }}>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    color: '#888',
-                    textTransform: 'uppercase',
-                    marginBottom: '2px',
-                  }}
-                >
-                  🚚 Frete
-                </div>
-                <div
-                  style={{ fontSize: '10px', color: '#333', fontWeight: 600, lineHeight: '1.4' }}
-                >
-                  {shippingLabel}
-                </div>
-              </td>
-              <td style={{ width: '25%', padding: '0 0 0 8px', verticalAlign: 'top' }}>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    color: '#888',
-                    textTransform: 'uppercase',
-                    marginBottom: '2px',
-                  }}
-                >
-                  📅 Validade da Proposta
-                </div>
-                <div
-                  style={{ fontSize: '10px', color: '#333', fontWeight: 600, lineHeight: '1.4' }}
-                >
-                  {data.validUntil || '15 dias'}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
         {data.notes && (
           <div
             style={{
               fontSize: '9px',
               color: '#777',
               lineHeight: '1.5',
-              paddingTop: '2px',
-              marginBottom: '2px',
+              marginBottom: '8px',
             }}
           >
             <div>- {data.notes}</div>
@@ -132,8 +32,7 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
         )}
 
         {/* Termos de Aceite */}
-        <div style={{ paddingTop: '2px' }}>
-
+        <div>
           <div
             style={{
               fontFamily: "'Montserrat', sans-serif",
