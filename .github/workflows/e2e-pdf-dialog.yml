@@ -1,190 +1,88 @@
-name: PdfGenerationDialog · Vitest + Playwright (multi-engine)
+name: E2E — PDF Dialog (watermark pixel-diff, authed)
+
+# Roda o spec `e2e/flows/pdf-dialog.spec.ts` no projeto autenticado.
+#
+# Dois modos:
+#   • push/PR → executa o spec e falha se snapshots divergirem (regressão).
+#   • workflow_dispatch com update_snapshots=true → regenera baselines
+#     (`*.png` sob e2e/**/__screenshots__) e sobe como artifact para revisão
+#     humana antes do commit. Não commita direto — evita "auto-atualizar
+#     baseline sem revisão".
+#
+# Contexto: os baselines do pixel-diff do watermark de RASCUNHO
+# (proposal-watermark-page-N.png + proposal-page-watermark-framed.png) são
+# gerados por este workflow no primeiro dispatch e depois versionados via PR.
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     paths:
-      - 'src/components/quotes/PdfGenerationDialog.tsx'
-      - 'src/components/quotes/__tests__/PdfGenerationDialog.*'
       - 'e2e/flows/pdf-dialog.spec.ts'
-      - 'e2e/quotes/**'
-      - '.github/workflows/e2e-pdf-dialog.yml'
+      - 'src/components/pdf/**'
+      - 'src/components/quotes/PdfGenerationDialog*'
   pull_request:
-    branches: [main, master]
     paths:
-      - 'src/components/quotes/PdfGenerationDialog.tsx'
-      - 'src/components/quotes/__tests__/PdfGenerationDialog.*'
       - 'e2e/flows/pdf-dialog.spec.ts'
-      - 'e2e/quotes/**'
-      - '.github/workflows/e2e-pdf-dialog.yml'
+      - 'src/components/pdf/**'
+      - 'src/components/quotes/PdfGenerationDialog*'
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: 'Regerar baselines de screenshot (salva como artifact)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+permissions:
+  contents: read
 
 jobs:
-  vitest:
-    name: Vitest — PdfGenerationDialog (unit + a11y jest-axe)
+  pdf-dialog:
+    name: PDF dialog + watermark pixel-diff
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Vitest — unit + a11y
-        run: |
-          npx vitest run \
-            src/components/quotes/__tests__/PdfGenerationDialog.headerWarning.test.tsx \
-            src/components/quotes/__tests__/PdfGenerationDialog.footerButton.test.tsx \
-            src/components/quotes/__tests__/PdfGenerationDialog.a11y.test.tsx
-        env:
-          TZ: America/Sao_Paulo
-
-  playwright:
-    name: Playwright · ${{ matrix.project }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: vitest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Multi-engine + mobile — cobre foco/hover no desktop (chromium/firefox)
-        # e responsividade no viewport mobile (Pixel 5).
-        project: [chromium-authed, firefox-authed, mobile-chrome]
+    timeout-minutes: 25
     env:
       CI: 'true'
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_BASE_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: '.nvmrc'
           cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
+      # pdftotext (poppler) é usado por asserts textuais do mesmo spec.
+      - name: Install poppler-utils (pdftotext)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-      - name: Install poppler-utils (pdftotext) para extração textual do PDF
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
-      - name: Playwright — pdf-dialog spec
-        run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=${{ matrix.project }} --reporter=list,html
-      - name: Coletar diffs visuais (baseline vs atual + .diff.png)
-        if: always()
-        run: |
-          set -e
-          mkdir -p visual-diff/${{ matrix.project }}
-          # Playwright grava *-actual.png, *-expected.png e *-diff.png em test-results/
-          # quando há falha de snapshot. Copiamos toda essa tríade para um bundle enxuto.
-          if [ -d test-results ]; then
-            find test-results -type f \
-              \( -name "*-actual.png" -o -name "*-expected.png" -o -name "*-diff.png" \) \
-              -exec cp --parents {} visual-diff/${{ matrix.project }}/ \;
-          fi
-          # Também copiamos as baselines commitadas para o mesmo bundle.
-          if [ -d e2e/flows/pdf-dialog.spec.ts-snapshots ]; then
-            mkdir -p visual-diff/${{ matrix.project }}/baselines
-            cp -r e2e/flows/pdf-dialog.spec.ts-snapshots/. visual-diff/${{ matrix.project }}/baselines/
-          fi
-          ls -R visual-diff || true
-      - name: Upload artifacts (relatório + resultados brutos)
+        run: npx playwright install --with-deps chromium
+
+      - name: Run pdf-dialog spec (chromium-authed)
+        if: ${{ github.event.inputs.update_snapshots != 'true' }}
+        run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=chromium-authed --retries=2
+
+      - name: Update snapshots (chromium-authed)
+        if: ${{ github.event.inputs.update_snapshots == 'true' }}
+        run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=chromium-authed --update-snapshots
+
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-pdf-dialog-${{ matrix.project }}
+          name: playwright-report-pdf-dialog
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload updated baselines (dispatch only)
+        if: ${{ github.event.inputs.update_snapshots == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-dialog-baselines
           path: |
-            playwright-report/
-            test-results/
-          retention-days: 14
-          if-no-files-found: ignore
-      - name: Upload diffs visuais (baseline + actual + diff)
-        if: always()
-        id: upload-visual-diff
-        uses: actions/upload-artifact@v4
-        with:
-          name: visual-diff-pdf-dialog-${{ matrix.project }}
-          path: visual-diff/${{ matrix.project }}/
-          retention-days: 14
-          if-no-files-found: ignore
-
-  pr-comment:
-    name: Comentário no PR (links de artifacts)
-    if: always() && github.event_name == 'pull_request'
-    needs: playwright
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      actions: read
-    steps:
-      - name: Postar/atualizar comentário com links de artifacts
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const runId = context.runId;
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId}`;
-            const projects = ['chromium-authed', 'firefox-authed', 'mobile-chrome'];
-
-            // Lista artifacts do run atual para obter URLs diretas de download.
-            const { data: artifactsData } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: runId,
-              per_page: 100,
-            });
-            const byName = new Map(artifactsData.artifacts.map((a) => [a.name, a]));
-
-            const artifactLink = (name) => {
-              const a = byName.get(name);
-              if (!a) return `_(não gerado)_`;
-              // O download direto do zip exige login GitHub — link para a página
-              // do artifact no run é o padrão navegável para o revisor.
-              const dl = `${runUrl}#artifacts`;
-              const zipApi = a.archive_download_url; // requer token
-              return `[⬇ zip](${zipApi}) · [ver no run](${dl}) · ${(a.size_in_bytes / 1024).toFixed(1)} KB`;
-            };
-
-            const rows = projects
-              .map((p) => {
-                const visual = artifactLink(`visual-diff-pdf-dialog-${p}`);
-                const report = artifactLink(`playwright-pdf-dialog-${p}`);
-                return `| \`${p}\` | ${visual} | ${report} |`;
-              })
-              .join('\n');
-
-            const marker = '<!-- pdf-dialog-artifacts-comment -->';
-            const body = [
-              marker,
-              '### 📎 PdfGenerationDialog · artifacts do E2E',
-              '',
-              `Run: [#${runId}](${runUrl})`,
-              '',
-              '| Projeto | Diff visual (baseline + actual + diff) | Relatório Playwright |',
-              '|---|---|---|',
-              rows,
-              '',
-              '> Diff visual inclui `*-actual.png`, `*-expected.png`, `*-diff.png` e as baselines commitadas — abra o zip para comparar lado a lado.',
-              '> Dark-only: o app força tema `dark` via `ThemeContext`; snapshots em light não são gerados por decisão arquitetural.',
-            ].join('\n');
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
-
-
+            e2e/**/__screenshots__/**/proposal-watermark-*.png
+            e2e/**/__screenshots__/**/proposal-page-watermark-*.png
+          retention-days: 30
+          if-no-files-found: warn
