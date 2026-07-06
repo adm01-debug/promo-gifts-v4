@@ -480,7 +480,6 @@ function CartsListContent() {
                   <TableHead className="w-[90px] px-4 text-center">Itens</TableHead>
                   <TableHead className="w-[130px] px-4 text-right">Valor</TableHead>
                   <TableHead className="w-[170px] px-4">Atualizado</TableHead>
-                  <TableHead className="w-[90px] px-4" />
                 </TableRow>
               </TableHeader>
               <TableBody>
