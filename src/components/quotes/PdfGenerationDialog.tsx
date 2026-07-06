@@ -170,13 +170,10 @@ export function PdfGenerationDialog({
     setPrintFallback(reason);
   };
 
-  const detectBrowser = (ua: string): string => {
-    if (/edg/i.test(ua)) return 'edge';
-    if (/firefox|fxios/i.test(ua)) return 'firefox';
-    if (/chrome|crios/i.test(ua)) return 'chrome';
-    if (detectSafari(ua)) return 'safari';
-    return 'other';
-  };
+  // Exportado como função pura (via export nomeado abaixo) para permitir
+  // fuzz de UAs em testes sem renderizar o componente.
+  const detectBrowser = (ua: string): string => detectBrowserPure(ua);
+
 
   const openInNewTab = (): boolean => {
     const url = blobUrlRef.current;
