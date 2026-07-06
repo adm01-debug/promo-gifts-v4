@@ -62,6 +62,10 @@ export default {
           DEFAULT: "hsl(var(--neon-blue))",
           foreground: "hsl(var(--neon-blue-foreground))",
         },
+        "neon-green": {
+          DEFAULT: "hsl(var(--neon-green))",
+          foreground: "hsl(var(--neon-green-foreground))",
+        },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
