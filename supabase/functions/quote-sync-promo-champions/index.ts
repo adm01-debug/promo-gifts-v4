@@ -154,7 +154,11 @@ export const handler = async (req: Request): Promise<Response> => {
     },
     200,
   );
-});
+};
+
+Deno.serve(handler);
+
+export { hmacSha256Hex };
 
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
