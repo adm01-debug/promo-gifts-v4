@@ -493,6 +493,9 @@ function CartsListContent() {
                     isSelected={selectedIds.has(cart.id)}
                     onToggleSelect={() => toggleRow(cart.id)}
                     onOpen={() => navigate(`/carrinhos/${cart.id}`)}
+                    onEdit={() => navigate(`/carrinhos/${cart.id}`)}
+                    onDuplicate={() => duplicateCart(cart.id)}
+                    onDelete={() => setDeleteConfirmId(cart.id)}
                   />
                 ))}
               </TableBody>
