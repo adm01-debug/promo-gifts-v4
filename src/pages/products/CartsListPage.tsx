@@ -268,18 +268,19 @@ function CartsListContent() {
         </EmptyState>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-primary/10 hover:bg-primary/10">
-                <TableHead className="w-[80px]">Status</TableHead>
-                <TableHead className="w-[340px]">Empresa</TableHead>
-                <TableHead>Ramo de Atividade</TableHead>
-                <TableHead className="w-[120px] text-center">Itens</TableHead>
-                <TableHead className="w-[160px] text-right">Valor</TableHead>
-                <TableHead className="w-[200px]">Atualizado</TableHead>
-                <TableHead className="w-[60px]" />
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow className="bg-primary/10 hover:bg-primary/10">
+                  <TableHead className="w-[90px] px-4">Status</TableHead>
+                  <TableHead className="w-[320px] min-w-[260px] px-4">Empresa</TableHead>
+                  <TableHead className="min-w-[180px] px-4">Ramo de Atividade</TableHead>
+                  <TableHead className="w-[90px] px-4 text-center">Itens</TableHead>
+                  <TableHead className="w-[130px] px-4 text-right">Valor</TableHead>
+                  <TableHead className="w-[170px] px-4">Atualizado</TableHead>
+                  <TableHead className="w-[90px] px-4" />
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filteredCarts.map((cart) => (
                 <CartRow
