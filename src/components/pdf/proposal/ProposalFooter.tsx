@@ -41,7 +41,24 @@ export function ProposalFooter({
       </div>
 
       {/* Green bar */}
-      <div style={{ width: '794px', height: '40px', backgroundColor: '#00c853' }} />
+      <div
+        style={{
+          width: '794px',
+          height: '40px',
+          backgroundColor: '#00c853',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          padding: '0 36px',
+          boxSizing: 'border-box',
+          fontSize: '10px',
+          fontWeight: 600,
+          color: '#000',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        Pág. {pageNumber}/{totalPages}
+      </div>
     </div>
   );
 }
