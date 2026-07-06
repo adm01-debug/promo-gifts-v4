@@ -136,26 +136,47 @@ export function PdfGenerationDialog({
       return;
     }
 
-    // Padrão robusto: iframe oculto → contentWindow.print()
-    // O evento `load` em window.open(blobUrl) NÃO dispara de forma confiável
-    // para o visualizador nativo de PDF (Chrome/Firefox usam plugin externo).
+    // Detecção de Safari: o WebKit tem bug conhecido com print() dentro de
+    // iframe contendo blob PDF — o diálogo simplesmente não abre. Nesse caso
+    // vamos direto para a nova aba, onde Cmd+P funciona nativamente.
+    const ua = navigator.userAgent;
+    const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
+
+    const openInNewTabFallback = (reason: 'safari' | 'iframe-failed' | 'timeout') => {
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        // Pop-up bloqueado — orientação completa
+        toast.error(
+          'Pop-ups bloqueados. Libere pop-ups para este site ou clique em "Baixar" e imprima o arquivo.',
+          { duration: 8000 },
+        );
+        return;
+      }
+      const msg =
+        reason === 'safari'
+          ? 'PDF aberto em nova aba. Use ⌘+P (Cmd+P) para imprimir.'
+          : 'PDF aberto em nova aba. Use Ctrl+P (ou ⌘+P) para imprimir.';
+      toast.info(msg, { duration: 6000 });
+    };
+
+    if (isSafari) {
+      openInNewTabFallback('safari');
+      return;
+    }
+
+    // Chrome/Firefox/Edge: iframe oculto → contentWindow.print()
     try {
-      // Remove qualquer iframe anterior para evitar vazamento
       const existing = document.getElementById('pdf-print-frame');
       if (existing) existing.remove();
 
       const iframe = document.createElement('iframe');
       iframe.id = 'pdf-print-frame';
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
+      iframe.style.cssText =
+        'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
       iframe.setAttribute('aria-hidden', 'true');
 
       let printed = false;
-      const triggerPrint = () => {
+      const triggerPrint = (source: 'onload' | 'watchdog') => {
         if (printed) return;
         printed = true;
         try {
@@ -163,30 +184,36 @@ export function PdfGenerationDialog({
           if (!cw) throw new Error('contentWindow indisponível');
           cw.focus();
           cw.print();
+          // Cleanup 60s depois — tempo suficiente pro usuário concluir/cancelar
+          setTimeout(() => iframe.remove(), 60_000);
         } catch (err) {
-          console.error('[PdfGenerationDialog] print via iframe falhou', err);
-          // Fallback: abrir em nova aba para o usuário imprimir manualmente
-          const win = window.open(url, '_blank', 'noopener,noreferrer');
-          if (!win) {
-            toast.error('Ative pop-ups para imprimir, ou use Baixar e imprima o arquivo.');
-          } else {
-            toast.info('Use Ctrl/Cmd+P na nova aba para imprimir.');
-          }
+          console.error('[PdfGenerationDialog] print via iframe falhou', {
+            source,
+            err,
+          });
+          iframe.remove();
+          openInNewTabFallback('iframe-failed');
         }
       };
 
-      iframe.onload = () => {
-        // Pequeno delay: alguns engines precisam de tick após load do PDF
-        setTimeout(triggerPrint, 250);
-      };
-      // Fallback: se onload nunca disparar (raro em Safari com blob PDF), força após 2s
-      setTimeout(triggerPrint, 2000);
+      iframe.onload = () => setTimeout(() => triggerPrint('onload'), 250);
+      // Watchdog: se onload nunca vier (raro), força nova aba após 3s
+      setTimeout(() => {
+        if (!printed) {
+          printed = true;
+          iframe.remove();
+          openInNewTabFallback('timeout');
+        }
+      }, 3000);
 
       document.body.appendChild(iframe);
       iframe.src = url;
     } catch (err) {
       console.error('[PdfGenerationDialog] handlePrint erro', err);
-      toast.error('Não foi possível iniciar a impressão. Use Baixar como alternativa.');
+      toast.error(
+        'Não foi possível iniciar a impressão. Clique em "Baixar" e imprima o arquivo.',
+        { duration: 6000 },
+      );
     }
   };
 
