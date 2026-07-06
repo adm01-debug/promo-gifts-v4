@@ -4,7 +4,7 @@
  * Layout em tabela (estilo Orçamentos): logo do cliente + nome, status,
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ShoppingCart, ArrowRight, Search, X, CheckSquare, Trash2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
