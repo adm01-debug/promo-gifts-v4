@@ -4,14 +4,26 @@
  * Layout em tabela (estilo Orçamentos): logo do cliente + nome, status,
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowRight, Search, X } from 'lucide-react';
+import { Plus, ShoppingCart, ArrowRight, Search, X, CheckSquare, Trash2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -77,7 +89,7 @@ export default function CartsListPage() {
 
 function CartsListContent() {
   const navigate = useNavigate();
-  const { carts, isLoading } = useSellerCartContext();
+  const { carts, isLoading, deleteCart } = useSellerCartContext();
   const { data: crmCompanies } = useCrmCompanies();
   const cnpjByCompanyId = useMemo(() => {
     const map = new Map<string, string>();
@@ -90,6 +102,10 @@ function CartsListContent() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortKey>('recent');
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  // deleteCart já vem do context acima
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
@@ -127,6 +143,61 @@ function CartsListContent() {
   }, [filteredCarts]);
 
   const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all';
+
+  const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
+  const selectedCount = selectedIds.size;
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+
+  const clearSelection = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const toggleRow = useCallback((cartId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cartId)) next.delete(cartId);
+      else next.add(cartId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllVisible = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (visibleIds.every((id) => prev.has(id))) {
+        const next = new Set(prev);
+        visibleIds.forEach((id) => next.delete(id));
+        return next;
+      }
+      const next = new Set(prev);
+      visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }, [visibleIds]);
+
+  const confirmBulkDelete = useCallback(() => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      setBulkDeleteOpen(false);
+      return;
+    }
+    ids.forEach((id) => deleteCart(id));
+    toast.success(
+      ids.length === 1
+        ? 'Carrinho excluído.'
+        : `${ids.length} carrinhos excluídos.`,
+    );
+    setBulkDeleteOpen(false);
+    clearSelection();
+  }, [selectedIds, deleteCart, clearSelection]);
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
@@ -229,6 +300,43 @@ function CartsListContent() {
               ))}
             </SelectContent>
           </Select>
+
+          {selectionMode && selectedCount > 0 && (
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              data-testid="carts-bulk-delete-top"
+              aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}`}
+              className="h-9 gap-1.5"
+            >
+              <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+              Excluir ({selectedCount})
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant={selectionMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleSelectionMode}
+            data-testid="carts-select-toggle"
+            data-selected={selectionMode ? 'true' : 'false'}
+            aria-pressed={selectionMode}
+            aria-label={
+              selectionMode
+                ? `Cancelar seleção${selectedCount > 0 ? ` (${selectedCount})` : ''}`
+                : 'Selecionar carrinhos'
+            }
+            className="h-9 gap-1.5"
+          >
+            <CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />
+            {selectionMode
+              ? selectedCount > 0
+                ? `Cancelar seleção (${selectedCount})`
+                : 'Cancelar seleção'
+              : 'Selecionar'}
+          </Button>
         </div>
       </div>
 
@@ -272,6 +380,20 @@ function CartsListContent() {
             <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-primary/10 hover:bg-primary/10">
+                  {selectionMode && (
+                    <TableHead className="w-[44px] px-3">
+                      <Checkbox
+                        checked={allVisibleSelected}
+                        onCheckedChange={toggleSelectAllVisible}
+                        aria-label={
+                          allVisibleSelected
+                            ? 'Desmarcar todos os carrinhos visíveis'
+                            : 'Selecionar todos os carrinhos visíveis'
+                        }
+                        data-testid="carts-select-all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="w-[90px] px-4">Status</TableHead>
                   <TableHead className="w-[320px] min-w-[260px] px-4">Empresa</TableHead>
                   <TableHead className="min-w-[180px] px-4">Ramo de Atividade</TableHead>
@@ -287,6 +409,9 @@ function CartsListContent() {
                     key={cart.id}
                     cart={cart}
                     cnpj={cnpjByCompanyId.get(cart.company_id) ?? null}
+                    selectionMode={selectionMode}
+                    isSelected={selectedIds.has(cart.id)}
+                    onToggleSelect={() => toggleRow(cart.id)}
                     onOpen={() => navigate(`/carrinhos/${cart.id}`)}
                   />
                 ))}
@@ -304,6 +429,30 @@ function CartsListContent() {
           if (cartId) navigate(`/carrinhos/${cartId}`);
         }}
       />
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent data-testid="carts-bulk-delete-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Excluir {selectedCount} {selectedCount === 1 ? 'carrinho' : 'carrinhos'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Os carrinhos selecionados e todos os seus itens
+              serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              data-testid="carts-bulk-delete-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir {selectedCount}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -347,19 +496,34 @@ function StatusChip({ active, onClick, label, count, testId }: StatusChipProps) 
 interface CartRowProps {
   cart: SellerCart;
   cnpj: string | null;
+  selectionMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: () => void;
   onOpen: () => void;
 }
 
-function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
+function CartRow({
+  cart,
+  cnpj,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+  onOpen,
+}: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
   const itemCount = cart.items.length;
   const updatedAt = new Date(cart.updated_at);
 
+  const handleActivate = () => {
+    if (selectionMode) onToggleSelect();
+    else onOpen();
+  };
+
   const handleKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onOpen();
+      handleActivate();
     }
   };
 
@@ -367,12 +531,31 @@ function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
     <TableRow
       role="button"
       tabIndex={0}
-      aria-label={`Abrir carrinho de ${cart.company_name}`}
-      onClick={onOpen}
+      aria-label={
+        selectionMode
+          ? `${isSelected ? 'Desmarcar' : 'Selecionar'} carrinho de ${cart.company_name}`
+          : `Abrir carrinho de ${cart.company_name}`
+      }
+      aria-selected={selectionMode ? isSelected : undefined}
+      onClick={handleActivate}
       onKeyDown={handleKey}
       data-testid={`cart-row-${cart.id}`}
-      className="group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+      data-selected={selectionMode && isSelected ? 'true' : undefined}
+      className={cn(
+        'group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+        selectionMode && isSelected && 'bg-primary/5 hover:bg-primary/10',
+      )}
     >
+      {selectionMode && (
+        <TableCell className="w-[44px] px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onToggleSelect}
+            aria-label={`${isSelected ? 'Desmarcar' : 'Selecionar'} ${cart.company_name}`}
+            data-testid={`cart-row-checkbox-${cart.id}`}
+          />
+        </TableCell>
+      )}
       <TableCell className="px-4 align-middle">
         <span
           data-testid={`cart-row-status-${cart.id}`}
