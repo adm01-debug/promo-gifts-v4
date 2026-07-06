@@ -300,6 +300,43 @@ function CartsListContent() {
               ))}
             </SelectContent>
           </Select>
+
+          {selectionMode && selectedCount > 0 && (
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              data-testid="carts-bulk-delete-top"
+              aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}`}
+              className="h-9 gap-1.5"
+            >
+              <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+              Excluir ({selectedCount})
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant={selectionMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleSelectionMode}
+            data-testid="carts-select-toggle"
+            data-selected={selectionMode ? 'true' : 'false'}
+            aria-pressed={selectionMode}
+            aria-label={
+              selectionMode
+                ? `Cancelar seleção${selectedCount > 0 ? ` (${selectedCount})` : ''}`
+                : 'Selecionar carrinhos'
+            }
+            className="h-9 gap-1.5"
+          >
+            <CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />
+            {selectionMode
+              ? selectedCount > 0
+                ? `Cancelar seleção (${selectedCount})`
+                : 'Cancelar seleção'
+              : 'Selecionar'}
+          </Button>
         </div>
       </div>
 
