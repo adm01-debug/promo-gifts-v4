@@ -52,6 +52,21 @@ export function detectSafari(ua: string): boolean {
   return isWebKit && !isChromeFamily;
 }
 
+/**
+ * Classifica o navegador para telemetria. Pura e exportada para fuzz.
+ * Precedência: Edge > Firefox > Chrome > Safari > other.
+ */
+export function detectBrowserPure(ua: string): 'edge' | 'firefox' | 'chrome' | 'safari' | 'other' {
+  if (/edg/i.test(ua)) return 'edge';
+  if (/firefox|fxios/i.test(ua)) return 'firefox';
+  if (/chrome|crios/i.test(ua)) return 'chrome';
+  if (detectSafari(ua)) return 'safari';
+  return 'other';
+}
+
+
+
+
 
 const PREVIEW_SCROLL_STYLE = { maxHeight: 'calc(90vh - 160px)' } as const;
 type Stage = 'generating' | 'preview' | 'ready';
@@ -170,13 +185,10 @@ export function PdfGenerationDialog({
     setPrintFallback(reason);
   };
 
-  const detectBrowser = (ua: string): string => {
-    if (/edg/i.test(ua)) return 'edge';
-    if (/firefox|fxios/i.test(ua)) return 'firefox';
-    if (/chrome|crios/i.test(ua)) return 'chrome';
-    if (detectSafari(ua)) return 'safari';
-    return 'other';
-  };
+  // Exportado como função pura (via export nomeado abaixo) para permitir
+  // fuzz de UAs em testes sem renderizar o componente.
+  const detectBrowser = (ua: string): string => detectBrowserPure(ua);
+
 
   const openInNewTab = (): boolean => {
     const url = blobUrlRef.current;
