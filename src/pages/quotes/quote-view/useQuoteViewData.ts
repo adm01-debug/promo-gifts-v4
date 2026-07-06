@@ -217,7 +217,7 @@ export function useQuoteViewData(id: string | undefined) {
 
   const handleSyncBitrix = async () => {
     if (!quote || !proposalData) return;
-    setIsSyncing(true);
+    setSyncingTarget((prev) => prev ?? 'bitrix');
     try {
       const { syncQuoteToBitrix } = await import('./QuoteBitrixSync');
       const result = await syncQuoteToBitrix({
@@ -233,9 +233,73 @@ export function useQuoteViewData(id: string | undefined) {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'erro desconhecido';
-      toast.error('Erro ao sincronizar', { description: msg });
+      toast.error('Erro ao sincronizar com Bitrix24', { description: msg });
     } finally {
-      setIsSyncing(false);
+      setSyncingTarget(null);
+    }
+  };
+
+  const handleSyncPromoChampions = async () => {
+    if (!quote) return;
+    setSyncingTarget((prev) => prev ?? 'pc');
+    try {
+      const { syncQuoteToPromoChampions } = await import('./QuotePromoChampionsSync');
+      await syncQuoteToPromoChampions({
+        quote,
+        userEmail: user?.email,
+        logQuoteHistory,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'erro desconhecido';
+      toast.error('Erro ao sincronizar com Promo Champions', { description: msg });
+    } finally {
+      setSyncingTarget(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (!quote || !proposalData) return;
+    setSyncingTarget('all');
+    try {
+      // Bitrix primeiro (transiciona status→sent). PC em seguida, independente do
+      // resultado — falha em um destino não bloqueia o outro.
+      const results = await Promise.allSettled([
+        (async () => {
+          const { syncQuoteToBitrix } = await import('./QuoteBitrixSync');
+          const r = await syncQuoteToBitrix({
+            quote,
+            proposalData,
+            bitrixCompanyId,
+            userEmail: user?.email,
+            logQuoteHistory,
+            onBitrixCompanyIdFound: (newId) => setBitrixCompanyId(newId),
+          });
+          if (r.success && r.updatedQuote) {
+            setQuote((prev) => (prev ? { ...prev, ...r.updatedQuote } : prev));
+          }
+          return r;
+        })(),
+        (async () => {
+          const { syncQuoteToPromoChampions } = await import('./QuotePromoChampionsSync');
+          return syncQuoteToPromoChampions({
+            quote,
+            userEmail: user?.email,
+            logQuoteHistory,
+          });
+        })(),
+      ]);
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length === results.length) {
+        toast.error('Falha ao sincronizar em ambos os destinos');
+      } else if (failed.length > 0) {
+        const rejected = failed[0] as PromiseRejectedResult;
+        const msg = rejected.reason instanceof Error
+          ? rejected.reason.message
+          : 'erro parcial';
+        toast.warning('Sincronização parcial', { description: msg });
+      }
+    } finally {
+      setSyncingTarget(null);
     }
   };
 
@@ -247,6 +311,7 @@ export function useQuoteViewData(id: string | undefined) {
     bitrixCompanyId,
     isGeneratingPDF,
     isSyncing,
+    syncingTarget,
     proposalData,
     approvalLink,
     // Actions
@@ -254,6 +319,8 @@ export function useQuoteViewData(id: string | undefined) {
     handleWhatsAppShare,
     handleShareLink,
     handleSyncBitrix,
+    handleSyncPromoChampions,
+    handleSyncAll,
     // Quotes
     fetchQuote,
     logQuoteHistory,
@@ -261,3 +328,4 @@ export function useQuoteViewData(id: string | undefined) {
     deleteQuote,
   };
 }
+
