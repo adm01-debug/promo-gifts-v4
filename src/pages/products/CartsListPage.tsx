@@ -373,7 +373,7 @@ function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
       data-testid={`cart-row-${cart.id}`}
       className="group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
     >
-      <TableCell>
+      <TableCell className="px-4 align-middle">
         <span
           data-testid={`cart-row-status-${cart.id}`}
           className={cn(
@@ -384,44 +384,56 @@ function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
           {statusCfg.label}
         </span>
       </TableCell>
-      <TableCell>
+      <TableCell className="max-w-0 px-4 align-middle">
         <div className="flex min-w-0 items-center gap-3">
           <CompanyListAvatar
             name={cart.company_name}
             logoUrl={cart.company_logo_url}
           />
-          <div className="min-w-0">
-            <div className="truncate font-semibold">{cart.company_name}</div>
+          <div className="min-w-0 flex-1">
+            <div
+              className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold"
+              title={cart.company_name}
+            >
+              {cart.company_name}
+            </div>
             {cnpj && (
-              <div className="truncate font-mono text-xs text-muted-foreground">
+              <div className="overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs text-muted-foreground">
                 {maskCnpj(cnpj)}
               </div>
             )}
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-xs text-muted-foreground">
+      <TableCell className="max-w-0 px-4 align-middle text-xs text-muted-foreground">
         {cart.company_location ? (
-          <span className="truncate">{cart.company_location}</span>
+          <span
+            className="block overflow-hidden text-ellipsis whitespace-nowrap"
+            title={cart.company_location}
+          >
+            {cart.company_location}
+          </span>
         ) : (
           <span className="opacity-60">—</span>
         )}
       </TableCell>
-      <TableCell className="text-center">
+      <TableCell className="px-4 text-center align-middle">
         <span className="inline-flex h-6 min-w-[28px] items-center justify-center rounded-full bg-primary/15 px-2 text-xs font-bold text-primary">
           {itemCount}
         </span>
       </TableCell>
-      <TableCell className="text-right font-display text-sm font-semibold tracking-tight tabular-nums">
+      <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tracking-tight tabular-nums">
         {formatCurrency(subtotal)}
       </TableCell>
-      <TableCell className="text-xs text-muted-foreground">
-        <div>{format(updatedAt, 'dd/MM/yyyy', { locale: ptBR })}</div>
-        <div className="text-[10px] opacity-70">
+      <TableCell className="px-4 align-middle text-xs text-muted-foreground">
+        <div className="whitespace-nowrap">
+          {format(updatedAt, 'dd/MM/yyyy', { locale: ptBR })}
+        </div>
+        <div className="whitespace-nowrap text-[10px] opacity-70">
           {formatDistanceToNow(updatedAt, { addSuffix: true, locale: ptBR })}
         </div>
       </TableCell>
-      <TableCell onClick={(e) => e.stopPropagation()}>
+      <TableCell className="px-4 align-middle" onClick={(e) => e.stopPropagation()}>
         <Button
           size="sm"
           variant="outline"
