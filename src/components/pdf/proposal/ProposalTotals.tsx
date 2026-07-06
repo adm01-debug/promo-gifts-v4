@@ -1,14 +1,17 @@
 // Totals block — label "Total:" (sem "Valor"). Largura vem do SSOT
 // `TOTALS_BLOCK_WIDTH_PX` em `../ProposalStyles` para manter paridade
 // com `TotalsSection` do PDF interno.
+// Cores dos badges vêm de `@/lib/pdf/totalsColorScheme` (flag A/B).
 import { type ProposalTemplateData, formatShipping } from '../ProposalHtmlTemplate';
 import { TOTALS_BLOCK_WIDTH_PX } from '../ProposalStyles';
+import { getTotalsColorTokens } from '@/lib/pdf/totalsColorScheme';
 
 function fmt(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
+  const tokens = getTotalsColorTokens();
   const shippingLabel = data.shippingType
     ? formatShipping(data.shippingType, data.shippingCost)
     : data.shippingCost
@@ -16,7 +19,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
       : 'Cortesia';
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }} data-totals-scheme={tokens.scheme}>
       <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         {/* Subtotal row */}
         <table
@@ -47,15 +50,16 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
               borderRadius: '6px',
               overflow: 'hidden',
               margin: '6px 0',
+              ...(tokens.discount.border ? { border: `1px solid ${tokens.discount.border}` } : {}),
             }}
           >
             <table
-              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#00c853' }}
+              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: tokens.discount.bg }}
             >
               <tbody>
                 <tr>
                   <td style={{ padding: '7px 16px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#111' }}>
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: tokens.discount.fg }}>
                       Você economiza
                     </span>
                   </td>
@@ -66,7 +70,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '15px', color: '#111' }}>
+                    <span style={{ fontWeight: 800, fontSize: '15px', color: tokens.discount.fg }}>
                       − {fmt(data.discount)}
                     </span>
                   </td>
@@ -101,8 +105,15 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
         </table>
 
         {/* Valor Total */}
-        <div style={{ borderRadius: '8px', overflow: 'hidden', marginTop: '10px', border: '1px solid #c8e6c9' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#f1f8e9' }}>
+        <div
+          style={{
+            borderRadius: '8px',
+            overflow: 'hidden',
+            marginTop: '10px',
+            ...(tokens.total.border ? { border: `1px solid ${tokens.total.border}` } : {}),
+          }}
+        >
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: tokens.total.bg }}>
             <tbody>
               <tr>
                 {/* verticalAlign: middle garante alinhamento do rótulo "Total:" (13px)
@@ -115,7 +126,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       fontSize: '13px',
-                      color: '#2e7d32',
+                      color: tokens.total.fg,
                       letterSpacing: '0.5px',
                     }}
                   >
@@ -128,7 +139,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontFamily: "'Montserrat', sans-serif",
                       fontWeight: 800,
                       fontSize: '19px',
-                      color: '#2e7d32',
+                      color: tokens.total.fg,
                     }}
                   >
                     {fmt(data.total)}
