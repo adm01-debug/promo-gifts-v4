@@ -146,7 +146,7 @@ function installFetchStub(opts: {
         });
       }
       if (method === "PATCH") {
-        return new Response("[]", {
+        return new Response(null, {
           status: 204,
           headers: { "content-type": "application/json" },
         });
