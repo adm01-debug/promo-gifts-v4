@@ -208,28 +208,42 @@ describe('PdfGenerationDialog — fluxo de impressão', () => {
 
   it('cenário watchdog-timeout: iframe.onload nunca dispara → help "watchdog-timeout"', async () => {
     setUserAgent(UA_FIREFOX);
-    vi.useFakeTimers();
+
+    // Impede onload disparar: substitui o setter de src para no-op
+    const originalSrc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+    Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
+      configurable: true,
+      set() {
+        /* no-op: onload nunca dispara */
+      },
+      get() {
+        return '';
+      },
+    });
 
     await openAndGenerate();
     await clickImprimir();
 
-    // NÃO dispara onload; avança 3.1s para o watchdog
-    await act(async () => {
-      vi.advanceTimersByTime(3100);
-    });
-    vi.useRealTimers();
-
-    await waitFor(() => {
-      expect(logSpies.warn).toHaveBeenCalledWith(
-        'print_watchdog_timeout',
-        expect.objectContaining({ browser: 'firefox' }),
-      );
-    });
+    // Espera real de 3.1s pelo watchdog (não usa fake timers para não
+    // interferir com o setup assíncrono do Radix/React)
+    await waitFor(
+      () => {
+        expect(logSpies.warn).toHaveBeenCalledWith(
+          'print_watchdog_timeout',
+          expect.objectContaining({ browser: 'firefox' }),
+        );
+      },
+      { timeout: 5000 },
+    );
     const help = await screen.findByTestId('pdf-print-help-dialog');
     expect(help.getAttribute('data-reason')).toBe('watchdog-timeout');
     expect(screen.getByTestId('pdf-print-retry')).toBeInTheDocument();
     expect(screen.getByTestId('pdf-print-open-tab')).toBeInTheDocument();
-  });
+
+    if (originalSrc) {
+      Object.defineProperty(HTMLIFrameElement.prototype, 'src', originalSrc);
+    }
+  }, 10000);
 
   it('emite print_start com browser detectado', async () => {
     setUserAgent(UA_CHROME);
