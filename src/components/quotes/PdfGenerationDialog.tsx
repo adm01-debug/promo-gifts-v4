@@ -300,6 +300,7 @@ export function PdfGenerationDialog({
   if (!proposalData) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
