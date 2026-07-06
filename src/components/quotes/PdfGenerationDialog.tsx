@@ -291,9 +291,11 @@ export function PdfGenerationDialog({
       setProgressLabel(''); // FIX #5
       setPdfBlob(null);
       setPdfVersion(1); // FIX #5: versão volta para 1
+      setPrintFallback(null);
       revokeBlobUrl(); // FIX #2
     }
   };
+
 
   if (!proposalData) return null;
 
