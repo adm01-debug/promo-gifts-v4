@@ -58,6 +58,10 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        "neon-yellow": {
+          DEFAULT: "hsl(var(--neon-yellow))",
+          foreground: "hsl(var(--neon-yellow-foreground))",
+        },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
