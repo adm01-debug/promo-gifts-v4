@@ -145,6 +145,7 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "mcp-server": { category: "scoped", rationale: "Token MCP com escopos read/write/admin", enforcedBy: "custom" },
   "crm-db-bridge": { category: "scoped", rationale: "JWT + RBAC custom interno", enforcedBy: "custom" },
   "simulation-orchestrator": { category: "scoped", rationale: "Orquestrador de simulacoes — HMAC N8N_PRODUCT_WEBHOOK_SECRET", enforcedBy: "custom" },
+  "receive-crm-callback": { category: "scoped", rationale: "Callback do CRM Promo Champions — x-api-key custom (timing-safe)", enforcedBy: "custom", skipAnonBypassTest: true, skipAuthBypassTest: true },
 
   // ---------------- Service (server-to-server) ----------------
   "sync-external-db": { category: "service", rationale: "Sync DB externo — service_role_key server-to-server", enforcedBy: "custom" },
