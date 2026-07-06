@@ -43,11 +43,9 @@ export function renderQuoteCell(
     case 'client':
       return hasClient ? (
         <div data-testid="quote-client-cell" className="flex min-w-0 items-center gap-3">
-          <AvatarLogo
+          <CompanyListAvatar
             name={clientDisplay}
             logoUrl={logoUrl}
-            size="md"
-            className="ring-1 ring-border"
             isLoading={logoLoading}
           />
           <div className="flex min-w-0 flex-col">
