@@ -39,6 +39,9 @@ jobs:
       - name: Banned phrases gate
         run: npm run check:removed-phrases
 
+      - name: "Draft label regression gate (Salvar Alterações → Salvar Rascunho)"
+        run: npm run check:no-salvar-alteracoes-draft
+
       - name: 🗑️ Sem referências residuais a QuoteComments/quote_comments
         run: node scripts/check-no-quote-comments.mjs
 
