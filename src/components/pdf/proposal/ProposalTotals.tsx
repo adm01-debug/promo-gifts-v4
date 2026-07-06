@@ -105,8 +105,15 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
         </table>
 
         {/* Valor Total */}
-        <div style={{ borderRadius: '8px', overflow: 'hidden', marginTop: '10px', border: '1px solid #c8e6c9' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#f1f8e9' }}>
+        <div
+          style={{
+            borderRadius: '8px',
+            overflow: 'hidden',
+            marginTop: '10px',
+            ...(tokens.total.border ? { border: `1px solid ${tokens.total.border}` } : {}),
+          }}
+        >
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: tokens.total.bg }}>
             <tbody>
               <tr>
                 {/* verticalAlign: middle garante alinhamento do rótulo "Total:" (13px)
@@ -119,7 +126,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       fontSize: '13px',
-                      color: '#2e7d32',
+                      color: tokens.total.fg,
                       letterSpacing: '0.5px',
                     }}
                   >
@@ -132,7 +139,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontFamily: "'Montserrat', sans-serif",
                       fontWeight: 800,
                       fontSize: '19px',
-                      color: '#2e7d32',
+                      color: tokens.total.fg,
                     }}
                   >
                     {fmt(data.total)}
