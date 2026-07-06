@@ -115,6 +115,30 @@ Deno.serve(async (req) => {
     return log.respond(json(401, { error: "invalid_api_key" }));
   }
 
+  // 1.b) rate-limit por (IP + hash da api-key). Bloqueia abuso mesmo
+  //      com credencial válida (chave vazada ou caller descontrolado).
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown";
+  const keyHash = (await sha256Hex(provided)).slice(0, 16);
+  const rlKey = `${ip}:${keyHash}`;
+  const rlRes = await rl.check(rlKey);
+  if (!rlRes.allowed) {
+    const retryAfter = Math.max(1, Math.ceil((rlRes.resetAt - Date.now()) / 1000));
+    log.warn("crm_callback_rate_limited", { ip, key_hash: keyHash, reset_at: rlRes.resetAt, retry_after: retryAfter });
+    return log.respond(
+      json(
+        429,
+        { error: "rate_limited", retry_after_seconds: retryAfter },
+        { "retry-after": String(retryAfter) },
+      ),
+    );
+  }
+  if (rlRes.suspicious) {
+    log.warn("crm_callback_rate_suspicious", { ip, key_hash: keyHash, remaining: rlRes.remaining });
+  }
+
   // 2) payload size guard (defense-in-depth vs. DoS)
   const declaredLen = Number(req.headers.get("content-length") ?? "0");
   if (declaredLen > MAX_BODY_BYTES) {
