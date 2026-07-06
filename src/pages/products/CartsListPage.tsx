@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowRight, ArrowUpDown, Search, X, CheckSquare, Trash2 } from 'lucide-react';
+import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -31,6 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -91,7 +98,7 @@ export default function CartsListPage() {
 
 function CartsListContent() {
   const navigate = useNavigate();
-  const { carts, isLoading, deleteCart } = useSellerCartContext();
+  const { carts, isLoading, deleteCart, duplicateCart } = useSellerCartContext();
   const { data: crmCompanies } = useCrmCompanies();
   const cnpjByCompanyId = useMemo(() => {
     const map = new Map<string, string>();
@@ -107,6 +114,7 @@ function CartsListContent() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   // deleteCart já vem do context acima
 
   const statusCounts = useMemo(() => {
@@ -485,6 +493,9 @@ function CartsListContent() {
                     isSelected={selectedIds.has(cart.id)}
                     onToggleSelect={() => toggleRow(cart.id)}
                     onOpen={() => navigate(`/carrinhos/${cart.id}`)}
+                    onEdit={() => navigate(`/carrinhos/${cart.id}`)}
+                    onDuplicate={() => duplicateCart(cart.id)}
+                    onDelete={() => setDeleteConfirmId(cart.id)}
                   />
                 ))}
               </TableBody>
@@ -521,6 +532,37 @@ function CartsListContent() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir {selectedCount}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+      >
+        <AlertDialogContent data-testid="cart-row-delete-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O carrinho e todos os seus itens serão removidos
+              permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirmId) {
+                  deleteCart(deleteConfirmId);
+                  toast.success('Carrinho excluído');
+                }
+                setDeleteConfirmId(null);
+              }}
+              data-testid="cart-row-delete-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar Exclusão
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -572,6 +614,9 @@ interface CartRowProps {
   isSelected: boolean;
   onToggleSelect: () => void;
   onOpen: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }
 
 function CartRow({
@@ -581,6 +626,9 @@ function CartRow({
   isSelected,
   onToggleSelect,
   onOpen,
+  onEdit,
+  onDuplicate,
+  onDelete,
 }: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
@@ -689,16 +737,48 @@ function CartRow({
         </div>
       </TableCell>
       <TableCell className="px-4 align-middle" onClick={(e) => e.stopPropagation()}>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onOpen}
-          data-testid={`cart-row-open-${cart.id}`}
-          className="gap-1"
-        >
-          Abrir
-          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                aria-label={`Mais opções para o carrinho de ${cart.company_name}`}
+                data-testid={`cart-row-more-${cart.id}`}
+              >
+                <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+              data-testid={`cart-row-menu-${cart.id}`}
+              className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
+            >
+              <DropdownMenuItem
+                data-testid={`cart-row-menu-edit-${cart.id}`}
+                onClick={onEdit}
+              >
+                <Edit className="mr-2 h-4 w-4" /> Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid={`cart-row-menu-duplicate-${cart.id}`}
+                onClick={onDuplicate}
+              >
+                <Copy className="mr-2 h-4 w-4" /> Duplicar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                data-testid={`cart-row-menu-delete-${cart.id}`}
+                className="text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </TableCell>
     </TableRow>
   );
