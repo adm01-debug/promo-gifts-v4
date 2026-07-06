@@ -458,6 +458,8 @@ export function useSellerCarts() {
       toast.success('Carrinho duplicado com sucesso');
     },
     onError: (err: Error) => {
+      // eslint-disable-next-line no-console
+      console.error('[duplicateCart] falha', err);
       toast.error('Operação falhou', { description: sanitizeError(err) });
     },
   });
