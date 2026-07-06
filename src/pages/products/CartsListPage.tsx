@@ -78,6 +78,14 @@ export default function CartsListPage() {
 function CartsListContent() {
   const navigate = useNavigate();
   const { carts, isLoading } = useSellerCartContext();
+  const { data: crmCompanies } = useCrmCompanies();
+  const cnpjByCompanyId = useMemo(() => {
+    const map = new Map<string, string>();
+    (crmCompanies ?? []).forEach((c) => {
+      if (c.id && c.cnpj) map.set(c.id, c.cnpj);
+    });
+    return map;
+  }, [crmCompanies]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
