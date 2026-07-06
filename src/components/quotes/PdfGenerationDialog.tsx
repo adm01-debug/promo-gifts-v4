@@ -601,5 +601,15 @@ export function PdfGenerationDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <PdfPrintHelpDialog
+      open={printFallback !== null}
+      reason={printFallback}
+      onOpenChange={(o) => { if (!o) setPrintFallback(null); }}
+      onDownload={() => { setPrintFallback(null); handleDownload(); }}
+      onRetry={() => { setPrintFallback(null); handlePrint(); }}
+      onOpenInNewTab={() => { setPrintFallback(null); openInNewTab(); }}
+    />
+    </>
   );
 }
+
