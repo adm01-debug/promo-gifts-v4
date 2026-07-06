@@ -1,54 +1,91 @@
-## Objetivo
+## Contexto
 
-Corrigir a integração PromoGifts → Promo Champions removendo o passo pelo `webhook-dispatcher` (que envia headers `X-Event`/`X-Signature-256` e envelopa o payload em `data:`) e passando a chamar `receive-quote-sync` do Champions diretamente com o contrato esperado.
+Boa notícia: o projeto **já tem** uma primitiva de rate limit funcionando — `supabase/functions/_shared/rate-limiter.ts` + RPC `public.check_edge_rate_limit(p_key, p_window_ms, p_max_requests)`. Não precisamos criar tabela nem função nova (respeitando a regra "PROIBIDO criar coisas novas no Lovable Cloud interno").
+
+`request_rate_limits` e `edge_rate_limits` existem, mas o caminho canônico é a RPC acima (usada pela classe `RateLimiter`). Vou usá-la.
+
+## Regra proposta
+
+- **Chave:** `quote-sync-pc:{sellerId}:{quoteId}`
+- **Limite:** 10 chamadas por hora (`maxRequests: 10`, `windowMs: 3_600_000`)
+- **Fail-open** (se a RPC falhar, permite — não bloqueia o vendedor por falha de infra; alinhado ao padrão `ai`/`search`)
+- **Escopo por seller+quote** → um vendedor não afeta os outros, e um mesmo quote não pode ser sincronizado > 10x/h; múltiplos quotes do mesmo seller continuam livres.
+
+## Ordem no fluxo
+
+Rate limit roda **depois** de:
+1. Auth (JWT válido) — para termos `sellerId` real
+2. Zod (body válido) — para termos `quote_id`
+3. Secret presente
+
+E **antes** de:
+4. Fetch do quote (ownership) — economiza roundtrip ao DB quando bloqueado
+5. UPDATE `quotes.status='sent'`
+6. POST ao Champions
 
 ## Mudanças
 
 **Arquivo único:** `supabase/functions/quote-sync-promo-champions/index.ts`
 
-Mantém:
-- CORS via `buildPublicCorsHeaders`
-- Validação JWT do vendedor via `sb.auth.getClaims`
-- Schema Zod atual do body de entrada
-- Cálculo de `correlation_key = quote:<id>:sent:<updated_at>`
-
-Substitui o bloco que chama `webhook-dispatcher` por:
-
-1. Ler `PROMO_CHAMPIONS_WEBHOOK_SECRET` do env. Se ausente → 503 `service_misconfigured` com hint claro.
-2. Montar body canônico:
-   ```json
-   {
-     "event": "quote.sent",
-     "correlation_key": "...",
-     "payload": { quote_id, quote_number, status, client_id, client_name, total, updated_at, seller_email }
+1. Adicionar import: `import { RateLimiter } from "../_shared/rate-limiter.ts";`
+2. Criar instância module-level:
+   ```ts
+   const syncRateLimiter = new RateLimiter({
+     maxRequests: 10,
+     windowMs: 60 * 60 * 1000,
+     keyPrefix: "quote-sync-pc",
+   });
+   ```
+3. Após validar Zod + secret, antes do fetch do quote:
+   ```ts
+   const rl = await syncRateLimiter.check(`${sellerId}:${q.quote_id}`);
+   if (!rl.allowed) {
+     return new Response(
+       JSON.stringify({
+         error: "rate_limited",
+         hint: "Limite de 10 sincronizações por hora para este orçamento. Tente novamente em instantes.",
+         reset_at: new Date(rl.resetAt).toISOString(),
+       }),
+       {
+         status: 429,
+         headers: {
+           ...cors,
+           "Content-Type": "application/json",
+           "X-RateLimit-Limit": "10",
+           "X-RateLimit-Remaining": String(rl.remaining),
+           "X-RateLimit-Reset": String(rl.resetAt),
+           "Retry-After": String(Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000))),
+         },
+       },
+     );
    }
    ```
-3. Serializar em string estável e calcular HMAC SHA-256 via `crypto.subtle.importKey` + `sign` com o secret; hex encode.
-4. POST para `https://rapjswienfhkobhlamxb.supabase.co/functions/v1/receive-quote-sync` com headers:
-   - `Content-Type: application/json`
-   - `x-webhook-event: quote.sent`
-   - `x-webhook-signature: sha256=<hex>`
-   - `x-correlation-key: <correlation_key>`
-5. Se `!resp.ok` → devolver `{ ok:false, error:"champions_failed", status, details }` com status upstream.
-6. Se ok → `{ ok:true, correlation_key, champions_response: <json ou texto> }`.
+   Obs.: como `sellerId` só existe após o `getClaims`, movo esse trecho para depois do auth (é onde já está o restante da lógica). O nome `sellerId` já é declarado no arquivo hoje.
 
-Remove: dependência de `WEBHOOK_DISPATCHER_SECRET` neste caminho (o dispatcher continua existindo para outros webhooks cadastrados; só este proxy manual deixa de usá-lo).
+**Zero mudanças de schema.** Zero migrations. Nada novo criado.
 
-## Detalhes técnicos
+## Frontend
 
-- URL do Champions fica como constante `CHAMPIONS_URL` no topo do arquivo (documentar que é o project ref `rapjswienfhkobhlamxb`).
-- HMAC: usar `TextEncoder` no secret + body; `crypto.subtle.importKey("raw", ..., { name:"HMAC", hash:"SHA-256" }, false, ["sign"])`; converter `ArrayBuffer` em hex.
-- Fetch com `AbortSignal.timeout(15000)` para não pendurar a request do frontend.
-- Logs estruturados (mantém o padrão que já existe no projeto se aplicável) só em falha, sem vazar secret.
+Nenhuma mudança obrigatória. O erro 429 já é tratado pelo hook de sync (mostra toast de erro). Se quiser copy dedicada, tratamos numa iteração futura — fora de escopo aqui.
 
-## Fora de escopo
+## Testes
 
-- Não altera `webhook-dispatcher` nem `outbound_webhooks` (o webhook cadastrado no /admin/conexões pode ficar como está, mas ele passará a ser redundante para este evento — decidir depois se remove).
-- Não altera frontend (`QuotePromoChampionsSync.ts` continua invocando `quote-sync-promo-champions` com o mesmo body).
-- Não altera Zod do body de entrada.
+Estender `supabase/functions/quote-sync-promo-champions/index.test.ts`:
+
+1. **Interceptar a RPC `check_edge_rate_limit`** no fetch stub (`POST /rest/v1/rpc/check_edge_rate_limit` → devolve `[{ allowed, remaining, reset_at }]`).
+2. Novos casos:
+   - **rate limit: allowed=true** → happy path continua 200 (garante que o header `x-correlation-key` sai normal e Champions foi chamado).
+   - **rate limit: allowed=false** → responde 429 com `error="rate_limited"`, `Retry-After` numérico, e **NÃO** chama Champions nem faz PATCH em `quotes`.
+   - **rate limit RPC falha** (stub devolve 500) → fail-open, fluxo continua até Champions (200).
+3. Atualizar os casos existentes (happy path, re-envio, 401 do Champions, updated_at ausente, ownership 403, 404 quote_not_found) para o stub devolver `allowed=true` por padrão — sem mudanças em asserts.
 
 ## Verificação
 
-Após deploy:
-1. `supabase--curl_edge_functions` em `/quote-sync-promo-champions` com body válido → esperar `{ ok:true, champions_response }`.
-2. Conferir do lado Champions se `receive-quote-sync` retornou 200 (ou `duplicate_ignored` se repetido).
+- Rodar `supabase--test_edge_functions` (todos os 12 + 3 novos casos verdes).
+- Manualmente: sincronizar o mesmo orçamento 11x seguidas → 11ª retorna 429 com `Retry-After`.
+
+## Fora de escopo
+
+- Cleanup automático da tabela `edge_rate_limits` (já existe `cleanup_expired_edge_rate_limits`).
+- Alertas Sentry para picos de 429.
+- Rate limit global por IP (a RPC opera por chave; se quiser cobertura por IP, é outra iteração).
