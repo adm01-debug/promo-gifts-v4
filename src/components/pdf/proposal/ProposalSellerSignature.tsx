@@ -19,9 +19,8 @@ export function ProposalSellerSignature({ data }: Props) {
   return (
     <div
       style={{
-        marginBottom: '10px',
         display: 'flex',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
       }}
     >
       <div
