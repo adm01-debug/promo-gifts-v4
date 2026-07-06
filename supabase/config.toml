@@ -95,6 +95,14 @@ verify_jwt = false
 [functions.receive-crm-callback]
 verify_jwt = false
 
+# Reprocessa dead-letters de crm_callback_events (auth admin/dev inline).
+[functions.crm-callback-reprocess]
+verify_jwt = false
+
+# Monitor de alertas: cron 1x/min (agendar em cron.job no canônico).
+[functions.crm-callback-alerts]
+verify_jwt = false
+
 [functions.word-magic]
 verify_jwt = true
 
