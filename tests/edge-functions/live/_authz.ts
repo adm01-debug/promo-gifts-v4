@@ -52,6 +52,7 @@ export const VERIFY_JWT_FALSE = new Set<string>([
   // Auth is enforced inline via x-cron-secret, so anon reaches the handler.
   "asia-ingestion",
   "backfill-image-dimensions",
+  "receive-crm-callback",
 ]);
 
 /**
