@@ -1433,6 +1433,45 @@ export type Database = {
           },
         ]
       }
+      crm_callback_events: {
+        Row: {
+          created_at: string
+          crm_quote_id: string | null
+          error_message: string | null
+          event_type: string
+          external_quote_id: string
+          id: string
+          occurred_at: string
+          payload: Json
+          result: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          crm_quote_id?: string | null
+          error_message?: string | null
+          event_type: string
+          external_quote_id: string
+          id?: string
+          occurred_at: string
+          payload?: Json
+          result?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          crm_quote_id?: string | null
+          error_message?: string | null
+          event_type?: string
+          external_quote_id?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          result?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_kits: {
         Row: {
           box_data: Json | null
