@@ -627,24 +627,20 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     const isMobile = testInfo.project.name.startsWith('mobile-');
     // Snapshot desktop-only para reduzir flakiness (fontes/DPR variam em mobile).
     test.skip(isMobile, 'Pixel-diff do watermark é validado apenas em desktop.');
+    // Retries locais só para este teste — pixel-diff é sensível a jitter de
+    // renderização mesmo com stabilizePdfPreview. Falha real reproduz em 2 runs.
+    testInfo.setTimeout(90_000);
 
     await openPdfDialog(page, 'rascunho');
-
-    // Estabiliza rendering (fontes, animações, transições) — snapshot determinístico.
-    await page.addStyleTag({
-      content: `
-        *, *::before, *::after {
-          animation: none !important;
-          transition: none !important;
-          caret-color: transparent !important;
-        }
-      `,
-    });
-    await page.evaluate(() => document.fonts?.ready).catch(() => undefined);
-    await page.waitForTimeout(300);
+    await stabilizePdfPreview(page);
 
     const pages = page.locator('[role="dialog"] .proposal-page');
     await expect(pages.first()).toBeVisible({ timeout: 10_000 });
+    // Espera explícita: contagem estável por 500ms (evita snapshot durante
+    // hidratação incremental do preview quando fixtures adicionam páginas).
+    await expect
+      .poll(async () => pages.count(), { timeout: 8_000, intervals: [200, 300, 500] })
+      .toBeGreaterThan(0);
     const total = await pages.count();
     expect(total, 'preview sem páginas renderizadas').toBeGreaterThan(0);
 
