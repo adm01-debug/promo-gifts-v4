@@ -15,8 +15,6 @@ import { ProposalProductTable } from './proposal/ProposalProductTable';
 import { ProposalTotals } from './proposal/ProposalTotals';
 import { maskCnpj } from '@/utils/masks';
 import { ProposalNotes } from './proposal/ProposalNotes';
-import { ProposalConditionsBadges } from './proposal/ProposalConditionsBadges';
-import { TOTALS_BLOCK_WIDTH_PX } from './ProposalStyles';
 import { ProposalSellerSignature } from './proposal/ProposalSellerSignature';
 import { ProposalFooter } from './proposal/ProposalFooter';
 import { WATERMARK_COLOR_CSS, WATERMARK_TEXT } from './watermarkTokens';
@@ -342,32 +340,7 @@ export const PropostaComercialTailwind = forwardRef<
 
               {isLast && (
                 <>
-                  {/* Layout 2 colunas na última página: badges de condições à esquerda,
-                      bloco de totais à direita — aproveitamento de espaço horizontal.
-                      Usa <table> em vez de flex para máxima compatibilidade com html2canvas. */}
-                  <table
-                    style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}
-                    data-block="conditions-plus-totals"
-                  >
-                    <tbody>
-                      <tr>
-                        {/* paddingTop alinha o topo dos badges com a linha
-                            "Subtotal:" do bloco de totais (10px marginTop +
-                            ~7px padding interno da row = ~17px). */}
-                        <td style={{ verticalAlign: 'top', paddingRight: '12px', paddingTop: '17px' }}>
-                          <ProposalConditionsBadges data={data} />
-                        </td>
-                        <td
-                          style={{
-                            verticalAlign: 'top',
-                            width: `${TOTALS_BLOCK_WIDTH_PX}px`,
-                          }}
-                        >
-                          <ProposalTotals data={data} />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <ProposalTotals data={data} />
                   <ProposalSellerSignature data={data} />
                 </>
               )}
