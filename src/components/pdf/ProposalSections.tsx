@@ -14,6 +14,7 @@ import {
   totalsRowStyle,
   TOTALS_BLOCK_WIDTH_PX,
 } from './ProposalStyles';
+import { getTotalsColorTokens } from '@/lib/pdf/totalsColorScheme';
 import { maskCnpj } from '@/utils/masks';
 import { getProposalImageUrl } from '@/utils/image-utils';
 import {
