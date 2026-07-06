@@ -363,6 +363,9 @@ html[data-scroll-locked] body {
     --destructive-foreground: 0 0% 100%;
     --info: 210 100% 62%;
     --info-foreground: 210 100% 8%;
+    /* Amarelo neon — mais luminância no dark para efeito "glow" */
+    --neon-yellow: 54 100% 66%;
+    --neon-yellow-foreground: 54 100% 8%;
 
     /* Estados muted */
     --secondary: 24 28% 12%;
