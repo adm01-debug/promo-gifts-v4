@@ -79,6 +79,9 @@ export const AdminProductFormPage = lazyWithRetry(
 );
 export const AdminTelemetriaPage = lazyWithRetry(() => import('@/pages/admin/AdminTelemetriaPage'));
 export const EmaHealthPage = lazyWithRetry(() => import('@/pages/admin/EmaHealthPage'));
+export const AdminV4CallbacksPage = lazyWithRetry(
+  () => import('@/pages/admin/AdminV4CallbacksPage'),
+);
 
 export const AdminClientPerformancePage = lazyWithRetry(
   () => import('@/pages/admin/AdminClientPerformancePage'),
