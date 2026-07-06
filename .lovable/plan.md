@@ -1,88 +1,54 @@
-# Validação exaustiva — `PdfGenerationDialog`
-
-## Escopo do que foi alterado nas últimas iterações
-
-1. Aviso "Confira as informações antes de enviar" movido do footer para o header, com `role="status"`, `aria-live="polite"`, `aria-label`, responsividade (`hidden sm:inline-flex`, texto curto/longo), efeito shimmer + glow via `<style>` inline, respeito a `prefers-reduced-motion`.
-2. Botão "Gerar PDF" reduzido ~20% (`size="default"`, `text-sm`, `h-3.5 ícone`), com `min-h-11`, padding responsivo (`px-5 sm:px-6 md:px-7`), estados `hover:brightness-110`, `active:scale-[0.98]`, `focus-visible:ring-2 ring-offset-card`, e tooltip shadcn.
-3. Footer com padding responsivo (`px-4 py-3 sm:px-6 sm:py-4`).
-
 ## Objetivo
 
-Rodar uma bateria de checagens estática + runtime + snapshot + a11y + fuzz visual para caçar regressões, colisões, contraste ruim, leaks de animação e falhas de acessibilidade.
+Corrigir a integração PromoGifts → Promo Champions removendo o passo pelo `webhook-dispatcher` (que envia headers `X-Event`/`X-Signature-256` e envelopa o payload em `data:`) e passando a chamar `receive-quote-sync` do Champions diretamente com o contrato esperado.
 
-## Plano de validação (10 blocos)
+## Mudanças
 
-### 1. Estática — TypeScript & lint
-- `tsgo` sobre `src/components/quotes/PdfGenerationDialog.tsx` para garantir 0 erros de tipagem após import do `Tooltip*`.
-- ESLint gate (baseline não pode subir).
+**Arquivo único:** `supabase/functions/quote-sync-promo-champions/index.ts`
 
-### 2. Import health
-- Confirmar que `Tooltip`, `TooltipContent`, `TooltipProvider`, `TooltipTrigger` existem em `@/components/ui/tooltip` e que `TooltipTrigger asChild` aceita `<Button>` sem quebrar a11y do Radix.
-- Verificar que `Info` e `cn` continuam usados após diffs.
+Mantém:
+- CORS via `buildPublicCorsHeaders`
+- Validação JWT do vendedor via `sb.auth.getClaims`
+- Schema Zod atual do body de entrada
+- Cálculo de `correlation_key = quote:<id>:sent:<updated_at>`
 
-### 3. Testes unitários novos (Vitest + RTL)
-Criar `PdfGenerationDialog.header-warning.test.tsx` cobrindo:
-- Aviso renderiza somente quando `stage === 'preview'`.
-- `role="status"` + `aria-label` presentes.
-- Texto longo em `md+`, curto em `sm..md`, oculto em `<sm` (via `matchMedia` mock).
-- Truncamento do título quando `quoteNumber` gigante (fuzz 30 strings 5–300 chars) não empurra a pílula (checar `min-w-0` + `truncate`).
-- `pdfVersion > 1` e `isDraft` juntos não colidem com a pílula.
+Substitui o bloco que chama `webhook-dispatcher` por:
 
-Criar `PdfGenerationDialog.footer-button.test.tsx` cobrindo:
-- Botão tem `min-h-11` classe aplicada.
-- Tooltip aparece em `hover`/`focus` com texto "Gera e baixa o PDF final da proposta".
-- Click dispara `handleGenerate` (mockado via prop `onGenerate` — ver se existe injeção; se não, mock em `generateProposalPDFv2`).
-- `aria-label` presente para leitores de tela.
+1. Ler `PROMO_CHAMPIONS_WEBHOOK_SECRET` do env. Se ausente → 503 `service_misconfigured` com hint claro.
+2. Montar body canônico:
+   ```json
+   {
+     "event": "quote.sent",
+     "correlation_key": "...",
+     "payload": { quote_id, quote_number, status, client_id, client_name, total, updated_at, seller_email }
+   }
+   ```
+3. Serializar em string estável e calcular HMAC SHA-256 via `crypto.subtle.importKey` + `sign` com o secret; hex encode.
+4. POST para `https://rapjswienfhkobhlamxb.supabase.co/functions/v1/receive-quote-sync` com headers:
+   - `Content-Type: application/json`
+   - `x-webhook-event: quote.sent`
+   - `x-webhook-signature: sha256=<hex>`
+   - `x-correlation-key: <correlation_key>`
+5. Se `!resp.ok` → devolver `{ ok:false, error:"champions_failed", status, details }` com status upstream.
+6. Se ok → `{ ok:true, correlation_key, champions_response: <json ou texto> }`.
 
-### 4. Snapshot de contraste (reuso do `pdfContrastReport`)
-- Rodar `src/components/pdf/proposal/__tests__/pdfContrastReport.test.ts` — o aviso não vai para o PDF exportado, mas garante que `--warning` continua ≥ AA sobre `--card`/`--background`.
-- Adicionar caso: token `hsl(var(--warning))` sobre `hsl(var(--warning)/0.1)` (fundo da pílula) precisa passar AA (relação ≥ 4.5:1 para texto pequeno) — se falhar, subir opacidade da borda/texto.
-
-### 5. A11y automatizada (jest-axe)
-- Renderizar o dialog nas 3 stages (`preview`, `generating`, `ready`) e rodar `axe` esperando 0 violações.
-- Especial atenção a: `aria-hidden` no ícone, contraste do tooltip, foco visível.
-
-### 6. Fuzz de layout (Playwright headless)
-- Roteiro `/tmp/browser/pdf-dialog/` que:
-  1. Loga com sessão gerenciada.
-  2. Navega para `/orcamentos/<id>` já usado (`573a7657-...`).
-  3. Abre dialog, captura screenshots em 4 viewports: 360x640, 640x900, 1024x800, 1440x900.
-  4. Verifica bounding box: pílula não sobrepõe close-button `×` (gap ≥ 8px), não sobrepõe título, botão footer não encosta na borda (margem ≥ 12px).
-  5. Repete com 20 `quoteNumber` sintéticos (via `page.evaluate` mutando o `<DialogTitle>`) para simular strings longas.
-
-### 7. Motion & reduced-motion
-- Playwright com `context = browser.new_context(reduced_motion="reduce")` — screenshot da pílula: shimmer/glow devem estar ausentes (regra CSS já implementada).
-- Sem `reduced_motion`: capturar 3 frames com intervalo 700ms e conferir que o pseudo-elemento se move (via `getComputedStyle` + `animationName === 'pdfWarnShimmer'`).
-
-### 8. Interação do botão
-- Playwright: `hover` → screenshot compara `box-shadow` mais forte que estado idle.
-- `focus` via `Tab` → screenshot mostra `ring-2 ring-ring ring-offset-2`.
-- `active` (mousedown) → screenshot mostra `scale(0.98)`.
-- `Enter` no botão dispara download (`page.expect_download`).
-
-### 9. Testes de regressão em snapshots existentes
-- Rodar toda a suite `src/components/pdf/**` (131 testes) — deve continuar 131/131.
-- Rodar suite `src/components/quotes/**` — não deve regredir.
-
-### 10. Cenários adversariais
-- `stage` alterna rápido `preview → generating → preview` (10x em 2s) via `act()` — não pode vazar timers do `<style>` nem duplicar `<style>` no `<head>` (efeito colateral de `<style>` inline em React: aceitável pois é subárvore, mas confirmar via `document.querySelectorAll('style').length` estável).
-- Dialog abre/fecha 50x — memory leak de `blobUrlRef` (já mitigado pelo Bug #2), mas revalidar via `performance.memory.usedJSHeapSize` no console.
-- `pdfVersion` sobe até 99, `isDraft=true`, `quoteNumber` = 100 chars: garantir wrap correto do header, sem overflow horizontal do dialog (`max-w-4xl`).
-
-## Entregáveis
-- 2 novos arquivos de teste em `src/components/quotes/__tests__/`.
-- 1 script Playwright em `/tmp/browser/pdf-dialog/run.py` com 4 screenshots por viewport = 16 imagens de referência.
-- Relatório consolidado em `qa/reports/pdf-dialog-validation.md` com contagem de checks, falhas encontradas, correções sugeridas.
+Remove: dependência de `WEBHOOK_DISPATCHER_SECRET` neste caminho (o dispatcher continua existindo para outros webhooks cadastrados; só este proxy manual deixa de usá-lo).
 
 ## Detalhes técnicos
 
-- Mocks necessários: `generateProposalPDFv2`, `downloadPDF`, `toast` (sonner), `matchMedia` (já em `src/test/setup.ts`).
-- Contraste calculado via helper existente `getContrastRatio` em `src/components/pdf/proposal/__tests__/pdfContrastReport.test.ts`.
-- Session Playwright: usar `LOVABLE_BROWSER_SUPABASE_*` (auth já injetada segundo padrão do projeto).
-- Não modificar produção sem falha comprovada — este plano é **read + test**; qualquer fix vira commit separado.
+- URL do Champions fica como constante `CHAMPIONS_URL` no topo do arquivo (documentar que é o project ref `rapjswienfhkobhlamxb`).
+- HMAC: usar `TextEncoder` no secret + body; `crypto.subtle.importKey("raw", ..., { name:"HMAC", hash:"SHA-256" }, false, ["sign"])`; converter `ArrayBuffer` em hex.
+- Fetch com `AbortSignal.timeout(15000)` para não pendurar a request do frontend.
+- Logs estruturados (mantém o padrão que já existe no projeto se aplicável) só em falha, sem vazar secret.
 
 ## Fora de escopo
 
-- Não alterar `PropostaComercialTailwind` (renderização do PDF em si).
-- Não tocar em backend / RLS / migrations.
-- Não subir baseline de ESLint nem `.toast-leaks-baseline.json`.
+- Não altera `webhook-dispatcher` nem `outbound_webhooks` (o webhook cadastrado no /admin/conexões pode ficar como está, mas ele passará a ser redundante para este evento — decidir depois se remove).
+- Não altera frontend (`QuotePromoChampionsSync.ts` continua invocando `quote-sync-promo-champions` com o mesmo body).
+- Não altera Zod do body de entrada.
+
+## Verificação
+
+Após deploy:
+1. `supabase--curl_edge_functions` em `/quote-sync-promo-champions` com body válido → esperar `{ ok:true, champions_response }`.
+2. Conferir do lado Champions se `receive-quote-sync` retornou 200 (ou `duplicate_ignored` se repetido).
