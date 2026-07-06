@@ -98,7 +98,7 @@ export default function CartsListPage() {
 
 function CartsListContent() {
   const navigate = useNavigate();
-  const { carts, isLoading, deleteCart } = useSellerCartContext();
+  const { carts, isLoading, deleteCart, duplicateCart } = useSellerCartContext();
   const { data: crmCompanies } = useCrmCompanies();
   const cnpjByCompanyId = useMemo(() => {
     const map = new Map<string, string>();
