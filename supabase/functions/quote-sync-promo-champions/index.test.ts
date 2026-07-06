@@ -267,7 +267,7 @@ Deno.test({ name: "Champions responde 401: propaga status e error=champions_fail
   }
 });
 
-Deno.test({ name: "updated_at ausente: correlation_key usa timestamp gerado", sanitizeOps: false, sanitizeResources: false }, async () => {
+Deno.test({ name: "updated_at ausente: correlation_key usa quote_id como fallback (deterministico)", sanitizeOps: false, sanitizeResources: false }, async () => {
   const stub = installFetchStub({ status: 200, body: { ok: true } });
   try {
     const input = { ...baseBody(), updated_at: null };
@@ -277,13 +277,17 @@ Deno.test({ name: "updated_at ausente: correlation_key usa timestamp gerado", sa
     assertEquals(res.status, 200);
     const call = stub.captured[0];
     const key = call.headers["x-correlation-key"];
-    assert(
-      key.startsWith(`quote:${input.quote_id}:sent:`) && key.length > `quote:${input.quote_id}:sent:`.length,
-      `correlation_key nao caiu no fallback ISO: ${key}`,
+    // Fallback deterministico: usa quote_id no lugar do timestamp para
+    // garantir dedup em cliques repetidos sem updated_at.
+    assertEquals(key, `quote:${input.quote_id}:sent:${input.quote_id}`);
+
+    // Segunda chamada com o mesmo input deve produzir a MESMA key.
+    const res2 = await handler(
+      buildRequest(input, { auth: `Bearer ${makeFakeJwt()}` }),
     );
-    // deve ser ISO parseavel
-    const iso = key.split(":sent:")[1];
-    assert(!Number.isNaN(Date.parse(iso)), `timestamp fallback nao e ISO valido: ${iso}`);
+    assertEquals(res2.status, 200);
+    const key2 = stub.captured[1].headers["x-correlation-key"];
+    assertEquals(key2, key, "correlation_key deve ser deterministica entre chamadas");
   } finally {
     stub.restore();
   }
