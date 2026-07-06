@@ -12,6 +12,22 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
 
   return (
     <div style={{ marginTop: '14px' }}>
+      {/* Título "Condições Comerciais" acima do card (fora da borda) */}
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 700,
+          fontSize: '12px',
+          color: '#00c853',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          marginBottom: '4px',
+          paddingLeft: '2px',
+        }}
+      >
+        Condições Comerciais
+      </div>
+
       {/* Bloco de Condições Comerciais */}
       <div
         style={{
@@ -21,45 +37,35 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           backgroundColor: '#fafafa',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: '12px',
-            marginBottom: '8px',
-            borderBottom: '2px solid #e8f5e9',
-            paddingBottom: '4px',
-          }}
-        >
+        {data.notes && (
           <div
             style={{
-              fontFamily: "'Montserrat', sans-serif",
-              fontWeight: 700,
-              fontSize: '10px',
-              color: '#00c853',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              flex: '0 0 auto',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '8px',
+              marginBottom: '8px',
+              borderBottom: '2px solid #e8f5e9',
+              paddingBottom: '4px',
+              fontSize: '9px',
+              color: '#555',
+              lineHeight: '1.4',
             }}
           >
-            Condições Comerciais
-          </div>
-          {data.notes && (
-            <div
+            <span
               style={{
-                fontSize: '9px',
-                color: '#555',
-                lineHeight: '1.4',
-                flex: '1 1 auto',
+                fontWeight: 800,
+                color: '#333',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                flex: '0 0 auto',
               }}
             >
-              <span style={{ fontWeight: 700, color: '#888', textTransform: 'uppercase', marginRight: '6px' }}>
-                Observações:
-              </span>
-              {data.notes}
-            </div>
-          )}
-        </div>
+              Observações:
+            </span>
+            <span style={{ flex: '1 1 auto' }}>{data.notes}</span>
+          </div>
+        )}
+
 
         {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2px' }}>
