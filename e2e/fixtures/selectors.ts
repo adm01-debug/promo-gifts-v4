@@ -313,6 +313,15 @@ export const Sel = {
     rowCheckbox: (id: string) => TID(`cart-row-checkbox-${id}`),
     row: (id: string) => TID(`cart-row-${id}`),
     rows: TID_PREFIX("cart-row-"),
+    listNew: TID("carts-list-new"),
+    listSearch: TID("carts-list-search"),
+    listSort: TID("carts-list-sort"),
+    rowMore: (id: string) => TID(`cart-row-more-${id}`),
+    rowMenu: (id: string) => TID(`cart-row-menu-${id}`),
+    rowMenuEdit: (id: string) => TID(`cart-row-menu-edit-${id}`),
+    rowMenuDuplicate: (id: string) => TID(`cart-row-menu-duplicate-${id}`),
+    rowMenuDelete: (id: string) => TID(`cart-row-menu-delete-${id}`),
+    rowDeleteDialog: TID("cart-row-delete-dialog"),
   },
 
 
