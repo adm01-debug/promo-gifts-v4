@@ -15,6 +15,8 @@ import { ProposalProductTable } from './proposal/ProposalProductTable';
 import { ProposalTotals } from './proposal/ProposalTotals';
 import { maskCnpj } from '@/utils/masks';
 import { ProposalNotes } from './proposal/ProposalNotes';
+import { ProposalConditionsBadges } from './proposal/ProposalConditionsBadges';
+import { TOTALS_BLOCK_WIDTH_PX } from './ProposalStyles';
 import { ProposalSellerSignature } from './proposal/ProposalSellerSignature';
 import { ProposalFooter } from './proposal/ProposalFooter';
 import { WATERMARK_COLOR_CSS, WATERMARK_TEXT } from './watermarkTokens';
