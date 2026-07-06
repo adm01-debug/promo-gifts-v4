@@ -34,6 +34,8 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
+import { maskCnpj } from '@/utils/masks';
+import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import type { SellerCart, CartStatus } from '@/hooks/products';
 
 
@@ -76,6 +78,14 @@ export default function CartsListPage() {
 function CartsListContent() {
   const navigate = useNavigate();
   const { carts, isLoading } = useSellerCartContext();
+  const { data: crmCompanies } = useCrmCompanies();
+  const cnpjByCompanyId = useMemo(() => {
+    const map = new Map<string, string>();
+    (crmCompanies ?? []).forEach((c) => {
+      if (c.id && c.cnpj) map.set(c.id, c.cnpj);
+    });
+    return map;
+  }, [crmCompanies]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -263,6 +273,7 @@ function CartsListContent() {
               <TableRow className="bg-primary/10 hover:bg-primary/10">
                 <TableHead className="w-[80px]">Status</TableHead>
                 <TableHead>Empresa</TableHead>
+                <TableHead className="w-[220px]">Ramo de Atividade</TableHead>
                 <TableHead className="w-[120px] text-center">Itens</TableHead>
                 <TableHead className="w-[160px] text-right">Valor</TableHead>
                 <TableHead className="w-[200px]">Atualizado</TableHead>
@@ -274,6 +285,7 @@ function CartsListContent() {
                 <CartRow
                   key={cart.id}
                   cart={cart}
+                  cnpj={cnpjByCompanyId.get(cart.company_id) ?? null}
                   onOpen={() => navigate(`/carrinhos/${cart.id}`)}
                 />
               ))}
@@ -332,10 +344,11 @@ function StatusChip({ active, onClick, label, count, testId }: StatusChipProps) 
 
 interface CartRowProps {
   cart: SellerCart;
+  cnpj: string | null;
   onOpen: () => void;
 }
 
-function CartRow({ cart, onOpen }: CartRowProps) {
+function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
   const itemCount = cart.items.length;
@@ -377,11 +390,20 @@ function CartRow({ cart, onOpen }: CartRowProps) {
           />
           <div className="min-w-0">
             <div className="truncate font-semibold">{cart.company_name}</div>
-            {cart.company_location && (
-              <div className="truncate text-xs text-muted-foreground">{cart.company_location}</div>
+            {cnpj && (
+              <div className="truncate font-mono text-xs text-muted-foreground">
+                {maskCnpj(cnpj)}
+              </div>
             )}
           </div>
         </div>
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {cart.company_location ? (
+          <span className="truncate">{cart.company_location}</span>
+        ) : (
+          <span className="text-xs opacity-60">—</span>
+        )}
       </TableCell>
       <TableCell className="text-center">
         <span className="inline-flex h-6 min-w-[28px] items-center justify-center rounded-full bg-primary/15 px-2 text-xs font-bold text-primary">
