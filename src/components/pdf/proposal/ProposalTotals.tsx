@@ -47,17 +47,15 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
               borderRadius: '6px',
               overflow: 'hidden',
               margin: '6px 0',
-              border: '1px solid #c8e6c9',
             }}
           >
             <table
-              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#f1f8e9' }}
+              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#00c853' }}
             >
               <tbody>
                 <tr>
-                  <td style={{ width: '4px', backgroundColor: '#00c853', padding: 0 }} />
                   <td style={{ padding: '7px 16px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#2e7d32' }}>
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#111' }}>
                       Você economiza
                     </span>
                   </td>
@@ -68,7 +66,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '15px', color: '#2e7d32' }}>
+                    <span style={{ fontWeight: 800, fontSize: '15px', color: '#111' }}>
                       − {fmt(data.discount)}
                     </span>
                   </td>
@@ -103,8 +101,8 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
         </table>
 
         {/* Valor Total */}
-        <div style={{ borderRadius: '8px', overflow: 'hidden', marginTop: '10px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#00c853' }}>
+        <div style={{ borderRadius: '8px', overflow: 'hidden', marginTop: '10px', border: '1px solid #c8e6c9' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#f1f8e9' }}>
             <tbody>
               <tr>
                 {/* verticalAlign: middle garante alinhamento do rótulo "Total:" (13px)
@@ -117,7 +115,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       fontSize: '13px',
-                      color: '#111',
+                      color: '#2e7d32',
                       letterSpacing: '0.5px',
                     }}
                   >
@@ -130,7 +128,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       fontFamily: "'Montserrat', sans-serif",
                       fontWeight: 800,
                       fontSize: '19px',
-                      color: '#111',
+                      color: '#2e7d32',
                     }}
                   >
                     {fmt(data.total)}
