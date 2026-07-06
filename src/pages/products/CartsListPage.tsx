@@ -281,17 +281,18 @@ function CartsListContent() {
                   <TableHead className="w-[90px] px-4" />
                 </TableRow>
               </TableHeader>
-            <TableBody>
-              {filteredCarts.map((cart) => (
-                <CartRow
-                  key={cart.id}
-                  cart={cart}
-                  cnpj={cnpjByCompanyId.get(cart.company_id) ?? null}
-                  onOpen={() => navigate(`/carrinhos/${cart.id}`)}
-                />
-              ))}
-            </TableBody>
-          </Table>
+              <TableBody>
+                {filteredCarts.map((cart) => (
+                  <CartRow
+                    key={cart.id}
+                    cart={cart}
+                    cnpj={cnpjByCompanyId.get(cart.company_id) ?? null}
+                    onOpen={() => navigate(`/carrinhos/${cart.id}`)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
