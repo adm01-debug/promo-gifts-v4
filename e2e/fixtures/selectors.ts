@@ -301,6 +301,22 @@ export const Sel = {
     statCardTrend: TID("stock-stat-card-trend"),
   },
 
+  // ---------- Carrinhos (lista) ----------
+  carts: {
+    pageTitle: TID("page-title-carrinhos"),
+    selectToggle: TID("carts-select-toggle"),
+    selectAll: TID("carts-select-all"),
+    bulkDeleteTop: TID("carts-bulk-delete-top"),
+    bulkDeleteDialog: TID("carts-bulk-delete-dialog"),
+    bulkDeleteConfirm: TID("carts-bulk-delete-confirm"),
+    selectionLive: TID("carts-selection-live"),
+    rowCheckbox: (id: string) => TID(`cart-row-checkbox-${id}`),
+    row: (id: string) => TID(`cart-row-${id}`),
+    rows: TID_PREFIX("cart-row-"),
+  },
+
+
+
 
   // ---------- App genérico ----------
   app: {
