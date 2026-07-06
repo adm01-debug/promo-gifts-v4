@@ -32,6 +32,26 @@ import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGene
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import {
+  PdfPrintHelpDialog,
+  type PdfPrintFallbackReason,
+} from './PdfPrintHelpDialog';
+
+// Logger estruturado dedicado — cada instância do dialog gera 1 request_id
+// que amarra generate → print → fallback no dashboard de telemetria.
+const printLog = createClientLogger('pdf.print');
+
+// Detecta Safari/WebKit desktop e iOS (Chrome iOS também é WebKit → CriOS).
+// Exposto p/ facilitar teste unitário (mock de navigator.userAgent).
+export function detectSafari(ua: string): boolean {
+  // WebKit puro: Safari desktop + iOS Safari. Exclui Chrome, Edge, Firefox e
+  // suas variantes iOS (CriOS, FxiOS, EdgiOS).
+  const isChromeFamily = /chrome|crios|edg|edgios|android|fxios/i.test(ua);
+  const isWebKit = /safari/i.test(ua) && /applewebkit/i.test(ua);
+  return isWebKit && !isChromeFamily;
+}
+
 
 const PREVIEW_SCROLL_STYLE = { maxHeight: 'calc(90vh - 160px)' } as const;
 type Stage = 'generating' | 'preview' | 'ready';
@@ -61,6 +81,7 @@ export function PdfGenerationDialog({
   const [progressLabel, setProgressLabel] = useState('');
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfVersion, setPdfVersion] = useState(1);
+  const [printFallback, setPrintFallback] = useState<PdfPrintFallbackReason | null>(null);
   const blobUrlRef = useRef<string | null>(null);
 
   const isDraft = quoteStatus === 'draft';
@@ -129,38 +150,72 @@ export function PdfGenerationDialog({
     setPdfVersion((v) => v + 1);
   };
 
+  /**
+   * Fluxo de impressão com telemetria estruturada e fallback guiado.
+   *
+   * Emite eventos em scope `pdf.print`:
+   *  - print_start           (info)  — usuário clicou Imprimir
+   *  - print_not_ready       (warn)  — blob ainda não pronto
+   *  - print_safari_fallback (info)  — WebKit detectado, indo direto p/ nova aba
+   *  - print_success         (info)  — contentWindow.print() executou
+   *  - print_watchdog_timeout(warn)  — iframe.onload não veio em 3s
+   *  - print_exception       (error) — contentWindow.print() lançou
+   *  - print_iframe_exception(error) — createElement/DOM falhou
+   *  - print_popup_blocked   (warn)  — fallback nova aba bloqueado
+   *  - print_new_tab_opened  (info)  — fallback abriu com sucesso
+   *
+   * Todos incluem: browser (chrome|firefox|safari|edge|other), reason, pdf_version.
+   */
+  const openPrintFallback = (reason: PdfPrintFallbackReason) => {
+    setPrintFallback(reason);
+  };
+
+  const detectBrowser = (ua: string): string => {
+    if (/edg/i.test(ua)) return 'edge';
+    if (/firefox|fxios/i.test(ua)) return 'firefox';
+    if (/chrome|crios/i.test(ua)) return 'chrome';
+    if (detectSafari(ua)) return 'safari';
+    return 'other';
+  };
+
+  const openInNewTab = (): boolean => {
+    const url = blobUrlRef.current;
+    if (!url) return false;
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!win || win.closed || typeof win.closed === 'undefined') {
+      printLog.warn('print_popup_blocked', {
+        browser: detectBrowser(navigator.userAgent),
+        pdf_version: pdfVersion,
+      });
+      openPrintFallback('popup-blocked');
+      return false;
+    }
+    printLog.info('print_new_tab_opened', {
+      browser: detectBrowser(navigator.userAgent),
+      pdf_version: pdfVersion,
+    });
+    return true;
+  };
+
   const handlePrint = () => {
     const url = blobUrlRef.current;
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const browser = detectBrowser(ua);
+
+    printLog.info('print_start', { browser, pdf_version: pdfVersion });
+
     if (!url) {
-      toast.error('PDF ainda não está pronto. Aguarde a geração terminar.');
+      printLog.warn('print_not_ready', { browser, pdf_version: pdfVersion });
+      openPrintFallback('not-ready');
       return;
     }
 
-    // Detecção de Safari: o WebKit tem bug conhecido com print() dentro de
-    // iframe contendo blob PDF — o diálogo simplesmente não abre. Nesse caso
-    // vamos direto para a nova aba, onde Cmd+P funciona nativamente.
-    const ua = navigator.userAgent;
-    const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
-
-    const openInNewTabFallback = (reason: 'safari' | 'iframe-failed' | 'timeout') => {
-      const win = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!win || win.closed || typeof win.closed === 'undefined') {
-        // Pop-up bloqueado — orientação completa
-        toast.error(
-          'Pop-ups bloqueados. Libere pop-ups para este site ou clique em "Baixar" e imprima o arquivo.',
-          { duration: 8000 },
-        );
-        return;
-      }
-      const msg =
-        reason === 'safari'
-          ? 'PDF aberto em nova aba. Use ⌘+P (Cmd+P) para imprimir.'
-          : 'PDF aberto em nova aba. Use Ctrl+P (ou ⌘+P) para imprimir.';
-      toast.info(msg, { duration: 6000 });
-    };
-
-    if (isSafari) {
-      openInNewTabFallback('safari');
+    // Safari/WebKit: bug conhecido — iframe blob PDF + .print() não abre
+    // diálogo. Vamos direto para nova aba (⌘+P nativo funciona).
+    if (detectSafari(ua)) {
+      printLog.info('print_safari_fallback', { browser, pdf_version: pdfVersion });
+      const opened = openInNewTab();
+      if (opened) openPrintFallback('safari'); // orienta ⌘+P
       return;
     }
 
@@ -179,43 +234,50 @@ export function PdfGenerationDialog({
       const triggerPrint = (source: 'onload' | 'watchdog') => {
         if (printed) return;
         printed = true;
+        if (source === 'watchdog') {
+          printLog.warn('print_watchdog_timeout', {
+            browser,
+            pdf_version: pdfVersion,
+          });
+          iframe.remove();
+          openPrintFallback('watchdog-timeout');
+          return;
+        }
         try {
           const cw = iframe.contentWindow;
           if (!cw) throw new Error('contentWindow indisponível');
           cw.focus();
           cw.print();
+          printLog.info('print_success', { browser, pdf_version: pdfVersion });
           // Cleanup 60s depois — tempo suficiente pro usuário concluir/cancelar
           setTimeout(() => iframe.remove(), 60_000);
         } catch (err) {
-          console.error('[PdfGenerationDialog] print via iframe falhou', {
-            source,
+          printLog.error('print_exception', {
+            browser,
+            pdf_version: pdfVersion,
             err,
           });
           iframe.remove();
-          openInNewTabFallback('iframe-failed');
+          openPrintFallback('print-exception');
         }
       };
 
       iframe.onload = () => setTimeout(() => triggerPrint('onload'), 250);
-      // Watchdog: se onload nunca vier (raro), força nova aba após 3s
-      setTimeout(() => {
-        if (!printed) {
-          printed = true;
-          iframe.remove();
-          openInNewTabFallback('timeout');
-        }
-      }, 3000);
+      setTimeout(() => triggerPrint('watchdog'), 3000);
 
       document.body.appendChild(iframe);
       iframe.src = url;
     } catch (err) {
-      console.error('[PdfGenerationDialog] handlePrint erro', err);
-      toast.error(
-        'Não foi possível iniciar a impressão. Clique em "Baixar" e imprima o arquivo.',
-        { duration: 6000 },
-      );
+      printLog.error('print_iframe_exception', {
+        browser,
+        pdf_version: pdfVersion,
+        err,
+      });
+      openPrintFallback('iframe-exception');
     }
   };
+
+
 
   const handleOpenChange = (newOpen: boolean) => {
     // FIX #4: Impedir fechamento durante geração — evita operação assíncrona zumbi
@@ -229,13 +291,16 @@ export function PdfGenerationDialog({
       setProgressLabel(''); // FIX #5
       setPdfBlob(null);
       setPdfVersion(1); // FIX #5: versão volta para 1
+      setPrintFallback(null);
       revokeBlobUrl(); // FIX #2
     }
   };
 
+
   if (!proposalData) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
@@ -536,5 +601,15 @@ export function PdfGenerationDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <PdfPrintHelpDialog
+      open={printFallback !== null}
+      reason={printFallback}
+      onOpenChange={(o) => { if (!o) setPrintFallback(null); }}
+      onDownload={() => { setPrintFallback(null); handleDownload(); }}
+      onRetry={() => { setPrintFallback(null); handlePrint(); }}
+      onOpenInNewTab={() => { setPrintFallback(null); openInNewTab(); }}
+    />
+    </>
   );
 }
+
