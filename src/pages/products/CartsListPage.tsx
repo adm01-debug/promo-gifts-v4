@@ -344,10 +344,11 @@ function StatusChip({ active, onClick, label, count, testId }: StatusChipProps) 
 
 interface CartRowProps {
   cart: SellerCart;
+  cnpj: string | null;
   onOpen: () => void;
 }
 
-function CartRow({ cart, onOpen }: CartRowProps) {
+function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
   const itemCount = cart.items.length;
@@ -389,11 +390,20 @@ function CartRow({ cart, onOpen }: CartRowProps) {
           />
           <div className="min-w-0">
             <div className="truncate font-semibold">{cart.company_name}</div>
-            {cart.company_location && (
-              <div className="truncate text-xs text-muted-foreground">{cart.company_location}</div>
+            {cnpj && (
+              <div className="truncate font-mono text-xs text-muted-foreground">
+                {maskCnpj(cnpj)}
+              </div>
             )}
           </div>
         </div>
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {cart.company_location ? (
+          <span className="truncate">{cart.company_location}</span>
+        ) : (
+          <span className="text-xs opacity-60">—</span>
+        )}
       </TableCell>
       <TableCell className="text-center">
         <span className="inline-flex h-6 min-w-[28px] items-center justify-center rounded-full bg-primary/15 px-2 text-xs font-bold text-primary">
