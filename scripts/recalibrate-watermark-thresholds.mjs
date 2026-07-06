@@ -65,11 +65,12 @@ function parseArgs(argv) {
 }
 const args = parseArgs(process.argv);
 if (!args.samples) {
-  console.error('❌ Uso: --samples <dir> [--out <md>]');
+  console.error('❌ Uso: --samples <dir> [--out <md>] [--json <path>]');
   process.exit(1);
 }
 const SAMPLES_DIR = resolve(args.samples);
 const OUT_PATH = resolve(args.out ?? 'qa/reports/watermark-threshold-recalibration.md');
+const JSON_PATH = args.json ? resolve(args.json) : null;
 
 // ── Coleta pares actual/expected ────────────────────────────────────────
 function walk(dir) {
