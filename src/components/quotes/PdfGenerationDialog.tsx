@@ -62,6 +62,9 @@ export function detectBrowserPure(ua: string): 'edge' | 'firefox' | 'chrome' | '
   if (/chrome|crios/i.test(ua)) return 'chrome';
   if (detectSafari(ua)) return 'safari';
   return 'other';
+}
+
+
 
 
 
