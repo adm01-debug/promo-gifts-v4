@@ -32,6 +32,26 @@ import { generateProposalPDFv2, downloadPDF } from '@/utils/proposalPdfReactGene
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import {
+  PdfPrintHelpDialog,
+  type PdfPrintFallbackReason,
+} from './PdfPrintHelpDialog';
+
+// Logger estruturado dedicado — cada instância do dialog gera 1 request_id
+// que amarra generate → print → fallback no dashboard de telemetria.
+const printLog = createClientLogger('pdf.print');
+
+// Detecta Safari/WebKit desktop e iOS (Chrome iOS também é WebKit → CriOS).
+// Exposto p/ facilitar teste unitário (mock de navigator.userAgent).
+export function detectSafari(ua: string): boolean {
+  // WebKit puro: Safari desktop + iOS Safari. Exclui Chrome, Edge, Firefox e
+  // suas variantes iOS (CriOS, FxiOS, EdgiOS).
+  const isChromeFamily = /chrome|crios|edg|edgios|android|fxios/i.test(ua);
+  const isWebKit = /safari/i.test(ua) && /applewebkit/i.test(ua);
+  return isWebKit && !isChromeFamily;
+}
+
 
 const PREVIEW_SCROLL_STYLE = { maxHeight: 'calc(90vh - 160px)' } as const;
 type Stage = 'generating' | 'preview' | 'ready';
