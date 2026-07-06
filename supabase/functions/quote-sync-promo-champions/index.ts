@@ -61,7 +61,7 @@ export const handler = async (req: Request): Promise<Response> => {
     );
   }
 
-  const correlationKey = `quote:${q.quote_id}:sent:${q.updated_at ?? new Date().toISOString()}`;
+  const correlationKey = `quote:${q.quote_id}:sent:${q.updated_at ?? q.quote_id}`;
 
   const bodyObj = {
     event: "quote.sent",
