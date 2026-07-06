@@ -75,6 +75,11 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 // ---------------------------------------------------------------- handler
+// Limites de defesa em profundidade
+const MAX_BODY_BYTES = 64 * 1024;                    // 64KB: DoS-guard
+const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;            // 5min: clock skew tolerado
+const MAX_PAST_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;  // 7d: anti-replay
+
 Deno.serve(async (req) => {
   const preflight = handleCorsPreflight(req, { public: true, extraAllowHeaders: ["x-api-key"] });
   if (preflight) return preflight;
@@ -94,10 +99,23 @@ Deno.serve(async (req) => {
     return log.respond(json(401, { error: "invalid_api_key" }));
   }
 
-  // 2) parse + validate
+  // 2) payload size guard (defense-in-depth vs. DoS)
+  const declaredLen = Number(req.headers.get("content-length") ?? "0");
+  if (declaredLen > MAX_BODY_BYTES) {
+    log.warn("crm_callback_payload_too_large", { declared_len: declaredLen, limit: MAX_BODY_BYTES });
+    return log.respond(json(413, { error: "payload_too_large", limit_bytes: MAX_BODY_BYTES }));
+  }
+  // Leitura crua (fallback caso content-length venha ausente/mentiroso)
+  const rawText = await req.text();
+  if (rawText.length > MAX_BODY_BYTES) {
+    log.warn("crm_callback_payload_too_large", { actual_len: rawText.length, limit: MAX_BODY_BYTES });
+    return log.respond(json(413, { error: "payload_too_large", limit_bytes: MAX_BODY_BYTES }));
+  }
+
+  // 3) parse + validate
   let raw: unknown;
   try {
-    raw = await req.json();
+    raw = JSON.parse(rawText);
   } catch {
     return log.respond(json(400, { error: "invalid_json" }));
   }
@@ -121,6 +139,18 @@ Deno.serve(async (req) => {
     occurred_at: body.occurred_at,
   };
   log.info("crm_callback_received", ctx);
+
+  // 3.a) janela anti-replay: rejeita occurred_at muito no passado ou muito no futuro
+  const occurredMs = Date.parse(body.occurred_at);
+  const nowMs = Date.now();
+  if (occurredMs - nowMs > MAX_FUTURE_SKEW_MS) {
+    log.warn("crm_callback_future_skew", { ...ctx, skew_ms: occurredMs - nowMs, limit_ms: MAX_FUTURE_SKEW_MS });
+    return log.respond(json(400, { error: "occurred_at_in_future", limit_ms: MAX_FUTURE_SKEW_MS }));
+  }
+  if (nowMs - occurredMs > MAX_PAST_WINDOW_MS) {
+    log.warn("crm_callback_too_old", { ...ctx, age_ms: nowMs - occurredMs, limit_ms: MAX_PAST_WINDOW_MS });
+    return log.respond(json(400, { error: "occurred_at_too_old", limit_ms: MAX_PAST_WINDOW_MS }));
+  }
 
   // 3) supabase admin client (service role — writes bypass RLS)
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
