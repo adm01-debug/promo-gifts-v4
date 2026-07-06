@@ -1620,5 +1620,40 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off', // 26 intentional non-null assertions; rule re-added by firehose batch
     },
   },
-
+  {
+    /**
+     * SSOT do avatar de empresa em listas: força o uso de `CompanyListAvatar`
+     * (tamanho responsivo lg↔md + ring padrão) em vez de importar `AvatarLogo`
+     * direto e passar `size` a mão. Rotas de página (`src/pages/**`) e células
+     * de listagem (`src/components/**/*List*`) entram no escopo. O próprio
+     * arquivo do wrapper e a implementação base ficam de fora.
+     */
+    files: [
+      'src/pages/**/*.{ts,tsx}',
+      'src/components/**/*List*.{ts,tsx}',
+      'src/components/**/*Cell*.{ts,tsx}',
+      'src/components/**/*Row*.{ts,tsx}',
+    ],
+    ignores: [
+      'src/components/shared/AvatarLogo.tsx',
+      'src/components/shared/CompanyListAvatar.tsx',
+      '**/*.test.{ts,tsx}',
+      '**/__tests__/**',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@/components/shared/AvatarLogo',
+              importNames: ['AvatarLogo'],
+              message:
+                'Use `CompanyListAvatar` de "@/components/shared/CompanyListAvatar" em listas — garante tamanho lg/md responsivo consistente. Se realmente precisar do AvatarLogo cru, mova o call-site para fora de páginas/listas.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
