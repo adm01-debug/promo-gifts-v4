@@ -622,6 +622,12 @@ export const CONTRACTS: Record<string, ContractDefinition> = {
     defaultVersion: "v1",
     deprecatedVersions: [],
   },
+  "receive-crm-callback": {
+    endpoint: "receive-crm-callback",
+    description: "Callback receiver for CRM Promo Champions V2 quote status changes",
+    versions: { v1: ReceiveCrmCallbackSchemaV1 },
+    defaultVersion: "v1",
+  },
   "webhook-dispatcher": {
     endpoint: "webhook-dispatcher",
     description: "Outbound webhook dispatcher (event fan-out)",
