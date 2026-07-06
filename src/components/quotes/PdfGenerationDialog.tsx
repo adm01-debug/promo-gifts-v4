@@ -130,12 +130,63 @@ export function PdfGenerationDialog({
   };
 
   const handlePrint = () => {
-    if (!blobUrlRef.current) return;
-    const win = window.open(blobUrlRef.current, '_blank');
-    if (win) {
-      win.addEventListener('load', () => {
-        win.print();
-      });
+    const url = blobUrlRef.current;
+    if (!url) {
+      toast.error('PDF ainda não está pronto. Aguarde a geração terminar.');
+      return;
+    }
+
+    // Padrão robusto: iframe oculto → contentWindow.print()
+    // O evento `load` em window.open(blobUrl) NÃO dispara de forma confiável
+    // para o visualizador nativo de PDF (Chrome/Firefox usam plugin externo).
+    try {
+      // Remove qualquer iframe anterior para evitar vazamento
+      const existing = document.getElementById('pdf-print-frame');
+      if (existing) existing.remove();
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'pdf-print-frame';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.setAttribute('aria-hidden', 'true');
+
+      let printed = false;
+      const triggerPrint = () => {
+        if (printed) return;
+        printed = true;
+        try {
+          const cw = iframe.contentWindow;
+          if (!cw) throw new Error('contentWindow indisponível');
+          cw.focus();
+          cw.print();
+        } catch (err) {
+          console.error('[PdfGenerationDialog] print via iframe falhou', err);
+          // Fallback: abrir em nova aba para o usuário imprimir manualmente
+          const win = window.open(url, '_blank', 'noopener,noreferrer');
+          if (!win) {
+            toast.error('Ative pop-ups para imprimir, ou use Baixar e imprima o arquivo.');
+          } else {
+            toast.info('Use Ctrl/Cmd+P na nova aba para imprimir.');
+          }
+        }
+      };
+
+      iframe.onload = () => {
+        // Pequeno delay: alguns engines precisam de tick após load do PDF
+        setTimeout(triggerPrint, 250);
+      };
+      // Fallback: se onload nunca disparar (raro em Safari com blob PDF), força após 2s
+      setTimeout(triggerPrint, 2000);
+
+      document.body.appendChild(iframe);
+      iframe.src = url;
+    } catch (err) {
+      console.error('[PdfGenerationDialog] handlePrint erro', err);
+      toast.error('Não foi possível iniciar a impressão. Use Baixar como alternativa.');
     }
   };
 
