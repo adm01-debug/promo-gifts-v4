@@ -32,7 +32,8 @@ export function useQuoteViewData(id: string | undefined) {
   const [clientCnpj, setClientCnpj] = useState<string | undefined>(undefined);
   const [bitrixCompanyId, setBitrixCompanyId] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingTarget, setSyncingTarget] = useState<'all' | 'bitrix' | 'pc' | null>(null);
+  const isSyncing = syncingTarget !== null;
 
   const loadQuote = useCallback(async () => {
     if (!id) return;
