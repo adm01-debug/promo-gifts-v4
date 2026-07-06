@@ -527,6 +527,41 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     ).toEqual([]);
   });
 
+  /**
+   * ── Pixel-diff do watermark — calibração de tolerância ──────────────────
+   *
+   * Objetivo: detectar regressões visuais do "RASCUNHO" (cor, opacidade,
+   * rotação, tamanho, posição) sem falsos positivos por antialiasing/DPR/
+   * fontes/dados dinâmicos do orçamento.
+   *
+   * Estratégia:
+   *   1. `toHaveScreenshot` no PRÓPRIO elemento `[data-testid="proposal-watermark"]`
+   *      — o bounding box já isola o watermark, sem depender do conteúdo.
+   *   2. Snapshot complementar da página inteira com `mask` cobrindo TUDO
+   *      exceto o watermark (header, tabelas, imagens, footer) — valida a
+   *      posição/escala relativa à moldura sem regredir por dados do quote.
+   *
+   * Tolerâncias (escolhidas empiricamente; alterar exige rebaseline):
+   *   - `WATERMARK_ELEMENT_TOLERANCE = 0.02` (2%) — snapshot só do elemento.
+   *     Bounding box pequeno; tolera antialiasing das bordas do texto rotacionado.
+   *   - `WATERMARK_FRAMED_TOLERANCE  = 0.03` (3%) — snapshot da página inteira
+   *     com máscara. Um pouco mais permissivo pois o `mask` do Playwright
+   *     preenche áreas com um retângulo magenta cuja borda tem antialiasing.
+   *   - `threshold` (por pixel) fica no default do Playwright (0.2) — trocamos
+   *     precisão por robustez a variações de subpixel entre runs.
+   *
+   * Determinismo:
+   *   - Desabilita animations/transitions/caret via `addStyleTag`.
+   *   - Aguarda `document.fonts.ready` (evita FOUT no texto do watermark).
+   *   - Pequeno debounce (300ms) cobre lazy-render do preview em iframes.
+   *
+   * Se este teste começar a piscar (flake) SEM mudança visual real: reveja
+   * fontes carregadas dinamicamente e o zoom/DPR do runner antes de afrouxar
+   * a tolerância — subir threshold mascara regressões reais do watermark.
+   */
+  const WATERMARK_ELEMENT_TOLERANCE = 0.02;
+  const WATERMARK_FRAMED_TOLERANCE = 0.03;
+
   test('RASCUNHO — pixel-diff dedicado do watermark em cada página do preview (conteúdo mascarado)', async ({
     page,
   }, testInfo) => {
@@ -554,10 +589,9 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     const total = await pages.count();
     expect(total, 'preview sem páginas renderizadas').toBeGreaterThan(0);
 
-    // Para cada página: pixel-diff do watermark isolado, mascarando todo o
-    // conteúdo (header/tabelas/rodapé) — reduz flakiness a variações de dados
-    // do orçamento e foca exclusivamente na aparência (cor/opacidade/tamanho/
-    // rotação) do "RASCUNHO".
+    // Para cada página: pixel-diff do watermark isolado. O bounding box do
+    // elemento `[data-testid="proposal-watermark"]` já exclui o conteúdo
+    // da página — a máscara acaba sendo o próprio recorte do elemento.
     for (let i = 0; i < total; i++) {
       const proposalPage = pages.nth(i);
       const watermark = proposalPage.locator('[data-testid="proposal-watermark"]');
@@ -568,10 +602,8 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
       // Confirma legibilidade — texto exato do SSOT.
       await expect(watermark).toHaveText('RASCUNHO');
 
-      // Screenshot só do elemento do watermark: bounding box já exclui o
-      // conteúdo da página. maxDiffPixelRatio pequeno tolera antialiasing.
       await expect(watermark).toHaveScreenshot(`proposal-watermark-page-${i + 1}.png`, {
-        maxDiffPixelRatio: 0.02,
+        maxDiffPixelRatio: WATERMARK_ELEMENT_TOLERANCE,
         animations: 'disabled',
         timeout: 15_000,
       });
@@ -579,7 +611,9 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
 
     // Complementar: snapshot da página inteira COM o conteúdo mascarado —
     // valida posição e escala do watermark relativa à moldura da página,
-    // sem depender do texto/dados dinâmicos do orçamento.
+    // sem depender do texto/dados dinâmicos do orçamento. A máscara cobre
+    // TODO conteúdo visível exceto o watermark (que fica por cima devido ao
+    // z-index maior do elemento absolutamente posicionado).
     const firstPage = pages.first();
     const contentMasks = [
       firstPage.locator('header, table, tbody, thead, tfoot, footer'),
@@ -587,15 +621,18 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     ];
     await expect(firstPage).toHaveScreenshot('proposal-page-watermark-framed.png', {
       mask: contentMasks,
-      maxDiffPixelRatio: 0.03,
+      maxDiffPixelRatio: WATERMARK_FRAMED_TOLERANCE,
       animations: 'disabled',
       timeout: 15_000,
     });
 
     testInfo.annotations.push({
       type: 'watermark-pixel-diff',
-      description: `Pixel-diff do watermark validado em ${total} página(s).`,
+      description:
+        `Pixel-diff validado em ${total} página(s) | ` +
+        `element tol=${WATERMARK_ELEMENT_TOLERANCE} | framed tol=${WATERMARK_FRAMED_TOLERANCE}`,
     });
   });
 });
+
 
