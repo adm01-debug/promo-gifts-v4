@@ -68,21 +68,44 @@ jobs:
         if: ${{ github.event.inputs.update_snapshots == 'true' }}
         run: npx playwright test e2e/flows/pdf-dialog.spec.ts --project=chromium-authed --update-snapshots
 
-      - name: Upload Playwright report
+      # Sempre publicar (push, PR e dispatch) — permite revisar diffs de
+      # pixel-diff direto do PR sem precisar rodar localmente.
+      - name: Upload Playwright HTML report + trace
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-pdf-dialog
-          path: playwright-report/
+          name: playwright-report-pdf-dialog-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/**/trace.zip
           retention-days: 14
+          if-no-files-found: warn
 
+      # PNGs do pixel-diff — inclui actual/expected/diff gerados pelo
+      # Playwright quando o snapshot falha. Publicado em TODO evento
+      # (não só workflow_dispatch) para facilitar review de PR.
+      - name: Upload pixel-diff PNGs (actual/expected/diff)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-dialog-pixel-diff-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results/**/*.png
+            e2e/**/__screenshots__/**/proposal-watermark-*.png
+            e2e/**/__screenshots__/**/proposal-page-watermark-*.png
+          retention-days: 30
+          if-no-files-found: warn
+
+      # Baseline "oficial" só é publicado no dispatch de update para deixar
+      # claro que o download desse artifact é o commit candidato.
       - name: Upload updated baselines (dispatch only)
         if: ${{ github.event.inputs.update_snapshots == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: pdf-dialog-baselines
+          name: pdf-dialog-baselines-${{ github.run_id }}
           path: |
             e2e/**/__screenshots__/**/proposal-watermark-*.png
             e2e/**/__screenshots__/**/proposal-page-watermark-*.png
           retention-days: 30
           if-no-files-found: warn
+
