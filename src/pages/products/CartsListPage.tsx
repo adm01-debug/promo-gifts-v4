@@ -99,6 +99,37 @@ export default function CartsListPage() {
 function CartsListContent() {
   const navigate = useNavigate();
   const { carts, isLoading, deleteCart, duplicateCart } = useSellerCartContext();
+
+  const handleGenerateQuote = useCallback(
+    (cart: SellerCart) => {
+      if (!cart.items || cart.items.length === 0) {
+        toast.error('Carrinho vazio', {
+          description: 'Adicione ao menos um produto antes de gerar o orçamento.',
+        });
+        return;
+      }
+      navigate('/orcamentos/novo', {
+        state: {
+          fromCart: true,
+          companyId: cart.company_id,
+          companyName: cart.company_name,
+          companyLocation: cart.company_location || undefined,
+          items: cart.items.map((i) => ({
+            product_id: i.product_id,
+            product_name: i.product_name,
+            product_sku: i.product_sku || undefined,
+            product_image_url: i.product_image_url || undefined,
+            quantity: i.quantity,
+            unit_price: i.product_price,
+            color_name: i.color_name || undefined,
+            color_hex: i.color_hex || undefined,
+          })),
+        },
+      });
+    },
+    [navigate],
+  );
+
   const { data: crmCompanies } = useCrmCompanies();
   const cnpjByCompanyId = useMemo(() => {
     const map = new Map<string, string>();
