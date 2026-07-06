@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/common/EmptyState';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { AvatarLogo } from '@/components/shared/AvatarLogo';
+import { CompanyListAvatar } from '@/components/shared/CompanyListAvatar';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
