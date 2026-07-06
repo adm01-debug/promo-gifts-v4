@@ -380,6 +380,20 @@ function CartsListContent() {
             <Table className="w-full">
               <TableHeader>
                 <TableRow className="bg-primary/10 hover:bg-primary/10">
+                  {selectionMode && (
+                    <TableHead className="w-[44px] px-3">
+                      <Checkbox
+                        checked={allVisibleSelected}
+                        onCheckedChange={toggleSelectAllVisible}
+                        aria-label={
+                          allVisibleSelected
+                            ? 'Desmarcar todos os carrinhos visíveis'
+                            : 'Selecionar todos os carrinhos visíveis'
+                        }
+                        data-testid="carts-select-all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="w-[90px] px-4">Status</TableHead>
                   <TableHead className="w-[320px] min-w-[260px] px-4">Empresa</TableHead>
                   <TableHead className="min-w-[180px] px-4">Ramo de Atividade</TableHead>
@@ -395,6 +409,9 @@ function CartsListContent() {
                     key={cart.id}
                     cart={cart}
                     cnpj={cnpjByCompanyId.get(cart.company_id) ?? null}
+                    selectionMode={selectionMode}
+                    isSelected={selectedIds.has(cart.id)}
+                    onToggleSelect={() => toggleRow(cart.id)}
                     onOpen={() => navigate(`/carrinhos/${cart.id}`)}
                   />
                 ))}
@@ -412,6 +429,30 @@ function CartsListContent() {
           if (cartId) navigate(`/carrinhos/${cartId}`);
         }}
       />
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent data-testid="carts-bulk-delete-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Excluir {selectedCount} {selectedCount === 1 ? 'carrinho' : 'carrinhos'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Os carrinhos selecionados e todos os seus itens
+              serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              data-testid="carts-bulk-delete-confirm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir {selectedCount}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
