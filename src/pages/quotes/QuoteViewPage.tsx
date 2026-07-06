@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   ArrowLeft,
+  ChevronDown,
   Copy,
   CreditCard,
   Edit2,
@@ -93,11 +94,14 @@ export default function QuoteViewPage() {
     clientCnpj,
     isGeneratingPDF,
     isSyncing,
+    syncingTarget,
     proposalData,
     handleDownloadPDF,
     handleWhatsAppShare,
     handleShareLink,
     handleSyncBitrix,
+    handleSyncPromoChampions,
+    handleSyncAll,
     logQuoteHistory,
     duplicateQuote,
     deleteQuote,
@@ -227,20 +231,59 @@ export default function QuoteViewPage() {
             )}
 
             {quote.status !== 'pending_approval' && quote.status !== 'draft' && (
-              <div className="hidden items-center gap-2 md:flex">
+              <div className="hidden items-center md:flex">
+                {/* Split button: clique principal sincroniza tudo; caret abre menu */}
                 <Button
                   variant="outline"
-                  onClick={handleSyncBitrix}
+                  onClick={handleSyncAll}
                   disabled={isSyncing}
-                  className="h-6 min-w-[78px] justify-center gap-1.5 rounded-full border-primary/40 px-2.5 text-[11px] hover:border-primary hover:bg-primary/10"
+                  data-testid="quote-sync-primary"
+                  className="h-6 justify-center gap-1.5 rounded-l-full rounded-r-none border-r-0 border-primary/40 px-2.5 text-[11px] hover:border-primary hover:bg-primary/10"
                 >
                   {isSyncing ? (
                     <Loader2 className="h-3 w-3 animate-spin text-primary" />
                   ) : (
                     <RefreshCw className="h-3 w-3 text-primary" />
                   )}
-                  {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+                  {syncingTarget === 'all'
+                    ? 'Sincronizando tudo...'
+                    : syncingTarget === 'bitrix'
+                    ? 'Bitrix...'
+                    : syncingTarget === 'pc'
+                    ? 'Promo Champions...'
+                    : 'Sincronizar tudo'}
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isSyncing}
+                      data-testid="quote-sync-menu"
+                      aria-label="Escolher destino da sincronização"
+                      className="h-6 rounded-l-none rounded-r-full border-primary/40 px-1.5 hover:border-primary hover:bg-primary/10"
+                    >
+                      <ChevronDown className="h-3 w-3 text-primary" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={6}
+                    className="w-52 rounded-lg p-1.5 text-[12px] leading-tight [&_[role=menuitem]]:flex [&_[role=menuitem]]:items-center [&_[role=menuitem]]:gap-2.5 [&_[role=menuitem]]:rounded-md [&_[role=menuitem]]:px-2.5 [&_[role=menuitem]]:py-2"
+                  >
+                    <DropdownMenuItem onClick={handleSyncAll} disabled={isSyncing}>
+                      <RefreshCw className="h-3.5 w-3.5 text-primary" />
+                      Sincronizar tudo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSyncBitrix} disabled={isSyncing}>
+                      <RefreshCw className="h-3.5 w-3.5 text-primary" />
+                      Só Bitrix24
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSyncPromoChampions} disabled={isSyncing}>
+                      <RefreshCw className="h-3.5 w-3.5 text-primary" />
+                      Só Promo Champions
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             )}
 
@@ -459,7 +502,7 @@ export default function QuoteViewPage() {
       <QuoteMobileActionBar
         onDownloadPDF={handleDownloadPDF}
         onWhatsApp={handleWhatsAppShare}
-        onSync={quote.status === 'draft' ? undefined : handleSyncBitrix}
+        onSync={quote.status === 'draft' ? undefined : handleSyncAll}
         isSyncing={isSyncing}
         onShare={handleShareLink}
         isGeneratingPDF={isGeneratingPDF}
