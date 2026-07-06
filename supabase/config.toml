@@ -90,6 +90,11 @@ verify_jwt = false
 [functions.backfill-image-dimensions]
 verify_jwt = false
 
+# CRM callback receiver: auth via x-api-key header (timing-safe compare).
+# JWT do gateway não se aplica — o CRM Promo Champions não tem JWT do Supabase.
+[functions.receive-crm-callback]
+verify_jwt = false
+
 [functions.word-magic]
 verify_jwt = true
 
