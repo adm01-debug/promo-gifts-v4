@@ -112,11 +112,21 @@ Deno.serve(async (req) => {
   }
   const body = parsed.data;
 
+  // Contexto padrão anexado a TODA linha de log deste request após o parse.
+  // Facilita grep por request_id/external_quote_id/event_type no Log Explorer.
+  const ctx = {
+    external_quote_id: body.external_quote_id,
+    crm_quote_id: body.crm_quote_id ?? null,
+    event_type: body.event_type,
+    occurred_at: body.occurred_at,
+  };
+  log.info("crm_callback_received", ctx);
+
   // 3) supabase admin client (service role — writes bypass RLS)
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) {
-    log.error("crm_callback_missing_env");
+    log.error("crm_callback_missing_env", ctx);
     return log.respond(json(500, { error: "internal_error", message: "missing_env" }));
   }
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
@@ -138,14 +148,11 @@ Deno.serve(async (req) => {
 
   // conflito de idempotência (unique violation)
   if (insertRes.error && (insertRes.error as any).code === "23505") {
-    log.info("crm_callback_duplicate", {
-      external_quote_id: body.external_quote_id,
-      event_type: body.event_type,
-    });
+    log.info("crm_callback_duplicate", ctx);
     return log.respond(json(200, { status: "duplicate_ignored" }));
   }
   if (insertRes.error) {
-    log.error("crm_callback_insert_failed", { err: insertRes.error });
+    log.error("crm_callback_insert_failed", { ...ctx, err: insertRes.error });
     return log.respond(json(500, { error: "internal_error", message: "audit_insert_failed" }));
   }
   const eventId = insertRes.data?.id as string | undefined;
@@ -164,7 +171,7 @@ Deno.serve(async (req) => {
       .from("crm_callback_events")
       .update({ result: "error", error_message: upd.error.message })
       .eq("id", eventId!);
-    log.error("crm_callback_update_failed", { err: upd.error, external_quote_id: body.external_quote_id });
+    log.error("crm_callback_update_failed", { ...ctx, event_id: eventId, err: upd.error });
     return log.respond(json(500, { error: "internal_error", message: "quote_update_failed" }));
   }
 
@@ -175,7 +182,7 @@ Deno.serve(async (req) => {
       .from("crm_callback_events")
       .update({ result: "error", error_message: "quote_not_found" })
       .eq("id", eventId!);
-    log.warn("crm_callback_quote_not_found", { external_quote_id: body.external_quote_id });
+    log.warn("crm_callback_quote_not_found", { ...ctx, event_id: eventId });
     return log.respond(
       json(200, {
         status: "ok",
@@ -186,11 +193,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  log.info("crm_callback_applied", {
-    external_quote_id: body.external_quote_id,
-    event_type: body.event_type,
-    event_id: eventId,
-  });
+  log.info("crm_callback_applied", { ...ctx, event_id: eventId, applied_fields: Object.keys(updates) });
   return log.respond(json(200, { status: "ok", event_id: eventId, applied: true }));
 });
 
