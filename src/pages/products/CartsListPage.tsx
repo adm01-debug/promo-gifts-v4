@@ -4,14 +4,26 @@
  * Layout em tabela (estilo Orçamentos): logo do cliente + nome, status,
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowRight, Search, X } from 'lucide-react';
+import { Plus, ShoppingCart, ArrowRight, Search, X, CheckSquare, Trash2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
