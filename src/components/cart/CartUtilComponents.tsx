@@ -27,7 +27,8 @@ export function formatCurrency(value: number) {
 export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }> = {
   em_separacao: {
     label: 'Separação',
-    color: 'bg-warning/10 text-warning border-warning/20',
+    color:
+      'bg-neon-yellow/15 text-neon-yellow border-neon-yellow/50 shadow-[0_0_12px_hsl(var(--neon-yellow)/0.35)]',
   },
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
