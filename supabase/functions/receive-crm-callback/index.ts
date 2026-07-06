@@ -1,0 +1,237 @@
+/**
+ * receive-crm-callback
+ * --------------------------------------------------------------
+ * Endpoint receptor de callbacks do CRM Promo Champions V2.
+ *
+ * Contrato:
+ *   POST /functions/v1/receive-crm-callback
+ *   Headers:
+ *     - content-type: application/json
+ *     - x-api-key:    <CRM_CALLBACK_API_KEY>  (comparação timing-safe)
+ *   Body: ver `CallbackSchema` abaixo.
+ *
+ * Aplica o efeito em `public.quotes` conforme `event_type` e registra
+ * todo evento (sucesso, duplicado ou erro) em `public.crm_callback_events`.
+ * Idempotente por (external_quote_id, event_type, occurred_at).
+ *
+ * Auth: verify_jwt=false no config.toml + validação inline via x-api-key.
+ * CORS: SSOT via _shared/cors.ts (buildPublicCorsHeaders).
+ * Logs: JSON estruturado via _shared/structured-logger.ts.
+ */
+
+// deno-lint-ignore-file no-explicit-any
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { z } from "npm:zod@3.23.8";
+import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { getOrCreateRequestId } from "../_shared/request-id.ts";
+
+const CORS = buildPublicCorsHeaders({ extraAllowHeaders: ["x-api-key"] });
+
+// ---------------------------------------------------------------- Zod schema
+const EventTypeEnum = z.enum([
+  "approved",
+  "rejected",
+  "order_created",
+  "sent_to_client",
+  "expired",
+]);
+
+const CallbackSchema = z.object({
+  external_quote_id: z.string().uuid(),
+  crm_quote_id: z.string().uuid().optional(),
+  event_type: EventTypeEnum,
+  status: z.string().optional(),
+  occurred_at: z.string().datetime({ offset: true }),
+  payload: z
+    .object({
+      order_id: z.string().uuid().optional(),
+      order_number: z.string().max(64).optional(),
+      rejection_reason: z.string().max(2000).optional(),
+      approved_by: z.string().max(255).optional(),
+      total_value: z.number().finite().optional(),
+    })
+    .catchall(z.any())
+    .default({}),
+});
+export type CallbackBody = z.infer<typeof CallbackSchema>;
+
+// ---------------------------------------------------------------- helpers
+function json(status: number, body: unknown, extra: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "content-type": "application/json", ...extra },
+  });
+}
+
+/** Comparação constant-time (evita timing attack no api-key). */
+function timingSafeEqual(a: string, b: string): boolean {
+  const ea = new TextEncoder().encode(a);
+  const eb = new TextEncoder().encode(b);
+  if (ea.length !== eb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ea.length; i++) diff |= ea[i] ^ eb[i];
+  return diff === 0;
+}
+
+// ---------------------------------------------------------------- handler
+Deno.serve(async (req) => {
+  const preflight = handleCorsPreflight(req, { public: true, extraAllowHeaders: ["x-api-key"] });
+  if (preflight) return preflight;
+
+  const requestId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: "receive-crm-callback", requestId, req });
+
+  if (req.method !== "POST") {
+    return log.respond(json(405, { error: "method_not_allowed" }));
+  }
+
+  // 1) auth
+  const expected = Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
+  const provided = req.headers.get("x-api-key") ?? "";
+  if (!expected || !provided || !timingSafeEqual(provided, expected)) {
+    log.warn("crm_callback_unauthorized", { has_env: expected.length > 0, has_header: provided.length > 0 });
+    return log.respond(json(401, { error: "invalid_api_key" }));
+  }
+
+  // 2) parse + validate
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    return log.respond(json(400, { error: "invalid_json" }));
+  }
+  const parsed = CallbackSchema.safeParse(raw);
+  if (!parsed.success) {
+    return log.respond(
+      json(400, {
+        error: "invalid_payload",
+        details: parsed.error.flatten(),
+      }),
+    );
+  }
+  const body = parsed.data;
+
+  // 3) supabase admin client (service role — writes bypass RLS)
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) {
+    log.error("crm_callback_missing_env");
+    return log.respond(json(500, { error: "internal_error", message: "missing_env" }));
+  }
+  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+  // 4) idempotência: INSERT ON CONFLICT DO NOTHING
+  //    Se já existir para (external_quote_id, event_type, occurred_at) → duplicate_ignored.
+  const insertRes = await supabase
+    .from("crm_callback_events")
+    .insert({
+      external_quote_id: body.external_quote_id,
+      crm_quote_id: body.crm_quote_id ?? null,
+      event_type: body.event_type,
+      occurred_at: body.occurred_at,
+      payload: body.payload,
+      result: "applied", // valor otimista; atualizamos abaixo em erro
+    })
+    .select("id")
+    .maybeSingle();
+
+  // conflito de idempotência (unique violation)
+  if (insertRes.error && (insertRes.error as any).code === "23505") {
+    log.info("crm_callback_duplicate", {
+      external_quote_id: body.external_quote_id,
+      event_type: body.event_type,
+    });
+    return log.respond(json(200, { status: "duplicate_ignored" }));
+  }
+  if (insertRes.error) {
+    log.error("crm_callback_insert_failed", { err: insertRes.error });
+    return log.respond(json(500, { error: "internal_error", message: "audit_insert_failed" }));
+  }
+  const eventId = insertRes.data?.id as string | undefined;
+
+  // 5) aplicar efeito no quotes
+  const updates = buildQuoteUpdates(body);
+  const upd = await supabase
+    .from("quotes")
+    .update(updates)
+    .eq("id", body.external_quote_id)
+    .select("id");
+
+  if (upd.error) {
+    // rollback lógico: marca o evento como error e responde 500 (CRM faz retry).
+    await supabase
+      .from("crm_callback_events")
+      .update({ result: "error", error_message: upd.error.message })
+      .eq("id", eventId!);
+    log.error("crm_callback_update_failed", { err: upd.error, external_quote_id: body.external_quote_id });
+    return log.respond(json(500, { error: "internal_error", message: "quote_update_failed" }));
+  }
+
+  const affected = upd.data?.length ?? 0;
+  if (affected === 0) {
+    // Política acordada com o PO: 200 + result=error (não gera retry no CRM).
+    await supabase
+      .from("crm_callback_events")
+      .update({ result: "error", error_message: "quote_not_found" })
+      .eq("id", eventId!);
+    log.warn("crm_callback_quote_not_found", { external_quote_id: body.external_quote_id });
+    return log.respond(
+      json(200, {
+        status: "ok",
+        event_id: eventId,
+        applied: false,
+        reason: "quote_not_found",
+      }),
+    );
+  }
+
+  log.info("crm_callback_applied", {
+    external_quote_id: body.external_quote_id,
+    event_type: body.event_type,
+    event_id: eventId,
+  });
+  return log.respond(json(200, { status: "ok", event_id: eventId, applied: true }));
+});
+
+// ---------------------------------------------------------------- mapping
+/**
+ * Mapeia o evento do CRM para colunas existentes em `public.quotes`
+ * do banco canônico `doufsxqlfjyuvxuezpln`. Colunas ausentes no schema
+ * (ex.: rejection_reason, order_number) são armazenadas apenas no
+ * payload jsonb da tabela de auditoria.
+ */
+function buildQuoteUpdates(body: CallbackBody): Record<string, unknown> {
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  switch (body.event_type) {
+    case "approved":
+      patch.status = "approved";
+      patch.approved_at = body.occurred_at;
+      patch.client_response = "approved";
+      patch.client_response_at = body.occurred_at;
+      if (body.payload.approved_by) patch.approved_by_client_name = body.payload.approved_by;
+      break;
+    case "rejected":
+      patch.status = "rejected";
+      patch.client_response = "rejected";
+      patch.client_response_at = body.occurred_at;
+      if (body.payload.rejection_reason) patch.client_feedback = body.payload.rejection_reason;
+      break;
+    case "order_created":
+      patch.status = "converted";
+      patch.converted_at = body.occurred_at;
+      if (body.payload.order_id) patch.converted_to_order_id = body.payload.order_id;
+      if (body.payload.order_number) {
+        patch.conversion_notes = `Pedido criado no CRM: ${body.payload.order_number}`;
+      }
+      break;
+    case "sent_to_client":
+      patch.last_sent_at = body.occurred_at;
+      if (!("sent_at" in patch)) patch.sent_at = body.occurred_at;
+      break;
+    case "expired":
+      patch.status = "expired";
+      break;
+  }
+  return patch;
+}

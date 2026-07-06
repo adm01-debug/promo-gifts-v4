@@ -90,6 +90,14 @@ export const DESCRIPTORS: Record<string, Descriptor> = {
     ],
   },
   "webhook-dispatcher": {},
+  "receive-crm-callback": {
+    // Auth por header x-api-key custom (verify_jwt=false). Sem a chave, 401.
+    // Sem CRM_CALLBACK_API_KEY nas creds locais, cobrimos apenas fronteira/CORS.
+    invalidInputs: [
+      { label: "sem x-api-key", body: { external_quote_id: "00000000-0000-0000-0000-000000000000", event_type: "sent_to_client", occurred_at: "2026-07-06T16:00:00.000Z", payload: {} }, role: "anon" },
+      { label: "event_type inválido", headers: { "x-api-key": "wrong" }, body: { external_quote_id: "00000000-0000-0000-0000-000000000000", event_type: "___bad___", occurred_at: "2026-07-06T16:00:00.000Z" }, role: "anon" },
+    ],
+  },
   "simulation-orchestrator": {
     invalidInputs: [{ label: "HMAC ausente", body: { action: "simulate" }, role: "anon" }],
   },
