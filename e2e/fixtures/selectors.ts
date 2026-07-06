@@ -322,6 +322,7 @@ export const Sel = {
     rowMenuDuplicate: (id: string) => TID(`cart-row-menu-duplicate-${id}`),
     rowMenuDelete: (id: string) => TID(`cart-row-menu-delete-${id}`),
     rowDeleteDialog: TID("cart-row-delete-dialog"),
+    rowDeleteConfirm: TID("cart-row-delete-confirm"),
   },
 
 
