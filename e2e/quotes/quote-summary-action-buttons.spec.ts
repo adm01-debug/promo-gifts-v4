@@ -169,4 +169,44 @@ test.describe('QuoteBuilderSummaryColumn — botões Criar / Rascunho lado a lad
       expect(rBox.x + rBox.width).toBeLessThanOrEqual(vp.width + 2);
     });
   }
+
+  test('diálogo de confirmação: foco vai ao confirm, texto e aria-label exatos', async ({
+    page,
+  }) => {
+    await setup(page, 1440, 900);
+    await skipIfEmpty(page);
+
+    const { rascunho } = getActionButtons(page);
+    await expect(rascunho).toBeVisible();
+    await rascunho.click();
+
+    const dialog = page.getByTestId('quote-save-draft-confirm-dialog');
+    await expect(dialog).toBeVisible();
+
+    const confirm = page.getByTestId('quote-save-draft-confirm');
+    await expect(confirm).toBeVisible();
+
+    // Contrato de label — texto e aria-label EXATAMENTE "Salvar Rascunho".
+    await expect(confirm).toHaveText(/^Salvar Rascunho$/);
+    await expect(confirm).toHaveAttribute('aria-label', 'Salvar Rascunho');
+
+    // Foco inicial cai no confirm (ação primária) — Enter confirma direto.
+    // Aguarda o rAF do onOpenAutoFocus liquidar.
+    await expect
+      .poll(async () => confirm.evaluate((el) => el === document.activeElement), {
+        timeout: 3_000,
+        message: 'foco não foi para o botão de confirmação após abrir o diálogo',
+      })
+      .toBe(true);
+
+    // Escape fecha e devolve o foco ao trigger.
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect
+      .poll(async () => rascunho.evaluate((el) => el === document.activeElement), {
+        timeout: 3_000,
+      })
+      .toBe(true);
+  });
 });
+
