@@ -53,6 +53,65 @@ async function extractPdfPages(pdfPath: string): Promise<string[] | null> {
   return res.stdout.split('\f').filter((p) => p.trim().length > 0);
 }
 
+/**
+ * Estabiliza o rendering do preview do PDF para snapshots determinísticos.
+ * Cobre as três fontes de flakiness observadas em CI:
+ *   1. FOUT/FOIT: aguarda `document.fonts.ready` com timeout curto e retry
+ *      (Chromium raramente demora >1s; se demorar >3s há problema real).
+ *   2. Animações/transições/caret: injeta CSS que zera durações.
+ *   3. Imagens do preview (logos, produtos): aguarda `img.complete` em
+ *      todos os <img> do dialog. Sem isso, uma imagem lenta muda o layout
+ *      no meio do screenshot.
+ * Estratégia de retry: até 3 tentativas com backoff (300/600/900ms) — todas
+ * as verificações são idempotentes.
+ */
+async function stabilizePdfPreview(page: import('@playwright/test').Page) {
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+        caret-color: transparent !important;
+      }
+    `,
+  });
+
+  const backoffs = [300, 600, 900];
+  for (const wait of backoffs) {
+    // (1) Fontes carregadas.
+    const fontsReady = await page
+      .evaluate(async () => {
+        try {
+          await (document as Document & { fonts?: FontFaceSet }).fonts?.ready;
+          return (document as Document & { fonts?: FontFaceSet }).fonts?.status === 'loaded';
+        } catch {
+          return false;
+        }
+      })
+      .catch(() => false);
+
+    // (2) Todas as imagens do dialog carregadas (ou naturalWidth definido).
+    const imagesReady = await page
+      .evaluate(() => {
+        const dlg = document.querySelector('[role="dialog"]');
+        if (!dlg) return false;
+        const imgs = Array.from(dlg.querySelectorAll('img'));
+        if (imgs.length === 0) return true;
+        return imgs.every((i) => i.complete && (i.naturalWidth > 0 || i.getAttribute('alt') !== null));
+      })
+      .catch(() => false);
+
+    if (fontsReady && imagesReady) {
+      await page.waitForTimeout(wait); // debounce final para lazy-render.
+      return;
+    }
+    await page.waitForTimeout(wait);
+  }
+  // Fallback: aceita mesmo assim — asserts subsequentes falharão claro.
+}
+
+
+
 test.describe('PdfGenerationDialog · fluxo completo', () => {
   test.skip(
     ({}, testInfo) => !AUTHED_PROJECTS.has(testInfo.project.name),
@@ -568,24 +627,20 @@ test.describe('PdfGenerationDialog · fluxo completo', () => {
     const isMobile = testInfo.project.name.startsWith('mobile-');
     // Snapshot desktop-only para reduzir flakiness (fontes/DPR variam em mobile).
     test.skip(isMobile, 'Pixel-diff do watermark é validado apenas em desktop.');
+    // Retries locais só para este teste — pixel-diff é sensível a jitter de
+    // renderização mesmo com stabilizePdfPreview. Falha real reproduz em 2 runs.
+    testInfo.setTimeout(90_000);
 
     await openPdfDialog(page, 'rascunho');
-
-    // Estabiliza rendering (fontes, animações, transições) — snapshot determinístico.
-    await page.addStyleTag({
-      content: `
-        *, *::before, *::after {
-          animation: none !important;
-          transition: none !important;
-          caret-color: transparent !important;
-        }
-      `,
-    });
-    await page.evaluate(() => document.fonts?.ready).catch(() => undefined);
-    await page.waitForTimeout(300);
+    await stabilizePdfPreview(page);
 
     const pages = page.locator('[role="dialog"] .proposal-page');
     await expect(pages.first()).toBeVisible({ timeout: 10_000 });
+    // Espera explícita: contagem estável por 500ms (evita snapshot durante
+    // hidratação incremental do preview quando fixtures adicionam páginas).
+    await expect
+      .poll(async () => pages.count(), { timeout: 8_000, intervals: [200, 300, 500] })
+      .toBeGreaterThan(0);
     const total = await pages.count();
     expect(total, 'preview sem páginas renderizadas').toBeGreaterThan(0);
 

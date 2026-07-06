@@ -15,6 +15,11 @@
           "name": "carrinhos",
           "workflow": ".github/workflows/cart-quality.yml",
           "rationale": "Bloqueia merges quando a matriz de viewports do popover de carrinhos (popover-footer-matrix.spec.ts) detectar clipping do footer ou regressão de snapshot. Consolidado em cart-quality.yml junto com typecheck e unit tests."
+        },
+        {
+          "name": "Draft label guard (Salvar Alterações → Salvar Rascunho)",
+          "workflow": ".github/workflows/draft-label-guard.yml",
+          "rationale": "Bloqueia regressão do label canônico 'Salvar Rascunho' nos fluxos de rascunho (QuoteBuilderSummaryColumn, QuoteItemEditorSheet, specs relacionados). Reaparecimento de 'Salvar Alterações' quebra contrato de a11y (aria-label) e o testid quote-save-draft*."
         }
       ]
     },
