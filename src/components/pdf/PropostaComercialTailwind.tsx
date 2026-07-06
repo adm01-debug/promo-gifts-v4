@@ -339,10 +339,22 @@ export const PropostaComercialTailwind = forwardRef<
               )}
 
               {isLast && (
-                <>
-                  <ProposalTotals data={data} />
-                  <ProposalSellerSignature data={data} />
-                </>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '16px',
+                    marginTop: '10px',
+                  }}
+                >
+                  <div style={{ flex: '0 0 auto', paddingTop: '4px' }}>
+                    <ProposalSellerSignature data={data} />
+                  </div>
+                  <div style={{ flex: '1 1 auto' }}>
+                    <ProposalTotals data={data} />
+                  </div>
+                </div>
               )}
 
               {/* P0 #5: Condições + Termos de aceite APENAS na última página
