@@ -92,6 +92,64 @@ export const handler = async (req: Request): Promise<Response> => {
     return json({ error: "forbidden", hint: "Este orçamento não pertence a você" }, 403);
   }
 
+  // ─── Rate limiting: 10 syncs/h por (seller × quote) ─────────────────────
+  const rlIdentifier = `${sellerId}:${q.quote_id}`;
+  const rlEndpoint = "quote-sync-promo-champions";
+  const rlWindowMs = 60 * 60 * 1000;
+  const rlMaxCalls = 10;
+
+  const { data: rlRow } = await supabaseAdmin
+    .from("request_rate_limits")
+    .select("id, request_count, window_start, blocked_until")
+    .eq("identifier", rlIdentifier)
+    .eq("endpoint", rlEndpoint)
+    .maybeSingle();
+
+  const nowMs = Date.now();
+
+  if (rlRow?.blocked_until && new Date(rlRow.blocked_until).getTime() > nowMs) {
+    return json({
+      error: "rate_limit_exceeded",
+      hint: "Máximo de 10 sincronizações por orçamento por hora.",
+      retry_after: rlRow.blocked_until,
+    }, 429);
+  }
+
+  const windowExpired = !rlRow ||
+    (nowMs - new Date(rlRow.window_start).getTime()) > rlWindowMs;
+
+  if (windowExpired) {
+    await supabaseAdmin.from("request_rate_limits").upsert({
+      identifier: rlIdentifier,
+      endpoint: rlEndpoint,
+      request_count: 1,
+      window_start: new Date().toISOString(),
+      blocked_until: null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "identifier,endpoint" });
+  } else {
+    const newCount = (rlRow?.request_count ?? 0) + 1;
+    const blockedUntil = newCount >= rlMaxCalls
+      ? new Date(new Date(rlRow!.window_start).getTime() + rlWindowMs).toISOString()
+      : null;
+    await supabaseAdmin.from("request_rate_limits").update({
+      request_count: newCount,
+      blocked_until: blockedUntil,
+      updated_at: new Date().toISOString(),
+    }).eq("identifier", rlIdentifier).eq("endpoint", rlEndpoint);
+
+    if (newCount >= rlMaxCalls) {
+      return json({
+        error: "rate_limit_exceeded",
+        hint: "Máximo de 10 sincronizações por orçamento por hora.",
+        retry_after: blockedUntil,
+      }, 429);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+
+
   // Atualiza status para 'sent' (uma vez) — não bloqueia o sync se falhar.
   if (quote.status !== "sent") {
     const nowIso = new Date().toISOString();
