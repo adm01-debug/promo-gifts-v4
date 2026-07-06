@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowRight, Search, X, CheckSquare, Trash2 } from 'lucide-react';
+import { Plus, ShoppingCart, ArrowRight, ArrowUpDown, Search, X, CheckSquare, Trash2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -40,6 +40,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/common/EmptyState';
+import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { CompanyListAvatar } from '@/components/shared/CompanyListAvatar';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
@@ -230,78 +232,93 @@ function CartsListContent() {
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-          <div className="shrink-0">
-            <h1
-              data-testid="page-title-carrinhos"
-              className="flex items-center gap-2 font-display text-2xl font-bold text-foreground lg:text-3xl"
-            >
-              <ShoppingCart aria-hidden="true" className="h-7 w-7" />
-              Carrinhos
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {totals.count} {totals.count === 1 ? 'carrinho' : 'carrinhos'} · {totals.totalItems}{' '}
-              {totals.totalItems === 1 ? 'item' : 'itens'} ·{' '}
-              <span className="font-semibold text-foreground">
-                {formatCurrency(totals.totalValue)}
-              </span>
-            </p>
-          </div>
-
-          <div className="relative w-full lg:max-w-sm">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por empresa…"
-              aria-label="Buscar carrinhos por empresa"
-              data-testid="carts-list-search"
-              className="h-9 pl-9 pr-9"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                aria-label="Limpar busca"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+      <TooltipProvider>
+        {/* Header: título + filtros + ação no mesmo eixo (padrão Orçamentos) */}
+        <div className="flex flex-wrap items-center gap-3">
+          <FadeInView>
+            <div className="flex-shrink-0 min-w-0">
+              <h1
+                data-testid="page-title-carrinhos"
+                className="flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
               >
-                <X aria-hidden="true" className="h-3.5 w-3.5" />
-              </button>
-            )}
+                <ShoppingCart aria-hidden="true" className="h-7 w-7" />
+                Carrinhos
+              </h1>
+              <p className="mt-1 text-muted-foreground">
+                <AnimatedCounter value={totals.count} /> carrinho(s) encontrado(s) ·{' '}
+                <span className="font-semibold text-foreground">
+                  {formatCurrency(totals.totalValue)}
+                </span>
+              </p>
+            </div>
+          </FadeInView>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-[260px] lg:w-[320px]">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por empresa…"
+                aria-label="Buscar carrinhos por empresa"
+                data-testid="carts-list-search"
+                className="pl-9 pr-9"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Limpar busca"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X aria-hidden="true" className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+              <SelectTrigger
+                className="w-full sm:w-[170px]"
+                data-testid="carts-list-sort"
+                aria-label="Ordenar carrinhos"
+              >
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-testid="carts-list-new"
+                  onClick={() => setPickerOpen(true)}
+                  size="icon"
+                  aria-label="Criar novo carrinho"
+                  className="group relative h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:scale-110 hover:shadow-xl hover:shadow-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"
+                  />
+                  <Plus className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Criar novo carrinho</TooltipContent>
+            </Tooltip>
           </div>
-
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger
-              className="h-9 w-full lg:w-[170px]"
-              data-testid="carts-list-sort"
-              aria-label="Ordenar carrinhos"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
+      </TooltipProvider>
 
-        <Button
-          onClick={() => setPickerOpen(true)}
-          data-testid="carts-list-new"
-          aria-label="Criar novo carrinho"
-          className="gap-2 lg:shrink-0"
-        >
-          <Plus aria-hidden="true" className="h-4 w-4" />
-          Novo carrinho
-        </Button>
-      </header>
 
       {/* Toolbar: chips de status + ações de seleção */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
