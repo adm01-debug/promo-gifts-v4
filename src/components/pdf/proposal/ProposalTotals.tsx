@@ -50,15 +50,16 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
               borderRadius: '6px',
               overflow: 'hidden',
               margin: '6px 0',
+              ...(tokens.discount.border ? { border: `1px solid ${tokens.discount.border}` } : {}),
             }}
           >
             <table
-              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#00c853' }}
+              style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: tokens.discount.bg }}
             >
               <tbody>
                 <tr>
                   <td style={{ padding: '7px 16px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '13px', color: '#111' }}>
+                    <span style={{ fontWeight: 700, fontSize: '13px', color: tokens.discount.fg }}>
                       Você economiza
                     </span>
                   </td>
@@ -69,7 +70,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '15px', color: '#111' }}>
+                    <span style={{ fontWeight: 800, fontSize: '15px', color: tokens.discount.fg }}>
                       − {fmt(data.discount)}
                     </span>
                   </td>
