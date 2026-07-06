@@ -410,7 +410,7 @@ function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
           {itemCount}
         </span>
       </TableCell>
-      <TableCell className="text-right font-serif text-base font-medium tracking-tight tabular-nums">
+      <TableCell className="text-right font-display text-base font-semibold tracking-tight tabular-nums">
         {formatCurrency(subtotal)}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
