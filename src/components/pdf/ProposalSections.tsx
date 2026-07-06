@@ -388,22 +388,41 @@ export function ProductsTable({ items }: { items: ProposalItem[] }) {
 
 /* ─── Totals ─── */
 export function TotalsSection({ data }: { data: ProposalTemplateData }) {
+  const tokens = getTotalsColorTokens();
   const shippingLabel = data.shippingType
     ? formatShipping(data.shippingType, data.shippingCost)
     : data.shippingCost
       ? fmt(data.shippingCost)
       : 'Cortesia';
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+    <div
+      style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}
+      data-totals-scheme={tokens.scheme}
+    >
       <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         <div style={totalsRowStyle}>
           <span>Subtotal:</span>
           <span style={{ fontWeight: 500 }}>{fmt(data.subtotal)}</span>
         </div>
+        {/* Economia — badge de destaque (paridade com ProposalTotals) */}
         {data.discount && data.discount > 0 && (
-          <div style={totalsRowStyle}>
-            <span>Desconto Global:</span>
-            <span style={{ fontWeight: 500 }}>- {fmt(data.discount)}</span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: tokens.discount.bg,
+              color: tokens.discount.fg,
+              padding: '8px 14px',
+              margin: '6px 0',
+              borderRadius: '6px',
+              ...(tokens.discount.border ? { border: `1px solid ${tokens.discount.border}` } : {}),
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: '13px' }}>Você economiza</span>
+            <span style={{ fontWeight: 800, fontSize: '15px', whiteSpace: 'nowrap' }}>
+              − {fmt(data.discount)}
+            </span>
           </div>
         )}
         <div style={totalsRowStyle}>
@@ -412,15 +431,17 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
         </div>
         <div
           style={{
-            backgroundColor: GREEN,
-            color: '#111',
+            backgroundColor: tokens.total.bg,
+            color: tokens.total.fg,
             padding: '9.7px 20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             marginTop: '15px',
             borderRadius: '6px',
-            boxShadow: '0 4px 10px rgba(0,200,83, 0.2)',
+            ...(tokens.total.border
+              ? { border: `1px solid ${tokens.total.border}` }
+              : { boxShadow: '0 4px 10px rgba(0,200,83, 0.2)' }),
           }}
         >
           <span
@@ -429,13 +450,18 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
               fontWeight: 700,
               textTransform: 'uppercase',
               fontSize: '15px',
-              color: '#111',
+              color: tokens.total.fg,
             }}
           >
             Total:
           </span>
           <strong
-            style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: '24px', color: '#111' }}
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: 800,
+              fontSize: '24px',
+              color: tokens.total.fg,
+            }}
           >
             {fmt(data.total)}
           </strong>
