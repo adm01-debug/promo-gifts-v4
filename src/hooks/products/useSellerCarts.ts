@@ -393,9 +393,33 @@ export function useSellerCarts() {
   // Duplicate cart
   const duplicateCart = useMutation({
     mutationFn: async (sourceCartId: string) => {
-      if (!userId) throw new Error('Não autenticado');
+      if (!userId) {
+        const err = new Error('Sessão expirada. Faça login novamente para duplicar o carrinho.');
+        (err as Error & { code?: string }).code = 'AUTH';
+        throw err;
+      }
       const sourceCart = (cartsQuery.data || []).find((c) => c.id === sourceCartId);
-      if (!sourceCart) throw new Error('Carrinho não encontrado');
+      if (!sourceCart) {
+        const err = new Error('Carrinho de origem não encontrado. Atualize a lista e tente novamente.');
+        (err as Error & { code?: string }).code = 'NOT_FOUND';
+        throw err;
+      }
+
+      // Validação prévia: garante NOT NULLs de product_name/product_price nos itens
+      const invalidItems = sourceCart.items.filter(
+        (i) =>
+          !i.product_id ||
+          !i.product_name ||
+          typeof i.product_price !== 'number' ||
+          Number.isNaN(i.product_price),
+      );
+      if (invalidItems.length > 0) {
+        const err = new Error(
+          `Não é possível duplicar: ${invalidItems.length} item(ns) com dados incompletos (nome ou preço ausentes).`,
+        );
+        (err as Error & { code?: string }).code = 'VALIDATION';
+        throw err;
+      }
 
       // Create new cart
       const { data: newCart, error: cartErr } = await supabase
@@ -408,14 +432,23 @@ export function useSellerCarts() {
           company_logo_url: sourceCart.company_logo_url,
         })
         .select()
-        .single();
+        .maybeSingle();
       if (cartErr) {
         if (isCartLimitError(cartErr)) {
-          throw new Error(
+          const err = new Error(
             `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de duplicar.`,
           );
+          (err as Error & { code?: string }).code = 'LIMIT';
+          throw err;
         }
         throw cartErr;
+      }
+      if (!newCart) {
+        const err = new Error(
+          'O carrinho foi criado mas não pôde ser lido de volta (RLS). Recarregue a página.',
+        );
+        (err as Error & { code?: string }).code = 'RLS';
+        throw err;
       }
 
       // Copy items
@@ -443,24 +476,74 @@ export function useSellerCarts() {
             .delete()
             .eq('id', newCart.id);
           if (cleanupErr) {
-            throw new Error(
-              `Falha ao inserir itens (${itemsErr.message}) e ao limpar carrinho criado (${cleanupErr.message}) — o carrinho ${newCart.id} pode estar órfão`,
+            const err = new Error(
+              `Falha ao inserir itens e ao limpar carrinho criado. Recarregue e verifique se restou um carrinho vazio.`,
             );
+            (err as Error & { code?: string }).code = 'CLEANUP';
+            throw err;
           }
           throw itemsErr;
+        }
+      }
+
+      // Polling: refetch até o novo carrinho aparecer na query cache
+      // (até 5 tentativas x 400ms = 2s). Evita inconsistência quando a
+      // replicação/latência do PostgREST atrasa a leitura.
+      const maxAttempts = 5;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+        const fresh = queryClient.getQueryData<SellerCart[]>([QUERY_KEY, userId]);
+        if (fresh?.some((c) => c.id === newCart.id)) break;
+        if (attempt < maxAttempts - 1) {
+          await new Promise((r) => setTimeout(r, 400));
         }
       }
 
       return newCart.id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Carrinho duplicado com sucesso');
     },
     onError: (err: Error) => {
       // eslint-disable-next-line no-console
       console.error('[duplicateCart] falha', err);
-      toast.error('Operação falhou', { description: sanitizeError(err) });
+      const code = (err as Error & { code?: string }).code;
+      const supaCode = (err as Error & { code?: string; status?: number }).code;
+      const status = (err as Error & { status?: number }).status;
+      const msg = err.message ?? '';
+
+      // Classificação amigável do erro
+      let title = 'Não foi possível duplicar o carrinho';
+      let description = sanitizeError(err);
+
+      if (code === 'LIMIT') {
+        title = SELLER_CART_LIMIT_REACHED_SHORT;
+        description = err.message;
+      } else if (code === 'VALIDATION') {
+        title = 'Carrinho inválido';
+        description = err.message;
+      } else if (code === 'RLS' || supaCode === '42501' || status === 401 || status === 403) {
+        title = 'Permissão negada';
+        description = 'Você não tem permissão para duplicar este carrinho. Recarregue e tente novamente.';
+      } else if (code === 'AUTH') {
+        title = 'Sessão expirada';
+        description = err.message;
+      } else if (
+        msg.toLowerCase().includes('failed to fetch') ||
+        msg.toLowerCase().includes('networkerror') ||
+        code === 'NETWORK'
+      ) {
+        title = 'Falha de rede';
+        description = 'Verifique sua conexão e tente novamente.';
+      } else if (code === 'NOT_FOUND') {
+        title = 'Carrinho não encontrado';
+        description = err.message;
+      } else if (code === 'CLEANUP') {
+        title = 'Falha parcial ao duplicar';
+        description = err.message;
+      }
+
+      toast.error(title, { description });
     },
   });
 
