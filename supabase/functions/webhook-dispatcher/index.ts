@@ -18,6 +18,7 @@ import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
 import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
 import { getCredential } from "../_shared/credentials.ts";
+import { getBreaker } from "../_shared/circuit-breaker.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
 
