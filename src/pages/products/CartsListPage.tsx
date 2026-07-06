@@ -652,6 +652,7 @@ interface CartRowProps {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onGenerateQuote: () => void;
 }
 
 function CartRow({
@@ -664,6 +665,7 @@ function CartRow({
   onEdit,
   onDuplicate,
   onDelete,
+  onGenerateQuote,
 }: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
