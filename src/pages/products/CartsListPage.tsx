@@ -330,42 +330,64 @@ function CartsListContent() {
             </SelectContent>
           </Select>
 
-          {selectionMode && selectedCount > 0 && (
+          <div
+            role="group"
+            aria-label="Ações de seleção de carrinhos"
+            className="flex items-center gap-2"
+          >
+            {/* Anúncio a leitores de tela quando entra/sai do modo e quantos itens estão selecionados. */}
+            <span
+              className="sr-only"
+              role="status"
+              aria-live="polite"
+              data-testid="carts-selection-live"
+            >
+              {selectionMode
+                ? selectedCount === 0
+                  ? 'Modo de seleção ativado. Nenhum carrinho selecionado. Pressione Esc para sair.'
+                  : `${selectedCount} ${selectedCount === 1 ? 'carrinho selecionado' : 'carrinhos selecionados'}. Pressione Esc para sair da seleção.`
+                : ''}
+            </span>
+
+            {selectionMode && selectedCount > 0 && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteOpen(true)}
+                data-testid="carts-bulk-delete-top"
+                aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho selecionado' : 'carrinhos selecionados'}`}
+                className="h-9 gap-1.5"
+              >
+                <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                Excluir ({selectedCount})
+              </Button>
+            )}
             <Button
               type="button"
-              variant="destructive"
+              variant={selectionMode ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setBulkDeleteOpen(true)}
-              data-testid="carts-bulk-delete-top"
-              aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}`}
+              onClick={toggleSelectionMode}
+              data-testid="carts-select-toggle"
+              data-selected={selectionMode ? 'true' : 'false'}
+              aria-pressed={selectionMode}
+              aria-keyshortcuts={selectionMode ? 'Escape' : undefined}
+              title={selectionMode ? 'Cancelar seleção (Esc)' : 'Selecionar carrinhos'}
+              aria-label={
+                selectionMode
+                  ? `Cancelar seleção${selectedCount > 0 ? ` (${selectedCount})` : ''}. Atalho: Esc`
+                  : 'Selecionar carrinhos'
+              }
               className="h-9 gap-1.5"
             >
-              <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
-              Excluir ({selectedCount})
+              <CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />
+              {selectionMode
+                ? selectedCount > 0
+                  ? `Cancelar seleção (${selectedCount})`
+                  : 'Cancelar seleção'
+                : 'Selecionar'}
             </Button>
-          )}
-          <Button
-            type="button"
-            variant={selectionMode ? 'default' : 'outline'}
-            size="sm"
-            onClick={toggleSelectionMode}
-            data-testid="carts-select-toggle"
-            data-selected={selectionMode ? 'true' : 'false'}
-            aria-pressed={selectionMode}
-            aria-label={
-              selectionMode
-                ? `Cancelar seleção${selectedCount > 0 ? ` (${selectedCount})` : ''}`
-                : 'Selecionar carrinhos'
-            }
-            className="h-9 gap-1.5"
-          >
-            <CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />
-            {selectionMode
-              ? selectedCount > 0
-                ? `Cancelar seleção (${selectedCount})`
-                : 'Cancelar seleção'
-              : 'Selecionar'}
-          </Button>
+          </div>
         </div>
       </div>
 
