@@ -480,7 +480,6 @@ function CartsListContent() {
                   <TableHead className="w-[90px] px-4 text-center">Itens</TableHead>
                   <TableHead className="w-[130px] px-4 text-right">Valor</TableHead>
                   <TableHead className="w-[170px] px-4">Atualizado</TableHead>
-                  <TableHead className="w-[90px] px-4" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -729,55 +728,57 @@ function CartRow({
         {formatCurrency(subtotal)}
       </TableCell>
       <TableCell className="px-4 align-middle text-xs text-muted-foreground">
-        <div className="whitespace-nowrap">
-          {format(updatedAt, 'dd/MM/yyyy', { locale: ptBR })}
-        </div>
-        <div className="whitespace-nowrap text-[10px] opacity-70">
-          {formatDistanceToNow(updatedAt, { addSuffix: true, locale: ptBR })}
-        </div>
-      </TableCell>
-      <TableCell className="px-4 align-middle" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                aria-label={`Mais opções para o carrinho de ${cart.company_name}`}
-                data-testid={`cart-row-more-${cart.id}`}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="whitespace-nowrap">
+              {format(updatedAt, 'dd/MM/yyyy', { locale: ptBR })}
+            </div>
+            <div className="whitespace-nowrap text-[10px] opacity-70">
+              {formatDistanceToNow(updatedAt, { addSuffix: true, locale: ptBR })}
+            </div>
+          </div>
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                  aria-label={`Mais opções para o carrinho de ${cart.company_name}`}
+                  data-testid={`cart-row-more-${cart.id}`}
+                >
+                  <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                onClick={(e) => e.stopPropagation()}
+                data-testid={`cart-row-menu-${cart.id}`}
+                className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
               >
-                <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              onClick={(e) => e.stopPropagation()}
-              data-testid={`cart-row-menu-${cart.id}`}
-              className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
-            >
-              <DropdownMenuItem
-                data-testid={`cart-row-menu-edit-${cart.id}`}
-                onClick={onEdit}
-              >
-                <Edit className="mr-2 h-4 w-4" /> Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                data-testid={`cart-row-menu-duplicate-${cart.id}`}
-                onClick={onDuplicate}
-              >
-                <Copy className="mr-2 h-4 w-4" /> Duplicar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                data-testid={`cart-row-menu-delete-${cart.id}`}
-                className="text-destructive"
-                onClick={onDelete}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem
+                  data-testid={`cart-row-menu-edit-${cart.id}`}
+                  onClick={onEdit}
+                >
+                  <Edit className="mr-2 h-4 w-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-testid={`cart-row-menu-duplicate-${cart.id}`}
+                  onClick={onDuplicate}
+                >
+                  <Copy className="mr-2 h-4 w-4" /> Duplicar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  data-testid={`cart-row-menu-delete-${cart.id}`}
+                  className="text-destructive"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </TableCell>
     </TableRow>
