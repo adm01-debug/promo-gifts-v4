@@ -140,6 +140,18 @@ Deno.serve(async (req) => {
   };
   log.info("crm_callback_received", ctx);
 
+  // 3.a) janela anti-replay: rejeita occurred_at muito no passado ou muito no futuro
+  const occurredMs = Date.parse(body.occurred_at);
+  const nowMs = Date.now();
+  if (occurredMs - nowMs > MAX_FUTURE_SKEW_MS) {
+    log.warn("crm_callback_future_skew", { ...ctx, skew_ms: occurredMs - nowMs, limit_ms: MAX_FUTURE_SKEW_MS });
+    return log.respond(json(400, { error: "occurred_at_in_future", limit_ms: MAX_FUTURE_SKEW_MS }));
+  }
+  if (nowMs - occurredMs > MAX_PAST_WINDOW_MS) {
+    log.warn("crm_callback_too_old", { ...ctx, age_ms: nowMs - occurredMs, limit_ms: MAX_PAST_WINDOW_MS });
+    return log.respond(json(400, { error: "occurred_at_too_old", limit_ms: MAX_PAST_WINDOW_MS }));
+  }
+
   // 3) supabase admin client (service role — writes bypass RLS)
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
