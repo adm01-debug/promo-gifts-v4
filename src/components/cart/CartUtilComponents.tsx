@@ -39,7 +39,7 @@ export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }>
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
     color:
-      'status-chip-glow [--chip-glow:var(--success)] bg-success/15 text-success border-success/50',
+      'status-chip-glow [--chip-glow:var(--neon-green)] bg-neon-green/15 text-neon-green border-neon-green/50',
   },
 };
 

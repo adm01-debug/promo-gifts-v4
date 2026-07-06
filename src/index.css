@@ -225,9 +225,11 @@ html[data-scroll-locked] body {
     --destructive-foreground: 0 0% 100%;
     --info: 210 100% 62%;
     --info-foreground: 210 100% 8%;
-    /* Azul neon (chip "Separação" e futuros highlights vibrantes) */
+    /* Neon highlights (chips de status e destaques vibrantes) */
     --neon-blue: 205 100% 60%;
     --neon-blue-foreground: 205 100% 8%;
+    --neon-green: 142 90% 55%;
+    --neon-green-foreground: 142 100% 8%;
 
     /* 6. Muted & Secondary States */
     --secondary: 24 28% 12%;
@@ -363,9 +365,11 @@ html[data-scroll-locked] body {
     --destructive-foreground: 0 0% 100%;
     --info: 210 100% 62%;
     --info-foreground: 210 100% 8%;
-    /* Azul neon — mais luminância no dark para efeito "glow" */
+    /* Neon highlights — mais luminância no dark para efeito "glow" */
     --neon-blue: 205 100% 66%;
     --neon-blue-foreground: 205 100% 8%;
+    --neon-green: 142 90% 60%;
+    --neon-green-foreground: 142 100% 8%;
 
     /* Estados muted */
     --secondary: 24 28% 12%;
