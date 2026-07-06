@@ -496,19 +496,34 @@ function StatusChip({ active, onClick, label, count, testId }: StatusChipProps) 
 interface CartRowProps {
   cart: SellerCart;
   cnpj: string | null;
+  selectionMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: () => void;
   onOpen: () => void;
 }
 
-function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
+function CartRow({
+  cart,
+  cnpj,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+  onOpen,
+}: CartRowProps) {
   const statusCfg = getStatusCfg(cart.status);
   const subtotal = cart.items.reduce((s, i) => s + i.product_price * i.quantity, 0);
   const itemCount = cart.items.length;
   const updatedAt = new Date(cart.updated_at);
 
+  const handleActivate = () => {
+    if (selectionMode) onToggleSelect();
+    else onOpen();
+  };
+
   const handleKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onOpen();
+      handleActivate();
     }
   };
 
@@ -516,12 +531,31 @@ function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
     <TableRow
       role="button"
       tabIndex={0}
-      aria-label={`Abrir carrinho de ${cart.company_name}`}
-      onClick={onOpen}
+      aria-label={
+        selectionMode
+          ? `${isSelected ? 'Desmarcar' : 'Selecionar'} carrinho de ${cart.company_name}`
+          : `Abrir carrinho de ${cart.company_name}`
+      }
+      aria-selected={selectionMode ? isSelected : undefined}
+      onClick={handleActivate}
       onKeyDown={handleKey}
       data-testid={`cart-row-${cart.id}`}
-      className="group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+      data-selected={selectionMode && isSelected ? 'true' : undefined}
+      className={cn(
+        'group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+        selectionMode && isSelected && 'bg-primary/5 hover:bg-primary/10',
+      )}
     >
+      {selectionMode && (
+        <TableCell className="w-[44px] px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onToggleSelect}
+            aria-label={`${isSelected ? 'Desmarcar' : 'Selecionar'} ${cart.company_name}`}
+            data-testid={`cart-row-checkbox-${cart.id}`}
+          />
+        </TableCell>
+      )}
       <TableCell className="px-4 align-middle">
         <span
           data-testid={`cart-row-status-${cart.id}`}
