@@ -360,8 +360,9 @@ function CartRow({ cart, onOpen }: CartRowProps) {
     >
       <TableCell>
         <span
+          data-testid={`cart-row-status-${cart.id}`}
           className={cn(
-            'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+            'inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
             statusCfg.color,
           )}
         >
