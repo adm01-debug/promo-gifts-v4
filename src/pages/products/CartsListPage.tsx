@@ -371,11 +371,9 @@ function CartRow({ cart, onOpen }: CartRowProps) {
       </TableCell>
       <TableCell>
         <div className="flex min-w-0 items-center gap-3">
-          <AvatarLogo
+          <CompanyListAvatar
             name={cart.company_name}
             logoUrl={cart.company_logo_url}
-            size="lg"
-            className="ring-1 ring-border"
           />
           <div className="min-w-0">
             <div className="truncate font-semibold">{cart.company_name}</div>
