@@ -1,14 +1,17 @@
 // Totals block — label "Total:" (sem "Valor"). Largura vem do SSOT
 // `TOTALS_BLOCK_WIDTH_PX` em `../ProposalStyles` para manter paridade
 // com `TotalsSection` do PDF interno.
+// Cores dos badges vêm de `@/lib/pdf/totalsColorScheme` (flag A/B).
 import { type ProposalTemplateData, formatShipping } from '../ProposalHtmlTemplate';
 import { TOTALS_BLOCK_WIDTH_PX } from '../ProposalStyles';
+import { getTotalsColorTokens } from '@/lib/pdf/totalsColorScheme';
 
 function fmt(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
+  const tokens = getTotalsColorTokens();
   const shippingLabel = data.shippingType
     ? formatShipping(data.shippingType, data.shippingCost)
     : data.shippingCost
@@ -16,7 +19,7 @@ export function ProposalTotals({ data }: { data: ProposalTemplateData }) {
       : 'Cortesia';
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }} data-totals-scheme={tokens.scheme}>
       <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         {/* Subtotal row */}
         <table
