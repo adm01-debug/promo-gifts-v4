@@ -51,7 +51,7 @@ export function ProposalFooter({
           justifyContent: 'flex-end',
           padding: '0 36px',
           boxSizing: 'border-box',
-          fontSize: '10px',
+          fontSize: '13px',
           fontWeight: 600,
           color: '#000',
           fontVariantNumeric: 'tabular-nums',
