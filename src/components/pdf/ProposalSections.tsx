@@ -413,7 +413,7 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
           style={{
             backgroundColor: GREEN,
             color: '#111',
-            padding: '10.8px 20px',
+            padding: '9.7px 20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
