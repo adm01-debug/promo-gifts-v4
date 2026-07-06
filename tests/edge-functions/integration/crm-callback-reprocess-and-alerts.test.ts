@@ -62,7 +62,7 @@ describe("crm-callback-alerts — source invariants", () => {
     expect(ALERTS).toContain("counts.exhausted >= cfg.exhausted_abs_error");
   });
   it("Sentry envelope com tags/fingerprint", () => {
-    expect(ALERTS).toContain('"x-sentry-envelope"'.toLowerCase().replace('x-', 'X-')) || expect(ALERTS).toContain('application/x-sentry-envelope');
+    expect(ALERTS).toContain('application/x-sentry-envelope');
     expect(ALERTS).toContain('fingerprint');
     expect(ALERTS).toContain('tags: { alert: "crm_callback"');
   });
