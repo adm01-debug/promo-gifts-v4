@@ -24,15 +24,22 @@ export function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * Classes compartilhadas de todos os chips de status (halo/glow consistente).
+ * Cada entrada só declara a paleta (bg/text/border) + a variável `--chip-glow`
+ * apontando para o token de cor; o box-shadow vem do utilitário `.status-chip-glow`
+ * definido em `src/index.css` (@layer components), garantindo SSOT do halo.
+ */
 export const STATUS_CONFIG: Record<CartStatus, { label: string; color: string }> = {
   em_separacao: {
     label: 'Separação',
     color:
-      'bg-neon-blue/15 text-neon-blue border-neon-blue/50 shadow-[0_0_12px_hsl(var(--neon-blue)/0.35)]',
+      'status-chip-glow [--chip-glow:var(--neon-blue)] bg-neon-blue/15 text-neon-blue border-neon-blue/50',
   },
   pronto_orcamento: {
     label: 'Pronto p/ orçamento',
-    color: 'bg-success/10 text-success border-success/20',
+    color:
+      'status-chip-glow [--chip-glow:var(--success)] bg-success/15 text-success border-success/50',
   },
 };
 
