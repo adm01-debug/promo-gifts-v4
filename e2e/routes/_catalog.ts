@@ -106,6 +106,7 @@ export const QUOTES_ROUTES: RouteEntry[] = [
  * ============================================================ */
 export const ADMIN_ROUTES: RouteEntry[] = [
   { path: "/admin/usuarios", area: "admin", requiresAdmin: true, feature: "admin-users" },
+  { path: "/admin/v4-callbacks", area: "admin", requiresAdmin: true, titleSlug: "v4-callbacks", feature: "admin-v4-callbacks" },
   { path: "/admin/limites-desconto", area: "admin", requiresAdmin: true, feature: "admin-discount-limits" },
   { path: "/admin/cadastros", area: "admin", requiresAdmin: true, feature: "admin-registrations" },
   { path: "/admin/permissoes", area: "admin", requiresAdmin: true, feature: "admin-permissions" },

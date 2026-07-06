@@ -21,6 +21,7 @@ import {
   AdminSegurancaPage,
   AdminTelemetriaPage,
   EmaHealthPage,
+  AdminV4CallbacksPage,
 
   AdminUsuariosPage,
   DiscountRequestDetailPage,
@@ -126,6 +127,7 @@ export const adminRoutes = (
       <Route path="/admin/badges-inteligencia" element={<IntelligenceBadgeSettingsPage />} />
       <Route path="/admin/telemetria" element={<AdminTelemetriaPage />} />
       <Route path="/admin/ema-health" element={<EmaHealthPage />} />
+      <Route path="/admin/v4-callbacks" element={<AdminV4CallbacksPage />} />
 
       <Route path="/admin/design-tokens" element={<AdminDesignTokensPage />} />
       <Route path="/admin/client-performance" element={<AdminClientPerformancePage />} />
