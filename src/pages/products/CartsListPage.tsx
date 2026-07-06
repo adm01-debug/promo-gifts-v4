@@ -4,7 +4,7 @@
  * Layout em tabela (estilo Orçamentos): logo do cliente + nome, status,
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ShoppingCart, ArrowRight, Search, X, CheckSquare, Trash2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -186,6 +186,7 @@ function CartsListContent() {
   const confirmBulkDelete = useCallback(() => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) {
+      toast.info('Selecione ao menos um carrinho para excluir.');
       setBulkDeleteOpen(false);
       return;
     }
@@ -198,6 +199,34 @@ function CartsListContent() {
     setBulkDeleteOpen(false);
     clearSelection();
   }, [selectedIds, deleteCart, clearSelection]);
+
+  /**
+   * Atalho: Esc sai do modo de seleção e limpa marcações.
+   * Ignora quando o AlertDialog de exclusão está aberto — nesse caso o
+   * Radix já trata Esc para fechar o dialog, evitando duplo fechamento.
+   * Ignora também quando foco está em input/textarea/contenteditable
+   * (ex.: campo de busca) para não interromper edição de texto.
+   */
+  useEffect(() => {
+    if (!selectionMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (bulkDeleteOpen) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        (target?.isContentEditable ?? false)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      clearSelection();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [selectionMode, bulkDeleteOpen, clearSelection]);
 
   return (
     <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
@@ -301,42 +330,64 @@ function CartsListContent() {
             </SelectContent>
           </Select>
 
-          {selectionMode && selectedCount > 0 && (
+          <div
+            role="group"
+            aria-label="Ações de seleção de carrinhos"
+            className="flex items-center gap-2"
+          >
+            {/* Anúncio a leitores de tela quando entra/sai do modo e quantos itens estão selecionados. */}
+            <span
+              className="sr-only"
+              role="status"
+              aria-live="polite"
+              data-testid="carts-selection-live"
+            >
+              {selectionMode
+                ? selectedCount === 0
+                  ? 'Modo de seleção ativado. Nenhum carrinho selecionado. Pressione Esc para sair.'
+                  : `${selectedCount} ${selectedCount === 1 ? 'carrinho selecionado' : 'carrinhos selecionados'}. Pressione Esc para sair da seleção.`
+                : ''}
+            </span>
+
+            {selectionMode && selectedCount > 0 && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteOpen(true)}
+                data-testid="carts-bulk-delete-top"
+                aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho selecionado' : 'carrinhos selecionados'}`}
+                className="h-9 gap-1.5"
+              >
+                <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                Excluir ({selectedCount})
+              </Button>
+            )}
             <Button
               type="button"
-              variant="destructive"
+              variant={selectionMode ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setBulkDeleteOpen(true)}
-              data-testid="carts-bulk-delete-top"
-              aria-label={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}`}
+              onClick={toggleSelectionMode}
+              data-testid="carts-select-toggle"
+              data-selected={selectionMode ? 'true' : 'false'}
+              aria-pressed={selectionMode}
+              aria-keyshortcuts={selectionMode ? 'Escape' : undefined}
+              title={selectionMode ? 'Cancelar seleção (Esc)' : 'Selecionar carrinhos'}
+              aria-label={
+                selectionMode
+                  ? `Cancelar seleção${selectedCount > 0 ? ` (${selectedCount})` : ''}. Atalho: Esc`
+                  : 'Selecionar carrinhos'
+              }
               className="h-9 gap-1.5"
             >
-              <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
-              Excluir ({selectedCount})
+              <CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />
+              {selectionMode
+                ? selectedCount > 0
+                  ? `Cancelar seleção (${selectedCount})`
+                  : 'Cancelar seleção'
+                : 'Selecionar'}
             </Button>
-          )}
-          <Button
-            type="button"
-            variant={selectionMode ? 'default' : 'outline'}
-            size="sm"
-            onClick={toggleSelectionMode}
-            data-testid="carts-select-toggle"
-            data-selected={selectionMode ? 'true' : 'false'}
-            aria-pressed={selectionMode}
-            aria-label={
-              selectionMode
-                ? `Cancelar seleção${selectedCount > 0 ? ` (${selectedCount})` : ''}`
-                : 'Selecionar carrinhos'
-            }
-            className="h-9 gap-1.5"
-          >
-            <CheckSquare aria-hidden="true" className="h-3.5 w-3.5" />
-            {selectionMode
-              ? selectedCount > 0
-                ? `Cancelar seleção (${selectedCount})`
-                : 'Cancelar seleção'
-              : 'Selecionar'}
-          </Button>
+          </div>
         </div>
       </div>
 
