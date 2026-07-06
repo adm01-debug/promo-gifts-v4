@@ -398,11 +398,11 @@ function CartRow({ cart, cnpj, onOpen }: CartRowProps) {
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
+      <TableCell className="text-xs text-muted-foreground">
         {cart.company_location ? (
           <span className="truncate">{cart.company_location}</span>
         ) : (
-          <span className="text-xs opacity-60">—</span>
+          <span className="opacity-60">—</span>
         )}
       </TableCell>
       <TableCell className="text-center">
