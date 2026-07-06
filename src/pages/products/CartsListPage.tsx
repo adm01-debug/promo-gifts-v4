@@ -105,7 +105,7 @@ function CartsListContent() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-  const { deleteCart } = useSellerCartContext();
+  // deleteCart já vem do context acima
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
