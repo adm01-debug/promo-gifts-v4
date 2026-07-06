@@ -25,8 +25,24 @@ import { z } from "npm:zod@3.23.8";
 import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
+import { RateLimiter } from "../_shared/rate-limiter.ts";
 
 const CORS = buildPublicCorsHeaders({ extraAllowHeaders: ["x-api-key"] });
+
+// Rate limit: 300 req/min por (IP + hash da api-key). Fail-open p/ não
+// derrubar callbacks legítimos quando o storage de rate-limit estiver
+// indisponível — mas ainda bloqueia abuso previsível.
+const rl = new RateLimiter({
+  maxRequests: 300,
+  windowMs: 60 * 1000,
+  keyPrefix: "rl:crm-callback",
+  failClosed: false,
+});
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 // ---------------------------------------------------------------- Zod schema
 const EventTypeEnum = z.enum([
