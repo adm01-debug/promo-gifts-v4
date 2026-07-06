@@ -412,7 +412,7 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
         <div
           style={{
             backgroundColor: GREEN,
-            color: '#555',
+            color: '#111',
             padding: '15px 20px',
             display: 'flex',
             justifyContent: 'space-between',
@@ -428,17 +428,18 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
               fontWeight: 700,
               textTransform: 'uppercase',
               fontSize: '15px',
-              color: '#555',
+              color: '#111',
             }}
           >
             Total:
           </span>
           <strong
-            style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: '24px' }}
+            style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: '24px', color: '#111' }}
           >
             {fmt(data.total)}
           </strong>
         </div>
+
       </div>
     </div>
   );
