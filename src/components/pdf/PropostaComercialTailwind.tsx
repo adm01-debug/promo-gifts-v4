@@ -342,16 +342,22 @@ export const PropostaComercialTailwind = forwardRef<
                 <div
                   style={{
                     display: 'flex',
-                    alignItems: 'flex-start',
+                    alignItems: 'flex-end',
                     justifyContent: 'space-between',
                     gap: '16px',
                     marginTop: '10px',
                   }}
                 >
-                  <div style={{ flex: '0 0 auto', paddingTop: '4px' }}>
+                  <div
+                    style={{
+                      flex: '1 1 0',
+                      display: 'flex',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <ProposalSellerSignature data={data} />
                   </div>
-                  <div style={{ flex: '1 1 auto' }}>
+                  <div style={{ flex: '0 0 auto' }}>
                     <ProposalTotals data={data} />
                   </div>
                 </div>
