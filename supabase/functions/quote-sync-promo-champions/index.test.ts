@@ -485,3 +485,183 @@ Deno.test({ name: "updated_at ausente (DB e body): correlation_key usa quote_id 
     stub.restore();
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIMULAÇÕES EXAUSTIVAS — Rate Limiting (10 req/h por seller×quote)
+// ═══════════════════════════════════════════════════════════════════════════
+
+Deno.test({ name: "rate-limit: 10 chamadas sequenciais passam, 11ª bloqueia com 429", sanitizeOps: false, sanitizeResources: false }, async () => {
+  const stub = installFetchStub({ championsResponse: { status: 200, body: { ok: true } } });
+  try {
+    let okCount = 0;
+    let blockedCount = 0;
+    for (let i = 0; i < 11; i++) {
+      const res = await handler(buildRequest(baseBody(), { auth: `Bearer ${makeFakeJwt()}` }));
+      const j = await res.json();
+      if (res.status === 200) okCount++;
+      else if (res.status === 429) blockedCount++;
+      if (i === 10) {
+        assertEquals(res.status, 429, `chamada 11 deveria bloquear (got ${res.status}, body=${JSON.stringify(j)})`);
+        assertEquals(j.error, "rate_limit_exceeded");
+        assert(j.retry_after, "retry_after deve estar presente no 429");
+      }
+    }
+    assertEquals(okCount, 10, "exatamente 10 chamadas devem passar");
+    assertEquals(blockedCount, 1, "exatamente 1 chamada deve ser bloqueada");
+    // Champions deve receber exatamente 10 posts (a 11ª nem chega lá)
+    assertEquals(stub.captured.length, 10, "Champions só recebe as 10 chamadas dentro do limite");
+  } finally {
+    stub.restore();
+  }
+});
+
+Deno.test({ name: "rate-limit: seller×quote distintos NÃO colidem (isolamento por chave)", sanitizeOps: false, sanitizeResources: false }, async () => {
+  const OTHER_QUOTE = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+  const store = new Map<string, RateLimitRow>();
+
+  // Estoura o limite pra (SELLER, QUOTE_ID)
+  const stub1 = installFetchStub({
+    championsResponse: { status: 200, body: { ok: true } },
+    quote: defaultQuoteRow({ id: QUOTE_ID }),
+    rateLimitStore: store,
+  });
+  try {
+    for (let i = 0; i < 10; i++) {
+      const r = await handler(buildRequest(baseBody(), { auth: `Bearer ${makeFakeJwt()}` }));
+      await r.text();
+    }
+    // Confirma que quote1 está bloqueado
+    const blocked = await handler(buildRequest(baseBody(), { auth: `Bearer ${makeFakeJwt()}` }));
+    assertEquals(blocked.status, 429, "quote1 deve estar bloqueado");
+    await blocked.text();
+  } finally {
+    stub1.restore();
+  }
+
+  // Agora chama (SELLER, OTHER_QUOTE) — deve passar limpo, chave diferente
+  const stub2 = installFetchStub({
+    championsResponse: { status: 200, body: { ok: true } },
+    quote: defaultQuoteRow({ id: OTHER_QUOTE }),
+    rateLimitStore: store,
+  });
+  try {
+    const other = await handler(
+      buildRequest({ ...baseBody(), quote_id: OTHER_QUOTE }, { auth: `Bearer ${makeFakeJwt()}` }),
+    );
+    assertEquals(other.status, 200, "outro quote não deve herdar bloqueio");
+    // Store deve ter 2 chaves separadas
+    assertEquals(store.size, 2, `esperava 2 chaves no store, tem ${store.size}: ${[...store.keys()].join(",")}`);
+  } finally {
+    stub2.restore();
+  }
+});
+
+Deno.test({ name: "rate-limit: janela expirada (>1h) reseta contador e destrava", sanitizeOps: false, sanitizeResources: false }, async () => {
+  const store = new Map<string, RateLimitRow>();
+  const key = `${SELLER_ID}:${QUOTE_ID}::quote-sync-promo-champions`;
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  // Semeia com contador estourado numa janela ANTIGA (já expirada)
+  store.set(key, {
+    request_count: 10,
+    window_start: twoHoursAgo,
+    blocked_until: null, // blocked_until já passou / não setado
+  });
+
+  const stub = installFetchStub({
+    championsResponse: { status: 200, body: { ok: true } },
+    rateLimitStore: store,
+  });
+  try {
+    const res = await handler(buildRequest(baseBody(), { auth: `Bearer ${makeFakeJwt()}` }));
+    assertEquals(res.status, 200, "janela expirada deveria destravar");
+    // Store atualizado com count=1 e window_start novo
+    const row = store.get(key);
+    assert(row, "linha deve continuar existindo");
+    assertEquals(row!.request_count, 1, "contador deve ter resetado para 1");
+    assert(
+      new Date(row!.window_start).getTime() > new Date(twoHoursAgo).getTime(),
+      "window_start deve ter avançado para a chamada atual",
+    );
+    assertEquals(row!.blocked_until, null, "blocked_until deve limpar após reset");
+  } finally {
+    stub.restore();
+  }
+});
+
+Deno.test({ name: "rate-limit: blocked_until ativo devolve 429 sem sequer bater no Champions", sanitizeOps: false, sanitizeResources: false }, async () => {
+  const store = new Map<string, RateLimitRow>();
+  const key = `${SELLER_ID}:${QUOTE_ID}::quote-sync-promo-champions`;
+  const inTenMinutes = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  store.set(key, {
+    request_count: 10,
+    window_start: new Date().toISOString(),
+    blocked_until: inTenMinutes,
+  });
+
+  const stub = installFetchStub({
+    championsResponse: { status: 200, body: { ok: true } },
+    rateLimitStore: store,
+  });
+  try {
+    const res = await handler(buildRequest(baseBody(), { auth: `Bearer ${makeFakeJwt()}` }));
+    assertEquals(res.status, 429);
+    const j = await res.json();
+    assertEquals(j.error, "rate_limit_exceeded");
+    assertEquals(j.retry_after, inTenMinutes);
+    // Champions NÃO chamado
+    assertEquals(stub.captured.length, 0, "Champions não pode ser chamado com bloqueio ativo");
+  } finally {
+    stub.restore();
+  }
+});
+
+Deno.test({ name: "correlation_key: 50 chamadas em rajada com mesmo updated_at → todas idênticas", sanitizeOps: false, sanitizeResources: false }, async () => {
+  // Simula "clique frenético" — usa store fresh e re-instala stub a cada 10 pra não bater no limit.
+  const inputs = { ...baseBody() };
+  const expected = `quote:${inputs.quote_id}:sent:${inputs.updated_at}`;
+
+  let totalCalls = 0;
+  for (let batch = 0; batch < 5; batch++) {
+    // 5 batches × 10 chamadas = 50, cada batch com store limpo (simula janelas independentes)
+    const stub = installFetchStub({ championsResponse: { status: 200, body: { ok: true } } });
+    try {
+      for (let i = 0; i < 10; i++) {
+        const res = await handler(buildRequest(inputs, { auth: `Bearer ${makeFakeJwt()}` }));
+        await res.text();
+        totalCalls++;
+      }
+      for (const call of stub.captured) {
+        assertEquals(
+          call.headers["x-correlation-key"],
+          expected,
+          `correlation_key deve ser determinística em todas as 50 chamadas (falhou na chamada #${totalCalls})`,
+        );
+        const parsed = JSON.parse(call.body);
+        assertEquals(parsed.correlation_key, expected);
+      }
+    } finally {
+      stub.restore();
+    }
+  }
+  assertEquals(totalCalls, 50);
+});
+
+Deno.test({ name: "correlation_key: DB.updated_at prevalece sobre body.updated_at (fonte da verdade)", sanitizeOps: false, sanitizeResources: false }, async () => {
+  const dbUpdatedAt = "2026-07-06T12:00:00.000Z"; // do defaultQuoteRow
+  const stub = installFetchStub({ championsResponse: { status: 200, body: { ok: true } } });
+  try {
+    // Body manda um updated_at DIFERENTE (cliente desatualizado)
+    const staleBody = { ...baseBody(), updated_at: "2020-01-01T00:00:00.000Z" };
+    const res = await handler(buildRequest(staleBody, { auth: `Bearer ${makeFakeJwt()}` }));
+    assertEquals(res.status, 200);
+    const call = stub.captured[0];
+    // Deve usar o updated_at do DB, ignorando o body
+    assertEquals(
+      call.headers["x-correlation-key"],
+      `quote:${staleBody.quote_id}:sent:${dbUpdatedAt}`,
+      "correlation_key deve derivar do DB, não do body",
+    );
+  } finally {
+    stub.restore();
+  }
+});
