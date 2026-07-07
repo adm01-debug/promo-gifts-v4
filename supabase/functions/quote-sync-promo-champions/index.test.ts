@@ -27,9 +27,10 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake-service-role-key");
 Deno.env.set("PROMO_CHAMPIONS_WEBHOOK_SECRET", SECRET);
 
 const mod = await import("./index.ts");
-const { handler, hmacSha256Hex } = mod as {
+const { handler, hmacSha256Hex, normalizeTs } = mod as {
   handler: (req: Request) => Promise<Response>;
   hmacSha256Hex: (s: string, m: string) => Promise<string>;
+  normalizeTs: (ts: string | null | undefined) => string | null;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -269,6 +270,54 @@ Deno.test("hmacSha256Hex: assinatura estável e determinística", async () => {
   assertEquals(sig1, sig2);
   assertEquals(sig1.length, 64);
   assert(/^[0-9a-f]{64}$/.test(sig1));
+});
+
+// ─── normalizeTs: variantes equivalentes de timestamptz colapsam ────────
+Deno.test("normalizeTs: variantes do mesmo instante colapsam no ISO canônico", () => {
+  // Todas estas representações apontam para o mesmo instante UTC.
+  const equivalents = [
+    "2026-07-06T22:00:00+00:00",
+    "2026-07-06T22:00:00Z",
+    "2026-07-06T22:00:00.000Z",
+    "2026-07-06T22:00:00.000000+00:00",
+    "2026-07-06T22:00:00.000000Z",
+    "2026-07-06T19:00:00-03:00", // mesmo instante em -03:00 (America/Sao_Paulo)
+    "2026-07-06T22:00:00.000+00:00",
+  ];
+  const canonical = "2026-07-06T22:00:00.000Z";
+  for (const v of equivalents) {
+    assertEquals(normalizeTs(v), canonical, `${v} deveria normalizar para ${canonical}`);
+  }
+});
+
+Deno.test("normalizeTs: preserva microssegundos truncando para ms (comportamento Date)", () => {
+  // Postgres pode devolver microsegundos; Date/toISOString trunca para ms.
+  // O importante é que TODAS as variantes com os mesmos ms produzam a mesma saída.
+  assertEquals(
+    normalizeTs("2026-07-06T22:00:00.123456+00:00"),
+    normalizeTs("2026-07-06T22:00:00.123Z"),
+  );
+});
+
+Deno.test("normalizeTs: null/undefined/'' → null; inparseável → devolve original", () => {
+  assertEquals(normalizeTs(null), null);
+  assertEquals(normalizeTs(undefined), null);
+  assertEquals(normalizeTs(""), null);
+  // string inparseável não deve quebrar o fluxo — devolve como veio
+  assertEquals(normalizeTs("not-a-date"), "not-a-date");
+});
+
+Deno.test("normalizeTs: idempotente (aplicar 2x = aplicar 1x)", () => {
+  const inputs = [
+    "2026-07-06T22:00:00+00:00",
+    "2026-07-06T22:00:00.123456Z",
+    "2026-01-01T00:00:00-03:00",
+  ];
+  for (const v of inputs) {
+    const once = normalizeTs(v);
+    const twice = normalizeTs(once);
+    assertEquals(twice, once, `normalizeTs deve ser idempotente para ${v}`);
+  }
 });
 
 Deno.test("OPTIONS: responde 204/200 sem body com CORS", async () => {

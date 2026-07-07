@@ -183,8 +183,13 @@ export const handler = async (req: Request): Promise<Response> => {
 
   // correlation_key determinístico. Se o DB tem updated_at (sempre tem), usa ele;
   // fallback derradeiro é o próprio quote_id (nunca timestamp gerado).
-  const updatedAtSource = quote.updated_at ?? q.updated_at ?? q.quote_id;
-  const correlationKey = `quote:${q.quote_id}:sent:${updatedAtSource}`;
+  //
+  // ⚠️ IMPORTANTE: `updated_at` vem do Postgres como `timestamptz` e pode ser
+  // serializado em variantes equivalentes ("Z", "+00:00", com/sem microsegundos).
+  // Cada variante geraria uma correlation_key distinta → dedup bypass no destino.
+  // Por isso normalizamos para o ISO canônico (`toISOString()` → sempre "Z" + ms).
+  const updatedAtSource = normalizeTs(quote.updated_at ?? q.updated_at);
+  const correlationKey = `quote:${q.quote_id}:sent:${updatedAtSource ?? q.quote_id}`;
 
   // Fonte da verdade: dados do DB (não do frontend), com fallback nos campos vindos do body.
   const bodyObj = {
@@ -199,7 +204,8 @@ export const handler = async (req: Request): Promise<Response> => {
       total:
         q.total ??
         (quote.total !== null && quote.total !== undefined ? Number(quote.total) : null),
-      updated_at: quote.updated_at ?? q.updated_at ?? null,
+      // Normalizado para casar com a correlation_key (mesma representação canônica).
+      updated_at: normalizeTs(quote.updated_at ?? q.updated_at),
       seller_email: q.seller_email ?? null,
     },
   };
@@ -284,7 +290,25 @@ export const handler = async (req: Request): Promise<Response> => {
 
 Deno.serve(handler);
 
-export { hmacSha256Hex };
+export { hmacSha256Hex, normalizeTs };
+
+/**
+ * Normaliza um timestamp arbitrário (ISO com/sem "Z", com/sem microssegundos,
+ * offset ±HH:MM etc.) para o ISO canônico UTC produzido por `Date#toISOString()`:
+ *   "YYYY-MM-DDTHH:mm:ss.sssZ"
+ *
+ * Usado na `correlation_key` para garantir que a MESMA quote/updated_at gere
+ * SEMPRE a mesma chave, independentemente de como o Postgres/driver formatar.
+ *
+ * Fallback: se `ts` for null/undefined → null; se for inparseável → devolve
+ * a string original (não bloqueia o fluxo; apenas perde o efeito de dedup).
+ */
+function normalizeTs(ts: string | null | undefined): string | null {
+  if (ts === null || ts === undefined || ts === "") return null;
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return ts;
+  return d.toISOString();
+}
 
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
