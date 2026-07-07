@@ -799,7 +799,7 @@ function CartRow({
                   disabled={cart.items.length === 0}
                   onClick={onGenerateQuote}
                 >
-                  <FileText className="mr-2 h-4 w-4" /> Gerar Orçamento
+                  <FileText className="mr-2 h-4 w-4" /> Orçamento
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
