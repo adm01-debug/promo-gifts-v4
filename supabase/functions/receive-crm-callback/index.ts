@@ -63,7 +63,7 @@ export function isAllowedEventType(v: unknown): v is AllowedEventType {
 }
 const EventTypeEnum = z.enum(ALLOWED_EVENT_TYPES);
 
-const CallbackSchema = z.object({
+export const CallbackSchema = z.object({
   external_quote_id: z.string().uuid(),
   crm_quote_id: z.string().uuid().optional(),
   event_type: EventTypeEnum,
