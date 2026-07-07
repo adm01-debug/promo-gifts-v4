@@ -91,18 +91,27 @@ function defaultQuoteRow(overrides: Partial<QuoteRow> = {}): QuoteRow {
  *   (null = quote não encontrado)
  * - captura e responde championsResponse para o CHAMPIONS_URL
  */
+interface RateLimitRow {
+  request_count: number;
+  window_start: string;
+  blocked_until: string | null;
+}
+
 function installFetchStub(opts: {
   championsResponse: { status: number; body: unknown };
   quote?: QuoteRow | null; // undefined = default, null = not found
+  rateLimitStore?: Map<string, RateLimitRow>;
 }): {
   captured: CapturedRequest[];
   postgrest: CapturedRequest[];
+  rateLimitStore: Map<string, RateLimitRow>;
   restore: () => void;
 } {
   const captured: CapturedRequest[] = [];
   const postgrest: CapturedRequest[] = [];
   const original = globalThis.fetch;
   const quote = opts.quote === undefined ? defaultQuoteRow() : opts.quote;
+  const rateLimitStore = opts.rateLimitStore ?? new Map<string, RateLimitRow>();
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
@@ -127,13 +136,66 @@ function installFetchStub(opts: {
       });
     }
 
+    // PostgREST: request_rate_limits (SELECT / UPSERT via POST / UPDATE via PATCH)
+    if (url.includes("/rest/v1/request_rate_limits")) {
+      postgrest.push({ url, method, headers, body });
+      const u = new URL(url);
+      const idFilter = (u.searchParams.get("identifier") ?? "").replace(/^eq\./, "");
+      const epFilter = (u.searchParams.get("endpoint") ?? "").replace(/^eq\./, "");
+      const key = `${idFilter}::${epFilter}`;
+
+      if (method === "GET" || method === undefined) {
+        const acceptsObject = (headers["accept"] ?? "").includes("pgrst.object");
+        const row = rateLimitStore.get(key);
+        if (!row) {
+          return new Response(acceptsObject ? "null" : "[]", {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        const payload = { id: "rl-" + key, ...row };
+        return new Response(
+          acceptsObject ? JSON.stringify(payload) : JSON.stringify([payload]),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (method === "POST") {
+        // UPSERT (onConflict identifier,endpoint)
+        try {
+          const parsed = JSON.parse(body);
+          const rows = Array.isArray(parsed) ? parsed : [parsed];
+          for (const r of rows) {
+            rateLimitStore.set(`${r.identifier}::${r.endpoint}`, {
+              request_count: r.request_count,
+              window_start: r.window_start,
+              blocked_until: r.blocked_until ?? null,
+            });
+          }
+        } catch { /* ignore */ }
+        return new Response("", { status: 201, headers: { "content-type": "application/json" } });
+      }
+      if (method === "PATCH") {
+        try {
+          const parsed = JSON.parse(body);
+          const existing = rateLimitStore.get(key);
+          if (existing) {
+            rateLimitStore.set(key, {
+              request_count: parsed.request_count ?? existing.request_count,
+              window_start: existing.window_start,
+              blocked_until: parsed.blocked_until === undefined ? existing.blocked_until : parsed.blocked_until,
+            });
+          }
+        } catch { /* ignore */ }
+        return new Response(null, { status: 204, headers: { "content-type": "application/json" } });
+      }
+    }
+
     // PostgREST: quotes SELECT/UPDATE
     if (url.includes("/rest/v1/quotes")) {
       postgrest.push({ url, method, headers, body });
       const acceptsObject = (headers["accept"] ?? "").includes("pgrst.object");
       if (method === "GET" || method === undefined) {
         if (quote === null) {
-          // maybeSingle com 0 rows: PostgREST devolve 200 + null (com Accept object)
           return new Response("null", {
             status: 200,
             headers: { "content-type": "application/json" },
@@ -146,14 +208,10 @@ function installFetchStub(opts: {
         });
       }
       if (method === "PATCH") {
-        return new Response(null, {
-          status: 204,
-          headers: { "content-type": "application/json" },
-        });
+        return new Response(null, { status: 204, headers: { "content-type": "application/json" } });
       }
     }
 
-    // Supabase auth endpoints (getClaims → /auth/v1/user ou /auth/v1/.well-known/jwks.json)
     if (url.includes("/auth/v1/")) {
       if (url.includes("jwks")) {
         return new Response(JSON.stringify({ keys: [] }), {
@@ -173,6 +231,7 @@ function installFetchStub(opts: {
   return {
     captured,
     postgrest,
+    rateLimitStore,
     restore: () => {
       globalThis.fetch = original;
     },
