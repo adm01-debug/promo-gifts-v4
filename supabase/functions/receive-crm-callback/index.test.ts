@@ -96,6 +96,8 @@ Deno.test("CallbackSchema.safeParse rejeita event_type inválido com erro estrut
 // ─── 4. INSERT real contra o banco → 23514 ──────────────────────────────
 Deno.test({
   name: "INSERT com event_type inválido é rejeitado pelo CHECK do DB (23514)",
+  sanitizeOps: false,
+  sanitizeResources: false,
   ignore:
     !Deno.env.get("SUPABASE_URL") ||
     Deno.env.get("SUPABASE_URL") === "https://fake.supabase.co" ||
