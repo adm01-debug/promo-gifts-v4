@@ -15,7 +15,10 @@
 //
 // Rodar: `deno test -A supabase/functions/receive-crm-callback/index.test.ts`
 
-import "https://deno.land/std@0.224.0/dotenv/load.ts";
+// Nota: NÃO importamos `dotenv/load.ts` — este teste só depende dos
+// export puros do módulo. O bloco #4 (INSERT real) usa Deno.env direto
+// e é pulado quando as vars de banco reais não estão presentes.
+
 import {
   assert,
   assertEquals,
