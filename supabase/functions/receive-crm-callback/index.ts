@@ -211,7 +211,26 @@ Deno.serve(async (req) => {
   }
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
-  // 4) idempotência: INSERT ON CONFLICT DO NOTHING
+  // 4) Defense-in-depth: mesmo com Zod validando, checamos a whitelist
+  //    antes do INSERT para evitar bater no CHECK do banco e queimar
+  //    conexão / gerar 500. Se um dia alguém remover o Zod, isto ainda
+  //    protege o CHECK constraint `chk_crm_callback_events_event_type`.
+  if (!isAllowedEventType(body.event_type)) {
+    log.warn("crm_callback_invalid_event_type", {
+      ...ctx,
+      received: body.event_type,
+      allowed: ALLOWED_EVENT_TYPES,
+    });
+    return log.respond(
+      json(400, {
+        error: "invalid_event_type",
+        received: body.event_type,
+        allowed: ALLOWED_EVENT_TYPES,
+      }),
+    );
+  }
+
+  // 5) idempotência: INSERT ON CONFLICT DO NOTHING
   //    Se já existir para (external_quote_id, event_type, occurred_at) → duplicate_ignored.
   const insertRes = await supabase
     .from("crm_callback_events")
@@ -230,6 +249,22 @@ Deno.serve(async (req) => {
   if (insertRes.error && (insertRes.error as any).code === "23505") {
     log.info("crm_callback_duplicate", ctx);
     return log.respond(json(200, { status: "duplicate_ignored" }));
+  }
+  // CHECK constraint violation (event_type fora da whitelist do banco).
+  // Só chega aqui se whitelist do código e do DB divergirem — sinaliza
+  // drift de schema e devolve 422 (semantic) em vez de 500 opaco.
+  if (insertRes.error && (insertRes.error as any).code === "23514") {
+    log.error("crm_callback_check_violation", {
+      ...ctx,
+      constraint: (insertRes.error as any).details ?? null,
+      message: insertRes.error.message,
+    });
+    return log.respond(
+      json(422, {
+        error: "constraint_violation",
+        hint: "event_type rejeitado pelo CHECK do banco — schema drift entre edge e DB.",
+      }),
+    );
   }
   if (insertRes.error) {
     log.error("crm_callback_insert_failed", { ...ctx, err: insertRes.error });
