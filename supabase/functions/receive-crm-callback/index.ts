@@ -45,13 +45,23 @@ async function sha256Hex(s: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------- Zod schema
-const EventTypeEnum = z.enum([
+/**
+ * SSOT dos event_type aceitos. Espelha o CHECK constraint
+ * `chk_crm_callback_events_event_type` no banco canônico. Qualquer
+ * mudança aqui exige migration correspondente (e vice-versa).
+ */
+export const ALLOWED_EVENT_TYPES = [
   "approved",
   "rejected",
   "order_created",
   "sent_to_client",
   "expired",
-]);
+] as const;
+export type AllowedEventType = (typeof ALLOWED_EVENT_TYPES)[number];
+export function isAllowedEventType(v: unknown): v is AllowedEventType {
+  return typeof v === "string" && (ALLOWED_EVENT_TYPES as readonly string[]).includes(v);
+}
+const EventTypeEnum = z.enum(ALLOWED_EVENT_TYPES);
 
 const CallbackSchema = z.object({
   external_quote_id: z.string().uuid(),
