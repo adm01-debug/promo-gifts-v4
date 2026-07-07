@@ -270,17 +270,13 @@ export default function QuoteViewPage() {
                     sideOffset={6}
                     className="w-52 rounded-lg p-1.5 text-[12px] leading-tight [&_[role=menuitem]]:flex [&_[role=menuitem]]:items-center [&_[role=menuitem]]:gap-2.5 [&_[role=menuitem]]:rounded-md [&_[role=menuitem]]:px-2.5 [&_[role=menuitem]]:py-2"
                   >
-                    <DropdownMenuItem onClick={handleSyncAll} disabled={isSyncing}>
-                      <RefreshCw className="h-3.5 w-3.5 text-primary" />
-                      Sincronizar tudo
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSyncBitrix} disabled={isSyncing}>
                       <RefreshCw className="h-3.5 w-3.5 text-primary" />
-                      Só Bitrix24
+                      Bitrix24
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSyncPromoChampions} disabled={isSyncing}>
                       <RefreshCw className="h-3.5 w-3.5 text-primary" />
-                      Só Promo Champions
+                      Promo Champions
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
