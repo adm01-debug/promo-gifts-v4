@@ -290,7 +290,25 @@ export const handler = async (req: Request): Promise<Response> => {
 
 Deno.serve(handler);
 
-export { hmacSha256Hex };
+export { hmacSha256Hex, normalizeTs };
+
+/**
+ * Normaliza um timestamp arbitrário (ISO com/sem "Z", com/sem microssegundos,
+ * offset ±HH:MM etc.) para o ISO canônico UTC produzido por `Date#toISOString()`:
+ *   "YYYY-MM-DDTHH:mm:ss.sssZ"
+ *
+ * Usado na `correlation_key` para garantir que a MESMA quote/updated_at gere
+ * SEMPRE a mesma chave, independentemente de como o Postgres/driver formatar.
+ *
+ * Fallback: se `ts` for null/undefined → null; se for inparseável → devolve
+ * a string original (não bloqueia o fluxo; apenas perde o efeito de dedup).
+ */
+function normalizeTs(ts: string | null | undefined): string | null {
+  if (ts === null || ts === undefined || ts === "") return null;
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return ts;
+  return d.toISOString();
+}
 
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
