@@ -27,9 +27,10 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "fake-service-role-key");
 Deno.env.set("PROMO_CHAMPIONS_WEBHOOK_SECRET", SECRET);
 
 const mod = await import("./index.ts");
-const { handler, hmacSha256Hex } = mod as {
+const { handler, hmacSha256Hex, normalizeTs } = mod as {
   handler: (req: Request) => Promise<Response>;
   hmacSha256Hex: (s: string, m: string) => Promise<string>;
+  normalizeTs: (ts: string | null | undefined) => string | null;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
