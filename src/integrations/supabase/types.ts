@@ -7474,6 +7474,13 @@ export type Database = {
         }
         Returns: string
       }
+      fn_check_dead_letters: {
+        Args: { _window_hours?: number }
+        Returns: {
+          alert: string
+          unresolved_count: number
+        }[]
+      }
       fn_check_geo_access: {
         Args: { p_country_code: string }
         Returns: boolean
