@@ -129,7 +129,9 @@ export const handler = async (req: Request): Promise<Response> => {
     }, { onConflict: "identifier,endpoint" });
   } else {
     const newCount = (rlRow?.request_count ?? 0) + 1;
-    const blockedUntil = newCount >= rlMaxCalls
+    // Semântica: "10 req/h" ⇒ calls 1..10 passam, a 11ª (newCount=11) bloqueia.
+    const exceeded = newCount > rlMaxCalls;
+    const blockedUntil = exceeded
       ? new Date(new Date(rlRow!.window_start).getTime() + rlWindowMs).toISOString()
       : null;
     await supabaseAdmin.from("request_rate_limits").update({
@@ -138,7 +140,7 @@ export const handler = async (req: Request): Promise<Response> => {
       updated_at: new Date().toISOString(),
     }).eq("identifier", rlIdentifier).eq("endpoint", rlEndpoint);
 
-    if (newCount >= rlMaxCalls) {
+    if (exceeded) {
       return json({
         error: "rate_limit_exceeded",
         hint: "Máximo de 10 sincronizações por orçamento por hora.",
