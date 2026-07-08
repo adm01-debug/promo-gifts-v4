@@ -41,6 +41,7 @@ test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
       if (id) ids.push(id);
     }
     expect(ids.length).toBe(2);
+    recordCarts(testInfo, { A: ids[0], B: ids[1] });
 
     const readSidebar = async () => {
       const hero = page.getByTestId('cart-sidebar-hero');
@@ -53,9 +54,11 @@ test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
     };
 
     // --- Carrinho A ---
+    recordNav(testInfo, `A:${ids[0]}`);
     await gotoAndSettle(page, `/carrinhos/${ids[0]}`);
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const a = await readSidebar();
+    setDebugContext(testInfo, { sidebarA: a });
 
     if (!a.visible) {
       // Sem itens → sidebar não renderiza; nada a validar.
