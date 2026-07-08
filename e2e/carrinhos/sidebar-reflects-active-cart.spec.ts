@@ -12,9 +12,17 @@
 import { test, expect } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
+
+installFailureCapture(test);
 
 test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
-  test('CTA presente, sem subtotal duplicado, peso/volume acompanham a troca', async ({ page }) => {
+  test('CTA presente, sem subtotal duplicado, peso/volume acompanham a troca', async ({ page }, testInfo) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/carrinhos');
 
