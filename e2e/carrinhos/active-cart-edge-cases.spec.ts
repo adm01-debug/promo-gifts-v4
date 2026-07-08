@@ -14,8 +14,10 @@ import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
 
-// Formato pt-BR: "R$ 1.234,56" ou "R$\u00A01.234,56"
-const CURRENCY_RE = /R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}/;
+// Formato pt-BR: "R$ 1.234,56" — `Intl` usa NBSP (\u00A0) entre símbolo e
+// número; normalizamos qualquer whitespace unicode antes de casar o padrão.
+const CURRENCY_RE = /R\$[\s\u00A0\u202F]?\d{1,3}(?:\.\d{3})*,\d{2}/;
+const norm = (s: string) => s.replace(/[\u00A0\u202F]/g, ' ');
 
 async function collectCartIds(page: Page): Promise<string[]> {
   const rows = page.locator('[data-testid^="cart-row-"]').filter({
@@ -38,7 +40,7 @@ async function readHeaderMeta(page: Page): Promise<string> {
     .locator('p')
     .first();
   await expect(meta).toBeVisible();
-  return (await meta.innerText()).trim();
+  return norm((await meta.innerText()).trim());
 }
 
 async function readHeaderTitle(page: Page): Promise<string> {
