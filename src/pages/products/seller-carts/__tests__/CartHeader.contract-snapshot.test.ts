@@ -85,4 +85,65 @@ describe('CartHeader · snapshot de contrato do meta', () => {
       expect(computeHeaderMeta(c.items)).toMatch(CONTRACT);
     }
   });
+
+  it('locka arredondamento BRL em bordas críticas (0,005 / 0,0099 / 1,005 / etc.)', () => {
+    // Cada valor abaixo é um subtotal potencial. Se o ICU/Intl mudar de
+    // política de arredondamento (half-up ↔ half-even), este snapshot quebra.
+    const boundaries = [
+      0.001,
+      0.005,
+      0.0099,
+      0.01,
+      0.014,
+      0.015,
+      0.025,
+      0.995,
+      1.005,
+      1.015,
+      1.245,
+      1.255,
+      2.005,
+      999.995,
+      1000.005,
+    ];
+    const rows = boundaries.map((v) => `${v} → ${norm(formatCurrency(v))}`).join('\n');
+    expect(rows).toMatchInlineSnapshot(`
+      "0.001 → R$ 0,00
+      0.005 → R$ 0,01
+      0.0099 → R$ 0,01
+      0.01 → R$ 0,01
+      0.014 → R$ 0,01
+      0.015 → R$ 0,02
+      0.025 → R$ 0,03
+      0.995 → R$ 1,00
+      1.005 → R$ 1,01
+      1.015 → R$ 1,02
+      1.245 → R$ 1,25
+      1.255 → R$ 1,26
+      2.005 → R$ 2,01
+      999.995 → R$ 1.000,00
+      1000.005 → R$ 1.000,01"
+    `);
+  });
+
+  it('separador de milhar SEMPRE "." e decimal SEMPRE "," (nunca inverte)', () => {
+    // Casos > 1000 obrigam separador de milhar.
+    for (const v of [1000, 1234.56, 10_000, 999_999.99, 1_000_000]) {
+      const out = norm(formatCurrency(v));
+      // Regex: "R$ <milhares com ponto>,\d{2}" — vírgula é o decimal.
+      expect(out).toMatch(/^R\$ \d{1,3}(?:\.\d{3})+,\d{2}$/);
+    }
+  });
+
+  it('formatCurrency sempre produz exatamente 2 casas decimais (100 valores)', () => {
+    for (let i = 0; i < 100; i++) {
+      // Injeta valores com 3+ casas para forçar arredondamento.
+      const v = Math.random() * 10_000;
+      const out = norm(formatCurrency(v));
+      // Nunca 0 ou 3+ casas depois da vírgula.
+      expect(out).toMatch(/,\d{2}$/);
+      expect(out).not.toMatch(/,\d{3,}$/);
+      expect(out).not.toMatch(/,\d{1}$/);
+    }
+  });
 });
