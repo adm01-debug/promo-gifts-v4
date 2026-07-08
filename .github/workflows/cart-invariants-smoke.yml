@@ -1,14 +1,19 @@
-name: Cart Invariants Smoke (Chrome + Firefox)
+name: Cart Invariants Smoke (Chrome + Firefox, sharded)
 
 # Roda em TODO PR (sem paths-filter): garante que os invariants do
-# header/sidebar do carrinho ativo nunca quebrem em qualquer mudança de
-# código, independentemente do escopo do diff.
+# header/sidebar do carrinho ativo nunca quebrem, em qualquer diff.
 #
-# Filosofia:
-#   - retries=0 → qualquer flake ou break do invariant falha o build.
-#   - matriz Chrome + Firefox → pega diffs de engine (regex NBSP/NNBSP,
-#     hidratação SSR/CSR, ordem de eventos, locale ICU).
-#   - job separado do `carrinhos` (que segue com paths-filter enxuto).
+# Sharding:
+#   - Matriz 2 browsers × 2 shards = 4 jobs paralelos (~50% do tempo total).
+#   - `--shard=X/Y` do Playwright particiona por spec (contagem total de
+#     testes ÷ Y). Como cada spec é curto, o balanceamento sai natural.
+#   - Cada shard sobe um Playwright novo → workers isolados, sem cross-talk.
+#
+# Artefatos:
+#   - trace/screenshot/video: retain-on-failure (config global).
+#   - HTML + page-context.json: anexados via `installFailureCapture()` nos
+#     specs opt-in.
+#   - Uploads separados por (browser, shard) para triagem rápida.
 
 on:
   pull_request:
@@ -23,17 +28,29 @@ concurrency:
 
 jobs:
   invariants-smoke:
-    name: cart-invariants-smoke (${{ matrix.project }})
+    name: cart-invariants (${{ matrix.project }} · shard ${{ matrix.shard }}/${{ matrix.total_shards }})
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
           - browser: chromium
             project: chromium-authed
+            shard: 1
+            total_shards: 2
+          - browser: chromium
+            project: chromium-authed
+            shard: 2
+            total_shards: 2
           - browser: firefox
             project: firefox-authed
+            shard: 1
+            total_shards: 2
+          - browser: firefox
+            project: firefox-authed
+            shard: 2
+            total_shards: 2
     env:
       CI: 'true'
       E2E_BASE_URL: http://localhost:8080
@@ -52,7 +69,9 @@ jobs:
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
       # retries=0: qualquer invariant quebrado FALHA o build. Sem "tentar de novo".
-      - name: Playwright — invariants do header/sidebar do carrinho ativo
+      # video/screenshot/trace já vêm do config global (retain-on-failure).
+      # HTML + page-context.json vêm de `installFailureCapture()` nos specs.
+      - name: Playwright — invariants do header/sidebar (shard ${{ matrix.shard }}/${{ matrix.total_shards }})
         run: |
           npx playwright test \
             e2e/carrinhos/header-reflects-active-cart.spec.ts \
@@ -61,25 +80,48 @@ jobs:
             e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
             e2e/carrinhos/active-cart-parallel-actions.spec.ts \
             e2e/carrinhos/active-cart-network-failure.spec.ts \
+            e2e/carrinhos/active-cart-mutations-parallel.spec.ts \
             --project=${{ matrix.project }} \
+            --shard=${{ matrix.shard }}/${{ matrix.total_shards }} \
             --retries=0
 
-      - name: Upload Playwright report
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cart-invariants-report-${{ matrix.browser }}
+          name: cart-invariants-report-${{ matrix.browser }}-shard${{ matrix.shard }}
           path: playwright-report/
           retention-days: 14
           if-no-files-found: ignore
 
-      - name: Upload traces on failure
+      # test-results/** contém: screenshot, video, trace.zip, attachments
+      # (page-html, page-context.json, failure-screenshot.png).
+      - name: Upload artefatos de falha (screenshot/video/HTML/trace)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: cart-invariants-traces-${{ matrix.browser }}
+          name: cart-invariants-failure-${{ matrix.browser }}-shard${{ matrix.shard }}
           path: |
+            test-results/**/*.png
+            test-results/**/*.webm
+            test-results/**/*.html
+            test-results/**/*.json
             test-results/**/trace.zip
-            test-results/**/*-diff.png
           retention-days: 14
           if-no-files-found: ignore
+
+  # Job agregador — required check único no branch protection, verde só
+  # quando TODOS os shards passaram.
+  invariants-summary:
+    name: cart-invariants-summary
+    runs-on: ubuntu-latest
+    needs: [invariants-smoke]
+    if: always()
+    steps:
+      - name: Falha se algum shard falhou
+        run: |
+          if [ "${{ needs.invariants-smoke.result }}" != "success" ]; then
+            echo "❌ Ao menos um shard/browser do smoke de invariants falhou."
+            exit 1
+          fi
+          echo "✅ Todos os shards de invariants passaram."
