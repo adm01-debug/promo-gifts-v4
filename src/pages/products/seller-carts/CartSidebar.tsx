@@ -85,60 +85,36 @@ export function CartSidebar({
       <Card data-testid="cart-sidebar-hero" data-loaded="true" className="group/hero relative space-y-5 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 shadow-md">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl transition-colors group-hover/hero:bg-primary/10" />
 
-        <div className="relative z-10 space-y-1">
-          <p className="text-[11px] font-medium text-muted-foreground">
-            Subtotal do carrinho
-          </p>
-          <div className="flex items-baseline gap-1">
-            <motion.p
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              key={cartSubtotal}
-              className="font-display text-3xl font-black tabular-nums leading-none tracking-tight text-primary"
-            >
-              {formatCurrency(cartSubtotal)}
-            </motion.p>
+        {/* Subtotal / SKUs / Qtd. agora vivem no header da página — evitamos
+            duplicidade e mantemos aqui apenas peso/volume quando aplicável. */}
+        {weightVolume && (weightVolume.weightKg > 0 || weightVolume.volumeCm3 > 0) && (
+          <div className="relative z-10 grid grid-cols-2 gap-3 text-xs">
+            {weightVolume.weightKg > 0 && (
+              <div className="space-y-1">
+                <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                  <Weight aria-hidden="true" className="h-3 w-3 opacity-60" /> Peso
+                </p>
+                <p className="text-sm font-bold tabular-nums">
+                  {weightVolume.weightKg >= 1
+                    ? `${weightVolume.weightKg.toFixed(1)}kg`
+                    : `${(weightVolume.weightKg * 1000).toFixed(0)}g`}
+                </p>
+              </div>
+            )}
+            {weightVolume.volumeCm3 > 0 && (
+              <div className="space-y-1">
+                <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                  <Box aria-hidden="true" className="h-3 w-3 opacity-60" /> Volume
+                </p>
+                <p className="text-sm font-bold tabular-nums">
+                  {weightVolume.volumeM3 >= 0.001
+                    ? `${weightVolume.volumeM3.toFixed(3)}m³`
+                    : `${weightVolume.volumeCm3.toLocaleString('pt-BR')}cm³`}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="relative z-10 grid grid-cols-2 gap-3 border-t border-primary/10 pt-4 text-xs">
-          <div className="space-y-1">
-            <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-              <Package aria-hidden="true" className="h-3 w-3 opacity-60" /> SKUs
-            </p>
-            <p className="text-sm font-bold tabular-nums">{cart.items.length}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-              Qtd. total
-            </p>
-            <p className="text-sm font-bold tabular-nums">{cartTotalQty.toLocaleString('pt-BR')}</p>
-          </div>
-          {weightVolume && weightVolume.weightKg > 0 && (
-            <div className="space-y-1">
-              <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                <Weight aria-hidden="true" className="h-3 w-3 opacity-60" /> Peso
-              </p>
-              <p className="text-sm font-bold tabular-nums">
-                {weightVolume.weightKg >= 1
-                  ? `${weightVolume.weightKg.toFixed(1)}kg`
-                  : `${(weightVolume.weightKg * 1000).toFixed(0)}g`}
-              </p>
-            </div>
-          )}
-          {weightVolume && weightVolume.volumeCm3 > 0 && (
-            <div className="space-y-1">
-              <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                <Box aria-hidden="true" className="h-3 w-3 opacity-60" /> Volume
-              </p>
-              <p className="text-sm font-bold tabular-nums">
-                {weightVolume.volumeM3 >= 0.001
-                  ? `${weightVolume.volumeM3.toFixed(3)}m³`
-                  : `${weightVolume.volumeCm3.toLocaleString('pt-BR')}cm³`}
-              </p>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* ZONE 2 — Ação primária */}
         <div className="relative z-10 pt-1">
