@@ -182,6 +182,8 @@ jobs:
             e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
             e2e/carrinhos/active-cart-edge-cases.spec.ts \
             e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
+            e2e/carrinhos/active-cart-parallel-actions.spec.ts \
+            e2e/carrinhos/active-cart-network-failure.spec.ts \
             --project=chromium-authed --retries=1
 
       # Repete os mesmos invariants em Firefox — falha o build se qualquer
@@ -196,6 +198,8 @@ jobs:
             e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
             e2e/carrinhos/active-cart-edge-cases.spec.ts \
             e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
+            e2e/carrinhos/active-cart-parallel-actions.spec.ts \
+            e2e/carrinhos/active-cart-network-failure.spec.ts \
             --project=firefox-authed --retries=1
 
       # Smoke dos handoffs Carrinho/URL → QuoteBuilder (BUG-CART-HANDOFF).
