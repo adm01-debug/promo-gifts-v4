@@ -173,6 +173,17 @@ jobs:
       - name: E2E smoke — CartSidebar sem painéis legados
         run: npx playwright test e2e/carrinhos/sidebar-no-legacy-labels.spec.ts --project=chromium-authed --retries=1
 
+      # Smoke dos handoffs Carrinho/URL → QuoteBuilder (BUG-CART-HANDOFF).
+      # Falha cedo se o autosave voltar a sobrescrever dados vindos do carrinho
+      # ou de URL params ao trocar de aba ou recarregar a página.
+      - name: E2E smoke — Handoffs QuoteBuilder (carrinho + URL params)
+        run: |
+          npx playwright test \
+            e2e/carrinhos/cart-to-quote-handoff.spec.ts \
+            e2e/carrinhos/cart-to-quote-handoff-persistence.spec.ts \
+            e2e/carrinhos/quote-handoff-url-params.spec.ts \
+            --project=chromium-authed --retries=1
+
       # Suíte completa de carrinhos (popover footer matrix, limite 10, etc.).
       # Falha = merge bloqueado pelo branch protection (required check).
       - name: Run E2E — Carrinhos (suíte completa)

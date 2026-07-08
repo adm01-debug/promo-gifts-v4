@@ -44,6 +44,7 @@ import { isValidQuoteTransition, getQuoteStatusLabel } from '@/lib/quote-status-
 import type { QuoteStatus } from '@/types/quote';
 
 import { logger } from '@/lib/logger';
+import { trackQuoteHandoff } from '@/lib/telemetry/quoteHandoffTelemetry';
 
 const VALIDITY_PRESETS = ['1', '3', '7', '15', '30'] as const;
 
@@ -621,11 +622,11 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
-    // TELEMETRY: handoff simulador → orçamento (permite auditar se autosave sobrescreveu depois)
-    logger.info('[QuoteBuilder handoff] fromSimulator', {
+    // TELEMETRY: handoff simulador → orçamento (persistido em frontend_telemetry
+    // para auditoria em `/admin/telemetria`).
+    trackQuoteHandoff('fromSimulator', {
       product_id: product.id,
-      product_name: product.name,
-      personalizations_count: (personalizations ?? []).length,
+      items_count: 1,
     });
     clearAutoSave();
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
@@ -689,11 +690,11 @@ export function useQuoteBuilderState() {
     if (!state?.fromCart || !state.items?.length) return;
     // BUG-CART-HANDOFF FIX: descarta autosave anterior para não sobrescrever o
     // cliente/itens vindos do carrinho quando o hook de autosave habilita.
-    // TELEMETRY: registrar handoff carrinho → orçamento para auditoria de
-    // regressões (rastreia empresa + qtd itens; nenhum dado sensível).
-    logger.info('[QuoteBuilder handoff] fromCart', {
-      company_id: state.companyId,
-      company_name: state.companyName,
+    // TELEMETRY: registrar handoff carrinho → orçamento (persistido em
+    // frontend_telemetry) para detectar regressões do autosave em PROD.
+    trackQuoteHandoff('fromCart', {
+      company_id: state.companyId ?? null,
+      company_name: state.companyName ?? null,
       items_count: state.items.length,
     });
     clearAutoSave();
@@ -738,7 +739,7 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCollection || !state.preloadProducts?.length) return;
-    logger.info('[QuoteBuilder handoff] fromCollection', {
+    trackQuoteHandoff('fromCollection', {
       collection_name: state.fromCollection,
       items_count: state.preloadProducts.length,
     });
@@ -785,7 +786,7 @@ export function useQuoteBuilderState() {
           };
         });
         if (parsedItems.length > 0) {
-          logger.info('[QuoteBuilder handoff] fromUrlParams (items[])', {
+          trackQuoteHandoff('fromUrlParams', {
             items_count: parsedItems.length,
           });
           clearAutoSave();
@@ -818,9 +819,10 @@ export function useQuoteBuilderState() {
       color_hex: colorHex,
       personalizations: [],
     };
-    logger.info('[QuoteBuilder handoff] fromUrlParams (single product)', {
+    trackQuoteHandoff('fromUrlParamsSingle', {
       product_id: productId,
       has_color: !!colorName,
+      items_count: 1,
     });
     clearAutoSave();
     setItems([newItem]);
