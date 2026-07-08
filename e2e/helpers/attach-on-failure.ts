@@ -5,21 +5,25 @@
  * O `playwright.config.ts` já ativa trace/screenshot/video `retain-on-failure`,
  * mas isso NÃO captura:
  *   - o HTML renderizado no exato instante da falha
- *   - o contexto de domínio (quais cart IDs A/B/C, item IDs, viewport, etc.)
+ *   - o contexto de domínio (quais cart IDs A/B/C, item IDs, sequência de
+ *     mutações, viewport, etc.)
  *
  * `installFailureCapture(test)` adiciona um `afterEach` que anexa:
- *   1) `page-html`             — snapshot exato do DOM na falha.
+ *   1) `page-html`             — snapshot exato do DOM na falha, com um
+ *      banner `<!-- DEBUG_CONTEXT: {...} -->` no topo.
  *   2) `page-context.json`     — URL, viewport, UA, title, timestamp.
- *   3) `failure-screenshot.png`— screenshot full-page.
- *   4) `debug-context.json`    — dados de domínio setados via `setDebugContext`
- *      (ex.: `{ cartA, cartB, cartC, itemIds }`). Injetado no HTML como
- *      comentário `<!-- DEBUG_CONTEXT: {...} -->` no topo, para leitura
- *      imediata ao baixar o artifact.
+ *   3) `debug-context.json`    — dados de domínio setados via helpers
+ *      (`recordCarts`, `recordItems`, `recordMutation`, `recordNav`) ou
+ *      diretamente com `setDebugContext`.
+ *   4) `failure-screenshot.png`— screenshot full-page.
  *
  * Uso nos specs:
  *   installFailureCapture(test);
- *   // dentro do teste, quando conhecer os IDs:
- *   setDebugContext(testInfo, { cartA, cartB, cartC, itemIds });
+ *   // dentro do teste:
+ *   recordCarts(testInfo, { A, B, C });
+ *   recordItems(testInfo, 'A', itemIdsA);
+ *   recordMutation(testInfo, { method: 'DELETE', cart: 'A', itemId });
+ *   recordNav(testInfo, cartId);
  */
 import type { TestType, TestInfo } from '@playwright/test';
 
@@ -27,20 +31,93 @@ type AnyTest = TestType<any, any>;
 
 /**
  * Payload de contexto de domínio para depuração pós-falha.
- * Aberto de propósito — cada spec anota o que for útil (IDs, viewport, etc.).
+ * Campos "canônicos" (carts/items/mutations/navSequence) são mesclados de
+ * forma inteligente pelos helpers; qualquer outra chave é apenas overwrite.
  */
-export type DebugContext = Record<string, unknown>;
+export interface DebugContext {
+  carts?: Record<string, string>; // { A: '<uuid>', B: '<uuid>', ... }
+  items?: Record<string, string[]>; // { A: ['<uuid>', ...], B: [...] }
+  mutations?: MutationLog[];
+  navSequence?: string[];
+  viewport?: string;
+  viewportSize?: { width: number; height: number };
+  finalHeader?: { title: string; meta: string };
+  [key: string]: unknown;
+}
+
+export interface MutationLog {
+  ts: string;
+  method: string;
+  cart?: string; // rótulo lógico ('A'|'B'|'C') OU cart id
+  itemId?: string;
+  url?: string;
+  note?: string;
+}
 
 // Registry por TestInfo — evita vazamento entre testes paralelos.
 const DEBUG_BY_TEST = new WeakMap<TestInfo, DebugContext>();
 
+function getOrInit(testInfo: TestInfo): DebugContext {
+  let ctx = DEBUG_BY_TEST.get(testInfo);
+  if (!ctx) {
+    ctx = {};
+    DEBUG_BY_TEST.set(testInfo, ctx);
+  }
+  return ctx;
+}
+
 /**
  * Registra/mescla contexto de depuração para o teste corrente. Chamável
- * várias vezes; entradas subsequentes são mescladas (Object.assign).
+ * várias vezes; entradas subsequentes fazem shallow-merge sobre as anteriores.
+ * Para acumular listas (mutations/navSequence), use os helpers dedicados
+ * (`recordMutation`, `recordNav`) — eles fazem append, não overwrite.
  */
 export function setDebugContext(testInfo: TestInfo, data: DebugContext): void {
-  const prev = DEBUG_BY_TEST.get(testInfo) ?? {};
-  DEBUG_BY_TEST.set(testInfo, { ...prev, ...data });
+  const prev = getOrInit(testInfo);
+  Object.assign(prev, data);
+}
+
+/** Registra o mapeamento de rótulos lógicos → cart IDs (A/B/C/...). */
+export function recordCarts(
+  testInfo: TestInfo,
+  carts: Record<string, string>,
+): void {
+  const ctx = getOrInit(testInfo);
+  ctx.carts = { ...(ctx.carts ?? {}), ...carts };
+}
+
+/** Registra IDs de itens observados para um cart (rótulo ou id). */
+export function recordItems(
+  testInfo: TestInfo,
+  cartLabel: string,
+  itemIds: string[],
+): void {
+  const ctx = getOrInit(testInfo);
+  ctx.items = { ...(ctx.items ?? {}), [cartLabel]: [...itemIds] };
+}
+
+/** Anexa uma linha ao log de mutações (append). */
+export function recordMutation(
+  testInfo: TestInfo,
+  entry: Omit<MutationLog, 'ts'> & { ts?: string },
+): void {
+  const ctx = getOrInit(testInfo);
+  const list = ctx.mutations ?? [];
+  list.push({ ts: entry.ts ?? new Date().toISOString(), ...entry });
+  ctx.mutations = list;
+}
+
+/** Anexa uma navegação à sequência (append). */
+export function recordNav(testInfo: TestInfo, cartIdOrLabel: string): void {
+  const ctx = getOrInit(testInfo);
+  const seq = ctx.navSequence ?? [];
+  seq.push(cartIdOrLabel);
+  ctx.navSequence = seq;
+}
+
+/** Getter para uso interno/inspeção nos specs (imutável — cópia rasa). */
+export function getDebugContext(testInfo: TestInfo): DebugContext {
+  return { ...(DEBUG_BY_TEST.get(testInfo) ?? {}) };
 }
 
 export function installFailureCapture(test: AnyTest): void {
@@ -51,8 +128,7 @@ export function installFailureCapture(test: AnyTest): void {
     const debug = DEBUG_BY_TEST.get(testInfo) ?? {};
     const debugJson = JSON.stringify(debug, null, 2);
 
-    // 1) HTML completo — com header contendo o debug-context inline,
-    //    para depurador ler direto ao abrir o arquivo (sem precisar de JSON).
+    // 1) HTML completo — com banner de contexto no topo.
     try {
       const html = await page.content();
       const banner =
@@ -64,7 +140,7 @@ export function installFailureCapture(test: AnyTest): void {
         contentType: 'text/html; charset=utf-8',
       });
     } catch {
-      // page pode estar fechada; ignora.
+      /* page pode estar fechada; ignora. */
     }
 
     // 2) URL + viewport + user agent — contexto de reprodução.
@@ -86,8 +162,7 @@ export function installFailureCapture(test: AnyTest): void {
       /* noop */
     }
 
-    // 3) debug-context.json — cart IDs, item IDs, sequência de navegação, etc.
-    //    Fica sempre presente (mesmo que vazio) para consistência de artifacts.
+    // 3) debug-context.json — sempre presente (mesmo que vazio).
     try {
       await testInfo.attach('debug-context.json', {
         body: debugJson,
@@ -97,8 +172,7 @@ export function installFailureCapture(test: AnyTest): void {
       /* noop */
     }
 
-    // 4) Screenshot full-page adicional (config já anexa 1× — aqui garantimos
-    //    presença mesmo se o retain-on-failure falhar por corrida).
+    // 4) Screenshot full-page adicional.
     try {
       await testInfo.attach('failure-screenshot.png', {
         body: await page.screenshot({ fullPage: true }),
