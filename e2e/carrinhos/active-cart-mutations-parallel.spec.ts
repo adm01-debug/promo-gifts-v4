@@ -16,7 +16,14 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
-import { installFailureCapture, setDebugContext } from '../helpers/attach-on-failure';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordItems,
+  recordMutation,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
 
 installFailureCapture(test);
 
