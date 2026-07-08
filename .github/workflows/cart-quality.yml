@@ -173,6 +173,15 @@ jobs:
       - name: E2E smoke — CartSidebar sem painéis legados
         run: npx playwright test e2e/carrinhos/sidebar-no-legacy-labels.spec.ts --project=chromium-authed --retries=1
 
+      # Smoke do header/sidebar refletindo apenas o carrinho ativo.
+      # Falha cedo se voltarmos a exibir agregados globais no detalhe.
+      - name: E2E smoke — Header e sidebar refletem carrinho ativo
+        run: |
+          npx playwright test \
+            e2e/carrinhos/header-reflects-active-cart.spec.ts \
+            e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
+            --project=chromium-authed --retries=1
+
       # Smoke dos handoffs Carrinho/URL → QuoteBuilder (BUG-CART-HANDOFF).
       # Falha cedo se o autosave voltar a sobrescrever dados vindos do carrinho
       # ou de URL params ao trocar de aba ou recarregar a página.
