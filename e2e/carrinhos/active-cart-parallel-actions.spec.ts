@@ -52,13 +52,14 @@ async function snapshotHeader(page: Page): Promise<{ title: string; meta: string
 }
 
 test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () => {
-  test('trocas rápidas com fetch/mutação paralelos nunca misturam header/sidebar', async ({ page }) => {
+  test('trocas rápidas com fetch/mutação paralelos nunca misturam header/sidebar', async ({ page }, testInfo) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/carrinhos');
 
     const ids = await collectCartIds(page);
     if (ids.length < 3) test.skip(true, 'precisa de 3+ carrinhos para A→B→A→C');
     const [A, B, C] = ids;
+    recordCarts(testInfo, { A, B, C });
 
     // Captura o header canônico de cada carrinho (sequencial, sem ruído).
     await gotoAndSettle(page, `/carrinhos/${A}`);
@@ -67,6 +68,7 @@ test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () 
     const canonB = await snapshotHeader(page);
     await gotoAndSettle(page, `/carrinhos/${C}`);
     const canonC = await snapshotHeader(page);
+    setDebugContext(testInfo, { canonA, canonB, canonC });
 
     // Introduz latência sintética em respostas GET para maximizar chance
     // de resposta "tardia" chegar após a próxima navegação.
