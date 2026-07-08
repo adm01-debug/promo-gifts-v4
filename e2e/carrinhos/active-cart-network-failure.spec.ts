@@ -10,6 +10,14 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
+
+installFailureCapture(test);
 
 const NBSP = /[\u00A0\u202F]/g;
 const norm = (s: string) => s.replace(NBSP, ' ').trim();
