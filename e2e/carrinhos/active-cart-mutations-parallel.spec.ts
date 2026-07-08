@@ -90,25 +90,23 @@ for (const vp of VIEWPORTS) {
 
       setDebugContext(testInfo, { cartA: A, cartB: B, cartC: C });
 
+      recordCarts(testInfo, { A, B, C });
+
       // Snapshot canônico de cada cart (sem interferência).
       await gotoAndSettle(page, `/carrinhos/${A}`);
       const itemsA = await collectItemIds(page);
+      recordItems(testInfo, 'A', itemsA);
       const canonA = await snapshotHeader(page);
       await gotoAndSettle(page, `/carrinhos/${B}`);
       const itemsB = await collectItemIds(page);
+      recordItems(testInfo, 'B', itemsB);
       const canonB = await snapshotHeader(page);
       await gotoAndSettle(page, `/carrinhos/${C}`);
       const itemsC = await collectItemIds(page);
+      recordItems(testInfo, 'C', itemsC);
       const canonC = await snapshotHeader(page);
 
-      setDebugContext(testInfo, {
-        itemsA,
-        itemsB,
-        itemsC,
-        canonA,
-        canonB,
-        canonC,
-      });
+      setDebugContext(testInfo, { canonA, canonB, canonC });
 
       // Rastreia mutações PATCH/DELETE contra cart_items e adia respostas para
       // simular resposta lenta do backend chegando após a próxima navegação.
