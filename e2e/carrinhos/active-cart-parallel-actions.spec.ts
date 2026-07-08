@@ -13,6 +13,14 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
+
+installFailureCapture(test);
 
 const NBSP = /[\u00A0\u202F]/g;
 const norm = (s: string) => s.replace(NBSP, ' ').trim();
@@ -44,13 +52,14 @@ async function snapshotHeader(page: Page): Promise<{ title: string; meta: string
 }
 
 test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () => {
-  test('trocas rápidas com fetch/mutação paralelos nunca misturam header/sidebar', async ({ page }) => {
+  test('trocas rápidas com fetch/mutação paralelos nunca misturam header/sidebar', async ({ page }, testInfo) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/carrinhos');
 
     const ids = await collectCartIds(page);
     if (ids.length < 3) test.skip(true, 'precisa de 3+ carrinhos para A→B→A→C');
     const [A, B, C] = ids;
+    recordCarts(testInfo, { A, B, C });
 
     // Captura o header canônico de cada carrinho (sequencial, sem ruído).
     await gotoAndSettle(page, `/carrinhos/${A}`);
@@ -59,6 +68,7 @@ test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () 
     const canonB = await snapshotHeader(page);
     await gotoAndSettle(page, `/carrinhos/${C}`);
     const canonC = await snapshotHeader(page);
+    setDebugContext(testInfo, { canonA, canonB, canonC });
 
     // Introduz latência sintética em respostas GET para maximizar chance
     // de resposta "tardia" chegar após a próxima navegação.
@@ -71,16 +81,19 @@ test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () 
 
     // Sequência A→B→A→C sem `waitForLoadState`. Requests em voo do cart
     // anterior devem ser DESCARTADOS pela camada de dados quando a URL muda.
-    await page.goto(`/carrinhos/${A}`);
-    await page.goto(`/carrinhos/${B}`);
-    await page.goto(`/carrinhos/${A}`);
-    await page.goto(`/carrinhos/${C}`);
+    // Sequência A→B→A→C sem `waitForLoadState`. Requests em voo do cart
+    // anterior devem ser DESCARTADOS pela camada de dados quando a URL muda.
+    for (const [label, id] of [['A', A], ['B', B], ['A', A], ['C', C]] as const) {
+      recordNav(testInfo, `${label}:${id}`);
+      await page.goto(`/carrinhos/${id}`);
+    }
 
     // Aguarda o header assentar no carrinho final (C).
     await expect(page).toHaveURL(new RegExp(`/carrinhos/${C}$`));
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
 
     const final = await snapshotHeader(page);
+    setDebugContext(testInfo, { finalHeader: final });
 
     // Contrato mínimo: meta segue "N SKU(s) · N unidade(s) [· R$ X,XX]".
     expect(final.meta).toMatch(META_RE);

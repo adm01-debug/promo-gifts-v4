@@ -16,7 +16,14 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
-import { installFailureCapture, setDebugContext } from '../helpers/attach-on-failure';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordItems,
+  recordMutation,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
 
 installFailureCapture(test);
 
@@ -83,25 +90,23 @@ for (const vp of VIEWPORTS) {
 
       setDebugContext(testInfo, { cartA: A, cartB: B, cartC: C });
 
+      recordCarts(testInfo, { A, B, C });
+
       // Snapshot canônico de cada cart (sem interferência).
       await gotoAndSettle(page, `/carrinhos/${A}`);
       const itemsA = await collectItemIds(page);
+      recordItems(testInfo, 'A', itemsA);
       const canonA = await snapshotHeader(page);
       await gotoAndSettle(page, `/carrinhos/${B}`);
       const itemsB = await collectItemIds(page);
+      recordItems(testInfo, 'B', itemsB);
       const canonB = await snapshotHeader(page);
       await gotoAndSettle(page, `/carrinhos/${C}`);
       const itemsC = await collectItemIds(page);
+      recordItems(testInfo, 'C', itemsC);
       const canonC = await snapshotHeader(page);
 
-      setDebugContext(testInfo, {
-        itemsA,
-        itemsB,
-        itemsC,
-        canonA,
-        canonB,
-        canonC,
-      });
+      setDebugContext(testInfo, { canonA, canonB, canonC });
 
       // Rastreia mutações PATCH/DELETE contra cart_items e adia respostas para
       // simular resposta lenta do backend chegando após a próxima navegação.
@@ -111,6 +116,7 @@ for (const vp of VIEWPORTS) {
         const method = req.method();
         if (method === 'DELETE' || method === 'PATCH' || method === 'POST') {
           observed.push({ method, url: req.url(), delayed: true });
+          recordMutation(testInfo, { method, url: req.url(), note: 'delayed 400ms' });
           await new Promise((r) => setTimeout(r, 400));
         }
         await route.continue();
@@ -123,22 +129,24 @@ for (const vp of VIEWPORTS) {
       });
 
       // ── Sequência A→B→A→C intercalada com mutações ────────────────────
-      const sequence: string[] = [];
+      const labelOf = (id: string) => (id === A ? 'A' : id === B ? 'B' : 'C');
       const nav = async (id: string) => {
-        sequence.push(id);
-        setDebugContext(testInfo, { navSequence: [...sequence] });
+        recordNav(testInfo, `${labelOf(id)}:${id}`);
         await page.goto(`/carrinhos/${id}`);
       };
 
       await nav(A);
       await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
 
+      recordMutation(testInfo, { method: 'PATCH', cart: 'A', note: 'in-page fetch' });
+      recordMutation(testInfo, { method: 'DELETE', cart: 'A', note: 'in-page fetch' });
       void page.evaluate((cartId) => {
         fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'PATCH' }).catch(() => {});
         fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'DELETE' }).catch(() => {});
       }, A);
 
       await nav(B);
+      recordMutation(testInfo, { method: 'PATCH', cart: 'B', note: 'in-page fetch' });
       void page.evaluate((cartId) => {
         fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'PATCH' }).catch(() => {});
       }, B);
@@ -149,7 +157,7 @@ for (const vp of VIEWPORTS) {
       await expect(page).toHaveURL(new RegExp(`/carrinhos/${C}$`));
       await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
 
-      setDebugContext(testInfo, { observedMutations: observed });
+      setDebugContext(testInfo, { observedMutationsCount: observed.length });
 
       expect(observed.length).toBeGreaterThanOrEqual(1);
 
