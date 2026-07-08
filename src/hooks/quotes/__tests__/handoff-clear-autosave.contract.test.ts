@@ -14,8 +14,9 @@
  * Fix: chamar `clearAutoSave()` DENTRO de cada handoff, ANTES do setItems, para
  * que quando o autosave finalmente restaurar não encontre nada.
  *
- * Também garante que o log de telemetria (`logger.info('[QuoteBuilder handoff]…`)
- * está presente — permite auditoria rápida em produção.
+ * Também garante que o handoff registra telemetria via
+ * `trackQuoteHandoff(<source>, ...)` — permite auditoria em produção pelo
+ * painel `/admin/telemetria` (persistido em `frontend_telemetry`).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -46,21 +47,21 @@ function extractEffectContaining(marker: string): string {
 }
 
 describe('QuoteBuilder handoffs — clearAutoSave() precede setItems/setClientId', () => {
-  const cases: Array<{ label: string; marker: string; telemetryTag: string }> = [
+  const cases: Array<{ label: string; marker: string; source: string }> = [
     {
       label: 'fromCart (carrinho)',
       marker: 'fromCart?: boolean;',
-      telemetryTag: '[QuoteBuilder handoff] fromCart',
+      source: 'fromCart',
     },
     {
       label: 'fromCollection (coleção)',
       marker: 'fromCollection?: string;',
-      telemetryTag: '[QuoteBuilder handoff] fromCollection',
+      source: 'fromCollection',
     },
     {
       label: 'fromSimulator (simulador)',
       marker: 'fromSimulator?: boolean;',
-      telemetryTag: '[QuoteBuilder handoff] fromSimulator',
+      source: 'fromSimulator',
     },
   ];
 
@@ -91,14 +92,15 @@ describe('QuoteBuilder handoffs — clearAutoSave() precede setItems/setClientId
       ).toBeLessThan(firstMutation!);
     });
 
-    it(`${c.label}: registra telemetria via logger.info`, () => {
+    it(`${c.label}: registra telemetria persistente via trackQuoteHandoff`, () => {
       const body = extractEffectContaining(c.marker);
-      expect(body).toContain(c.telemetryTag);
-      // logger.info deve ocorrer antes do clearAutoSave / setItems
-      const loggerIdx = body.indexOf('logger.info');
+      // trackQuoteHandoff DEVE aparecer com o source correto.
+      expect(body).toContain(`trackQuoteHandoff('${c.source}'`);
+      // E deve preceder o clearAutoSave (evento é emitido antes da mutação).
+      const trackIdx = body.indexOf('trackQuoteHandoff(');
       const clearIdx = body.indexOf('clearAutoSave()');
-      expect(loggerIdx).toBeGreaterThan(-1);
-      expect(loggerIdx).toBeLessThan(clearIdx);
+      expect(trackIdx).toBeGreaterThan(-1);
+      expect(trackIdx).toBeLessThan(clearIdx);
     });
   }
 
@@ -116,20 +118,25 @@ describe('QuoteBuilder handoffs — clearAutoSave() precede setItems/setClientId
     const clearCount = (body.match(/clearAutoSave\(\)/g) ?? []).length;
     expect(clearCount).toBeGreaterThanOrEqual(2);
 
-    // E duas telemetrias distintas.
-    expect(body).toContain('[QuoteBuilder handoff] fromUrlParams (items[])');
-    expect(body).toContain('[QuoteBuilder handoff] fromUrlParams (single product)');
+    // E duas telemetrias distintas (lote + produto único).
+    expect(body).toContain("trackQuoteHandoff('fromUrlParams'");
+    expect(body).toContain("trackQuoteHandoff('fromUrlParamsSingle'");
 
     // Cada clearAutoSave deve estar antes do setItems mais próximo do mesmo branch.
-    // Heurística simples: no primeiro branch, clearAutoSave < setItems(parsedItems)
     const clear1 = body.indexOf('clearAutoSave()');
     const setItems1 = body.indexOf('setItems(parsedItems)');
     expect(clear1).toBeLessThan(setItems1);
 
-    // No segundo branch, clearAutoSave (após o primeiro) < setItems([newItem])
     const clear2 = body.indexOf('clearAutoSave()', clear1 + 1);
     const setItems2 = body.indexOf('setItems([newItem])');
     expect(clear2).toBeGreaterThan(-1);
     expect(clear2).toBeLessThan(setItems2);
+  });
+
+  it('nenhum handoff usa mais logger.info diretamente (evita perda de telemetria em PROD)', () => {
+    // logger.info só aparece em DEV (import.meta.env.DEV). Se um handoff
+    // depender só dele para auditoria, o evento SUMIRÁ em produção.
+    const handoffLoggerInfo = SRC.match(/logger\.info\(\s*['"`]\[QuoteBuilder handoff\]/g);
+    expect(handoffLoggerInfo, 'logger.info residual em handoff detectado').toBeNull();
   });
 });
