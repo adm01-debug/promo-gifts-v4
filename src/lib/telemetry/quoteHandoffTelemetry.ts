@@ -46,7 +46,7 @@ export function trackQuoteHandoff(
       await supabase.from('frontend_telemetry').insert({
         event_type: EVENT_TYPE,
         name: source,
-        metadata: metadata as Record<string, unknown>,
+        metadata: (metadata ?? {}) as never,
         url,
         user_agent: userAgent,
         user_id: userRes?.user?.id ?? null,
