@@ -621,6 +621,7 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
+    clearAutoSave();
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
       // Fallback: wizard pode vir sem location explícito — usa 'Frente' como padrão
       // consistente para que a proposta SEMPRE exiba Lado A/B/Circular/Frente.
