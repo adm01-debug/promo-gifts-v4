@@ -81,10 +81,12 @@ test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () 
 
     // Sequência A→B→A→C sem `waitForLoadState`. Requests em voo do cart
     // anterior devem ser DESCARTADOS pela camada de dados quando a URL muda.
-    await page.goto(`/carrinhos/${A}`);
-    await page.goto(`/carrinhos/${B}`);
-    await page.goto(`/carrinhos/${A}`);
-    await page.goto(`/carrinhos/${C}`);
+    // Sequência A→B→A→C sem `waitForLoadState`. Requests em voo do cart
+    // anterior devem ser DESCARTADOS pela camada de dados quando a URL muda.
+    for (const [label, id] of [['A', A], ['B', B], ['A', A], ['C', C]] as const) {
+      recordNav(testInfo, `${label}:${id}`);
+      await page.goto(`/carrinhos/${id}`);
+    }
 
     // Aguarda o header assentar no carrinho final (C).
     await expect(page).toHaveURL(new RegExp(`/carrinhos/${C}$`));
