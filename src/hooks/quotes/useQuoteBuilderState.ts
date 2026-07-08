@@ -44,6 +44,7 @@ import { isValidQuoteTransition, getQuoteStatusLabel } from '@/lib/quote-status-
 import type { QuoteStatus } from '@/types/quote';
 
 import { logger } from '@/lib/logger';
+import { trackQuoteHandoff } from '@/lib/telemetry/quoteHandoffTelemetry';
 
 const VALIDITY_PRESETS = ['1', '3', '7', '15', '30'] as const;
 
