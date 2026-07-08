@@ -170,7 +170,7 @@ export function QuoteBuilderHandoffCard() {
                 <li key={`${r.created_at}-${i}`} className="flex justify-between gap-2">
                   <span>
                     <Badge variant="outline" className="mr-2 text-[10px]">
-                      {SOURCE_LABELS[r.name as QuoteHandoffSource] ?? r.name}
+                      {SOURCE_LABELS[stripPrefix(r.name) as QuoteHandoffSource] ?? r.name}
                     </Badge>
                     {typeof r.metadata?.items_count === 'number'
                       ? `${r.metadata.items_count} item(ns)`
