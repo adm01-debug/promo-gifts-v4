@@ -621,6 +621,12 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
+    // TELEMETRY: handoff simulador → orçamento (permite auditar se autosave sobrescreveu depois)
+    logger.info('[QuoteBuilder handoff] fromSimulator', {
+      product_id: product.id,
+      product_name: product.name,
+      personalizations_count: (personalizations ?? []).length,
+    });
     clearAutoSave();
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
       // Fallback: wizard pode vir sem location explícito — usa 'Frente' como padrão
@@ -683,6 +689,13 @@ export function useQuoteBuilderState() {
     if (!state?.fromCart || !state.items?.length) return;
     // BUG-CART-HANDOFF FIX: descarta autosave anterior para não sobrescrever o
     // cliente/itens vindos do carrinho quando o hook de autosave habilita.
+    // TELEMETRY: registrar handoff carrinho → orçamento para auditoria de
+    // regressões (rastreia empresa + qtd itens; nenhum dado sensível).
+    logger.info('[QuoteBuilder handoff] fromCart', {
+      company_id: state.companyId,
+      company_name: state.companyName,
+      items_count: state.items.length,
+    });
     clearAutoSave();
     if (state.companyId) setClientId(state.companyId);
     const cartItems: QuoteItem[] = state.items.map((i) => ({
@@ -725,6 +738,10 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCollection || !state.preloadProducts?.length) return;
+    logger.info('[QuoteBuilder handoff] fromCollection', {
+      collection_name: state.fromCollection,
+      items_count: state.preloadProducts.length,
+    });
     clearAutoSave();
     const collectionItems: QuoteItem[] = state.preloadProducts.map((p) => ({
       product_id: p.product_id,
@@ -768,6 +785,10 @@ export function useQuoteBuilderState() {
           };
         });
         if (parsedItems.length > 0) {
+          logger.info('[QuoteBuilder handoff] fromUrlParams (items[])', {
+            items_count: parsedItems.length,
+          });
+          clearAutoSave();
           setItems(parsedItems);
           setActiveItemIndex(0);
           toast.success(
@@ -797,6 +818,11 @@ export function useQuoteBuilderState() {
       color_hex: colorHex,
       personalizations: [],
     };
+    logger.info('[QuoteBuilder handoff] fromUrlParams (single product)', {
+      product_id: productId,
+      has_color: !!colorName,
+    });
+    clearAutoSave();
     setItems([newItem]);
     setActiveItemIndex(0);
     if (productName) {
