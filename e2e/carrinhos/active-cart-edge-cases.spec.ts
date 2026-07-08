@@ -40,7 +40,7 @@ async function readHeaderMeta(page: Page): Promise<string> {
     .locator('p')
     .first();
   await expect(meta).toBeVisible();
-  return (await meta.innerText()).trim();
+  return norm((await meta.innerText()).trim());
 }
 
 async function readHeaderTitle(page: Page): Promise<string> {
