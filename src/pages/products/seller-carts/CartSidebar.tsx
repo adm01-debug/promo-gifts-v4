@@ -18,13 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  formatCurrency,
-} from '@/components/cart/CartUtilComponents';
 import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
-import { ArrowRight, Weight, Box, Sparkles, Trash2, Package } from 'lucide-react';
+import { ArrowRight, Weight, Box, Sparkles, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { m as motion } from 'framer-motion';
+import type { UseMutationResult } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 interface CartSidebarProps {
