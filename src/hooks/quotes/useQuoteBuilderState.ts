@@ -785,6 +785,10 @@ export function useQuoteBuilderState() {
           };
         });
         if (parsedItems.length > 0) {
+          logger.info('[QuoteBuilder handoff] fromUrlParams (items[])', {
+            items_count: parsedItems.length,
+          });
+          clearAutoSave();
           setItems(parsedItems);
           setActiveItemIndex(0);
           toast.success(
