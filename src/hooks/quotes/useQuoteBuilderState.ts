@@ -818,6 +818,11 @@ export function useQuoteBuilderState() {
       color_hex: colorHex,
       personalizations: [],
     };
+    logger.info('[QuoteBuilder handoff] fromUrlParams (single product)', {
+      product_id: productId,
+      has_color: !!colorName,
+    });
+    clearAutoSave();
     setItems([newItem]);
     setActiveItemIndex(0);
     if (productName) {
