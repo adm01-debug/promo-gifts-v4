@@ -94,6 +94,11 @@ const AppHealthDashboard = lazy(() =>
     default: m.AppHealthDashboard,
   })),
 );
+const QuoteBuilderHandoffCard = lazy(() =>
+  import('@/components/admin/telemetry/QuoteBuilderHandoffCard').then((m) => ({
+    default: m.QuoteBuilderHandoffCard,
+  })),
+);
 const ColdVsWarmCrmCard = lazy(() =>
   import('@/components/admin/telemetry/ColdVsWarmCrmCard').then((m) => ({
     default: m.ColdVsWarmCrmCard,
@@ -211,6 +216,12 @@ export default function AdminTelemetriaPage() {
         {/* Guardrail automático: interrompe regressões antes que afetem usuários */}
         <Suspense fallback={<BannerSkeleton />}>
           <RegressionGuardrailBanner />
+        </Suspense>
+
+        {/* Auditoria dos handoffs do QuoteBuilder — confirma que carrinho/coleção/simulador/URL
+             continuam alimentando o QuoteBuilder após deploy e sem regressões do autosave. */}
+        <Suspense fallback={<CardSkeleton height={320} label="Carregando handoffs do QuoteBuilder" />}>
+          <QuoteBuilderHandoffCard />
         </Suspense>
 
         {/* Fila automática de otimizações — executa todas em sequência sem pausas */}
