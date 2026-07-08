@@ -93,6 +93,7 @@ test.describe('Carrinhos · alternância paralela A→B→A→C @carrinhos', () 
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
 
     const final = await snapshotHeader(page);
+    setDebugContext(testInfo, { finalHeader: final });
 
     // Contrato mínimo: meta segue "N SKU(s) · N unidade(s) [· R$ X,XX]".
     expect(final.meta).toMatch(META_RE);
