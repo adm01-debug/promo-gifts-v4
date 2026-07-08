@@ -621,6 +621,7 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
+    clearAutoSave();
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
       // Fallback: wizard pode vir sem location explícito — usa 'Frente' como padrão
       // consistente para que a proposta SEMPRE exiba Lado A/B/Circular/Frente.
@@ -680,6 +681,9 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCart || !state.items?.length) return;
+    // BUG-CART-HANDOFF FIX: descarta autosave anterior para não sobrescrever o
+    // cliente/itens vindos do carrinho quando o hook de autosave habilita.
+    clearAutoSave();
     if (state.companyId) setClientId(state.companyId);
     const cartItems: QuoteItem[] = state.items.map((i) => ({
       product_id: i.product_id,
@@ -721,6 +725,7 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCollection || !state.preloadProducts?.length) return;
+    clearAutoSave();
     const collectionItems: QuoteItem[] = state.preloadProducts.map((p) => ({
       product_id: p.product_id,
       product_name: p.product_name,
