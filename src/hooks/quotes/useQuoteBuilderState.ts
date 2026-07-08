@@ -680,6 +680,9 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCart || !state.items?.length) return;
+    // BUG-CART-HANDOFF FIX: descarta autosave anterior para não sobrescrever o
+    // cliente/itens vindos do carrinho quando o hook de autosave habilita.
+    clearAutoSave();
     if (state.companyId) setClientId(state.companyId);
     const cartItems: QuoteItem[] = state.items.map((i) => ({
       product_id: i.product_id,
