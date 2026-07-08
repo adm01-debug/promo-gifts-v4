@@ -738,6 +738,10 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCollection || !state.preloadProducts?.length) return;
+    logger.info('[QuoteBuilder handoff] fromCollection', {
+      collection_name: state.fromCollection,
+      items_count: state.preloadProducts.length,
+    });
     clearAutoSave();
     const collectionItems: QuoteItem[] = state.preloadProducts.map((p) => ({
       product_id: p.product_id,
