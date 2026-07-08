@@ -202,6 +202,146 @@ describe('Sidebar weight/volume — gate visual (100+ cenários)', () => {
   });
 });
 
+describe('Formatação BRL — resiliência a NBSP/NNBSP (\\u00A0, \\u202F)', () => {
+  // Padrão robusto: aceita space, NBSP (\u00A0) e NNBSP (\u202F) entre R$ e dígito,
+  // e também sem separador algum (algumas engines/locales emitem "R$1,00").
+  const RE_ROBUST = /R\$[\s\u00A0\u202F]?\d{1,3}(?:\.\d{3})*,\d{2}/;
+
+  it('formatCurrency produz string que casa com regex robusto (ICU real)', () => {
+    for (let i = 0; i < 200; i++) {
+      const v = Math.round(Math.random() * 1_000_000_00) / 100;
+      const out = formatCurrency(v);
+      expect(out).toMatch(RE_ROBUST);
+      // Nunca deve ter caracteres inesperados (BOM, ZWSP, etc.).
+      expect(out).not.toMatch(/[\u200B-\u200F\uFEFF]/);
+    }
+  });
+
+  it('regex robusto casa variantes sintéticas: space, NBSP, NNBSP e sem separador', () => {
+    const variants = [
+      'R$ 1.234,56',           // space
+      'R$\u00A01.234,56',      // NBSP
+      'R$\u202F1.234,56',      // NNBSP
+      'R$1.234,56',            // sem separador
+      'R$ 0,01',               // menor unidade
+      'R$ 999.999.999,99',     // 9 dígitos + separadores de milhar
+    ];
+    for (const v of variants) {
+      expect(v).toMatch(RE_ROBUST);
+    }
+  });
+
+  it('regex robusto REJEITA formatos inválidos', () => {
+    const invalid = [
+      'R$ 1,234.56',    // formato en-US
+      'R$ 1.234',       // sem casas decimais
+      'R$ 1.234,5',     // 1 casa decimal
+      'R$ 1.234,567',   // 3 casas decimais
+      '$1.234,56',      // moeda errada
+      'R$ abc',
+      '',
+    ];
+    for (const v of invalid) {
+      expect(v).not.toMatch(RE_ROBUST);
+    }
+  });
+
+  it('norm() converte NBSP/NNBSP para space padrão sem alterar dígitos', () => {
+    const raw = 'R$\u00A01.234,56 · R$\u202F999,00';
+    const normalized = norm(raw);
+    expect(normalized).toBe('R$ 1.234,56 · R$ 999,00');
+    expect(normalized).toMatch(CURRENCY_RE);
+  });
+
+  it('meta do header (500 fuzz) sempre passa no regex robusto quando subtotal > 0', () => {
+    for (let i = 0; i < 500; i++) {
+      const items = Array.from({ length: 1 + (i % 8) }, () => ({
+        quantity: 1 + Math.floor(Math.random() * 50),
+        product_price: Math.round(Math.random() * 500_00) / 100 + 0.01,
+      }));
+      const metaRaw = computeHeaderMeta(items);
+      expect(metaRaw).toMatch(RE_ROBUST);
+    }
+  });
+});
+
+describe('Regressão — fronteiras de qty/peso/volume nunca misturam entre carrinhos', () => {
+  const boundaries = {
+    qty: [0, 1, 2, 99, 100, 999, 1000, 9999, 10000, 99999],
+    weightKg: [0, 0.001, 0.5, 0.999, 1.0, 1.5, 99.9, 100, 999.9, 1000],
+    volumeM3: [0, 0.0009, 0.001, 0.01, 0.5, 1.0, 9.999, 100],
+  };
+
+  it('produto cartesiano de fronteiras: A e B nunca compartilham strings de meta', () => {
+    // Amostra 300 pares para não explodir combinações.
+    const cases: Array<{ qty: number; price: number }> = [];
+    for (const q of boundaries.qty) {
+      cases.push({ qty: q, price: 1.23 });
+      cases.push({ qty: q, price: 999.99 });
+    }
+    let mixCount = 0;
+    for (let i = 0; i < cases.length; i++) {
+      for (let j = 0; j < cases.length; j++) {
+        if (i === j) continue;
+        const a = [{ quantity: cases[i].qty, product_price: cases[i].price }];
+        const b = [{ quantity: cases[j].qty, product_price: cases[j].price }];
+        const metaA = norm(computeHeaderMeta(a));
+        const metaB = norm(computeHeaderMeta(b));
+        if (metaA === metaB) continue; // podem coincidir se qty e subtotal iguais
+        // subtotal de A não vaza no meta de B
+        const subA = cases[i].qty * cases[i].price;
+        const subB = cases[j].qty * cases[j].price;
+        if (subA > 0 && subA !== subB) {
+          expect(metaB.includes(formatCurrency(subA).replace(NBSP, ' '))).toBe(false);
+        }
+        mixCount++;
+        if (mixCount > 300) return;
+      }
+    }
+  });
+
+  it('fronteiras de peso: gate visual muda corretamente em torno de 0/1kg', () => {
+    // 0kg + 0cm³ → oculto
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: 0 })).toBe(false);
+    // 1g (0.001kg) → visível
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0.001, volumeCm3: 0 })).toBe(true);
+    // Peso negativo (edge de dado corrompido) → wv.weightKg > 0 é false, mas
+    // volumeCm3 > 0 pode salvar. Testamos ambos:
+    expect(shouldShowWeightVolumeBlock({ weightKg: -1, volumeCm3: 0 })).toBe(false);
+    expect(shouldShowWeightVolumeBlock({ weightKg: -1, volumeCm3: 10 })).toBe(true);
+  });
+
+  it('fronteiras de volume: cm³/m³ nas viradas exatas', () => {
+    // Exatamente 0.001m³ → m³
+    expect(fmtVolume({ volumeM3: 0.001, volumeCm3: 1000 })).toBe('0.001m³');
+    // 0.0009999m³ → cm³ (999 arredondado)
+    expect(fmtVolume({ volumeM3: 0.0009999, volumeCm3: 1000 })).toMatch(/cm³$/);
+    // Volume muito grande → m³ com 3 casas
+    expect(fmtVolume({ volumeM3: 999.999, volumeCm3: 999_999_000 })).toBe('999.999m³');
+  });
+
+  it('troca rápida A→B→C→A (100x): meta final SEMPRE reflete o último cart', () => {
+    const carts = [
+      [{ quantity: 3, product_price: 10 }],          // A: R$ 30,00
+      [{ quantity: 5, product_price: 100 }, { quantity: 1, product_price: 1 }], // B: R$ 501,00
+      [], // C: vazio
+    ];
+    for (let i = 0; i < 100; i++) {
+      const sequence = [0, 1, 2, 0][i % 4];
+      const final = norm(computeHeaderMeta(carts[sequence]));
+      const expectedSubtotal = carts[sequence].reduce(
+        (s, x) => s + x.quantity * x.product_price,
+        0,
+      );
+      if (expectedSubtotal === 0) {
+        expect(final).not.toMatch(CURRENCY_RE);
+      } else {
+        expect(final).toContain(formatCurrency(expectedSubtotal).replace(NBSP, ' '));
+      }
+    }
+  });
+});
+
 describe('Invariante — troca entre 2 carrinhos nunca mistura dados', () => {
   it('500x fuzz: meta do carrinho B nunca contém números do carrinho A', () => {
     for (let i = 0; i < 500; i++) {
