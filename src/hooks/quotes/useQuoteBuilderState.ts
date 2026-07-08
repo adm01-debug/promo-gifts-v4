@@ -621,6 +621,12 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
+    // TELEMETRY: handoff simulador → orçamento (permite auditar se autosave sobrescreveu depois)
+    logger.info('[QuoteBuilder handoff] fromSimulator', {
+      product_id: product.id,
+      product_name: product.name,
+      personalizations_count: (personalizations ?? []).length,
+    });
     clearAutoSave();
     const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
       // Fallback: wizard pode vir sem location explícito — usa 'Frente' como padrão
