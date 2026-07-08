@@ -1,0 +1,85 @@
+name: Cart Invariants Smoke (Chrome + Firefox)
+
+# Roda em TODO PR (sem paths-filter): garante que os invariants do
+# header/sidebar do carrinho ativo nunca quebrem em qualquer mudança de
+# código, independentemente do escopo do diff.
+#
+# Filosofia:
+#   - retries=0 → qualquer flake ou break do invariant falha o build.
+#   - matriz Chrome + Firefox → pega diffs de engine (regex NBSP/NNBSP,
+#     hidratação SSR/CSR, ordem de eventos, locale ICU).
+#   - job separado do `carrinhos` (que segue com paths-filter enxuto).
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: cart-invariants-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  invariants-smoke:
+    name: cart-invariants-smoke (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            project: chromium-authed
+          - browser: firefox
+            project: firefox-authed
+    env:
+      CI: 'true'
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      # retries=0: qualquer invariant quebrado FALHA o build. Sem "tentar de novo".
+      - name: Playwright — invariants do header/sidebar do carrinho ativo
+        run: |
+          npx playwright test \
+            e2e/carrinhos/header-reflects-active-cart.spec.ts \
+            e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
+            e2e/carrinhos/active-cart-edge-cases.spec.ts \
+            e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
+            e2e/carrinhos/active-cart-parallel-actions.spec.ts \
+            e2e/carrinhos/active-cart-network-failure.spec.ts \
+            --project=${{ matrix.project }} \
+            --retries=0
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-invariants-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-invariants-traces-${{ matrix.browser }}
+          path: |
+            test-results/**/trace.zip
+            test-results/**/*-diff.png
+          retention-days: 14
+          if-no-files-found: ignore
