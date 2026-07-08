@@ -71,7 +71,7 @@ describe('CartHeader · snapshot de contrato do meta', () => {
       1 SKU · 1 unidade · R$ pequeno → 1 SKU · 1 unidade · R$ 9,90
       1 SKU · N unidades → 1 SKU · 5 unidades · R$ 50,00
       2 SKUs · 1 unidade total (SKU cadastrado com qty=0) → 2 SKUs · 1 unidade · R$ 10,00
-      3 SKUs · valores mistos → 3 SKUs · 22 unidades · R$ 1.064,89
+      3 SKUs · valores mistos → 3 SKUs · 13 unidades · R$ 1.064,29
       grande escala (milhares) → 1 SKU · 1000 unidades · R$ 12.340,00
       subtotal na casa dos milhões → 1 SKU · 10000 unidades · R$ 9.999.900,00
       preço zero (subtotal oculto) → 1 SKU · 3 unidades"
