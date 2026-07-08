@@ -16,6 +16,7 @@ import { ShoppingCart, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   QUOTE_HANDOFF_EVENT_TYPE,
+  QUOTE_HANDOFF_NAME_PREFIX,
   type QuoteHandoffSource,
 } from '@/lib/telemetry/quoteHandoffTelemetry';
 import { formatDistanceToNowStrict } from 'date-fns';
