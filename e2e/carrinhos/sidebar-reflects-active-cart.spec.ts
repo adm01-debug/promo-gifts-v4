@@ -73,9 +73,11 @@ test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
     expect(a.text).not.toMatch(/Qtd\.\s*total/i);
 
     // --- Carrinho B ---
+    recordNav(testInfo, `B:${ids[1]}`);
     await gotoAndSettle(page, `/carrinhos/${ids[1]}`);
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const b = await readSidebar();
+    setDebugContext(testInfo, { sidebarB: b });
 
     if (!b.visible) test.skip(true, 'carrinho B sem itens — sidebar não é exibida');
 
