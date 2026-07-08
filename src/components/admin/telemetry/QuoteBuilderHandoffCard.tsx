@@ -46,9 +46,16 @@ const ALL_SOURCES: QuoteHandoffSource[] = [
 
 function countInWindow(rows: HandoffRow[], source: string, ms: number): number {
   const cutoff = Date.now() - ms;
+  const fullName = `${QUOTE_HANDOFF_NAME_PREFIX}${source}`;
   return rows.filter(
-    (r) => r.name === source && new Date(r.created_at).getTime() >= cutoff,
+    (r) => r.name === fullName && new Date(r.created_at).getTime() >= cutoff,
   ).length;
+}
+
+function stripPrefix(name: string): string {
+  return name.startsWith(QUOTE_HANDOFF_NAME_PREFIX)
+    ? name.slice(QUOTE_HANDOFF_NAME_PREFIX.length)
+    : name;
 }
 
 export function QuoteBuilderHandoffCard() {
@@ -60,6 +67,7 @@ export function QuoteBuilderHandoffCard() {
         .from('frontend_telemetry')
         .select('name, created_at, metadata')
         .eq('event_type', QUOTE_HANDOFF_EVENT_TYPE)
+        .like('name', `${QUOTE_HANDOFF_NAME_PREFIX}%`)
         .gte('created_at', cutoff)
         .order('created_at', { ascending: false })
         .limit(500);
