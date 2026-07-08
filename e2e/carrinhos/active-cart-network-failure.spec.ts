@@ -55,17 +55,20 @@ test.describe('Carrinhos · falha de rede durante refresh @carrinhos', () => {
   }: {
     page: Page;
     context: BrowserContext;
-  }) => {
+  }, testInfo) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/carrinhos');
 
     const ids = await collectCartIds(page);
     if (ids.length === 0) test.skip(true, 'sem carrinhos disponíveis');
     const cartId = ids[0];
+    recordCarts(testInfo, { A: cartId });
+    recordNav(testInfo, `A:${cartId}`);
 
     await gotoAndSettle(page, `/carrinhos/${cartId}`);
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const before = await readHeader(page);
+    setDebugContext(testInfo, { beforeHeader: before });
     expect(before.meta).toMatch(META_RE);
 
     // Corta a rede — todo request que sair agora falha imediatamente.
