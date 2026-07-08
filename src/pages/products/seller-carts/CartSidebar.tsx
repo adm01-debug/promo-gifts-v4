@@ -19,8 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
-import { ArrowRight, Weight, Box, Sparkles, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ArrowRight, Weight, Box, Trash2 } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 
