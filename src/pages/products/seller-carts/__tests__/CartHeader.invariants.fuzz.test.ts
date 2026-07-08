@@ -375,3 +375,145 @@ describe('Invariante — troca entre 2 carrinhos nunca mistura dados', () => {
     }
   });
 });
+
+describe('Extremos — quantidades, pesos e volumes fora do "normal"', () => {
+  // Regex robusto (mesmo do bloco A0/202F).
+  const RE_ROBUST = /R\$[\s\u00A0\u202F]?\d{1,3}(?:\.\d{3})*,\d{2}(?!\d)/;
+
+  // Gerador de casos extremos determinístico (não aleatório):
+  // cobre 0, subnormals, MAX_SAFE_INTEGER, negativos e valores absurdos.
+  const EXTREME_QTY = [
+    0,
+    1,
+    Number.EPSILON,
+    Number.MIN_VALUE,
+    -1,
+    -1_000_000,
+    1_000_000,
+    Number.MAX_SAFE_INTEGER,
+    Number.MAX_SAFE_INTEGER - 1,
+    9_007_199_254_740_991, // MAX_SAFE_INTEGER
+    1e15,
+    1e20,               // além do MAX_SAFE_INTEGER — cientific notation risk
+  ];
+  const EXTREME_PRICE = [
+    0,
+    0.01,
+    0.001,           // subcentavo (arredondado no format)
+    1,
+    99_999.99,
+    1e6,
+    1e9,
+    Number.MAX_VALUE / 1e300, // ainda finito
+    -100,
+  ];
+  const EXTREME_WEIGHT_KG = [
+    0,
+    Number.EPSILON,
+    0.0001,
+    0.999,
+    1,
+    999.999,
+    1e6,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+    Number.NaN,
+  ];
+  const EXTREME_VOLUME_M3 = [
+    0,
+    1e-9,
+    0.0009,
+    0.001,
+    1,
+    1e6,
+    Number.POSITIVE_INFINITY,
+    Number.NaN,
+  ];
+
+  it('formatCurrency nunca lança nem retorna string inválida em valores extremos', () => {
+    for (const q of EXTREME_QTY) {
+      for (const p of EXTREME_PRICE) {
+        const subtotal = q * p;
+        // Se não é finito, o formatter deve ao menos não crashar; a UI
+        // esconde subtotal quando <= 0. Testamos apenas casos finitos > 0
+        // para o regex — casos infinitos/NaN são cobertos pelo throw check.
+        let out = '';
+        expect(() => {
+          out = formatCurrency(subtotal);
+        }).not.toThrow();
+        expect(typeof out).toBe('string');
+        expect(out.length).toBeGreaterThan(0);
+        // Nunca "NaN" ou "Infinity" literais na UI (contrato de sanidade).
+        expect(out).not.toMatch(/NaN|Infinity/i);
+
+        if (Number.isFinite(subtotal) && subtotal > 0 && subtotal < 1e15) {
+          expect(out).toMatch(RE_ROBUST);
+        }
+      }
+    }
+  });
+
+  it('computeHeaderMeta nunca produz "NaN"/"undefined"/"Infinity" em casos extremos', () => {
+    for (const q of EXTREME_QTY) {
+      for (const p of EXTREME_PRICE) {
+        const items = [{ quantity: q, product_price: p }];
+        let meta = '';
+        expect(() => {
+          meta = norm(computeHeaderMeta(items));
+        }).not.toThrow();
+        expect(meta).not.toMatch(/NaN|undefined|null|Infinity/i);
+      }
+    }
+  });
+
+  it('fmtWeight/fmtVolume sobrevivem a NaN, Infinity e valores negativos', () => {
+    for (const kg of EXTREME_WEIGHT_KG) {
+      let out = '';
+      expect(() => {
+        out = fmtWeight(kg);
+      }).not.toThrow();
+      expect(typeof out).toBe('string');
+      // Contrato: sempre termina em "kg" ou "g".
+      expect(out).toMatch(/(kg|g)$/);
+    }
+    for (const m3 of EXTREME_VOLUME_M3) {
+      const cm3 = Number.isFinite(m3) ? Math.round(m3 * 1_000_000) : m3;
+      let out = '';
+      expect(() => {
+        out = fmtVolume({ volumeM3: m3, volumeCm3: cm3 });
+      }).not.toThrow();
+      expect(out).toMatch(/(m³|cm³)$/);
+    }
+  });
+
+  it('gate shouldShowWeightVolumeBlock nunca "vaza" com NaN/Infinity', () => {
+    // NaN > 0 é false → não exibe; Infinity > 0 é true → exibe.
+    expect(shouldShowWeightVolumeBlock({ weightKg: Number.NaN, volumeCm3: 0 })).toBe(false);
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: Number.NaN })).toBe(false);
+    expect(shouldShowWeightVolumeBlock({ weightKg: Infinity, volumeCm3: 0 })).toBe(true);
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: Infinity })).toBe(true);
+    // Ambos NaN → nunca exibir (não faz sentido).
+    expect(
+      shouldShowWeightVolumeBlock({ weightKg: Number.NaN, volumeCm3: Number.NaN }),
+    ).toBe(false);
+  });
+
+  it('regex robusto do BRL nunca casa saída extrema inválida (fuzz 500x)', () => {
+    for (let i = 0; i < 500; i++) {
+      // Escolhe combinação semi-aleatória de valores extremos.
+      const q =
+        EXTREME_QTY[Math.floor(Math.random() * EXTREME_QTY.length)];
+      const p =
+        EXTREME_PRICE[Math.floor(Math.random() * EXTREME_PRICE.length)];
+      const items = [{ quantity: q, product_price: p }];
+      const meta = norm(computeHeaderMeta(items));
+
+      // Se o subtotal calculado NÃO é finito ou não é positivo, o meta
+      // NÃO deve conter uma moeda válida (a UI esconde neste caso).
+      const subtotal = q * p;
+      if (!Number.isFinite(subtotal) || subtotal <= 0) {
+        expect(meta).not.toMatch(RE_ROBUST);
+      }
+    }
+  });
+});
