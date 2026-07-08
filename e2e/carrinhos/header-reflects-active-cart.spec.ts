@@ -5,9 +5,17 @@
 import { test, expect } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
+
+installFailureCapture(test);
 
 test.describe('Carrinhos · header reflete carrinho ativo @carrinhos', () => {
-  test('alterna SKUs/unidades/subtotal ao trocar de carrinho', async ({ page }) => {
+  test('alterna SKUs/unidades/subtotal ao trocar de carrinho', async ({ page }, testInfo) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/carrinhos');
 
@@ -26,6 +34,7 @@ test.describe('Carrinhos · header reflete carrinho ativo @carrinhos', () => {
       if (id) ids.push(id);
     }
     expect(ids.length).toBe(2);
+    recordCarts(testInfo, { A: ids[0], B: ids[1] });
 
     const readHeader = async () => {
       const title = await page.getByTestId('page-title-carrinhos').innerText();
@@ -34,20 +43,24 @@ test.describe('Carrinhos · header reflete carrinho ativo @carrinhos', () => {
     };
 
     // Abre carrinho A
+    recordNav(testInfo, `A:${ids[0]}`);
     await gotoAndSettle(page, `/carrinhos/${ids[0]}`);
     await expect(page).toHaveURL(new RegExp(`/carrinhos/${ids[0]}`));
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const a = await readHeader();
+    setDebugContext(testInfo, { headerA: a });
 
     // Sanidade: header não deve mostrar o formato agregado "N itens" da lista
     // (formato do carrinho ativo usa "SKU/SKUs" e "unidade/unidades").
     expect(a.meta).toMatch(/SKU|unidade/i);
 
     // Abre carrinho B
+    recordNav(testInfo, `B:${ids[1]}`);
     await gotoAndSettle(page, `/carrinhos/${ids[1]}`);
     await expect(page).toHaveURL(new RegExp(`/carrinhos/${ids[1]}`));
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const b = await readHeader();
+    setDebugContext(testInfo, { headerB: b });
     expect(b.meta).toMatch(/SKU|unidade/i);
 
     // Título (nome da empresa) OU meta (SKUs/unidades/subtotal) DEVE mudar

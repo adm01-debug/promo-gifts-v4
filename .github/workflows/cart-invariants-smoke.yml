@@ -218,6 +218,7 @@ jobs:
           merge-multiple: true
 
       - name: Resumo de duração + alertas + auto-tune
+        id: summary
         if: always()
         env:
           CURRENT_TOTAL_SHARDS: ${{ needs.prepare-matrix.outputs.total_shards }}
@@ -234,6 +235,10 @@ jobs:
           echo "- **total_shards atual (por browser):** \`$CUR\`" >> "$SUMMARY_FILE"
           echo "- **Limiares:** warn=\`${WARN}s\` · alerta forte=\`${FAIL_INFO}s\` · auto-tune ratio=\`${RATIO}\`" >> "$SUMMARY_FILE"
           echo "" >> "$SUMMARY_FILE"
+
+          # Output default (nenhum bump necessário).
+          echo "should_bump=0" >> "$GITHUB_OUTPUT"
+          echo "recommended_shards=$CUR" >> "$GITHUB_OUTPUT"
 
           if ! ls all-timings/*.json >/dev/null 2>&1; then
             echo "⚠️ Nenhum arquivo de timing encontrado (shards podem ter falhado antes de gravar)." >> "$SUMMARY_FILE"
@@ -280,7 +285,6 @@ jobs:
             IFS='|' read -r N TOTAL AVG_RAW MAX <<< "$STATS"
             if [ "$N" -gt 0 ]; then
               AVG_INT=$(printf '%.0f' "$AVG_RAW")
-              # ratio = avg / max (float). Se max=0, ratio=0.
               if [ "$MAX" -gt 0 ]; then
                 RATIO_VAL=$(awk -v a="$AVG_RAW" -v m="$MAX" 'BEGIN { printf "%.2f", a/m }')
               else
@@ -288,7 +292,6 @@ jobs:
               fi
               echo "| \`$BROWSER\` | $N | $TOTAL | $AVG_INT | $MAX | $RATIO_VAL |" >> "$SUMMARY_FILE"
 
-              # Auto-tune trigger: shards balanceados (avg/wall alto) E wall > warn ⇒ bump.
               ABOVE_WARN=0
               if [ "$MAX" -gt "$WARN" ]; then ABOVE_WARN=1; fi
               RATIO_BUMP=$(awk -v r="$RATIO_VAL" -v t="$RATIO" 'BEGIN { print (r+0 >= t+0) ? 1 : 0 }')
@@ -307,14 +310,64 @@ jobs:
           echo "" >> "$SUMMARY_FILE"
 
           if [ "$SHOULD_BUMP" = "1" ]; then
+            # Recomendação = próximo degrau (3), com teto 4.
+            REC=$((CUR + 1))
+            if [ "$REC" -gt 4 ]; then REC=4; fi
+            echo "should_bump=1" >> "$GITHUB_OUTPUT"
+            echo "recommended_shards=$REC" >> "$GITHUB_OUTPUT"
             echo "### 🚦 Recomendação de auto-tune" >> "$SUMMARY_FILE"
             echo "" >> "$SUMMARY_FILE"
             echo "> Os shards estão **bem balanceados** (avg/wall ≥ ${RATIO}) mas o wall clock" >> "$SUMMARY_FILE"
-            echo "> ultrapassou o limiar de \`${WARN}s\`. **Aumente \`CART_TOTAL_SHARDS\` para 3**" >> "$SUMMARY_FILE"
-            echo "> (repo variable ou input do workflow_dispatch) para dividir melhor a carga." >> "$SUMMARY_FILE"
+            echo "> ultrapassou o limiar de \`${WARN}s\`. Recomendado: **total_shards = \`$REC\`**." >> "$SUMMARY_FILE"
+            echo "> O step seguinte tenta persistir \`vars.CART_TOTAL_SHARDS=$REC\` automaticamente" >> "$SUMMARY_FILE"
+            echo "> (requer secret \`CART_TUNE_PAT\` com permissão \`Variables: Read and write\`)." >> "$SUMMARY_FILE"
           else
             echo "> ℹ️ Nenhum ajuste de sharding recomendado neste run." >> "$SUMMARY_FILE"
           fi
+
+      # Persistência do auto-tune. Só roda:
+      #   - quando o step anterior recomendou bump;
+      #   - no branch default (main/master), fora de PR — evita fork PR
+      #     mutando repo state;
+      #   - se o secret CART_TUNE_PAT estiver presente (a permissão de
+      #     `Variables: Read and write` NÃO existe no GITHUB_TOKEN default).
+      # Caso o secret não exista, o step apenas registra um aviso e segue.
+      - name: Persistir CART_TOTAL_SHARDS (auto-tune)
+        if: >
+          always() &&
+          steps.summary.outputs.should_bump == '1' &&
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        env:
+          GH_TOKEN: ${{ secrets.CART_TUNE_PAT }}
+          REC: ${{ steps.summary.outputs.recommended_shards }}
+        run: |
+          set -e
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::warning::Secret CART_TUNE_PAT ausente — não é possível persistir CART_TOTAL_SHARDS. Defina manualmente em Settings → Secrets and variables → Actions → Variables."
+            {
+              echo ""
+              echo "> ⚠️ **Auto-tune não persistiu.** Configure o secret \`CART_TUNE_PAT\` (PAT fine-grained com escopo \`Variables: Read and write\` no repo) para habilitar."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "→ Aplicando gh variable set CART_TOTAL_SHARDS=${REC} em ${GITHUB_REPOSITORY}"
+          if gh variable set CART_TOTAL_SHARDS --body "${REC}" --repo "${GITHUB_REPOSITORY}"; then
+            {
+              echo ""
+              echo "### ✅ Auto-tune aplicado"
+              echo ""
+              echo "> \`vars.CART_TOTAL_SHARDS\` foi definido para **\`${REC}\`**. O próximo run já usará essa configuração — sem oscilar de volta para 2."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Falha ao executar 'gh variable set'. Verifique se o PAT tem escopo 'Variables: Read and write' no repositório."
+            {
+              echo ""
+              echo "> ❌ **Auto-tune falhou** ao persistir a variável. Ajuste manualmente para \`${REC}\` ou revise o PAT."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
 
       - name: Falha se algum shard falhou
         run: |

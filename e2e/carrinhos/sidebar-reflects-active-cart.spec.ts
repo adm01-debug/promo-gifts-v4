@@ -12,9 +12,17 @@
 import { test, expect } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
+import {
+  installFailureCapture,
+  recordCarts,
+  recordNav,
+  setDebugContext,
+} from '../helpers/attach-on-failure';
+
+installFailureCapture(test);
 
 test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
-  test('CTA presente, sem subtotal duplicado, peso/volume acompanham a troca', async ({ page }) => {
+  test('CTA presente, sem subtotal duplicado, peso/volume acompanham a troca', async ({ page }, testInfo) => {
     await loginAs(page, 'seller');
     await gotoAndSettle(page, '/carrinhos');
 
@@ -33,6 +41,7 @@ test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
       if (id) ids.push(id);
     }
     expect(ids.length).toBe(2);
+    recordCarts(testInfo, { A: ids[0], B: ids[1] });
 
     const readSidebar = async () => {
       const hero = page.getByTestId('cart-sidebar-hero');
@@ -45,9 +54,11 @@ test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
     };
 
     // --- Carrinho A ---
+    recordNav(testInfo, `A:${ids[0]}`);
     await gotoAndSettle(page, `/carrinhos/${ids[0]}`);
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const a = await readSidebar();
+    setDebugContext(testInfo, { sidebarA: a });
 
     if (!a.visible) {
       // Sem itens → sidebar não renderiza; nada a validar.
@@ -62,9 +73,11 @@ test.describe('Carrinhos · sidebar reflete carrinho ativo @carrinhos', () => {
     expect(a.text).not.toMatch(/Qtd\.\s*total/i);
 
     // --- Carrinho B ---
+    recordNav(testInfo, `B:${ids[1]}`);
     await gotoAndSettle(page, `/carrinhos/${ids[1]}`);
     await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
     const b = await readSidebar();
+    setDebugContext(testInfo, { sidebarB: b });
 
     if (!b.visible) test.skip(true, 'carrinho B sem itens — sidebar não é exibida');
 
