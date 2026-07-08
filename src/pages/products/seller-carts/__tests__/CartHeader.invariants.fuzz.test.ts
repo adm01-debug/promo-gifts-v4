@@ -205,7 +205,8 @@ describe('Sidebar weight/volume — gate visual (100+ cenários)', () => {
 describe('Formatação BRL — resiliência a NBSP/NNBSP (\\u00A0, \\u202F)', () => {
   // Padrão robusto: aceita space, NBSP (\u00A0) e NNBSP (\u202F) entre R$ e dígito,
   // e também sem separador algum (algumas engines/locales emitem "R$1,00").
-  const RE_ROBUST = /R\$[\s\u00A0\u202F]?\d{1,3}(?:\.\d{3})*,\d{2}/;
+  // Lookahead `(?!\d)` evita casar dentro de "R$ 1,234.56" (formato en-US).
+  const RE_ROBUST = /R\$[\s\u00A0\u202F]?\d{1,3}(?:\.\d{3})*,\d{2}(?!\d)/;
 
   it('formatCurrency produz string que casa com regex robusto (ICU real)', () => {
     for (let i = 0; i < 200; i++) {
