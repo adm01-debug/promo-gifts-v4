@@ -180,6 +180,7 @@ jobs:
           npx playwright test \
             e2e/carrinhos/header-reflects-active-cart.spec.ts \
             e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
+            e2e/carrinhos/active-cart-edge-cases.spec.ts \
             --project=chromium-authed --retries=1
 
       # Smoke dos handoffs Carrinho/URL → QuoteBuilder (BUG-CART-HANDOFF).
