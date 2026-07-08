@@ -689,6 +689,13 @@ export function useQuoteBuilderState() {
     if (!state?.fromCart || !state.items?.length) return;
     // BUG-CART-HANDOFF FIX: descarta autosave anterior para não sobrescrever o
     // cliente/itens vindos do carrinho quando o hook de autosave habilita.
+    // TELEMETRY: registrar handoff carrinho → orçamento para auditoria de
+    // regressões (rastreia empresa + qtd itens; nenhum dado sensível).
+    logger.info('[QuoteBuilder handoff] fromCart', {
+      company_id: state.companyId,
+      company_name: state.companyName,
+      items_count: state.items.length,
+    });
     clearAutoSave();
     if (state.companyId) setClientId(state.companyId);
     const cartItems: QuoteItem[] = state.items.map((i) => ({
