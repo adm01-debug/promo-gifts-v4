@@ -725,6 +725,7 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCollection || !state.preloadProducts?.length) return;
+    clearAutoSave();
     const collectionItems: QuoteItem[] = state.preloadProducts.map((p) => ({
       product_id: p.product_id,
       product_name: p.product_name,
