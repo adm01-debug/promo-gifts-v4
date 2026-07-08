@@ -70,9 +70,13 @@ jobs:
 
       # retries=0: qualquer invariant quebrado FALHA o build. Sem "tentar de novo".
       # video/screenshot/trace já vêm do config global (retain-on-failure).
-      # HTML + page-context.json vêm de `installFailureCapture()` nos specs.
+      # HTML + page-context.json + debug-context.json vêm de
+      # `installFailureCapture()` (com IDs de cart/item quando setados).
       - name: Playwright — invariants do header/sidebar (shard ${{ matrix.shard }}/${{ matrix.total_shards }})
+        id: playwright
         run: |
+          START_TS=$(date +%s)
+          set +e
           npx playwright test \
             e2e/carrinhos/header-reflects-active-cart.spec.ts \
             e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
@@ -84,6 +88,37 @@ jobs:
             --project=${{ matrix.project }} \
             --shard=${{ matrix.shard }}/${{ matrix.total_shards }} \
             --retries=0
+          RC=$?
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - START_TS))
+          mkdir -p shard-timings
+          cat > "shard-timings/${{ matrix.browser }}-${{ matrix.shard }}.json" <<EOF
+          {
+            "browser": "${{ matrix.browser }}",
+            "project": "${{ matrix.project }}",
+            "shard": ${{ matrix.shard }},
+            "total_shards": ${{ matrix.total_shards }},
+            "duration_seconds": $DURATION,
+            "exit_code": $RC,
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}"
+          }
+          EOF
+          echo "### ⏱️ Shard \`${{ matrix.browser }}\` · shard ${{ matrix.shard }}/${{ matrix.total_shards }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Duração:** ${DURATION}s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Exit code:** $RC" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit $RC
+
+      - name: Upload timing do shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-invariants-timing-${{ matrix.browser }}-shard${{ matrix.shard }}
+          path: shard-timings/
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload Playwright HTML report
         if: always()
@@ -95,8 +130,8 @@ jobs:
           if-no-files-found: ignore
 
       # test-results/** contém: screenshot, video, trace.zip, attachments
-      # (page-html, page-context.json, failure-screenshot.png).
-      - name: Upload artefatos de falha (screenshot/video/HTML/trace)
+      # (page-html, page-context.json, debug-context.json, failure-screenshot.png).
+      - name: Upload artefatos de falha (screenshot/video/HTML/trace/debug-context)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -111,13 +146,79 @@ jobs:
           if-no-files-found: ignore
 
   # Job agregador — required check único no branch protection, verde só
-  # quando TODOS os shards passaram.
+  # quando TODOS os shards passaram. Também consolida um resumo com o
+  # tempo total e a duração média por shard/browser, para decidir se vale
+  # aumentar o total_shards (ex.: 2 → 3).
   invariants-summary:
     name: cart-invariants-summary
     runs-on: ubuntu-latest
     needs: [invariants-smoke]
     if: always()
     steps:
+      - name: Download timings de todos os shards
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cart-invariants-timing-*
+          path: all-timings
+          merge-multiple: true
+
+      - name: Resumo de duração (total + média por browser)
+        if: always()
+        run: |
+          set -e
+          SUMMARY_FILE="$GITHUB_STEP_SUMMARY"
+          echo "## 📊 Resumo · cart-invariants-smoke" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+
+          if ! ls all-timings/*.json >/dev/null 2>&1; then
+            echo "⚠️ Nenhum arquivo de timing encontrado (shards podem ter falhado antes de gravar)." >> "$SUMMARY_FILE"
+            exit 0
+          fi
+
+          echo "| Browser | Shard | Duração (s) | Exit |" >> "$SUMMARY_FILE"
+          echo "|---|---|---|---|" >> "$SUMMARY_FILE"
+
+          # Linha por shard.
+          for f in all-timings/*.json; do
+            B=$(jq -r '.browser' "$f")
+            S=$(jq -r '.shard' "$f")
+            T=$(jq -r '.total_shards' "$f")
+            D=$(jq -r '.duration_seconds' "$f")
+            E=$(jq -r '.exit_code' "$f")
+            echo "| \`$B\` | $S/$T | $D | $E |" >> "$SUMMARY_FILE"
+          done
+
+          echo "" >> "$SUMMARY_FILE"
+          echo "### ⏱️ Agregado por browser" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "| Browser | Shards | Total (s) | Média (s) | Máx (s) |" >> "$SUMMARY_FILE"
+          echo "|---|---|---|---|---|" >> "$SUMMARY_FILE"
+
+          # Agrega por browser via jq.
+          for BROWSER in chromium firefox; do
+            STATS=$(jq -s --arg b "$BROWSER" '
+              [ .[] | select(.browser == $b) | .duration_seconds ] as $d
+              | { n: ($d | length), total: ($d | add // 0), max: ($d | max // 0) }
+              | "\($b)|\(.n)|\(.total)|\(if .n > 0 then (.total / .n | floor) else 0 end)|\(.max)"
+            ' all-timings/*.json | tr -d '"')
+            IFS='|' read -r B N TOTAL AVG MAX <<< "$STATS"
+            if [ "$N" -gt 0 ]; then
+              echo "| \`$B\` | $N | $TOTAL | $AVG | $MAX |" >> "$SUMMARY_FILE"
+            fi
+          done
+
+          # Total absoluto (wall clock aproximado = máximo entre browsers,
+          # já que shards de mesmo browser rodam em paralelo).
+          echo "" >> "$SUMMARY_FILE"
+          WALL=$(jq -s '[.[] | .duration_seconds] | max // 0' all-timings/*.json)
+          SUM=$(jq -s '[.[] | .duration_seconds] | add // 0' all-timings/*.json)
+          echo "- **Wall clock (máximo entre shards paralelos):** ${WALL}s" >> "$SUMMARY_FILE"
+          echo "- **CPU total (soma de todos os shards):** ${SUM}s" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "> 💡 Se a **duração média por shard** estiver bem acima do wall clock desejado," >> "$SUMMARY_FILE"
+          echo "> considere aumentar \`total_shards\` (ex.: 2 → 3) na matrix." >> "$SUMMARY_FILE"
+
       - name: Falha se algum shard falhou
         run: |
           if [ "${{ needs.invariants-smoke.result }}" != "success" ]; then

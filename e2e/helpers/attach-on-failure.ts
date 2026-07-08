@@ -3,32 +3,64 @@
  * do carrinho falha em CI.
  *
  * O `playwright.config.ts` já ativa trace/screenshot/video `retain-on-failure`,
- * mas isso NÃO captura o HTML renderizado no exato instante da falha (útil
- * para diffs de hidratação / estado inconsistente).
+ * mas isso NÃO captura:
+ *   - o HTML renderizado no exato instante da falha
+ *   - o contexto de domínio (quais cart IDs A/B/C, item IDs, viewport, etc.)
  *
  * `installFailureCapture(test)` adiciona um `afterEach` que anexa:
- *   1) page.content() como HTML — snapshot exato do DOM na falha.
- *   2) console log agregado — se um teste opt-in coletou console messages.
- *   3) URL final + viewport — contexto rápido para triagem.
+ *   1) `page-html`             — snapshot exato do DOM na falha.
+ *   2) `page-context.json`     — URL, viewport, UA, title, timestamp.
+ *   3) `failure-screenshot.png`— screenshot full-page.
+ *   4) `debug-context.json`    — dados de domínio setados via `setDebugContext`
+ *      (ex.: `{ cartA, cartB, cartC, itemIds }`). Injetado no HTML como
+ *      comentário `<!-- DEBUG_CONTEXT: {...} -->` no topo, para leitura
+ *      imediata ao baixar o artifact.
  *
- * Uso: nos specs que queremos priorizar debug, chamar
+ * Uso nos specs:
  *   installFailureCapture(test);
- * no topo do describe. Trace/video/screenshot vêm do config global.
+ *   // dentro do teste, quando conhecer os IDs:
+ *   setDebugContext(testInfo, { cartA, cartB, cartC, itemIds });
  */
-import type { TestType } from '@playwright/test';
+import type { TestType, TestInfo } from '@playwright/test';
 
 type AnyTest = TestType<any, any>;
+
+/**
+ * Payload de contexto de domínio para depuração pós-falha.
+ * Aberto de propósito — cada spec anota o que for útil (IDs, viewport, etc.).
+ */
+export type DebugContext = Record<string, unknown>;
+
+// Registry por TestInfo — evita vazamento entre testes paralelos.
+const DEBUG_BY_TEST = new WeakMap<TestInfo, DebugContext>();
+
+/**
+ * Registra/mescla contexto de depuração para o teste corrente. Chamável
+ * várias vezes; entradas subsequentes são mescladas (Object.assign).
+ */
+export function setDebugContext(testInfo: TestInfo, data: DebugContext): void {
+  const prev = DEBUG_BY_TEST.get(testInfo) ?? {};
+  DEBUG_BY_TEST.set(testInfo, { ...prev, ...data });
+}
 
 export function installFailureCapture(test: AnyTest): void {
   test.afterEach(async ({ page }, testInfo) => {
     const failed = testInfo.status !== testInfo.expectedStatus;
     if (!failed) return;
 
-    // 1) HTML completo — inclui DOM hidratado, estado de erro, skeleton etc.
+    const debug = DEBUG_BY_TEST.get(testInfo) ?? {};
+    const debugJson = JSON.stringify(debug, null, 2);
+
+    // 1) HTML completo — com header contendo o debug-context inline,
+    //    para depurador ler direto ao abrir o arquivo (sem precisar de JSON).
     try {
       const html = await page.content();
+      const banner =
+        `<!-- DEBUG_CONTEXT: ${JSON.stringify(debug)} -->\n` +
+        `<!-- TEST: ${testInfo.title} · project=${testInfo.project.name} · ` +
+        `viewport=${JSON.stringify(page.viewportSize())} -->\n`;
       await testInfo.attach('page-html', {
-        body: html,
+        body: banner + html,
         contentType: 'text/html; charset=utf-8',
       });
     } catch {
@@ -43,6 +75,8 @@ export function installFailureCapture(test: AnyTest): void {
         userAgent: await page.evaluate(() => navigator.userAgent),
         title: await page.title().catch(() => null),
         timestamp: new Date().toISOString(),
+        project: testInfo.project.name,
+        testTitle: testInfo.title,
       };
       await testInfo.attach('page-context.json', {
         body: JSON.stringify(meta, null, 2),
@@ -52,7 +86,18 @@ export function installFailureCapture(test: AnyTest): void {
       /* noop */
     }
 
-    // 3) Screenshot full-page adicional (o config já anexa 1× — aqui garantimos
+    // 3) debug-context.json — cart IDs, item IDs, sequência de navegação, etc.
+    //    Fica sempre presente (mesmo que vazio) para consistência de artifacts.
+    try {
+      await testInfo.attach('debug-context.json', {
+        body: debugJson,
+        contentType: 'application/json',
+      });
+    } catch {
+      /* noop */
+    }
+
+    // 4) Screenshot full-page adicional (config já anexa 1× — aqui garantimos
     //    presença mesmo se o retain-on-failure falhar por corrida).
     try {
       await testInfo.attach('failure-screenshot.png', {

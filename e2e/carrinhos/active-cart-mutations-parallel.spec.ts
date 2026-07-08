@@ -8,11 +8,15 @@
  *
  * Objetivo: garantir que respostas de PATCH/DELETE tardias vindas do cart
  * anterior nunca "vazem" para o header/sidebar do cart ativo.
+ *
+ * Executa em DOIS viewports (desktop 1280×720 e mobile 390×844) — o layout
+ * responsivo do header/sidebar difere entre eles e queremos garantir o
+ * invariant em ambos.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
-import { installFailureCapture } from '../helpers/attach-on-failure';
+import { installFailureCapture, setDebugContext } from '../helpers/attach-on-failure';
 
 installFailureCapture(test);
 
@@ -34,6 +38,17 @@ async function collectCartIds(page: Page): Promise<string[]> {
   return ids;
 }
 
+async function collectItemIds(page: Page): Promise<string[]> {
+  const items = page.locator('[data-testid^="cart-item-"]');
+  const count = await items.count().catch(() => 0);
+  const ids: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const tid = await items.nth(i).getAttribute('data-testid');
+    if (tid) ids.push(tid.replace('cart-item-', ''));
+  }
+  return ids;
+}
+
 async function snapshotHeader(page: Page) {
   const title = (await page.getByTestId('page-title-carrinhos').innerText()).trim();
   const meta = page
@@ -45,90 +60,113 @@ async function snapshotHeader(page: Page) {
   return { title, meta: norm(await meta.innerText()) };
 }
 
-test.describe('Carrinhos · A→B→A→C com mutações paralelas @carrinhos', () => {
-  test('DELETE/PATCH tardios nunca vazam para o header/sidebar do cart ativo', async ({ page }) => {
-    await loginAs(page, 'seller');
-    await gotoAndSettle(page, '/carrinhos');
+const VIEWPORTS = [
+  { name: 'desktop', size: { width: 1280, height: 720 } },
+  { name: 'mobile', size: { width: 390, height: 844 } },
+] as const;
 
-    const ids = await collectCartIds(page);
-    if (ids.length < 3) test.skip(true, 'precisa de 3+ carrinhos');
-    const [A, B, C] = ids;
+for (const vp of VIEWPORTS) {
+  test.describe(`Carrinhos · A→B→A→C · mutações paralelas · ${vp.name} @carrinhos`, () => {
+    test.use({ viewport: vp.size });
 
-    // Snapshot canônico de cada cart (sem interferência).
-    await gotoAndSettle(page, `/carrinhos/${A}`);
-    const canonA = await snapshotHeader(page);
-    await gotoAndSettle(page, `/carrinhos/${B}`);
-    const canonB = await snapshotHeader(page);
-    await gotoAndSettle(page, `/carrinhos/${C}`);
-    const canonC = await snapshotHeader(page);
+    test('DELETE/PATCH tardios nunca vazam para o header/sidebar do cart ativo', async ({
+      page,
+    }, testInfo) => {
+      setDebugContext(testInfo, { viewport: vp.name, viewportSize: vp.size });
 
-    // Rastreia mutações PATCH/DELETE contra cart_items e adia respostas para
-    // simular resposta lenta do backend chegando após a próxima navegação.
-    const observed: Array<{ method: string; url: string; delayed: boolean }> = [];
-    await page.route('**/rest/v1/cart_items**', async (route) => {
-      const req = route.request();
-      const method = req.method();
-      if (method === 'DELETE' || method === 'PATCH' || method === 'POST') {
-        observed.push({ method, url: req.url(), delayed: true });
-        // Atrasa 400ms — tempo suficiente para o usuário já ter trocado de cart.
-        await new Promise((r) => setTimeout(r, 400));
+      await loginAs(page, 'seller');
+      await gotoAndSettle(page, '/carrinhos');
+
+      const ids = await collectCartIds(page);
+      if (ids.length < 3) test.skip(true, 'precisa de 3+ carrinhos');
+      const [A, B, C] = ids;
+
+      setDebugContext(testInfo, { cartA: A, cartB: B, cartC: C });
+
+      // Snapshot canônico de cada cart (sem interferência).
+      await gotoAndSettle(page, `/carrinhos/${A}`);
+      const itemsA = await collectItemIds(page);
+      const canonA = await snapshotHeader(page);
+      await gotoAndSettle(page, `/carrinhos/${B}`);
+      const itemsB = await collectItemIds(page);
+      const canonB = await snapshotHeader(page);
+      await gotoAndSettle(page, `/carrinhos/${C}`);
+      const itemsC = await collectItemIds(page);
+      const canonC = await snapshotHeader(page);
+
+      setDebugContext(testInfo, {
+        itemsA,
+        itemsB,
+        itemsC,
+        canonA,
+        canonB,
+        canonC,
+      });
+
+      // Rastreia mutações PATCH/DELETE contra cart_items e adia respostas para
+      // simular resposta lenta do backend chegando após a próxima navegação.
+      const observed: Array<{ method: string; url: string; delayed: boolean }> = [];
+      await page.route('**/rest/v1/cart_items**', async (route) => {
+        const req = route.request();
+        const method = req.method();
+        if (method === 'DELETE' || method === 'PATCH' || method === 'POST') {
+          observed.push({ method, url: req.url(), delayed: true });
+          await new Promise((r) => setTimeout(r, 400));
+        }
+        await route.continue();
+      });
+      await page.route('**/rest/v1/seller_carts**', async (route) => {
+        if (route.request().method() === 'GET') {
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        await route.continue();
+      });
+
+      // ── Sequência A→B→A→C intercalada com mutações ────────────────────
+      const sequence: string[] = [];
+      const nav = async (id: string) => {
+        sequence.push(id);
+        setDebugContext(testInfo, { navSequence: [...sequence] });
+        await page.goto(`/carrinhos/${id}`);
+      };
+
+      await nav(A);
+      await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
+
+      void page.evaluate((cartId) => {
+        fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'PATCH' }).catch(() => {});
+        fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'DELETE' }).catch(() => {});
+      }, A);
+
+      await nav(B);
+      void page.evaluate((cartId) => {
+        fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'PATCH' }).catch(() => {});
+      }, B);
+
+      await nav(A);
+      await nav(C);
+
+      await expect(page).toHaveURL(new RegExp(`/carrinhos/${C}$`));
+      await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
+
+      setDebugContext(testInfo, { observedMutations: observed });
+
+      expect(observed.length).toBeGreaterThanOrEqual(1);
+
+      const final = await snapshotHeader(page);
+      setDebugContext(testInfo, { finalHeader: final });
+
+      expect(final.meta).toMatch(META_RE);
+      expect(final.title).toBe(canonC.title);
+      expect(final.meta).toBe(canonC.meta);
+
+      if (canonA.meta !== canonC.meta) expect(final.meta).not.toBe(canonA.meta);
+      if (canonB.meta !== canonC.meta) expect(final.meta).not.toBe(canonB.meta);
+
+      const sidebarCount = await page.getByTestId('cart-sidebar-hero').count();
+      if (sidebarCount > 0) {
+        await expect(page.getByTestId('cart-checkout-cta')).toBeVisible();
       }
-      await route.continue();
     });
-    // GETs também com pequena latência para forçar sobreposição.
-    await page.route('**/rest/v1/seller_carts**', async (route) => {
-      if (route.request().method() === 'GET') {
-        await new Promise((r) => setTimeout(r, 120));
-      }
-      await route.continue();
-    });
-
-    // ── Sequência A→B→A→C intercalada com mutações ────────────────────
-    await page.goto(`/carrinhos/${A}`);
-    await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
-
-    // Dispara mutação síntetica direto pelo runtime (evita depender de UI
-    // exata de "remover item"). O importante é gerar tráfego concorrente
-    // contra a mesma tabela durante a troca.
-    void page.evaluate((cartId) => {
-      // Chamada "fantasma" — não precisa completar, só criar tráfego que
-      // possa retornar tarde. Se falhar, é ok — é rota mockada.
-      fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'PATCH' }).catch(() => {});
-      fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'DELETE' }).catch(() => {});
-    }, A);
-
-    // Troca imediata para B (respostas de A ficam voando).
-    await page.goto(`/carrinhos/${B}`);
-    void page.evaluate((cartId) => {
-      fetch(`/rest/v1/cart_items?cart_id=eq.${cartId}`, { method: 'PATCH' }).catch(() => {});
-    }, B);
-
-    // Volta para A.
-    await page.goto(`/carrinhos/${A}`);
-    // Salta para C — deve ser o estado final.
-    await page.goto(`/carrinhos/${C}`);
-
-    await expect(page).toHaveURL(new RegExp(`/carrinhos/${C}$`));
-    await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
-
-    // Assegura que já houve tráfego de mutação em voo durante a sequência.
-    // (Se zero, o teste ainda passa — mas perdemos a garantia.)
-    expect(observed.length).toBeGreaterThanOrEqual(1);
-
-    // Header final DEVE ser idêntico ao snapshot canônico de C.
-    const final = await snapshotHeader(page);
-    expect(final.meta).toMatch(META_RE);
-    expect(final.title).toBe(canonC.title);
-    expect(final.meta).toBe(canonC.meta);
-
-    // E jamais igual a A ou B (quando distintos).
-    if (canonA.meta !== canonC.meta) expect(final.meta).not.toBe(canonA.meta);
-    if (canonB.meta !== canonC.meta) expect(final.meta).not.toBe(canonB.meta);
-
-    // Sidebar (quando presente) deve estar carregada e sem estado stale.
-    const sidebarCount = await page.getByTestId('cart-sidebar-hero').count();
-    if (sidebarCount > 0) {
-      await expect(page.getByTestId('cart-checkout-cta')).toBeVisible();
-    }
   });
-});
+}
