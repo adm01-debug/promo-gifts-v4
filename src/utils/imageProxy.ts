@@ -49,6 +49,15 @@ const SUPABASE_FUNCTION_BASE = (() => {
   if (supabaseUrl?.startsWith('https://')) return supabaseUrl.replace(/\/$/, '');
   const rawId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined;
   if (rawId) {
+    // Warn em DEV se o PROJECT_ID foi configurado como URL completa (Vercel config bug)
+    // Veja .env.example para a configuração correta.
+    if (import.meta.env.DEV && rawId.startsWith('http')) {
+      console.warn(
+        '[imageProxy] VITE_SUPABASE_PROJECT_ID contém URL completa em vez de só o ID.',
+        'Configure apenas o ID (ex: doufsxqlfjyuvxuezpln) no Vercel.',
+        'Consulte .env.example para detalhes. (PR #1649)'
+      );
+    }
     const cleanId = rawId.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '');
     if (cleanId) return 'https://' + cleanId + '.supabase.co';
   }
