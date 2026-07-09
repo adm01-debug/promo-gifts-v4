@@ -88,7 +88,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'a', status: 'expired', valid_until: iso(5 * DAY) }),
       q({ id: 'b', status: 'pending', valid_until: iso(2 * DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['b']);
   });
@@ -100,7 +100,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'edge-1ms-past', status: 'pending', valid_until: iso(-1) }),
       q({ id: 'edge-now', status: 'pending', valid_until: iso(0) }), // == now → mantém
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id).sort()).toEqual(
       ['edge-now', 'future'].sort(),
@@ -113,7 +113,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'undef', valid_until: undefined }),
       q({ id: 'ok', valid_until: iso(DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['ok']);
   });
@@ -124,7 +124,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'empty', valid_until: '' }),
       q({ id: 'ok', valid_until: iso(DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['ok']);
   });
@@ -135,7 +135,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'd1', valid_until: iso(1 * DAY) }),
       q({ id: 'd5', valid_until: iso(5 * DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['d1', 'd5', 'd10']);
   });
@@ -146,7 +146,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'nil', valid_until: null }),
       q({ id: 'future', valid_until: iso(DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.length).toBe(1);
     act(() => h.result.current.setSortBy('newest'));
@@ -158,7 +158,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
       q({ id: 'p', status: 'pending', valid_until: iso(2 * DAY) }),
       q({ id: 'd', status: 'draft', valid_until: iso(1 * DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     act(() => h.result.current.setStatusFilter('draft'));
     const ids = h.result.current.filteredQuotes.map((x) => x.id);
@@ -175,7 +175,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
         valid_until: iso((i - 10) * DAY),
       }),
     );
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     const a = h.result.current.filteredQuotes.map((x) => x.id);
     const b = h.result.current.filteredQuotes.map((x) => x.id);
@@ -183,7 +183,7 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
   });
 
   it('caso vazio: retorna []', () => {
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes).toEqual([]);
   });
@@ -215,7 +215,7 @@ describe('useQuotesListPage — fuzz exaustivo (300 runs) do filtro expiring', (
     fc.assert(
       fc.property(fc.array(quoteArb, { minLength: 0, maxLength: 25 }), (quotes) => {
         mockQuotes = quotes;
-        const h = renderHook(() => useQuotesListPage());
+        const h = renderHook(() => useQuotesListPage(), { wrapper });
         setExpiring(h);
         const out = h.result.current.filteredQuotes;
         let lastT = -Infinity;
@@ -244,7 +244,7 @@ describe('useQuotesListPage — bordas de data/timezone do filtro expiring', () 
       q({ id: 'today-late', status: 'pending', valid_until: '2026-06-27T23:59:59.000Z' }),
       q({ id: 'today-early', status: 'pending', valid_until: '2026-06-27T00:00:00.000Z' }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['today-late']);
   });
@@ -252,7 +252,7 @@ describe('useQuotesListPage — bordas de data/timezone do filtro expiring', () 
   it('timezone -03:00 cujo instante UTC é futuro → mantém', () => {
     // 2026-06-28T10:00-03:00 == 2026-06-28T13:00Z (futuro)
     mockQuotes = [q({ id: 'brt-future', valid_until: '2026-06-28T10:00:00-03:00' })];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['brt-future']);
   });
@@ -260,7 +260,7 @@ describe('useQuotesListPage — bordas de data/timezone do filtro expiring', () 
   it('timezone +09:00 cujo instante UTC é passado → exclui', () => {
     // 2026-06-27T20:00+09:00 == 2026-06-27T11:00Z (passado vs 12:00Z)
     mockQuotes = [q({ id: 'jp-past', valid_until: '2026-06-27T20:00:00+09:00' })];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes).toEqual([]);
   });
@@ -270,7 +270,7 @@ describe('useQuotesListPage — bordas de data/timezone do filtro expiring', () 
       q({ id: 'today', valid_until: '2026-06-27' }), // 00:00Z → passado
       q({ id: 'tomorrow', valid_until: '2026-06-28' }), // 00:00Z → futuro
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['tomorrow']);
   });
@@ -282,7 +282,7 @@ describe('useQuotesListPage — bordas de data/timezone do filtro expiring', () 
       q({ id: 'obj', valid_until: {} as unknown as string }),
       q({ id: 'ok', valid_until: iso(DAY) }),
     ];
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     expect(h.result.current.filteredQuotes.map((x) => x.id)).toEqual(['ok']);
   });
@@ -298,7 +298,7 @@ describe('useQuotesListPage — performance do filtro expiring', () => {
       }),
     );
     const t0 = performance.now();
-    const h = renderHook(() => useQuotesListPage());
+    const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
     const out = h.result.current.filteredQuotes;
     const elapsed = performance.now() - t0;
