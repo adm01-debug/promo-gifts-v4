@@ -56,9 +56,36 @@ const COMPARE_STATUS_COLORS: Record<string, string> = {
 export default function ComparePage() {
   useComparisonSync();
   const navigate = useNavigate();
-  const [differencesOnly, setDifferencesOnly] = useState(false);
-  const [duelMode, setDuelMode] = useState(true);
-  const [showRadar, setShowRadar] = useState(true);
+  // Toggles sincronizados com a URL (deep-link + share).
+  // Defaults: differencesOnly=0 (off), duelMode=1 (on), showRadar=1 (on).
+  // useListUrlState só grava não-defaults → URL fica limpa no estado padrão.
+  const { values, setValue } = useListUrlState({
+    keys: { differencesOnly: '0', duelMode: '1', showRadar: '1' },
+  });
+  const differencesOnly = values.differencesOnly === '1';
+  const duelMode = values.duelMode === '1';
+  const showRadar = values.showRadar === '1';
+  const setDifferencesOnly = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const v = typeof next === 'function' ? next(differencesOnly) : next;
+      setValue('differencesOnly', v ? '1' : '0');
+    },
+    [differencesOnly, setValue],
+  );
+  const setDuelMode = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const v = typeof next === 'function' ? next(duelMode) : next;
+      setValue('duelMode', v ? '1' : '0');
+    },
+    [duelMode, setValue],
+  );
+  const setShowRadar = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const v = typeof next === 'function' ? next(showRadar) : next;
+      setValue('showRadar', v ? '1' : '0');
+    },
+    [showRadar, setValue],
+  );
   const [shareOpen, setShareOpen] = useState(false);
   const [client, setClient] = useState<{ id: string; name: string } | null>(null);
   const [ariaMessage, setAriaMessage] = useState('');
