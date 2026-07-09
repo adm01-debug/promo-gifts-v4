@@ -51,6 +51,13 @@ interface SortableCartItemProps {
   onMoveToCart: (itemId: string, targetCartId: string) => void;
   onDuplicateToCart: (itemId: string, targetCartId: string) => void;
   onNavigate: (path: string) => void;
+  /**
+   * Visual variant:
+   *  - 'card' (padrão): usado no grid — imagem quadrada no topo, corpo abaixo.
+   *  - 'row': usado no modo Lista — imagem compacta à esquerda, corpo à direita.
+   *    Evita a imagem gigante quando a coluna ocupa 100% da largura da página.
+   */
+  variant?: 'card' | 'row';
 }
 
 export const SortableCartItem = memo(
