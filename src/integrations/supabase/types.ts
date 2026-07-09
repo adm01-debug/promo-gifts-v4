@@ -4026,6 +4026,7 @@ export type Database = {
           auto_disabled_at: string | null
           auto_disabled_reason: string | null
           consecutive_failures: number
+          contract_version: string
           created_at: string
           created_by: string
           description: string | null
@@ -4035,6 +4036,7 @@ export type Database = {
           name: string
           retry_policy: Json
           secret_ref: string | null
+          signature_header: string
           total_failure: number
           total_success: number
           updated_at: string
@@ -4045,6 +4047,7 @@ export type Database = {
           auto_disabled_at?: string | null
           auto_disabled_reason?: string | null
           consecutive_failures?: number
+          contract_version?: string
           created_at?: string
           created_by: string
           description?: string | null
@@ -4054,6 +4057,7 @@ export type Database = {
           name: string
           retry_policy?: Json
           secret_ref?: string | null
+          signature_header?: string
           total_failure?: number
           total_success?: number
           updated_at?: string
@@ -4064,6 +4068,7 @@ export type Database = {
           auto_disabled_at?: string | null
           auto_disabled_reason?: string | null
           consecutive_failures?: number
+          contract_version?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -4073,6 +4078,7 @@ export type Database = {
           name?: string
           retry_policy?: Json
           secret_ref?: string | null
+          signature_header?: string
           total_failure?: number
           total_success?: number
           updated_at?: string
@@ -6872,6 +6878,32 @@ export type Database = {
           },
         ]
       }
+      webhook_delivery_locks: {
+        Row: {
+          claimed_at: string
+          payload_hash: string
+          webhook_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          payload_hash: string
+          webhook_id: string
+        }
+        Update: {
+          claimed_at?: string
+          payload_hash?: string
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_delivery_locks_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_delivery_metrics: {
         Row: {
           attempt: number | null
@@ -7368,6 +7400,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      claim_webhook_delivery: {
+        Args: { p_payload_hash: string; p_webhook_id: string }
+        Returns: boolean
       }
       cleanup_discount_test_data: { Args: never; Returns: Json }
       cleanup_expired_collection_trash: { Args: never; Returns: number }
@@ -7879,6 +7915,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_product_popularity: { Args: never; Returns: undefined }
+      release_webhook_delivery_lock: {
+        Args: { p_payload_hash: string; p_webhook_id: string }
+        Returns: undefined
+      }
       repair_ownership_orphans: {
         Args: {
           _dry_run?: boolean
