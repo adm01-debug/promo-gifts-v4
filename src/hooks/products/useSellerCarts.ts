@@ -196,7 +196,7 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'em_separacao' as CartStatus, items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'em_separacao' as CartStatus, shipping_deadline: null, items: [] } as SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
