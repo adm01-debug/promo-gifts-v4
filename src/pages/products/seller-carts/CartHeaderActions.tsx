@@ -63,12 +63,20 @@ export function CartHeaderActions({
   const [tplName, setTplName] = useState('');
   const [tplDesc, setTplDesc] = useState('');
 
+  const isCartValid = Array.isArray(cart.items) && cart.items.length > 0;
+
   return (
     <>
       <Button
         data-testid="cart-checkout-cta"
-        className="group/cta h-9 gap-2 rounded-xl bg-success px-4 text-xs font-bold text-success-foreground shadow-lg shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-xl hover:shadow-success/30 active:scale-[0.98]"
-        onClick={() => onGenerateQuote(cart)}
+        disabled={!isCartValid}
+        aria-disabled={!isCartValid}
+        title={isCartValid ? 'Gerar Orçamento a partir deste carrinho' : 'Adicione itens ao carrinho antes de gerar um orçamento'}
+        className="group/cta h-9 gap-2 rounded-xl bg-success px-4 text-xs font-bold text-success-foreground shadow-lg shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-xl hover:shadow-success/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:scale-100"
+        onClick={() => {
+          if (!isCartValid) return;
+          onGenerateQuote(cart);
+        }}
       >
         Gerar Orçamento
         <ArrowRight
