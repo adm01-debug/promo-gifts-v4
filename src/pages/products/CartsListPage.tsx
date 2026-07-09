@@ -232,8 +232,16 @@ function CartsListContent() {
     return counts;
   }, [carts]);
 
+  // Contagem de vencidos (só shipping_deadline no passado) — usado no chip
+  // clicável do header. Independe do statusFilter atual para refletir o total
+  // absoluto que o vendedor precisa priorizar.
+  const overdueCount = useMemo(
+    () => carts.filter((c) => getShippingDeadlineStatus(c.shipping_deadline) === 'overdue').length,
+    [carts],
+  );
+
   const filteredCarts = useMemo(() => {
-    const q = fold(query.trim());
+    const q = fold(debouncedQuery.trim());
     let out = carts.filter((c) => {
       const matchesStatus = statusFilter === 'all' || (c.status ?? 'em_separacao') === statusFilter;
       if (!matchesStatus) return false;
@@ -256,7 +264,7 @@ function CartsListContent() {
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return out;
-  }, [carts, query, statusFilter, deadlineFilter, sort]);
+  }, [carts, debouncedQuery, statusFilter, deadlineFilter, sort]);
 
   const totals = useMemo(() => {
     const totalValue = filteredCarts.reduce((acc, c) => acc + cartSubtotal(c), 0);
@@ -264,7 +272,9 @@ function CartsListContent() {
     return { totalValue, totalItems, count: filteredCarts.length };
   }, [filteredCarts]);
 
-  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
+  const hasActiveFilters =
+    queryInput.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
+
 
   const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
   const selectedCount = selectedIds.size;
