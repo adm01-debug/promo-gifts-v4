@@ -5,7 +5,7 @@
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText, AlertTriangle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -66,7 +66,7 @@ import {
   DEADLINE_BADGE_CLASSES,
   type DeadlineFilter,
 } from '@/lib/carts/shipping-deadline';
-import { useDebounce } from '@/hooks/common/useDebounce';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
 
 
 type StatusFilter = CartStatus | 'all';
@@ -160,57 +160,30 @@ function CartsListContent() {
   }, [crmCompanies]);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Persistência de filtros/ordenação na URL (query string).
-  // URL é a fonte da verdade para status/deadline/sort — permite compartilhar
-  // links e sobrevive a reload. Query textual mantém state local para digitação
-  // fluida; sincroniza para a URL após debounce.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const urlStatus = (searchParams.get('status') as StatusFilter) ?? 'all';
-  const urlDeadline = (searchParams.get('deadline') as DeadlineFilter) ?? 'all';
-  const urlSort = (searchParams.get('sort') as SortKey) ?? 'recent';
-  const urlQuery = searchParams.get('q') ?? '';
+  // Persistência de filtros/ordenação na URL — SSOT: `useListUrlState`.
+  // Deep-links sobrevivem a reload; defaults ficam fora da query string.
+  const { values, setValue, searchInput: queryInput, setSearchInput: setQueryInput, clearAll } =
+    useListUrlState({
+      keys: { status: 'all', deadline: 'all', sort: 'recent', q: '' } as const,
+      searchKey: 'q',
+      debounceMs: 250,
+    });
 
-  const [queryInput, setQueryInput] = useState(urlQuery);
-  // 250ms — imperceptível ao digitar, mas reduz re-computo de filteredCarts
-  // e evita spam de replaceState na URL.
-  const debouncedQuery = useDebounce(queryInput, 250);
-
-  const statusFilter: StatusFilter = urlStatus;
-  const deadlineFilter: DeadlineFilter = urlDeadline;
-  const sort: SortKey = urlSort;
-
-  const updateSearchParam = useCallback(
-    (key: string, value: string, defaultValue: string) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (!value || value === defaultValue) next.delete(key);
-          else next.set(key, value);
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
+  const statusFilter = values.status as StatusFilter;
+  const deadlineFilter = values.deadline as DeadlineFilter;
+  const sort = values.sort as SortKey;
+  const debouncedQuery = values.q;
 
   const setStatusFilter = useCallback(
-    (v: StatusFilter) => updateSearchParam('status', v, 'all'),
-    [updateSearchParam],
+    (v: StatusFilter) => setValue('status', v),
+    [setValue],
   );
   const setDeadlineFilter = useCallback(
-    (v: DeadlineFilter) => updateSearchParam('deadline', v, 'all'),
-    [updateSearchParam],
+    (v: DeadlineFilter) => setValue('deadline', v),
+    [setValue],
   );
-  const setSort = useCallback(
-    (v: SortKey) => updateSearchParam('sort', v, 'recent'),
-    [updateSearchParam],
-  );
+  const setSort = useCallback((v: SortKey) => setValue('sort', v), [setValue]);
 
-  // Sincroniza a busca (debounced) → URL.
-  useEffect(() => {
-    updateSearchParam('q', debouncedQuery, '');
-  }, [debouncedQuery, updateSearchParam]);
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -619,12 +592,8 @@ function CartsListContent() {
             <Button
               data-testid="carts-list-clear-filters"
               variant="outline"
-              onClick={() => {
-                setQueryInput('');
-                setStatusFilter('all');
-                setDeadlineFilter('all');
-                setSort('recent');
-              }}
+              onClick={() => clearAll()}
+
               disabled={!hasActiveFilters}
               className="gap-2"
             >

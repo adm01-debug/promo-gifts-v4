@@ -1,12 +1,12 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuotes, type Quote, type QuoteItem } from '@/hooks/quotes';
 import { QUOTE_CHIP_MATCHERS } from '@/components/quotes/QuotesStatusChips';
-import { useDebounce } from '@/hooks/common/useDebounce';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
@@ -17,6 +17,9 @@ export const sortOptions: { value: SortOption; label: string }[] = [
   { value: 'lowest', label: 'Menor valor' },
   { value: 'expiring', label: 'Vencimento próximo' },
 ];
+
+// Chaves e defaults sincronizados com a URL. SSOT: `useListUrlState`.
+const URL_KEYS = { status: 'all', sort: 'newest', q: '' } as const;
 
 export function useQuotesListPage() {
   const navigate = useNavigate();
@@ -33,48 +36,22 @@ export function useQuotesListPage() {
     fetchQuotes,
   } = useQuotes();
 
-  // Persistência de filtros/ordenação/busca na URL (query string).
-  // A URL é a fonte da verdade — permite compartilhar deep-links, sobrevive a
-  // reload e mantém histórico do navegador consistente. A busca (`q`) mantém
-  // estado local para digitação fluida e sincroniza para a URL via debounce.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const urlStatus = searchParams.get('status') ?? 'all';
-  const urlSort = (searchParams.get('sort') as SortOption) ?? 'newest';
-  const urlQuery = searchParams.get('q') ?? '';
+  // Persistência de filtros/ordenação/busca na URL — deep-link + share + reload.
+  const { values, setValue, searchInput, setSearchInput, clearAll } = useListUrlState({
+    keys: URL_KEYS,
+    searchKey: 'q',
+    debounceMs: 250,
+  });
 
-  const [searchTerm, setSearchTerm] = useState(urlQuery);
-  const debouncedSearch = useDebounce(searchTerm, 250);
-  const statusFilter = urlStatus;
-  const sortBy = urlSort;
+  const statusFilter = values.status;
+  const sortBy = values.sort as SortOption;
+  const debouncedSearch = values.q;
+  const searchTerm = searchInput;
+  const setSearchTerm = setSearchInput;
 
-  const updateSearchParam = useCallback(
-    (key: string, value: string, defaultValue: string) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (!value || value === defaultValue) next.delete(key);
-          else next.set(key, value);
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
+  const setStatusFilter = useCallback((v: string) => setValue('status', v), [setValue]);
+  const setSortBy = useCallback((v: SortOption) => setValue('sort', v), [setValue]);
 
-  const setStatusFilter = useCallback(
-    (v: string) => updateSearchParam('status', v, 'all'),
-    [updateSearchParam],
-  );
-  const setSortBy = useCallback(
-    (v: SortOption) => updateSearchParam('sort', v, 'newest'),
-    [updateSearchParam],
-  );
-
-  // Sincroniza busca (debounced) → URL.
-  useEffect(() => {
-    updateSearchParam('q', debouncedSearch, '');
-  }, [debouncedSearch, updateSearchParam]);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
@@ -264,11 +241,10 @@ export function useQuotesListPage() {
   }, []);
 
 
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setSortBy('newest');
-  };
+  const handleClearFilters = useCallback(() => {
+    clearAll();
+  }, [clearAll]);
+
 
   const handleMarkApproved = async (id: string) => {
     const ok = await updateQuoteStatus(id, 'approved');
