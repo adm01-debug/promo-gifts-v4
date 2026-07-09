@@ -1,26 +1,11 @@
 /**
- * CartSidebar — Summary panel reorganized in 3 zones:
- * 1) Hero Pricing (subtotal grande + peso/volume)
- * 2) Ação primária (Gerar Orçamento)
- * 3) Mais ações (DropdownMenu) + Health Checklist
+ * CartSidebar — painel lateral apenas com peso/volume do carrinho.
+ * As ações (Gerar Orçamento + Gerenciar Carrinho) foram promovidas
+ * ao header do carrinho ativo (ver CartHeaderActions).
  */
-import { useState } from 'react';
 import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { CartActionsMenu } from '@/components/cart/CartActionsMenu';
-import { ArrowRight, Weight, Box, Trash2 } from 'lucide-react';
-import type { UseMutationResult } from '@tanstack/react-query';
+import { Weight, Box } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 interface CartSidebarProps {
@@ -49,219 +34,47 @@ interface CartSidebarProps {
   onFocusNotes?: () => void;
 }
 
-export function CartSidebar({
-  cart,
-  cartSubtotal,
-  cartTotalQty,
-  weightVolume,
-  templates,
-  canCreateCart,
-  onGenerateQuote,
-  onShareCart,
-  onDuplicateCart,
-  onExportCSV,
-  onExportPDF,
-  onSaveTemplate,
-  onLoadTemplate,
-  onDeleteTemplate,
-  onClear,
-  onNavigate,
-  onFocusNotes,
-}: CartSidebarProps) {
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [loadOpen, setLoadOpen] = useState(false);
-  const [tplName, setTplName] = useState('');
-  const [tplDesc, setTplDesc] = useState('');
+export function CartSidebar({ weightVolume }: CartSidebarProps) {
+  const hasWeightVolume =
+    !!weightVolume && (weightVolume.weightKg > 0 || weightVolume.volumeCm3 > 0);
 
-
+  if (!hasWeightVolume) return null;
 
   return (
     <div className="hidden space-y-4 md:block xl:sticky xl:top-20 xl:self-start">
-      {/* ZONE 1 — Hero Pricing */}
-      <Card data-testid="cart-sidebar-hero" data-loaded="true" className="group/hero relative space-y-5 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 shadow-md">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl transition-colors group-hover/hero:bg-primary/10" />
-
-        {/* Subtotal / SKUs / Qtd. agora vivem no header da página — evitamos
-            duplicidade e mantemos aqui apenas peso/volume quando aplicável. */}
-        {weightVolume && (weightVolume.weightKg > 0 || weightVolume.volumeCm3 > 0) && (
-          <div className="relative z-10 grid grid-cols-2 gap-3 text-xs">
-            {weightVolume.weightKg > 0 && (
-              <div className="space-y-1">
-                <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                  <Weight aria-hidden="true" className="h-3 w-3 opacity-60" /> Peso
-                </p>
-                <p className="text-sm font-bold tabular-nums">
-                  {weightVolume.weightKg >= 1
-                    ? `${weightVolume.weightKg.toFixed(1)}kg`
-                    : `${(weightVolume.weightKg * 1000).toFixed(0)}g`}
-                </p>
-              </div>
-            )}
-            {weightVolume.volumeCm3 > 0 && (
-              <div className="space-y-1">
-                <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
-                  <Box aria-hidden="true" className="h-3 w-3 opacity-60" /> Volume
-                </p>
-                <p className="text-sm font-bold tabular-nums">
-                  {weightVolume.volumeM3 >= 0.001
-                    ? `${weightVolume.volumeM3.toFixed(3)}m³`
-                    : `${weightVolume.volumeCm3.toLocaleString('pt-BR')}cm³`}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ZONE 2 — Ação primária */}
-        <div className="relative z-10 pt-1">
-          <Button
-            data-testid="cart-checkout-cta"
-            className="group/cta h-12 w-full gap-2.5 rounded-xl bg-success font-bold text-success-foreground shadow-lg shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-xl hover:shadow-success/30 active:scale-[0.98]"
-            onClick={() => onGenerateQuote(cart)}
-          >
-            Gerar Orçamento
-            <ArrowRight
-              aria-hidden="true"
-              className="h-4 w-4 transition-transform group-hover/cta:translate-x-1"
-            />
-          </Button>
-        </div>
-
-        {/* ZONE 3 — Menu de ações secundárias */}
-        <CartActionsMenu
-          onShare={() => onShareCart(cart.id)}
-          onDuplicate={() => onDuplicateCart(cart.id)}
-          onExportCSV={() => onExportCSV(cart)}
-          onExportPDF={() => onExportPDF(cart)}
-          onSaveTemplate={() => setSaveOpen(true)}
-          onLoadTemplate={() => setLoadOpen(true)}
-          onAddProducts={() => onNavigate('/produtos')}
-          onClear={onClear}
-          canDuplicate={canCreateCart}
-        />
-      </Card>
-
-
-
-
-      {/* Save Template (controlled) */}
-      <Dialog
-        open={saveOpen}
-        onOpenChange={(open) => {
-          setSaveOpen(open);
-          if (!open) {
-            setTplName('');
-            setTplDesc('');
-          }
-        }}
+      <Card
+        data-testid="cart-sidebar-hero"
+        data-loaded="true"
+        className="group/hero relative space-y-5 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.04] via-background to-background p-5 shadow-md"
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Salvar Template de Carrinho</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <label htmlFor="tpl-name" className="text-sm font-medium">
-                Nome do template
-              </label>
-              <Input
-                id="tpl-name"
-                placeholder='Ex: "Kit Onboarding"'
-                value={tplName}
-                onChange={(e) => setTplName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="tpl-desc" className="text-sm font-medium text-muted-foreground">
-                Descrição <span className="font-normal">(opcional)</span>
-              </label>
-              <Textarea
-                id="tpl-desc"
-                placeholder="Descreva o propósito deste template..."
-                value={tplDesc}
-                onChange={(e) => setTplDesc(e.target.value)}
-                rows={2}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {cart.items.length} itens serão salvos no template
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveOpen(false)}>
-              Cancelar
-            </Button>
-            <Button
-              disabled={!tplName.trim()}
-              onClick={() => {
-                onSaveTemplate(tplName.trim(), tplDesc.trim());
-                setSaveOpen(false);
-                setTplName('');
-                setTplDesc('');
-              }}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Load Template (controlled) */}
-      <Dialog open={loadOpen} onOpenChange={setLoadOpen}>
-        <DialogContent className="max-h-[70vh] max-w-md">
-          <DialogHeader>
-            <DialogTitle>Templates Salvos</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[50vh]">
-            {templates.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Nenhum template salvo ainda.
+        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-primary/5 blur-3xl transition-colors group-hover/hero:bg-primary/10" />
+        <div className="relative z-10 grid grid-cols-2 gap-3 text-xs">
+          {weightVolume!.weightKg > 0 && (
+            <div className="space-y-1">
+              <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                <Weight aria-hidden="true" className="h-3 w-3 opacity-60" /> Peso
               </p>
-            ) : (
-              <div className="space-y-2">
-                {templates.map((t) => (
-                  <Card key={t.id} className="p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{t.name}</p>
-                        {t.description && (
-                          <p className="truncate text-xs text-muted-foreground">{t.description}</p>
-                        )}
-                        <p className="mt-1 text-[10px] text-muted-foreground">
-                          {t.items.length} itens
-                        </p>
-                      </div>
-                      <div className="flex flex-shrink-0 gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs"
-                          onClick={() => {
-                            onLoadTemplate(t.items);
-                            setLoadOpen(false);
-                          }}
-                        >
-                          Aplicar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          aria-label={`Excluir template ${t.name}`}
-                          className="h-7 text-xs text-destructive"
-                          onClick={() => onDeleteTemplate.mutate(t.id)}
-                        >
-                          <Trash2 aria-hidden="true" className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+              <p className="text-sm font-bold tabular-nums">
+                {weightVolume!.weightKg >= 1
+                  ? `${weightVolume!.weightKg.toFixed(1)}kg`
+                  : `${(weightVolume!.weightKg * 1000).toFixed(0)}g`}
+              </p>
+            </div>
+          )}
+          {weightVolume!.volumeCm3 > 0 && (
+            <div className="space-y-1">
+              <p className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                <Box aria-hidden="true" className="h-3 w-3 opacity-60" /> Volume
+              </p>
+              <p className="text-sm font-bold tabular-nums">
+                {weightVolume!.volumeM3 >= 0.001
+                  ? `${weightVolume!.volumeM3.toFixed(3)}m³`
+                  : `${weightVolume!.volumeCm3.toLocaleString('pt-BR')}cm³`}
+              </p>
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
