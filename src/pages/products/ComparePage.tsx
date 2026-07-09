@@ -6,9 +6,10 @@
  * C4: similar rail, presentation launcher.
  * C5: shortcuts, ARIA-live, smart empty state, recent sidebar.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
 import type { Product, ProductColor } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
