@@ -4,7 +4,7 @@
  * Após a repaginação, o subtotal/SKUs/Qtd. total saíram da sidebar
  * e passaram a viver no header da página. A sidebar mantém:
  *   - Card hero com peso/volume (quando aplicável) + CTA "Gerar Orçamento"
- *   - CartActionsMenu (ações secundárias)
+ *   - Atalho secundário "Ver Orçamentos" (substitui o antigo menu "Gerenciar Carrinho")
  *
  * Estes testes garantem:
  *   1) Render mínimo (hero card + CTA)
@@ -12,6 +12,7 @@
  *   3) Peso/Volume aparecem quando `weightVolume` os traz
  *   4) A sidebar consome APENAS o `cart` recebido — nunca agrega
  *      dados de outros carrinhos.
+ *   5) O botão "Gerenciar Carrinho" foi removido em definitivo.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -114,6 +115,23 @@ describe('CartSidebar — render smoke pós-repaginação', () => {
     expect(screen.queryByText(/Histórico de ações/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Sugestões inteligentes/i)).not.toBeInTheDocument();
   });
+
+  it('NÃO renderiza mais o botão "Gerenciar Carrinho" (removido em definitivo)', () => {
+    renderSidebar();
+    expect(screen.queryByText(/Gerenciar Carrinho/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Gerenciar Carrinho/i })).not.toBeInTheDocument();
+  });
+
+  it('renderiza o atalho substituto "Ver Orçamentos" no header e dispara onNavigate', () => {
+    const onNavigate = vi.fn();
+    renderSidebar({ onNavigate });
+    const btn = screen.getByTestId('cart-view-quotes');
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent(/Ver Orçamentos/i);
+    btn.click();
+    expect(onNavigate).toHaveBeenCalledWith('/orcamentos');
+  });
+
 
   it('CartUtilComponents NÃO expõe mais SmartSuggestions/ActionHistoryPanel', () => {
     const exported = CartUtilComponents as Record<string, unknown>;
