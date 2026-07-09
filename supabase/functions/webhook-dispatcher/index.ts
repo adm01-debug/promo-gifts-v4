@@ -154,7 +154,9 @@ Deno.serve(async (req) => {
         "X-Contract-Version": hookContractVersion,
       };
       const secret = hook.secret_ref ? Deno.env.get(hook.secret_ref) : null;
-      if (secret) headers["X-Signature-256"] = "sha256=" + await hmacSign(bodyJson, secret);
+      // fix_version=2026-07-09-webhook-header-compat: lê signature_header do registro (x-webhook-signature para Champions V2)
+      const _sigHdr = ((hook as {signature_header?: string}).signature_header) ?? "X-Signature-256";
+      if (secret) headers[_sigHdr] = "sha256=" + await hmacSign(bodyJson, secret);
       const start = Date.now();
       try {
         const res = await fetch(hook.url, { method: "POST", headers, body: bodyJson });
@@ -296,7 +298,9 @@ Deno.serve(async (req) => {
             "X-Contract-Version": hookContractVersion,
           };
           const secret = hook.secret_ref ? Deno.env.get(hook.secret_ref) : null;
-          if (secret) headers["X-Signature-256"] = "sha256=" + await hmacSign(bodyJson, secret);
+          // fix_version=2026-07-09-webhook-header-compat: lê signature_header do registro (x-webhook-signature para Champions V2)
+          const _sigHdr = ((hook as {signature_header?: string}).signature_header) ?? "X-Signature-256";
+          if (secret) headers[_sigHdr] = "sha256=" + await hmacSign(bodyJson, secret);
 
           const res = await fetch(hook.url, { method: "POST", headers, body: bodyJson });
           const respText = (await res.text()).slice(0, 4000);
