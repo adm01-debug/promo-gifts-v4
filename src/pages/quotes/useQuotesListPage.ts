@@ -241,11 +241,10 @@ export function useQuotesListPage() {
   }, []);
 
 
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setSortBy('newest');
-  };
+  const handleClearFilters = useCallback(() => {
+    clearAll();
+  }, [clearAll]);
+
 
   const handleMarkApproved = async (id: string) => {
     const ok = await updateQuoteStatus(id, 'approved');
