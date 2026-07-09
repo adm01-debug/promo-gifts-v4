@@ -396,9 +396,15 @@ export function useSellerCarts() {
   // Update cart shipping deadline (prazo p/ envio)
   const updateCartShippingDeadline = useMutation({
     mutationFn: async ({ cartId, shippingDeadline }: { cartId: string; shippingDeadline: string | null }) => {
+      // Validação Zod (formato ISO, data válida, não no passado).
+      const { shippingDeadlineSchema } = await import('@/lib/carts/shipping-deadline');
+      const parsed = shippingDeadlineSchema.safeParse(shippingDeadline);
+      if (!parsed.success) {
+        throw new Error(parsed.error.errors[0]?.message ?? 'Data inválida.');
+      }
       const { error } = await supabase
         .from('seller_carts')
-        .update({ shipping_deadline: shippingDeadline })
+        .update({ shipping_deadline: parsed.data })
         .eq('id', cartId);
       if (error) throw error;
     },
