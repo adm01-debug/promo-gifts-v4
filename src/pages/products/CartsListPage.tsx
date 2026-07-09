@@ -186,16 +186,26 @@ function CartsListContent() {
     let out = carts.filter((c) => {
       const matchesStatus = statusFilter === 'all' || (c.status ?? 'em_separacao') === statusFilter;
       if (!matchesStatus) return false;
+      if (!matchesDeadlineFilter(c.shipping_deadline, deadlineFilter)) return false;
       if (!q) return true;
       return fold(c.company_name ?? '').includes(q) || fold(c.company_location ?? '').includes(q);
     });
+    // Prazos: null vai para o fim em asc, para o topo em desc (mais distante = sem prazo é neutro no fim).
+    const FAR = Number.POSITIVE_INFINITY;
     out = [...out].sort((a, b) => {
       if (sort === 'value-desc') return cartSubtotal(b) - cartSubtotal(a);
       if (sort === 'items-desc') return b.items.length - a.items.length;
+      if (sort === 'deadline-asc' || sort === 'deadline-desc') {
+        const da = daysUntilDeadline(a.shipping_deadline);
+        const db = daysUntilDeadline(b.shipping_deadline);
+        const va = da === null ? FAR : da;
+        const vb = db === null ? FAR : db;
+        return sort === 'deadline-asc' ? va - vb : vb - va;
+      }
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return out;
-  }, [carts, query, statusFilter, sort]);
+  }, [carts, query, statusFilter, deadlineFilter, sort]);
 
   const totals = useMemo(() => {
     const totalValue = filteredCarts.reduce((acc, c) => acc + cartSubtotal(c), 0);
@@ -203,7 +213,7 @@ function CartsListContent() {
     return { totalValue, totalItems, count: filteredCarts.length };
   }, [filteredCarts]);
 
-  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all';
+  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
 
   const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
   const selectedCount = selectedIds.size;
