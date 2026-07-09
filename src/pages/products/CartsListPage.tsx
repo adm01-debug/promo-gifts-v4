@@ -494,7 +494,39 @@ function CartsListContent() {
               testId={`carts-list-chip-${key}`}
             />
           ))}
+
+          {/* Chip clicável de Vencidos — só aparece quando há algum vencido.
+              Aciona o filtro de deadline (independente do status atual). */}
+          {overdueCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setDeadlineFilter(deadlineFilter === 'overdue' ? 'all' : 'overdue')}
+              data-testid="carts-list-chip-overdue"
+              aria-pressed={deadlineFilter === 'overdue'}
+              aria-label={`${overdueCount} ${overdueCount === 1 ? 'carrinho vencido' : 'carrinhos vencidos'}. ${deadlineFilter === 'overdue' ? 'Remover filtro' : 'Aplicar filtro de vencidos'}.`}
+              className={cn(
+                'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors',
+                deadlineFilter === 'overdue'
+                  ? 'border-destructive/60 bg-destructive/20 text-destructive'
+                  : 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15',
+              )}
+            >
+              <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
+              Vencidos
+              <span
+                className={cn(
+                  'inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold',
+                  deadlineFilter === 'overdue'
+                    ? 'bg-destructive/30 text-destructive'
+                    : 'bg-destructive/20 text-destructive',
+                )}
+              >
+                {overdueCount}
+              </span>
+            </button>
+          )}
         </div>
+
 
         <div className="flex flex-wrap items-center gap-2">
 
