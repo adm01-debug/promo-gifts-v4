@@ -304,6 +304,13 @@ export const Sel = {
   // ---------- Carrinhos (lista) ----------
   carts: {
     pageTitle: TID("page-title-carrinhos"),
+    // Header do carrinho ativo (substitui page-title-carrinhos como âncora
+    // de "cabeçalho do /carrinhos" após o header agregado ter sido removido).
+    activeHeader: TID("active-cart-header"),
+    activeCompanyName: TID("active-cart-company-name"),
+    activeMeta: TID("active-cart-meta"),
+    activeCnpj: TID("active-cart-cnpj"),
+    rowCnpj: (id: string) => TID(`cart-row-cnpj-${id}`),
     selectToggle: TID("carts-select-toggle"),
     selectAll: TID("carts-select-all"),
     bulkDeleteTop: TID("carts-bulk-delete-top"),
