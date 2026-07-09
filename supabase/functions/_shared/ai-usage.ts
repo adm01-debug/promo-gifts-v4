@@ -18,7 +18,7 @@
  * Assinatura compatível — legacyTimeoutMs é opcional, todas as edges
  * existentes continuam funcionando sem alteração.
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 // Default timeout for the Lovable legacy gateway fetch (ms).
 // Prevents Edge Functions from hanging ~150s when the gateway is unresponsive,

@@ -2,7 +2,7 @@
 // Centralized anti-scraping/bot protection for public Edge Functions.
 // Combines: (1) User-Agent blacklist, (2) DB-backed rate limit, (3) bot logging.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 // Known scraper / automation User-Agents (case-insensitive substring match)
 const BOT_UA_PATTERNS = [

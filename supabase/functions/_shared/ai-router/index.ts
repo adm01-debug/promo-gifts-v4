@@ -18,7 +18,7 @@
 // função, a mensagem de erro agora inclui instrução clara de onde configurar.
 // =============================================================================
 
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 import { getCredential } from "../credentials.ts";
 import { acquireAiQuota, logAiUsage, QuotaExceededError } from "../ai-usage.ts";
 import type { Adapter, AdapterCallOpts, ApiFormat, UnifiedRequest, UnifiedResponse } from "./types.ts";

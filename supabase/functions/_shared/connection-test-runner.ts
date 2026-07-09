@@ -1,7 +1,7 @@
 // Shared core logic for connection ping + persistence.
 // Used by `connection-tester` (manual, JWT-protected) and
 // `connections-auto-test` (cron, service-role).
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 import { getCredential } from "./credentials.ts";
 import { resolveTimeout, type ConnectionType } from "./connection-timeouts.ts";
 
