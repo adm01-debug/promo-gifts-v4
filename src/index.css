@@ -1659,7 +1659,7 @@ html[data-scroll-locked] body {
    * o box-shadow padrão. Alterar o raio/opacidade aqui propaga para tudo.
    */
   .status-chip-glow {
-    box-shadow: 0 0 12px hsl(var(--chip-glow, var(--primary)) / 0.35);
+    box-shadow: 0 0 6px hsl(var(--chip-glow, var(--primary)) / 0.18);
   }
 
   /* Card Variants */
