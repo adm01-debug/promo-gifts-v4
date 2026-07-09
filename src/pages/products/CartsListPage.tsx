@@ -814,14 +814,38 @@ function CartRow({
       <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tracking-tight tabular-nums">
         {formatCurrency(subtotal)}
       </TableCell>
-      <TableCell className="px-4 align-middle text-xs text-muted-foreground" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
-        {cart.shipping_deadline ? (
-          <span className="whitespace-nowrap font-medium text-foreground">
-            {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
-          </span>
-        ) : (
-          <span className="opacity-60">—</span>
-        )}
+      <TableCell className="px-4 align-middle text-xs" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
+        {(() => {
+          if (!cart.shipping_deadline) return <span className="opacity-60">—</span>;
+          const status = getShippingDeadlineStatus(cart.shipping_deadline);
+          const diff = daysUntilDeadline(cart.shipping_deadline);
+          const showBadge = status === 'overdue' || status === 'soon';
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span
+                className={cn(
+                  'whitespace-nowrap font-medium tabular-nums',
+                  status === 'overdue' && 'text-destructive',
+                  status === 'soon' && 'text-yellow-600 dark:text-yellow-400',
+                  status === 'ok' && 'text-foreground',
+                )}
+              >
+                {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+              {showBadge && (
+                <span
+                  data-testid={`cart-row-deadline-badge-${cart.id}`}
+                  className={cn(
+                    'status-chip-glow inline-flex w-fit items-center whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+                    DEADLINE_BADGE_CLASSES[status],
+                  )}
+                >
+                  {getDeadlineLabel(status, diff)}
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </TableCell>
       <TableCell className="px-4 align-middle text-xs text-muted-foreground">
         <div className="flex items-center justify-between gap-2">
