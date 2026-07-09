@@ -363,6 +363,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       updateCartNotes,
       flushCartNotes,
       updateCartStatus,
+      updateCartShippingDeadline,
       duplicateCartFn,
       moveItemToCart,
       duplicateItemToCart,
