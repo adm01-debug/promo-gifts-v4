@@ -159,15 +159,65 @@ function CartsListContent() {
     return map;
   }, [crmCompanies]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
-  const [sort, setSort] = useState<SortKey>('recent');
+
+  // Persistência de filtros/ordenação na URL (query string).
+  // URL é a fonte da verdade para status/deadline/sort — permite compartilhar
+  // links e sobrevive a reload. Query textual mantém state local para digitação
+  // fluida; sincroniza para a URL após debounce.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStatus = (searchParams.get('status') as StatusFilter) ?? 'all';
+  const urlDeadline = (searchParams.get('deadline') as DeadlineFilter) ?? 'all';
+  const urlSort = (searchParams.get('sort') as SortKey) ?? 'recent';
+  const urlQuery = searchParams.get('q') ?? '';
+
+  const [queryInput, setQueryInput] = useState(urlQuery);
+  // 250ms — imperceptível ao digitar, mas reduz re-computo de filteredCarts
+  // e evita spam de replaceState na URL.
+  const debouncedQuery = useDebounce(queryInput, 250);
+
+  const statusFilter: StatusFilter = urlStatus;
+  const deadlineFilter: DeadlineFilter = urlDeadline;
+  const sort: SortKey = urlSort;
+
+  const updateSearchParam = useCallback(
+    (key: string, value: string, defaultValue: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!value || value === defaultValue) next.delete(key);
+          else next.set(key, value);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setStatusFilter = useCallback(
+    (v: StatusFilter) => updateSearchParam('status', v, 'all'),
+    [updateSearchParam],
+  );
+  const setDeadlineFilter = useCallback(
+    (v: DeadlineFilter) => updateSearchParam('deadline', v, 'all'),
+    [updateSearchParam],
+  );
+  const setSort = useCallback(
+    (v: SortKey) => updateSearchParam('sort', v, 'recent'),
+    [updateSearchParam],
+  );
+
+  // Sincroniza a busca (debounced) → URL.
+  useEffect(() => {
+    updateSearchParam('q', debouncedQuery, '');
+  }, [debouncedQuery, updateSearchParam]);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   // deleteCart já vem do context acima
+
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
