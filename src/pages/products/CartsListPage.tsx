@@ -160,6 +160,7 @@ function CartsListContent() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
   const [sort, setSort] = useState<SortKey>('recent');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
