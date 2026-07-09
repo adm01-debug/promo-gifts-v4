@@ -78,6 +78,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     updateItemSortOrder: updateSortMutation,
     updateCartNotes: updateCartNotesMutation,
     updateCartStatus: updateCartStatusMutation,
+    updateCartShippingDeadline: updateCartShippingDeadlineMutation,
     duplicateCart: duplicateCartMutation,
     moveItemToCart: moveItemMutation,
     duplicateItemToCart: duplicateItemMutation,
