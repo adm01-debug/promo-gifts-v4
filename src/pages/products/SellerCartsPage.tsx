@@ -32,7 +32,7 @@ import {
   formatCurrency,
 } from '@/components/cart/CartUtilComponents';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
