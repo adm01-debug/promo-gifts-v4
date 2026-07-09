@@ -44,6 +44,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
 import { CartHeaderActions } from '@/pages/products/seller-carts/CartHeaderActions';
+import { purgeOrphanCartPrefs } from '@/pages/products/seller-carts/purgeOrphanCartPrefs';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
@@ -140,22 +141,9 @@ function SellerCartsContent() {
     if (!uid) return;
     const ns = (key: string) => `${key}:${uid}`;
 
-    // Limpeza de chaves órfãs do antigo popover "Colunas / Densidade" —
-    // removidas em 2026-07. Feito uma única vez por sessão para evitar work
-    // repetido em cada render. Cobre chaves namespaced por uid e legadas
-    // (sem namespace) que possam ter sobrado de builds antigos.
-    try {
-      const ORPHAN_PREFIXES = ['cart-table-columns', 'cart-table-density'];
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-        if (ORPHAN_PREFIXES.some((p) => key === p || key.startsWith(`${p}:`))) {
-          localStorage.removeItem(key);
-        }
-      }
-    } catch {
-      // localStorage indisponível (modo privado/quota) — ignorar silenciosamente.
-    }
+    // Limpeza de chaves órfãs do antigo popover "Colunas / Densidade"
+    // (removido em 2026-07). Ver `purgeOrphanCartPrefs` + testes.
+    purgeOrphanCartPrefs();
 
     const vm = localStorage.getItem(ns('cart-view-mode'));
     if (vm === 'grid' || vm === 'list' || vm === 'table') setViewMode(vm);
@@ -613,7 +601,7 @@ function SellerCartsContent() {
                         className="overflow-x-auto rounded-xl border border-border/40 bg-card/40"
                         data-testid="cart-table"
                       >
-                        <table className="w-full text-sm">
+                        <table className="w-full min-w-[720px] text-sm">
                           <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
