@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
     // 1) auth
-  // fix_version=2026-07-09-crm-callback BUILD=5 ANTI-REGRESSÃO
+  // fix_version=2026-07-09-crm-callback BUILD=6 ANTI-REGRESSÃO
   // VAULT TEM PRIORIDADE — não sofre de isolate cache/secret fossilizada
   const _authUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const _authSvcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -284,13 +284,35 @@ Deno.serve(async (req) => {
   }
   const eventId = insertRes.data?.id as string | undefined;
 
-  // 5) aplicar efeito no quotes
-  const updates = buildQuoteUpdates(body);
-  const upd = await supabase
-    .from("quotes")
-    .update(updates)
-    .eq("id", body.external_quote_id)
-    .select("id");
+  // 5) aplicar efeito no quotes via RPC fn_apply_crm_callback
+  // fix_version=2026-07-09-rcb-build6 ANTI-REGRESSÃO
+  // Usa RPC em vez de supabase.from("quotes").update() para:
+  //   a) COALESCE(sent_at, occurred_at) — preserva data da PRIMEIRA vez enviado
+  //   b) Lógica de mapping centralizada no banco (SSOT)
+  //   c) Retorno estruturado (affected, applied, detail)
+  const rpcRes = await supabase.rpc("fn_apply_crm_callback", {
+    p_quote_id:        body.external_quote_id,
+    p_event_type:      body.event_type,
+    p_occurred_at:     body.occurred_at,
+    p_approved_by:     body.payload.approved_by     ?? null,
+    p_rejection_reason: body.payload.rejection_reason ?? null,
+    p_order_id:        body.payload.order_id         ?? null,
+    p_order_number:    body.payload.order_number      ?? null,
+  });
+
+  // Adaptar formato de resposta para o restante do código
+  const upd = {
+    error: rpcRes.error,
+    data: rpcRes.data && rpcRes.data.length > 0 && rpcRes.data[0].applied
+      ? [{ id: body.external_quote_id }]
+      : (rpcRes.error ? null : []),
+    _rpcResult: rpcRes.data?.[0] ?? null,
+  } as any;
+
+  // Se RPC retornou applied=false (sem erro) → quote_not_found
+  if (!upd.error && rpcRes.data?.[0] && !rpcRes.data[0].applied) {
+    upd.data = [];
+  }
 
   if (upd.error) {
     // fix_version=2026-07-09-rcb-build5 ANTI-REGRESSÃO
@@ -360,8 +382,11 @@ Deno.serve(async (req) => {
   return log.respond(json(200, { status: "ok", event_id: eventId, applied: true }));
 });
 
-// ---------------------------------------------------------------- mapping
+// ---------------------------------------------------------------- mapping (DEPRECATED — BUILD=6 usa fn_apply_crm_callback RPC)
+// fix_version=2026-07-09-rcb-build6 ANTI-REGRESSÃO: buildQuoteUpdates mantida para
+// referência histórica. A lógica vive agora em public.fn_apply_crm_callback no banco.
 /**
+ * @deprecated BUILD=6: use fn_apply_crm_callback RPC. Mantida para referência.
  * Mapeia o evento do CRM para colunas existentes em `public.quotes`
  * do banco canônico `doufsxqlfjyuvxuezpln`. Colunas ausentes no schema
  * (ex.: rejection_reason, order_number) são armazenadas apenas no
