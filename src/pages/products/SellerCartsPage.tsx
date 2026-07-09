@@ -78,7 +78,6 @@ function CartCompanyCnpj({ companyId }: { companyId: string }) {
         data-cnpj-state={cnpj ? 'present' : 'missing'}
         aria-label={cnpj ? `CNPJ ${cnpj}` : placeholder}
       >
-        <IdCard aria-hidden="true" className="h-3 w-3 opacity-60" />
         {cnpj ?? placeholder}
       </span>
     </div>
