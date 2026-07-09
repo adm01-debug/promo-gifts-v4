@@ -162,7 +162,13 @@ export const SortableCartItem = memo(
           )}
         >
           {/* Product image */}
-          <div className="group/img-container relative aspect-square overflow-hidden bg-muted/20">
+          <div
+            className={cn(
+              'group/img-container relative aspect-square overflow-hidden bg-muted/20',
+              isRow &&
+                'aspect-auto h-40 w-full shrink-0 sm:h-auto sm:w-40 md:w-48 lg:w-56',
+            )}
+          >
             <button
               type="button"
               {...attributes}
