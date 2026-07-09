@@ -14,8 +14,16 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import React from 'react';
 import fc from 'fast-check';
 import { QUOTE_STATUSES } from '@/types/quote';
+
+// MemoryRouter wrapper — obrigatório para hooks que usam useSearchParams
+// (introduzido pelo `useListUrlState`).
+const wrapper = ({ children }: { children: ReactNode }) =>
+  React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
 
 const updateQuoteStatus = vi.fn(async () => true);
 const duplicateQuote = vi.fn(async () => null);
@@ -41,8 +49,8 @@ vi.mock('@/hooks/quotes', () => ({
   }),
 }));
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 
