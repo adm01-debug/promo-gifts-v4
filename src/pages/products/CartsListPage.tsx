@@ -514,6 +514,7 @@ function CartsListContent() {
                   <TableHead className="min-w-[180px] px-4">Ramo de Atividade</TableHead>
                   <TableHead className="w-[90px] px-4 text-center">Itens</TableHead>
                   <TableHead className="w-[130px] px-4 text-right">Valor</TableHead>
+                  <TableHead className="w-[140px] px-4">Prazo p/ envio</TableHead>
                   <TableHead className="w-[170px] px-4">Atualizado</TableHead>
                 </TableRow>
               </TableHeader>
