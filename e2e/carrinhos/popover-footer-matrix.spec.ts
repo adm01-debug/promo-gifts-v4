@@ -24,12 +24,16 @@ const HEIGHTS = [560, 640, 720, 812, 900, 1080] as const;
 
 // Subconjunto representativo (24 combos) — evita explosão combinatória mas
 // cobre todos os pontos críticos onde o footer poderia clipar.
-const MATRIX = [
-  ...WIDTHS.map((w) => ({ w, h: 560 })), // alturas curtas em todas as larguras
-  ...WIDTHS.map((w) => ({ w, h: 720 })),
-  ...HEIGHTS.map((h) => ({ w: 375, h })), // mobile em todas alturas
-  ...HEIGHTS.map((h) => ({ w: 1280, h })), // desktop em todas alturas
-];
+const MATRIX = Array.from(
+  new Map(
+    [
+      ...WIDTHS.map((w) => ({ w, h: 560 as number })), // alturas curtas em todas as larguras
+      ...WIDTHS.map((w) => ({ w, h: 720 as number })),
+      ...HEIGHTS.map((h) => ({ w: 375, h })), // mobile em todas alturas
+      ...HEIGHTS.map((h) => ({ w: 1280, h })), // desktop em todas alturas
+    ].map((c) => [`${c.w}x${c.h}`, c]),
+  ).values(),
+);
 
 function makeLongCart(idx: number): MockCart {
   const base = makeMockCart(idx, 12);
