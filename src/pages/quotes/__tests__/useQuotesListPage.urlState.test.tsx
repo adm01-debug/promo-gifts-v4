@@ -134,9 +134,7 @@ describe('useQuotesListPage — sincronização com query string', () => {
     // Segunda montagem com a mesma URL — reidrata igual.
     const remount = renderHook(() => useQuotesListPage(), { wrapper });
     expect(remount.result.current.statusFilter).toBe('draft');
-    expect(remount.result.result?.sortBy ?? remount.result.current.sortBy).toBe(
-      'oldest',
-    );
+    expect(remount.result.current.sortBy).toBe('oldest');
     expect(remount.result.current.searchTerm).toBe('abc');
   });
 });
