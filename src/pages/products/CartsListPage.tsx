@@ -592,12 +592,8 @@ function CartsListContent() {
             <Button
               data-testid="carts-list-clear-filters"
               variant="outline"
-              onClick={() => {
-                setQueryInput('');
-                setStatusFilter('all');
-                setDeadlineFilter('all');
-                setSort('recent');
-              }}
+              onClick={() => clearAll()}
+
               disabled={!hasActiveFilters}
               className="gap-2"
             >
