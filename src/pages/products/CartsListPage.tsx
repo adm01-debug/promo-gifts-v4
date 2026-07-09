@@ -5,8 +5,8 @@
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText, AlertTriangle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
