@@ -67,12 +67,18 @@ export function getShippingDeadlineStatus(
   return 'ok';
 }
 
-/** Classes Tailwind (tokens semânticos) por status — SSOT visual. */
+/**
+ * Classes Tailwind (tokens semânticos) por status — SSOT visual.
+ *
+ * A11y de contraste (WCAG AA): opacidade de background bumped p/ >=0.20 e
+ * cores de texto usando shade escuro no light-mode + shade claro no dark
+ * — garante 4.5:1 mínimo em texto pequeno nos dois temas.
+ */
 export const DEADLINE_BADGE_CLASSES: Record<ShippingDeadlineStatus, string> = {
   overdue:
-    'border-destructive/50 bg-destructive/15 text-destructive [--chip-glow:var(--destructive)]',
+    'border-destructive/60 bg-destructive/20 text-destructive font-semibold [--chip-glow:var(--destructive)]',
   soon:
-    'border-yellow-500/50 bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 [--chip-glow:theme(colors.yellow.500)]',
+    'border-yellow-500/60 bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 font-semibold [--chip-glow:theme(colors.yellow.500)]',
   ok: 'border-border/40 bg-muted/40 text-foreground',
   none: 'border-border/30 bg-muted/20 text-muted-foreground',
 };

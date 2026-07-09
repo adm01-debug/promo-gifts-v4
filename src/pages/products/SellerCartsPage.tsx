@@ -1004,7 +1004,10 @@ function SellerCartsContent() {
                   </p>
                   {s.shippingDeadlineBadge && (
                     <span
+                      role="status"
+                      aria-label={`Status do prazo: ${s.shippingDeadlineBadge.label}`}
                       data-testid="cart-shipping-deadline-badge"
+                      data-status={s.shippingDeadlineBadge.status}
                       className={cn(
                         'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
                         s.shippingDeadlineBadge.className,

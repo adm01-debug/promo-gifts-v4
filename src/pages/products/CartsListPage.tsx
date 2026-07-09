@@ -5,8 +5,8 @@
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText, AlertTriangle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -66,6 +66,7 @@ import {
   DEADLINE_BADGE_CLASSES,
   type DeadlineFilter,
 } from '@/lib/carts/shipping-deadline';
+import { useDebounce } from '@/hooks/common/useDebounce';
 
 
 type StatusFilter = CartStatus | 'all';
@@ -158,15 +159,65 @@ function CartsListContent() {
     return map;
   }, [crmCompanies]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
-  const [sort, setSort] = useState<SortKey>('recent');
+
+  // Persistência de filtros/ordenação na URL (query string).
+  // URL é a fonte da verdade para status/deadline/sort — permite compartilhar
+  // links e sobrevive a reload. Query textual mantém state local para digitação
+  // fluida; sincroniza para a URL após debounce.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStatus = (searchParams.get('status') as StatusFilter) ?? 'all';
+  const urlDeadline = (searchParams.get('deadline') as DeadlineFilter) ?? 'all';
+  const urlSort = (searchParams.get('sort') as SortKey) ?? 'recent';
+  const urlQuery = searchParams.get('q') ?? '';
+
+  const [queryInput, setQueryInput] = useState(urlQuery);
+  // 250ms — imperceptível ao digitar, mas reduz re-computo de filteredCarts
+  // e evita spam de replaceState na URL.
+  const debouncedQuery = useDebounce(queryInput, 250);
+
+  const statusFilter: StatusFilter = urlStatus;
+  const deadlineFilter: DeadlineFilter = urlDeadline;
+  const sort: SortKey = urlSort;
+
+  const updateSearchParam = useCallback(
+    (key: string, value: string, defaultValue: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!value || value === defaultValue) next.delete(key);
+          else next.set(key, value);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setStatusFilter = useCallback(
+    (v: StatusFilter) => updateSearchParam('status', v, 'all'),
+    [updateSearchParam],
+  );
+  const setDeadlineFilter = useCallback(
+    (v: DeadlineFilter) => updateSearchParam('deadline', v, 'all'),
+    [updateSearchParam],
+  );
+  const setSort = useCallback(
+    (v: SortKey) => updateSearchParam('sort', v, 'recent'),
+    [updateSearchParam],
+  );
+
+  // Sincroniza a busca (debounced) → URL.
+  useEffect(() => {
+    updateSearchParam('q', debouncedQuery, '');
+  }, [debouncedQuery, updateSearchParam]);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   // deleteCart já vem do context acima
+
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
@@ -181,8 +232,16 @@ function CartsListContent() {
     return counts;
   }, [carts]);
 
+  // Contagem de vencidos (só shipping_deadline no passado) — usado no chip
+  // clicável do header. Independe do statusFilter atual para refletir o total
+  // absoluto que o vendedor precisa priorizar.
+  const overdueCount = useMemo(
+    () => carts.filter((c) => getShippingDeadlineStatus(c.shipping_deadline) === 'overdue').length,
+    [carts],
+  );
+
   const filteredCarts = useMemo(() => {
-    const q = fold(query.trim());
+    const q = fold(debouncedQuery.trim());
     let out = carts.filter((c) => {
       const matchesStatus = statusFilter === 'all' || (c.status ?? 'em_separacao') === statusFilter;
       if (!matchesStatus) return false;
@@ -205,7 +264,7 @@ function CartsListContent() {
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return out;
-  }, [carts, query, statusFilter, deadlineFilter, sort]);
+  }, [carts, debouncedQuery, statusFilter, deadlineFilter, sort]);
 
   const totals = useMemo(() => {
     const totalValue = filteredCarts.reduce((acc, c) => acc + cartSubtotal(c), 0);
@@ -213,7 +272,9 @@ function CartsListContent() {
     return { totalValue, totalItems, count: filteredCarts.length };
   }, [filteredCarts]);
 
-  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
+  const hasActiveFilters =
+    queryInput.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
+
 
   const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
   const selectedCount = selectedIds.size;
@@ -329,17 +390,17 @@ function CartsListContent() {
                 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
               />
               <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
                 placeholder="Buscar por empresa…"
                 aria-label="Buscar carrinhos por empresa"
                 data-testid="carts-list-search"
                 className="pl-9 pr-9"
               />
-              {query && (
+              {queryInput && (
                 <button
                   type="button"
-                  onClick={() => setQuery('')}
+                  onClick={() => setQueryInput('')}
                   aria-label="Limpar busca"
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
@@ -433,7 +494,39 @@ function CartsListContent() {
               testId={`carts-list-chip-${key}`}
             />
           ))}
+
+          {/* Chip clicável de Vencidos — só aparece quando há algum vencido.
+              Aciona o filtro de deadline (independente do status atual). */}
+          {overdueCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setDeadlineFilter(deadlineFilter === 'overdue' ? 'all' : 'overdue')}
+              data-testid="carts-list-chip-overdue"
+              aria-pressed={deadlineFilter === 'overdue'}
+              aria-label={`${overdueCount} ${overdueCount === 1 ? 'carrinho vencido' : 'carrinhos vencidos'}. ${deadlineFilter === 'overdue' ? 'Remover filtro' : 'Aplicar filtro de vencidos'}.`}
+              className={cn(
+                'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors',
+                deadlineFilter === 'overdue'
+                  ? 'border-destructive/60 bg-destructive/20 text-destructive'
+                  : 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15',
+              )}
+            >
+              <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" />
+              Vencidos
+              <span
+                className={cn(
+                  'inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold',
+                  deadlineFilter === 'overdue'
+                    ? 'bg-destructive/30 text-destructive'
+                    : 'bg-destructive/20 text-destructive',
+                )}
+              >
+                {overdueCount}
+              </span>
+            </button>
+          )}
         </div>
+
 
         <div className="flex flex-wrap items-center gap-2">
 
@@ -526,7 +619,7 @@ function CartsListContent() {
             <Button
               variant="outline"
               onClick={() => {
-                setQuery('');
+                setQueryInput('');
                 setStatusFilter('all');
                 setDeadlineFilter('all');
               }}
@@ -820,27 +913,40 @@ function CartRow({
           const status = getShippingDeadlineStatus(cart.shipping_deadline);
           const diff = daysUntilDeadline(cart.shipping_deadline);
           const showBadge = status === 'overdue' || status === 'soon';
+          const formattedDate = format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR });
+          const badgeLabel = getDeadlineLabel(status, diff);
           return (
-            <div className="flex flex-col gap-0.5">
+            <div
+              className="flex flex-col gap-0.5"
+              role="group"
+              aria-label={
+                showBadge
+                  ? `Prazo de envio ${formattedDate}. ${badgeLabel}.`
+                  : `Prazo de envio ${formattedDate}.`
+              }
+            >
               <span
                 className={cn(
                   'whitespace-nowrap font-medium tabular-nums',
+                  // Contraste WCAG AA: shade escuro no light, claro no dark.
                   status === 'overdue' && 'text-destructive',
-                  status === 'soon' && 'text-yellow-600 dark:text-yellow-400',
+                  status === 'soon' && 'text-yellow-700 dark:text-yellow-300',
                   status === 'ok' && 'text-foreground',
                 )}
               >
-                {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
+                {formattedDate}
               </span>
               {showBadge && (
                 <span
+                  role="status"
+                  aria-label={badgeLabel}
                   data-testid={`cart-row-deadline-badge-${cart.id}`}
                   className={cn(
                     'status-chip-glow inline-flex w-fit items-center whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
                     DEADLINE_BADGE_CLASSES[status],
                   )}
                 >
-                  {getDeadlineLabel(status, diff)}
+                  {badgeLabel}
                 </span>
               )}
             </div>
