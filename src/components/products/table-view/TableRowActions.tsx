@@ -74,7 +74,7 @@ export function TableRowActions({
               productId={product.id}
               productName={product.name}
               productSku={product.sku}
-              productImageUrl={product.og_image_url || product.images[0]}
+              productImageUrl={product.primary_image_url || product.og_image_url || product.images?.[0]}
               productPrice={product.price}
               minQuantity={product.minQuantity || 1}
               variant="icon"
