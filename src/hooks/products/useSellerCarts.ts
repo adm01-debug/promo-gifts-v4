@@ -162,6 +162,7 @@ export function useSellerCarts() {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
           status: ((cart.status as string) ?? 'em_separacao') as CartStatus,
+          shipping_deadline: ((cart as { shipping_deadline?: string | null }).shipping_deadline ?? null),
           items: (rowItems ?? []) as SellerCartItem[],
         };
       });
