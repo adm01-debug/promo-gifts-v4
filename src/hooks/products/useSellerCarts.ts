@@ -398,8 +398,7 @@ export function useSellerCarts() {
     mutationFn: async ({ cartId, shippingDeadline }: { cartId: string; shippingDeadline: string | null }) => {
       const { error } = await supabase
         .from('seller_carts')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ shipping_deadline: shippingDeadline } as any)
+        .update({ shipping_deadline: shippingDeadline })
         .eq('id', cartId);
       if (error) throw error;
     },
