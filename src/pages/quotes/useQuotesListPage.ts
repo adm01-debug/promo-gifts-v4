@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuotes, type Quote, type QuoteItem } from '@/hooks/quotes';
 import { QUOTE_CHIP_MATCHERS } from '@/components/quotes/QuotesStatusChips';
+import { useDebounce } from '@/hooks/common/useDebounce';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
