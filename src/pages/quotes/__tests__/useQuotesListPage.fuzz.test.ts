@@ -1,9 +1,15 @@
 /**
  * Property-based / fuzz test do hook useQuotesListPage.
  * 100 datasets randomizados validam invariantes de filtro, sort e banner.
+ *
+ * NOTA: envolvemos em `MemoryRouter` porque o hook usa `useSearchParams`
+ * (via `useListUrlState`).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import React from 'react';
 import fc from 'fast-check';
 import { QUOTE_STATUSES } from '@/types/quote';
 
@@ -24,10 +30,15 @@ vi.mock('@/hooks/quotes', () => ({
   }),
 }));
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
+
+// Cada renderHook precisa de uma instância nova do MemoryRouter — assim
+// não vaza query string entre runs da property.
+const wrapper = ({ children }: { children: ReactNode }) =>
+  React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
+
 
 const statusArb = fc.constantFrom(...QUOTE_STATUSES);
 
@@ -66,7 +77,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     fc.assert(
       fc.property(fc.array(quoteArb, { minLength: 0, maxLength: 30 }), (quotes) => {
         mockQuotes = quotes;
-        const { result } = renderHook(() => useQuotesListPage());
+        const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         const ids = new Set(quotes.map((q) => q.id));
         for (const q of result.current.filteredQuotes) {
           expect(ids.has(q.id as string)).toBe(true);
@@ -80,7 +91,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     fc.assert(
       fc.property(fc.array(quoteArb, { minLength: 0, maxLength: 20 }), (quotes) => {
         mockQuotes = quotes;
-        const { result } = renderHook(() => useQuotesListPage());
+        const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         const expected = quotes.length > 0 && quotes.every((q) => q.status === 'pending');
         expect(result.current.onlyPendingStatuses).toBe(expected);
       }),
@@ -96,7 +107,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
         fc.constantFrom('newest', 'oldest', 'highest', 'lowest'),
         (quotes, sortBy) => {
           mockQuotes = quotes;
-          const { result } = renderHook(() => useQuotesListPage());
+          const { result } = renderHook(() => useQuotesListPage(), { wrapper });
           act(() => {
             result.current.setSortBy(sortBy as 'newest');
           });
@@ -112,7 +123,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     fc.assert(
       fc.property(fc.array(quoteArb, { maxLength: 5 }), statusArb, (quotes, status) => {
         mockQuotes = quotes;
-        const { result } = renderHook(() => useQuotesListPage());
+        const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         act(() => {
           result.current.setSearchTerm('xyz');
           result.current.setStatusFilter(status);
@@ -133,7 +144,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     fc.assert(
       fc.property(fc.array(quoteArb, { minLength: 1, maxLength: 20 }), statusArb, (quotes, status) => {
         mockQuotes = quotes;
-        const { result } = renderHook(() => useQuotesListPage());
+        const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         act(() => {
           result.current.setStatusFilter(status);
         });
@@ -149,7 +160,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     fc.assert(
       fc.property(fc.array(quoteArb, { minLength: 1, maxLength: 25 }), (quotes) => {
         mockQuotes = quotes;
-        const { result } = renderHook(() => useQuotesListPage());
+        const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         act(() => result.current.setStatusFilter('synced'));
         for (const q of result.current.filteredQuotes) {
           expect(q.synced_to_bitrix).toBe(true);
@@ -163,7 +174,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
     fc.assert(
       fc.property(fc.array(quoteArb, { minLength: 1, maxLength: 25 }), (quotes) => {
         mockQuotes = quotes;
-        const { result } = renderHook(() => useQuotesListPage());
+        const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         act(() => result.current.setStatusFilter('unsynced'));
         for (const q of result.current.filteredQuotes) {
           expect(q.status).toBe('pending');

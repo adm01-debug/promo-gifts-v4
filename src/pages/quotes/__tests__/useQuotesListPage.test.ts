@@ -1,9 +1,17 @@
 /**
  * Testes unitários do hook useQuotesListPage.
  * Mocka `@/hooks/quotes` para isolar lógica de filtro/sort/banner sem rede.
+ *
+ * NOTA (URL state): a partir da introdução de `useListUrlState`, o hook
+ * consome `useSearchParams` — precisamos envolver o `renderHook` em
+ * `MemoryRouter`. A busca (`q`) usa debounce de 250ms, então testes que
+ * dependem do filtro por texto usam fake timers p/ avançar o relógio.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import React from 'react';
 
 // Mocks devem vir antes do import do SUT
 const updateQuoteStatus = vi.fn(async () => true);
@@ -25,13 +33,14 @@ vi.mock('@/hooks/quotes', () => ({
   }),
 }));
 
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
-}));
-
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
+
+// Wrapper com MemoryRouter — obrigatório para hooks que usam useSearchParams.
+const wrapper = ({ children }: { children: ReactNode }) =>
+  React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
+
 
 function quote(
   overrides: Partial<{
@@ -69,7 +78,7 @@ beforeEach(() => {
 describe('useQuotesListPage — onlyPendingStatuses', () => {
   it('false quando lista está vazia', () => {
     mockQuotes = [];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     expect(result.current.onlyPendingStatuses).toBe(false);
     expect(result.current.filteredQuotes).toHaveLength(0);
   });
@@ -80,7 +89,7 @@ describe('useQuotesListPage — onlyPendingStatuses', () => {
       quote({ status: 'pending' }),
       quote({ status: 'pending' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     expect(result.current.onlyPendingStatuses).toBe(true);
   });
 
@@ -90,7 +99,7 @@ describe('useQuotesListPage — onlyPendingStatuses', () => {
       quote({ status: 'sent' }),
       quote({ status: 'approved' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     expect(result.current.onlyPendingStatuses).toBe(false);
   });
 });
@@ -102,21 +111,27 @@ describe('useQuotesListPage — filtro/sort', () => {
       quote({ id: 'b', status: 'approved' }),
       quote({ id: 'c', status: 'approved' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('approved'));
     expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['b', 'c']);
   });
 
-  it('busca por searchTerm com ≥ 2 chars usa Fuse', () => {
+  it('busca por searchTerm com ≥ 2 chars usa Fuse (após debounce)', async () => {
     mockQuotes = [
       quote({ id: 'x', client_name: 'Acme', quote_number: 'ORC-2026-0001' }),
       quote({ id: 'y', client_name: 'Beta', quote_number: 'ORC-2026-0002' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setSearchTerm('Acme'));
-    expect(result.current.filteredQuotes.map((q) => q.id)).toContain('x');
-    expect(result.current.filteredQuotes.map((q) => q.id)).not.toContain('y');
+    // A busca (`q`) usa debounce 250ms — filteredQuotes só reage após o timer.
+    const { waitFor } = await import('@testing-library/react');
+    await waitFor(() => {
+      const ids = result.current.filteredQuotes.map((q) => q.id);
+      expect(ids).toContain('x');
+      expect(ids).not.toContain('y');
+    });
   });
+
 
   it.each([
     ['highest', ['big', 'mid', 'low']],
@@ -127,7 +142,7 @@ describe('useQuotesListPage — filtro/sort', () => {
       quote({ id: 'big', total: 1000 }),
       quote({ id: 'mid', total: 100 }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setSortBy(sortBy));
     expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(expected);
   });
@@ -138,13 +153,13 @@ describe('useQuotesListPage — filtro/sort', () => {
       quote({ id: 'new', created_at: '2026-06-01T00:00:00Z' }),
       quote({ id: 'mid', created_at: '2026-03-01T00:00:00Z' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['new', 'mid', 'old']);
   });
 
   it('handleClearFilters reseta searchTerm, statusFilter e sortBy', () => {
     mockQuotes = [quote()];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => {
       result.current.setSearchTerm('foo');
       result.current.setStatusFilter('approved');
@@ -160,7 +175,7 @@ describe('useQuotesListPage — filtro/sort', () => {
 describe('useQuotesListPage — handleMarkApproved', () => {
   it('chama updateQuoteStatus(id, "approved")', async () => {
     mockQuotes = [quote({ id: 'q1' })];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     await act(async () => {
       await result.current.handleMarkApproved('q1');
     });
@@ -176,7 +191,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       quote({ id: 'c', status: 'draft', synced_to_bitrix: false }),
       quote({ id: 'd', status: 'expired', synced_to_bitrix: false }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('unsynced'));
     expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['a']);
   });
@@ -187,7 +202,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       quote({ id: 'b', status: 'pending', synced_to_bitrix: false }),
       quote({ id: 'c', status: 'draft' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('pending'));
     expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
   });
@@ -197,7 +212,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       quote({ id: 'a', status: 'pending', synced_to_bitrix: true }),
       quote({ id: 'b', status: 'draft' }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('created_synced'));
     expect(result.current.filteredQuotes).toHaveLength(1);
     act(() => result.current.handleClearFilters());
@@ -212,7 +227,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       quote({ id: 'b', status: 'pending', synced_to_bitrix: true }),
       quote({ id: 'c', status: 'pending', synced_to_bitrix: false }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
 
     act(() => result.current.setStatusFilter('pending'));
     const pendingIds = result.current.filteredQuotes.map((q) => q.id).sort();
@@ -236,7 +251,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       { ...quote({ id: 'b', status: 'pending' }), synced_to_bitrix: null },
       quote({ id: 'c', status: 'pending', synced_to_bitrix: true }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
 
     act(() => result.current.setStatusFilter('created_synced'));
     expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['c']);
@@ -252,7 +267,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       quote({ id: 'c', status: 'approved', synced_to_bitrix: true }),
       quote({ id: 'd', status: 'pending', synced_to_bitrix: null }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('created_synced'));
     expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['a']);
   });
@@ -263,7 +278,7 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
       quote({ id: 'b', status: 'pending', synced_to_bitrix: false }),
       quote({ id: 'c', status: 'approved', synced_to_bitrix: true }),
     ];
-    const { result } = renderHook(() => useQuotesListPage());
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
 
     act(() => result.current.setStatusFilter('created_synced'));
     const cs = result.current.filteredQuotes.map((q) => q.id).sort();
