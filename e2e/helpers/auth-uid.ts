@@ -43,8 +43,6 @@ export function cartNs(uid: string) {
     sortKey:   `cart-table-sort-key:${uid}`,
     sortDir:   `cart-table-sort-dir:${uid}`,
     pageSize:  `cart-table-page-size:${uid}`,
-    columns:   `cart-table-columns:${uid}`,
-    density:   `cart-table-density:${uid}`,
     gridCols:  `cart-grid-columns:${uid}`,
   } as const;
 }
