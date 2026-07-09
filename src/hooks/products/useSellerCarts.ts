@@ -45,6 +45,8 @@ export interface SellerCart {
   company_logo_url: string | null;
   notes: string | null;
   status: CartStatus;
+  /** Prazo p/ envio: data limite (YYYY-MM-DD) para enviar o pedido ao cliente. Null quando não definido. */
+  shipping_deadline: string | null;
   created_at: string;
   updated_at: string;
   items: SellerCartItem[];
