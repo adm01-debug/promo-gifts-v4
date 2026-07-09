@@ -116,16 +116,22 @@ describe('useQuotesListPage — filtro/sort', () => {
     expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['b', 'c']);
   });
 
-  it('busca por searchTerm com ≥ 2 chars usa Fuse', () => {
+  it('busca por searchTerm com ≥ 2 chars usa Fuse (após debounce)', async () => {
     mockQuotes = [
       quote({ id: 'x', client_name: 'Acme', quote_number: 'ORC-2026-0001' }),
       quote({ id: 'y', client_name: 'Beta', quote_number: 'ORC-2026-0002' }),
     ];
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setSearchTerm('Acme'));
-    expect(result.current.filteredQuotes.map((q) => q.id)).toContain('x');
-    expect(result.current.filteredQuotes.map((q) => q.id)).not.toContain('y');
+    // A busca (`q`) usa debounce 250ms — filteredQuotes só reage após o timer.
+    const { waitFor } = await import('@testing-library/react');
+    await waitFor(() => {
+      const ids = result.current.filteredQuotes.map((q) => q.id);
+      expect(ids).toContain('x');
+      expect(ids).not.toContain('y');
+    });
   });
+
 
   it.each([
     ['highest', ['big', 'mid', 'low']],
