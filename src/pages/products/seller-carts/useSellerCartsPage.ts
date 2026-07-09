@@ -46,6 +46,7 @@ export function useSellerCartsPage() {
     updateCartNotes,
     flushCartNotes,
     updateCartStatus,
+    updateCartShippingDeadline,
     duplicateCart,
     moveItemToCart,
     duplicateItemToCart,
