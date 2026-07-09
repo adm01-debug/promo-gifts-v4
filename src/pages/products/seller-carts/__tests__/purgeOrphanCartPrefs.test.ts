@@ -95,4 +95,68 @@ describe('purgeOrphanCartPrefs', () => {
     expect(() => purgeOrphanCartPrefs(brokenStorage)).not.toThrow();
     expect(purgeOrphanCartPrefs(brokenStorage)).toEqual([]);
   });
+
+  describe('presença parcial de chaves órfãs', () => {
+    it('remove apenas cart-table-columns quando cart-table-density está ausente', () => {
+      localStorage.setItem('cart-table-columns:user-1', '["name"]');
+      // cart-table-density:user-1 propositalmente ausente.
+      localStorage.setItem('cart-view-mode:user-1', 'grid');
+
+      const removed = purgeOrphanCartPrefs(localStorage);
+
+      expect(removed).toEqual(['cart-table-columns:user-1']);
+      expect(localStorage.getItem('cart-table-columns:user-1')).toBeNull();
+      expect(localStorage.getItem('cart-view-mode:user-1')).toBe('grid');
+    });
+
+    it('remove apenas cart-table-density quando cart-table-columns está ausente', () => {
+      // cart-table-columns:user-2 propositalmente ausente.
+      localStorage.setItem('cart-table-density:user-2', 'compact');
+      localStorage.setItem('cart-table-page-size:user-2', '10');
+
+      const removed = purgeOrphanCartPrefs(localStorage);
+
+      expect(removed).toEqual(['cart-table-density:user-2']);
+      expect(localStorage.getItem('cart-table-density:user-2')).toBeNull();
+      expect(localStorage.getItem('cart-table-page-size:user-2')).toBe('10');
+    });
+
+    it('remove mistura de namespaced + legado quando ambos coexistem parcialmente', () => {
+      localStorage.setItem('cart-table-columns:user-a', 'ns');
+      localStorage.setItem('cart-table-density', 'legado');   // sem namespace
+      // cart-table-columns (legado) ausente + cart-table-density:user-a ausente.
+
+      const removed = purgeOrphanCartPrefs(localStorage).sort();
+
+      expect(removed).toEqual(['cart-table-columns:user-a', 'cart-table-density']);
+      expect(localStorage.length).toBe(0);
+    });
+
+    it('não-op quando nenhuma chave órfã está presente', () => {
+      localStorage.setItem('cart-view-mode:user-1', 'list');
+      localStorage.setItem('unrelated-key', 'x');
+
+      const removed = purgeOrphanCartPrefs(localStorage);
+
+      expect(removed).toEqual([]);
+      expect(localStorage.getItem('cart-view-mode:user-1')).toBe('list');
+      expect(localStorage.getItem('unrelated-key')).toBe('x');
+    });
+
+    it('remove órfãs de múltiplos uids simultaneamente (apenas density presente para alguns)', () => {
+      localStorage.setItem('cart-table-columns:user-a', 'x');
+      localStorage.setItem('cart-table-density:user-b', 'x');
+      localStorage.setItem('cart-table-columns:user-c', 'x');
+      localStorage.setItem('cart-table-density:user-c', 'x');
+
+      const removed = purgeOrphanCartPrefs(localStorage).sort();
+
+      expect(removed).toEqual([
+        'cart-table-columns:user-a',
+        'cart-table-columns:user-c',
+        'cart-table-density:user-b',
+        'cart-table-density:user-c',
+      ]);
+    });
+  });
 });
