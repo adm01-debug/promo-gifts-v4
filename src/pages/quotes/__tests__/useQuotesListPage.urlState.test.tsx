@@ -128,4 +128,51 @@ describe('useQuotesListPage — sincronização com query string', () => {
     expect(remount.result.current.sortBy).toBe('oldest');
     expect(remount.result.current.searchTerm).toBe('abc');
   });
+
+  it('handleClearFilters remove status, sort e q da URL', async () => {
+    const { wrapper, getSearch } = makeWrapper(
+      '/orcamentos?status=approved&sort=highest&q=teste',
+    );
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
+
+    // Precondição: params estão na URL.
+    expect(getSearch()).toMatch(/status=approved/);
+    expect(getSearch()).toMatch(/sort=highest/);
+    expect(getSearch()).toMatch(/q=teste/);
+
+    act(() => result.current.handleClearFilters());
+
+    // URL fica sem nenhum dos params de filtro.
+    await waitFor(() => {
+      expect(getSearch()).not.toMatch(/status=/);
+      expect(getSearch()).not.toMatch(/sort=/);
+      expect(getSearch()).not.toMatch(/q=/);
+    });
+
+    // Estado interno volta aos defaults.
+    expect(result.current.statusFilter).toBe('all');
+    expect(result.current.sortBy).toBe('newest');
+    expect(result.current.searchTerm).toBe('');
+  });
+
+  it('após handleClearFilters, remontar (reload) mantém URL limpa', () => {
+    // Simula: usuário clicou em "Limpar filtros" → URL limpa → reload.
+    // Recriamos o cenário montando o hook direto em `/orcamentos` (sem params).
+    const { wrapper, getSearch } = makeWrapper('/orcamentos');
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
+
+    expect(getSearch()).toBe('');
+    expect(result.current.statusFilter).toBe('all');
+    expect(result.current.sortBy).toBe('newest');
+    expect(result.current.searchTerm).toBe('');
+  });
+
+  it('handleClearFilters é no-op quando URL já está limpa', () => {
+    const { wrapper, getSearch } = makeWrapper('/orcamentos');
+    const { result } = renderHook(() => useQuotesListPage(), { wrapper });
+
+    act(() => result.current.handleClearFilters());
+    expect(getSearch()).toBe('');
+  });
 });
+
