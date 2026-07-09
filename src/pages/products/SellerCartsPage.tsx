@@ -56,25 +56,35 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
  */
 function CartCompanyCnpj({ companyId }: { companyId: string }) {
   const { data: company, isLoading } = useCrmCompany(companyId);
-  // Fallback silencioso: se o CRM ainda está carregando OU não devolveu CNPJ,
-  // não renderizamos nada — o header não quebra visualmente (o bloco de
-  // metadados fica ausente e o Card mantém a altura via padding+status toggle).
-  if (isLoading || !company?.cnpj) return null;
+  // Durante o loading do CRM, ocultamos o subheader para não piscar um
+  // placeholder que ainda pode virar CNPJ real. O Card mantém a altura via
+  // padding + toggle de status, então nenhuma quebra de layout.
+  if (isLoading) return null;
+
+  const cnpj = company?.cnpj ? maskCnpj(company.cnpj) : null;
+  const placeholder = 'CNPJ não informado';
+
   return (
     <div
       className="flex items-center gap-3 text-xs font-medium text-muted-foreground"
       data-testid="active-cart-meta"
     >
       <span
-        className="flex items-center gap-1.5 whitespace-nowrap font-mono"
+        className={cn(
+          'flex items-center gap-1.5 whitespace-nowrap',
+          cnpj ? 'font-mono' : 'italic opacity-70',
+        )}
         data-testid="active-cart-cnpj"
+        data-cnpj-state={cnpj ? 'present' : 'missing'}
+        aria-label={cnpj ? `CNPJ ${cnpj}` : placeholder}
       >
         <IdCard aria-hidden="true" className="h-3 w-3 opacity-60" />
-        {maskCnpj(company.cnpj)}
+        {cnpj ?? placeholder}
       </span>
     </div>
   );
 }
+
 
 
 export default function SellerCartsPage() {
