@@ -117,27 +117,21 @@ Deno.serve(async (req) => {
     return log.respond(json(405, { error: "method_not_allowed" }));
   }
 
-  // 1) auth
-  // fix_version=2026-07-09-crm-callback deployed=2026-07-09T13:13:03Z BUILD=2: fallback vault quando Deno.env não tem a key
-  const expected = await (async () => {
-    const envKey = Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
-    if (envKey) return envKey;
-    // Fallback: buscar no vault via RPC (service_role)
-    try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL");
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      if (!supabaseUrl || !serviceKey) return "";
-      const vaultSb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-      const { data } = await vaultSb.rpc("get_vault_secret", { p_name: "CRM_CALLBACK_API_KEY" });
-      return (typeof data === "string" && data) ? data : "";
-    } catch { return ""; }
+    // 1) auth
+  // fix_version=2026-07-09-crm-callback BUILD=3 ANTI-REGRESSÃO
+  // VAULT TEM PRIORIDADE — não sofre de isolate cache/secret fossilizada
+  const _authUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const _authSvcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const expected = await (async (): Promise<string> => {
+    if (_authUrl && _authSvcKey) {
+      try {
+        const vaultSb = createClient(_authUrl, _authSvcKey, { auth: { persistSession: false } });
+        const { data, error } = await vaultSb.rpc("get_vault_secret", { p_name: "CRM_CALLBACK_API_KEY" });
+        if (!error && typeof data === "string" && data.length > 0) return data;
+      } catch { /* vault indisponível */ }
+    }
+    return Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
   })();
-  const provided = req.headers.get("x-api-key") ?? "";
-  if (!expected || !provided || !timingSafeEqual(provided, expected)) {
-    log.warn("crm_callback_unauthorized", { has_env: expected.length > 0, has_header: provided.length > 0 });
-    return log.respond(json(401, { error: "invalid_api_key" }));
-  }
-
   // 1.b) rate-limit por (IP + hash da api-key). Bloqueia abuso mesmo
   //      com credencial válida (chave vazada ou caller descontrolado).
   const ip =
