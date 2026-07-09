@@ -48,6 +48,7 @@ import { maskCnpj } from '@/utils/masks';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
+import { CartHeaderActions } from '@/pages/products/seller-carts/CartHeaderActions';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
@@ -474,7 +475,7 @@ function SellerCartsContent() {
 
             </div>
           </div>
-          <div className="flex flex-shrink-0 items-center gap-2.5">
+          <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
             <div
               role="radiogroup"
               aria-label="Status do carrinho"
@@ -516,6 +517,26 @@ function SellerCartsContent() {
                 );
               })}
             </div>
+            {s.activeCart.items.length > 0 && (
+              <CartHeaderActions
+                cart={s.activeCart}
+                templates={s.templates}
+                canCreateCart={s.canCreateCart}
+                onGenerateQuote={s.handleGenerateQuote}
+                onShareCart={s.shareCartLink}
+                onDuplicateCart={(id) => {
+                  if (s.canCreateCart) s.duplicateCart(id);
+                  else toast.error(SELLER_CART_LIMIT_REACHED_SHORT);
+                }}
+                onExportCSV={s.exportCartToCSV}
+                onExportPDF={s.exportCartToPDF}
+                onSaveTemplate={s.handleSaveTemplate}
+                onLoadTemplate={s.handleLoadTemplate}
+                onDeleteTemplate={s.deleteTemplate}
+                onClear={() => s.setConfirmClearCart(true)}
+                onNavigate={s.navigate}
+              />
+            )}
             <Button
               variant="ghost"
               size="sm"
