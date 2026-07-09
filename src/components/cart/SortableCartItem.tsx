@@ -356,7 +356,7 @@ export const SortableCartItem = memo(
           </div>
 
           {/* Product info */}
-          <div className="space-y-2.5 p-3.5">
+          <div className={cn('space-y-2.5 p-3.5', isRow && 'flex-1 min-w-0')}>
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 {item.product_sku && (
