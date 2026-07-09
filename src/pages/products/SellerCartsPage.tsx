@@ -41,7 +41,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Plus, Building2, Briefcase, Trash2, Clock, MapPin, FileText, ChevronLeft, CalendarClock } from 'lucide-react';
+import { Building2, Briefcase, Trash2, Clock, MapPin, FileText, ChevronLeft, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
