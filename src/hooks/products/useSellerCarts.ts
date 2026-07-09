@@ -393,6 +393,24 @@ export function useSellerCarts() {
     },
   });
 
+  // Update cart shipping deadline (prazo p/ envio)
+  const updateCartShippingDeadline = useMutation({
+    mutationFn: async ({ cartId, shippingDeadline }: { cartId: string; shippingDeadline: string | null }) => {
+      const { error } = await supabase
+        .from('seller_carts')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ shipping_deadline: shippingDeadline } as any)
+        .eq('id', cartId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+    },
+    onError: (err: Error) => {
+      toast.error('Não foi possível salvar o prazo p/ envio', { description: sanitizeError(err) });
+    },
+  });
+
   // Duplicate cart
   const duplicateCart = useMutation({
     mutationFn: async (sourceCartId: string) => {
