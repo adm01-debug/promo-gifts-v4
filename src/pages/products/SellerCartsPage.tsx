@@ -437,7 +437,10 @@ function SellerCartsContent() {
       ) : s.activeCart ? (
         <>
         {/* Cart header fundido — full-width, logo após "Carrinhos" */}
-        <Card className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center">
+        <Card
+          data-testid="active-cart-header"
+          className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center"
+        >
           <div className="flex min-w-0 items-center gap-4">
             <div className="relative">
               {s.activeCart.company_logo_url ? (
@@ -460,7 +463,10 @@ function SellerCartsContent() {
               />
             </div>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <h2 className="truncate font-display text-lg font-bold tracking-tight text-foreground/90">
+              <h2
+                data-testid="active-cart-company-name"
+                className="truncate font-display text-lg font-bold tracking-tight text-foreground/90"
+              >
                 {s.activeCart.company_name}
               </h2>
               <CartCompanyCnpj companyId={s.activeCart.company_id} />
