@@ -452,26 +452,18 @@ function SellerCartsContent() {
           className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center"
         >
           <div className="flex min-w-0 items-center gap-4">
-            <div className="relative">
-              {s.activeCart.company_logo_url ? (
-                <img
-                  src={s.activeCart.company_logo_url}
-                  alt=""
-                  className="h-12 w-12 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover shadow-inner transition-transform duration-300 group-hover/header:scale-105"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
-                  <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
-                </div>
-              )}
-              <div
-                className={cn(
-                  'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background',
-                  getStatusCfg(s.activeCart.status).color.split(' ')[0],
-                )}
+            {s.activeCart.company_logo_url ? (
+              <img
+                src={s.activeCart.company_logo_url}
+                alt=""
+                className="h-12 w-12 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover shadow-inner transition-transform duration-300 group-hover/header:scale-105"
+                loading="lazy"
               />
-            </div>
+            ) : (
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
+                <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
+              </div>
+            )}
             <div className="flex min-w-0 flex-col gap-0.5">
               <h2
                 data-testid="active-cart-company-name"
