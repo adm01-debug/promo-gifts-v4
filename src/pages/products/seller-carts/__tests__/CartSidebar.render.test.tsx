@@ -116,6 +116,23 @@ describe('CartSidebar — render smoke pós-repaginação', () => {
     expect(screen.queryByText(/Sugestões inteligentes/i)).not.toBeInTheDocument();
   });
 
+  it('NÃO renderiza mais o botão "Gerenciar Carrinho" (removido em definitivo)', () => {
+    renderSidebar();
+    expect(screen.queryByText(/Gerenciar Carrinho/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Gerenciar Carrinho/i })).not.toBeInTheDocument();
+  });
+
+  it('renderiza o atalho substituto "Ver Orçamentos" no header e dispara onNavigate', () => {
+    const onNavigate = vi.fn();
+    renderSidebar({ onNavigate });
+    const btn = screen.getByTestId('cart-view-quotes');
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent(/Ver Orçamentos/i);
+    btn.click();
+    expect(onNavigate).toHaveBeenCalledWith('/orcamentos');
+  });
+
+
   it('CartUtilComponents NÃO expõe mais SmartSuggestions/ActionHistoryPanel', () => {
     const exported = CartUtilComponents as Record<string, unknown>;
     expect(exported.SmartSuggestions).toBeUndefined();
