@@ -348,9 +348,26 @@ function CartsListContent() {
               )}
             </div>
 
+            <Select value={deadlineFilter} onValueChange={(v) => setDeadlineFilter(v as DeadlineFilter)}>
+              <SelectTrigger
+                className="w-full sm:w-[190px]"
+                data-testid="carts-list-deadline-filter"
+                aria-label="Filtrar por prazo de envio"
+              >
+                <SelectValue placeholder="Prazo p/ envio" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEADLINE_FILTER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value} data-testid={`carts-deadline-opt-${o.value}`}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger
-                className="w-full sm:w-[170px]"
+                className="w-full sm:w-[190px]"
                 data-testid="carts-list-sort"
                 aria-label="Ordenar carrinhos"
               >
