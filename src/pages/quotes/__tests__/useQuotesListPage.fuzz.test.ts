@@ -1,9 +1,15 @@
 /**
  * Property-based / fuzz test do hook useQuotesListPage.
  * 100 datasets randomizados validam invariantes de filtro, sort e banner.
+ *
+ * NOTA: envolvemos em `MemoryRouter` porque o hook usa `useSearchParams`
+ * (via `useListUrlState`).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import React from 'react';
 import fc from 'fast-check';
 import { QUOTE_STATUSES } from '@/types/quote';
 
@@ -24,10 +30,15 @@ vi.mock('@/hooks/quotes', () => ({
   }),
 }));
 
-vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
+
+// Cada renderHook precisa de uma instância nova do MemoryRouter — assim
+// não vaza query string entre runs da property.
+const wrapper = ({ children }: { children: ReactNode }) =>
+  React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
+
 
 const statusArb = fc.constantFrom(...QUOTE_STATUSES);
 
