@@ -58,15 +58,34 @@ import { cn } from '@/lib/utils';
 import { maskCnpj } from '@/utils/masks';
 import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import type { SellerCart, CartStatus } from '@/hooks/products';
+import {
+  matchesDeadlineFilter,
+  getShippingDeadlineStatus,
+  daysUntilDeadline,
+  getDeadlineLabel,
+  DEADLINE_BADGE_CLASSES,
+  type DeadlineFilter,
+} from '@/lib/carts/shipping-deadline';
 
 
 type StatusFilter = CartStatus | 'all';
-type SortKey = 'items-desc' | 'recent' | 'value-desc';
+type SortKey = 'items-desc' | 'recent' | 'value-desc' | 'deadline-asc' | 'deadline-desc';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recent', label: 'Mais recente' },
   { value: 'value-desc', label: 'Maior valor' },
   { value: 'items-desc', label: 'Mais itens' },
+  { value: 'deadline-asc', label: 'Prazo: mais próximo' },
+  { value: 'deadline-desc', label: 'Prazo: mais distante' },
+];
+
+const DEADLINE_FILTER_OPTIONS: { value: DeadlineFilter; label: string }[] = [
+  { value: 'all', label: 'Todos os prazos' },
+  { value: 'overdue', label: 'Vencidos' },
+  { value: 'soon', label: 'Próximos (3 dias)' },
+  { value: 'week', label: 'Próximos 7 dias' },
+  { value: 'month', label: 'Próximos 30 dias' },
+  { value: 'none', label: 'Sem prazo' },
 ];
 
 function cartSubtotal(c: SellerCart) {
