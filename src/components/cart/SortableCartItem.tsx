@@ -202,6 +202,7 @@ export const SortableCartItem = memo(
                 alt={item.product_name}
                 className={cn(
                   'h-full w-full object-contain p-6 transition-all duration-500',
+                  isRow && 'p-3',
                   !item.product_image_url && 'opacity-0',
                 )}
                 loading="lazy"
