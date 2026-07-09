@@ -209,35 +209,64 @@ async function _runDetection(
 }
 
 /**
- * Carrega imagem com fallback gracioso para CDNs sem CORS.
+ * Domínios que suportam CORS headers para uso com crossOrigin='anonymous'.
+ * Apenas CDNs Cloudflare retornam Access-Control-Allow-Origin: * para qualquer origem.
+ * CDNs de fornecedores (XBZ, SPOT, ASIA, Só Marcas etc.) NÃO têm CORS headers —
+ * tentar crossOrigin gera erro no console sem nenhum benefício.
  *
- * @fix_version cors-bounds-xbz-2026-07
- * ESTRATÉGIA:
- *   1. Tenta crossOrigin='anonymous' → getImageData() funciona (CORS OK).
- *   2. Se onerror (CDN sem CORS headers como cdn.xbzbrindes.com.br):
- *      retry SEM crossOrigin — imagem carrega (img-src: https: na CSP permite),
- *      canvas fica tainted → getImageData() joga SecurityError → DEFAULT_BOUNDS.
- *   3. NUNCA usa fetch() como fallback — violaria connect-src da CSP para
- *      CDNs externos e geraria erros redundantes sem nenhum benefício funcional.
+ * @fix_version bounds-cors-capable-2026-07
+ * ANTI-REGRESSÃO: não reverter. Elimina CORS errors no console para imagens XBZ.
+ */
+const CORS_CAPABLE_HOSTNAMES = new Set(['imagedelivery.net', 'videodelivery.net']);
+
+function isCorsCapable(url: string): boolean {
+  try {
+    return CORS_CAPABLE_HOSTNAMES.has(new URL(url).hostname);
+  } catch {
+    return false; // URL relativa, blob:, data: etc. → sem crossOrigin
+  }
+}
+
+/**
+ * Carrega imagem para detecção de bounds, com estratégia baseada no domínio:
  *
- * Robusto a qualquer CDN externo sem precisar manter lista de domínios.
+ * CDNs CF (imagedelivery.net / videodelivery.net):
+ *   → crossOrigin='anonymous' → getImageData() funciona → bounds detection completa
+ *   → se falhar (ex: Lovable preview fora da allowlist), retry sem crossOrigin
+ *
+ * CDNs de fornecedores (XBZ, SPOT, ASIA, Só Marcas etc.):
+ *   → carrega SEM crossOrigin (sem CORS error no console!)
+ *   → canvas fica tainted → getImageData() joga SecurityError
+ *   → retornamos DEFAULT_BOUNDS com imageAspectRatio correto
+ *
+ * @fix_version bounds-cors-capable-2026-07
  */
 function loadImageCors(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
 
+    if (!isCorsCapable(url)) {
+      // CDN sem CORS (XBZ, SPOT, ASIA etc.) — carrega direto SEM crossOrigin.
+      // Evita CORS error no console. Canvas ficará tainted → DEFAULT_BOUNDS+aspectRatio.
+      img.onload = () => resolve(img);
+      img.onerror = () =>
+        reject(new Error('[ProductBoundsDetector] image load failed: ' + url.substring(0, 80)));
+      img.src = url;
+      return;
+    }
+
+    // CF Images (imagedelivery.net) suporta CORS → tenta com crossOrigin
+    // para permitir getImageData() e bounds detection completa.
+    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => {
-      // CORS falhou — retry SEM crossOrigin.
-      // NÃO usa fetch() — violaria connect-src da CSP.
+      // CORS falhou (ex: origem Lovable preview não na allowlist) — retry sem crossOrigin.
       const img2 = new Image();
       img2.onload = () => resolve(img2);
       img2.onerror = () =>
         reject(new Error('[ProductBoundsDetector] image load failed: ' + url.substring(0, 80)));
       img2.src = url;
     };
-
     img.src = url;
   });
 }

@@ -37,7 +37,23 @@ const PROXIED_DOMAINS = new Set([
   'www.somarcas.com.br',
 ]);
 
-const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+// @fix_version image-proxy-url-2026-07
+// ANTI-REGRESSÃO: não reverter.
+// RAIZ: VITE_SUPABASE_PROJECT_ID configurado no Vercel com URL completa
+// ('https://doufsxqlfjyuvxuezpln.supabase.co') em vez de só o ID.
+// Resultado: 'https://' + fullUrl + '.supabase.co' = URL dupla → ERR_NAME_NOT_RESOLVED.
+// FIX: usa VITE_SUPABASE_URL como fonte primária (sempre URL completa).
+// Fallback defensivo: extrai project ID de VITE_SUPABASE_PROJECT_ID.
+const SUPABASE_FUNCTION_BASE = (() => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  if (supabaseUrl?.startsWith('https://')) return supabaseUrl.replace(/\/$/, '');
+  const rawId = import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined;
+  if (rawId) {
+    const cleanId = rawId.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '');
+    if (cleanId) return 'https://' + cleanId + '.supabase.co';
+  }
+  return 'https://doufsxqlfjyuvxuezpln.supabase.co';
+})();
 
 /**
  * Retorna a URL proxiada se o domínio requer proxy, senão retorna a original.
@@ -49,7 +65,7 @@ export function getProxiedImageUrl(url: string | null | undefined): string | nul
   try {
     const parsed = new URL(url);
     if (PROXIED_DOMAINS.has(parsed.hostname)) {
-      return `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
+      return `${SUPABASE_FUNCTION_BASE}/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
     }
   } catch {
     // URL inválida, retorna como está
