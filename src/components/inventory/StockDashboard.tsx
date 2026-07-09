@@ -126,22 +126,9 @@ export function StockDashboard() {
   // #14 — persiste preferência do painel de risco entre sessões.
   const [riskPanelOpen, setRiskPanelOpen] = useState<boolean>(readRiskPanelPref);
   const reliabilityFlag = isFeatureEnabled('supplierReliability');
-  // Aba ativa: URL é a SSOT (deep-link + share), com fallback para o preferido
-  // salvo em localStorage na primeira visita. `useListUrlState` mantém o
-  // padrão dos demais listagens (/orcamentos, /carrinhos) — status/sort/busca
-  // via query string.
-  const initialTab: StockTabValue = reliabilityFlag ? readActiveTabPref() : 'overview';
-  const stockUrlKeys = useMemo(() => ({ tab: initialTab }), [initialTab]);
-  const {
-    values: stockUrlValues,
-    setValue: setStockUrlValue,
-  } = useListUrlState({ keys: stockUrlKeys });
-  const activeTab = (stockUrlValues.tab === 'reliability' ? 'reliability' : 'overview') as StockTabValue;
-  const setActiveTab = useCallback(
-    (v: StockTabValue) => setStockUrlValue('tab', v),
-    [setStockUrlValue],
+  const [activeTab, setActiveTab] = useState<StockTabValue>(() =>
+    reliabilityFlag ? readActiveTabPref() : 'overview',
   );
-  // Persiste como preferência local (retenção entre sessões quando a URL não traz `tab`).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
