@@ -72,7 +72,9 @@ export const SortableCartItem = memo(
     onMoveToCart,
     onDuplicateToCart,
     onNavigate,
+    variant = 'card',
   }: SortableCartItemProps) => {
+    const isRow = variant === 'row';
     const [notesOpen, setNotesOpen] = useState(!!item.notes);
     const [localNotes, setLocalNotes] = useState(item.notes || '');
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
