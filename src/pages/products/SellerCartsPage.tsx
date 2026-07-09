@@ -638,23 +638,21 @@ function SellerCartsContent() {
                                       </button>
                                     </div>
                                   </td>
-                                  {visibleColumns.color && (
-                                    <td className={rowPad}>
-                                      {item.color_name ? (
-                                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                                          {item.color_hex && (
-                                            <span
-                                              className="inline-block h-3 w-3 rounded-full border border-border/40"
-                                              style={{ background: item.color_hex }}
-                                            />
-                                          )}
-                                          {item.color_name}
-                                        </span>
-                                      ) : (
-                                        <span className="text-xs text-muted-foreground/60">—</span>
-                                      )}
-                                    </td>
-                                  )}
+                                  <td className={rowPad}>
+                                    {item.color_name ? (
+                                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                        {item.color_hex && (
+                                          <span
+                                            className="inline-block h-3 w-3 rounded-full border border-border/40"
+                                            style={{ background: item.color_hex }}
+                                          />
+                                        )}
+                                        {item.color_name}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground/60">—</span>
+                                    )}
+                                  </td>
                                   <td className={cn(rowPad, 'text-right align-top')}>
                                     <input
                                       type="number"
@@ -699,27 +697,23 @@ function SellerCartsContent() {
                                       </p>
                                     )}
                                   </td>
-                                  {visibleColumns.price && (
-                                    <td
-                                      className={cn(
-                                        rowPad,
-                                        'text-right tabular-nums text-muted-foreground',
-                                      )}
-                                    >
-                                      {formatCurrency(item.product_price)}
-                                    </td>
-                                  )}
-                                  {visibleColumns.total && (
-                                    <td
-                                      className={cn(
-                                        rowPad,
-                                        'text-right font-semibold tabular-nums text-foreground',
-                                      )}
-                                      data-testid={`cart-row-total-${item.id}`}
-                                    >
-                                      {formatCurrency(item.product_price * item.quantity)}
-                                    </td>
-                                  )}
+                                  <td
+                                    className={cn(
+                                      rowPad,
+                                      'text-right tabular-nums text-muted-foreground',
+                                    )}
+                                  >
+                                    {formatCurrency(item.product_price)}
+                                  </td>
+                                  <td
+                                    className={cn(
+                                      rowPad,
+                                      'text-right font-semibold tabular-nums text-foreground',
+                                    )}
+                                    data-testid={`cart-row-total-${item.id}`}
+                                  >
+                                    {formatCurrency(item.product_price * item.quantity)}
+                                  </td>
                                   <td className={cn(rowPad, 'text-right')}>
                                     <Button
                                       variant="ghost"
