@@ -67,9 +67,13 @@ export function ProductSearchCombobox({
   }, [search, debouncedSearch]);
 
   const getProductImage = (product: Product): string | null => {
-    // Prioridade: og_image_url > primary_image_url > images[0]
-    if (product.og_image_url) return product.og_image_url;
+    // Prioridade: primary_image_url (CF) > og_image_url > images[0]
+    // @fix_version cors-bounds-xbz-2026-07
+    // ANTI-REGRESSÃO: primary_image_url deve vir ANTES de og_image_url.
+    // og_image_url pode ser URL XBZ (cdn.xbzbrindes.com.br) para 48 produtos ativos,
+    // causando CORS error + CSP violation no bounds detector do mockup generator.
     if (product.primary_image_url) return product.primary_image_url;
+    if (product.og_image_url) return product.og_image_url;
     if (!product.images) return null;
     const images = Array.isArray(product.images) ? product.images : [];
     return images.length > 0 ? String(images[0]) : null;
