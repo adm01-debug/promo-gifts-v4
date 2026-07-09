@@ -32,7 +32,7 @@ import {
   formatCurrency,
 } from '@/components/cart/CartUtilComponents';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -445,10 +445,10 @@ function SellerCartsContent() {
         />
       ) : s.activeCart ? (
         <>
-        {/* Cart header fundido — full-width, logo após "Carrinhos" */}
-        <Card
+        {/* Cart header fundido — sem card, direto no fundo da página */}
+        <div
           data-testid="active-cart-header"
-          className="group/header relative flex flex-col justify-between gap-4 overflow-hidden border-border/40 p-4 shadow-sm sm:flex-row sm:items-center"
+          className="group/header relative flex flex-col justify-between gap-4 py-2 sm:flex-row sm:items-center"
         >
           <div className="flex min-w-0 items-center gap-4">
             {s.activeCart.company_logo_url ? (
@@ -525,7 +525,7 @@ function SellerCartsContent() {
               <Trash2 aria-hidden="true" className="h-4 w-4" /> Excluir
             </Button>
           </div>
-        </Card>
+        </div>
 
 
 
