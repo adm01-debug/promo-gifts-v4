@@ -1,9 +1,17 @@
 /**
  * Testes unitários do hook useQuotesListPage.
  * Mocka `@/hooks/quotes` para isolar lógica de filtro/sort/banner sem rede.
+ *
+ * NOTA (URL state): a partir da introdução de `useListUrlState`, o hook
+ * consome `useSearchParams` — precisamos envolver o `renderHook` em
+ * `MemoryRouter`. A busca (`q`) usa debounce de 250ms, então testes que
+ * dependem do filtro por texto usam fake timers p/ avançar o relógio.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import React from 'react';
 
 // Mocks devem vir antes do import do SUT
 const updateQuoteStatus = vi.fn(async () => true);
@@ -25,13 +33,14 @@ vi.mock('@/hooks/quotes', () => ({
   }),
 }));
 
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
-}));
-
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
+
+// Wrapper com MemoryRouter — obrigatório para hooks que usam useSearchParams.
+const wrapper = ({ children }: { children: ReactNode }) =>
+  React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
+
 
 function quote(
   overrides: Partial<{
