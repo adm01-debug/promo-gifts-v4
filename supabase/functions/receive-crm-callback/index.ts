@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
     // 1) auth
-  // fix_version=2026-07-09-crm-callback BUILD=3 ANTI-REGRESSÃO
+  // fix_version=2026-07-09-crm-callback BUILD=4 ANTI-REGRESSÃO
   // VAULT TEM PRIORIDADE — não sofre de isolate cache/secret fossilizada
   const _authUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const _authSvcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -132,6 +132,11 @@ Deno.serve(async (req) => {
     }
     return Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
   })();
+  const provided = req.headers.get("x-api-key") ?? "";
+  if (!expected || !provided || !timingSafeEqual(provided, expected)) {
+    log.warn("crm_callback_unauthorized", { has_env: expected.length > 0, has_header: provided.length > 0 });
+    return log.respond(json(401, { error: "invalid_api_key" }));
+  }
   // 1.b) rate-limit por (IP + hash da api-key). Bloqueia abuso mesmo
   //      com credencial válida (chave vazada ou caller descontrolado).
   const ip =
