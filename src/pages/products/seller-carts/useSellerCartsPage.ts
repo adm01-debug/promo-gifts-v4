@@ -460,6 +460,7 @@ export function useSellerCartsPage() {
     removeItem,
     updateItemNotes,
     updateCartStatus,
+    updateCartShippingDeadline,
     duplicateCart,
     templates,
     deleteTemplate,
