@@ -41,6 +41,13 @@ const DEFAULT_BOUNDS: ProductBounds = {
 // Cache to avoid reprocessing the same image
 const boundsCache = new Map<string, ProductBounds>();
 
+// In-flight deduplication: garante que URLs idênticas requisitadas
+// simultaneamente compartilhem a mesma Promise (sem N detecções redundantes).
+// @fix_version bounds-inflight-dedup-2026-07
+// ANTI-REGRESSÃO: crítico para grades com mesmo produto repetido ou
+// virtual-scroll que re-renderiza o mesmo card enquanto detecção está em curso.
+const _pendingDetections = new Map<string, Promise<ProductBounds>>();
+
 // ---------------------------------------------------------------------------
 // Semáforo de concorrência — evita centenas de loads simultâneos
 // ---------------------------------------------------------------------------
@@ -84,7 +91,34 @@ export async function detectProductBounds(
   const cached = boundsCache.get(imageUrl);
   if (cached) return cached;
 
+  // In-flight deduplication: se outra chamada para a mesma URL está em curso,
+  // compartilha a mesma Promise em vez de disparar uma nova detecção.
+  const inFlight = _pendingDetections.get(imageUrl);
+  if (inFlight) return inFlight;
+
   const { whiteThreshold = 245, alphaThreshold = 10, margin = 0.02, maxSize = 512 } = options || {};
+
+  // Registra a Promise desta detecção para deduplicação concurrent.
+  // Removida do Map em finally (sucesso ou falha).
+  const detectionPromise = _runDetection(imageUrl, { whiteThreshold, alphaThreshold, margin, maxSize });
+  _pendingDetections.set(imageUrl, detectionPromise);
+  try {
+    return await detectionPromise;
+  } finally {
+    _pendingDetections.delete(imageUrl);
+  }
+}
+
+// Implementação interna — chamada apenas pela função pública (jamais diretamente).
+async function _runDetection(
+  imageUrl: string,
+  { whiteThreshold, alphaThreshold, margin, maxSize }: Required<{
+    whiteThreshold: number;
+    alphaThreshold: number;
+    margin: number;
+    maxSize: number;
+  }>,
+): Promise<ProductBounds> {
 
   await acquireDetectionSlot();
   try {
