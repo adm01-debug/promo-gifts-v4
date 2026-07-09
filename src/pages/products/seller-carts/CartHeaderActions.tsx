@@ -76,19 +76,6 @@ export function CartHeaderActions({
         />
       </Button>
 
-      <div className="min-w-[180px]">
-        <CartActionsMenu
-          onShare={() => onShareCart(cart.id)}
-          onDuplicate={() => onDuplicateCart(cart.id)}
-          onExportCSV={() => onExportCSV(cart)}
-          onExportPDF={() => onExportPDF(cart)}
-          onSaveTemplate={() => setSaveOpen(true)}
-          onLoadTemplate={() => setLoadOpen(true)}
-          onAddProducts={() => onNavigate('/produtos')}
-          onClear={onClear}
-          canDuplicate={canCreateCart}
-        />
-      </div>
 
       {/* Save Template */}
       <Dialog
