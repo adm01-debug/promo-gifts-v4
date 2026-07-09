@@ -295,6 +295,8 @@ export default function ComparePage() {
                 size="sm"
                 variant={duelMode ? 'default' : 'outline'}
                 onClick={() => setDuelMode((v) => !v)}
+                aria-pressed={duelMode}
+                data-testid="compare-toggle-duel-mode"
               >
                 <Swords className="mr-2 h-4 w-4" />
                 {duelMode ? 'Modo Duelo ativo' : 'Ativar Modo Duelo'}
