@@ -153,8 +153,10 @@ export const SortableCartItem = memo(
         transition={{ delay: index * 0.03 }}
       >
         <Card
+          data-variant={variant}
           className={cn(
             'group overflow-hidden transition-all duration-200 hover:border-primary/20',
+            isRow && 'flex flex-col sm:flex-row sm:items-stretch',
             isDragging && 'shadow-xl ring-2 ring-primary/30',
             isOutOfStock && 'opacity-60',
           )}
