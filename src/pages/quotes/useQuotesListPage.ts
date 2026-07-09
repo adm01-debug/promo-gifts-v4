@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
 import confetti from 'canvas-confetti';
 import Fuse from 'fuse.js';
 import { useQuotes, type Quote, type QuoteItem } from '@/hooks/quotes';
 import { QUOTE_CHIP_MATCHERS } from '@/components/quotes/QuotesStatusChips';
+import { useDebounce } from '@/hooks/common/useDebounce';
 
 export type SortOption = 'expiring' | 'highest' | 'lowest' | 'newest' | 'oldest';
 
@@ -32,9 +33,49 @@ export function useQuotesListPage() {
     fetchQuotes,
   } = useQuotes();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  // Persistência de filtros/ordenação/busca na URL (query string).
+  // A URL é a fonte da verdade — permite compartilhar deep-links, sobrevive a
+  // reload e mantém histórico do navegador consistente. A busca (`q`) mantém
+  // estado local para digitação fluida e sincroniza para a URL via debounce.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStatus = searchParams.get('status') ?? 'all';
+  const urlSort = (searchParams.get('sort') as SortOption) ?? 'newest';
+  const urlQuery = searchParams.get('q') ?? '';
+
+  const [searchTerm, setSearchTerm] = useState(urlQuery);
+  const debouncedSearch = useDebounce(searchTerm, 250);
+  const statusFilter = urlStatus;
+  const sortBy = urlSort;
+
+  const updateSearchParam = useCallback(
+    (key: string, value: string, defaultValue: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!value || value === defaultValue) next.delete(key);
+          else next.set(key, value);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setStatusFilter = useCallback(
+    (v: string) => updateSearchParam('status', v, 'all'),
+    [updateSearchParam],
+  );
+  const setSortBy = useCallback(
+    (v: SortOption) => updateSearchParam('sort', v, 'newest'),
+    [updateSearchParam],
+  );
+
+  // Sincroniza busca (debounced) → URL.
+  useEffect(() => {
+    updateSearchParam('q', debouncedSearch, '');
+  }, [debouncedSearch, updateSearchParam]);
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -59,8 +100,8 @@ export function useQuotesListPage() {
   const filteredQuotes = useMemo(() => {
     let results = quotes;
 
-    if (searchTerm && searchTerm.length >= 2) {
-      const fuseResults = quoteFuse.search(searchTerm);
+    if (debouncedSearch && debouncedSearch.length >= 2) {
+      const fuseResults = quoteFuse.search(debouncedSearch);
       results = fuseResults.map((r) => r.item);
     }
 
@@ -107,7 +148,7 @@ export function useQuotesListPage() {
     });
 
     return results;
-  }, [quotes, searchTerm, statusFilter, quoteFuse, sortBy]);
+  }, [quotes, debouncedSearch, statusFilter, quoteFuse, sortBy]);
 
   const handleDelete = async () => {
     if (deleteConfirmId) {

@@ -31,6 +31,13 @@ jobs:
       run: npx playwright test --project=chromium-smoke --retries=2 --workers=2
       env:
         E2E_BASE_URL: http://localhost:8080
+    # Specs de restauração de URL em /carrinhos rodam fora do project smoke
+    # (filename não bate com o pattern *smoke.spec.ts). Executamos como job
+    # extra no chromium-authed para garantir cobertura em CI após reload.
+    - name: Run /carrinhos URL-state E2E
+      run: npx playwright test e2e/carrinhos/list-url-state-restore.spec.ts e2e/carrinhos/list-url-state-overdue-chip.spec.ts e2e/carrinhos/list-url-state-search-debounce.spec.ts --project=chromium-authed --retries=2 --workers=1
+      env:
+        E2E_BASE_URL: http://localhost:8080
     - name: Upload Playwright HTML report
       uses: actions/upload-artifact@v4
       if: always()
