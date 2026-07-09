@@ -436,22 +436,8 @@ function SellerCartsContent() {
               <h2 className="truncate font-display text-lg font-bold tracking-tight text-foreground/90">
                 {s.activeCart.company_name}
               </h2>
-              <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                {s.activeCart.company_location && (
-                  <span className="flex items-center gap-1.5 truncate">
-                    <Briefcase aria-hidden="true" className="h-3 w-3 opacity-60" />
-                    {s.activeCart.company_location}
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                  <Clock aria-hidden="true" className="h-3 w-3 opacity-60" />
-                  Atualizado{' '}
-                  {formatDistanceToNow(new Date(s.activeCart.updated_at), {
-                    addSuffix: true,
-                    locale: ptBR,
-                  })}
-                </span>
-              </div>
+              <CartCompanyCnpj companyId={s.activeCart.company_id} />
+
             </div>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2.5">
