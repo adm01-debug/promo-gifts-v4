@@ -528,6 +528,7 @@ function CartsListContent() {
               onClick={() => {
                 setQuery('');
                 setStatusFilter('all');
+                setDeadlineFilter('all');
               }}
               disabled={!hasActiveFilters}
               className="gap-2"
