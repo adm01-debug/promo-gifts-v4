@@ -851,7 +851,10 @@ function CartRow({
               {cart.company_name}
             </div>
             {cnpj && (
-              <div className="overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs text-muted-foreground">
+              <div
+                className="overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs text-muted-foreground"
+                data-testid={`cart-row-cnpj-${cart.id}`}
+              >
                 {maskCnpj(cnpj)}
               </div>
             )}
