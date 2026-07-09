@@ -601,7 +601,7 @@ function SellerCartsContent() {
                         className="overflow-x-auto rounded-xl border border-border/40 bg-card/40"
                         data-testid="cart-table"
                       >
-                        <table className="w-full text-sm">
+                        <table className="w-full min-w-[720px] text-sm">
                           <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
