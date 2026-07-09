@@ -580,14 +580,6 @@ function SellerCartsContent() {
                     {s.activeCart.items.length} {s.activeCart.items.length === 1 ? 'item' : 'itens'}
                   </span>
                   <div className="flex items-center gap-2">
-                    {viewMode === 'table' && (
-                      <CartTablePreferences
-                        visibleColumns={visibleColumns}
-                        setVisibleColumns={setVisibleColumns}
-                        density={density}
-                        setDensity={setDensity}
-                      />
-                    )}
                     <LayoutPopover
                       viewMode={viewMode}
                       setViewMode={setViewMode}
