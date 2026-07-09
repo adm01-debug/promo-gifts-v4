@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
     // 1) auth
-  // fix_version=2026-07-09-crm-callback BUILD=4 ANTI-REGRESSÃO
+  // fix_version=2026-07-09-crm-callback BUILD=5 ANTI-REGRESSÃO
   // VAULT TEM PRIORIDADE — não sofre de isolate cache/secret fossilizada
   const _authUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const _authSvcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -293,11 +293,47 @@ Deno.serve(async (req) => {
     .select("id");
 
   if (upd.error) {
-    // rollback lógico: marca o evento como error e responde 500 (CRM faz retry).
+    // fix_version=2026-07-09-rcb-build5 ANTI-REGRESSÃO
+    // Distinguir erros transientes (→ 500, CRM retenta) de erros semânticos
+    // que não devem gerar retry (ex: trigger de validação, quote inexistente,
+    // erro de permissão isolado). Esses erros retornam 200/applied:false.
+    //
+    // Códigos semânticos que NÃO devem gerar retry no CRM:
+    //   42501 = insufficient_privilege (trigger de validação de role/desconto)
+    //   23514 = check_violation (regra de desconto)
+    //   P0001 = raise_exception genérico de trigger (outros triggers)
+    const errCode = (upd.error as any).code ?? "";
+    const errMsg  = upd.error.message ?? "";
+    const isTriggerError =
+      errCode === "42501" ||   // insufficient_privilege (is_coord_or_above)
+      errCode === "23514" ||   // check_violation (desconto acima do limite)
+      errCode === "P0001" ||   // raise_exception genérico de PL/pgSQL
+      errMsg.includes("forbidden:") ||
+      errMsg.includes("cannot query role");
+
     await supabase
       .from("crm_callback_events")
-      .update({ result: "error", error_message: upd.error.message })
+      .update({ result: "error", error_message: errMsg })
       .eq("id", eventId!);
+
+    if (isTriggerError) {
+      // Erro semântico: evento auditado, quote não atualizada, sem retry no CRM.
+      log.warn("crm_callback_trigger_blocked", {
+        ...ctx, event_id: eventId,
+        err_code: errCode, err_msg: errMsg,
+      });
+      return log.respond(
+        json(200, {
+          status: "ok",
+          event_id: eventId,
+          applied: false,
+          reason: "quote_update_blocked",
+          detail: errMsg,
+        }),
+      );
+    }
+
+    // Erro transiente (DB down, timeout, etc.) → 500 para CRM retentar.
     log.error("crm_callback_update_failed", { ...ctx, event_id: eventId, err: upd.error });
     return log.respond(json(500, { error: "internal_error", message: "quote_update_failed" }));
   }
