@@ -44,6 +44,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
 import { CartHeaderActions } from '@/pages/products/seller-carts/CartHeaderActions';
+import { purgeOrphanCartPrefs } from '@/pages/products/seller-carts/purgeOrphanCartPrefs';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
