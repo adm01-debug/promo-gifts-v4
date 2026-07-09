@@ -11,11 +11,6 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import {
-  CartTablePreferences,
-  type CartTableColumnKey,
-  type CartTableDensity,
-} from '@/components/cart/CartTablePreferences';
 
 import { type CartStatus } from '@/hooks/products';
 import { SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
@@ -110,13 +105,6 @@ const NOTES_PLACEHOLDERS = [
   'Margem-alvo: XX%. Frete por conta do cliente.',
 ];
 
-const DEFAULT_CART_TABLE_COLS: Record<CartTableColumnKey, boolean> = {
-  color: true,
-  quantity: true,
-  price: true,
-  total: true,
-  actions: true,
-} as const;
 
 function SellerCartsContent() {
   const s = useSellerCartsPage();
@@ -137,12 +125,8 @@ function SellerCartsContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
   const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
-  // Tabela: colunas visíveis + densidade (persistidos, namespaced por user)
-  const [visibleColumns, setVisibleColumns] =
-    useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
-  const [density, setDensity] = useState<CartTableDensity>('comfortable');
-  // Density-aware cell padding (single SSOT; consumed by every th/td in the table view).
-  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+  // Tabela: padding fixo confortável (colunas/densidade customizáveis removidas).
+  const rowPad = 'px-3 py-2.5';
 
   // Ordenação + paginação (persistidas, namespaced por user)
   type SortKey = 'name' | 'price' | 'total';
@@ -161,19 +145,6 @@ function SellerCartsContent() {
 
     const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
     if ([3, 4, 5, 6, 8].includes(gc)) setGridColumns(gc as ColumnCount);
-
-    try {
-      const raw = localStorage.getItem(ns('cart-table-columns'));
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
-        setVisibleColumns({ ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true });
-      }
-    } catch {
-      /* ignore corrupt stored value */
-    }
-
-    const dn = localStorage.getItem(ns('cart-table-density'));
-    if (dn === 'comfortable' || dn === 'compact') setDensity(dn as CartTableDensity);
 
     const sk = localStorage.getItem(ns('cart-table-sort-key'));
     if (sk === 'name' || sk === 'price' || sk === 'total') setSortKey(sk as SortKey);
@@ -194,14 +165,6 @@ function SellerCartsContent() {
     if (!uid) return;
     localStorage.setItem(`cart-grid-columns:${uid}`, String(gridColumns));
   }, [gridColumns, uid]);
-  useEffect(() => {
-    if (!uid) return;
-    localStorage.setItem(`cart-table-columns:${uid}`, JSON.stringify(visibleColumns));
-  }, [visibleColumns, uid]);
-  useEffect(() => {
-    if (!uid) return;
-    localStorage.setItem(`cart-table-density:${uid}`, density);
-  }, [density, uid]);
   useEffect(() => {
     if (!uid) return;
     localStorage.setItem(`cart-table-sort-key:${uid}`, sortKey);
@@ -636,16 +599,14 @@ function SellerCartsContent() {
                           <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
-                              {visibleColumns.color && (
-                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
-                                  Cor
-                                </th>
-                              )}
+                              <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
+                                Cor
+                              </th>
                               <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
                                 Qtd
                               </th>
-                              {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
-                              {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
+                              {renderSortHdr('price', 'Preço', 'right')}
+                              {renderSortHdr('total', 'Total', 'right')}
                               <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
                                 Ações
                               </th>
@@ -665,10 +626,7 @@ function SellerCartsContent() {
                                       <img
                                         src={item.product_image_url || '/placeholder.svg'}
                                         alt=""
-                                        className={cn(
-                                          'flex-shrink-0 rounded-md border border-border/30 object-cover',
-                                          density === 'compact' ? 'h-8 w-8' : 'h-10 w-10',
-                                        )}
+                                        className="h-10 w-10 flex-shrink-0 rounded-md border border-border/30 object-cover"
                                         loading="lazy"
                                       />
                                       <button
@@ -680,23 +638,21 @@ function SellerCartsContent() {
                                       </button>
                                     </div>
                                   </td>
-                                  {visibleColumns.color && (
-                                    <td className={rowPad}>
-                                      {item.color_name ? (
-                                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                                          {item.color_hex && (
-                                            <span
-                                              className="inline-block h-3 w-3 rounded-full border border-border/40"
-                                              style={{ background: item.color_hex }}
-                                            />
-                                          )}
-                                          {item.color_name}
-                                        </span>
-                                      ) : (
-                                        <span className="text-xs text-muted-foreground/60">—</span>
-                                      )}
-                                    </td>
-                                  )}
+                                  <td className={rowPad}>
+                                    {item.color_name ? (
+                                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                        {item.color_hex && (
+                                          <span
+                                            className="inline-block h-3 w-3 rounded-full border border-border/40"
+                                            style={{ background: item.color_hex }}
+                                          />
+                                        )}
+                                        {item.color_name}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground/60">—</span>
+                                    )}
+                                  </td>
                                   <td className={cn(rowPad, 'text-right align-top')}>
                                     <input
                                       type="number"
@@ -741,27 +697,23 @@ function SellerCartsContent() {
                                       </p>
                                     )}
                                   </td>
-                                  {visibleColumns.price && (
-                                    <td
-                                      className={cn(
-                                        rowPad,
-                                        'text-right tabular-nums text-muted-foreground',
-                                      )}
-                                    >
-                                      {formatCurrency(item.product_price)}
-                                    </td>
-                                  )}
-                                  {visibleColumns.total && (
-                                    <td
-                                      className={cn(
-                                        rowPad,
-                                        'text-right font-semibold tabular-nums text-foreground',
-                                      )}
-                                      data-testid={`cart-row-total-${item.id}`}
-                                    >
-                                      {formatCurrency(item.product_price * item.quantity)}
-                                    </td>
-                                  )}
+                                  <td
+                                    className={cn(
+                                      rowPad,
+                                      'text-right tabular-nums text-muted-foreground',
+                                    )}
+                                  >
+                                    {formatCurrency(item.product_price)}
+                                  </td>
+                                  <td
+                                    className={cn(
+                                      rowPad,
+                                      'text-right font-semibold tabular-nums text-foreground',
+                                    )}
+                                    data-testid={`cart-row-total-${item.id}`}
+                                  >
+                                    {formatCurrency(item.product_price * item.quantity)}
+                                  </td>
                                   <td className={cn(rowPad, 'text-right')}>
                                     <Button
                                       variant="ghost"
