@@ -1,0 +1,2 @@
+ALTER TABLE public.seller_carts ADD COLUMN IF NOT EXISTS shipping_deadline DATE;
+COMMENT ON COLUMN public.seller_carts.shipping_deadline IS 'Data limite para envio do pedido ao cliente (prazo p/ envio).';

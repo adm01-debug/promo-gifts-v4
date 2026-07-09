@@ -514,6 +514,7 @@ function CartsListContent() {
                   <TableHead className="min-w-[180px] px-4">Ramo de Atividade</TableHead>
                   <TableHead className="w-[90px] px-4 text-center">Itens</TableHead>
                   <TableHead className="w-[130px] px-4 text-right">Valor</TableHead>
+                  <TableHead className="w-[140px] px-4">Prazo p/ envio</TableHead>
                   <TableHead className="w-[170px] px-4">Atualizado</TableHead>
                 </TableRow>
               </TableHeader>
@@ -764,6 +765,15 @@ function CartRow({
       </TableCell>
       <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tracking-tight tabular-nums">
         {formatCurrency(subtotal)}
+      </TableCell>
+      <TableCell className="px-4 align-middle text-xs text-muted-foreground" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
+        {cart.shipping_deadline ? (
+          <span className="whitespace-nowrap font-medium text-foreground">
+            {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
+          </span>
+        ) : (
+          <span className="opacity-60">—</span>
+        )}
       </TableCell>
       <TableCell className="px-4 align-middle text-xs text-muted-foreground">
         <div className="flex items-center justify-between gap-2">

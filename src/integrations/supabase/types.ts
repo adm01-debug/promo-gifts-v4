@@ -5924,6 +5924,7 @@ export type Database = {
           id: string
           notes: string | null
           seller_id: string
+          shipping_deadline: string | null
           status: string
           updated_at: string
         }
@@ -5936,6 +5937,7 @@ export type Database = {
           id?: string
           notes?: string | null
           seller_id: string
+          shipping_deadline?: string | null
           status?: string
           updated_at?: string
         }
@@ -5948,6 +5950,7 @@ export type Database = {
           id?: string
           notes?: string | null
           seller_id?: string
+          shipping_deadline?: string | null
           status?: string
           updated_at?: string
         }

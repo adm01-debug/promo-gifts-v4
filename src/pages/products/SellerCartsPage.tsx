@@ -41,7 +41,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Plus, Building2, Briefcase, Trash2, Clock, MapPin, FileText, ChevronLeft } from 'lucide-react';
+import { ShoppingCart, Plus, Building2, Briefcase, Trash2, Clock, MapPin, FileText, ChevronLeft, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -946,21 +946,49 @@ function SellerCartsContent() {
         </div>
         {/* Notas da negociação — rodapé full-width (Mudança 03) */}
         <div className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3.5">
-          <label
-            htmlFor="cart-notes"
-            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
-          >
-            <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
-          </label>
-          <Textarea
-            id="cart-notes"
-            ref={notesRef}
-            value={s.localCartNotes}
-            onChange={(e) => s.handleCartNotesChange(e.target.value)}
-            placeholder={notesPlaceholder}
-            className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
-            rows={3}
-          />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex-1 space-y-2">
+              <label
+                htmlFor="cart-notes"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
+              >
+                <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
+              </label>
+              <Textarea
+                id="cart-notes"
+                ref={notesRef}
+                value={s.localCartNotes}
+                onChange={(e) => s.handleCartNotesChange(e.target.value)}
+                placeholder={notesPlaceholder}
+                className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
+                rows={3}
+              />
+            </div>
+            <div className="w-full space-y-2 sm:w-56">
+              <label
+                htmlFor="cart-shipping-deadline"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground"
+              >
+                <CalendarClock aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Prazo p/ envio
+              </label>
+              <input
+                id="cart-shipping-deadline"
+                type="date"
+                data-testid="cart-shipping-deadline-input"
+                value={s.activeCart?.shipping_deadline ?? ''}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => {
+                  if (!s.activeCart) return;
+                  s.updateCartShippingDeadline(s.activeCart.id, e.target.value || null);
+                }}
+                className="h-9 w-full rounded-lg border border-border/30 bg-background/50 px-3 text-sm text-foreground transition-all focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
+                aria-label="Data limite para envio ao cliente"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Data limite para envio ao cliente.
+              </p>
+            </div>
+          </div>
         </div>
         </>
       ) : null}

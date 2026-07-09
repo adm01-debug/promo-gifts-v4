@@ -45,6 +45,8 @@ export interface SellerCart {
   company_logo_url: string | null;
   notes: string | null;
   status: CartStatus;
+  /** Prazo p/ envio: data limite (YYYY-MM-DD) para enviar o pedido ao cliente. Null quando não definido. */
+  shipping_deadline: string | null;
   created_at: string;
   updated_at: string;
   items: SellerCartItem[];
@@ -160,6 +162,7 @@ export function useSellerCarts() {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
           status: ((cart.status as string) ?? 'em_separacao') as CartStatus,
+          shipping_deadline: ((cart as { shipping_deadline?: string | null }).shipping_deadline ?? null),
           items: (rowItems ?? []) as SellerCartItem[],
         };
       });
@@ -193,7 +196,7 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'em_separacao' as CartStatus, items: [] } as SellerCart;
+      return { ...data, notes: null, status: 'em_separacao' as CartStatus, shipping_deadline: null, items: [] } as SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
@@ -387,6 +390,24 @@ export function useSellerCarts() {
     },
     onError: (err: Error) => {
       toast.error('Não foi possível atualizar o status', { description: sanitizeError(err) });
+    },
+  });
+
+  // Update cart shipping deadline (prazo p/ envio)
+  const updateCartShippingDeadline = useMutation({
+    mutationFn: async ({ cartId, shippingDeadline }: { cartId: string; shippingDeadline: string | null }) => {
+      const { error } = await supabase
+        .from('seller_carts')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ shipping_deadline: shippingDeadline } as any)
+        .eq('id', cartId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+    },
+    onError: (err: Error) => {
+      toast.error('Não foi possível salvar o prazo p/ envio', { description: sanitizeError(err) });
     },
   });
 
@@ -752,6 +773,7 @@ export function useSellerCarts() {
     updateItemSortOrder,
     updateCartNotes,
     updateCartStatus,
+    updateCartShippingDeadline,
     duplicateCart,
     moveItemToCart,
     duplicateItemToCart,

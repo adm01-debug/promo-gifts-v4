@@ -51,6 +51,7 @@ interface SellerCartContextType {
   updateCartNotes: (cartId: string, notes: string) => void;
   flushCartNotes: (cartId: string, notes: string) => Promise<boolean>;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
+  updateCartShippingDeadline: (cartId: string, shippingDeadline: string | null) => void;
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
   duplicateItemToCart: (itemId: string, targetCartId: string) => void;
@@ -77,6 +78,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     updateItemSortOrder: updateSortMutation,
     updateCartNotes: updateCartNotesMutation,
     updateCartStatus: updateCartStatusMutation,
+    updateCartShippingDeadline: updateCartShippingDeadlineMutation,
     duplicateCart: duplicateCartMutation,
     moveItemToCart: moveItemMutation,
     duplicateItemToCart: duplicateItemMutation,
@@ -269,6 +271,13 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [updateCartStatusMutation],
   );
 
+  const updateCartShippingDeadline = useCallback(
+    (cartId: string, shippingDeadline: string | null) => {
+      updateCartShippingDeadlineMutation.mutate({ cartId, shippingDeadline });
+    },
+    [updateCartShippingDeadlineMutation],
+  );
+
   const duplicateCartFn = useCallback(
     (cartId: string) => {
       duplicateCartMutation.mutate(cartId);
@@ -329,6 +338,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       updateCartNotes,
       flushCartNotes,
       updateCartStatus,
+      updateCartShippingDeadline,
       duplicateCart: duplicateCartFn,
       moveItemToCart,
       duplicateItemToCart,
@@ -353,6 +363,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       updateCartNotes,
       flushCartNotes,
       updateCartStatus,
+      updateCartShippingDeadline,
       duplicateCartFn,
       moveItemToCart,
       duplicateItemToCart,
