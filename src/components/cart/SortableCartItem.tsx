@@ -51,6 +51,13 @@ interface SortableCartItemProps {
   onMoveToCart: (itemId: string, targetCartId: string) => void;
   onDuplicateToCart: (itemId: string, targetCartId: string) => void;
   onNavigate: (path: string) => void;
+  /**
+   * Visual variant:
+   *  - 'card' (padrão): usado no grid — imagem quadrada no topo, corpo abaixo.
+   *  - 'row': usado no modo Lista — imagem compacta à esquerda, corpo à direita.
+   *    Evita a imagem gigante quando a coluna ocupa 100% da largura da página.
+   */
+  variant?: 'card' | 'row';
 }
 
 export const SortableCartItem = memo(
@@ -65,7 +72,9 @@ export const SortableCartItem = memo(
     onMoveToCart,
     onDuplicateToCart,
     onNavigate,
+    variant = 'card',
   }: SortableCartItemProps) => {
+    const isRow = variant === 'row';
     const [notesOpen, setNotesOpen] = useState(!!item.notes);
     const [localNotes, setLocalNotes] = useState(item.notes || '');
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -144,14 +153,22 @@ export const SortableCartItem = memo(
         transition={{ delay: index * 0.03 }}
       >
         <Card
+          data-variant={variant}
           className={cn(
             'group overflow-hidden transition-all duration-200 hover:border-primary/20',
+            isRow && 'flex flex-col sm:flex-row sm:items-stretch',
             isDragging && 'shadow-xl ring-2 ring-primary/30',
             isOutOfStock && 'opacity-60',
           )}
         >
           {/* Product image */}
-          <div className="group/img-container relative aspect-square overflow-hidden bg-muted/20">
+          <div
+            className={cn(
+              'group/img-container relative aspect-square overflow-hidden bg-muted/20',
+              isRow &&
+                'aspect-auto h-40 w-full shrink-0 sm:h-auto sm:w-40 md:w-48 lg:w-56',
+            )}
+          >
             <button
               type="button"
               {...attributes}
@@ -185,6 +202,7 @@ export const SortableCartItem = memo(
                 alt={item.product_name}
                 className={cn(
                   'h-full w-full object-contain p-6 transition-all duration-500',
+                  isRow && 'p-3',
                   !item.product_image_url && 'opacity-0',
                 )}
                 loading="lazy"
@@ -338,7 +356,7 @@ export const SortableCartItem = memo(
           </div>
 
           {/* Product info */}
-          <div className="space-y-2.5 p-3.5">
+          <div className={cn('space-y-2.5 p-3.5', isRow && 'flex-1 min-w-0')}>
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 {item.product_sku && (

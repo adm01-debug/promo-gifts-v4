@@ -818,6 +818,7 @@ function SellerCartsContent() {
                               key={item.id}
                               item={item}
                               index={index}
+                              variant={viewMode === 'list' ? 'row' : 'card'}
                               otherCarts={s.otherCarts}
                               stockMap={s.stockMap}
                               onRemove={s.handleRemoveItem}
