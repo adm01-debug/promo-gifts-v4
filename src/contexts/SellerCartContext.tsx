@@ -51,6 +51,7 @@ interface SellerCartContextType {
   updateCartNotes: (cartId: string, notes: string) => void;
   flushCartNotes: (cartId: string, notes: string) => Promise<boolean>;
   updateCartStatus: (cartId: string, status: CartStatus) => void;
+  updateCartShippingDeadline: (cartId: string, shippingDeadline: string | null) => void;
   duplicateCart: (cartId: string) => void;
   moveItemToCart: (itemId: string, targetCartId: string) => void;
   duplicateItemToCart: (itemId: string, targetCartId: string) => void;
