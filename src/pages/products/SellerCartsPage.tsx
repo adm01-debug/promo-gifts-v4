@@ -140,22 +140,9 @@ function SellerCartsContent() {
     if (!uid) return;
     const ns = (key: string) => `${key}:${uid}`;
 
-    // Limpeza de chaves órfãs do antigo popover "Colunas / Densidade" —
-    // removidas em 2026-07. Feito uma única vez por sessão para evitar work
-    // repetido em cada render. Cobre chaves namespaced por uid e legadas
-    // (sem namespace) que possam ter sobrado de builds antigos.
-    try {
-      const ORPHAN_PREFIXES = ['cart-table-columns', 'cart-table-density'];
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (!key) continue;
-        if (ORPHAN_PREFIXES.some((p) => key === p || key.startsWith(`${p}:`))) {
-          localStorage.removeItem(key);
-        }
-      }
-    } catch {
-      // localStorage indisponível (modo privado/quota) — ignorar silenciosamente.
-    }
+    // Limpeza de chaves órfãs do antigo popover "Colunas / Densidade"
+    // (removido em 2026-07). Ver `purgeOrphanCartPrefs` + testes.
+    purgeOrphanCartPrefs();
 
     const vm = localStorage.getItem(ns('cart-view-mode'));
     if (vm === 'grid' || vm === 'list' || vm === 'table') setViewMode(vm);
