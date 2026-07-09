@@ -913,27 +913,40 @@ function CartRow({
           const status = getShippingDeadlineStatus(cart.shipping_deadline);
           const diff = daysUntilDeadline(cart.shipping_deadline);
           const showBadge = status === 'overdue' || status === 'soon';
+          const formattedDate = format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR });
+          const badgeLabel = getDeadlineLabel(status, diff);
           return (
-            <div className="flex flex-col gap-0.5">
+            <div
+              className="flex flex-col gap-0.5"
+              role="group"
+              aria-label={
+                showBadge
+                  ? `Prazo de envio ${formattedDate}. ${badgeLabel}.`
+                  : `Prazo de envio ${formattedDate}.`
+              }
+            >
               <span
                 className={cn(
                   'whitespace-nowrap font-medium tabular-nums',
+                  // Contraste WCAG AA: shade escuro no light, claro no dark.
                   status === 'overdue' && 'text-destructive',
-                  status === 'soon' && 'text-yellow-600 dark:text-yellow-400',
+                  status === 'soon' && 'text-yellow-700 dark:text-yellow-300',
                   status === 'ok' && 'text-foreground',
                 )}
               >
-                {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
+                {formattedDate}
               </span>
               {showBadge && (
                 <span
+                  role="status"
+                  aria-label={badgeLabel}
                   data-testid={`cart-row-deadline-badge-${cart.id}`}
                   className={cn(
                     'status-chip-glow inline-flex w-fit items-center whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
                     DEADLINE_BADGE_CLASSES[status],
                   )}
                 >
-                  {getDeadlineLabel(status, diff)}
+                  {badgeLabel}
                 </span>
               )}
             </div>
