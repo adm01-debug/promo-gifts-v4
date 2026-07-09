@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
     // 1) auth
-  // fix_version=2026-07-09-crm-callback BUILD=6 ANTI-REGRESSÃO
+  // fix_version=2026-07-09-crm-callback BUILD=7 ANTI-REGRESSÃO
   // VAULT TEM PRIORIDADE — não sofre de isolate cache/secret fossilizada
   const _authUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const _authSvcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -378,7 +378,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  log.info("crm_callback_applied", { ...ctx, event_id: eventId, applied_fields: Object.keys(updates) });
+  log.info("crm_callback_applied", { ...ctx, event_id: eventId, applied_fields: [body.event_type], rpc_detail: upd._rpcResult?.detail ?? null });
   return log.respond(json(200, { status: "ok", event_id: eventId, applied: true }));
 });
 
