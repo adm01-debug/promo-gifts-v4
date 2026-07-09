@@ -623,7 +623,7 @@ function CartsListContent() {
                 setQueryInput('');
                 setStatusFilter('all');
                 setDeadlineFilter('all');
-                setSortBy('recent');
+                setSort('recent');
               }}
               disabled={!hasActiveFilters}
               className="gap-2"
