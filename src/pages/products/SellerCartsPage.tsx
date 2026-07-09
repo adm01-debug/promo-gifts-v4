@@ -50,6 +50,24 @@ import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCarts
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
+/**
+ * Exibe o CNPJ da empresa vinculada ao carrinho ativo (busca no CRM).
+ * Substitui as antigas linhas "ramo de atividade" e "atualizado há X dias".
+ */
+function CartCompanyCnpj({ companyId }: { companyId: string }) {
+  const { data: company } = useCrmCompany(companyId);
+  if (!company?.cnpj) return null;
+  return (
+    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+      <span className="flex items-center gap-1.5 whitespace-nowrap font-mono">
+        <IdCard aria-hidden="true" className="h-3 w-3 opacity-60" />
+        {maskCnpj(company.cnpj)}
+      </span>
+    </div>
+  );
+}
+
+
 export default function SellerCartsPage() {
   return (
     <>
