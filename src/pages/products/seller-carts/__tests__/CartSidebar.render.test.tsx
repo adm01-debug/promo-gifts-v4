@@ -4,7 +4,7 @@
  * Após a repaginação, o subtotal/SKUs/Qtd. total saíram da sidebar
  * e passaram a viver no header da página. A sidebar mantém:
  *   - Card hero com peso/volume (quando aplicável) + CTA "Gerar Orçamento"
- *   - CartActionsMenu (ações secundárias)
+ *   - Atalho secundário "Ver Orçamentos" (substitui o antigo menu "Gerenciar Carrinho")
  *
  * Estes testes garantem:
  *   1) Render mínimo (hero card + CTA)
@@ -12,6 +12,7 @@
  *   3) Peso/Volume aparecem quando `weightVolume` os traz
  *   4) A sidebar consome APENAS o `cart` recebido — nunca agrega
  *      dados de outros carrinhos.
+ *   5) O botão "Gerenciar Carrinho" foi removido em definitivo.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
