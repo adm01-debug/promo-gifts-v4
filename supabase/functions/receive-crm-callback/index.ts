@@ -118,7 +118,20 @@ Deno.serve(async (req) => {
   }
 
   // 1) auth
-  const expected = Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
+  // fix_version=2026-07-09-crm-callback: fallback vault quando Deno.env não tem a key
+  const expected = await (async () => {
+    const envKey = Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
+    if (envKey) return envKey;
+    // Fallback: buscar no vault via RPC (service_role)
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!supabaseUrl || !serviceKey) return "";
+      const vaultSb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+      const { data } = await vaultSb.rpc("get_vault_secret", { p_name: "CRM_CALLBACK_API_KEY" });
+      return (typeof data === "string" && data) ? data : "";
+    } catch { return ""; }
+  })();
   const provided = req.headers.get("x-api-key") ?? "";
   if (!expected || !provided || !timingSafeEqual(provided, expected)) {
     log.warn("crm_callback_unauthorized", { has_env: expected.length > 0, has_header: provided.length > 0 });
