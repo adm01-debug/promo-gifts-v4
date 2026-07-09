@@ -194,6 +194,53 @@ export function useSellerCartsPage() {
     }, 800);
   };
 
+  // ============================================
+  // Prazo p/ envio (shipping_deadline)
+  // ============================================
+  const [shippingDeadlineDraft, setShippingDeadlineDraft] = useState<string | null>(
+    activeCart?.shipping_deadline ?? null,
+  );
+  const [shippingDeadlineError, setShippingDeadlineError] = useState<string | null>(null);
+
+  // Sincroniza rascunho ao trocar de carrinho ou quando o servidor atualiza.
+  useEffect(() => {
+    setShippingDeadlineDraft(activeCart?.shipping_deadline ?? null);
+    setShippingDeadlineError(null);
+  }, [activeCart?.id, activeCart?.shipping_deadline]);
+
+  const handleShippingDeadlineChange = useCallback(
+    (value: string | null) => {
+      setShippingDeadlineDraft(value);
+      if (!activeCart) return;
+      // Validação síncrona via Zod para feedback instantâneo.
+      import('@/lib/carts/shipping-deadline').then(({ shippingDeadlineSchema }) => {
+        const parsed = shippingDeadlineSchema.safeParse(value);
+        if (!parsed.success) {
+          setShippingDeadlineError(parsed.error.errors[0]?.message ?? 'Data inválida.');
+          return;
+        }
+        setShippingDeadlineError(null);
+        updateCartShippingDeadline(activeCart.id, parsed.data);
+      });
+    },
+    [activeCart, updateCartShippingDeadline],
+  );
+
+  // Badge de status (vencido/próximo) — usa import estático seguro.
+  const shippingDeadlineBadge = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    const mod = require('@/lib/carts/shipping-deadline') as typeof import('@/lib/carts/shipping-deadline');
+    const status = mod.getShippingDeadlineStatus(shippingDeadlineDraft);
+    if (status === 'none' || status === 'ok') return null;
+    const diff = mod.daysUntilDeadline(shippingDeadlineDraft);
+    return {
+      status,
+      label: mod.getDeadlineLabel(status, diff),
+      className: mod.DEADLINE_BADGE_CLASSES[status],
+    };
+  }, [shippingDeadlineDraft]);
+
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
