@@ -773,6 +773,7 @@ export function useSellerCarts() {
     updateItemSortOrder,
     updateCartNotes,
     updateCartStatus,
+    updateCartShippingDeadline,
     duplicateCart,
     moveItemToCart,
     duplicateItemToCart,
