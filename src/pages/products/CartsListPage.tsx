@@ -5,7 +5,7 @@
  * itens, valor, data de atualização. Clique na linha → /carrinhos/:cartId.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText, AlertTriangle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -66,7 +66,7 @@ import {
   DEADLINE_BADGE_CLASSES,
   type DeadlineFilter,
 } from '@/lib/carts/shipping-deadline';
-import { useDebounce } from '@/hooks/common/useDebounce';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
 
 
 type StatusFilter = CartStatus | 'all';
