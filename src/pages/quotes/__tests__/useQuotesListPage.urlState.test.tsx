@@ -94,29 +94,20 @@ describe('useQuotesListPage — sincronização com query string', () => {
   });
 
   it('setSearchTerm sincroniza para URL após o debounce', async () => {
-    vi.useFakeTimers();
     const { wrapper, getSearch } = makeWrapper('/orcamentos');
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
 
     act(() => result.current.setSearchTerm('foo'));
 
-    // Antes do debounce (~250ms), URL não tem q.
+    // Antes do debounce (~250ms) a URL não deve refletir ainda.
     expect(getSearch()).not.toMatch(/q=foo/);
 
-    await act(async () => {
-      vi.advanceTimersByTime(300);
-    });
-
-    // Após debounce, URL contém q=foo.
-    await waitFor(() => expect(getSearch()).toMatch(/q=foo/));
+    // Após debounce (~250ms) a URL passa a refletir.
+    await waitFor(() => expect(getSearch()).toMatch(/q=foo/), { timeout: 1500 });
 
     // Limpando volta para vazio → remove da URL.
     act(() => result.current.setSearchTerm(''));
-    await act(async () => {
-      vi.advanceTimersByTime(300);
-    });
-    await waitFor(() => expect(getSearch()).not.toMatch(/q=/));
-    vi.useRealTimers();
+    await waitFor(() => expect(getSearch()).not.toMatch(/q=/), { timeout: 1500 });
   });
 
   it('remonta o hook (simula reload) — estado reidrata da URL', () => {
