@@ -1,7 +1,7 @@
 // supabase/functions/_shared/auth.ts
 // Centralized authentication for Edge Functions
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 import { isTokenRevoked } from "./token-revocation.ts";
 
 export interface AuthResult {
