@@ -271,6 +271,13 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [updateCartStatusMutation],
   );
 
+  const updateCartShippingDeadline = useCallback(
+    (cartId: string, shippingDeadline: string | null) => {
+      updateCartShippingDeadlineMutation.mutate({ cartId, shippingDeadline });
+    },
+    [updateCartShippingDeadlineMutation],
+  );
+
   const duplicateCartFn = useCallback(
     (cartId: string) => {
       duplicateCartMutation.mutate(cartId);
