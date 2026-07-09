@@ -599,16 +599,14 @@ function SellerCartsContent() {
                           <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
                             <tr>
                               {renderSortHdr('name', 'Produto', 'left')}
-                              {visibleColumns.color && (
-                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
-                                  Cor
-                                </th>
-                              )}
+                              <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
+                                Cor
+                              </th>
                               <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
                                 Qtd
                               </th>
-                              {visibleColumns.price && renderSortHdr('price', 'Preço', 'right')}
-                              {visibleColumns.total && renderSortHdr('total', 'Total', 'right')}
+                              {renderSortHdr('price', 'Preço', 'right')}
+                              {renderSortHdr('total', 'Total', 'right')}
                               <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
                                 Ações
                               </th>
@@ -628,10 +626,7 @@ function SellerCartsContent() {
                                       <img
                                         src={item.product_image_url || '/placeholder.svg'}
                                         alt=""
-                                        className={cn(
-                                          'flex-shrink-0 rounded-md border border-border/30 object-cover',
-                                          density === 'compact' ? 'h-8 w-8' : 'h-10 w-10',
-                                        )}
+                                        className="h-10 w-10 flex-shrink-0 rounded-md border border-border/30 object-cover"
                                         loading="lazy"
                                       />
                                       <button
