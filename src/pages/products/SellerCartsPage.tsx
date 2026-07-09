@@ -11,11 +11,6 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import {
-  CartTablePreferences,
-  type CartTableColumnKey,
-  type CartTableDensity,
-} from '@/components/cart/CartTablePreferences';
 
 import { type CartStatus } from '@/hooks/products';
 import { SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
@@ -110,13 +105,6 @@ const NOTES_PLACEHOLDERS = [
   'Margem-alvo: XX%. Frete por conta do cliente.',
 ];
 
-const DEFAULT_CART_TABLE_COLS: Record<CartTableColumnKey, boolean> = {
-  color: true,
-  quantity: true,
-  price: true,
-  total: true,
-  actions: true,
-} as const;
 
 function SellerCartsContent() {
   const s = useSellerCartsPage();
@@ -137,12 +125,8 @@ function SellerCartsContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
   const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
-  // Tabela: colunas visíveis + densidade (persistidos, namespaced por user)
-  const [visibleColumns, setVisibleColumns] =
-    useState<Record<CartTableColumnKey, boolean>>(DEFAULT_CART_TABLE_COLS);
-  const [density, setDensity] = useState<CartTableDensity>('comfortable');
-  // Density-aware cell padding (single SSOT; consumed by every th/td in the table view).
-  const rowPad = density === 'compact' ? 'px-2 py-1' : 'px-3 py-2.5';
+  // Tabela: padding fixo confortável (colunas/densidade customizáveis removidas).
+  const rowPad = 'px-3 py-2.5';
 
   // Ordenação + paginação (persistidas, namespaced por user)
   type SortKey = 'name' | 'price' | 'total';
@@ -161,19 +145,6 @@ function SellerCartsContent() {
 
     const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
     if ([3, 4, 5, 6, 8].includes(gc)) setGridColumns(gc as ColumnCount);
-
-    try {
-      const raw = localStorage.getItem(ns('cart-table-columns'));
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<Record<CartTableColumnKey, boolean>>;
-        setVisibleColumns({ ...DEFAULT_CART_TABLE_COLS, ...parsed, quantity: true, actions: true });
-      }
-    } catch {
-      /* ignore corrupt stored value */
-    }
-
-    const dn = localStorage.getItem(ns('cart-table-density'));
-    if (dn === 'comfortable' || dn === 'compact') setDensity(dn as CartTableDensity);
 
     const sk = localStorage.getItem(ns('cart-table-sort-key'));
     if (sk === 'name' || sk === 'price' || sk === 'total') setSortKey(sk as SortKey);
@@ -194,14 +165,6 @@ function SellerCartsContent() {
     if (!uid) return;
     localStorage.setItem(`cart-grid-columns:${uid}`, String(gridColumns));
   }, [gridColumns, uid]);
-  useEffect(() => {
-    if (!uid) return;
-    localStorage.setItem(`cart-table-columns:${uid}`, JSON.stringify(visibleColumns));
-  }, [visibleColumns, uid]);
-  useEffect(() => {
-    if (!uid) return;
-    localStorage.setItem(`cart-table-density:${uid}`, density);
-  }, [density, uid]);
   useEffect(() => {
     if (!uid) return;
     localStorage.setItem(`cart-table-sort-key:${uid}`, sortKey);
