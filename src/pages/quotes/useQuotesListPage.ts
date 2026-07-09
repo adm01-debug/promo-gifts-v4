@@ -33,9 +33,49 @@ export function useQuotesListPage() {
     fetchQuotes,
   } = useQuotes();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  // Persistência de filtros/ordenação/busca na URL (query string).
+  // A URL é a fonte da verdade — permite compartilhar deep-links, sobrevive a
+  // reload e mantém histórico do navegador consistente. A busca (`q`) mantém
+  // estado local para digitação fluida e sincroniza para a URL via debounce.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStatus = searchParams.get('status') ?? 'all';
+  const urlSort = (searchParams.get('sort') as SortOption) ?? 'newest';
+  const urlQuery = searchParams.get('q') ?? '';
+
+  const [searchTerm, setSearchTerm] = useState(urlQuery);
+  const debouncedSearch = useDebounce(searchTerm, 250);
+  const statusFilter = urlStatus;
+  const sortBy = urlSort;
+
+  const updateSearchParam = useCallback(
+    (key: string, value: string, defaultValue: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!value || value === defaultValue) next.delete(key);
+          else next.set(key, value);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setStatusFilter = useCallback(
+    (v: string) => updateSearchParam('status', v, 'all'),
+    [updateSearchParam],
+  );
+  const setSortBy = useCallback(
+    (v: SortOption) => updateSearchParam('sort', v, 'newest'),
+    [updateSearchParam],
+  );
+
+  // Sincroniza busca (debounced) → URL.
+  useEffect(() => {
+    updateSearchParam('q', debouncedSearch, '');
+  }, [debouncedSearch, updateSearchParam]);
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
