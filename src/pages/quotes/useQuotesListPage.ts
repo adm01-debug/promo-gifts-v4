@@ -148,7 +148,7 @@ export function useQuotesListPage() {
     });
 
     return results;
-  }, [quotes, searchTerm, statusFilter, quoteFuse, sortBy]);
+  }, [quotes, debouncedSearch, statusFilter, quoteFuse, sortBy]);
 
   const handleDelete = async () => {
     if (deleteConfirmId) {
