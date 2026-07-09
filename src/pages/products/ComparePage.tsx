@@ -243,6 +243,7 @@ export default function ComparePage() {
               onClick={() => setDifferencesOnly((v) => !v)}
               aria-pressed={differencesOnly}
               title="Atalho: D"
+              data-testid="compare-toggle-differences-only"
             >
               <Filter className="mr-2 h-4 w-4" />
               {differencesOnly ? 'Mostrando diferenças' : 'Só diferenças'}
