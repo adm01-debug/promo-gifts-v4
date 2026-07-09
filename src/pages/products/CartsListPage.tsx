@@ -766,6 +766,15 @@ function CartRow({
       <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tracking-tight tabular-nums">
         {formatCurrency(subtotal)}
       </TableCell>
+      <TableCell className="px-4 align-middle text-xs text-muted-foreground" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
+        {cart.shipping_deadline ? (
+          <span className="whitespace-nowrap font-medium text-foreground">
+            {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
+          </span>
+        ) : (
+          <span className="opacity-60">—</span>
+        )}
+      </TableCell>
       <TableCell className="px-4 align-middle text-xs text-muted-foreground">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
