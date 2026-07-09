@@ -24,6 +24,13 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import {
+  shippingDeadlineSchema,
+  getShippingDeadlineStatus,
+  daysUntilDeadline,
+  getDeadlineLabel,
+  DEADLINE_BADGE_CLASSES,
+} from '@/lib/carts/shipping-deadline';
 
 export function useSellerCartsPage() {
   const navigate = useNavigate();
@@ -193,6 +200,47 @@ export function useSellerCartsPage() {
       if (activeCart) updateCartNotes(activeCart.id, value);
     }, 800);
   };
+
+  // ============================================
+  // Prazo p/ envio (shipping_deadline)
+  // ============================================
+  const [shippingDeadlineDraft, setShippingDeadlineDraft] = useState<string | null>(
+    activeCart?.shipping_deadline ?? null,
+  );
+  const [shippingDeadlineError, setShippingDeadlineError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setShippingDeadlineDraft(activeCart?.shipping_deadline ?? null);
+    setShippingDeadlineError(null);
+  }, [activeCart?.id, activeCart?.shipping_deadline]);
+
+  const handleShippingDeadlineChange = useCallback(
+    (value: string | null) => {
+      setShippingDeadlineDraft(value);
+      if (!activeCart) return;
+      const parsed = shippingDeadlineSchema.safeParse(value);
+      if (!parsed.success) {
+        setShippingDeadlineError(parsed.error.errors[0]?.message ?? 'Data inválida.');
+        return;
+      }
+      setShippingDeadlineError(null);
+      updateCartShippingDeadline(activeCart.id, parsed.data);
+    },
+    [activeCart, updateCartShippingDeadline],
+  );
+
+  const shippingDeadlineBadge = useMemo(() => {
+    const status = getShippingDeadlineStatus(shippingDeadlineDraft);
+    if (status === 'none' || status === 'ok') return null;
+    const diff = daysUntilDeadline(shippingDeadlineDraft);
+    return {
+      status,
+      label: getDeadlineLabel(status, diff),
+      className: DEADLINE_BADGE_CLASSES[status],
+    };
+  }, [shippingDeadlineDraft]);
+
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -471,6 +519,10 @@ export function useSellerCartsPage() {
     setCartNotesOpen,
     localCartNotes,
     handleCartNotesChange,
+    shippingDeadlineDraft,
+    shippingDeadlineError,
+    shippingDeadlineBadge,
+    handleShippingDeadlineChange,
     stockMap,
     weightVolume,
     sensors,

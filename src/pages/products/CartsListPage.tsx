@@ -58,15 +58,34 @@ import { cn } from '@/lib/utils';
 import { maskCnpj } from '@/utils/masks';
 import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import type { SellerCart, CartStatus } from '@/hooks/products';
+import {
+  matchesDeadlineFilter,
+  getShippingDeadlineStatus,
+  daysUntilDeadline,
+  getDeadlineLabel,
+  DEADLINE_BADGE_CLASSES,
+  type DeadlineFilter,
+} from '@/lib/carts/shipping-deadline';
 
 
 type StatusFilter = CartStatus | 'all';
-type SortKey = 'items-desc' | 'recent' | 'value-desc';
+type SortKey = 'items-desc' | 'recent' | 'value-desc' | 'deadline-asc' | 'deadline-desc';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recent', label: 'Mais recente' },
   { value: 'value-desc', label: 'Maior valor' },
   { value: 'items-desc', label: 'Mais itens' },
+  { value: 'deadline-asc', label: 'Prazo: mais próximo' },
+  { value: 'deadline-desc', label: 'Prazo: mais distante' },
+];
+
+const DEADLINE_FILTER_OPTIONS: { value: DeadlineFilter; label: string }[] = [
+  { value: 'all', label: 'Todos os prazos' },
+  { value: 'overdue', label: 'Vencidos' },
+  { value: 'soon', label: 'Próximos (3 dias)' },
+  { value: 'week', label: 'Próximos 7 dias' },
+  { value: 'month', label: 'Próximos 30 dias' },
+  { value: 'none', label: 'Sem prazo' },
 ];
 
 function cartSubtotal(c: SellerCart) {
@@ -141,6 +160,7 @@ function CartsListContent() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all');
   const [sort, setSort] = useState<SortKey>('recent');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -166,16 +186,26 @@ function CartsListContent() {
     let out = carts.filter((c) => {
       const matchesStatus = statusFilter === 'all' || (c.status ?? 'em_separacao') === statusFilter;
       if (!matchesStatus) return false;
+      if (!matchesDeadlineFilter(c.shipping_deadline, deadlineFilter)) return false;
       if (!q) return true;
       return fold(c.company_name ?? '').includes(q) || fold(c.company_location ?? '').includes(q);
     });
+    // Prazos: null vai para o fim em asc, para o topo em desc (mais distante = sem prazo é neutro no fim).
+    const FAR = Number.POSITIVE_INFINITY;
     out = [...out].sort((a, b) => {
       if (sort === 'value-desc') return cartSubtotal(b) - cartSubtotal(a);
       if (sort === 'items-desc') return b.items.length - a.items.length;
+      if (sort === 'deadline-asc' || sort === 'deadline-desc') {
+        const da = daysUntilDeadline(a.shipping_deadline);
+        const db = daysUntilDeadline(b.shipping_deadline);
+        const va = da === null ? FAR : da;
+        const vb = db === null ? FAR : db;
+        return sort === 'deadline-asc' ? va - vb : vb - va;
+      }
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return out;
-  }, [carts, query, statusFilter, sort]);
+  }, [carts, query, statusFilter, deadlineFilter, sort]);
 
   const totals = useMemo(() => {
     const totalValue = filteredCarts.reduce((acc, c) => acc + cartSubtotal(c), 0);
@@ -183,7 +213,7 @@ function CartsListContent() {
     return { totalValue, totalItems, count: filteredCarts.length };
   }, [filteredCarts]);
 
-  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all';
+  const hasActiveFilters = query.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
 
   const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
   const selectedCount = selectedIds.size;
@@ -318,9 +348,26 @@ function CartsListContent() {
               )}
             </div>
 
+            <Select value={deadlineFilter} onValueChange={(v) => setDeadlineFilter(v as DeadlineFilter)}>
+              <SelectTrigger
+                className="w-full sm:w-[190px]"
+                data-testid="carts-list-deadline-filter"
+                aria-label="Filtrar por prazo de envio"
+              >
+                <SelectValue placeholder="Prazo p/ envio" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEADLINE_FILTER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value} data-testid={`carts-deadline-opt-${o.value}`}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger
-                className="w-full sm:w-[170px]"
+                className="w-full sm:w-[190px]"
                 data-testid="carts-list-sort"
                 aria-label="Ordenar carrinhos"
               >
@@ -481,6 +528,7 @@ function CartsListContent() {
               onClick={() => {
                 setQuery('');
                 setStatusFilter('all');
+                setDeadlineFilter('all');
               }}
               disabled={!hasActiveFilters}
               className="gap-2"
@@ -766,14 +814,38 @@ function CartRow({
       <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tracking-tight tabular-nums">
         {formatCurrency(subtotal)}
       </TableCell>
-      <TableCell className="px-4 align-middle text-xs text-muted-foreground" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
-        {cart.shipping_deadline ? (
-          <span className="whitespace-nowrap font-medium text-foreground">
-            {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
-          </span>
-        ) : (
-          <span className="opacity-60">—</span>
-        )}
+      <TableCell className="px-4 align-middle text-xs" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
+        {(() => {
+          if (!cart.shipping_deadline) return <span className="opacity-60">—</span>;
+          const status = getShippingDeadlineStatus(cart.shipping_deadline);
+          const diff = daysUntilDeadline(cart.shipping_deadline);
+          const showBadge = status === 'overdue' || status === 'soon';
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span
+                className={cn(
+                  'whitespace-nowrap font-medium tabular-nums',
+                  status === 'overdue' && 'text-destructive',
+                  status === 'soon' && 'text-yellow-600 dark:text-yellow-400',
+                  status === 'ok' && 'text-foreground',
+                )}
+              >
+                {format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+              {showBadge && (
+                <span
+                  data-testid={`cart-row-deadline-badge-${cart.id}`}
+                  className={cn(
+                    'status-chip-glow inline-flex w-fit items-center whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+                    DEADLINE_BADGE_CLASSES[status],
+                  )}
+                >
+                  {getDeadlineLabel(status, diff)}
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </TableCell>
       <TableCell className="px-4 align-middle text-xs text-muted-foreground">
         <div className="flex items-center justify-between gap-2">

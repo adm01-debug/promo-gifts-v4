@@ -162,7 +162,7 @@ export function useSellerCarts() {
           ...cart,
           notes: (cart.notes as string | null) ?? null,
           status: ((cart.status as string) ?? 'em_separacao') as CartStatus,
-          shipping_deadline: ((cart as { shipping_deadline?: string | null }).shipping_deadline ?? null),
+          shipping_deadline: (cart.shipping_deadline as string | null) ?? null,
           items: (rowItems ?? []) as SellerCartItem[],
         };
       });
@@ -396,10 +396,15 @@ export function useSellerCarts() {
   // Update cart shipping deadline (prazo p/ envio)
   const updateCartShippingDeadline = useMutation({
     mutationFn: async ({ cartId, shippingDeadline }: { cartId: string; shippingDeadline: string | null }) => {
+      // Validação Zod (formato ISO, data válida, não no passado).
+      const { shippingDeadlineSchema } = await import('@/lib/carts/shipping-deadline');
+      const parsed = shippingDeadlineSchema.safeParse(shippingDeadline);
+      if (!parsed.success) {
+        throw new Error(parsed.error.errors[0]?.message ?? 'Data inválida.');
+      }
       const { error } = await supabase
         .from('seller_carts')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ shipping_deadline: shippingDeadline } as any)
+        .update({ shipping_deadline: parsed.data })
         .eq('id', cartId);
       if (error) throw error;
     },

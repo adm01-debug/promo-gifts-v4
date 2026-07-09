@@ -964,7 +964,7 @@ function SellerCartsContent() {
                 rows={3}
               />
             </div>
-            <div className="w-full space-y-2 sm:w-56">
+            <div className="w-full space-y-2 sm:w-60">
               <label
                 htmlFor="cart-shipping-deadline"
                 className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground"
@@ -975,18 +975,46 @@ function SellerCartsContent() {
                 id="cart-shipping-deadline"
                 type="date"
                 data-testid="cart-shipping-deadline-input"
-                value={s.activeCart?.shipping_deadline ?? ''}
+                value={s.shippingDeadlineDraft ?? ''}
                 min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => {
-                  if (!s.activeCart) return;
-                  s.updateCartShippingDeadline(s.activeCart.id, e.target.value || null);
-                }}
-                className="h-9 w-full rounded-lg border border-border/30 bg-background/50 px-3 text-sm text-foreground transition-all focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
+                aria-invalid={!!s.shippingDeadlineError || undefined}
+                aria-describedby={s.shippingDeadlineError ? 'cart-shipping-deadline-error' : 'cart-shipping-deadline-help'}
+                onChange={(e) => s.handleShippingDeadlineChange(e.target.value || null)}
+                className={cn(
+                  'h-9 w-full rounded-lg border bg-background/50 px-3 text-sm text-foreground transition-all focus:outline-none focus:ring-2',
+                  s.shippingDeadlineError
+                    ? 'border-destructive/60 focus:border-destructive focus:ring-destructive/20'
+                    : 'border-border/30 focus:border-primary/40 focus:ring-primary/10',
+                )}
                 aria-label="Data limite para envio ao cliente"
               />
-              <p className="text-[10px] text-muted-foreground">
-                Data limite para envio ao cliente.
-              </p>
+              {s.shippingDeadlineError ? (
+                <p
+                  id="cart-shipping-deadline-error"
+                  role="alert"
+                  data-testid="cart-shipping-deadline-error"
+                  className="text-[10px] font-medium text-destructive"
+                >
+                  {s.shippingDeadlineError}
+                </p>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <p id="cart-shipping-deadline-help" className="text-[10px] text-muted-foreground">
+                    Data limite para envio ao cliente.
+                  </p>
+                  {s.shippingDeadlineBadge && (
+                    <span
+                      data-testid="cart-shipping-deadline-badge"
+                      className={cn(
+                        'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                        s.shippingDeadlineBadge.className,
+                      )}
+                    >
+                      {s.shippingDeadlineBadge.label}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
