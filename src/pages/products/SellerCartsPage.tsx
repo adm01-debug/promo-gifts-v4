@@ -550,7 +550,8 @@ function SellerCartsContent() {
 
 
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
+        <div className="grid grid-cols-1 gap-6">
+
           <div className="space-y-4">
 
 
