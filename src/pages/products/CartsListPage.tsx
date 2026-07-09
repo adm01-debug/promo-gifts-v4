@@ -617,11 +617,13 @@ function CartsListContent() {
             description="Ajuste a busca ou os filtros para ver mais carrinhos."
           >
             <Button
+              data-testid="carts-list-clear-filters"
               variant="outline"
               onClick={() => {
                 setQueryInput('');
                 setStatusFilter('all');
                 setDeadlineFilter('all');
+                setSortBy('recent');
               }}
               disabled={!hasActiveFilters}
               className="gap-2"
