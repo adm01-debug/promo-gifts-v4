@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
   // 1) auth
-  // fix_version=2026-07-09-crm-callback deployed=2026-07-09T12:35Z: fallback vault quando Deno.env não tem a key
+  // fix_version=2026-07-09-crm-callback deployed=2026-07-09T13:13:03Z BUILD=2: fallback vault quando Deno.env não tem a key
   const expected = await (async () => {
     const envKey = Deno.env.get("CRM_CALLBACK_API_KEY") ?? "";
     if (envKey) return envKey;
