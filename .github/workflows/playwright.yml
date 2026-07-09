@@ -57,3 +57,19 @@ jobs:
           test-results/**/*.webm
         retention-days: 30
         if-no-files-found: ignore
+    # Bundle dedicado para specs @carrinhos — filtra apenas os diretórios de
+    # resultado cujo nome contém "carrinhos", tornando o download no PR ~10x
+    # menor e o diagnóstico direto para o time do módulo.
+    - name: Upload @carrinhos failure artifacts (video/screenshot/trace)
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: playwright-carrinhos-failures
+        path: |
+          test-results/**/carrinhos*/**
+          test-results/**/*carrinhos*/trace.zip
+          test-results/**/*carrinhos*/*.png
+          test-results/**/*carrinhos*/*.webm
+        retention-days: 30
+        if-no-files-found: ignore
+

@@ -17,7 +17,18 @@ import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
 
 test.describe('@carrinhos · responsividade da tabela em mobile @smoke', () => {
+  test.beforeEach(async ({ context, page }) => {
+    // Isolamento entre casos: nunca herdar cookies/localStorage de outros specs.
+    await context.clearCookies();
+    await page.goto('/');
+    await page.evaluate(() => {
+      try { localStorage.clear(); sessionStorage.clear(); } catch { /* noop */ }
+    });
+  });
+
   test('overflow-x-auto habilita scroll horizontal sem estourar container', async ({
+    page,
+  }) => {
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 812 }); // iPhone X

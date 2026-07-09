@@ -1,22 +1,32 @@
 /**
  * E2E: SellerCartsPage limpa chaves órfãs do antigo popover
- * "Colunas / Densidade" (removido em 2026-07) no localStorage ao carregar.
+ * "Colunas / Densidade" (removido em 2026-07) no localStorage ao carregar,
+ * e o próprio trigger do popover não aparece mais na toolbar.
  *
  * Contrato: `purgeOrphanCartPrefs` roda dentro do useEffect de load em
  * `SellerCartsPage.tsx` assim que o uid do usuário fica disponível.
- * Cobre chaves namespaced e legadas (sem namespace).
  */
 import { test, expect } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
 
 test.describe('@carrinhos · purge de chaves órfãs (columns/density) @smoke', () => {
+  test.beforeEach(async ({ context, page }) => {
+    // Isolamento entre casos: nunca herdar cookies/localStorage de outros
+    // specs. Limpar ANTES do login para não invalidar a sessão criada aqui.
+    await context.clearCookies();
+    await page.goto('/');
+    await page.evaluate(() => {
+      try { localStorage.clear(); sessionStorage.clear(); } catch { /* noop */ }
+    });
+  });
+
   test('remove cart-table-columns* e cart-table-density* ao carregar /carrinhos', async ({
     page,
   }) => {
     await loginAs(page, 'user');
 
-    // Pré-popula ANTES da navegação para a rota que dispara o purge.
+    // Pré-popula ANTES da navegação que dispara o purge.
     await gotoAndSettle(page, '/');
     await page.evaluate(() => {
       localStorage.setItem('cart-table-columns:legacy-uid', '["name","price"]');
@@ -52,5 +62,21 @@ test.describe('@carrinhos · purge de chaves órfãs (columns/density) @smoke', 
     }));
     expect(survivors.view).toBe('table');
     expect(survivors.sort).toBe('price');
+  });
+
+  test('trigger do popover Colunas/Densidade não aparece mais na toolbar', async ({
+    page,
+  }) => {
+    await loginAs(page, 'user');
+    await gotoAndSettle(page, '/carrinhos');
+    await expect(page.getByTestId('page-title-carrinhos')).toBeVisible();
+
+    // Testid canônico do trigger removido (visto no commit 5ed2e1f79).
+    await expect(page.getByTestId('cart-table-prefs-trigger')).toHaveCount(0);
+
+    // Guarda extra: nenhum botão com o rótulo antigo permanece renderizado.
+    await expect(
+      page.getByRole('button', { name: /Colunas.*Densidade|Densidade.*Colunas/i }),
+    ).toHaveCount(0);
   });
 });
