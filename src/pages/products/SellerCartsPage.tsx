@@ -41,14 +41,32 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { Building2, Briefcase, Trash2, Clock, MapPin, FileText, ChevronLeft, CalendarClock } from 'lucide-react';
+import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, IdCard } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useCrmCompany } from '@/hooks/crm/useCrmCompanies';
+import { maskCnpj } from '@/utils/masks';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+
+/**
+ * Exibe o CNPJ da empresa vinculada ao carrinho ativo (busca no CRM).
+ * Substitui as antigas linhas "ramo de atividade" e "atualizado há X dias".
+ */
+function CartCompanyCnpj({ companyId }: { companyId: string }) {
+  const { data: company } = useCrmCompany(companyId);
+  if (!company?.cnpj) return null;
+  return (
+    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+      <span className="flex items-center gap-1.5 whitespace-nowrap font-mono">
+        <IdCard aria-hidden="true" className="h-3 w-3 opacity-60" />
+        {maskCnpj(company.cnpj)}
+      </span>
+    </div>
+  );
+}
+
 
 export default function SellerCartsPage() {
   return (
@@ -436,22 +454,8 @@ function SellerCartsContent() {
               <h2 className="truncate font-display text-lg font-bold tracking-tight text-foreground/90">
                 {s.activeCart.company_name}
               </h2>
-              <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                {s.activeCart.company_location && (
-                  <span className="flex items-center gap-1.5 truncate">
-                    <Briefcase aria-hidden="true" className="h-3 w-3 opacity-60" />
-                    {s.activeCart.company_location}
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                  <Clock aria-hidden="true" className="h-3 w-3 opacity-60" />
-                  Atualizado{' '}
-                  {formatDistanceToNow(new Date(s.activeCart.updated_at), {
-                    addSuffix: true,
-                    locale: ptBR,
-                  })}
-                </span>
-              </div>
+              <CartCompanyCnpj companyId={s.activeCart.company_id} />
+
             </div>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2.5">
