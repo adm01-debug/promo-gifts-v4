@@ -390,17 +390,17 @@ function CartsListContent() {
                 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
               />
               <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
                 placeholder="Buscar por empresa…"
                 aria-label="Buscar carrinhos por empresa"
                 data-testid="carts-list-search"
                 className="pl-9 pr-9"
               />
-              {query && (
+              {queryInput && (
                 <button
                   type="button"
-                  onClick={() => setQuery('')}
+                  onClick={() => setQueryInput('')}
                   aria-label="Limpar busca"
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
