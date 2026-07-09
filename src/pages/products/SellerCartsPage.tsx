@@ -360,80 +360,8 @@ function SellerCartsContent() {
       >
         <ChevronLeft aria-hidden="true" className="h-3.5 w-3.5" /> Voltar aos carrinhos
       </button>
-      {/* Header compactado — foca no carrinho aberto quando existir */}
-      {(() => {
-        const activeItems = s.activeCart?.items ?? [];
-        const activeSkus = activeItems.length;
-        const activeQty = activeItems.reduce((sum, it) => sum + (it.quantity || 0), 0);
-        const activeSubtotal = s.activeCart ? s.cartSubtotal : 0;
-        const showCartHeader = !!s.activeCart;
-        return (
-          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <ShoppingCart aria-hidden="true" className="h-4.5 w-4.5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h1
-                  data-testid="page-title-carrinhos"
-                  className="truncate font-display text-xl font-bold leading-tight text-foreground lg:text-2xl"
-                >
-                  {showCartHeader ? s.activeCart!.company_name : 'Carrinhos'}
-                </h1>
-                <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                  {showCartHeader ? (
-                    <>
-                      <span className="tabular-nums">{activeSkus} {activeSkus === 1 ? 'SKU' : 'SKUs'}</span>
-                      <span className="text-muted-foreground/50">·</span>
-                      <span className="tabular-nums">{activeQty} {activeQty === 1 ? 'unidade' : 'unidades'}</span>
-                      {activeSubtotal > 0 && (
-                        <>
-                          <span className="text-muted-foreground/50">·</span>
-                          <span className="font-medium tabular-nums text-foreground/80">
-                            {formatCurrency(activeSubtotal)}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span className="tabular-nums">{s.carts.length}</span>
-                      <span className="text-muted-foreground/50">·</span>
-                      <span className="tabular-nums">{s.totalItems} itens</span>
-                      {aggregateTotal > 0 && (
-                        <>
-                          <span className="text-muted-foreground/50">·</span>
-                          <span className="font-medium tabular-nums text-foreground/80">
-                            {formatCurrency(aggregateTotal)}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  )}
-                  <span
-                    className="ml-2 hidden items-center gap-1 text-muted-foreground/50 sm:inline-flex"
-                    title="Buscar produtos"
-                  >
-                    <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">Ctrl+K</kbd>
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {!showCartHeader && s.carts.length >= 2 && <CompareCartsDialog carts={s.carts} />}
-              <Button
-                onClick={() => s.setShowNewCart(true)}
-                size="sm"
-                data-testid="seller-carts-new"
-                aria-label="Criar novo carrinho"
-                className="h-9 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus aria-hidden="true" className="h-3.5 w-3.5" /> Novo Carrinho
-              </Button>
-            </div>
-          </header>
-        );
-      })()}
+      {/* Header removido por solicitação do PO (2026-07-09). */}
+      {/* Botão "Novo Carrinho" acessível via Ctrl+K / picker; título via <title>. */}
 
       {/* Picker em Dialog */}
       {/* BUG-4 FIX: navega para /carrinhos/:id após criar, sincronizando a URL */}
