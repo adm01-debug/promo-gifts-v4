@@ -587,7 +587,7 @@ function CartsListContent() {
             <Button
               variant="outline"
               onClick={() => {
-                setQuery('');
+                setQueryInput('');
                 setStatusFilter('all');
                 setDeadlineFilter('all');
               }}
