@@ -100,8 +100,8 @@ export function useQuotesListPage() {
   const filteredQuotes = useMemo(() => {
     let results = quotes;
 
-    if (searchTerm && searchTerm.length >= 2) {
-      const fuseResults = quoteFuse.search(searchTerm);
+    if (debouncedSearch && debouncedSearch.length >= 2) {
+      const fuseResults = quoteFuse.search(debouncedSearch);
       results = fuseResults.map((r) => r.item);
     }
 
