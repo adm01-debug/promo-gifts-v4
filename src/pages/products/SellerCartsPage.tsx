@@ -588,7 +588,10 @@ function SellerCartsContent() {
               </div>
             </div>
           </div>
-          <div className="flex min-w-0 flex-1 flex-col items-start justify-center gap-1 sm:pl-4">
+          <div
+            data-testid="cart-shipping-deadline-block"
+            className="flex min-w-0 flex-col items-start justify-center gap-1 sm:flex-1 sm:pl-4"
+          >
             <label
               htmlFor="cart-shipping-deadline"
               className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
@@ -641,7 +644,7 @@ function SellerCartsContent() {
               )}
             </div>
           </div>
-          <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3">
+          <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5 sm:ml-auto sm:gap-2 md:gap-2.5 lg:gap-3">
             <CartStatusSelect
               currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
               onChange={(next) => {
