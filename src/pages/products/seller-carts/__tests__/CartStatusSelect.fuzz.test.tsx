@@ -91,10 +91,6 @@ const LABELS: Record<CartStatus, string> = {
   em_separacao: 'Separação',
   pronto_orcamento: 'Pronto p/ orçamento',
 };
-const LABEL_TO_KEY: Record<string, CartStatus> = {
-  [LABELS.em_separacao]: 'em_separacao',
-  [LABELS.pronto_orcamento]: 'pronto_orcamento',
-};
 
 /** PRNG determinístico (mulberry32) — reprodutibilidade absoluta. */
 function makeRng(seed: number) {
