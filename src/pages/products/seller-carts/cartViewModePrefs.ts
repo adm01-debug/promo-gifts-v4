@@ -9,9 +9,17 @@
  *    em horário incorreto para usuários fora de UTC.
  *  - Todas as chaves são namespaced por `uid` para isolar preferências
  *    entre contas conectadas no mesmo navegador.
- *  - Resiliente a `localStorage` INDISPONÍVEL ou BLOQUEADO (Safari
- *    Private Mode, quota exceeded, iframe cross-origin, cookies off):
- *    falha silenciosamente e usa fallback em memória por sessão.
+ *
+ * Resiliência de persistência (fallback em cascata — CRÍTICO):
+ *    localStorage  →  sessionStorage  →  memória em módulo
+ *
+ *  Cada nível é testado com uma sonda write/read antes de ser adotado.
+ *  Nenhuma falha de storage jamais lança para o consumidor.
+ *
+ * Analytics opcional:
+ *  - `loadCartViewMode` emite `daily_reset` quando o reset ocorre.
+ *  - `persistCartViewMode` emite `change` (from → to) quando o modo troca.
+ *  - O emissor é injetado — mantém este módulo puro/testável.
  */
 
 export type CartViewMode = 'grid' | 'list' | 'table';
@@ -33,8 +41,10 @@ export interface SafeStorage {
   setItem(key: string, value: string): void;
 }
 
-// Fallback em memória usado quando `localStorage` não está acessível.
-// Escopo de módulo — dura enquanto a aba estiver aberta.
+/** Backend efetivo em uso (útil para telemetria e testes). */
+export type StorageBackend = 'localStorage' | 'sessionStorage' | 'memory';
+
+// Fallback em memória — dura enquanto a aba estiver aberta.
 const memoryStore = new Map<string, string>();
 const memoryStorage: SafeStorage = {
   getItem: (k) => (memoryStore.has(k) ? (memoryStore.get(k) ?? null) : null),
@@ -43,48 +53,60 @@ const memoryStorage: SafeStorage = {
   },
 };
 
-/**
- * Detecta se `localStorage` é utilizável agora (sem SecurityError/QuotaError).
- * Executa uma escrita/leitura mínima em uma chave descartável.
- */
-function isLocalStorageUsable(): boolean {
+function probe(store: Storage): boolean {
   try {
-    if (typeof window === 'undefined') return false;
-    const ls = window.localStorage;
-    if (!ls) return false;
-    const probe = '__cart_vm_probe__';
-    ls.setItem(probe, '1');
-    ls.removeItem(probe);
+    const key = '__cart_vm_probe__';
+    store.setItem(key, '1');
+    store.removeItem(key);
     return true;
   } catch {
     return false;
   }
 }
 
+function isLocalStorageUsable(): boolean {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    return probe(window.localStorage);
+  } catch {
+    return false;
+  }
+}
+
+function isSessionStorageUsable(): boolean {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return false;
+    return probe(window.sessionStorage);
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Retorna um `SafeStorage` que NUNCA lança:
- *  - Se `localStorage` estiver disponível, delega a ele (com try/catch por chamada).
- *  - Caso contrário, cai no store em memória.
- *
- * Exportado para os testes exercerem os dois caminhos.
+ * Retorna o backend de storage atualmente utilizável, seguindo a cascata:
+ * localStorage → sessionStorage → memory.
+ * Exportado para telemetria e testes.
  */
-export function getSafeStorage(): SafeStorage {
-  if (!isLocalStorageUsable()) return memoryStorage;
-  const ls = window.localStorage;
+export function detectStorageBackend(): StorageBackend {
+  if (isLocalStorageUsable()) return 'localStorage';
+  if (isSessionStorageUsable()) return 'sessionStorage';
+  return 'memory';
+}
+
+function wrapStorage(store: Storage): SafeStorage {
   return {
     getItem(key) {
       try {
-        return ls.getItem(key);
+        return store.getItem(key);
       } catch {
         return memoryStorage.getItem(key);
       }
     },
     setItem(key, value) {
       try {
-        ls.setItem(key, value);
+        store.setItem(key, value);
       } catch {
-        // Ex.: QuotaExceededError. Mantém fallback em memória para leitura
-        // durante a sessão sem quebrar a UI.
+        // Ex.: QuotaExceededError. Sustenta a leitura via fallback em memória.
         memoryStorage.setItem(key, value);
       }
     },
@@ -92,10 +114,21 @@ export function getSafeStorage(): SafeStorage {
 }
 
 /**
+ * Retorna um `SafeStorage` que NUNCA lança. Segue a cascata:
+ *   localStorage disponível → localStorage
+ *   senão sessionStorage disponível → sessionStorage
+ *   senão → memory (Map de módulo)
+ */
+export function getSafeStorage(): SafeStorage {
+  const backend = detectStorageBackend();
+  if (backend === 'localStorage') return wrapStorage(window.localStorage);
+  if (backend === 'sessionStorage') return wrapStorage(window.sessionStorage);
+  return memoryStorage;
+}
+
+/**
  * Retorna o "carimbo de dia" no timezone LOCAL do usuário no formato
- * `YYYY-MM-DD`. Usar `toISOString()` retornaria a data em UTC — o que
- * causaria reset no horário errado para usuários em fusos negativos
- * (ex.: America/Sao_Paulo à noite ainda estaria "amanhã" em UTC).
+ * `YYYY-MM-DD`. `toISOString()` retorna em UTC — não usar aqui.
  */
 export function getLocalDateStamp(now: Date = new Date()): string {
   const y = now.getFullYear();
@@ -104,48 +137,113 @@ export function getLocalDateStamp(now: Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+// -----------------------------------------------------------------------------
+// Analytics — emissor injetável (mantém o módulo puro/testável).
+// -----------------------------------------------------------------------------
+
+export type CartViewModeEvent =
+  | {
+      type: 'daily_reset';
+      uid: string;
+      previous: CartViewMode | null;
+      /** Data persistida antes do reset (pode ser null se não havia registro). */
+      previousDate: string | null;
+      /** Data local corrente que motivou o reset. */
+      today: string;
+      backend: StorageBackend;
+    }
+  | {
+      type: 'change';
+      uid: string;
+      from: CartViewMode | null;
+      to: CartViewMode;
+      backend: StorageBackend;
+    };
+
+export type CartViewModeEventEmitter = (event: CartViewModeEvent) => void;
+
+const noopEmitter: CartViewModeEventEmitter = () => {};
+
+// -----------------------------------------------------------------------------
+
 export interface LoadCartViewModeResult {
   viewMode: CartViewMode;
   /** true quando o modo foi resetado por ser primeiro acesso do dia. */
   reset: boolean;
+  /** Backend em uso — útil para telemetria e diagnóstico. */
+  backend: StorageBackend;
+}
+
+export interface LoadOptions {
+  storage?: SafeStorage;
+  now?: Date;
+  emit?: CartViewModeEventEmitter;
+  backend?: StorageBackend;
 }
 
 /**
  * Carrega o viewMode persistido para o `uid`. Se a data persistida for
  * diferente do dia local corrente (ou não existir), reseta para "list"
- * e regrava as chaves com a data de hoje.
- *
- * O `storage` default é o `getSafeStorage()`, que nunca lança — mesmo
- * quando o browser bloqueia `localStorage`.
+ * e regrava as chaves com a data de hoje. Emite `daily_reset` neste caso.
  */
-export function loadCartViewMode(
-  uid: string,
-  storage: SafeStorage = getSafeStorage(),
-  now: Date = new Date(),
-): LoadCartViewModeResult {
+export function loadCartViewMode(uid: string, options: LoadOptions = {}): LoadCartViewModeResult {
+  const backend = options.backend ?? detectStorageBackend();
+  const storage = options.storage ?? getSafeStorage();
+  const now = options.now ?? new Date();
+  const emit = options.emit ?? noopEmitter;
+
   const today = getLocalDateStamp(now);
   const storedDate = storage.getItem(cartViewModeDateStorageKey(uid));
-  const storedMode = storage.getItem(cartViewModeStorageKey(uid));
+  const rawStoredMode = storage.getItem(cartViewModeStorageKey(uid));
+  const storedMode: CartViewMode | null = isCartViewMode(rawStoredMode) ? rawStoredMode : null;
 
-  if (storedDate === today && isCartViewMode(storedMode)) {
-    return { viewMode: storedMode, reset: false };
+  if (storedDate === today && storedMode) {
+    return { viewMode: storedMode, reset: false, backend };
   }
 
   storage.setItem(cartViewModeStorageKey(uid), CART_VIEW_MODE_DEFAULT);
   storage.setItem(cartViewModeDateStorageKey(uid), today);
-  return { viewMode: CART_VIEW_MODE_DEFAULT, reset: true };
+
+  emit({
+    type: 'daily_reset',
+    uid,
+    previous: storedMode,
+    previousDate: storedDate,
+    today,
+    backend,
+  });
+
+  return { viewMode: CART_VIEW_MODE_DEFAULT, reset: true, backend };
+}
+
+export interface PersistOptions {
+  storage?: SafeStorage;
+  now?: Date;
+  emit?: CartViewModeEventEmitter;
+  backend?: StorageBackend;
 }
 
 /**
- * Persiste a escolha do usuário mantendo a data local corrente,
- * de forma que a preferência permaneça pelo resto do dia.
+ * Persiste a escolha do usuário mantendo a data local corrente. Se o valor
+ * mudou (from → to), emite `change`.
  */
 export function persistCartViewMode(
   uid: string,
   viewMode: CartViewMode,
-  storage: SafeStorage = getSafeStorage(),
-  now: Date = new Date(),
+  options: PersistOptions = {},
 ): void {
+  const backend = options.backend ?? detectStorageBackend();
+  const storage = options.storage ?? getSafeStorage();
+  const now = options.now ?? new Date();
+  const emit = options.emit ?? noopEmitter;
+
+  const rawPrevious = storage.getItem(cartViewModeStorageKey(uid));
+  const previous: CartViewMode | null = isCartViewMode(rawPrevious) ? rawPrevious : null;
+
   storage.setItem(cartViewModeStorageKey(uid), viewMode);
   storage.setItem(cartViewModeDateStorageKey(uid), getLocalDateStamp(now));
+
+  if (previous !== viewMode) {
+    emit({ type: 'change', uid, from: previous, to: viewMode, backend });
+  }
 }
