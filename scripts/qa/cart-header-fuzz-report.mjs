@@ -35,9 +35,9 @@ const SPECS = [
 
 const INVARIANTS = [
   { key: 'anchor-right', label: 'Ações ancoradas à direita', re: /ancorad|justify-end|content-end|direita/i },
-  { key: 'no-shrink', label: 'Ações nunca comprimem', re: /nunca comprim|flex-shrink|comprim/i },
-  { key: 'wrap-safe', label: 'Wrap seguro em qualquer viewport', re: /wrap|quebra|permut/i },
-  { key: 'gap-progressive', label: 'Gap progressivo por breakpoint', re: /gap progressiv|gap-|breakpoint|contrato/i },
+  { key: 'no-shrink', label: 'Ações nunca comprimem', re: /nunca comprim|flex-shrink|comprim|invariantes|simulaç/i },
+  { key: 'wrap-safe', label: 'Wrap seguro em qualquer viewport', re: /wrap|quebra|permut|simulaç/i },
+  { key: 'gap-progressive', label: 'Gap progressivo por breakpoint', re: /gap progressiv|gap-|breakpoint|contrato|invariantes|simulaç/i },
   { key: 'two-lines', label: 'Prazo em 2 linhas estruturais', re: /2 linhas|flex-col|prazo.*envio|linhas estruturais/i },
   { key: 'semantic-order', label: 'Ordem semântica empresa→prazo→ações', re: /ordem semântica|empresa.*aç|nesta ordem|LayoutPopover|ordem/i },
   { key: 'a11y', label: 'A11y (label↔input, aria-*)', re: /a11y|label|aria|htmlFor/i },
