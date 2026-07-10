@@ -27,6 +27,13 @@ import {
   formatCurrency,
 } from '@/components/cart/CartUtilComponents';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -444,47 +451,47 @@ function SellerCartsContent() {
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
-            <div
-              role="radiogroup"
-              aria-label="Status do carrinho"
-              className="inline-flex items-center gap-1 rounded-xl border border-border/40 bg-muted/20 p-1"
-            >
-              {(
-                Object.entries(STATUS_CONFIG) as [
-                  CartStatus,
-                  (typeof STATUS_CONFIG)[CartStatus],
-                ][]
-              ).map(([key, cfg]) => {
-                const active = s.activeCart?.status === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    aria-label={cfg.label}
-                    onClick={() => {
-                      if (s.activeCart) s.updateCartStatus(s.activeCart.id, key);
-                    }}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
-                      active
-                        ? cfg.color
-                        : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
-                    )}
+            {(() => {
+              const currentKey = (s.activeCart?.status ?? 'em_separacao') as CartStatus;
+              const currentCfg = STATUS_CONFIG[currentKey];
+              return (
+                <Select
+                  value={currentKey}
+                  onValueChange={(next) => {
+                    if (s.activeCart) s.updateCartStatus(s.activeCart.id, next as CartStatus);
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Status do carrinho"
+                    data-testid="cart-status-select"
+                    className="h-8 w-auto min-w-[160px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
                   >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'h-1.5 w-1.5 rounded-full',
-                        active ? 'bg-current opacity-80' : 'bg-muted-foreground/40',
-                      )}
-                    />
-                    {cfg.label}
-                  </button>
-                );
-              })}
-            </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Status
+                    </span>
+                    <span className={cn('flex items-center gap-1.5 rounded-md px-1.5 py-0.5', currentCfg.color)}>
+                      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+                      <SelectValue />
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {(
+                      Object.entries(STATUS_CONFIG) as [
+                        CartStatus,
+                        (typeof STATUS_CONFIG)[CartStatus],
+                      ][]
+                    ).map(([key, cfg]) => (
+                      <SelectItem key={key} value={key} className="text-xs">
+                        <span className={cn('flex items-center gap-1.5 rounded-md px-1.5 py-0.5', cfg.color)}>
+                          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+                          {cfg.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
             {s.activeCart.items.length > 0 && (
               <CartHeaderActions
                 cart={s.activeCart}
