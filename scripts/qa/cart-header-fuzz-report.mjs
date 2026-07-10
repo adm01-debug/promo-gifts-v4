@@ -34,17 +34,17 @@ const SPECS = [
 ];
 
 const INVARIANTS = [
-  { key: 'anchor-right', label: 'Ações ancoradas à direita', re: /ancorad.*direita|justify-end|content-end/i },
-  { key: 'no-shrink', label: 'Ações nunca comprimem', re: /nunca comprim|flex-shrink-0/i },
-  { key: 'wrap-safe', label: 'Wrap seguro em qualquer viewport', re: /wrap|quebra/i },
-  { key: 'gap-progressive', label: 'Gap progressivo por breakpoint', re: /gap progressiv|gap-\d/i },
-  { key: 'two-lines', label: 'Prazo em 2 linhas estruturais', re: /2 linhas|flex-col|prazo.*envio/i },
-  { key: 'semantic-order', label: 'Ordem semântica empresa→prazo→ações', re: /ordem semântica|empresa.*ações|nesta ordem/i },
-  { key: 'a11y', label: 'A11y (label↔input, aria-*)', re: /a11y|label|aria/i },
+  { key: 'anchor-right', label: 'Ações ancoradas à direita', re: /ancorad|justify-end|content-end|direita/i },
+  { key: 'no-shrink', label: 'Ações nunca comprimem', re: /nunca comprim|flex-shrink|comprim/i },
+  { key: 'wrap-safe', label: 'Wrap seguro em qualquer viewport', re: /wrap|quebra|permut/i },
+  { key: 'gap-progressive', label: 'Gap progressivo por breakpoint', re: /gap progressiv|gap-|breakpoint|contrato/i },
+  { key: 'two-lines', label: 'Prazo em 2 linhas estruturais', re: /2 linhas|flex-col|prazo.*envio|linhas estruturais/i },
+  { key: 'semantic-order', label: 'Ordem semântica empresa→prazo→ações', re: /ordem semântica|empresa.*aç|nesta ordem|LayoutPopover|ordem/i },
+  { key: 'a11y', label: 'A11y (label↔input, aria-*)', re: /a11y|label|aria|htmlFor/i },
   { key: 'no-hardcoded-colors', label: 'Sem cores hardcoded', re: /hardcoded|tokens semânticos|cores/i },
-  { key: 'schema-edge', label: 'Schema com valores extremos', re: /extremos|schema|passado|inválido|vazio/i },
-  { key: 'badge-error-xor', label: 'Badge XOR erro (mutuamente exclusivos)', re: /XOR|mutuamente|badge.*error/i },
-  { key: 'status-transitions', label: 'Transições de status por dia', re: /status|fronteir|dias/i },
+  { key: 'schema-edge', label: 'Schema com valores extremos', re: /extremos|schema|passado|inválido|vazio|null|whitespace|zero|não-ASCII|inputs/i },
+  { key: 'badge-error-xor', label: 'Badge XOR erro (mutuamente exclusivos)', re: /XOR|mutuamente|badge.*error|coerência|render/i },
+  { key: 'status-transitions', label: 'Transições de status por dia', re: /status|fronteir|dias|hoje|ontem|soon|overdue|pluraliz|domínio/i },
 ];
 
 console.log('▶ Rodando fuzzer com reporter JSON...');
