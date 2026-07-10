@@ -35,10 +35,10 @@ function makeCart(i: number): SellerCart {
   } as unknown as SellerCart;
 }
 
-describe('CartTabsRich · contador X/10 e estado do CTA', () => {
+describe(`CartTabsRich · contador X/${MAX_SELLER_CARTS} e estado do CTA`, () => {
   afterEach(cleanup);
 
-  it('mostra contador "3/10" e CTA habilitado abaixo do limite', () => {
+  it(`mostra contador "3/${MAX_SELLER_CARTS}" e CTA habilitado abaixo do limite`, () => {
     const carts = Array.from({ length: 3 }, (_, i) => makeCart(i));
     render(
       <CartTabsRich
@@ -59,7 +59,7 @@ describe('CartTabsRich · contador X/10 e estado do CTA', () => {
     expect(screen.queryByTestId('cart-limit-details-link')).toBeNull();
   });
 
-  it('mostra contador "10/10", CTA desabilitado e link "Ver detalhes" no limite', () => {
+  it(`mostra contador "${MAX_SELLER_CARTS}/${MAX_SELLER_CARTS}", CTA desabilitado e link "Ver detalhes" no limite`, () => {
     const carts = Array.from({ length: MAX_SELLER_CARTS }, (_, i) => makeCart(i));
     render(
       <CartTabsRich
