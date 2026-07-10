@@ -108,15 +108,16 @@ export function CartStatusSelect({
 }) {
   const [pending, setPending] = useState<CartStatus | null>(null);
   const [liveMessage, setLiveMessage] = useState<string>('');
-  const currentCfg = STATUS_CONFIG[currentStatus];
+  // Fallback SSOT: garante que valores legados/inesperados não quebrem o render.
+  const currentCfg = getStatusCfg(currentStatus);
   const displayKey = pending ?? currentStatus;
-  const displayCfg = STATUS_CONFIG[displayKey];
+  const displayCfg = getStatusCfg(displayKey);
   const isPending = pending !== null && pending !== currentStatus;
 
   // Sucesso: quando o status real do carrinho alcança o valor pendente.
   useEffect(() => {
     if (pending && currentStatus === pending) {
-      const label = STATUS_CONFIG[pending].label;
+      const label = getStatusCfg(pending).label;
       toast.success(`Status atualizado para "${label}"`);
       setLiveMessage(`Status atualizado para ${label}.`);
       setPending(null);
@@ -124,22 +125,23 @@ export function CartStatusSelect({
   }, [currentStatus, pending]);
 
   // Falha: se depois de `confirmTimeoutMs` o status ainda não bateu, tratamos como erro.
-  // (O hook de mutação também emite um toast.error próprio — aqui garantimos o reset
-  // do estado visual e uma mensagem acessível.)
+  // Depender de `pending` (identidade do alvo) — não do boolean `isPending` — garante
+  // que o timer reinicia quando o alvo muda, sem manter um timer órfão do alvo anterior.
   useEffect(() => {
-    if (!isPending) return;
+    if (pending === null || pending === currentStatus) return;
+    const targetLabel = getStatusCfg(pending).label;
     const timer = window.setTimeout(() => {
-      setLiveMessage('Não foi possível atualizar o status. Tente novamente.');
+      setLiveMessage(`Não foi possível atualizar o status para ${targetLabel}. Tente novamente.`);
       toast.error('Não foi possível atualizar o status', {
         description: 'A mudança não foi confirmada. Verifique sua conexão e tente novamente.',
       });
       setPending(null);
-    }, confirmTimeoutMs);
+    }, Math.max(0, confirmTimeoutMs));
     return () => window.clearTimeout(timer);
-  }, [isPending, confirmTimeoutMs]);
+  }, [pending, currentStatus, confirmTimeoutMs]);
 
   const ariaLabel = isPending
-    ? `Atualizando status do carrinho para ${STATUS_CONFIG[pending!].label}. Aguarde.`
+    ? `Atualizando status do carrinho para ${getStatusCfg(pending!).label}. Aguarde.`
     : `Status atual do carrinho: ${currentCfg.label}. Clique para alterar.`;
 
   return (
