@@ -109,10 +109,13 @@ export function CartStatusSelect({
   onChange,
   /** Timeout (ms) para considerar a mutação falha se `currentStatus` não confirmar. */
   confirmTimeoutMs = 6000,
+  /** Se o carrinho está vazio — bloqueia a transição para `pronto_orcamento`. */
+  isEmpty = false,
 }: {
   currentStatus: CartStatus;
   onChange: (next: CartStatus) => void;
   confirmTimeoutMs?: number;
+  isEmpty?: boolean;
 }) {
   const [pending, setPending] = useState<CartStatus | null>(null);
   const [liveMessage, setLiveMessage] = useState<string>('');
