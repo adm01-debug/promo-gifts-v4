@@ -595,6 +595,14 @@ function SellerCartsContent() {
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
+            {s.activeCart.items.length > 0 && (
+              <LayoutPopover
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                gridColumns={gridColumns}
+                setGridColumns={setGridColumns}
+              />
+            )}
             <CartActionsMenu
               canGenerateQuote={s.activeCart.items.length > 0}
               onGenerateQuote={() => {
