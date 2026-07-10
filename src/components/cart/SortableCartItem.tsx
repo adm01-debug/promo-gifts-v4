@@ -213,7 +213,7 @@ export const SortableCartItem = memo(
             <div
               data-testid="cart-item-view"
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-primary/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:pointer-events-auto group-hover:opacity-100"
+              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:pointer-events-auto group-hover:opacity-100"
             >
               <Button
                 variant="secondary"
