@@ -90,92 +90,132 @@ function CartCompanyCnpj({ companyId }: { companyId: string }) {
 }
 
 /**
- * CartStatusSelect — Select compacto de status com tooltip, aria-label reforçado
- * e feedback visual (spinner + toast) durante a atualização.
+ * CartStatusSelect — Select compacto de status com tooltip, aria-label/aria-busy/aria-live
+ * reforçados e feedback visual completo (spinner, toast de sucesso, toast de erro por
+ * timeout, live-region para leitores de tela).
+ *
+ * Exportado para testes de integração.
  */
-function CartStatusSelect({
+export function CartStatusSelect({
   currentStatus,
   onChange,
+  /** Timeout (ms) para considerar a mutação falha se `currentStatus` não confirmar. */
+  confirmTimeoutMs = 6000,
 }: {
   currentStatus: CartStatus;
   onChange: (next: CartStatus) => void;
+  confirmTimeoutMs?: number;
 }) {
   const [pending, setPending] = useState<CartStatus | null>(null);
+  const [liveMessage, setLiveMessage] = useState<string>('');
   const currentCfg = STATUS_CONFIG[currentStatus];
   const displayKey = pending ?? currentStatus;
   const displayCfg = STATUS_CONFIG[displayKey];
+  const isPending = pending !== null && pending !== currentStatus;
 
-  // Quando o status real do carrinho alcança o valor pendente, confirmamos ao usuário.
+  // Sucesso: quando o status real do carrinho alcança o valor pendente.
   useEffect(() => {
     if (pending && currentStatus === pending) {
-      toast.success(`Status atualizado para "${STATUS_CONFIG[pending].label}"`);
+      const label = STATUS_CONFIG[pending].label;
+      toast.success(`Status atualizado para "${label}"`);
+      setLiveMessage(`Status atualizado para ${label}.`);
       setPending(null);
     }
   }, [currentStatus, pending]);
 
-  const isPending = pending !== null && pending !== currentStatus;
+  // Falha: se depois de `confirmTimeoutMs` o status ainda não bateu, tratamos como erro.
+  // (O hook de mutação também emite um toast.error próprio — aqui garantimos o reset
+  // do estado visual e uma mensagem acessível.)
+  useEffect(() => {
+    if (!isPending) return;
+    const timer = window.setTimeout(() => {
+      setLiveMessage('Não foi possível atualizar o status. Tente novamente.');
+      toast.error('Não foi possível atualizar o status', {
+        description: 'A mudança não foi confirmada. Verifique sua conexão e tente novamente.',
+      });
+      setPending(null);
+    }, confirmTimeoutMs);
+    return () => window.clearTimeout(timer);
+  }, [isPending, confirmTimeoutMs]);
+
   const ariaLabel = isPending
-    ? `Alterando status para ${STATUS_CONFIG[pending!].label}…`
-    : `Status do carrinho: ${currentCfg.label}. Clique para alterar.`;
+    ? `Atualizando status do carrinho para ${STATUS_CONFIG[pending!].label}. Aguarde.`
+    : `Status atual do carrinho: ${currentCfg.label}. Clique para alterar.`;
 
   return (
-    <Select
-      value={displayKey}
-      onValueChange={(next) => {
-        const nextKey = next as CartStatus;
-        if (nextKey === currentStatus) return;
-        setPending(nextKey);
-        onChange(nextKey);
-      }}
-    >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <SelectTrigger
-            aria-label={ariaLabel}
-            aria-live="polite"
-            aria-busy={isPending}
-            data-testid="cart-status-select"
-            data-status={displayKey}
-            className="h-7 w-auto min-w-[112px] max-w-[180px] gap-1.5 rounded-full border-border/50 bg-muted/30 px-2.5 text-xs font-medium hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/60"
-          >
-            {isPending ? (
-              <Loader2
-                aria-hidden="true"
-                className="h-3 w-3 flex-shrink-0 animate-spin text-muted-foreground"
-              />
-            ) : (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'h-1.5 w-1.5 flex-shrink-0 rounded-full',
-                  displayKey === 'pronto_orcamento' ? 'bg-neon-green' : 'bg-neon-blue',
-                )}
-              />
-            )}
-            <SelectValue aria-label={displayCfg.label}>
-              <span className="truncate">{displayCfg.label}</span>
-            </SelectValue>
-          </SelectTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" sideOffset={6}>
-          {isPending
-            ? `Atualizando para ${STATUS_CONFIG[pending!].label}…`
-            : `Status atual: ${currentCfg.label}. Clique para alterar.`}
-        </TooltipContent>
-      </Tooltip>
-      <SelectContent align="start">
-        {(
-          Object.entries(STATUS_CONFIG) as [
-            CartStatus,
-            (typeof STATUS_CONFIG)[CartStatus],
-          ][]
-        ).map(([key, cfg]) => (
-          <SelectItem key={key} value={key} className="text-xs">
-            {cfg.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <>
+      <Select
+        value={displayKey}
+        onValueChange={(next) => {
+          const nextKey = next as CartStatus;
+          if (nextKey === currentStatus || isPending) return;
+          setLiveMessage(`Atualizando status para ${STATUS_CONFIG[nextKey].label}.`);
+          setPending(nextKey);
+          onChange(nextKey);
+        }}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SelectTrigger
+              aria-label={ariaLabel}
+              aria-busy={isPending}
+              aria-disabled={isPending}
+              data-testid="cart-status-select"
+              data-status={displayKey}
+              data-pending={isPending ? 'true' : 'false'}
+              className="h-7 w-auto min-w-[128px] gap-1.5 whitespace-nowrap rounded-full border-border/50 bg-muted/30 px-2.5 text-xs font-medium hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/60 aria-busy:opacity-80"
+            >
+              {isPending ? (
+                <Loader2
+                  data-testid="cart-status-spinner"
+                  aria-hidden="true"
+                  className="h-3 w-3 flex-shrink-0 animate-spin text-muted-foreground"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                    displayKey === 'pronto_orcamento' ? 'bg-neon-green' : 'bg-neon-blue',
+                  )}
+                />
+              )}
+              <SelectValue aria-label={displayCfg.label}>
+                <span className="truncate">{displayCfg.label}</span>
+              </SelectValue>
+            </SelectTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={6}>
+            {isPending
+              ? `Atualizando para ${STATUS_CONFIG[pending!].label}…`
+              : `Status atual: ${currentCfg.label}. Clique para alterar.`}
+          </TooltipContent>
+        </Tooltip>
+        <SelectContent align="start">
+          {(
+            Object.entries(STATUS_CONFIG) as [
+              CartStatus,
+              (typeof STATUS_CONFIG)[CartStatus],
+            ][]
+          ).map(([key, cfg]) => (
+            <SelectItem key={key} value={key} className="text-xs">
+              {cfg.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Live region para leitores de tela — anuncia início, sucesso e falha. */}
+      <span
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="cart-status-live"
+      >
+        {liveMessage}
+      </span>
+    </>
   );
 }
 
