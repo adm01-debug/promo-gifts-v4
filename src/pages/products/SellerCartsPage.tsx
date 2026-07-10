@@ -298,8 +298,9 @@ function SellerCartsContent() {
 
     // Regra: no primeiro acesso do dia (timezone local) o viewMode reseta
     // para "list"; após o usuário alterar, mantém a escolha durante o dia.
+    // Emite telemetria `daily_reset` quando o reset ocorre.
     // Ver `cartViewModePrefs.ts` — SSOT com testes.
-    const { viewMode: nextViewMode } = loadCartViewMode(uid);
+    const { viewMode: nextViewMode } = loadCartViewMode(uid, { emit: emitCartViewModeEvent });
     setViewMode(nextViewMode);
 
     const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
