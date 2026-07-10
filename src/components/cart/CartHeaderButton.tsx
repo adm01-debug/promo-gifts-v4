@@ -438,8 +438,10 @@ export function CartHeaderButton() {
                                   {cart.company_name}
                                 </p>
                                 {cart.company_location && (
-                                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                    {cart.company_location}
+                                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                                    {isNormalizedCnpj(cart.company_location)
+                                      ? maskCnpj(cart.company_location)
+                                      : cart.company_location}
                                   </p>
                                 )}
                               </div>
