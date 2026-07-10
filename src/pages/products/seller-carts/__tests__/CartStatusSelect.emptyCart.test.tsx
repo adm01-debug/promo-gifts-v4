@@ -154,6 +154,41 @@ describe('CartStatusSelect — isEmpty bloqueia pronto_orcamento', () => {
     expect(screen.queryByTestId('cart-status-spinner')).not.toBeInTheDocument();
   });
 
+  it('bypass do disabled (keyboard nav / Radix interno): guard interno dispara toast SSOT e não chama onChange', () => {
+    // Simulamos um caminho onde onValueChange é chamado mesmo com o item
+    // desabilitado (ex.: teclado, mudança de estado assíncrona). O guard
+    // dentro de onValueChange deve absorver a chamada sem ativar loading.
+    const onChange = vi.fn();
+    render(
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} isEmpty />,
+    );
+    // Força o disparo diretamente no elemento (contorna `disabled`).
+    const readyItem = document.querySelector<HTMLButtonElement>(
+      '[data-mock-select-item][data-value="pronto_orcamento"]',
+    );
+    // Remove disabled em runtime — simula bypass.
+    readyItem!.removeAttribute('disabled');
+    readyItem!.removeAttribute('data-disabled');
+    fireEvent.click(readyItem!);
+
+    expect(onChange).not.toHaveBeenCalled();
+    // Toast SSOT foi disparado com título "Carrinho vazio".
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError.mock.calls[0][0]).toBe('Carrinho vazio');
+    expect(toastError.mock.calls[0][1]).toMatchObject({
+      description: expect.stringMatching(/pronto para orçamento/i),
+    });
+    // Live region anuncia a razão.
+    expect(screen.getByTestId('cart-status-live').textContent).toMatch(
+      /Não é possível marcar o carrinho como pronto para orçamento/i,
+    );
+    // Nenhum loading foi iniciado.
+    const trigger = screen.getByTestId('cart-status-select');
+    expect(trigger).toHaveAttribute('aria-busy', 'false');
+    expect(screen.queryByTestId('cart-status-spinner')).not.toBeInTheDocument();
+  });
+
+
   it('quando isEmpty=false, pronto_orcamento fica habilitado e o fluxo normal roda', () => {
     const onChange = vi.fn();
     render(
