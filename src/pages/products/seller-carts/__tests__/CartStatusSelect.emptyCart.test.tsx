@@ -174,7 +174,10 @@ describe('CartStatusSelect — isEmpty bloqueia pronto_orcamento', () => {
       globalThis as unknown as { __cartSelectFire?: (v: string) => void }
     ).__cartSelectFire;
     expect(fire).toBeTypeOf('function');
-    fire!('pronto_orcamento');
+    act(() => {
+      fire!('pronto_orcamento');
+    });
+
 
     expect(onChange).not.toHaveBeenCalled();
     // Toast SSOT foi disparado com título "Carrinho vazio".
