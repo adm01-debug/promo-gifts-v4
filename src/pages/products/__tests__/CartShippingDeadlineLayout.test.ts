@@ -78,25 +78,30 @@ describe('SellerCartsPage — layout do bloco "Prazo p/ envio"', () => {
   });
 
   it('grupo de ações permanece ancorado à direita e com gap progressivo', () => {
-    const actions = sliceBetween(SRC, 'CartStatusSelect', 'LayoutPopover');
-    // Sobe pela árvore para pegar a className do container das ações
-    const containerLine = SRC
-      .split('\n')
-      .find(
-        (l) =>
-          l.includes('flex-shrink-0') &&
-          l.includes('justify-end') &&
-          l.includes('sm:ml-auto'),
-      );
-    expect(containerLine, 'container das ações deve existir').toBeTruthy();
-    expect(containerLine!).toMatch(/\bflex-wrap\b/);
-    expect(containerLine!).toMatch(/\bgap-1\.5\b/);
-    expect(containerLine!).toMatch(/\bsm:gap-2\b/);
-    expect(containerLine!).toMatch(/\bmd:gap-2\.5\b/);
-    expect(containerLine!).toMatch(/\blg:gap-3\b/);
-    // sanity: ainda vem depois do bloco de prazo
-    expect(actions.length).toBeGreaterThan(0);
+    const actions = sliceBetween(
+      SRC,
+      'data-testid="cart-header-actions"',
+      'LayoutPopover',
+    );
+    // Ancoragem à direita em qualquer quebra: justify-end + content-end
+    expect(actions).toMatch(/\bjustify-end\b/);
+    expect(actions).toMatch(/\bcontent-end\b/);
+    // Nunca comprime, sempre pode quebrar linha
+    expect(actions).toMatch(/\bflex-shrink-0\b/);
+    expect(actions).toMatch(/\bflex-wrap\b/);
+    // Mobile: full-width com justify-end cola tudo à direita;
+    // Desktop: auto + ml-auto empurra o grupo pro canto direito do header
+    expect(actions).toMatch(/\bw-full\b/);
+    expect(actions).toMatch(/\bsm:w-auto\b/);
+    expect(actions).toMatch(/\bsm:ml-auto\b/);
+    // Gap progressivo por breakpoint
+    expect(actions).toMatch(/\bgap-1\.5\b/);
+    expect(actions).toMatch(/\bsm:gap-2\b/);
+    expect(actions).toMatch(/\bmd:gap-2\.5\b/);
+    expect(actions).toMatch(/\blg:gap-3\b/);
   });
+
+
 
   it('header stack em mobile (flex-col) e alinha em linha no sm+', () => {
     const headerOpen = SRC
