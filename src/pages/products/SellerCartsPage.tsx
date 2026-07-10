@@ -44,7 +44,14 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2 } from 'lucide-react';
+import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2, MoreHorizontal, ArrowRight } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useCrmCompany } from '@/hooks/crm/useCrmCompanies';
 import { maskCnpj } from '@/utils/masks';
@@ -594,34 +601,41 @@ function SellerCartsContent() {
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
-            {s.activeCart.items.length > 0 && (
-              <CartHeaderActions
-                cart={s.activeCart}
-                templates={s.templates}
-                canCreateCart={s.canCreateCart}
-                onGenerateQuote={s.handleGenerateQuote}
-                onShareCart={s.shareCartLink}
-                onDuplicateCart={(id) => {
-                  if (s.canCreateCart) s.duplicateCart(id);
-                  else toast.error(SELLER_CART_LIMIT_REACHED_SHORT);
-                }}
-                onExportCSV={s.exportCartToCSV}
-                onExportPDF={s.exportCartToPDF}
-                onSaveTemplate={s.handleSaveTemplate}
-                onLoadTemplate={s.handleLoadTemplate}
-                onDeleteTemplate={s.deleteTemplate}
-                onClear={() => s.setConfirmClearCart(true)}
-                onNavigate={s.navigate}
-              />
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 gap-2 rounded-xl px-3 text-xs font-bold text-destructive transition-all hover:bg-destructive/5 hover:text-destructive"
-              onClick={() => s.setConfirmDeleteCart(true)}
-            >
-              <Trash2 aria-hidden="true" className="h-4 w-4" /> Excluir
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Mais ações do carrinho"
+                  data-testid="cart-actions-menu"
+                  className="h-9 w-9 rounded-full border-primary/30 text-primary transition-all hover:border-primary hover:bg-primary/10 hover:text-primary"
+                >
+                  <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem
+                  disabled={s.activeCart.items.length === 0}
+                  onSelect={() => {
+                    if (s.activeCart && s.activeCart.items.length > 0) {
+                      s.handleGenerateQuote(s.activeCart);
+                    }
+                  }}
+                  className="cursor-pointer font-semibold text-success focus:bg-success/10 focus:text-success"
+                >
+                  <ArrowRight aria-hidden="true" className="mr-2 h-4 w-4" />
+                  Gerar Orçamento
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => s.setConfirmDeleteCart(true)}
+                  className="cursor-pointer font-semibold text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
+                  <Trash2 aria-hidden="true" className="mr-2 h-4 w-4" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
