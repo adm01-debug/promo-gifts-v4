@@ -16,7 +16,7 @@
  * transições que NÃO envolvem pronto_orcamento (sempre permitidas).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import type { CartStatus } from '@/hooks/products';
 
 const toastSuccess = vi.fn();
@@ -43,6 +43,10 @@ vi.mock('@/components/ui/select', () => {
     children: React.ReactNode;
   }) => {
     Ctx.current = onValueChange;
+    // Expõe globalmente para bypass em testes que precisam simular
+    // um caminho onde o valor chega ao handler mesmo com o item disabled.
+    (globalThis as unknown as { __cartSelectFire?: OnChange }).__cartSelectFire =
+      onValueChange;
     return (
       <div data-mock-select data-value={value}>
         {children}
@@ -77,9 +81,11 @@ vi.mock('@/components/ui/select', () => {
       data-value={value}
       data-disabled={disabled ? 'true' : undefined}
       disabled={disabled}
-      onClick={() => {
+      onClick={(e) => {
         // Semântica realista: item desabilitado NÃO dispara onValueChange.
-        if (disabled) return;
+        // Consulta a propriedade DOM live (permite bypass explícito em
+        // testes removendo o atributo disabled em runtime).
+        if ((e.currentTarget as HTMLButtonElement).disabled) return;
         Ctx.current?.(value);
       }}
       {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
@@ -153,6 +159,43 @@ describe('CartStatusSelect — isEmpty bloqueia pronto_orcamento', () => {
     expect(trigger).toHaveAttribute('data-pending', 'false');
     expect(screen.queryByTestId('cart-status-spinner')).not.toBeInTheDocument();
   });
+
+  it('bypass do disabled (keyboard nav / Radix interno): guard interno dispara toast SSOT e não chama onChange', () => {
+    // Simulamos um caminho onde onValueChange é chamado mesmo com o item
+    // desabilitado (ex.: teclado, mudança de estado assíncrona). O guard
+    // dentro de onValueChange deve absorver a chamada sem ativar loading.
+    const onChange = vi.fn();
+    render(
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} isEmpty />,
+    );
+
+    // Invoca diretamente o handler onValueChange do Select (bypass total).
+    const fire = (
+      globalThis as unknown as { __cartSelectFire?: (v: string) => void }
+    ).__cartSelectFire;
+    expect(fire).toBeTypeOf('function');
+    act(() => {
+      fire!('pronto_orcamento');
+    });
+
+
+    expect(onChange).not.toHaveBeenCalled();
+    // Toast SSOT foi disparado com título "Carrinho vazio".
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError.mock.calls[0][0]).toBe('Carrinho vazio');
+    expect(toastError.mock.calls[0][1]).toMatchObject({
+      description: expect.stringMatching(/pronto para orçamento/i),
+    });
+    // Live region anuncia a razão.
+    expect(screen.getByTestId('cart-status-live').textContent).toMatch(
+      /Não é possível marcar o carrinho como pronto para orçamento/i,
+    );
+    // Nenhum loading foi iniciado.
+    const trigger = screen.getByTestId('cart-status-select');
+    expect(trigger).toHaveAttribute('aria-busy', 'false');
+    expect(screen.queryByTestId('cart-status-spinner')).not.toBeInTheDocument();
+  });
+
 
   it('quando isEmpty=false, pronto_orcamento fica habilitado e o fluxo normal roda', () => {
     const onChange = vi.fn();
