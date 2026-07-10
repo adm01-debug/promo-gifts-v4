@@ -640,17 +640,6 @@ function SellerCartsContent() {
               />
             ) : (
               <>
-                {/* Toolbar de visualização */}
-                <div className="flex items-center justify-end gap-2 px-1">
-                  <div className="flex items-center gap-2">
-                    <LayoutPopover
-                      viewMode={viewMode}
-                      setViewMode={setViewMode}
-                      gridColumns={gridColumns}
-                      setGridColumns={setGridColumns}
-                    />
-                  </div>
-                </div>
 
                 {viewMode === 'table' ? (
                   (() => {
