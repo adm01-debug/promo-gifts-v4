@@ -76,6 +76,8 @@ jobs:
             src/pages/products/__tests__/CartNotesLeakGuards.test.tsx \
             src/pages/products/seller-carts/__tests__/cartViewModePrefs.test.ts \
             src/pages/products/seller-carts/__tests__/useMidnightReset.test.tsx \
+            src/components/cart/__tests__/cartCompanyCnpj.test.ts \
+            src/components/cart/__tests__/cartCompanyCnpjMaskContract.test.ts \
             --reporter=verbose
 
       - name: Smoke — cartViewModePrefs carrega sem storage disponível
