@@ -34,6 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSellerCartContextSafe } from '@/contexts/SellerCartContext';
+import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import { MAX_SELLER_CARTS } from '@/hooks/products/useSellerCarts';
 import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
