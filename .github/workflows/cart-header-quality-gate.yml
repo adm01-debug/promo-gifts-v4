@@ -16,6 +16,8 @@ on:
       - 'src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts'
       - 'src/pages/products/__tests__/CartNotesInternalOnly.test.ts'
       - 'src/pages/products/__tests__/CartNotesLeakGuards.test.tsx'
+      - 'src/pages/products/seller-carts/cartViewModePrefs.ts'
+      - 'src/pages/products/seller-carts/__tests__/cartViewModePrefs.test.ts'
       - 'src/hooks/products/useSellerCarts.ts'
       - 'src/components/pdf/**'
       - 'src/utils/proposalPdfReactGenerator.ts'
