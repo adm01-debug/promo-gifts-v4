@@ -583,7 +583,7 @@ function SellerCartsContent() {
               >
                 {s.activeCart.company_name}
               </h2>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 leading-none">
+              <div className="flex flex-wrap items-end gap-x-3 gap-y-2 leading-none">
                 <CartCompanyCnpj companyId={s.activeCart.company_id} />
                 <div className="inline-flex flex-col items-start gap-1">
                   <label
