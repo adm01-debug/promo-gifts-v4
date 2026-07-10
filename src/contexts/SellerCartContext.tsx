@@ -231,6 +231,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     userId: user?.id,
     updateQtyMutation,
     removeItemMutation,
+    debounceMs: getCartItemDebounceMs(),
   });
 
   const updateItemNotes = useCallback(
