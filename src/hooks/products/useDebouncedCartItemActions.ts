@@ -182,27 +182,25 @@ export function useDebouncedCartItemActions(
     }
   }, [flushWrite]);
 
-  // Cleanup: flush best-effort dos writes pendentes ao desmontar
+  // Cleanup: CANCELA timers pendentes ao desmontar. NÃO dispara mutation nem
+  // rollback — se o popover fecha ou o componente sai da tela, o clique que
+  // ainda estava dentro da janela de debounce é descartado. Assim evitamos:
+  //   • writes fantasmas após unmount (que causariam warnings de setState
+  //     em componente desmontado no onError/onSuccess);
+  //   • mutations disparadas contra um QueryClient possivelmente já
+  //     descartado no tear-down de Suspense/HMR.
+  // O cache TanStack Query já reflete o valor otimista → na próxima montagem,
+  // `invalidateQueries` de outra ação reconcilia com o servidor.
   useEffect(() => {
     const timersMap = timers.current;
     const pendingMap = pendingQty.current;
     return () => {
-      for (const [itemId, timer] of timersMap) {
-        clearTimeout(timer);
-        const qty = pendingMap.get(itemId);
-        if (qty !== undefined) {
-          pendingMap.delete(itemId);
-          try {
-            updateQtyMutation.mutate({ itemId, quantity: qty });
-          } catch {
-            /* no-op — o cleanup não pode lançar */
-          }
-        }
-      }
+      for (const [, timer] of timersMap) clearTimeout(timer);
       timersMap.clear();
+      pendingMap.clear();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   return {
     updateItemQuantity,
