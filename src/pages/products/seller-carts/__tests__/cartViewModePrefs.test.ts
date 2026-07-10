@@ -12,12 +12,13 @@
  *     entre contas no mesmo navegador).
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   CART_VIEW_MODE_DEFAULT,
   cartViewModeDateStorageKey,
   cartViewModeStorageKey,
   getLocalDateStamp,
+  getSafeStorage,
   loadCartViewMode,
   persistCartViewMode,
 } from '../cartViewModePrefs';
@@ -200,3 +201,99 @@ describe('Ciclo completo — cenário do usuário conectado', () => {
     expect(CART_VIEW_MODE_DEFAULT).toBe('list');
   });
 });
+
+// -----------------------------------------------------------------------------
+// Resiliência a localStorage indisponível/bloqueado (Safari Private, quota,
+// cookies off, iframe cross-origin). O helper NUNCA deve lançar — deve cair
+// silenciosamente em um fallback em memória.
+// -----------------------------------------------------------------------------
+
+describe('getSafeStorage — resiliência a localStorage bloqueado', () => {
+  // Guarda o descriptor original para restaurar após cada caso.
+  let originalDescriptor: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+  });
+
+  afterEach(() => {
+    if (originalDescriptor) {
+      Object.defineProperty(window, 'localStorage', originalDescriptor);
+    }
+    vi.restoreAllMocks();
+  });
+
+  const stubLocalStorage = (impl: Storage | null | (() => never)) => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get: typeof impl === 'function' ? (impl as () => never) : () => impl as Storage,
+    });
+  };
+
+  it('quando window.localStorage lança SecurityError no acesso, retorna fallback em memória', () => {
+    stubLocalStorage(() => {
+      throw new DOMException('SecurityError', 'SecurityError');
+    });
+
+    // Não deve lançar — apenas devolver um SafeStorage funcional.
+    const safe = getSafeStorage();
+    expect(() => safe.setItem('k', 'v')).not.toThrow();
+    expect(safe.getItem('k')).toBe('v');
+  });
+
+  it('quando setItem lança QuotaExceededError, mantém leitura via fallback em memória', () => {
+    const fakeLS: Storage = {
+      length: 0,
+      clear: () => {},
+      key: () => null,
+      getItem: () => null,
+      removeItem: () => {},
+      setItem: () => {
+        throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+      },
+    };
+    stubLocalStorage(fakeLS);
+
+    const safe = getSafeStorage();
+    // O `isLocalStorageUsable` faz uma escrita-sonda; se essa falhar, cai em
+    // memória. Se passar (mock sem probe), o setItem real falha e cai também.
+    expect(() => safe.setItem('cart-view-mode:u1', 'grid')).not.toThrow();
+    expect(safe.getItem('cart-view-mode:u1')).toBe('grid');
+  });
+
+  it('loadCartViewMode + persistCartViewMode funcionam com localStorage bloqueado (ciclo completo)', () => {
+    stubLocalStorage(() => {
+      throw new DOMException('SecurityError', 'SecurityError');
+    });
+
+    const safe = getSafeStorage();
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+
+    // Primeiro acesso do dia — reseta para "list" e não lança.
+    const first = loadCartViewMode('u-blocked', safe, day);
+    expect(first.viewMode).toBe('list');
+    expect(first.reset).toBe(true);
+
+    // Usuário troca para "grid" — persistência não lança.
+    expect(() => persistCartViewMode('u-blocked', 'grid', safe, day)).not.toThrow();
+
+    // Reload no mesmo dia — mantém "grid" via fallback em memória.
+    const second = loadCartViewMode('u-blocked', safe, day);
+    expect(second.viewMode).toBe('grid');
+    expect(second.reset).toBe(false);
+
+    // Dia seguinte — reseta.
+    const nextDay = new Date(2026, 6, 11, 8, 0, 0);
+    const third = loadCartViewMode('u-blocked', safe, nextDay);
+    expect(third.viewMode).toBe('list');
+    expect(third.reset).toBe(true);
+  });
+
+  it('quando localStorage está disponível, delega escrita ao real (não usa memória)', () => {
+    // Ambiente jsdom padrão — localStorage funciona.
+    const safe = getSafeStorage();
+    safe.setItem('cart-view-mode:u-real', 'table');
+    expect(window.localStorage.getItem('cart-view-mode:u-real')).toBe('table');
+  });
+});
+
