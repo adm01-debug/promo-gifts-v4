@@ -179,7 +179,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
     vi.useRealTimers();
   });
 
-  const SEEDS = Array.from({ length: 300 }, (_, i) => 1 + i);
+  const SEEDS = Array.from({ length: 1000 }, (_, i) => 1 + i);
 
   it.each(SEEDS)('seed %i · sequência aleatória mantém invariantes DOM', (seed) => {
     const rng = makeRng(seed);
