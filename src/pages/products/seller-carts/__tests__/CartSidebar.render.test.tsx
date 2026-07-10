@@ -122,14 +122,10 @@ describe('CartSidebar — render smoke pós-repaginação', () => {
     expect(screen.queryByRole('button', { name: /Gerenciar Carrinho/i })).not.toBeInTheDocument();
   });
 
-  it('renderiza o atalho substituto "Ver Orçamentos" no header e dispara onNavigate', () => {
-    const onNavigate = vi.fn();
-    renderSidebar({ onNavigate });
-    const btn = screen.getByTestId('cart-view-quotes');
-    expect(btn).toBeInTheDocument();
-    expect(btn).toHaveTextContent(/Ver Orçamentos/i);
-    btn.click();
-    expect(onNavigate).toHaveBeenCalledWith('/orcamentos');
+  it('NÃO renderiza mais o atalho "Ver Orçamentos" (removido em definitivo)', () => {
+    renderSidebar();
+    expect(screen.queryByTestId('cart-view-quotes')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ver Orçamentos/i)).not.toBeInTheDocument();
   });
 
 
