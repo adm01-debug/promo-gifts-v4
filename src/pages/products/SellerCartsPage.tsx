@@ -267,7 +267,7 @@ function SellerCartsContent() {
   const uid = user?.id ?? '';
 
   // View mode + grid columns (persisted, namespaced by user)
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('list');
   const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
   // Tabela: padding fixo confortável (colunas/densidade customizáveis removidas).
@@ -289,8 +289,18 @@ function SellerCartsContent() {
     // (removido em 2026-07). Ver `purgeOrphanCartPrefs` + testes.
     purgeOrphanCartPrefs();
 
+    // Regra: no primeiro acesso do dia o viewMode reseta para "list";
+    // após o usuário alterar, mantém a escolha enquanto a data persistida for hoje.
+    const today = new Date().toISOString().slice(0, 10);
+    const vmDate = localStorage.getItem(ns('cart-view-mode-date'));
     const vm = localStorage.getItem(ns('cart-view-mode'));
-    if (vm === 'grid' || vm === 'list' || vm === 'table') setViewMode(vm);
+    if (vmDate === today && (vm === 'grid' || vm === 'list' || vm === 'table')) {
+      setViewMode(vm);
+    } else {
+      setViewMode('list');
+      localStorage.setItem(ns('cart-view-mode'), 'list');
+      localStorage.setItem(ns('cart-view-mode-date'), today);
+    }
 
     const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
     if ([3, 4, 5, 6, 8].includes(gc)) setGridColumns(gc as ColumnCount);
@@ -309,6 +319,7 @@ function SellerCartsContent() {
   useEffect(() => {
     if (!uid) return;
     localStorage.setItem(`cart-view-mode:${uid}`, viewMode);
+    localStorage.setItem(`cart-view-mode-date:${uid}`, new Date().toISOString().slice(0, 10));
   }, [viewMode, uid]);
   useEffect(() => {
     if (!uid) return;
