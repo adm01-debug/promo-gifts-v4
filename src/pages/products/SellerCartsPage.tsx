@@ -316,8 +316,7 @@ function SellerCartsContent() {
   // Persiste preferências com chave namespaced por user
   useEffect(() => {
     if (!uid) return;
-    localStorage.setItem(`cart-view-mode:${uid}`, viewMode);
-    localStorage.setItem(`cart-view-mode-date:${uid}`, new Date().toISOString().slice(0, 10));
+    persistCartViewMode(uid, viewMode);
   }, [viewMode, uid]);
   useEffect(() => {
     if (!uid) return;
