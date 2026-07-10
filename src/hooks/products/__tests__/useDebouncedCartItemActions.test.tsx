@@ -403,4 +403,72 @@ describe('useDebouncedCartItemActions', () => {
     // Não avançamos o timer: nenhuma mutation deve ter sido chamada síncronamente.
     expect(upd.calls).toHaveLength(0);
   });
+
+  describe('feature flag ff_cart_debounce_ms', () => {
+    afterEach(() => {
+      try {
+        localStorage.removeItem('ff_cart_debounce_ms');
+      } catch {
+        /* ignore */
+      }
+    });
+
+    it('sem flag: retorna o default CART_ITEM_DEBOUNCE_MS', () => {
+      expect(getCartItemDebounceMs()).toBe(CART_ITEM_DEBOUNCE_MS);
+    });
+
+    it('flag válida no localStorage sobrescreve o default', () => {
+      localStorage.setItem('ff_cart_debounce_ms', '750');
+      expect(getCartItemDebounceMs()).toBe(750);
+    });
+
+    it('flag fora dos limites (negativa ou absurda) é ignorada', () => {
+      localStorage.setItem('ff_cart_debounce_ms', '-10');
+      expect(getCartItemDebounceMs()).toBe(CART_ITEM_DEBOUNCE_MS);
+      localStorage.setItem('ff_cart_debounce_ms', '999999');
+      expect(getCartItemDebounceMs()).toBe(CART_ITEM_DEBOUNCE_MS);
+      localStorage.setItem('ff_cart_debounce_ms', 'abc');
+      expect(getCartItemDebounceMs()).toBe(CART_ITEM_DEBOUNCE_MS);
+    });
+
+    it('flag altera o tempo de coalescimento no hook SEM quebrar o rollback', () => {
+      const upd = makeMockMutation<{ itemId: string; quantity: number }>();
+      const rem = makeMockMutation<string>();
+      // Simula a flag configurando um debounce customizado (ex.: 500ms).
+      localStorage.setItem('ff_cart_debounce_ms', '500');
+      const ms = getCartItemDebounceMs();
+      expect(ms).toBe(500);
+
+      const { result } = renderHook(
+        () =>
+          useDebouncedCartItemActions({
+            userId: 'user-1',
+            updateQtyMutation: upd.mutation,
+            removeItemMutation: rem.mutation,
+            debounceMs: ms,
+          }),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.updateItemQuantity('item-1', 8);
+        vi.advanceTimersByTime(499);
+      });
+      expect(upd.calls).toHaveLength(0);
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(upd.calls).toHaveLength(1);
+
+      // Falha da mutation → rollback flag-agnóstico: itemErrors populado.
+      act(() => {
+        upd.calls[0].handlers.onError?.(
+          new Error('nope'),
+          upd.calls[0].vars,
+          undefined,
+        );
+      });
+      expect(result.current.itemErrors['item-1']).toBeTruthy();
+    });
+  });
 });
