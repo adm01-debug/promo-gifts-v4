@@ -19,7 +19,7 @@ import {
   type CreateCartInput,
   type CartStatus,
 } from '@/hooks/products';
-import { useDebouncedCartItemActions } from '@/hooks/products/useDebouncedCartItemActions';
+import { useDebouncedCartItemActions, getCartItemDebounceMs } from '@/hooks/products/useDebouncedCartItemActions';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
