@@ -109,10 +109,13 @@ export function CartStatusSelect({
   onChange,
   /** Timeout (ms) para considerar a mutação falha se `currentStatus` não confirmar. */
   confirmTimeoutMs = 6000,
+  /** Se o carrinho está vazio — bloqueia a transição para `pronto_orcamento`. */
+  isEmpty = false,
 }: {
   currentStatus: CartStatus;
   onChange: (next: CartStatus) => void;
   confirmTimeoutMs?: number;
+  isEmpty?: boolean;
 }) {
   const [pending, setPending] = useState<CartStatus | null>(null);
   const [liveMessage, setLiveMessage] = useState<string>('');
@@ -159,6 +162,16 @@ export function CartStatusSelect({
         onValueChange={(next) => {
           const nextKey = next as CartStatus;
           if (nextKey === currentStatus || isPending) return;
+          if (nextKey === 'pronto_orcamento' && isEmpty) {
+            toast.error('Carrinho vazio', {
+              description:
+                'Adicione ao menos um produto antes de marcar o carrinho como pronto para orçamento.',
+            });
+            setLiveMessage(
+              'Não é possível marcar o carrinho como pronto para orçamento: ele está vazio.',
+            );
+            return;
+          }
           setLiveMessage(`Atualizando status para ${STATUS_CONFIG[nextKey].label}.`);
           setPending(nextKey);
           onChange(nextKey);
@@ -207,11 +220,31 @@ export function CartStatusSelect({
               CartStatus,
               (typeof STATUS_CONFIG)[CartStatus],
             ][]
-          ).map(([key, cfg]) => (
-            <SelectItem key={key} value={key} className="text-xs">
-              {cfg.label}
-            </SelectItem>
-          ))}
+          ).map(([key, cfg]) => {
+            const disabled = key === 'pronto_orcamento' && isEmpty;
+            return (
+              <SelectItem
+                key={key}
+                value={key}
+                disabled={disabled}
+                className="text-xs"
+                data-testid={`cart-status-option-${key}`}
+                data-disabled-empty={disabled ? 'true' : undefined}
+                aria-label={
+                  disabled
+                    ? `${cfg.label} — indisponível: adicione produtos ao carrinho primeiro`
+                    : cfg.label
+                }
+              >
+                {cfg.label}
+                {disabled && (
+                  <span className="ml-2 text-[10px] text-muted-foreground">
+                    (carrinho vazio)
+                  </span>
+                )}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 
@@ -671,6 +704,7 @@ function SellerCartsContent() {
           >
             <CartStatusSelect
               currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
+              isEmpty={(s.activeCart?.items.length ?? 0) === 0}
               onChange={(next) => {
                 if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
               }}
