@@ -13,6 +13,13 @@ on:
       - 'src/lib/carts/shipping-deadline.ts'
       - 'src/pages/products/__tests__/CartHeader*.test.ts'
       - 'src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts'
+      - 'src/pages/products/__tests__/CartNotesInternalOnly.test.ts'
+      - 'src/pages/products/__tests__/CartNotesLeakGuards.test.tsx'
+      - 'src/hooks/products/useSellerCarts.ts'
+      - 'src/components/pdf/**'
+      - 'src/utils/proposalPdfReactGenerator.ts'
+      - 'supabase/functions/quote-public-*/**'
+      - 'supabase/functions/tests/seller-carts-rls_test.ts'
       - 'scripts/qa/cart-header-fuzz-report.mjs'
       - '.github/workflows/cart-header-quality-gate.yml'
   push:
@@ -20,6 +27,8 @@ on:
     paths:
       - 'src/pages/products/SellerCartsPage.tsx'
       - 'src/lib/carts/shipping-deadline.ts'
+      - 'src/pages/products/__tests__/CartNotesInternalOnly.test.ts'
+      - 'src/pages/products/__tests__/CartNotesLeakGuards.test.tsx'
 
 concurrency:
   group: cart-header-qg-${{ github.ref }}
