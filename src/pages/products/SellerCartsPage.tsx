@@ -594,7 +594,9 @@ function SellerCartsContent() {
                     <CalendarClock aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
                     Prazo p/ envio
                   </label>
-                  <input
+                  </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    <input
                     id="cart-shipping-deadline"
                     type="date"
                     data-testid="cart-shipping-deadline-input"
