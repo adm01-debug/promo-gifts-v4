@@ -1,7 +1,7 @@
 /**
  * CartHeaderActions — ações do header do carrinho ativo:
- * CTA primário "Gerar Orçamento" + atalho secundário "Ver Orçamentos".
- * O antigo menu "Gerenciar Carrinho" foi removido.
+ * CTA primário "Gerar Orçamento". Os antigos "Gerenciar Carrinho"
+ * e "Ver Orçamentos" foram removidos.
  */
 import { useState } from 'react';
 import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
