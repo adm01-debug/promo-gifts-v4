@@ -168,7 +168,7 @@ function clickItem(value: CartStatus) {
   if (el) fireEvent.click(el);
 }
 
-describe('CartStatusSelect · fuzz 300× (invariantes DOM + edge cases)', () => {
+describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () => {
   beforeEach(() => {
     toastSuccess.mockReset();
     toastError.mockReset();
