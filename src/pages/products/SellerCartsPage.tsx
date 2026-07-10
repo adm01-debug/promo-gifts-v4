@@ -220,11 +220,31 @@ export function CartStatusSelect({
               CartStatus,
               (typeof STATUS_CONFIG)[CartStatus],
             ][]
-          ).map(([key, cfg]) => (
-            <SelectItem key={key} value={key} className="text-xs">
-              {cfg.label}
-            </SelectItem>
-          ))}
+          ).map(([key, cfg]) => {
+            const disabled = key === 'pronto_orcamento' && isEmpty;
+            return (
+              <SelectItem
+                key={key}
+                value={key}
+                disabled={disabled}
+                className="text-xs"
+                data-testid={`cart-status-option-${key}`}
+                data-disabled-empty={disabled ? 'true' : undefined}
+                aria-label={
+                  disabled
+                    ? `${cfg.label} — indisponível: adicione produtos ao carrinho primeiro`
+                    : cfg.label
+                }
+              >
+                {cfg.label}
+                {disabled && (
+                  <span className="ml-2 text-[10px] text-muted-foreground">
+                    (carrinho vazio)
+                  </span>
+                )}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 
