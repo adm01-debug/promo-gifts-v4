@@ -146,7 +146,10 @@ function CartStatusSelect({
             ) : (
               <span
                 aria-hidden="true"
-                className={cn('h-1.5 w-1.5 flex-shrink-0 rounded-full', displayCfg.dotColor ?? 'bg-current')}
+                className={cn(
+                  'h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                  displayKey === 'pronto_orcamento' ? 'bg-neon-green' : 'bg-neon-blue',
+                )}
               />
             )}
             <SelectValue aria-label={displayCfg.label}>
