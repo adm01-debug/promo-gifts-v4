@@ -44,7 +44,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2, Plus } from 'lucide-react';
+import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCrmCompany } from '@/hooks/crm/useCrmCompanies';
 import { maskCnpj } from '@/utils/masks';
@@ -594,20 +594,6 @@ function SellerCartsContent() {
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  data-testid="cart-add-products"
-                  aria-label="Adicionar produtos ao carrinho"
-                  size="icon"
-                  className="h-9 w-9 rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]"
-                  onClick={() => s.navigate('/produtos')}
-                >
-                  <Plus aria-hidden="true" className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Adicionar produtos</TooltipContent>
-            </Tooltip>
             {s.activeCart.items.length > 0 && (
               <CartHeaderActions
                 cart={s.activeCart}
