@@ -166,7 +166,7 @@ export function CartStatusSelect({
               data-testid="cart-status-select"
               data-status={displayKey}
               data-pending={isPending ? 'true' : 'false'}
-              className="h-7 w-auto min-w-[128px] gap-1.5 whitespace-nowrap rounded-full border-border/50 bg-muted/30 px-2.5 text-xs font-medium hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/60 aria-busy:opacity-80"
+              className="h-9 w-auto min-w-[128px] gap-1.5 whitespace-nowrap rounded-full border-border/50 bg-muted/30 px-3 text-xs font-medium hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/60 aria-busy:opacity-80"
             >
               {isPending ? (
                 <Loader2
