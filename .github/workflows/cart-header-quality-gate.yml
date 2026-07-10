@@ -1,0 +1,70 @@
+name: cart-header-quality-gate
+
+# Roda o fuzzer estrutural (rápido, vitest) + spec de edge cases +
+# gera relatório automático de invariantes. Falha o PR se qualquer
+# invariante regredir. Não roda Playwright visual aqui (fica em
+# playwright.yml/e2e-*.yml pra reaproveitar cache do browser).
+
+on:
+  pull_request:
+    paths:
+      - 'src/pages/products/SellerCartsPage.tsx'
+      - 'src/pages/products/seller-carts/**'
+      - 'src/lib/carts/shipping-deadline.ts'
+      - 'src/pages/products/__tests__/CartHeader*.test.ts'
+      - 'src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts'
+      - 'scripts/qa/cart-header-fuzz-report.mjs'
+      - '.github/workflows/cart-header-quality-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/products/SellerCartsPage.tsx'
+      - 'src/lib/carts/shipping-deadline.ts'
+
+concurrency:
+  group: cart-header-qg-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: CartHeader fuzz + edge cases
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Rodar fuzz + edge cases (timeout 5min)
+        timeout-minutes: 5
+        run: |
+          bunx vitest run \
+            src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts \
+            src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts \
+            src/pages/products/__tests__/CartHeaderEdgeCases.test.ts \
+            --reporter=verbose
+
+      - name: Gerar relatório de invariantes
+        if: always()
+        run: node scripts/qa/cart-header-fuzz-report.mjs
+
+      - name: Publicar relatório como artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-header-fuzz-report
+          path: qa/reports/cart-header-fuzz-report.md
+          retention-days: 30
+
+      - name: Publicar sumário no job
+        if: always()
+        run: |
+          if [ -f qa/reports/cart-header-fuzz-report.md ]; then
+            cat qa/reports/cart-header-fuzz-report.md >> $GITHUB_STEP_SUMMARY
+          fi
