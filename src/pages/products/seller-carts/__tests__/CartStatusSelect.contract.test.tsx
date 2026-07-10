@@ -93,7 +93,7 @@ describe('CartStatusSelect · contrato STATUS_CONFIG × getStatusCfg', () => {
     (status) => {
       expect(() =>
         render(
-          <CartStatusSelect currentStatus={status} onChange={() => {}} isPending={false} />,
+          <CartStatusSelect currentStatus={status} onChange={() => {}} />,
         ),
       ).not.toThrow();
       const trigger = screen.getByTestId('cart-status-select');
@@ -107,7 +107,7 @@ describe('CartStatusSelect · contrato STATUS_CONFIG × getStatusCfg', () => {
     const bogus = 'legacy_unknown' as unknown as CartStatus;
     expect(() =>
       render(
-        <CartStatusSelect currentStatus={bogus} onChange={() => {}} isPending={false} />,
+        <CartStatusSelect currentStatus={bogus} onChange={() => {}} />,
       ),
     ).not.toThrow();
     const trigger = screen.getByTestId('cart-status-select');
