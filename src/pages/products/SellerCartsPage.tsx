@@ -637,6 +637,7 @@ function SellerCartsContent() {
                       {s.shippingDeadlineError}
                     </span>
                   )}
+                  </div>
                 </div>
                 <CartStatusSelect
                   currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
