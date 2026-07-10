@@ -633,10 +633,7 @@ function SellerCartsContent() {
             ) : (
               <>
                 {/* Toolbar de visualização */}
-                <div className="flex items-center justify-between gap-2 px-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {s.activeCart.items.length} {s.activeCart.items.length === 1 ? 'item' : 'itens'}
-                  </span>
+                <div className="flex items-center justify-end gap-2 px-1">
                   <div className="flex items-center gap-2">
                     <LayoutPopover
                       viewMode={viewMode}
