@@ -54,6 +54,11 @@ import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCarts
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
 import { CartHeaderActions } from '@/pages/products/seller-carts/CartHeaderActions';
 import { purgeOrphanCartPrefs } from '@/pages/products/seller-carts/purgeOrphanCartPrefs';
+import {
+  CART_VIEW_MODE_DEFAULT,
+  loadCartViewMode,
+  persistCartViewMode,
+} from '@/pages/products/seller-carts/cartViewModePrefs';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
