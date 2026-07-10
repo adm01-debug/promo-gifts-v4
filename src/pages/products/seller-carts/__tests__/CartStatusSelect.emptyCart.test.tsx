@@ -168,16 +168,13 @@ describe('CartStatusSelect — isEmpty bloqueia pronto_orcamento', () => {
     render(
       <CartStatusSelect currentStatus="em_separacao" onChange={onChange} isEmpty />,
     );
-    // Força o disparo diretamente no elemento (contorna `disabled`).
-    const readyItem = document.querySelector<HTMLButtonElement>(
-      '[data-mock-select-item][data-value="pronto_orcamento"]',
-    );
-    // Bypass em runtime: força a propriedade `disabled` do DOM para false
-    // (simula um caminho onde o valor chega ao onValueChange mesmo com o
-    // item marcado como desabilitado — teclado, mudança assíncrona etc.).
-    Object.defineProperty(readyItem!, 'disabled', { value: false, configurable: true });
-    readyItem!.removeAttribute('data-disabled');
-    fireEvent.click(readyItem!);
+
+    // Invoca diretamente o handler onValueChange do Select (bypass total).
+    const fire = (
+      globalThis as unknown as { __cartSelectFire?: (v: string) => void }
+    ).__cartSelectFire;
+    expect(fire).toBeTypeOf('function');
+    fire!('pronto_orcamento');
 
     expect(onChange).not.toHaveBeenCalled();
     // Toast SSOT foi disparado com título "Carrinho vazio".
