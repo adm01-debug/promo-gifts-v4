@@ -12,12 +12,13 @@
  *     entre contas no mesmo navegador).
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   CART_VIEW_MODE_DEFAULT,
   cartViewModeDateStorageKey,
   cartViewModeStorageKey,
   getLocalDateStamp,
+  getSafeStorage,
   loadCartViewMode,
   persistCartViewMode,
 } from '../cartViewModePrefs';
