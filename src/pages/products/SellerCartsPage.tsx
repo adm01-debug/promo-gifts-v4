@@ -586,7 +586,6 @@ function SellerCartsContent() {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 leading-none">
                 <CartCompanyCnpj companyId={s.activeCart.company_id} />
                 <div className="inline-flex flex-col items-start gap-1">
-                  <div className="inline-flex items-center gap-1.5">
                   <label
                     htmlFor="cart-shipping-deadline"
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
@@ -594,49 +593,49 @@ function SellerCartsContent() {
                     <CalendarClock aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
                     Prazo p/ envio
                   </label>
-                  </div>
-                  <div className="inline-flex items-center gap-1.5">
+                  <div className="inline-flex flex-wrap items-center gap-1.5">
                     <input
-                    id="cart-shipping-deadline"
-                    type="date"
-                    data-testid="cart-shipping-deadline-input"
-                    value={s.shippingDeadlineDraft ?? ''}
-                    min={new Date().toISOString().slice(0, 10)}
-                    aria-invalid={!!s.shippingDeadlineError || undefined}
-                    aria-describedby={s.shippingDeadlineError ? 'cart-shipping-deadline-error' : undefined}
-                    onChange={(e) => s.handleShippingDeadlineChange(e.target.value || null)}
-                    className={cn(
-                      'h-7 rounded-md border bg-background/50 px-2 text-xs text-foreground transition-all focus:outline-none focus:ring-2',
-                      s.shippingDeadlineError
-                        ? 'border-destructive/60 focus:border-destructive focus:ring-destructive/20'
-                        : 'border-border/30 focus:border-primary/40 focus:ring-primary/10',
-                    )}
-                    aria-label="Data limite para envio ao cliente"
-                  />
-                  {s.shippingDeadlineBadge && !s.shippingDeadlineError && (
-                    <span
-                      role="status"
-                      aria-label={`Status do prazo: ${s.shippingDeadlineBadge.label}`}
-                      data-testid="cart-shipping-deadline-badge"
-                      data-status={s.shippingDeadlineBadge.status}
+                      id="cart-shipping-deadline"
+                      type="date"
+                      data-testid="cart-shipping-deadline-input"
+                      value={s.shippingDeadlineDraft ?? ''}
+                      min={new Date().toISOString().slice(0, 10)}
+                      aria-invalid={!!s.shippingDeadlineError || undefined}
+                      aria-describedby={
+                        s.shippingDeadlineError ? 'cart-shipping-deadline-error' : undefined
+                      }
+                      onChange={(e) => s.handleShippingDeadlineChange(e.target.value || null)}
                       className={cn(
-                        'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                        s.shippingDeadlineBadge.className,
+                        'h-7 rounded-md border bg-background/50 px-2 text-xs text-foreground transition-all focus:outline-none focus:ring-2',
+                        s.shippingDeadlineError
+                          ? 'border-destructive/60 focus:border-destructive focus:ring-destructive/20'
+                          : 'border-border/30 focus:border-primary/40 focus:ring-primary/10',
                       )}
-                    >
-                      {s.shippingDeadlineBadge.label}
-                    </span>
-                  )}
-                  {s.shippingDeadlineError && (
-                    <span
-                      id="cart-shipping-deadline-error"
-                      role="alert"
-                      data-testid="cart-shipping-deadline-error"
-                      className="text-[10px] font-medium text-destructive"
-                    >
-                      {s.shippingDeadlineError}
-                    </span>
-                  )}
+                    />
+                    {s.shippingDeadlineBadge && !s.shippingDeadlineError && (
+                      <span
+                        role="status"
+                        aria-label={`Status do prazo: ${s.shippingDeadlineBadge.label}`}
+                        data-testid="cart-shipping-deadline-badge"
+                        data-status={s.shippingDeadlineBadge.status}
+                        className={cn(
+                          'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                          s.shippingDeadlineBadge.className,
+                        )}
+                      >
+                        {s.shippingDeadlineBadge.label}
+                      </span>
+                    )}
+                    {s.shippingDeadlineError && (
+                      <span
+                        id="cart-shipping-deadline-error"
+                        role="alert"
+                        data-testid="cart-shipping-deadline-error"
+                        className="text-[10px] font-medium text-destructive"
+                      >
+                        {s.shippingDeadlineError}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <CartStatusSelect
