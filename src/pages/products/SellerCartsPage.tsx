@@ -644,7 +644,10 @@ function SellerCartsContent() {
               )}
             </div>
           </div>
-          <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5 sm:ml-auto sm:gap-2 md:gap-2.5 lg:gap-3">
+          <div
+            data-testid="cart-header-actions"
+            className="flex w-full flex-shrink-0 flex-wrap items-center content-end justify-end gap-1.5 sm:ml-auto sm:w-auto sm:gap-2 md:gap-2.5 lg:gap-3"
+          >
             <CartStatusSelect
               currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
               onChange={(next) => {
