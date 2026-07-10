@@ -40,6 +40,7 @@ import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
 import { resolveCartCompanyCnpj } from './cartCompanyCnpj';
+import { CartItemErrorAlert } from './CartItemErrorAlert';
 import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
 import { useState, useEffect } from 'react';
