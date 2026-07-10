@@ -1,9 +1,10 @@
 name: cart-header-quality-gate
 
 # Roda o fuzzer estrutural (rápido, vitest) + spec de edge cases +
-# gera relatório automático de invariantes. Falha o PR se qualquer
-# invariante regredir. Não roda Playwright visual aqui (fica em
-# playwright.yml/e2e-*.yml pra reaproveitar cache do browser).
+# gera relatório automático de invariantes. Também roda os testes
+# de confidencialidade das notas internas (seller_carts.notes) e o
+# teste de RLS via Deno quando as credenciais estão disponíveis.
+# Falha o PR se qualquer invariante regredir.
 
 on:
   pull_request:
@@ -36,9 +37,9 @@ concurrency:
 
 jobs:
   fuzz:
-    name: CartHeader fuzz + edge cases
+    name: CartHeader fuzz + notas internas
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -50,17 +51,8 @@ jobs:
       - name: Install
         run: npm ci --prefer-offline --no-audit
 
-      - name: Rodar fuzz + edge cases (timeout 5min)
-        timeout-minutes: 5
-        run: |
-          bunx vitest run \
-            src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts \
-            src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts \
-            src/pages/products/__tests__/CartHeaderEdgeCases.test.ts \
-            --reporter=verbose
-
-      - name: Rodar fuzz + edge cases (timeout 5min)
-        timeout-minutes: 5
+      - name: Rodar fuzz + edge cases + guarda de vazamento (timeout 6min)
+        timeout-minutes: 6
         run: |
           bunx vitest run \
             src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts \
@@ -70,17 +62,14 @@ jobs:
             src/pages/products/__tests__/CartNotesLeakGuards.test.tsx \
             --reporter=verbose
 
-      - name: Rodar teste de RLS de seller_carts (Deno, skip-graceful sem env)
-        if: env.SUPABASE_URL != '' && env.TEST_SELLER_A_JWT != '' && env.TEST_SELLER_B_JWT != ''
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          TEST_SELLER_A_JWT: ${{ secrets.TEST_SELLER_A_JWT }}
-          TEST_SELLER_B_JWT: ${{ secrets.TEST_SELLER_B_JWT }}
-        run: |
-          curl -fsSL https://deno.land/install.sh | sh
-          export PATH="$HOME/.deno/bin:$PATH"
-          deno test --allow-net --allow-env supabase/functions/tests/seller-carts-rls_test.ts
+      - name: Gerar relatório de invariantes
+        if: always()
+        run: node scripts/qa/cart-header-fuzz-report.mjs
+
+      - name: Publicar relatório como artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
           name: cart-header-fuzz-report
           path: qa/reports/cart-header-fuzz-report.md
           retention-days: 30
@@ -91,3 +80,25 @@ jobs:
           if [ -f qa/reports/cart-header-fuzz-report.md ]; then
             cat qa/reports/cart-header-fuzz-report.md >> $GITHUB_STEP_SUMMARY
           fi
+
+  rls-integration:
+    name: seller_carts RLS (Deno, skip-graceful sem credenciais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    # Só executa quando os segredos existirem. Sem eles o job é pulado
+    # (não falha), mantendo o gate estável em PRs de contribuidores externos.
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      TEST_SELLER_A_JWT: ${{ secrets.TEST_SELLER_A_JWT }}
+      TEST_SELLER_B_JWT: ${{ secrets.TEST_SELLER_B_JWT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Rodar teste de RLS
+        run: deno test --allow-net --allow-env supabase/functions/tests/seller-carts-rls_test.ts
