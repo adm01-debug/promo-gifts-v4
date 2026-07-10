@@ -161,6 +161,8 @@ export function CartHeaderButton() {
     updateItemQuantity,
     clearCart,
     restoreItems,
+    itemErrors,
+    clearItemError,
   } = cartContext;
 
   const handleRemoveWithUndo = (
