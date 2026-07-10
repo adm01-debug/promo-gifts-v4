@@ -219,19 +219,19 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [resolvedActiveCartId, addItem, carts],
   );
 
-  const removeItem = useCallback(
-    (itemId: string) => {
-      removeItemMutation.mutate(itemId);
-    },
-    [removeItemMutation],
-  );
-
-  const updateItemQuantity = useCallback(
-    (itemId: string, quantity: number) => {
-      updateQtyMutation.mutate({ itemId, quantity });
-    },
-    [updateQtyMutation],
-  );
+  // Camada de debounce + tracking de erro por item. Cliques rápidos em +/- e
+  // lixeira colapsam em um único write (economizando round-trips) enquanto a
+  // UI reflete cada clique instantaneamente via update otimista no cache.
+  const {
+    updateItemQuantity,
+    removeItem,
+    itemErrors,
+    clearItemError,
+  } = useDebouncedCartItemActions({
+    userId: user?.id,
+    updateQtyMutation,
+    removeItemMutation,
+  });
 
   const updateItemNotes = useCallback(
     (itemId: string, notes: string) => {
