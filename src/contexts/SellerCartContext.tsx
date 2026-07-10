@@ -58,6 +58,10 @@ interface SellerCartContextType {
   duplicateItemToCart: (itemId: string, targetCartId: string) => void;
   clearCart: (cartId: string) => Promise<void>;
   restoreItems: (cartId: string, items: AddToCartInput[]) => void;
+  /** Mapa de erros por item (rollback aplicado; UI mostra mensagem clara). */
+  itemErrors: Record<string, string>;
+  /** Limpa o erro exibido para um item (após retry pelo usuário). */
+  clearItemError: (itemId: string) => void;
 }
 
 const SellerCartContext = createContext<SellerCartContextType | undefined>(undefined);
