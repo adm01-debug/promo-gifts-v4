@@ -59,14 +59,28 @@ jobs:
             src/pages/products/__tests__/CartHeaderEdgeCases.test.ts \
             --reporter=verbose
 
-      - name: Gerar relatório de invariantes
-        if: always()
-        run: node scripts/qa/cart-header-fuzz-report.mjs
+      - name: Rodar fuzz + edge cases (timeout 5min)
+        timeout-minutes: 5
+        run: |
+          bunx vitest run \
+            src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts \
+            src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts \
+            src/pages/products/__tests__/CartHeaderEdgeCases.test.ts \
+            src/pages/products/__tests__/CartNotesInternalOnly.test.ts \
+            src/pages/products/__tests__/CartNotesLeakGuards.test.tsx \
+            --reporter=verbose
 
-      - name: Publicar relatório como artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
+      - name: Rodar teste de RLS de seller_carts (Deno, skip-graceful sem env)
+        if: env.SUPABASE_URL != '' && env.TEST_SELLER_A_JWT != '' && env.TEST_SELLER_B_JWT != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          TEST_SELLER_A_JWT: ${{ secrets.TEST_SELLER_A_JWT }}
+          TEST_SELLER_B_JWT: ${{ secrets.TEST_SELLER_B_JWT }}
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          export PATH="$HOME/.deno/bin:$PATH"
+          deno test --allow-net --allow-env supabase/functions/tests/seller-carts-rls_test.ts
           name: cart-header-fuzz-report
           path: qa/reports/cart-header-fuzz-report.md
           retention-days: 30
