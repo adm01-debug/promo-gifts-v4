@@ -39,11 +39,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
 import { DeleteConfirmDialog, ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock } from 'lucide-react';
+import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCrmCompany } from '@/hooks/crm/useCrmCompanies';
 import { maskCnpj } from '@/utils/masks';
@@ -87,6 +88,99 @@ function CartCompanyCnpj({ companyId }: { companyId: string }) {
     </div>
   );
 }
+
+/**
+ * CartStatusSelect — Select compacto de status com tooltip, aria-label reforçado
+ * e feedback visual (spinner + toast) durante a atualização.
+ */
+function CartStatusSelect({
+  currentStatus,
+  onChange,
+}: {
+  currentStatus: CartStatus;
+  onChange: (next: CartStatus) => void;
+}) {
+  const [pending, setPending] = useState<CartStatus | null>(null);
+  const currentCfg = STATUS_CONFIG[currentStatus];
+  const displayKey = pending ?? currentStatus;
+  const displayCfg = STATUS_CONFIG[displayKey];
+
+  // Quando o status real do carrinho alcança o valor pendente, confirmamos ao usuário.
+  useEffect(() => {
+    if (pending && currentStatus === pending) {
+      toast.success(`Status atualizado para "${STATUS_CONFIG[pending].label}"`);
+      setPending(null);
+    }
+  }, [currentStatus, pending]);
+
+  const isPending = pending !== null && pending !== currentStatus;
+  const ariaLabel = isPending
+    ? `Alterando status para ${STATUS_CONFIG[pending!].label}…`
+    : `Status do carrinho: ${currentCfg.label}. Clique para alterar.`;
+
+  return (
+    <Select
+      value={displayKey}
+      onValueChange={(next) => {
+        const nextKey = next as CartStatus;
+        if (nextKey === currentStatus) return;
+        setPending(nextKey);
+        onChange(nextKey);
+      }}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SelectTrigger
+            aria-label={ariaLabel}
+            aria-live="polite"
+            aria-busy={isPending}
+            data-testid="cart-status-select"
+            data-status={displayKey}
+            className="h-7 w-auto min-w-[112px] max-w-[180px] gap-1.5 rounded-full border-border/50 bg-muted/30 px-2.5 text-xs font-medium hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/60"
+          >
+            {isPending ? (
+              <Loader2
+                aria-hidden="true"
+                className="h-3 w-3 flex-shrink-0 animate-spin text-muted-foreground"
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                  displayKey === 'pronto_orcamento' ? 'bg-neon-green' : 'bg-neon-blue',
+                )}
+              />
+            )}
+            <SelectValue aria-label={displayCfg.label}>
+              <span className="truncate">{displayCfg.label}</span>
+            </SelectValue>
+          </SelectTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          {isPending
+            ? `Atualizando para ${STATUS_CONFIG[pending!].label}…`
+            : `Status atual: ${currentCfg.label}. Clique para alterar.`}
+        </TooltipContent>
+      </Tooltip>
+      <SelectContent align="start">
+        {(
+          Object.entries(STATUS_CONFIG) as [
+            CartStatus,
+            (typeof STATUS_CONFIG)[CartStatus],
+          ][]
+        ).map(([key, cfg]) => (
+          <SelectItem key={key} value={key} className="text-xs">
+            {cfg.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+
+
 
 
 
@@ -446,42 +540,14 @@ function SellerCartsContent() {
               >
                 {s.activeCart.company_name}
               </h2>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 leading-none">
                 <CartCompanyCnpj companyId={s.activeCart.company_id} />
-                {(() => {
-                  const currentKey = (s.activeCart?.status ?? 'em_separacao') as CartStatus;
-                  const currentCfg = STATUS_CONFIG[currentKey];
-                  return (
-                    <Select
-                      value={currentKey}
-                      onValueChange={(next) => {
-                        if (s.activeCart) s.updateCartStatus(s.activeCart.id, next as CartStatus);
-                      }}
-                    >
-                      <SelectTrigger
-                        aria-label="Status do carrinho"
-                        data-testid="cart-status-select"
-                        className="h-7 w-auto min-w-[110px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
-                      >
-                        <SelectValue aria-label={currentCfg.label}>
-                          <span className="truncate">{currentCfg.label}</span>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent align="start">
-                        {(
-                          Object.entries(STATUS_CONFIG) as [
-                            CartStatus,
-                            (typeof STATUS_CONFIG)[CartStatus],
-                          ][]
-                        ).map(([key, cfg]) => (
-                          <SelectItem key={key} value={key} className="text-xs">
-                            {cfg.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                })()}
+                <CartStatusSelect
+                  currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
+                  onChange={(next) => {
+                    if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
+                  }}
+                />
               </div>
             </div>
           </div>
