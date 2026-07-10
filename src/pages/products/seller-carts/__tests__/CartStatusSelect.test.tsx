@@ -162,7 +162,17 @@ describe('CartStatusSelect', () => {
     expect(toastSuccess.mock.calls[0][0]).toMatch(/Pronto p\/ orçamento/);
     const trigger = screen.getByTestId('cart-status-select');
     expect(trigger).toHaveAttribute('aria-busy', 'false');
+    expect(trigger).toHaveAttribute('data-pending', 'false');
+    expect(trigger).toHaveAttribute('data-status', 'pronto_orcamento');
+    // aria-label volta ao formato de "Status atual: <novo label>".
+    expect(trigger.getAttribute('aria-label')).toMatch(
+      /Status atual do carrinho:\s*Pronto p\/ orçamento/i,
+    );
     expect(screen.queryByTestId('cart-status-spinner')).not.toBeInTheDocument();
+    // Live-region reflete a confirmação da atualização.
+    expect(screen.getByTestId('cart-status-live').textContent).toMatch(
+      /Status atualizado para Pronto p\/ orçamento/i,
+    );
   });
 
   it('se a mutação não confirmar antes do timeout, exibe toast.error e reseta o loading', () => {
