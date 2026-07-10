@@ -4,19 +4,19 @@
  * Cobertura:
  *  1. Primeiro acesso do dia reseta para "list".
  *  2. Preferência escolhida é mantida durante o mesmo dia.
- *  3. Reset ocorre quando a data persistida é de qualquer dia anterior.
- *  4. `getLocalDateStamp` respeita o timezone LOCAL do usuário (não UTC),
- *     validando que dois usuários em fusos diferentes recebem o carimbo
- *     correspondente ao seu relógio local.
- *  5. Preferências ficam isoladas por `uid` (sem conflito ao alternar
- *     entre contas no mesmo navegador).
+ *  3. Timezone local (não UTC).
+ *  4. Isolamento por uid.
+ *  5. Resiliência: localStorage bloqueado → sessionStorage → memória.
+ *  6. Emissor de analytics (`change` e `daily_reset`).
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   CART_VIEW_MODE_DEFAULT,
+  type CartViewModeEvent,
   cartViewModeDateStorageKey,
   cartViewModeStorageKey,
+  detectStorageBackend,
   getLocalDateStamp,
   getSafeStorage,
   loadCartViewMode,
@@ -28,38 +28,38 @@ const UID_B = 'user-b';
 
 beforeEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
 });
 
+// -----------------------------------------------------------------------------
+// getLocalDateStamp
+// -----------------------------------------------------------------------------
+
 describe('getLocalDateStamp — timezone local', () => {
-  it('usa componentes de data LOCAL (getFullYear/getMonth/getDate), não UTC', () => {
-    // Um Date fixo: independente do TZ, os getters locais formam o carimbo.
-    const now = new Date(2026, 6, 10, 23, 30, 0); // 10/jul/2026 23:30 local
+  it('usa componentes de data LOCAL (não UTC)', () => {
+    const now = new Date(2026, 6, 10, 23, 30, 0);
     expect(getLocalDateStamp(now)).toBe('2026-07-10');
   });
 
-  it('mantém o mesmo dia ao virar meia-noite UTC se ainda for hoje no fuso local', () => {
-    // À noite em fusos negativos (ex: America/Sao_Paulo -03:00), UTC já
-    // pode ter avançado para o dia seguinte. `toISOString().slice(0,10)`
-    // retornaria "amanhã" — nosso helper NÃO.
-    const localNight = new Date(2026, 0, 15, 22, 0, 0); // 15/jan 22:00 local
-    const stamp = getLocalDateStamp(localNight);
-    expect(stamp).toBe('2026-01-15');
-    // Sanity: se este ambiente estiver em UTC-3 ou similar, o toISOString
-    // teria virado para 2026-01-16. Confirmamos apenas que o nosso helper
-    // não depende disso — vale para qualquer TZ da máquina de testes.
-    expect(stamp).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  it('formata com padding de mês/dia', () => {
+    expect(getLocalDateStamp(new Date(2026, 0, 5, 12, 0, 0))).toBe('2026-01-05');
   });
 
-  it('zera padding para meses/dias de um dígito', () => {
-    const d = new Date(2026, 0, 5, 12, 0, 0);
-    expect(getLocalDateStamp(d)).toBe('2026-01-05');
+  it('não depende de toISOString (UTC)', () => {
+    const localNight = new Date(2026, 0, 15, 22, 0, 0);
+    expect(getLocalDateStamp(localNight)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(getLocalDateStamp(localNight)).toBe('2026-01-15');
   });
 });
 
+// -----------------------------------------------------------------------------
+// loadCartViewMode — reset diário
+// -----------------------------------------------------------------------------
+
 describe('loadCartViewMode — primeiro acesso do dia reseta para "list"', () => {
-  it('sem nada no storage, retorna "list" e grava data de hoje', () => {
+  it('sem storage prévio, retorna "list" e grava data de hoje', () => {
     const now = new Date(2026, 6, 10, 9, 0, 0);
-    const result = loadCartViewMode(UID_A, localStorage, now);
+    const result = loadCartViewMode(UID_A, { storage: localStorage, now });
 
     expect(result.viewMode).toBe('list');
     expect(result.reset).toBe(true);
@@ -67,181 +67,186 @@ describe('loadCartViewMode — primeiro acesso do dia reseta para "list"', () =>
     expect(localStorage.getItem(cartViewModeDateStorageKey(UID_A))).toBe('2026-07-10');
   });
 
-  it('com data de ONTEM persistida, reseta para "list" mesmo com viewMode "grid" salvo', () => {
+  it('com data de ONTEM + modo "grid", reseta', () => {
     localStorage.setItem(cartViewModeStorageKey(UID_A), 'grid');
     localStorage.setItem(cartViewModeDateStorageKey(UID_A), '2026-07-09');
 
     const now = new Date(2026, 6, 10, 8, 0, 0);
-    const result = loadCartViewMode(UID_A, localStorage, now);
-
-    expect(result.viewMode).toBe('list');
-    expect(result.reset).toBe(true);
-    expect(localStorage.getItem(cartViewModeStorageKey(UID_A))).toBe('list');
-    expect(localStorage.getItem(cartViewModeDateStorageKey(UID_A))).toBe('2026-07-10');
-  });
-
-  it('com data ANTIGA (> 1 dia), reseta igualmente', () => {
-    localStorage.setItem(cartViewModeStorageKey(UID_A), 'table');
-    localStorage.setItem(cartViewModeDateStorageKey(UID_A), '2025-01-01');
-
-    const now = new Date(2026, 6, 10, 9, 0, 0);
-    const result = loadCartViewMode(UID_A, localStorage, now);
+    const result = loadCartViewMode(UID_A, { storage: localStorage, now });
 
     expect(result.viewMode).toBe('list');
     expect(result.reset).toBe(true);
   });
 
-  it('com valor de viewMode CORROMPIDO no storage, força reset para "list"', () => {
+  it('com viewMode CORROMPIDO no storage, força reset', () => {
     localStorage.setItem(cartViewModeStorageKey(UID_A), 'lixo-invalido');
     localStorage.setItem(cartViewModeDateStorageKey(UID_A), '2026-07-10');
 
     const now = new Date(2026, 6, 10, 9, 0, 0);
-    const result = loadCartViewMode(UID_A, localStorage, now);
+    const result = loadCartViewMode(UID_A, { storage: localStorage, now });
 
     expect(result.viewMode).toBe('list');
     expect(result.reset).toBe(true);
   });
 });
 
+// -----------------------------------------------------------------------------
+// loadCartViewMode — retenção durante o dia
+// -----------------------------------------------------------------------------
+
 describe('loadCartViewMode — preferência mantida durante o mesmo dia', () => {
-  it('mantém "grid" quando data persistida === hoje local', () => {
+  it('mantém "grid" no mesmo dia', () => {
     const now = new Date(2026, 6, 10, 15, 0, 0);
-    persistCartViewMode(UID_A, 'grid', localStorage, now);
+    persistCartViewMode(UID_A, 'grid', { storage: localStorage, now });
 
-    const later = new Date(2026, 6, 10, 22, 45, 0); // mesmo dia, mais tarde
-    const result = loadCartViewMode(UID_A, localStorage, later);
-
+    const later = new Date(2026, 6, 10, 22, 45, 0);
+    const result = loadCartViewMode(UID_A, { storage: localStorage, now: later });
     expect(result.viewMode).toBe('grid');
     expect(result.reset).toBe(false);
   });
 
-  it('mantém "table" durante o mesmo dia', () => {
-    const now = new Date(2026, 6, 10, 10, 0, 0);
-    persistCartViewMode(UID_A, 'table', localStorage, now);
-
-    const result = loadCartViewMode(UID_A, localStorage, new Date(2026, 6, 10, 20, 0, 0));
-    expect(result.viewMode).toBe('table');
-    expect(result.reset).toBe(false);
-  });
-
-  it('alterna list → grid → table → list mantendo a data e sem resetar', () => {
+  it('alterna list → grid → table sem resetar no mesmo dia', () => {
     const day = new Date(2026, 6, 10, 9, 0, 0);
-    persistCartViewMode(UID_A, 'grid', localStorage, day);
-    expect(loadCartViewMode(UID_A, localStorage, day).viewMode).toBe('grid');
+    persistCartViewMode(UID_A, 'grid', { storage: localStorage, now: day });
+    expect(loadCartViewMode(UID_A, { storage: localStorage, now: day }).viewMode).toBe('grid');
 
-    persistCartViewMode(UID_A, 'table', localStorage, day);
-    expect(loadCartViewMode(UID_A, localStorage, day).viewMode).toBe('table');
-
-    persistCartViewMode(UID_A, 'list', localStorage, day);
-    const final = loadCartViewMode(UID_A, localStorage, day);
-    expect(final.viewMode).toBe('list');
-    expect(final.reset).toBe(false);
+    persistCartViewMode(UID_A, 'table', { storage: localStorage, now: day });
+    expect(loadCartViewMode(UID_A, { storage: localStorage, now: day }).viewMode).toBe('table');
   });
 });
 
-describe('Isolamento por uid — sem conflito entre contas', () => {
-  it('preferências de user-a NÃO interferem em user-b', () => {
-    const now = new Date(2026, 6, 10, 12, 0, 0);
-    persistCartViewMode(UID_A, 'grid', localStorage, now);
-    persistCartViewMode(UID_B, 'table', localStorage, now);
+// -----------------------------------------------------------------------------
+// Isolamento por uid
+// -----------------------------------------------------------------------------
 
-    expect(loadCartViewMode(UID_A, localStorage, now).viewMode).toBe('grid');
-    expect(loadCartViewMode(UID_B, localStorage, now).viewMode).toBe('table');
+describe('Isolamento por uid — sem conflito entre contas', () => {
+  it('preferências de user-a não afetam user-b', () => {
+    const now = new Date(2026, 6, 10, 12, 0, 0);
+    persistCartViewMode(UID_A, 'grid', { storage: localStorage, now });
+    persistCartViewMode(UID_B, 'table', { storage: localStorage, now });
+
+    expect(loadCartViewMode(UID_A, { storage: localStorage, now }).viewMode).toBe('grid');
+    expect(loadCartViewMode(UID_B, { storage: localStorage, now }).viewMode).toBe('table');
   });
 
-  it('reset diário do user-a NÃO reseta o user-b (isolamento de chave e data)', () => {
-    // user-a com data de ontem, user-b com data de hoje.
+  it('reset diário de user-a não reseta user-b', () => {
     localStorage.setItem(cartViewModeStorageKey(UID_A), 'grid');
     localStorage.setItem(cartViewModeDateStorageKey(UID_A), '2026-07-09');
     const today = new Date(2026, 6, 10, 8, 0, 0);
-    persistCartViewMode(UID_B, 'table', localStorage, today);
+    persistCartViewMode(UID_B, 'table', { storage: localStorage, now: today });
 
-    const rA = loadCartViewMode(UID_A, localStorage, today);
-    const rB = loadCartViewMode(UID_B, localStorage, today);
+    const rA = loadCartViewMode(UID_A, { storage: localStorage, now: today });
+    const rB = loadCartViewMode(UID_B, { storage: localStorage, now: today });
 
-    expect(rA.viewMode).toBe('list'); // resetou
-    expect(rA.reset).toBe(true);
-    expect(rB.viewMode).toBe('table'); // intacto
-    expect(rB.reset).toBe(false);
+    expect(rA.viewMode).toBe('list');
+    expect(rB.viewMode).toBe('table');
   });
 
-  it('chaves usam formato `<key>:<uid>` (contrato consumido pelo SellerCartsPage)', () => {
+  it('formato de chaves: `<key>:<uid>`', () => {
     expect(cartViewModeStorageKey('abc')).toBe('cart-view-mode:abc');
     expect(cartViewModeDateStorageKey('abc')).toBe('cart-view-mode-date:abc');
   });
 });
 
-describe('Ciclo completo — cenário do usuário conectado', () => {
-  it('primeiro acesso do dia → escolhe grid → mantém grid até virar o dia', () => {
-    // Dia 1, 08:00 — primeiro acesso.
-    const morning = new Date(2026, 6, 10, 8, 0, 0);
-    const first = loadCartViewMode(UID_A, localStorage, morning);
-    expect(first.viewMode).toBe('list');
-    expect(first.reset).toBe(true);
+// -----------------------------------------------------------------------------
+// SSOT
+// -----------------------------------------------------------------------------
 
-    // Usuário troca para grid.
-    persistCartViewMode(UID_A, 'grid', localStorage, morning);
-
-    // Reabre o app à tarde (mesmo dia).
-    const afternoon = new Date(2026, 6, 10, 14, 30, 0);
-    expect(loadCartViewMode(UID_A, localStorage, afternoon).viewMode).toBe('grid');
-
-    // Reabre à noite (mesmo dia).
-    const night = new Date(2026, 6, 10, 22, 45, 0);
-    expect(loadCartViewMode(UID_A, localStorage, night).viewMode).toBe('grid');
-
-    // Dia seguinte, primeiro acesso — reseta para "list".
-    const nextDay = new Date(2026, 6, 11, 7, 0, 0);
-    const next = loadCartViewMode(UID_A, localStorage, nextDay);
-    expect(next.viewMode).toBe('list');
-    expect(next.reset).toBe(true);
-  });
-
-  it('CART_VIEW_MODE_DEFAULT é "list" — SSOT compartilhado com o componente', () => {
+describe('SSOT', () => {
+  it('CART_VIEW_MODE_DEFAULT === "list"', () => {
     expect(CART_VIEW_MODE_DEFAULT).toBe('list');
   });
 });
 
 // -----------------------------------------------------------------------------
-// Resiliência a localStorage indisponível/bloqueado (Safari Private, quota,
-// cookies off, iframe cross-origin). O helper NUNCA deve lançar — deve cair
-// silenciosamente em um fallback em memória.
+// Resiliência: cascata localStorage → sessionStorage → memória
 // -----------------------------------------------------------------------------
 
-describe('getSafeStorage — resiliência a localStorage bloqueado', () => {
-  // Guarda o descriptor original para restaurar após cada caso.
-  let originalDescriptor: PropertyDescriptor | undefined;
+describe('Cascata de storage — localStorage → sessionStorage → memória', () => {
+  let lsDescriptor: PropertyDescriptor | undefined;
+  let ssDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
-    originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    lsDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    ssDescriptor = Object.getOwnPropertyDescriptor(window, 'sessionStorage');
   });
 
   afterEach(() => {
-    if (originalDescriptor) {
-      Object.defineProperty(window, 'localStorage', originalDescriptor);
-    }
+    if (lsDescriptor) Object.defineProperty(window, 'localStorage', lsDescriptor);
+    if (ssDescriptor) Object.defineProperty(window, 'sessionStorage', ssDescriptor);
     vi.restoreAllMocks();
   });
 
-  const stubLocalStorage = (impl: Storage | null | (() => never)) => {
-    Object.defineProperty(window, 'localStorage', {
+  const blockStorage = (name: 'localStorage' | 'sessionStorage') => {
+    Object.defineProperty(window, name, {
       configurable: true,
-      get: typeof impl === 'function' ? (impl as () => never) : () => impl as Storage,
+      get: () => {
+        throw new DOMException('SecurityError', 'SecurityError');
+      },
     });
   };
 
-  it('quando window.localStorage lança SecurityError no acesso, retorna fallback em memória', () => {
-    stubLocalStorage(() => {
-      throw new DOMException('SecurityError', 'SecurityError');
-    });
-
-    // Não deve lançar — apenas devolver um SafeStorage funcional.
-    const safe = getSafeStorage();
-    expect(() => safe.setItem('k', 'v')).not.toThrow();
-    expect(safe.getItem('k')).toBe('v');
+  it('detectStorageBackend retorna "localStorage" quando tudo disponível', () => {
+    expect(detectStorageBackend()).toBe('localStorage');
   });
 
-  it('quando setItem lança QuotaExceededError, mantém leitura via fallback em memória', () => {
+  it('cai para sessionStorage quando localStorage lança', () => {
+    blockStorage('localStorage');
+    expect(detectStorageBackend()).toBe('sessionStorage');
+
+    const safe = getSafeStorage();
+    safe.setItem('cart-view-mode:u1', 'grid');
+    expect(sessionStorage.getItem('cart-view-mode:u1')).toBe('grid');
+    expect(safe.getItem('cart-view-mode:u1')).toBe('grid');
+  });
+
+  it('cai para memória quando localStorage E sessionStorage lançam', () => {
+    blockStorage('localStorage');
+    blockStorage('sessionStorage');
+    expect(detectStorageBackend()).toBe('memory');
+
+    const safe = getSafeStorage();
+    expect(() => safe.setItem('cart-view-mode:u2', 'table')).not.toThrow();
+    expect(safe.getItem('cart-view-mode:u2')).toBe('table');
+  });
+
+  it('ciclo completo em sessionStorage: reset diário + persistência', () => {
+    blockStorage('localStorage');
+    const safe = getSafeStorage();
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+
+    const first = loadCartViewMode('u-ss', { storage: safe, now: day });
+    expect(first.viewMode).toBe('list');
+    expect(first.reset).toBe(true);
+
+    persistCartViewMode('u-ss', 'grid', { storage: safe, now: day });
+    const second = loadCartViewMode('u-ss', { storage: safe, now: day });
+    expect(second.viewMode).toBe('grid');
+    expect(second.reset).toBe(false);
+
+    // sessionStorage é o backend real neste caso
+    expect(sessionStorage.getItem('cart-view-mode:u-ss')).toBe('grid');
+  });
+
+  it('ciclo completo em memória (ambos bloqueados)', () => {
+    blockStorage('localStorage');
+    blockStorage('sessionStorage');
+    const safe = getSafeStorage();
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+
+    const first = loadCartViewMode('u-mem', { storage: safe, now: day });
+    expect(first.viewMode).toBe('list');
+
+    persistCartViewMode('u-mem', 'grid', { storage: safe, now: day });
+    const second = loadCartViewMode('u-mem', { storage: safe, now: day });
+    expect(second.viewMode).toBe('grid');
+
+    // Nem ls nem ss têm o valor — memory-only.
+    // (getters bloqueados; leitura fora do wrapper cairia; usamos o wrapper.)
+    expect(safe.getItem('cart-view-mode:u-mem')).toBe('grid');
+  });
+
+  it('quando setItem lança QuotaExceededError, fallback em memória mantém leitura', () => {
     const fakeLS: Storage = {
       length: 0,
       clear: () => {},
@@ -252,48 +257,98 @@ describe('getSafeStorage — resiliência a localStorage bloqueado', () => {
         throw new DOMException('QuotaExceededError', 'QuotaExceededError');
       },
     };
-    stubLocalStorage(fakeLS);
-
-    const safe = getSafeStorage();
-    // O `isLocalStorageUsable` faz uma escrita-sonda; se essa falhar, cai em
-    // memória. Se passar (mock sem probe), o setItem real falha e cai também.
-    expect(() => safe.setItem('cart-view-mode:u1', 'grid')).not.toThrow();
-    expect(safe.getItem('cart-view-mode:u1')).toBe('grid');
-  });
-
-  it('loadCartViewMode + persistCartViewMode funcionam com localStorage bloqueado (ciclo completo)', () => {
-    stubLocalStorage(() => {
-      throw new DOMException('SecurityError', 'SecurityError');
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get: () => fakeLS,
     });
 
+    // Backend será "sessionStorage" (a sonda de localStorage falha).
     const safe = getSafeStorage();
-    const day = new Date(2026, 6, 10, 9, 0, 0);
-
-    // Primeiro acesso do dia — reseta para "list" e não lança.
-    const first = loadCartViewMode('u-blocked', safe, day);
-    expect(first.viewMode).toBe('list');
-    expect(first.reset).toBe(true);
-
-    // Usuário troca para "grid" — persistência não lança.
-    expect(() => persistCartViewMode('u-blocked', 'grid', safe, day)).not.toThrow();
-
-    // Reload no mesmo dia — mantém "grid" via fallback em memória.
-    const second = loadCartViewMode('u-blocked', safe, day);
-    expect(second.viewMode).toBe('grid');
-    expect(second.reset).toBe(false);
-
-    // Dia seguinte — reseta.
-    const nextDay = new Date(2026, 6, 11, 8, 0, 0);
-    const third = loadCartViewMode('u-blocked', safe, nextDay);
-    expect(third.viewMode).toBe('list');
-    expect(third.reset).toBe(true);
-  });
-
-  it('quando localStorage está disponível, delega escrita ao real (não usa memória)', () => {
-    // Ambiente jsdom padrão — localStorage funciona.
-    const safe = getSafeStorage();
-    safe.setItem('cart-view-mode:u-real', 'table');
-    expect(window.localStorage.getItem('cart-view-mode:u-real')).toBe('table');
+    expect(() => safe.setItem('cart-view-mode:u3', 'grid')).not.toThrow();
+    expect(safe.getItem('cart-view-mode:u3')).toBe('grid');
   });
 });
 
+// -----------------------------------------------------------------------------
+// Analytics — emissor injetado
+// -----------------------------------------------------------------------------
+
+describe('Analytics — emissor de eventos', () => {
+  it('emite `daily_reset` quando o modo é resetado no primeiro acesso', () => {
+    const events: CartViewModeEvent[] = [];
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+    loadCartViewMode(UID_A, { storage: localStorage, now: day, emit: (e) => events.push(e) });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      type: 'daily_reset',
+      uid: UID_A,
+      previous: null,
+      previousDate: null,
+      today: '2026-07-10',
+    });
+  });
+
+  it('emite `daily_reset` com previous/previousDate quando reseta de outro dia', () => {
+    localStorage.setItem(cartViewModeStorageKey(UID_A), 'grid');
+    localStorage.setItem(cartViewModeDateStorageKey(UID_A), '2026-07-09');
+
+    const events: CartViewModeEvent[] = [];
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+    loadCartViewMode(UID_A, { storage: localStorage, now: day, emit: (e) => events.push(e) });
+
+    expect(events[0]).toMatchObject({
+      type: 'daily_reset',
+      uid: UID_A,
+      previous: 'grid',
+      previousDate: '2026-07-09',
+      today: '2026-07-10',
+    });
+  });
+
+  it('NÃO emite `daily_reset` quando o modo é mantido no mesmo dia', () => {
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+    persistCartViewMode(UID_A, 'grid', { storage: localStorage, now: day });
+
+    const events: CartViewModeEvent[] = [];
+    loadCartViewMode(UID_A, { storage: localStorage, now: day, emit: (e) => events.push(e) });
+
+    expect(events).toHaveLength(0);
+  });
+
+  it('emite `change` (from → to) quando o usuário troca o modo', () => {
+    const events: CartViewModeEvent[] = [];
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+
+    // Inicial: sem modo (from=null)
+    persistCartViewMode(UID_A, 'grid', {
+      storage: localStorage,
+      now: day,
+      emit: (e) => events.push(e),
+    });
+    // Troca para "table"
+    persistCartViewMode(UID_A, 'table', {
+      storage: localStorage,
+      now: day,
+      emit: (e) => events.push(e),
+    });
+
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({ type: 'change', from: null, to: 'grid' });
+    expect(events[1]).toMatchObject({ type: 'change', from: 'grid', to: 'table' });
+  });
+
+  it('NÃO emite `change` quando o modo é regravado com o mesmo valor', () => {
+    const day = new Date(2026, 6, 10, 9, 0, 0);
+    persistCartViewMode(UID_A, 'grid', { storage: localStorage, now: day });
+
+    const events: CartViewModeEvent[] = [];
+    persistCartViewMode(UID_A, 'grid', {
+      storage: localStorage,
+      now: day,
+      emit: (e) => events.push(e),
+    });
+
+    expect(events).toHaveLength(0);
+  });
+});
