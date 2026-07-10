@@ -1000,80 +1000,21 @@ function SellerCartsContent() {
         </div>
         {/* Notas da negociação — rodapé full-width (Mudança 03) */}
         <div className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3.5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex-1 space-y-2">
-              <label
-                htmlFor="cart-notes"
-                className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
-              >
-                <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
-              </label>
-              <Textarea
-                id="cart-notes"
-                ref={notesRef}
-                value={s.localCartNotes}
-                onChange={(e) => s.handleCartNotesChange(e.target.value)}
-                placeholder={notesPlaceholder}
-                className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
-                rows={3}
-              />
-            </div>
-            <div className="w-full space-y-2 sm:w-60">
-              <label
-                htmlFor="cart-shipping-deadline"
-                className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground"
-              >
-                <CalendarClock aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Prazo p/ envio
-              </label>
-              <input
-                id="cart-shipping-deadline"
-                type="date"
-                data-testid="cart-shipping-deadline-input"
-                value={s.shippingDeadlineDraft ?? ''}
-                min={new Date().toISOString().slice(0, 10)}
-                aria-invalid={!!s.shippingDeadlineError || undefined}
-                aria-describedby={s.shippingDeadlineError ? 'cart-shipping-deadline-error' : 'cart-shipping-deadline-help'}
-                onChange={(e) => s.handleShippingDeadlineChange(e.target.value || null)}
-                className={cn(
-                  'h-9 w-full rounded-lg border bg-background/50 px-3 text-sm text-foreground transition-all focus:outline-none focus:ring-2',
-                  s.shippingDeadlineError
-                    ? 'border-destructive/60 focus:border-destructive focus:ring-destructive/20'
-                    : 'border-border/30 focus:border-primary/40 focus:ring-primary/10',
-                )}
-                aria-label="Data limite para envio ao cliente"
-              />
-              {s.shippingDeadlineError ? (
-                <p
-                  id="cart-shipping-deadline-error"
-                  role="alert"
-                  data-testid="cart-shipping-deadline-error"
-                  className="text-[10px] font-medium text-destructive"
-                >
-                  {s.shippingDeadlineError}
-                </p>
-              ) : (
-                <div className="flex items-center justify-between gap-2">
-                  <p id="cart-shipping-deadline-help" className="text-[10px] text-muted-foreground">
-                    Data limite para envio ao cliente.
-                  </p>
-                  {s.shippingDeadlineBadge && (
-                    <span
-                      role="status"
-                      aria-label={`Status do prazo: ${s.shippingDeadlineBadge.label}`}
-                      data-testid="cart-shipping-deadline-badge"
-                      data-status={s.shippingDeadlineBadge.status}
-                      className={cn(
-                        'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                        s.shippingDeadlineBadge.className,
-                      )}
-                    >
-                      {s.shippingDeadlineBadge.label}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <label
+            htmlFor="cart-notes"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
+          >
+            <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
+          </label>
+          <Textarea
+            id="cart-notes"
+            ref={notesRef}
+            value={s.localCartNotes}
+            onChange={(e) => s.handleCartNotesChange(e.target.value)}
+            placeholder={notesPlaceholder}
+            className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
+            rows={3}
+          />
         </div>
         </>
       ) : null}
