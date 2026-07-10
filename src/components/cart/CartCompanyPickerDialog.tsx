@@ -231,7 +231,7 @@ export function CartCompanyPickerDialog({
         const input: CreateCartInput = {
           company_id: company.id,
           company_name: company.name,
-          company_location: company.ramo || undefined,
+          company_location: company.cnpj || company.ramo || undefined,
           company_logo_url: company.logo_url || undefined,
         };
         const result = await createCart(input);
