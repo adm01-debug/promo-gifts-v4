@@ -742,27 +742,15 @@ export function CartHeaderButton() {
                                       </div>
                                     </div>
                                     {itemErrors[item.id] && (
-                                      <div
-                                        role="alert"
-                                        data-testid={`cart-item-error-${item.id}`}
-                                        className="mt-1 flex items-center justify-between gap-2 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-[10px] text-destructive"
-                                      >
-                                        <span className="truncate">
-                                          Não foi possível salvar. Tente novamente.
-                                        </span>
-                                        <button
-                                          type="button"
-                                          className="shrink-0 underline underline-offset-2 hover:no-underline"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            clearItemError(item.id);
-                                            // Retry aplicando a mesma quantidade atual (já reconciliada com o servidor).
-                                            updateItemQuantity(item.id, item.quantity);
-                                          }}
-                                        >
-                                          Tentar de novo
-                                        </button>
-                                      </div>
+                                      <CartItemErrorAlert
+                                        itemId={item.id}
+                                        productName={item.product_name}
+                                        focusRetry
+                                        onDismiss={() => clearItemError(item.id)}
+                                        onRetry={() =>
+                                          updateItemQuantity(item.id, item.quantity)
+                                        }
+                                      />
                                     )}
                                   </div>
 
