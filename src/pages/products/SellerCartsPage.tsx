@@ -638,16 +638,16 @@ function SellerCartsContent() {
                     )}
                   </div>
                 </div>
-                <CartStatusSelect
-                  currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
-                  onChange={(next) => {
-                    if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
-                  }}
-                />
               </div>
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
+            <CartStatusSelect
+              currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
+              onChange={(next) => {
+                if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
+              }}
+            />
             <CartActionsMenu
               canGenerateQuote={s.activeCart.items.length > 0}
               onGenerateQuote={() => {
