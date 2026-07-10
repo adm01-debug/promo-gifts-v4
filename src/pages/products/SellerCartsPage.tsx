@@ -294,18 +294,11 @@ function SellerCartsContent() {
     // (removido em 2026-07). Ver `purgeOrphanCartPrefs` + testes.
     purgeOrphanCartPrefs();
 
-    // Regra: no primeiro acesso do dia o viewMode reseta para "list";
-    // após o usuário alterar, mantém a escolha enquanto a data persistida for hoje.
-    const today = new Date().toISOString().slice(0, 10);
-    const vmDate = localStorage.getItem(ns('cart-view-mode-date'));
-    const vm = localStorage.getItem(ns('cart-view-mode'));
-    if (vmDate === today && (vm === 'grid' || vm === 'list' || vm === 'table')) {
-      setViewMode(vm);
-    } else {
-      setViewMode('list');
-      localStorage.setItem(ns('cart-view-mode'), 'list');
-      localStorage.setItem(ns('cart-view-mode-date'), today);
-    }
+    // Regra: no primeiro acesso do dia (timezone local) o viewMode reseta
+    // para "list"; após o usuário alterar, mantém a escolha durante o dia.
+    // Ver `cartViewModePrefs.ts` — SSOT com testes.
+    const { viewMode: nextViewMode } = loadCartViewMode(uid);
+    setViewMode(nextViewMode);
 
     const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
     if ([3, 4, 5, 6, 8].includes(gc)) setGridColumns(gc as ColumnCount);
