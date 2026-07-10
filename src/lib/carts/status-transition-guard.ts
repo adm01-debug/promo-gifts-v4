@@ -43,7 +43,8 @@ export function normalizeItemCount(raw: number | null | undefined): number {
   if (Number.isNaN(raw)) return 0;
   if (raw < 0) return 0;
   // Trata 1.7 como 1 (nunca inflar para permitir transição).
-  return Math.floor(raw);
+  // `+ 0` normaliza `-0` para `+0` — evita surpresas com Object.is.
+  return Math.floor(raw) + 0;
 }
 
 export function evaluateCartStatusTransition(
