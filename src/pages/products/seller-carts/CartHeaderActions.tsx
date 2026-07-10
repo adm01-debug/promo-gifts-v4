@@ -1,7 +1,7 @@
 /**
  * CartHeaderActions — ações do header do carrinho ativo:
- * CTA primário "Gerar Orçamento" + atalho secundário "Ver Orçamentos".
- * O antigo menu "Gerenciar Carrinho" foi removido.
+ * CTA primário "Gerar Orçamento". Os antigos "Gerenciar Carrinho"
+ * e "Ver Orçamentos" foram removidos.
  */
 import { useState } from 'react';
 import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-import { ArrowRight, FileText, Trash2 } from 'lucide-react';
+import { ArrowRight, Trash2 } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 interface CartHeaderActionsProps {
@@ -85,16 +85,6 @@ export function CartHeaderActions({
         />
       </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        data-testid="cart-view-quotes"
-        className="h-9 gap-2 rounded-xl border-border/40 px-3 text-xs font-semibold text-muted-foreground hover:border-primary/30 hover:text-primary"
-        onClick={() => onNavigate('/orcamentos')}
-      >
-        <FileText aria-hidden="true" className="h-3.5 w-3.5" />
-        Ver Orçamentos
-      </Button>
 
       {/* Save Template */}
       <Dialog

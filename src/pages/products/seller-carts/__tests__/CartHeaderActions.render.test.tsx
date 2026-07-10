@@ -1,11 +1,11 @@
 /**
- * CartHeaderActions — contrato do CTA "Gerar Orçamento" + atalho "Ver Orçamentos".
+ * CartHeaderActions — contrato do CTA "Gerar Orçamento".
  *
  * Cobre:
  *   1) CTA habilitado quando o carrinho tem itens → dispara onGenerateQuote com o cart.
  *   2) CTA desabilitado (aria-disabled + disabled + não dispara) quando o carrinho é inválido.
- *   3) "Ver Orçamentos" navega para /orcamentos.
- *   4) O antigo botão "Gerenciar Carrinho" NÃO existe mais no header.
+ *   3) O antigo botão "Gerenciar Carrinho" NÃO existe mais no header.
+ *   4) O atalho "Ver Orçamentos" também foi removido.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -96,12 +96,11 @@ describe('CartHeaderActions — CTA "Gerar Orçamento"', () => {
   });
 });
 
-describe('CartHeaderActions — atalho "Ver Orçamentos"', () => {
-  it('navega para /orcamentos', () => {
-    const onNavigate = vi.fn();
-    renderHeader({ onNavigate });
-    fireEvent.click(screen.getByTestId('cart-view-quotes'));
-    expect(onNavigate).toHaveBeenCalledWith('/orcamentos');
+describe('CartHeaderActions — regressão "Ver Orçamentos"', () => {
+  it('NÃO renderiza mais o botão "Ver Orçamentos" (removido em definitivo)', () => {
+    renderHeader();
+    expect(screen.queryByTestId('cart-view-quotes')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ver Orçamentos/i)).not.toBeInTheDocument();
   });
 });
 

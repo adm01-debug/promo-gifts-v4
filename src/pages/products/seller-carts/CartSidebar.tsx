@@ -1,8 +1,8 @@
 /**
  * CartSidebar — painel lateral apenas com peso/volume do carrinho.
- * As ações "Gerar Orçamento" e "Ver Orçamentos" vivem no header
- * do carrinho ativo (ver CartHeaderActions). O antigo menu
- * "Gerenciar Carrinho" foi removido.
+ * A ação "Gerar Orçamento" vive no header do carrinho ativo
+ * (ver CartHeaderActions). Os antigos menus "Gerenciar Carrinho"
+ * e o atalho "Ver Orçamentos" foram removidos.
  */
 import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
 import { Card } from '@/components/ui/card';
