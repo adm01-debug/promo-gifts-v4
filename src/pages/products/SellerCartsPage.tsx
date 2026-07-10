@@ -119,17 +119,17 @@ function CartStatusSelect({
     : `Status do carrinho: ${currentCfg.label}. Clique para alterar.`;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Select
-          value={displayKey}
-          onValueChange={(next) => {
-            const nextKey = next as CartStatus;
-            if (nextKey === currentStatus) return;
-            setPending(nextKey);
-            onChange(nextKey);
-          }}
-        >
+    <Select
+      value={displayKey}
+      onValueChange={(next) => {
+        const nextKey = next as CartStatus;
+        if (nextKey === currentStatus) return;
+        setPending(nextKey);
+        onChange(nextKey);
+      }}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
           <SelectTrigger
             aria-label={ariaLabel}
             aria-live="polite"
@@ -156,26 +156,26 @@ function CartStatusSelect({
               <span className="truncate">{displayCfg.label}</span>
             </SelectValue>
           </SelectTrigger>
-          <SelectContent align="start">
-            {(
-              Object.entries(STATUS_CONFIG) as [
-                CartStatus,
-                (typeof STATUS_CONFIG)[CartStatus],
-              ][]
-            ).map(([key, cfg]) => (
-              <SelectItem key={key} value={key} className="text-xs">
-                {cfg.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" sideOffset={6}>
-        {isPending
-          ? `Atualizando para ${STATUS_CONFIG[pending!].label}…`
-          : `Status atual: ${currentCfg.label}. Clique para alterar.`}
-      </TooltipContent>
-    </Tooltip>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          {isPending
+            ? `Atualizando para ${STATUS_CONFIG[pending!].label}…`
+            : `Status atual: ${currentCfg.label}. Clique para alterar.`}
+        </TooltipContent>
+      </Tooltip>
+      <SelectContent align="start">
+        {(
+          Object.entries(STATUS_CONFIG) as [
+            CartStatus,
+            (typeof STATUS_CONFIG)[CartStatus],
+          ][]
+        ).map(([key, cfg]) => (
+          <SelectItem key={key} value={key} className="text-xs">
+            {cfg.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
