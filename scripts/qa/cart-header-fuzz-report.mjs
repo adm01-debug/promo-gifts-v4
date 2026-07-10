@@ -77,19 +77,16 @@ for (const file of raw.testResults ?? []) {
   }
 }
 
-// Bucketize por invariante
+// Bucketize por invariante — um teste pode cobrir múltiplas invariantes
 const buckets = new Map(INVARIANTS.map((i) => [i.key, { ...i, tests: [] }]));
 const orphans = [];
 for (const t of tests) {
-  let matched = false;
-  for (const inv of INVARIANTS) {
-    if (inv.re.test(t.title)) {
-      buckets.get(inv.key).tests.push(t);
-      matched = true;
-      break;
-    }
+  const matches = INVARIANTS.filter((inv) => inv.re.test(t.title));
+  if (matches.length === 0) {
+    orphans.push(t);
+    continue;
   }
-  if (!matched) orphans.push(t);
+  for (const inv of matches) buckets.get(inv.key).tests.push(t);
 }
 
 // Agrega totais
