@@ -83,8 +83,9 @@ describe('CartTabsRich · contador X/10 e estado do CTA', () => {
     expect(modal.textContent).toMatch(new RegExp(`${MAX_SELLER_CARTS} de ${MAX_SELLER_CARTS}`));
   });
 
-  it('contador permanece "15/10" quando ultrapassa o limite', () => {
-    const carts = Array.from({ length: 15 }, (_, i) => makeCart(i));
+  it('contador permanece com valor acima do teto quando ultrapassa o limite', () => {
+    const overflow = MAX_SELLER_CARTS + 5;
+    const carts = Array.from({ length: overflow }, (_, i) => makeCart(i));
     render(
       <CartTabsRich
         carts={carts}
@@ -94,7 +95,7 @@ describe('CartTabsRich · contador X/10 e estado do CTA', () => {
         onNew={vi.fn()}
       />,
     );
-    expect(screen.getByTestId('cart-tab-new-counter').textContent).toBe(`15/${MAX_SELLER_CARTS}`);
+    expect(screen.getByTestId('cart-tab-new-counter').textContent).toBe(`${overflow}/${MAX_SELLER_CARTS}`);
     expect((screen.getByTestId('cart-tab-new') as HTMLButtonElement).disabled).toBe(true);
   });
 });
