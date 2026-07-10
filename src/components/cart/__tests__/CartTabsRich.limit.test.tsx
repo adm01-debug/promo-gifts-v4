@@ -79,8 +79,8 @@ describe('CartTabsRich · contador X/10 e estado do CTA', () => {
     const link = screen.getByTestId('cart-limit-details-link');
     fireEvent.click(link);
     const modal = screen.getByTestId('cart-limit-details-modal');
-    expect(modal.textContent).toMatch(/Limite de 10 carrinhos/);
-    expect(modal.textContent).toMatch(/10 de 10/);
+    expect(modal.textContent).toMatch(new RegExp(`Limite de ${MAX_SELLER_CARTS} carrinhos`));
+    expect(modal.textContent).toMatch(new RegExp(`${MAX_SELLER_CARTS} de ${MAX_SELLER_CARTS}`));
   });
 
   it('contador permanece "15/10" quando ultrapassa o limite', () => {
