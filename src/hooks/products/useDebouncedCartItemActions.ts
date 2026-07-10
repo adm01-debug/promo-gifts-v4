@@ -33,6 +33,46 @@ import { clampQuantity, type SellerCart } from './useSellerCarts';
 /** Janela de debounce para coalescer cliques consecutivos no mesmo item. */
 export const CART_ITEM_DEBOUNCE_MS = 300;
 
+/** Limites aceitos para override via feature flag (evita valores absurdos). */
+export const CART_ITEM_DEBOUNCE_MS_MIN = 0;
+export const CART_ITEM_DEBOUNCE_MS_MAX = 2000;
+
+/**
+ * Feature flag: `ff_cart_debounce_ms` (localStorage) ou
+ * `VITE_CART_DEBOUNCE_MS` (build-time). Retorna um número válido dentro
+ * dos limites ou o default. Usado pelo `SellerCartContext` para plugar o
+ * `debounceMs` do hook em runtime sem redeploy.
+ *
+ * Precedência: localStorage > env > default.
+ */
+export function getCartItemDebounceMs(): number {
+  const tryParse = (raw: unknown): number | null => {
+    if (raw == null) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return null;
+    if (n < CART_ITEM_DEBOUNCE_MS_MIN || n > CART_ITEM_DEBOUNCE_MS_MAX) return null;
+    return n;
+  };
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const fromLs = tryParse(localStorage.getItem('ff_cart_debounce_ms'));
+      if (fromLs !== null) return fromLs;
+    }
+  } catch {
+    /* SSR / storage bloqueado — ignora */
+  }
+  try {
+    const fromEnv = tryParse(
+      (import.meta as unknown as { env?: Record<string, string | undefined> })
+        .env?.VITE_CART_DEBOUNCE_MS,
+    );
+    if (fromEnv !== null) return fromEnv;
+  } catch {
+    /* ignora */
+  }
+  return CART_ITEM_DEBOUNCE_MS;
+}
+
 const QUERY_KEY = 'seller-carts';
 
 type UpdateQtyMutation = UseMutationResult<
