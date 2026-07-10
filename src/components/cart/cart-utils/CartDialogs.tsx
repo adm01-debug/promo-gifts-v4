@@ -25,7 +25,7 @@ export function CompareCartsDialog({ carts }: { carts: SellerCart[] }) {
   if (carts.length < 2) return null;
 
   // BUG-11 FIX: cap a 3 carrinhos — grid não suporta mais de 3 colunas legíveis.
-  // Com o novo limite de 10 carrinhos, exibir todos quebrava o layout horizontal.
+  // Com o limite de 50 carrinhos, exibir todos quebrava o layout horizontal.
   const displayCarts = carts.slice(0, 3);
 
   return (
