@@ -34,10 +34,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSellerCartContextSafe } from '@/contexts/SellerCartContext';
+import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import { MAX_SELLER_CARTS } from '@/hooks/products/useSellerCarts';
 import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
+import { maskCnpj, isNormalizedCnpj } from '@/utils/masks';
 import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
 import { useState, useEffect } from 'react';
@@ -117,6 +119,15 @@ export function CartHeaderButton() {
       /* quota/safari private mode — ignora silenciosamente */
     }
   }, [collapsedIds]);
+
+  // Enriquecimento de CNPJ: carrinhos legados guardam ramo em `company_location`.
+  // Buscamos CNPJ do CRM (cache 10min compartilhado) para exibir CNPJ no popover.
+  const { data: crmCompanies = [] } = useCrmCompanies({ is_customer: true });
+  const cnpjByCompanyId = new Map<string, string>();
+  for (const c of crmCompanies) {
+    if (c.cnpj) cnpjByCompanyId.set(c.id, c.cnpj);
+  }
+
 
   // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery,
   // ou Provider fora da árvore). Em vez de um botão inerte, o ícone NAVEGA para a página de
@@ -437,11 +448,27 @@ export function CartHeaderButton() {
                                 >
                                   {cart.company_name}
                                 </p>
-                                {cart.company_location && (
-                                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                    {cart.company_location}
-                                  </p>
-                                )}
+                                {(() => {
+                                  const cnpjRaw =
+                                    cnpjByCompanyId.get(cart.company_id) ||
+                                    (isNormalizedCnpj(cart.company_location)
+                                      ? cart.company_location
+                                      : null);
+                                  const display = cnpjRaw
+                                    ? maskCnpj(cnpjRaw)
+                                    : cart.company_location;
+                                  if (!display) return null;
+                                  return (
+                                    <p
+                                      className={cn(
+                                        'mt-0.5 text-[11px] text-muted-foreground',
+                                        cnpjRaw && 'font-mono',
+                                      )}
+                                    >
+                                      {display}
+                                    </p>
+                                  );
+                                })()}
                               </div>
                             </button>
 

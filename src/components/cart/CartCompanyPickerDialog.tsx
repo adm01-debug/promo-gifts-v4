@@ -32,6 +32,7 @@ interface CompanyItem {
   razao_social: string;
   nome_fantasia: string | null;
   ramo: string | null;
+  cnpj: string | null;
   logo_url: string | null;
 }
 
@@ -106,7 +107,7 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-local'],
     queryFn: async () => {
       const companies = await selectCrm<CrmCompany>('companies', {
-        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade',
+        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade, cnpj',
         filters: { deleted_at: null, is_customer: true },
         orderBy: { column: 'razao_social', ascending: true },
         limit: 200,
@@ -118,6 +119,7 @@ export function CartCompanyPickerDialog({
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
@@ -153,6 +155,7 @@ export function CartCompanyPickerDialog({
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
@@ -228,7 +231,7 @@ export function CartCompanyPickerDialog({
         const input: CreateCartInput = {
           company_id: company.id,
           company_name: company.name,
-          company_location: company.ramo || undefined,
+          company_location: company.cnpj || company.ramo || undefined,
           company_logo_url: company.logo_url || undefined,
         };
         const result = await createCart(input);

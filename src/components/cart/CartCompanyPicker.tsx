@@ -23,6 +23,7 @@ interface CompanyItem {
   razao_social: string;
   nome_fantasia: string | null;
   ramo: string | null;
+  cnpj: string | null;
   logo_url: string | null;
 }
 
@@ -56,7 +57,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
     queryKey: ['cart-companies-local'],
     queryFn: async () => {
       const companies = await selectCrm<CrmCompany>('companies', {
-        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade',
+        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade, cnpj',
         filters: { deleted_at: null, is_customer: true },
         orderBy: { column: 'razao_social', ascending: true },
         limit: 100,
@@ -68,6 +69,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
@@ -103,6 +105,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
@@ -140,6 +143,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
       id: string;
       name: string;
       ramo?: string | null;
+      cnpj?: string | null;
       logo_url?: string | null;
     }) => {
       // Trava de reentrância: createCart é assíncrono e canCreateCart só vira false
@@ -174,7 +178,8 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
       const input: CreateCartInput = {
         company_id: company.id,
         company_name: company.name,
-        company_location: company.ramo ?? enriched?.ramo ?? undefined,
+        company_location:
+          company.cnpj ?? enriched?.cnpj ?? company.ramo ?? enriched?.ramo ?? undefined,
         company_logo_url: company.logo_url ?? enriched?.logo_url ?? undefined,
       };
       setCreating(true);
