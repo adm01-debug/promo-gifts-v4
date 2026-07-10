@@ -39,6 +39,8 @@ on:
       - 'e2e/carrinhos/popover-cnpj-toggle-stability.spec.ts'
       - 'e2e/carrinhos/popover-optimistic-latency.spec.ts'
       - 'e2e/carrinhos/popover-plus-minus-alternate.spec.ts'
+      - 'e2e/carrinhos/popover-retry-after-error.spec.ts'
+      - 'e2e/carrinhos/popover-jittered-latency.spec.ts'
       - 'src/components/pdf/**'
       - 'src/utils/proposalPdfReactGenerator.ts'
       - 'supabase/functions/quote-public-*/**'
