@@ -96,12 +96,11 @@ describe('CartHeaderActions — CTA "Gerar Orçamento"', () => {
   });
 });
 
-describe('CartHeaderActions — atalho "Ver Orçamentos"', () => {
-  it('navega para /orcamentos', () => {
-    const onNavigate = vi.fn();
-    renderHeader({ onNavigate });
-    fireEvent.click(screen.getByTestId('cart-view-quotes'));
-    expect(onNavigate).toHaveBeenCalledWith('/orcamentos');
+describe('CartHeaderActions — regressão "Ver Orçamentos"', () => {
+  it('NÃO renderiza mais o botão "Ver Orçamentos" (removido em definitivo)', () => {
+    renderHeader();
+    expect(screen.queryByTestId('cart-view-quotes')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ver Orçamentos/i)).not.toBeInTheDocument();
   });
 });
 
