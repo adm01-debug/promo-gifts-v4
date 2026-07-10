@@ -1,11 +1,11 @@
 /**
- * CartHeaderActions — contrato do CTA "Gerar Orçamento" + atalho "Ver Orçamentos".
+ * CartHeaderActions — contrato do CTA "Gerar Orçamento".
  *
  * Cobre:
  *   1) CTA habilitado quando o carrinho tem itens → dispara onGenerateQuote com o cart.
  *   2) CTA desabilitado (aria-disabled + disabled + não dispara) quando o carrinho é inválido.
- *   3) "Ver Orçamentos" navega para /orcamentos.
- *   4) O antigo botão "Gerenciar Carrinho" NÃO existe mais no header.
+ *   3) O antigo botão "Gerenciar Carrinho" NÃO existe mais no header.
+ *   4) O atalho "Ver Orçamentos" também foi removido.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
