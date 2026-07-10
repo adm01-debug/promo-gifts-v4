@@ -39,7 +39,7 @@ import { MAX_SELLER_CARTS } from '@/hooks/products/useSellerCarts';
 import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
-import { maskCnpj, isNormalizedCnpj } from '@/utils/masks';
+import { resolveCartCompanyCnpj } from './cartCompanyCnpj';
 import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
 import { useState, useEffect } from 'react';
