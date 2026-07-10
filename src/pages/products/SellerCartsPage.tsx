@@ -316,11 +316,21 @@ function SellerCartsContent() {
     if ([10, 25, 50, 100].includes(ps)) setPageSize(ps);
   }, [uid]);
 
-  // Persiste preferências com chave namespaced por user
+  // Persiste preferências (com telemetria `change` on-diff) por user.
   useEffect(() => {
     if (!uid) return;
-    persistCartViewMode(uid, viewMode);
+    persistCartViewMode(uid, viewMode, { emit: emitCartViewModeEvent });
   }, [viewMode, uid]);
+
+  // Reset automático ao virar a meia-noite local — sem reload.
+  useMidnightReset(
+    () => {
+      if (!uid) return;
+      const { viewMode: reloaded } = loadCartViewMode(uid, { emit: emitCartViewModeEvent });
+      setViewMode(reloaded);
+    },
+    { enabled: !!uid },
+  );
   useEffect(() => {
     if (!uid) return;
     localStorage.setItem(`cart-grid-columns:${uid}`, String(gridColumns));
