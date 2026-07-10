@@ -32,6 +32,7 @@ interface CompanyItem {
   razao_social: string;
   nome_fantasia: string | null;
   ramo: string | null;
+  cnpj: string | null;
   logo_url: string | null;
 }
 
