@@ -6,14 +6,14 @@
  *  - Contaminar/apagar dados de usuários reais
  * Cleanup: deleteUser cascateia seller_carts (ON DELETE CASCADE).
  *
- * Limite atual: MAX_SELLER_CARTS = 10 (migration 20260623111612).
+ * Limite atual: MAX_SELLER_CARTS = 50 (enforcement client-side; backend sem trigger desde 20260623172606).
  */
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_SELLER_CARTS = 10; // Espelha o trigger enforce_seller_cart_limit
+const MAX_SELLER_CARTS = 50; // Espelha a constante do client (useSellerCarts.ts)
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
