@@ -14,6 +14,10 @@ import type { ColumnCount } from '@/components/products/ColumnSelector';
 
 import { type CartStatus } from '@/hooks/products';
 import { SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
+import {
+  evaluateCartStatusTransition,
+  EMPTY_CART_BLOCK_TITLE,
+} from '@/lib/carts/status-transition-guard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartEmptyStateSmart } from '@/components/cart/CartEmptyStateSmart';
