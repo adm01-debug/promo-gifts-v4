@@ -26,8 +26,8 @@
     "e2e:quote-freight:local:update": "bash scripts/e2e/quote-freight-local.sh --update",
     "e2e:calendar": "bash scripts/e2e/calendar-local.sh",
     "e2e:calendar:update": "bash scripts/e2e/calendar-local.sh --update",
-    "e2e:calendar:conditions": "playwright test e2e/ui/calendar-visual.spec.ts --project=chromium-public --grep \"Condições\"",
-    "e2e:calendar:conditions:update": "playwright test e2e/ui/calendar-visual.spec.ts --project=chromium-public --grep \"Condições\" --update-snapshots",
+    "e2e:calendar:conditions": "playwright test e2e/ui/calendar-visual.spec.ts --project=chromium-public --grep \"Condi\u00e7\u00f5es\"",
+    "e2e:calendar:conditions:update": "playwright test e2e/ui/calendar-visual.spec.ts --project=chromium-public --grep \"Condi\u00e7\u00f5es\" --update-snapshots",
     "e2e:collapse": "playwright test e2e/flows/04d-customization-collapse.spec.ts e2e/customization/collapse-reflow.spec.ts --project=chromium-authed",
     "e2e:collapse:update": "playwright test e2e/customization/collapse-reflow.spec.ts --project=chromium-authed --update-snapshots",
     "e2e:collapse:update:mobile": "playwright test e2e/customization/collapse-reflow.spec.ts --project=chromium-authed --grep \"\\[mobile\\]\" --update-snapshots",
@@ -179,7 +179,11 @@
     "drafts:target:check": "node scripts/check-draft-canonical-target.mjs",
     "drafts:pr-comment": "node scripts/build-drafts-pr-comment.mjs",
     "check:cnpj-render": "node scripts/check-cnpj-render.mjs",
-    "test:cnpj": "vitest run src/utils/masks.test.ts src/utils/cnpj-schema.test.ts \"src/utils/__tests__/cnpj-\" src/components/__tests__/cnpj-render.test.tsx"
+    "test:cnpj": "vitest run src/utils/masks.test.ts src/utils/cnpj-schema.test.ts \"src/utils/__tests__/cnpj-\" src/components/__tests__/cnpj-render.test.tsx",
+    "test:cart-header": "vitest run src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts src/pages/products/__tests__/CartHeaderEdgeCases.test.ts",
+    "test:cart-header:report": "node scripts/qa/cart-header-fuzz-report.mjs",
+    "e2e:cart-header": "playwright test e2e/visual/cart-header-actions.spec.ts --project=chromium-authed",
+    "e2e:cart-header:update": "playwright test e2e/visual/cart-header-actions.spec.ts --project=chromium-authed --update-snapshots"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
