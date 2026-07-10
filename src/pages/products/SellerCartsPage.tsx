@@ -166,11 +166,12 @@ export function CartStatusSelect({
         onValueChange={(next) => {
           const nextKey = next as CartStatus;
           if (nextKey === currentStatus || isPending) return;
-          if (nextKey === 'pronto_orcamento' && isEmpty) {
-            toast.error('Carrinho vazio', {
-              description:
-                'Adicione ao menos um produto antes de marcar o carrinho como pronto para orçamento.',
-            });
+          const decision = evaluateCartStatusTransition({
+            nextStatus: nextKey,
+            itemCount: isEmpty ? 0 : 1,
+          });
+          if (!decision.allowed) {
+            toast.error(EMPTY_CART_BLOCK_TITLE, { description: decision.message });
             setLiveMessage(
               'Não é possível marcar o carrinho como pronto para orçamento: ele está vazio.',
             );
