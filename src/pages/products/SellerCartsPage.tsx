@@ -588,7 +588,10 @@ function SellerCartsContent() {
               </div>
             </div>
           </div>
-          <div className="flex min-w-0 flex-1 flex-col items-start justify-center gap-1 sm:pl-4">
+          <div
+            data-testid="cart-shipping-deadline-block"
+            className="flex min-w-0 flex-col items-start justify-center gap-1 sm:flex-1 sm:pl-4"
+          >
             <label
               htmlFor="cart-shipping-deadline"
               className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
