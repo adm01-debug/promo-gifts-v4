@@ -585,7 +585,8 @@ function SellerCartsContent() {
               </h2>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 leading-none">
                 <CartCompanyCnpj companyId={s.activeCart.company_id} />
-                <div className="inline-flex items-center gap-1.5">
+                <div className="inline-flex flex-col items-start gap-1">
+                  <div className="inline-flex items-center gap-1.5">
                   <label
                     htmlFor="cart-shipping-deadline"
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
