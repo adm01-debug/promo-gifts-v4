@@ -448,13 +448,27 @@ export function CartHeaderButton() {
                                 >
                                   {cart.company_name}
                                 </p>
-                                {cart.company_location && (
-                                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                                    {isNormalizedCnpj(cart.company_location)
-                                      ? maskCnpj(cart.company_location)
-                                      : cart.company_location}
-                                  </p>
-                                )}
+                                {(() => {
+                                  const cnpjRaw =
+                                    cnpjByCompanyId.get(cart.company_id) ||
+                                    (isNormalizedCnpj(cart.company_location)
+                                      ? cart.company_location
+                                      : null);
+                                  const display = cnpjRaw
+                                    ? maskCnpj(cnpjRaw)
+                                    : cart.company_location;
+                                  if (!display) return null;
+                                  return (
+                                    <p
+                                      className={cn(
+                                        'mt-0.5 text-[11px] text-muted-foreground',
+                                        cnpjRaw && 'font-mono',
+                                      )}
+                                    >
+                                      {display}
+                                    </p>
+                                  );
+                                })()}
                               </div>
                             </button>
 
