@@ -83,4 +83,33 @@ describe('CartItemErrorAlert', () => {
     const alert = screen.getByRole('alert');
     expect(alert).toHaveAttribute('aria-live', 'polite');
   });
+
+  it('ao aparecer com focusRetry, anuncia via aria-live E entrega foco ao retry', () => {
+    // Simula o fluxo: erro NÃO estava renderizado, aparece, e no mesmo frame
+    // (a) o role=alert com aria-live é adicionado ao DOM (SR anuncia) e
+    // (b) o botão Tentar de novo recebe foco para permitir Enter imediato.
+    function Host({ show }: { show: boolean }) {
+      return show ? (
+        <CartItemErrorAlert
+          itemId="i-1"
+          productName="Caneta"
+          onRetry={() => {}}
+          focusRetry
+        />
+      ) : (
+        <button data-testid="outside">outside</button>
+      );
+    }
+    const { rerender } = render(<Host show={false} />);
+    // Antes: nenhum alerta.
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByTestId('outside')).toBeInTheDocument();
+
+    rerender(<Host show={true} />);
+    // Depois: alerta anunciável + foco no retry.
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveAttribute('aria-live', 'polite');
+    expect(alert).toHaveAttribute('data-testid', 'cart-item-error-i-1');
+    expect(screen.getByTestId('cart-item-error-retry-i-1')).toHaveFocus();
+  });
 });
