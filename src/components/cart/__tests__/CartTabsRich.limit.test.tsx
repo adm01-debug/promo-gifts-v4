@@ -35,10 +35,10 @@ function makeCart(i: number): SellerCart {
   } as unknown as SellerCart;
 }
 
-describe('CartTabsRich · contador X/10 e estado do CTA', () => {
+describe(`CartTabsRich · contador X/${MAX_SELLER_CARTS} e estado do CTA`, () => {
   afterEach(cleanup);
 
-  it('mostra contador "3/10" e CTA habilitado abaixo do limite', () => {
+  it(`mostra contador "3/${MAX_SELLER_CARTS}" e CTA habilitado abaixo do limite`, () => {
     const carts = Array.from({ length: 3 }, (_, i) => makeCart(i));
     render(
       <CartTabsRich
