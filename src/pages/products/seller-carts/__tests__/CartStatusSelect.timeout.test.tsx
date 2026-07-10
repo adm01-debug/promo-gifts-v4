@@ -237,13 +237,16 @@ describe('CartStatusSelect · timeout extremes', () => {
     expect(toastError).toHaveBeenCalledTimes(1);
   });
 
-  it('C3 · confirmTimeoutMs muito grande (Number.MAX_SAFE_INTEGER) não dispara em janela razoável', () => {
+  it('C3 · confirmTimeoutMs muito grande (~24 dias, dentro do limite de setTimeout) não dispara em janela razoável', () => {
+    // NOTE: `setTimeout` em Node/jsdom clamps delays > 2^31-1 ms para 1ms (spec HTML).
+    // Usamos ~24 dias, o maior valor SEGURO, para simular "timeout praticamente infinito".
+    const HUGE = 2_000_000_000; // ~23.1 dias
     const onChange = vi.fn();
     render(
       <CartStatusSelect
         currentStatus="em_separacao"
         onChange={onChange}
-        confirmTimeoutMs={Number.MAX_SAFE_INTEGER}
+        confirmTimeoutMs={HUGE}
       />,
     );
     click('pronto_orcamento');
