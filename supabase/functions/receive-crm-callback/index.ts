@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
     // 1) auth
-  // fix_version=2026-07-10-crm-callback BUILD=8 ANTI-REGRESSÃO
+  // fix_version=2026-07-09-crm-callback BUILD=7 ANTI-REGRESSÃO
   // VAULT TEM PRIORIDADE — não sofre de isolate cache/secret fossilizada
   const _authUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const _authSvcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -362,21 +362,18 @@ Deno.serve(async (req) => {
 
   const affected = upd.data?.length ?? 0;
   if (affected === 0) {
-    // BUILD=8 fix: propagar detail do RPC como reason
-    // fn_apply retorna detail='quote_not_found' OU 'invalid_transition:X->Y'
-    // ambos chegam aqui com applied=false, então usamos o detail para distinguir
-    const notFoundDetail = upd._rpcResult?.detail ?? "quote_not_found";
+    // Política acordada com o PO: 200 + result=error (não gera retry no CRM).
     await supabase
       .from("crm_callback_events")
-      .update({ result: "error", error_message: notFoundDetail })
+      .update({ result: "error", error_message: "quote_not_found" })
       .eq("id", eventId!);
-    log.warn("crm_callback_not_applied", { ...ctx, event_id: eventId, detail: notFoundDetail });
+    log.warn("crm_callback_quote_not_found", { ...ctx, event_id: eventId });
     return log.respond(
       json(200, {
         status: "ok",
         event_id: eventId,
         applied: false,
-        reason: notFoundDetail,
+        reason: "quote_not_found",
       }),
     );
   }

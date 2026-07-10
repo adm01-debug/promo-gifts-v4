@@ -466,9 +466,6 @@ function SellerCartsContent() {
                     data-testid="cart-status-select"
                     className="h-8 w-auto min-w-[110px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
                   >
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Status
-                    </span>
                     <SelectValue aria-label={currentCfg.label}>
                       <span className="truncate">{currentCfg.label}</span>
                     </SelectValue>
