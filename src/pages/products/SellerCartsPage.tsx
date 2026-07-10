@@ -470,9 +470,7 @@ function SellerCartsContent() {
                       Status
                     </span>
                     <SelectValue aria-label={currentCfg.label}>
-                      <span className={cn('truncate', currentCfg.textColor ?? '')}>
-                        {currentCfg.label}
-                      </span>
+                      <span className="truncate">{currentCfg.label}</span>
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent align="end">
