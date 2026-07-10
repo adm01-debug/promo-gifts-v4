@@ -28,6 +28,8 @@ on:
       - 'src/contexts/SellerCartContext.tsx'
       - 'src/contexts/__tests__/SellerCartContext.test.tsx'
       - 'src/components/cart/CartHeaderButton.tsx'
+      - 'src/components/cart/CartItemErrorAlert.tsx'
+      - 'src/components/cart/__tests__/CartItemErrorAlert.test.tsx'
       - 'src/components/cart/cartCompanyCnpj.ts'
       - 'src/components/cart/__tests__/cartCompanyCnpj.test.ts'
       - 'src/components/cart/__tests__/cartCompanyCnpjMaskContract.test.ts'
@@ -35,6 +37,8 @@ on:
       - 'e2e/carrinhos/popover-cnpj-display.spec.ts'
       - 'e2e/carrinhos/popover-cnpj-mobile.spec.ts'
       - 'e2e/carrinhos/popover-cnpj-toggle-stability.spec.ts'
+      - 'e2e/carrinhos/popover-optimistic-latency.spec.ts'
+      - 'e2e/carrinhos/popover-plus-minus-alternate.spec.ts'
       - 'src/components/pdf/**'
       - 'src/utils/proposalPdfReactGenerator.ts'
       - 'supabase/functions/quote-public-*/**'
@@ -84,6 +88,7 @@ jobs:
             src/components/cart/__tests__/cartCompanyCnpjMaskContract.test.ts \
             src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx \
             src/contexts/__tests__/SellerCartContext.test.tsx \
+            src/components/cart/__tests__/CartItemErrorAlert.test.tsx \
             --reporter=verbose
 
       - name: Smoke — cartViewModePrefs carrega sem storage disponível
