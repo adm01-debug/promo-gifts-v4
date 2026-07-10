@@ -14,6 +14,10 @@ import type { ColumnCount } from '@/components/products/ColumnSelector';
 
 import { type CartStatus } from '@/hooks/products';
 import { SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
+import {
+  evaluateCartStatusTransition,
+  EMPTY_CART_BLOCK_TITLE,
+} from '@/lib/carts/status-transition-guard';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { CartEmptyStateSmart } from '@/components/cart/CartEmptyStateSmart';
@@ -162,11 +166,12 @@ export function CartStatusSelect({
         onValueChange={(next) => {
           const nextKey = next as CartStatus;
           if (nextKey === currentStatus || isPending) return;
-          if (nextKey === 'pronto_orcamento' && isEmpty) {
-            toast.error('Carrinho vazio', {
-              description:
-                'Adicione ao menos um produto antes de marcar o carrinho como pronto para orçamento.',
-            });
+          const decision = evaluateCartStatusTransition({
+            nextStatus: nextKey,
+            itemCount: isEmpty ? 0 : 1,
+          });
+          if (!decision.allowed) {
+            toast.error(EMPTY_CART_BLOCK_TITLE, { description: decision.message });
             setLiveMessage(
               'Não é possível marcar o carrinho como pronto para orçamento: ele está vazio.',
             );

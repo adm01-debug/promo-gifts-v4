@@ -419,19 +419,22 @@ export function useSellerCarts() {
   // Update cart status
   const updateCartStatus = useMutation({
     mutationFn: async ({ cartId, status }: { cartId: string; status: CartStatus }) => {
-      // Regra de negócio: só é possível marcar "pronto p/ orçamento" se o carrinho
-      // tiver ao menos 1 item. Defesa em profundidade — a UI já bloqueia, mas
-      // aqui também para evitar chamadas via atalhos, testes ou race conditions.
-      if (status === 'pronto_orcamento') {
-        const cart = (cartsQuery.data || []).find((c) => c.id === cartId);
-        const itemCount = cart?.items?.length ?? 0;
-        if (itemCount === 0) {
-          const err = new Error(
-            'Adicione ao menos um produto antes de marcar como pronto para orçamento.',
-          );
-          (err as Error & { code?: string }).code = 'EMPTY_CART';
-          throw err;
-        }
+      // Regra de negócio (SSOT em src/lib/carts/status-transition-guard.ts):
+      // só é possível marcar "pronto p/ orçamento" se o carrinho tiver ao
+      // menos 1 item. Defesa em profundidade — a UI já bloqueia, mas aqui
+      // também para evitar chamadas via atalhos, testes ou race conditions.
+      const { evaluateCartStatusTransition } = await import(
+        '@/lib/carts/status-transition-guard'
+      );
+      const cart = (cartsQuery.data || []).find((c) => c.id === cartId);
+      const decision = evaluateCartStatusTransition({
+        nextStatus: status,
+        itemCount: cart?.items?.length ?? 0,
+      });
+      if (!decision.allowed) {
+        const err = new Error(decision.message);
+        (err as Error & { code?: string }).code = 'EMPTY_CART';
+        throw err;
       }
       const { error } = await supabase.from('seller_carts').update({ status }).eq('id', cartId);
       if (error) throw error;
@@ -443,6 +446,7 @@ export function useSellerCarts() {
       toast.error('Não foi possível atualizar o status', { description: sanitizeError(err) });
     },
   });
+
 
   // Update cart shipping deadline (prazo p/ envio)
   const updateCartShippingDeadline = useMutation({
