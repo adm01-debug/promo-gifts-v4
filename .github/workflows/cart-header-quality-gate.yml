@@ -23,6 +23,10 @@ on:
       - 'src/pages/products/seller-carts/__tests__/useMidnightReset.test.tsx'
       - 'scripts/qa/smoke-cart-view-mode-prefs.ts'
       - 'src/hooks/products/useSellerCarts.ts'
+      - 'src/hooks/products/useDebouncedCartItemActions.ts'
+      - 'src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx'
+      - 'src/contexts/SellerCartContext.tsx'
+      - 'src/contexts/__tests__/SellerCartContext.test.tsx'
       - 'src/components/cart/CartHeaderButton.tsx'
       - 'src/components/cart/cartCompanyCnpj.ts'
       - 'src/components/cart/__tests__/cartCompanyCnpj.test.ts'
@@ -78,6 +82,8 @@ jobs:
             src/pages/products/seller-carts/__tests__/useMidnightReset.test.tsx \
             src/components/cart/__tests__/cartCompanyCnpj.test.ts \
             src/components/cart/__tests__/cartCompanyCnpjMaskContract.test.ts \
+            src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx \
+            src/contexts/__tests__/SellerCartContext.test.tsx \
             --reporter=verbose
 
       - name: Smoke — cartViewModePrefs carrega sem storage disponível

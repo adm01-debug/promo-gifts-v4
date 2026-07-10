@@ -22,6 +22,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Stub leve de useSellerCarts pra não pagar custo de subir TanStack Query +
 // supabase real só para validar o shape do contexto.
@@ -79,8 +80,13 @@ describe('SellerCartContext — contrato sem action history', () => {
       '../SellerCartContext'
     );
 
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const { result } = renderHook(() => useSellerCartContext(), {
-      wrapper: ({ children }) => <SellerCartProvider>{children}</SellerCartProvider>,
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={qc}>
+          <SellerCartProvider>{children}</SellerCartProvider>
+        </QueryClientProvider>
+      ),
     });
 
     // Membros que o CartSidebar e o useSellerCartsPage consomem hoje:

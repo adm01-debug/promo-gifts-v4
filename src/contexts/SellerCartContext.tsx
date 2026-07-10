@@ -19,6 +19,7 @@ import {
   type CreateCartInput,
   type CartStatus,
 } from '@/hooks/products';
+import { useDebouncedCartItemActions } from '@/hooks/products/useDebouncedCartItemActions';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
@@ -57,6 +58,10 @@ interface SellerCartContextType {
   duplicateItemToCart: (itemId: string, targetCartId: string) => void;
   clearCart: (cartId: string) => Promise<void>;
   restoreItems: (cartId: string, items: AddToCartInput[]) => void;
+  /** Mapa de erros por item (rollback aplicado; UI mostra mensagem clara). */
+  itemErrors: Record<string, string>;
+  /** Limpa o erro exibido para um item (após retry pelo usuário). */
+  clearItemError: (itemId: string) => void;
 }
 
 const SellerCartContext = createContext<SellerCartContextType | undefined>(undefined);
@@ -214,19 +219,19 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [resolvedActiveCartId, addItem, carts],
   );
 
-  const removeItem = useCallback(
-    (itemId: string) => {
-      removeItemMutation.mutate(itemId);
-    },
-    [removeItemMutation],
-  );
-
-  const updateItemQuantity = useCallback(
-    (itemId: string, quantity: number) => {
-      updateQtyMutation.mutate({ itemId, quantity });
-    },
-    [updateQtyMutation],
-  );
+  // Camada de debounce + tracking de erro por item. Cliques rápidos em +/- e
+  // lixeira colapsam em um único write (economizando round-trips) enquanto a
+  // UI reflete cada clique instantaneamente via update otimista no cache.
+  const {
+    updateItemQuantity,
+    removeItem,
+    itemErrors,
+    clearItemError,
+  } = useDebouncedCartItemActions({
+    userId: user?.id,
+    updateQtyMutation,
+    removeItemMutation,
+  });
 
   const updateItemNotes = useCallback(
     (itemId: string, notes: string) => {
@@ -344,6 +349,8 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       duplicateItemToCart,
       clearCart,
       restoreItems,
+      itemErrors,
+      clearItemError,
     }),
     [
       carts,
@@ -369,6 +376,8 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       duplicateItemToCart,
       clearCart,
       restoreItems,
+      itemErrors,
+      clearItemError,
     ],
   );
 
