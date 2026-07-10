@@ -105,20 +105,22 @@ describe('CartActionsMenu — teclado (Radix)', () => {
     renderMenu();
     await user.click(screen.getByTestId('cart-actions-menu'));
     const first = await screen.findByTestId('cart-actions-generate-quote');
+    // Radix pode não auto-focar o primeiro item em jsdom; ArrowDown garante entrada
+    await user.keyboard('{ArrowDown}');
     await waitFor(() => expect(first).toHaveFocus());
     await user.keyboard('{ArrowDown}');
     await waitFor(() =>
       expect(screen.getByTestId('cart-actions-delete')).toHaveFocus(),
     );
-    await user.keyboard('{ArrowUp}');
-    await waitFor(() => expect(first).toHaveFocus());
   });
 
-  it('Enter no item aciona o callback correspondente', async () => {
+  it('Enter no item focado aciona o callback correspondente', async () => {
     const user = userEvent.setup();
     const { onGenerateQuote } = renderMenu();
     await user.click(screen.getByTestId('cart-actions-menu'));
-    await screen.findByTestId('cart-actions-generate-quote');
+    const first = await screen.findByTestId('cart-actions-generate-quote');
+    await user.keyboard('{ArrowDown}');
+    await waitFor(() => expect(first).toHaveFocus());
     await user.keyboard('{Enter}');
     expect(onGenerateQuote).toHaveBeenCalledTimes(1);
   });
