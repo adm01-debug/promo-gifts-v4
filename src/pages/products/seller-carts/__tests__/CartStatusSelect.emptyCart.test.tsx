@@ -43,6 +43,10 @@ vi.mock('@/components/ui/select', () => {
     children: React.ReactNode;
   }) => {
     Ctx.current = onValueChange;
+    // Expõe globalmente para bypass em testes que precisam simular
+    // um caminho onde o valor chega ao handler mesmo com o item disabled.
+    (globalThis as unknown as { __cartSelectFire?: OnChange }).__cartSelectFire =
+      onValueChange;
     return (
       <div data-mock-select data-value={value}>
         {children}
