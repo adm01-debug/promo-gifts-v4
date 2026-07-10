@@ -272,7 +272,7 @@ function SellerCartsContent() {
   const uid = user?.id ?? '';
 
   // View mode + grid columns (persisted, namespaced by user)
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(CART_VIEW_MODE_DEFAULT);
   const [gridColumns, setGridColumns] = useState<ColumnCount>(3);
 
   // Tabela: padding fixo confortável (colunas/densidade customizáveis removidas).
