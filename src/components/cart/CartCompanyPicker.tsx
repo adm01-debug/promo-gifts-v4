@@ -178,7 +178,8 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
       const input: CreateCartInput = {
         company_id: company.id,
         company_name: company.name,
-        company_location: company.ramo ?? enriched?.ramo ?? undefined,
+        company_location:
+          company.cnpj ?? enriched?.cnpj ?? company.ramo ?? enriched?.ramo ?? undefined,
         company_logo_url: company.logo_url ?? enriched?.logo_url ?? undefined,
       };
       setCreating(true);
