@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-import { ArrowRight, FileText, Trash2 } from 'lucide-react';
+import { ArrowRight, Trash2 } from 'lucide-react';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 interface CartHeaderActionsProps {
