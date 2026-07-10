@@ -80,8 +80,13 @@ describe('SellerCartContext — contrato sem action history', () => {
       '../SellerCartContext'
     );
 
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const { result } = renderHook(() => useSellerCartContext(), {
-      wrapper: ({ children }) => <SellerCartProvider>{children}</SellerCartProvider>,
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={qc}>
+          <SellerCartProvider>{children}</SellerCartProvider>
+        </QueryClientProvider>
+      ),
     });
 
     // Membros que o CartSidebar e o useSellerCartsPage consomem hoje:
