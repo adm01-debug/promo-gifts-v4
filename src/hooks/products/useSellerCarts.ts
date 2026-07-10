@@ -286,21 +286,38 @@ export function useSellerCarts() {
     },
   });
 
-  // Remove item
+  // Remove item — com update otimista para eliminar delay percebido no popover.
   const removeItem = useMutation({
     mutationFn: async (itemId: string) => {
       const { error } = await supabase.from('seller_cart_items').delete().eq('id', itemId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+    onMutate: async (itemId: string) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEY, userId] });
+      const previous = queryClient.getQueryData<SellerCart[]>([QUERY_KEY, userId]);
+      if (previous) {
+        queryClient.setQueryData<SellerCart[]>(
+          [QUERY_KEY, userId],
+          previous.map((cart) => ({
+            ...cart,
+            items: cart.items.filter((it) => it.id !== itemId),
+          })),
+        );
+      }
+      return { previous };
     },
-    onError: (err: Error) => {
+    onError: (err: Error, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData([QUERY_KEY, userId], ctx.previous);
+      }
       toast.error('Não foi possível remover o item', { description: sanitizeError(err) });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
   });
 
-  // Update item quantity
+  // Update item quantity — otimista: reflete o clique instantaneamente e reconcilia depois.
   const updateItemQuantity = useMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
       // Defesa em profundidade: a UI já impede valores < 1, mas garantimos aqui
@@ -313,11 +330,31 @@ export function useSellerCarts() {
         .eq('id', itemId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+    onMutate: async ({ itemId, quantity }) => {
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEY, userId] });
+      const previous = queryClient.getQueryData<SellerCart[]>([QUERY_KEY, userId]);
+      const safeQty = clampQuantity(quantity);
+      if (previous) {
+        queryClient.setQueryData<SellerCart[]>(
+          [QUERY_KEY, userId],
+          previous.map((cart) => ({
+            ...cart,
+            items: cart.items.map((it) =>
+              it.id === itemId ? { ...it, quantity: safeQty } : it,
+            ),
+          })),
+        );
+      }
+      return { previous };
     },
-    onError: (err: Error) => {
+    onError: (err: Error, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData([QUERY_KEY, userId], ctx.previous);
+      }
       toast.error('Não foi possível atualizar a quantidade', { description: sanitizeError(err) });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
   });
 
