@@ -1007,23 +1007,45 @@ function SellerCartsContent() {
             />
           )}
         </div>
-        {/* Notas da negociação — rodapé full-width (Mudança 03) */}
-        <div className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3.5">
-          <label
-            htmlFor="cart-notes"
-            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
-          >
-            <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
-          </label>
+        {/* Notas da negociação — rodapé full-width (Mudança 03).
+            🔒 Interno: seller_carts.notes NUNCA é enviado ao cliente
+            (não vai para /orcamento-publico, PDF, e-mail ou sync CRM).
+            RLS: seller_id = auth.uid(). */}
+        <div
+          className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3.5"
+          data-testid="cart-notes-internal-block"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <label
+              htmlFor="cart-notes"
+              className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
+            >
+              <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
+            </label>
+            <span
+              data-testid="cart-notes-internal-badge"
+              title="Estas notas são visíveis apenas para você. Não são enviadas ao cliente, ao orçamento público, ao PDF nem ao CRM."
+              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+            >
+              <span aria-hidden="true">🔒</span> Interno — não visível ao cliente
+            </span>
+          </div>
           <Textarea
             id="cart-notes"
             ref={notesRef}
             value={s.localCartNotes}
             onChange={(e) => s.handleCartNotesChange(e.target.value)}
             placeholder={notesPlaceholder}
+            aria-describedby="cart-notes-internal-hint"
             className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
             rows={3}
           />
+          <p
+            id="cart-notes-internal-hint"
+            className="text-[10px] leading-snug text-muted-foreground/80"
+          >
+            Uso interno para a sua negociação. O cliente <strong>não</strong> vê este conteúdo em nenhum lugar.
+          </p>
         </div>
         </>
       ) : null}
