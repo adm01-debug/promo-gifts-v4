@@ -446,45 +446,46 @@ function SellerCartsContent() {
               >
                 {s.activeCart.company_name}
               </h2>
-              <CartCompanyCnpj companyId={s.activeCart.company_id} />
-
+              <div className="flex flex-wrap items-center gap-2">
+                <CartCompanyCnpj companyId={s.activeCart.company_id} />
+                {(() => {
+                  const currentKey = (s.activeCart?.status ?? 'em_separacao') as CartStatus;
+                  const currentCfg = STATUS_CONFIG[currentKey];
+                  return (
+                    <Select
+                      value={currentKey}
+                      onValueChange={(next) => {
+                        if (s.activeCart) s.updateCartStatus(s.activeCart.id, next as CartStatus);
+                      }}
+                    >
+                      <SelectTrigger
+                        aria-label="Status do carrinho"
+                        data-testid="cart-status-select"
+                        className="h-7 w-auto min-w-[110px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
+                      >
+                        <SelectValue aria-label={currentCfg.label}>
+                          <span className="truncate">{currentCfg.label}</span>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent align="start">
+                        {(
+                          Object.entries(STATUS_CONFIG) as [
+                            CartStatus,
+                            (typeof STATUS_CONFIG)[CartStatus],
+                          ][]
+                        ).map(([key, cfg]) => (
+                          <SelectItem key={key} value={key} className="text-xs">
+                            {cfg.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
+              </div>
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
-            {(() => {
-              const currentKey = (s.activeCart?.status ?? 'em_separacao') as CartStatus;
-              const currentCfg = STATUS_CONFIG[currentKey];
-              return (
-                <Select
-                  value={currentKey}
-                  onValueChange={(next) => {
-                    if (s.activeCart) s.updateCartStatus(s.activeCart.id, next as CartStatus);
-                  }}
-                >
-                  <SelectTrigger
-                    aria-label="Status do carrinho"
-                    data-testid="cart-status-select"
-                    className="h-8 w-auto min-w-[110px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
-                  >
-                    <SelectValue aria-label={currentCfg.label}>
-                      <span className="truncate">{currentCfg.label}</span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent align="end">
-                    {(
-                      Object.entries(STATUS_CONFIG) as [
-                        CartStatus,
-                        (typeof STATUS_CONFIG)[CartStatus],
-                      ][]
-                    ).map(([key, cfg]) => (
-                      <SelectItem key={key} value={key} className="text-xs">
-                        {cfg.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              );
-            })()}
             {s.activeCart.items.length > 0 && (
               <CartHeaderActions
                 cart={s.activeCart}
