@@ -168,8 +168,10 @@ describe('CartStatusSelect — isEmpty bloqueia pronto_orcamento', () => {
     const readyItem = document.querySelector<HTMLButtonElement>(
       '[data-mock-select-item][data-value="pronto_orcamento"]',
     );
-    // Remove disabled em runtime — simula bypass.
-    readyItem!.removeAttribute('disabled');
+    // Bypass em runtime: força a propriedade `disabled` do DOM para false
+    // (simula um caminho onde o valor chega ao onValueChange mesmo com o
+    // item marcado como desabilitado — teclado, mudança assíncrona etc.).
+    Object.defineProperty(readyItem!, 'disabled', { value: false, configurable: true });
     readyItem!.removeAttribute('data-disabled');
     fireEvent.click(readyItem!);
 
