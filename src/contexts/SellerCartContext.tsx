@@ -349,6 +349,8 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       duplicateItemToCart,
       clearCart,
       restoreItems,
+      itemErrors,
+      clearItemError,
     }),
     [
       carts,
@@ -374,6 +376,8 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       duplicateItemToCart,
       clearCart,
       restoreItems,
+      itemErrors,
+      clearItemError,
     ],
   );
 
