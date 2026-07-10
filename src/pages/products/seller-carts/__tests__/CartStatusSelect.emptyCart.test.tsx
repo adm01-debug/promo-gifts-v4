@@ -77,9 +77,11 @@ vi.mock('@/components/ui/select', () => {
       data-value={value}
       data-disabled={disabled ? 'true' : undefined}
       disabled={disabled}
-      onClick={() => {
+      onClick={(e) => {
         // Semântica realista: item desabilitado NÃO dispara onValueChange.
-        if (disabled) return;
+        // Consulta a propriedade DOM live (permite bypass explícito em
+        // testes removendo o atributo disabled em runtime).
+        if ((e.currentTarget as HTMLButtonElement).disabled) return;
         Ctx.current?.(value);
       }}
       {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
