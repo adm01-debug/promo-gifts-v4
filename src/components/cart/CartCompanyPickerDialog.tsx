@@ -119,6 +119,7 @@ export function CartCompanyPickerDialog({
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
