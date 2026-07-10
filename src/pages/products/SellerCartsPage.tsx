@@ -44,7 +44,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2, Plus } from 'lucide-react';
+import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCrmCompany } from '@/hooks/crm/useCrmCompanies';
 import { maskCnpj } from '@/utils/masks';
