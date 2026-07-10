@@ -464,15 +464,14 @@ function SellerCartsContent() {
                   <SelectTrigger
                     aria-label="Status do carrinho"
                     data-testid="cart-status-select"
-                    className="h-8 w-auto min-w-[160px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
+                    className="h-8 w-auto min-w-[110px] gap-2 rounded-xl border-border/40 bg-muted/20 px-2.5 text-xs font-medium"
                   >
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Status
                     </span>
-                    <span className={cn('flex items-center gap-1.5 rounded-md px-1.5 py-0.5', currentCfg.color)}>
-                      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-                      <SelectValue />
-                    </span>
+                    <SelectValue aria-label={currentCfg.label}>
+                      <span className="truncate">{currentCfg.label}</span>
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent align="end">
                     {(
@@ -482,10 +481,7 @@ function SellerCartsContent() {
                       ][]
                     ).map(([key, cfg]) => (
                       <SelectItem key={key} value={key} className="text-xs">
-                        <span className={cn('flex items-center gap-1.5 rounded-md px-1.5 py-0.5', cfg.color)}>
-                          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-                          {cfg.label}
-                        </span>
+                        {cfg.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
