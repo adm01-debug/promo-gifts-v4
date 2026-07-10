@@ -719,7 +719,10 @@ export function CartHeaderButton() {
                                             <Minus aria-hidden="true" className="h-3 w-3" />
                                           )}
                                         </button>
-                                        <span className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums">
+                                        <span
+                                          data-testid={`cart-item-qty-${item.id}`}
+                                          className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums"
+                                        >
                                           {item.quantity}
                                         </span>
                                         <button
