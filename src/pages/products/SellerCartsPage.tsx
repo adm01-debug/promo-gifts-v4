@@ -704,6 +704,7 @@ function SellerCartsContent() {
           >
             <CartStatusSelect
               currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
+              isEmpty={(s.activeCart?.items.length ?? 0) === 0}
               onChange={(next) => {
                 if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
               }}
