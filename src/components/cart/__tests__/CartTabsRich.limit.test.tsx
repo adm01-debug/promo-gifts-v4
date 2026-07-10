@@ -54,7 +54,7 @@ describe('CartTabsRich · contador X/10 e estado do CTA', () => {
     const btn = screen.getByTestId('cart-tab-new') as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
     expect(btn.getAttribute('aria-label')).toBe('Criar novo carrinho');
-    expect(btn.getAttribute('title')).toMatch(/3\/10/);
+    expect(btn.getAttribute('title')).toMatch(new RegExp(`3\\/${MAX_SELLER_CARTS}`));
     // Sem link de detalhes quando não atingiu o limite.
     expect(screen.queryByTestId('cart-limit-details-link')).toBeNull();
   });
