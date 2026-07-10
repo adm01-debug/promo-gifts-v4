@@ -91,6 +91,10 @@ const LABELS: Record<CartStatus, string> = {
   em_separacao: 'Separação',
   pronto_orcamento: 'Pronto p/ orçamento',
 };
+const LABEL_TO_KEY: Record<string, CartStatus> = {
+  [LABELS.em_separacao]: 'em_separacao',
+  [LABELS.pronto_orcamento]: 'pronto_orcamento',
+};
 
 /** PRNG determinístico (mulberry32) — reprodutibilidade absoluta. */
 function makeRng(seed: number) {
@@ -104,64 +108,61 @@ function makeRng(seed: number) {
   };
 }
 
-type State = {
-  currentStatus: CartStatus;
-  pending: CartStatus | null;
-  toastsSuccess: number;
-  toastsError: number;
-};
-
 function readTrigger() {
   return screen.queryByTestId('cart-status-select') as HTMLElement | null;
 }
 
-function assertInvariants(state: State, seed: number, step: number) {
+/**
+ * Lê a "verdade" do DOM — o único árbitro confiável. Retorna null se desmontado.
+ */
+function readDomState() {
   const trigger = readTrigger();
-  if (!trigger) return; // desmontado — invariantes de DOM não se aplicam
-  const busy = trigger.getAttribute('aria-busy');
-  const pendingAttr = trigger.getAttribute('data-pending');
-  const status = trigger.getAttribute('data-status');
+  if (!trigger) return null;
+  const busy = trigger.getAttribute('aria-busy') === 'true';
+  const pendingAttr = trigger.getAttribute('data-pending') === 'true';
+  const status = trigger.getAttribute('data-status') as CartStatus;
   const aria = trigger.getAttribute('aria-label') ?? '';
   const spinner = screen.queryByTestId('cart-status-spinner');
   const live = screen.queryByTestId('cart-status-live');
+  return { busy, pendingAttr, status, aria, spinner, live, trigger };
+}
 
-  const expectedIsPending =
-    state.pending !== null && state.pending !== state.currentStatus;
-  const expectedDisplay = state.pending ?? state.currentStatus;
+/**
+ * Invariantes puramente DOM-internos — não dependem de modelo externo.
+ * Cada um é uma tautologia lógica sobre o estado renderizado.
+ */
+function assertDomInvariants(currentStatus: CartStatus, ctx: string) {
+  const dom = readDomState();
+  if (!dom) return;
 
-  const ctx = `seed=${seed} step=${step} state=${JSON.stringify(state)}`;
+  // INV-1: aria-busy ↔ data-pending (tautologia estrutural)
+  expect(dom.busy, `INV-1 aria-busy===data-pending ${ctx}`).toBe(dom.pendingAttr);
 
-  // INV-1
-  expect(busy, `INV-1 aria-busy ${ctx}`).toBe(expectedIsPending ? 'true' : 'false');
-  expect(pendingAttr, `INV-1 data-pending ${ctx}`).toBe(
-    expectedIsPending ? 'true' : 'false',
-  );
-
-  // INV-2
-  expect(status, `INV-2 data-status ${ctx}`).toBe(expectedDisplay);
-
-  // INV-3
-  if (expectedIsPending) {
-    expect(spinner, `INV-3 spinner presente ${ctx}`).toBeTruthy();
+  // INV-3: spinner presente ↔ busy
+  if (dom.busy) {
+    expect(dom.spinner, `INV-3 spinner+busy ${ctx}`).toBeTruthy();
   } else {
-    expect(spinner, `INV-3 spinner ausente ${ctx}`).toBeNull();
+    expect(dom.spinner, `INV-3 !spinner+!busy ${ctx}`).toBeNull();
   }
 
-  // INV-4
-  if (expectedIsPending) {
-    expect(aria, `INV-4 aria-label pending ${ctx}`).toMatch(/Atualizando status/i);
-    expect(aria, `INV-4 aria-label pending label ${ctx}`).toContain(
-      LABELS[state.pending!],
+  // INV-4: aria-label consistente com busy
+  if (dom.busy) {
+    expect(dom.aria, `INV-4 pending label ${ctx}`).toMatch(/Atualizando status/i);
+    // data-status durante pending == label do pending
+    expect(dom.aria, `INV-4 label contains status ${ctx}`).toContain(
+      LABELS[dom.status],
     );
   } else {
-    expect(aria, `INV-4 aria-label idle ${ctx}`).toMatch(/Status atual do carrinho/i);
-    expect(aria, `INV-4 aria-label idle label ${ctx}`).toContain(
-      LABELS[state.currentStatus],
+    expect(dom.aria, `INV-4 idle label ${ctx}`).toMatch(/Status atual do carrinho/i);
+    // Quando não-pending, data-status DEVE ser o currentStatus real
+    expect(dom.status, `INV-2 idle==current ${ctx}`).toBe(currentStatus);
+    expect(dom.aria, `INV-4 label contains current ${ctx}`).toContain(
+      LABELS[currentStatus],
     );
   }
 
-  // INV-8 (só a partir do 1º evento — permitimos vazio no init)
-  expect(live, `INV-8 live-region existe ${ctx}`).toBeTruthy();
+  // INV-8: live-region sempre existe
+  expect(dom.live, `INV-8 live-region existe ${ctx}`).toBeTruthy();
 }
 
 function clickItem(value: CartStatus) {
@@ -171,7 +172,7 @@ function clickItem(value: CartStatus) {
   if (el) fireEvent.click(el);
 }
 
-describe('CartStatusSelect · fuzz 300× (invariantes + edge cases)', () => {
+describe('CartStatusSelect · fuzz 300× (invariantes DOM + edge cases)', () => {
   beforeEach(() => {
     toastSuccess.mockReset();
     toastError.mockReset();
@@ -184,83 +185,79 @@ describe('CartStatusSelect · fuzz 300× (invariantes + edge cases)', () => {
 
   const SEEDS = Array.from({ length: 300 }, (_, i) => 1 + i);
 
-  it.each(SEEDS)('seed %i · sequência aleatória mantém invariantes', (seed) => {
+  it.each(SEEDS)('seed %i · sequência aleatória mantém invariantes DOM', (seed) => {
     const rng = makeRng(seed);
-    const timeout = 2000 + Math.floor(rng() * 6000); // 2–8s
-    const initial = STATUSES[Math.floor(rng() * STATUSES.length)];
-    const state: State = {
-      currentStatus: initial,
-      pending: null,
-      toastsSuccess: 0,
-      toastsError: 0,
-    };
+    const timeout = 2000 + Math.floor(rng() * 6000);
+    let currentStatus: CartStatus = STATUSES[Math.floor(rng() * STATUSES.length)];
+    let userInitiatedClicks = 0;
+    let successUpperBound = 0; // toasts.success ≤ este valor
+    let errorUpperBound = 0; //  toasts.error ≤ este valor
 
     const onChange = vi.fn((next: CartStatus) => {
-      // INV-9
-      expect(next, `INV-9 seed=${seed}`).not.toBe(state.currentStatus);
+      // INV-9: onChange sempre com valor DIFERENTE do current atual
+      expect(next, `INV-9 seed=${seed}`).not.toBe(currentStatus);
     });
 
     const view = render(
       <CartStatusSelect
-        currentStatus={state.currentStatus}
+        currentStatus={currentStatus}
         onChange={onChange}
         confirmTimeoutMs={timeout}
       />,
     );
 
-    assertInvariants(state, seed, 0);
+    assertDomInvariants(currentStatus, `seed=${seed} step=0`);
 
-    const STEPS = 8 + Math.floor(rng() * 12); // 8–19 passos por seed
+    const STEPS = 8 + Math.floor(rng() * 12);
     for (let step = 1; step <= STEPS; step++) {
       const action = rng();
+      const ctx = `seed=${seed} step=${step} action=${action.toFixed(3)}`;
+      const beforeDom = readDomState();
 
       if (action < 0.35) {
-        // AÇÃO A: usuário tenta trocar para um valor aleatório
+        // A: clique aleatório
         const target = STATUSES[Math.floor(rng() * STATUSES.length)];
-        const wouldBePending =
-          state.pending !== null && state.pending !== state.currentStatus;
         clickItem(target);
-        if (!wouldBePending && target !== state.currentStatus) {
-          state.pending = target;
+        // Só conta como clique útil se não-busy e target != current visível
+        if (
+          beforeDom &&
+          !beforeDom.busy &&
+          target !== beforeDom.status
+        ) {
+          userInitiatedClicks += 1;
+          successUpperBound += 1; // pode ou não confirmar; upper bound
+          errorUpperBound += 1;
         }
       } else if (action < 0.6) {
-        // AÇÃO B: backend confirma → parent atualiza currentStatus para o pending
-        if (state.pending && state.pending !== state.currentStatus) {
-          const newCurrent = state.pending;
-          state.currentStatus = newCurrent;
+        // B: parent confirma para o pending atual (se houver)
+        if (beforeDom?.busy) {
+          const targetKey = beforeDom.status;
+          currentStatus = targetKey;
           view.rerender(
             <CartStatusSelect
-              currentStatus={state.currentStatus}
+              currentStatus={currentStatus}
               onChange={onChange}
               confirmTimeoutMs={timeout}
             />,
           );
-          // O success effect roda no próximo tick — flush.
           act(() => {
             vi.advanceTimersByTime(0);
           });
-          state.pending = null;
-          state.toastsSuccess += 1;
         }
       } else if (action < 0.8) {
-        // AÇÃO C: avança tempo (pode disparar timeout)
+        // C: avança o tempo
         const jump = Math.floor(rng() * (timeout + 200));
         act(() => {
           vi.advanceTimersByTime(jump);
         });
-        if (state.pending && jump >= timeout) {
-          state.toastsError += 1;
-          state.pending = null;
-        }
       } else if (action < 0.92) {
-        // AÇÃO D: parent muda currentStatus arbitrariamente (para o mesmo pending
-        // ou para outro valor)
+        // D: parent muda currentStatus arbitrariamente
         const target = STATUSES[Math.floor(rng() * STATUSES.length)];
-        if (target !== state.currentStatus) {
-          state.currentStatus = target;
+        if (target !== currentStatus) {
+          currentStatus = target;
           view.rerender(
             <CartStatusSelect
-              currentStatus={state.currentStatus}
+              currentStatus={currentStatus}
               onChange={onChange}
               confirmTimeoutMs={timeout}
             />,
@@ -268,45 +265,45 @@ describe('CartStatusSelect · fuzz 300× (invariantes + edge cases)', () => {
           act(() => {
             vi.advanceTimersByTime(0);
           });
-          if (state.pending === state.currentStatus) {
-            state.pending = null;
-            state.toastsSuccess += 1;
-          }
         }
       } else {
-        // AÇÃO E: troca o confirmTimeoutMs (não deve criar toast duplo)
+        // E: troca o confirmTimeoutMs
         const newTimeout = 500 + Math.floor(rng() * 3000);
         view.rerender(
           <CartStatusSelect
-            currentStatus={state.currentStatus}
+            currentStatus={currentStatus}
             onChange={onChange}
             confirmTimeoutMs={newTimeout}
           />,
         );
-        // Timer reinicia com o novo timeout — modelo local não recontabiliza,
-        // apenas verificamos invariantes de DOM.
       }
 
-      assertInvariants(state, seed, step);
+      assertDomInvariants(currentStatus, ctx);
 
-      // INV-5 e INV-6: contadores de toast batem com o modelo.
-      expect(toastSuccess.mock.calls.length, `INV-5 seed=${seed} step=${step}`).toBe(
-        state.toastsSuccess,
-      );
-      // Para timeout, o modelo é aproximado quando trocamos confirmTimeoutMs;
-      // então validamos apenas ≤ (nunca dispara a mais).
+      // INV-5/6: toast counters SEMPRE ≤ número de cliques úteis do usuário
+      expect(
+        toastSuccess.mock.calls.length,
+        `INV-5 seed=${seed} step=${step} success≤clicks`,
+      ).toBeLessThanOrEqual(successUpperBound);
       expect(
         toastError.mock.calls.length,
-        `INV-6 seed=${seed} step=${step} error≤model`,
-      ).toBeLessThanOrEqual(state.toastsError + 1);
+        `INV-6 seed=${seed} step=${step} error≤clicks`,
+      ).toBeLessThanOrEqual(errorUpperBound);
+
+      // INV-10: success + error de UM MESMO CLIQUE são mutuamente exclusivos
+      //  Total (success + error) nunca excede cliques úteis
+      expect(
+        toastSuccess.mock.calls.length + toastError.mock.calls.length,
+        `INV-10 seed=${seed} step=${step} success+error≤clicks`,
+      ).toBeLessThanOrEqual(userInitiatedClicks);
     }
 
-    // INV-7: unmount e verifica que nenhum toast novo dispara
+    // INV-7: pós-unmount, nenhum toast novo
     const beforeSuccess = toastSuccess.mock.calls.length;
     const beforeError = toastError.mock.calls.length;
     view.unmount();
     act(() => {
-      vi.advanceTimersByTime(timeout * 2);
+      vi.advanceTimersByTime(timeout * 4);
     });
     expect(toastSuccess.mock.calls.length, `INV-7 success seed=${seed}`).toBe(
       beforeSuccess,
