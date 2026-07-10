@@ -190,7 +190,9 @@ describe('CartStatusSelect', () => {
     expect(toastError.mock.calls[0][0]).toMatch(/Não foi possível atualizar o status/i);
     const trigger = screen.getByTestId('cart-status-select');
     expect(trigger).toHaveAttribute('aria-busy', 'false');
-    expect(screen.getByTestId('cart-status-live').textContent).toMatch(/Não foi possível/i);
+    expect(screen.getByTestId('cart-status-live').textContent).toMatch(
+      /Não foi possível atualizar o status para Pronto p\/ orçamento/i,
+    );
   });
 
   it('ignora seleção do mesmo valor (não vira loading)', () => {
