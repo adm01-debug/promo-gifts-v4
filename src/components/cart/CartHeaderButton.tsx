@@ -120,6 +120,15 @@ export function CartHeaderButton() {
     }
   }, [collapsedIds]);
 
+  // Enriquecimento de CNPJ: carrinhos legados guardam ramo em `company_location`.
+  // Buscamos CNPJ do CRM (cache 10min compartilhado) para exibir CNPJ no popover.
+  const { data: crmCompanies = [] } = useCrmCompanies({ is_customer: true });
+  const cnpjByCompanyId = new Map<string, string>();
+  for (const c of crmCompanies) {
+    if (c.cnpj) cnpjByCompanyId.set(c.id, c.cnpj);
+  }
+
+
   // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery,
   // ou Provider fora da árvore). Em vez de um botão inerte, o ícone NAVEGA para a página de
   // carrinhos — garante que o clique no carrinho do header nunca fique morto.
