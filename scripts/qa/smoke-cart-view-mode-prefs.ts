@@ -15,7 +15,7 @@
 (async () => {
   try {
     // @ts-expect-error — path relativo do repo, resolvido pelo tsx
-    const mod = await import('../src/pages/products/seller-carts/cartViewModePrefs.ts');
+    const mod = await import('../../src/pages/products/seller-carts/cartViewModePrefs.ts');
 
     const {
       CART_VIEW_MODE_DEFAULT,
