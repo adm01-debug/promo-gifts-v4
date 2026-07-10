@@ -59,6 +59,8 @@ import {
   loadCartViewMode,
   persistCartViewMode,
 } from '@/pages/products/seller-carts/cartViewModePrefs';
+import { emitCartViewModeEvent } from '@/pages/products/seller-carts/cartViewModeTelemetry';
+import { useMidnightReset } from '@/pages/products/seller-carts/useMidnightReset';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
@@ -296,8 +298,9 @@ function SellerCartsContent() {
 
     // Regra: no primeiro acesso do dia (timezone local) o viewMode reseta
     // para "list"; após o usuário alterar, mantém a escolha durante o dia.
+    // Emite telemetria `daily_reset` quando o reset ocorre.
     // Ver `cartViewModePrefs.ts` — SSOT com testes.
-    const { viewMode: nextViewMode } = loadCartViewMode(uid);
+    const { viewMode: nextViewMode } = loadCartViewMode(uid, { emit: emitCartViewModeEvent });
     setViewMode(nextViewMode);
 
     const gc = Number(localStorage.getItem(ns('cart-grid-columns')));
@@ -313,11 +316,21 @@ function SellerCartsContent() {
     if ([10, 25, 50, 100].includes(ps)) setPageSize(ps);
   }, [uid]);
 
-  // Persiste preferências com chave namespaced por user
+  // Persiste preferências (com telemetria `change` on-diff) por user.
   useEffect(() => {
     if (!uid) return;
-    persistCartViewMode(uid, viewMode);
+    persistCartViewMode(uid, viewMode, { emit: emitCartViewModeEvent });
   }, [viewMode, uid]);
+
+  // Reset automático ao virar a meia-noite local — sem reload.
+  useMidnightReset(
+    () => {
+      if (!uid) return;
+      const { viewMode: reloaded } = loadCartViewMode(uid, { emit: emitCartViewModeEvent });
+      setViewMode(reloaded);
+    },
+    { enabled: !!uid },
+  );
   useEffect(() => {
     if (!uid) return;
     localStorage.setItem(`cart-grid-columns:${uid}`, String(gridColumns));
