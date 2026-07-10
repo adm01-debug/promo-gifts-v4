@@ -595,6 +595,13 @@ function SellerCartsContent() {
             </div>
           </div>
           <div className="flex flex-shrink-0 flex-wrap items-center gap-2.5">
+            <CartActionsMenu
+              canGenerateQuote={s.activeCart.items.length > 0}
+              onGenerateQuote={() => {
+                if (s.activeCart) s.handleGenerateQuote(s.activeCart);
+              }}
+              onDelete={() => s.setConfirmDeleteCart(true)}
+            />
             {s.activeCart.items.length > 0 && (
               <LayoutPopover
                 viewMode={viewMode}
@@ -603,13 +610,6 @@ function SellerCartsContent() {
                 setGridColumns={setGridColumns}
               />
             )}
-            <CartActionsMenu
-              canGenerateQuote={s.activeCart.items.length > 0}
-              onGenerateQuote={() => {
-                if (s.activeCart) s.handleGenerateQuote(s.activeCart);
-              }}
-              onDelete={() => s.setConfirmDeleteCart(true)}
-            />
           </div>
         </div>
 
