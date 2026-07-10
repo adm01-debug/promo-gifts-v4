@@ -10,8 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
-/** Teto máximo de carrinhos simultâneos por vendedor (espelha o trigger `enforce_seller_cart_limit`). */
-export const MAX_SELLER_CARTS = 10;
+/** Teto máximo de carrinhos simultâneos por vendedor (enforcement client-side; backend não impõe). */
+export const MAX_SELLER_CARTS = 50;
 
 /** Mensagem padrão (SSOT) para limite de carrinhos atingido — tooltips/aria-labels. */
 export const SELLER_CART_LIMIT_REACHED_MESSAGE = `Limite de ${MAX_SELLER_CARTS} carrinhos atingido. Exclua um carrinho para criar outro.`;
