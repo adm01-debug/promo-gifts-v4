@@ -118,4 +118,61 @@ test.describe('Carrinhos · CartStatusSelect @carrinhos', () => {
 
     await ctx.close();
   });
+
+  /**
+   * Smoke @smoke — Timeout: intercepta a PATCH em `seller_carts` e a atrasa
+   * além do `confirmTimeoutMs` do componente (6s default). Valida:
+   *   - toast.error do sonner aparece com a copy esperada
+   *   - live-region anuncia "Não foi possível atualizar o status para <label>"
+   *   - trigger volta a aria-busy=false e ao status original (rollback)
+   */
+  test('@smoke timeout: toast.error + live-region + rollback quando a mutação demora demais', async ({
+    page,
+  }) => {
+    await loginAs(page, 'seller');
+    // Intercepta a chamada PATCH ANTES de abrir o carrinho, para não perder o request.
+    await page.route(/\/rest\/v1\/seller_carts\?.*id=eq\./i, async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        return route.continue();
+      }
+      // Segura a resposta por 10s — muito além do confirmTimeoutMs (6s).
+      await new Promise((r) => setTimeout(r, 10_000));
+      await route.fulfill({ status: 204, body: '' });
+    });
+
+    await openFirstCart(page);
+    const trigger = page.getByTestId('cart-status-select');
+    await expect(trigger).toBeVisible();
+    const initialStatus = await trigger.getAttribute('data-status');
+    expect(initialStatus).toMatch(/em_separacao|pronto_orcamento/);
+
+    const nextKey =
+      initialStatus === 'pronto_orcamento' ? 'em_separacao' : 'pronto_orcamento';
+    const nextLabel = STATUS_LABELS[nextKey];
+
+    await trigger.click();
+    await page.getByRole('option', { name: nextLabel }).click();
+
+    // Durante o pending: aria-busy=true.
+    await expect(trigger).toHaveAttribute('aria-busy', 'true', { timeout: 3_000 });
+
+    const liveRegion = page.getByTestId('cart-status-live');
+    // Após ~6s (default), o timeout do cliente dispara o erro.
+    await expect(liveRegion).toContainText(
+      new RegExp(`Não foi possível atualizar o status para ${nextLabel}`, 'i'),
+      { timeout: 9_000 },
+    );
+    // Toast de erro do sonner.
+    await expect(
+      page
+        .locator('[data-sonner-toast]')
+        .filter({ hasText: /Não foi possível atualizar o status/i })
+        .first(),
+    ).toBeVisible({ timeout: 3_000 });
+
+    // Rollback: volta a aria-busy=false, sem spinner, status original preservado.
+    await expect(trigger).toHaveAttribute('aria-busy', 'false', { timeout: 3_000 });
+    await expect(page.getByTestId('cart-status-spinner')).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('data-status', initialStatus!);
+  });
 });
