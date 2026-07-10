@@ -143,6 +143,7 @@ export function CartCompanyPicker({ onCreated, onCancel }: CartCompanyPickerProp
       id: string;
       name: string;
       ramo?: string | null;
+      cnpj?: string | null;
       logo_url?: string | null;
     }) => {
       // Trava de reentrância: createCart é assíncrono e canCreateCart só vira false
