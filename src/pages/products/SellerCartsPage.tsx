@@ -319,6 +319,7 @@ function SellerCartsContent() {
   useEffect(() => {
     if (!uid) return;
     localStorage.setItem(`cart-view-mode:${uid}`, viewMode);
+    localStorage.setItem(`cart-view-mode-date:${uid}`, new Date().toISOString().slice(0, 10));
   }, [viewMode, uid]);
   useEffect(() => {
     if (!uid) return;
