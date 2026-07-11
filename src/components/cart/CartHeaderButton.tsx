@@ -571,17 +571,20 @@ export function CartHeaderButton() {
                                       e.preventDefault();
                                       e.stopPropagation();
                                       const id = cart.id;
+                                      cartHeaderLog.info('cart_delete_click', { cart_id: id });
                                       // Fecha o Popover ANTES do dialog abrir para evitar corrida
                                       // de foco entre dois DismissableLayers do Radix (Popover +
                                       // AlertDialog), que estava impedindo o dialog de aparecer.
                                       deleteDialogHandoffRef.current = true;
                                       setOpen(false);
+                                      cartHeaderLog.debug('cart_popover_closed_for_dialog', { cart_id: id });
                                       // Agenda a abertura do dialog no próximo tick para garantir
                                       // que o Popover já tenha desmontado seu focus-scope. Fallback
                                       // para setTimeout em ambientes sem rAF (jsdom/SSR) evita que
                                       // o dialog nunca abra em testes headless.
                                       const scheduleOpen = () => {
                                         setPendingDeleteId(id);
+                                        cartHeaderLog.info('cart_delete_dialog_open', { cart_id: id });
                                         globalThis.setTimeout(() => {
                                           deleteDialogHandoffRef.current = false;
                                         }, 0);
