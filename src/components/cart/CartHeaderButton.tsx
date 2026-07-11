@@ -556,9 +556,22 @@ export function CartHeaderButton() {
                                     className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
                                     style={{ opacity: isActive ? 1 : undefined }}
                                     disabled={isDeletingCart}
-                                    onClick={(e) => {
+                                    onPointerDown={(e) => {
+                                      // Bloqueia o Radix Tooltip/Popover de dar preventDefault
+                                      // e engolir o clique subsequente (bug reportado: nada acontece).
                                       e.stopPropagation();
-                                      setPendingDeleteId(cart.id);
+                                    }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const id = cart.id;
+                                      // Fecha o Popover ANTES do dialog abrir para evitar corrida
+                                      // de foco entre dois DismissableLayers do Radix (Popover +
+                                      // AlertDialog), que estava impedindo o dialog de aparecer.
+                                      setOpen(false);
+                                      // Agenda a abertura do dialog no próximo tick para garantir
+                                      // que o Popover já tenha desmontado seu focus-scope.
+                                      requestAnimationFrame(() => setPendingDeleteId(id));
                                     }}
                                   >
                                     <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
