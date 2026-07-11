@@ -155,25 +155,21 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteCart = useCallback(
-    (cartId: string) => {
+    async (cartId: string) => {
       // Limpa histórico/seleção SOMENTE após o delete confirmar. Antes isso rodava
       // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
       // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
-      deleteCartMutation.mutate(cartId, {
-        onSuccess: () => {
-          if (activeCartId === cartId) {
-            setActiveCartId(null);
-            // Remove explicitamente o ID salvo para não herdar referência obsoleta após reload.
-            if (user?.id) {
-              try {
-                localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
-              } catch {
-                // no-op: storage unavailable
-              }
-            }
+      await deleteCartMutation.mutateAsync(cartId);
+      if (activeCartId === cartId) {
+        setActiveCartId(null);
+        if (user?.id) {
+          try {
+            localStorage.removeItem(`${ACTIVE_CART_STORAGE_KEY}:${user.id}`);
+          } catch {
+            // no-op: storage unavailable
           }
-        },
-      });
+        }
+      }
     },
     [deleteCartMutation, activeCartId, user?.id],
   );
