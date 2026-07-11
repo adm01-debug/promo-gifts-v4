@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useBadgesManager } from './useBadgesManager';
 import { BadgeTable } from './BadgeTable';
