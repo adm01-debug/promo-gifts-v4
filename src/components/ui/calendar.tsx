@@ -55,7 +55,7 @@ function Calendar({
         month: 'flex w-full flex-col space-y-2',
         caption: 'flex justify-between items-center px-1 pt-0 pb-2',
         caption_label:
-          'text-[17px] font-bold tracking-tight leading-tight text-destructive capitalize flex flex-col items-start whitespace-pre-line',
+          'text-[14px] font-bold tracking-tight leading-tight text-destructive capitalize flex flex-col items-start whitespace-pre-line',
         nav: 'flex items-center gap-3',
         nav_button:
           'inline-flex h-7 w-7 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -66,11 +66,11 @@ function Calendar({
         tbody: 'flex w-full flex-col gap-1',
         head_row: 'flex w-full gap-0 pb-1',
         head_cell:
-          'flex-1 font-semibold uppercase tracking-[0.08em] text-[11px] text-muted-foreground/70 flex items-center justify-center',
+          'flex-1 font-semibold uppercase tracking-[0.08em] text-[9px] text-muted-foreground/70 flex items-center justify-center',
         row: 'flex w-full gap-0',
         cell: 'flex-1 aspect-square text-center p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
-        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[17px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[14px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'text-destructive font-semibold aria-selected:bg-destructive aria-selected:text-primary-foreground',
