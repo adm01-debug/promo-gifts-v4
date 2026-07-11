@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import {
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PrintAreaForm } from './PrintAreaForm';
 import { fetchPrintAreas, createPrintArea, updatePrintArea, deletePrintArea } from './api';
