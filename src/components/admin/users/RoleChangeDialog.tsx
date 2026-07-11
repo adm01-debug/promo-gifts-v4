@@ -41,7 +41,7 @@ export function RoleChangeDialog({ user, onClose, onConfirm }: RoleChangeDialogP
 
   return (
     <AlertDialog open={!!user} onOpenChange={(open) => !open && handleClose()}>
-      <AlertDialogContent className="!max-w-[420px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80">
+      <AlertDialogContent className="!max-w-[420px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80" data-testid="role-change-confirm-dialog">
         <div
           aria-hidden="true"
           className="h-[3px] w-full bg-gradient-to-r from-transparent via-primary to-transparent"
