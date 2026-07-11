@@ -570,8 +570,15 @@ export function CartHeaderButton() {
                                       // AlertDialog), que estava impedindo o dialog de aparecer.
                                       setOpen(false);
                                       // Agenda a abertura do dialog no próximo tick para garantir
-                                      // que o Popover já tenha desmontado seu focus-scope.
-                                      requestAnimationFrame(() => setPendingDeleteId(id));
+                                      // que o Popover já tenha desmontado seu focus-scope. Fallback
+                                      // para setTimeout em ambientes sem rAF (jsdom/SSR) evita que
+                                      // o dialog nunca abra em testes headless.
+                                      const scheduleOpen = () => setPendingDeleteId(id);
+                                      if (typeof requestAnimationFrame === 'function') {
+                                        requestAnimationFrame(scheduleOpen);
+                                      } else {
+                                        setTimeout(scheduleOpen, 0);
+                                      }
                                     }}
                                   >
                                     <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />

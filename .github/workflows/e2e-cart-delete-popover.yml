@@ -1,0 +1,77 @@
+name: E2E · Cart Delete Popover (multi-engine)
+
+# Gate obrigatório: valida o fix da corrida Popover×AlertDialog em Chromium,
+# Firefox e WebKit. Bloqueia merges que reintroduzam a regressão.
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/cart/CartHeaderButton.tsx'
+      - 'src/contexts/SellerCartContext.tsx'
+      - 'src/hooks/products/useSellerCarts.ts'
+      - 'e2e/ui/cart-delete-header-popover*.spec.ts'
+      - 'e2e/helpers/cart-mock.ts'
+      - 'e2e/helpers/cart-fixture.ts'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e-cart-delete-popover.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-cart-delete-popover-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz-and-unit:
+    name: Fuzz + Unit (rápido)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Fuzz determinístico (500 seeds)
+        run: node scripts/qa/fuzz-cart-delete-popover.mjs
+      - name: Unit — contrato dos handlers
+        run: npx vitest run src/components/cart/__tests__/CartHeaderButton.delete.test.tsx
+
+  e2e:
+    name: E2E · ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-authed, firefox-authed, webkit-authed]
+    env:
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Rodar bateria exaustiva
+        run: |
+          npx playwright test \
+            e2e/ui/cart-delete-header-popover.spec.ts \
+            e2e/ui/cart-delete-header-popover-exhaustive.spec.ts \
+            --project=${{ matrix.project }}
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 7
