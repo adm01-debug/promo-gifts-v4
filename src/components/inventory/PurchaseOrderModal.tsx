@@ -139,12 +139,15 @@ export function PurchaseOrderModal({ open, onOpenChange, row }: Props) {
             <Label htmlFor="po-eta">
               Previsão de chegada <span className="text-xs text-muted-foreground">(opcional)</span>
             </Label>
-            <Input
+            <DatePickerField
               id="po-eta"
-              type="date"
+              data-testid="po-eta"
               value={arrivalDate}
-              onChange={(e) => setArrivalDate(e.target.value)}
+              onChange={setArrivalDate}
+              minDate={new Date()}
+              className="w-full"
             />
+
           </div>
 
           {/* Notas */}
