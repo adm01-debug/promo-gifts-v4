@@ -26,6 +26,7 @@ import {
   Eye,
   ChevronUp,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -875,12 +876,13 @@ export function CartHeaderButton() {
           </AlertDialogCancel>
           <AlertDialogAction
             aria-label="Confirmar exclusão do carrinho"
+            aria-busy={isDeletingCart}
             data-testid="cart-delete-confirm"
             disabled={isDeletingCart}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"
             onClick={async (e) => {
               e.preventDefault();
-              if (!pendingDeleteId) return;
+              if (!pendingDeleteId || isDeletingCart) return;
               try {
                 await deleteCart(pendingDeleteId);
                 setPendingDeleteId(null);
@@ -890,7 +892,18 @@ export function CartHeaderButton() {
               }
             }}
           >
-            {isDeletingCart ? 'Excluindo…' : 'Excluir'}
+            {isDeletingCart ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2
+                  aria-hidden="true"
+                  data-testid="cart-delete-loading"
+                  className="h-3.5 w-3.5 animate-spin"
+                />
+                Excluindo…
+              </span>
+            ) : (
+              'Excluir'
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
