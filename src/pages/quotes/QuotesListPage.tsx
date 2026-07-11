@@ -360,25 +360,18 @@ export default function QuotesListPage() {
         </div>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. O orçamento será removido permanentemente.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Confirmar Exclusão
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          open={!!deleteConfirmId}
+          onOpenChange={(o) => !o && setDeleteConfirmId(null)}
+          variant="destructive"
+          title="Excluir orçamento?"
+          description="Esta ação não pode ser desfeita. O orçamento será removido permanentemente."
+          confirmLabel="Confirmar exclusão"
+          confirmLabelShort="Excluir"
+          cancelLabel="Cancelar"
+          onConfirm={handleDelete}
+          testId="quote-list-delete-dialog"
+        />
 
         {/* Bulk Delete Dialog — preview de IDs, loading com progresso, cancelar preserva seleção */}
         <AlertDialog
