@@ -61,14 +61,7 @@ describe('PopoverQtyInput — snapshot de feedback visual', () => {
   });
 
   it('clamped: 9999999 → ring âmbar + mensagem "Valor limitado a 999.999"', () => {
-    render(
-      <PopoverQtyInput
-        itemId="snap-clamp"
-        productName="Item snap"
-        quantity={10}
-        onCommit={vi.fn()}
-      />,
-    );
+    render(<Controlled itemId="snap-clamp" />);
     const input = screen.getByTestId('cart-item-qty-snap-clamp') as HTMLInputElement;
     act(() => input.focus());
     fireEvent.change(input, { target: { value: '9999999' } });
