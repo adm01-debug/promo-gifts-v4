@@ -44,7 +44,7 @@ import { resolveCartCompanyCnpj } from './cartCompanyCnpj';
 import { CartItemErrorAlert } from './CartItemErrorAlert';
 import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PopoverQtyInput } from './PopoverQtyInput';
 import {
   AlertDialog,
@@ -64,6 +64,7 @@ export function CartHeaderButton() {
   const [open, setOpen] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const deleteDialogHandoffRef = useRef(false);
   // UI-local: carrinhos que o usuário recolheu explicitamente. Necessário porque
   // o contexto faz fallback automático para carts[0] quando activeCartId === null,
   // o que impediria o usuário de recolher o primeiro carrinho da lista.
@@ -276,9 +277,11 @@ export function CartHeaderButton() {
         className="w-[min(386px,calc(100vw-1rem))] max-h-[min(80vh,560px)] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
         align="end"
         sideOffset={8}
-        onCloseAutoFocus={() => {
+        onCloseAutoFocus={(event) => {
           setShowPicker(false);
-          setPendingDeleteId(null);
+          if (deleteDialogHandoffRef.current) {
+            event.preventDefault();
+          }
         }}
       >
         {showPicker ? (
@@ -568,16 +571,22 @@ export function CartHeaderButton() {
                                       // Fecha o Popover ANTES do dialog abrir para evitar corrida
                                       // de foco entre dois DismissableLayers do Radix (Popover +
                                       // AlertDialog), que estava impedindo o dialog de aparecer.
+                                      deleteDialogHandoffRef.current = true;
                                       setOpen(false);
                                       // Agenda a abertura do dialog no próximo tick para garantir
                                       // que o Popover já tenha desmontado seu focus-scope. Fallback
                                       // para setTimeout em ambientes sem rAF (jsdom/SSR) evita que
                                       // o dialog nunca abra em testes headless.
-                                      const scheduleOpen = () => setPendingDeleteId(id);
+                                      const scheduleOpen = () => {
+                                        setPendingDeleteId(id);
+                                        globalThis.setTimeout(() => {
+                                          deleteDialogHandoffRef.current = false;
+                                        }, 0);
+                                      };
                                       if (typeof requestAnimationFrame === 'function') {
                                         requestAnimationFrame(scheduleOpen);
                                       } else {
-                                        setTimeout(scheduleOpen, 0);
+                                        globalThis.setTimeout(scheduleOpen, 0);
                                       }
                                     }}
                                   >

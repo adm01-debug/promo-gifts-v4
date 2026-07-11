@@ -16,6 +16,7 @@
  *   I6  activeCartId só é limpo quando o cart deletado era o ativo.
  *   I7  localStorage[seller:active-cart-id:<uid>] consistente com activeCartId.
  *   I8  Sem "phantom deletes": deletes.length === Σ (sucessos).
+ *   I9  HTTP 2xx sem linha deletada é erro: mantém dialog aberto e cart preservado.
  */
 
 // --------- PRNG determinística (mulberry32)
@@ -102,6 +103,9 @@ const actions = {
         delete s.localStorage[`seller:active-cart-id:${s.userId}`];
       }
       s.pendingDeleteId = null;
+    } else if (mode === 'noop') {
+      // Backend respondeu 2xx, mas a mutation robusta não recebeu a linha deletada.
+      // Deve ser tratado como falha, não como sucesso.
     } else {
       // fail: mantém dialog aberto, cart preservado
     }
@@ -154,7 +158,8 @@ function runSeed(seed) {
   for (let step = 0; step < N_STEPS; step++) {
     if (s.carts.length === 0) break;
     const name = pick(rng, ACTION_NAMES);
-    const mode = rng() < 0.75 ? 'ok' : 'fail';
+    const r = rng();
+    const mode = r < 0.65 ? 'ok' : r < 0.85 ? 'fail' : 'noop';
     try {
       actions[name](s, rng, mode);
     } catch (e) {

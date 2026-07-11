@@ -57,9 +57,10 @@ async function seedWithDelayedDelete(
       if (idx >= 0) carts.splice(idx, 1);
     }
     return route.fulfill({
-      status,
+      status: status < 300 ? 200 : status,
+      contentType: 'application/json',
       headers: { 'X-Mock-Source': 'cart-delete-success-loading-focus-spec' },
-      body: status === 204 ? '' : JSON.stringify({ message: 'boom' }),
+      body: status < 300 ? JSON.stringify([{ id }]) : JSON.stringify({ message: 'boom' }),
     });
   });
 

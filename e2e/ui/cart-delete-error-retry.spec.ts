@@ -54,9 +54,10 @@ async function seedCartsWithToggleableDelete(page: Page): Promise<DeleteHarness>
       if (idx >= 0) carts.splice(idx, 1);
     }
     return route.fulfill({
-      status: 204,
+      status: 200,
+      contentType: 'application/json',
       headers: { 'X-Mock-Source': 'cart-delete-error-spec' },
-      body: '',
+      body: JSON.stringify([{ id }]),
     });
   });
 

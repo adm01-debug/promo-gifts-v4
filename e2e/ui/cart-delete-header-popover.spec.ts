@@ -25,7 +25,13 @@ async function mockDeleteCart(page: Page): Promise<{ attempts: () => number }> {
   await page.route('**/rest/v1/seller_carts**', async (route) => {
     if (route.request().method() !== 'DELETE') return route.continue();
     n += 1;
-    await route.fulfill({ status: 204, body: '' });
+    const m = route.request().url().match(/id=eq\.([^&]+)/);
+    const id = m?.[1] ?? 'unknown-cart';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{ id }]),
+    });
   });
   return { attempts: () => n };
 }

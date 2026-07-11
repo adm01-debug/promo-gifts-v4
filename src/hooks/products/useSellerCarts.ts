@@ -207,12 +207,28 @@ export function useSellerCarts() {
   });
 
   // Delete cart
-  const deleteCart = useMutation({
+  const deleteCart = useMutation<string, Error, string>({
     mutationFn: async (cartId: string) => {
-      const { error } = await supabase.from('seller_carts').delete().eq('id', cartId);
+      if (!userId) throw new Error('Não autenticado');
+
+      const { data, error } = await supabase
+        .from('seller_carts')
+        .delete()
+        .eq('id', cartId)
+        .eq('seller_id', userId)
+        .select('id');
+
       if (error) throw error;
+      if (!Array.isArray(data) || data.length !== 1 || data[0]?.id !== cartId) {
+        throw new Error('Não foi possível confirmar a exclusão do carrinho. Atualize a lista e tente novamente.');
+      }
+
+      return data[0].id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedCartId) => {
+      queryClient.setQueryData<SellerCart[]>([QUERY_KEY, userId], (previous) =>
+        previous?.filter((cart) => cart.id !== deletedCartId) ?? previous,
+      );
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       toast.success('Carrinho removido');
     },

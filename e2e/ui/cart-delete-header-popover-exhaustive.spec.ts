@@ -1,5 +1,5 @@
 /**
- * E2E · CartHeaderButton — Bateria exaustiva (15 cenários)
+ * E2E · CartHeaderButton — Bateria exaustiva (19 cenários)
  *
  * Valida o fix da corrida entre DismissableLayer do Popover e do AlertDialog
  * (setOpen(false) + rAF(setPendingDeleteId)). Cada cenário mocka /rest/v1/seller_carts
@@ -51,7 +51,11 @@ async function seed(page: Page, carts: MockCart[]): Promise<Harness> {
       const idx = carts.findIndex((c) => c.id === id);
       if (idx >= 0) carts.splice(idx, 1);
     }
-    return route.fulfill({ status: 204, body: '' });
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{ id }]),
+    });
   });
 
   return {
@@ -110,6 +114,54 @@ test.describe('CartHeaderButton — exaustivo (delete via popover)', () => {
     await expect(page.getByTestId('cart-delete-dialog')).toBeHidden();
     expect(h.attempts()).toBe(1);
     expect(h.deleted()).toEqual([cart.id]);
+  });
+
+  test('carrinho expandido com itens — lixeira abre dialog mesmo após fechamento do popover', async ({ page }) => {
+    const cart = makeMockCart(0, 2);
+    cart.id = 'exh-expanded-real-click';
+    cart.company_name = 'Andco Cosmeticos';
+    await seed(page, [cart]);
+
+    await gotoAndSettle(page, '/');
+    await openPopover(page);
+
+    await expect(page.getByTestId(`cart-toggle-${cart.id}`)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByText(cart.seller_cart_items[0].product_name).first()).toBeVisible();
+
+    await page.getByTestId(`cart-delete-${cart.id}`).click();
+
+    await expect(page.getByTestId('cart-drawer')).toBeHidden({ timeout: 3_000 });
+    await expect(page.getByTestId('cart-delete-dialog')).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByTestId('cart-delete-dialog-description')).toContainText('Andco Cosmeticos');
+  });
+
+  test('DELETE 200 com 0 linhas removidas — trata como erro e mantém o carrinho', async ({ page }) => {
+    const cart = makeMockCart(0, 1);
+    cart.id = 'exh-noop-delete';
+    await mockSellerCartsAPI(page, [cart]);
+
+    let attempts = 0;
+    await page.route('**/rest/v1/seller_carts**', async (route: Route) => {
+      if (route.request().method() !== 'DELETE') return route.continue();
+      attempts += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await gotoAndSettle(page, '/');
+    await openPopover(page);
+    await page.getByTestId(`cart-delete-${cart.id}`).click();
+    await expect(page.getByTestId('cart-delete-dialog')).toBeVisible();
+
+    await page.getByTestId('cart-delete-confirm').click();
+
+    await expect(page.locator('[data-sonner-toast][data-type="error"]').first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId('cart-delete-dialog')).toBeVisible();
+    await expect(page.getByText(cart.company_name).first()).toBeVisible();
+    expect(attempts).toBe(1);
   });
 
   // 2

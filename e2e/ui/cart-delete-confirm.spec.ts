@@ -35,9 +35,10 @@ async function seedTwoCartsAndInterceptDelete(page: Page): Promise<{
       if (idx >= 0) carts.splice(idx, 1);
     }
     return route.fulfill({
-      status: 204,
+      status: 200,
+      contentType: 'application/json',
       headers: { 'X-Mock-Source': 'cart-delete-spec' },
-      body: '',
+      body: JSON.stringify([{ id: deletedId }]),
     });
   });
 
