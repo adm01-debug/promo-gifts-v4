@@ -628,34 +628,84 @@ export function CartHeaderButton() {
                                   key={item.id}
                                   className="group/item relative flex items-start gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-background/60"
                                 >
-                                  <div className="group/img relative flex-shrink-0">
-                                    {item.product_image_url ? (
-                                      <img
-                                        src={item.product_image_url}
-                                        alt={item.product_name}
-                                        className="mt-0.5 h-9 w-9 rounded-lg border border-border/30 bg-background object-contain p-0.5 transition-transform group-hover/img:scale-110"
-                                        loading="lazy"
-                                      />
-                                    ) : (
-                                      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-muted/40">
-                                        <Package
-                                          aria-hidden="true"
-                                          className="h-3.5 w-3.5 text-muted-foreground/50"
+                                  <div className="flex flex-shrink-0 flex-col items-center gap-1.5">
+                                    <div className="group/img relative">
+                                      {item.product_image_url ? (
+                                        <img
+                                          src={item.product_image_url}
+                                          alt={item.product_name}
+                                          className="mt-0.5 h-9 w-9 rounded-lg border border-border/30 bg-background object-contain p-0.5 transition-transform group-hover/img:scale-110"
+                                          loading="lazy"
                                         />
-                                      </div>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/produto/${item.product_id}`);
-                                        setOpen(false);
-                                      }}
-                                      aria-label={`Ver produto ${item.product_name}`}
-                                      className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10 opacity-0 transition-opacity group-hover/img:opacity-100"
-                                    >
-                                      <Eye aria-hidden="true" className="h-3 w-3 text-primary" />
-                                    </button>
+                                      ) : (
+                                        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-muted/40">
+                                          <Package
+                                            aria-hidden="true"
+                                            className="h-3.5 w-3.5 text-muted-foreground/50"
+                                          />
+                                        </div>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(`/produto/${item.product_id}`);
+                                          setOpen(false);
+                                        }}
+                                        aria-label={`Ver produto ${item.product_name}`}
+                                        className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10 opacity-0 transition-opacity group-hover/img:opacity-100"
+                                      >
+                                        <Eye aria-hidden="true" className="h-3 w-3 text-primary" />
+                                      </button>
+                                    </div>
+                                    {/* Qty stepper abaixo da imagem */}
+                                    <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
+                                      <button
+                                        type="button"
+                                        aria-label={
+                                          item.quantity <= 1
+                                            ? `Remover ${item.product_name}`
+                                            : `Diminuir quantidade de ${item.product_name}`
+                                        }
+                                        className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (item.quantity <= 1) {
+                                            handleRemoveWithUndo(cart.id, item);
+                                          } else {
+                                            updateItemQuantity(item.id, item.quantity - 1);
+                                          }
+                                        }}
+                                      >
+                                        {item.quantity <= 1 ? (
+                                          <Trash2
+                                            aria-hidden="true"
+                                            className="h-3 w-3 text-destructive"
+                                          />
+                                        ) : (
+                                          <Minus aria-hidden="true" className="h-3 w-3" />
+                                        )}
+                                      </button>
+                                      <span
+                                        data-testid={`cart-item-qty-${item.id}`}
+                                        className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums"
+                                      >
+                                        {item.quantity}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        aria-label={`Aumentar quantidade de ${item.product_name}`}
+                                        className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                        disabled={item.quantity >= 999999}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (item.quantity >= 999999) return;
+                                          updateItemQuantity(item.id, item.quantity + 1);
+                                        }}
+                                      >
+                                        <Plus aria-hidden="true" className="h-3 w-3" />
+                                      </button>
+                                    </div>
                                   </div>
 
                                   <div className="min-w-0 flex-1">
