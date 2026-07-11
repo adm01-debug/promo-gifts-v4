@@ -396,30 +396,22 @@ export default function KitTemplatesAdminPage() {
         </Dialog>
 
         {/* Delete */}
-        <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir template?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação remove o template para todos os vendedores.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={async () => {
-                  if (deleteId) {
-                    await remove(deleteId);
-                    setDeleteId(null);
-                  }
-                }}
-              >
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          open={!!deleteId}
+          onOpenChange={(o) => !o && setDeleteId(null)}
+          variant="destructive"
+          title="Excluir template?"
+          description="Esta ação remove o template para todos os vendedores."
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          onConfirm={async () => {
+            if (deleteId) {
+              await remove(deleteId);
+              setDeleteId(null);
+            }
+          }}
+          testId="kit-templates-admin-delete-dialog"
+        />
       </div>
     </>
   );
