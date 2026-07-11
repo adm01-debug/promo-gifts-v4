@@ -10,15 +10,7 @@ import { SupplierListHeader } from './SupplierListHeader';
 import { SupplierTable } from './SupplierTable';
 import { SupplierFormDialog } from './SupplierFormDialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export function SuppliersManager() {
   const m = useSuppliersManager();
