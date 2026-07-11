@@ -243,28 +243,22 @@ export function BadgesManager() {
         onSave={handleSave}
       />
 
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir badge?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget
-                ? `A badge "${deleteTarget.name}" será removida permanentemente. Esta ação não pode ser desfeita.`
-                : ''}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteBadge.isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              disabled={deleteBadge.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        variant="destructive"
+        title="Excluir badge?"
+        description={
+          deleteTarget
+            ? `A badge "${deleteTarget.name}" será removida permanentemente. Esta ação não pode ser desfeita.`
+            : ''
+        }
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDelete}
+        loading={deleteBadge.isPending}
+        testId="badges-delete-dialog"
+      />
     </div>
   );
 }
