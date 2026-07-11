@@ -504,43 +504,31 @@ export default function QuoteViewPage() {
         isGeneratingPDF={isGeneratingPDF}
       />
 
-      <AlertDialog open={deleteOpen} onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}>
-        <AlertDialogContent data-testid="quote-delete-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O orçamento será removido permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting} data-testid="quote-delete-cancel">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={isDeleting}
-              data-testid="quote-delete-confirm"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async (e) => {
-                e.preventDefault();
-                if (!quote?.id || isDeleting) return;
-                setIsDeleting(true);
-                try {
-                  await deleteQuote(quote.id);
-                  toast.success('Orçamento excluído');
-                  setDeleteOpen(false);
-                  navigate('/orcamentos');
-                } catch {
-                  toast.error('Não foi possível excluir o orçamento. Tente novamente.');
-                } finally {
-                  setIsDeleting(false);
-                }
-              }}
-            >
-              {isDeleting ? 'Excluindo…' : 'Excluir'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}
+        variant="destructive"
+        title="Excluir orçamento?"
+        description="Esta ação não pode ser desfeita. O orçamento será removido permanentemente."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        loading={isDeleting}
+        onConfirm={async () => {
+          if (!quote?.id || isDeleting) return;
+          setIsDeleting(true);
+          try {
+            await deleteQuote(quote.id);
+            toast.success('Orçamento excluído');
+            setDeleteOpen(false);
+            navigate('/orcamentos');
+          } catch {
+            toast.error('Não foi possível excluir o orçamento. Tente novamente.');
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+        testId="quote-delete-dialog"
+      />
     </>
   );
 }
