@@ -171,6 +171,7 @@ export function CartHeaderButton() {
     canCreateCart,
     setActiveCartId,
     deleteCart,
+    isDeletingCart,
     removeItem,
     updateItemQuantity,
     clearCart,
@@ -550,8 +551,10 @@ export function CartHeaderButton() {
                                   <button
                                     type="button"
                                     aria-label={`Excluir carrinho de ${cart.company_name}`}
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                                    data-testid={`cart-delete-${cart.id}`}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
                                     style={{ opacity: isActive ? 1 : undefined }}
+                                    disabled={isDeletingCart}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPendingDeleteId(cart.id);
@@ -848,28 +851,46 @@ export function CartHeaderButton() {
     <AlertDialog
       open={pendingDeleteId !== null}
       onOpenChange={(o) => {
-        if (!o) setPendingDeleteId(null);
+        if (!o && !isDeletingCart) setPendingDeleteId(null);
       }}
     >
-      <AlertDialogContent className="!max-w-[420px] w-[92vw]">
+      <AlertDialogContent
+        className="!max-w-[420px] w-[92vw]"
+        data-testid="cart-delete-dialog"
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription data-testid="cart-delete-dialog-description">
             {pendingDeleteCart
               ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
               : 'Esta ação não pode ser desfeita.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel
+            data-testid="cart-delete-cancel"
+            disabled={isDeletingCart}
+          >
+            Cancelar
+          </AlertDialogCancel>
           <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={() => {
-              if (pendingDeleteId) deleteCart(pendingDeleteId);
-              setPendingDeleteId(null);
+            aria-label="Confirmar exclusão do carrinho"
+            data-testid="cart-delete-confirm"
+            disabled={isDeletingCart}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"
+            onClick={async (e) => {
+              e.preventDefault();
+              if (!pendingDeleteId) return;
+              try {
+                await deleteCart(pendingDeleteId);
+                setPendingDeleteId(null);
+              } catch {
+                // toast de erro já é emitido pela mutation; mantém dialog aberto
+                // para o usuário poder tentar novamente ou cancelar.
+              }
             }}
           >
-            Excluir
+            {isDeletingCart ? 'Excluindo…' : 'Excluir'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
