@@ -273,13 +273,18 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       wrapper: wrapperWith(qc),
     });
 
+    let caught: unknown = null;
     await act(async () => {
-      await result.current
-        .mutateAsync({ itemId: 'ghost', quantity: 50 })
-        .catch(() => {});
+      try {
+        await result.current.mutateAsync({ itemId: 'ghost', quantity: 50 });
+      } catch (e) {
+        caught = e;
+      }
     });
     expect(qc.getQueryData([QUERY_KEY, USER_ID])).toBeUndefined();
-    expect(result.current.isError).toBe(true);
+    // A rejeição foi observada — a mutação de fato falhou.
+    expect(caught).toBeInstanceOf(Error);
+    expect(patchFn).toHaveBeenCalledTimes(1);
   });
 
   it('rollback preserva EXATAMENTE o snapshot inicial (todos os campos)', async () => {
