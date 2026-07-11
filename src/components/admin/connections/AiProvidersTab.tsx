@@ -447,26 +447,17 @@ export function AiProvidersTab() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir provider</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação também exclui modelos vinculados (ON DELETE CASCADE). Roteamentos que usem
-              esses modelos serão quebrados (FK RESTRICT). Não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deletingId}
+        onOpenChange={(o) => !o && setDeletingId(null)}
+        variant="destructive"
+        title="Excluir provider?"
+        description="Esta ação também exclui modelos vinculados (ON DELETE CASCADE). Roteamentos que usem esses modelos serão quebrados (FK RESTRICT). Não pode ser desfeita."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDelete}
+        testId="ai-provider-delete"
+      />
     </div>
   );
 }
