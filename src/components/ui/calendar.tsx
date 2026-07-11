@@ -27,7 +27,7 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-2 select-none overflow-hidden', className)}
+      className={cn('pointer-events-auto p-2 select-none overflow-hidden w-[224px] min-w-[224px] max-w-[224px]', className)}
       formatters={{
         formatWeekdayName: (date) => {
           const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
