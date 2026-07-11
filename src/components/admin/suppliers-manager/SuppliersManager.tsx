@@ -95,34 +95,21 @@ export function SuppliersManager() {
         removePixKey={m.removePixKey}
       />
 
-      {/* BUG-04 FIX: state-driven AlertDialog instead of native confirm() */}
-      <AlertDialog
+      {/* BUG-04 FIX: state-driven confirm instead of native confirm() */}
+      <ConfirmDialog
         open={!!m.deleteConfirmSupplier}
         onOpenChange={(open) => {
           if (!open) m.cancelDelete();
         }}
-      >
-        <AlertDialogContent data-testid="admin-confirm-delete-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir fornecedor</AlertDialogTitle>
-            <AlertDialogDescription>
-              Deseja realmente excluir o fornecedor{' '}
-              <strong>&quot;{m.deleteConfirmSupplier?.name}&quot;</strong>? Esta ação não pode ser
-              desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={m.cancelDelete}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={m.confirmDelete}
-              data-testid="admin-confirm-delete-btn"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        variant="destructive"
+        title="Excluir fornecedor?"
+        description={`Deseja realmente excluir o fornecedor "${m.deleteConfirmSupplier?.name ?? ''}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={m.confirmDelete}
+        onCancel={m.cancelDelete}
+        testId="admin-confirm-delete-dialog"
+      />
     </div>
   );
 }
