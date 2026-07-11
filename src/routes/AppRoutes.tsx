@@ -35,6 +35,9 @@ const QuoteAddProductButtonHarness = import.meta.env.DEV
 const CalendarHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/CalendarHarness'))
   : null;
+const DatePickerFieldHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/DatePickerFieldHarness'))
+  : null;
 const NegotiationMarkupCardHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/NegotiationMarkupCardHarness'))
   : null;
