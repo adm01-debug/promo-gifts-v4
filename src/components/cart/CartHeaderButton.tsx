@@ -579,14 +579,14 @@ export function CartHeaderButton() {
                                       deleteDialogHandoffRef.current = true;
                                       const scheduleOpen = () => {
                                         setPendingDeleteId(id);
-                                        window.setTimeout(() => {
+                                        globalThis.setTimeout(() => {
                                           deleteDialogHandoffRef.current = false;
                                         }, 0);
                                       };
                                       if (typeof requestAnimationFrame === 'function') {
                                         requestAnimationFrame(scheduleOpen);
                                       } else {
-                                        window.setTimeout(scheduleOpen, 0);
+                                        globalThis.setTimeout(scheduleOpen, 0);
                                       }
                                     }}
                                   >
