@@ -10,15 +10,7 @@ import { Button } from '@/components/ui/button';
 import { VariantGridMatrix } from '@/components/products/VariantGridMatrix';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useProductVariants } from './useProductVariants';
 import { VariantForm } from './VariantForm';
 
