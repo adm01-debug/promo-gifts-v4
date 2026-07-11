@@ -1,8 +1,9 @@
 // src/components/ui/calendar.tsx
-// Visual iOS: header grande à esquerda ("Julho 2026"), setas discretas à
-// direita, weekdays de 1 letra ("D S T Q Q S S"), domingos em vermelho,
-// hoje em círculo claro com texto invertido, selecionado em círculo primário,
-// dias fora do mês ocultos.
+// Design iPhone Calendar (iOS): mês em destaque à esquerda com chevron de
+// dropdown, setas ‹ › à direita, weekdays de uma letra em cinza uppercase,
+// domingos em vermelho (iOS red = destructive), dia de hoje em vermelho,
+// selecionado em círculo preenchido, números grandes e espaçados como no
+// app Calendário do iPhone.
 
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -26,7 +27,7 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-1.5', className)}
+      className={cn('pointer-events-auto p-3 select-none', className)}
       formatters={{
         // fix_version: calendar-ios-type-safe-2026-07-03 — cast Day para satisfazer date-fns typings
         formatWeekdayName: (date) => {
@@ -45,29 +46,30 @@ function Calendar({
       }}
       classNames={{
         months: 'flex w-full flex-col sm:flex-row gap-4',
-        month: 'flex w-full flex-col',
-        caption: 'flex justify-between items-center px-0.5 pt-0.5 pb-1.5 mb-1',
-        caption_label: 'text-[15px] font-bold tracking-tight leading-none text-foreground capitalize',
-        nav: 'flex items-center gap-0.5',
+        month: 'flex w-full flex-col space-y-2',
+        caption: 'flex justify-between items-center px-1 pt-0 pb-2',
+        caption_label:
+          'text-[17px] font-bold tracking-tight leading-none text-destructive capitalize inline-flex items-center gap-1',
+        nav: 'flex items-center gap-3',
         nav_button:
-          'inline-flex h-6 w-6 items-center justify-center rounded-full bg-transparent p-0 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'inline-flex h-7 w-7 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         nav_button_previous: 'static',
         nav_button_next: 'static',
         table: 'flex w-full min-w-0 flex-col border-collapse',
         head: 'block w-full',
-        tbody: 'flex w-full flex-col justify-between',
-        head_row: 'flex w-full justify-between gap-0',
+        tbody: 'flex w-full flex-col gap-1',
+        head_row: 'flex w-full gap-0 pb-1',
         head_cell:
-          'flex-1 sm:flex-none sm:h-[18.571428px] sm:w-[18.571428px] font-medium uppercase tracking-wider text-[10px] text-muted-foreground/60 flex items-center justify-center',
-        row: 'flex w-full justify-between gap-0',
-        cell: 'flex-1 sm:flex-none sm:h-[18.571428px] sm:w-[18.571428px] aspect-square text-center text-[11px] p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
+          'flex-1 font-semibold uppercase tracking-[0.08em] text-[11px] text-muted-foreground/70 flex items-center justify-center',
+        row: 'flex w-full gap-0',
+        cell: 'flex-1 aspect-square text-center p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
-        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[11px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[17px] font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
-          'bg-foreground text-background font-semibold hover:bg-foreground hover:text-background focus:bg-foreground focus:text-background',
+          'text-destructive font-semibold aria-selected:bg-destructive aria-selected:text-primary-foreground',
         day_selected:
-          'bg-primary text-primary-foreground font-semibold hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+          'bg-destructive text-primary-foreground font-semibold hover:bg-destructive hover:text-primary-foreground focus:bg-destructive focus:text-primary-foreground',
         day_outside: 'invisible pointer-events-none',
         day_disabled: 'text-muted-foreground/30',
         day_range_middle:
@@ -76,8 +78,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-3.5 w-3.5" />,
-        IconRight: () => <ChevronRight className="h-3.5 w-3.5" />,
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />,
       }}
 
       {...props}
