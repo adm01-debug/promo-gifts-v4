@@ -63,6 +63,9 @@ function tick(s) {
 // --------- Ações
 const actions = {
   openPopover(s) {
+    // AlertDialog é modal — bloqueia interações fora dele. Se o dialog está
+    // aberto, o clique no cart-trigger é interceptado pelo overlay do dialog.
+    if (s.pendingDeleteId !== null || s.scheduledDelete !== null) return;
     s.popoverOpen = true;
   },
   closePopover(s) {
