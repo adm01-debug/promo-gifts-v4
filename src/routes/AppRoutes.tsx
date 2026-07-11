@@ -159,6 +159,9 @@ export function AppRoutes() {
         {CalendarHarness && (
           <Route path="/__visual/calendar" element={<CalendarHarness />} />
         )}
+        {DatePickerFieldHarness && (
+          <Route path="/__visual/date-picker-field" element={<DatePickerFieldHarness />} />
+        )}
         {NegotiationMarkupCardHarness && (
           <Route
             path="/__visual/negotiation-markup-card"
