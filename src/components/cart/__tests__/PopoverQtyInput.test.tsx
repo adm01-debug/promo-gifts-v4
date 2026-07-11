@@ -1,9 +1,10 @@
 /**
- * Testes do PopoverQtyInput — sanitização, clamp e navegação por teclado.
+ * Testes do PopoverQtyInput — sanitização, clamp, teclado e feedback visual.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import {
   PopoverQtyInput,
   normalizeQty,
@@ -172,5 +173,126 @@ describe('<PopoverQtyInput />', () => {
       <PopoverQtyInput {...baseProps} quantity={99} onCommit={onCommit} />,
     );
     expect(input.value).toBe('7');
+  });
+});
+
+describe('<PopoverQtyInput /> — feedback visual', () => {
+  it('marca data-feedback=sanitized quando o usuário tenta digitar não-dígitos', () => {
+    render(
+      <PopoverQtyInput
+        itemId="fb-1"
+        productName="Item"
+        quantity={5}
+        onCommit={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('cart-item-qty-fb-1') as HTMLInputElement;
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '5a,3' } });
+    expect(input.dataset.feedback).toBe('sanitized');
+    expect(input.value).toBe('53');
+  });
+
+  it('marca data-feedback=clamped e propaga onCommit(MAX) quando digitado acima do limite', () => {
+    const onCommit = vi.fn();
+    render(
+      <PopoverQtyInput
+        itemId="fb-2"
+        productName="Item"
+        quantity={5}
+        onCommit={onCommit}
+      />,
+    );
+    const input = screen.getByTestId('cart-item-qty-fb-2') as HTMLInputElement;
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '9999999' } });
+    fireEvent.blur(input);
+    expect(onCommit).toHaveBeenCalledWith(999_999);
+    expect(input.dataset.feedback).toBe('clamped');
+  });
+
+  it('marca data-feedback=invalid + aria-invalid ao comitar valor vazio', () => {
+    render(
+      <PopoverQtyInput
+        itemId="fb-3"
+        productName="Item"
+        quantity={5}
+        onCommit={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('cart-item-qty-fb-3') as HTMLInputElement;
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.blur(input);
+    expect(input.dataset.feedback).toBe('invalid');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('feedback volta para idle após 700ms', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <PopoverQtyInput
+          itemId="fb-4"
+          productName="Item"
+          quantity={5}
+          onCommit={vi.fn()}
+        />,
+      );
+      const input = screen.getByTestId('cart-item-qty-fb-4') as HTMLInputElement;
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: '5a' } });
+      expect(input.dataset.feedback).toBe('sanitized');
+      act(() => {
+        vi.advanceTimersByTime(750);
+      });
+      expect(input.dataset.feedback).toBe('idle');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('<PopoverQtyInput /> — integração com Total do pai (recalc)', () => {
+  function Harness({ unitPrice = 92.16 }: { unitPrice?: number }) {
+    const [qty, setQty] = useState(29);
+    return (
+      <div>
+        <PopoverQtyInput
+          itemId="int-1"
+          productName="Item"
+          quantity={qty}
+          onCommit={setQty}
+        />
+        <span data-testid="int-total">{(unitPrice * qty).toFixed(2)}</span>
+      </div>
+    );
+  }
+
+  it('digitar 80 + Enter recalcula o Total no pai (simula fluxo do carrinho)', async () => {
+    const user = userEvent.setup();
+    render(<Harness unitPrice={92.16} />);
+    const input = screen.getByTestId('cart-item-qty-int-1') as HTMLInputElement;
+    const total = screen.getByTestId('int-total');
+
+    expect(total.textContent).toBe((92.16 * 29).toFixed(2));
+
+    await user.click(input);
+    await user.keyboard('{Control>}a{/Control}80{Enter}');
+
+    expect(total.textContent).toBe((92.16 * 80).toFixed(2));
+    expect(input.value).toBe('80');
+  });
+
+  it('digitar 9999999 aplica clamp e o Total reflete MAX_QTY', () => {
+    render(<Harness unitPrice={1} />);
+    const input = screen.getByTestId('cart-item-qty-int-1') as HTMLInputElement;
+    const total = screen.getByTestId('int-total');
+
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '9999999' } });
+    fireEvent.blur(input);
+
+    expect(total.textContent).toBe((1 * MAX_QTY).toFixed(2));
   });
 });
