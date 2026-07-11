@@ -15,15 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useBadgesManager } from './useBadgesManager';
 import { BadgeTable } from './BadgeTable';
 import { BadgeFormDialog, type BadgeFormValues } from './BadgeFormDialog';
