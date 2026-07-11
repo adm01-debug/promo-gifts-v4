@@ -551,8 +551,10 @@ export function CartHeaderButton() {
                                   <button
                                     type="button"
                                     aria-label={`Excluir carrinho de ${cart.company_name}`}
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                                    data-testid={`cart-delete-${cart.id}`}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
                                     style={{ opacity: isActive ? 1 : undefined }}
+                                    disabled={isDeletingCart}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPendingDeleteId(cart.id);
