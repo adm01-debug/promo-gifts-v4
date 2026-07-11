@@ -28,6 +28,42 @@ function Calendar({
       locale={ptBR}
       showOutsideDays={showOutsideDays}
       className={cn('pointer-events-auto p-2 select-none overflow-hidden', className)}
+      formatters={{
+        formatWeekdayName: (date) => {
+          const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
+          return narrow.charAt(0).toUpperCase();
+        },
+        formatCaption: (date) => {
+          const month = date.toLocaleDateString('pt-BR', { month: 'long' });
+          const year = date.getFullYear();
+          return `${month.charAt(0).toUpperCase()}${month.slice(1)}\n${year}` as unknown as string;
+        },
+        ...formatters,
+      }}
+      modifiers={{
+        sunday: (date) => date.getDay() === 0,
+        ...modifiers,
+      }}
+      modifiersClassNames={{
+        sunday: 'text-destructive',
+        ...modifiersClassNames,
+      }}
+      classNames={{
+        months: 'flex w-full flex-col sm:flex-row gap-3',
+        month: 'flex w-full flex-col space-y-1',
+        caption: 'flex justify-between items-start px-0.5 pt-0 pb-1',
+        caption_label:
+          'text-[14px] font-bold tracking-tight leading-[1.1] text-destructive capitalize flex flex-col items-start gap-0 whitespace-pre-line',
+        nav: 'flex items-center gap-2',
+        nav_button:
+          'inline-flex h-6 w-6 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        nav_button_previous: 'static',
+        nav_button_next: 'static',
+        table: 'flex w-full min-w-0 flex-col border-collapse',
+        head: 'block w-full',
+        tbody: 'flex w-full flex-col gap-1',
+        head_row: 'flex w-full gap-0 pb-1',
+
 
         head_cell:
           'flex-1 font-semibold uppercase tracking-[0.08em] text-[9px] leading-none text-muted-foreground/70 flex items-center justify-center',
