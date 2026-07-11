@@ -684,13 +684,8 @@ export function CartHeaderButton() {
                                         </span>
                                       </div>
                                     )}
-                                    {/* Price + Qty stepper row */}
-                                    <div className="mt-1.5 flex items-center justify-between gap-2">
-                                      <PriceLabel
-                                        label="Total"
-                                        value={item.product_price * item.quantity}
-                                        className="flex-row items-center gap-1.5 space-y-0 text-[10px]"
-                                      />
+                                    {/* Qty stepper row */}
+                                    <div className="mt-1.5 flex items-center justify-end gap-2">
                                       {/* Qty stepper */}
                                       <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
                                         <button
@@ -753,13 +748,20 @@ export function CartHeaderButton() {
                                     )}
                                   </div>
 
-                                  {/* Unit price destacado (vertical) */}
-                                  <PriceLabel
-                                    label="Unitário"
-                                    value={item.product_price}
-                                    isPrimary
-                                    className="min-w-[60px] items-end"
-                                  />
+                                  {/* Unitário destacado + Total abaixo */}
+                                  <div className="flex min-w-[60px] flex-col items-end gap-0.5">
+                                    <PriceLabel
+                                      label="Unitário"
+                                      value={item.product_price}
+                                      isPrimary
+                                      className="items-end"
+                                    />
+                                    <PriceLabel
+                                      label="Total"
+                                      value={item.product_price * item.quantity}
+                                      className="flex-row items-baseline gap-1 space-y-0 text-[10px]"
+                                    />
+                                  </div>
 
 
                                   {/* Remove button */}
