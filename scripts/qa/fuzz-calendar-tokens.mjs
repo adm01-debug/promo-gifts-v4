@@ -16,30 +16,42 @@ const FORBIDDEN = [
   /\btext-white\b/,
   /#[0-9a-fA-F]{3,6}\b/,
 ];
+// Invariantes do design iOS Calendar (revisado 2026-07-11):
+// - mês em vermelho (destructive) com peso bold e chevron dropdown
+// - números 17px, hoje = texto vermelho, selecionado = círculo vermelho preenchido
+// - domingos em destructive, weekdays uppercase 11px
+// - grid proporcional (flex-1 + aspect-square), sem dimensões fixas nas células
 const REQUIRED = [
   /rounded-full/,
-  /bg-primary/,
-  /text-primary-foreground/,
-  /bg-foreground/,
-  /text-background/,
   /text-destructive/,
-  /text-\[15px\]/,
+  /bg-destructive/,
+  /text-primary-foreground/,
+  /text-\[17px\]/,
   /text-\[11px\]/,
-  /text-\[10px\]/,
   /font-bold/,
+  /font-semibold/,
   /tracking-tight/,
+  /tracking-\[0\.08em\]/,
   /hover:bg-accent/,
   /invisible/,
   /flex-1/,
   /aspect-square/,
-  /h-6 w-6/,
-  /h-3\.5 w-3\.5/,
-  /p-1\.5/,
-  /space-y-1\.5/,
+  /h-7 w-7/,
+  /h-4 w-4/,
+  /p-3/,
+  /space-y-2/,
   /gap-0/,
+  /select-none/,
 ];
-const REQUIRED_LITERALS = [`cell: 'flex-1 aspect-square`, `row: 'flex w-full gap-0'`];
-const FORBIDDEN_LITERALS = [`cell: 'flex-1 h-9`, `mt-1`];
+const REQUIRED_LITERALS = [
+  `cell: 'flex-1 aspect-square`,
+  `row: 'flex w-full gap-0'`,
+];
+const FORBIDDEN_LITERALS = [
+  `cell: 'flex-1 h-9`,
+  `mt-1`,
+  `bg-primary text-primary-foreground font-semibold hover:bg-primary`, // era o design antigo
+];
 
 
 
