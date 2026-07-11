@@ -16,15 +16,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PrintAreaForm } from './PrintAreaForm';
 import { fetchPrintAreas, createPrintArea, updatePrintArea, deletePrintArea } from './api';
 import { type PrintArea, type PrintAreaFormData, EMPTY_PRINT_AREA } from './types';
