@@ -127,7 +127,7 @@ export function McpKeyRow({ row, onRotate, onRevoke, onDetails, onEdit }: Props)
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="!max-w-[400px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl">
+              <AlertDialogContent className="!max-w-[400px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl" data-testid="mcp-key-revoke-dialog">
                 <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent" />
                 <div className="px-4 pb-1.5 pt-4">
                   <AlertDialogHeader>

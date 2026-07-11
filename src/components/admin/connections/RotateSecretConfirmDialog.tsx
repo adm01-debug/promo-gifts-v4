@@ -56,6 +56,7 @@ export function RotateSecretConfirmDialog({
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent
         className="!max-w-lg w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
+        data-testid="rotate-secret-confirm-dialog"
         onEscapeKeyDown={(e) => isLoading && e.preventDefault()}
       >
         <div

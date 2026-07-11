@@ -239,7 +239,7 @@ export function ScheduledReportsManager() {
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="!max-w-[380px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl">
+                  <AlertDialogContent className="!max-w-[380px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl" data-testid="scheduled-report-delete-dialog">
                     <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent" />
                     <div className="px-4 pb-1.5 pt-4">
                       <AlertDialogHeader>
