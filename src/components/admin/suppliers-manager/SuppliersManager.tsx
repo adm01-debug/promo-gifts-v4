@@ -9,7 +9,6 @@ import { useSuppliersManager } from './useSuppliersManager';
 import { SupplierListHeader } from './SupplierListHeader';
 import { SupplierTable } from './SupplierTable';
 import { SupplierFormDialog } from './SupplierFormDialog';
-import {
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export function SuppliersManager() {
