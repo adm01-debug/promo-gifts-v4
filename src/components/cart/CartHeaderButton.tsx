@@ -845,5 +845,35 @@ export function CartHeaderButton() {
         )}
       </PopoverContent>
     </Popover>
+    <AlertDialog
+      open={pendingDeleteId !== null}
+      onOpenChange={(o) => {
+        if (!o) setPendingDeleteId(null);
+      }}
+    >
+      <AlertDialogContent className="!max-w-[420px] w-[92vw]">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {pendingDeleteCart
+              ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
+              : 'Esta ação não pode ser desfeita.'}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => {
+              if (pendingDeleteId) deleteCart(pendingDeleteId);
+              setPendingDeleteId(null);
+            }}
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
