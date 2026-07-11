@@ -628,7 +628,7 @@ export function CartHeaderButton() {
                                   key={item.id}
                                   className="group/item relative flex items-start gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-background/60"
                                 >
-                                  <div className="flex flex-shrink-0 flex-col items-center gap-1.5">
+                                  <div className="flex flex-shrink-0 flex-col items-center justify-between gap-1.5 self-stretch">
                                     <div className="group/img relative">
                                       {item.product_image_url ? (
                                         <img
