@@ -47,8 +47,8 @@ function check(width, seed) {
   if (!headRow.includes('w-full')) {
     return `w=${width} seed=${seed}: head_row sem w-full`;
   }
-  if (!cap.includes('leading-none') || !cap.includes('text-[17px]')) {
-    return `w=${width} seed=${seed}: caption sem leading-none/text-[17px]`;
+  if (!cap.includes('leading-[1.1]') || !cap.includes('text-[11px]')) {
+    return `w=${width} seed=${seed}: caption sem leading-[1.1]/text-[11px]`;
   }
   return null;
 }
