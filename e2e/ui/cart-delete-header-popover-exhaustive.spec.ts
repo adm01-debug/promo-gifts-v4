@@ -1,5 +1,5 @@
 /**
- * E2E · CartHeaderButton — Bateria exaustiva (15 cenários)
+ * E2E · CartHeaderButton — Bateria exaustiva (19 cenários)
  *
  * Valida o fix da corrida entre DismissableLayer do Popover e do AlertDialog
  * (setOpen(false) + rAF(setPendingDeleteId)). Cada cenário mocka /rest/v1/seller_carts
