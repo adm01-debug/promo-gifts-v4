@@ -1,10 +1,11 @@
 /**
- * Snapshot visual — confirma as classes/mensagens de feedback do PopoverQtyInput
+ * Snapshot visual — confirma classes/mensagens de feedback do PopoverQtyInput
  * nos estados `sanitized` (vírgula), `clamped` (9999999) e `invalid` (vazio).
  *
  * Não é screenshot pixel-perfect: capturamos o `outerHTML` do input + do
- * `role=status` correspondente. Assim, qualquer regressão de classe/ARIA/mensagem
- * quebra o snapshot de forma legível no diff.
+ * `role=status` correspondente com `toMatchSnapshot()` (arquivo externo
+ * gerado no primeiro run). Regressões de classe/ARIA/mensagem quebram o
+ * snapshot com diff legível.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
@@ -34,10 +35,15 @@ describe('PopoverQtyInput — snapshot de feedback visual', () => {
     fireEvent.change(input, { target: { value: '1,0' } });
 
     expect(input.dataset.feedback).toBe('sanitized');
-    expect(snapshotBundle('snap-san')).toMatchInlineSnapshot(`
-      "INPUT: <input type=\\"text\\" inputmode=\\"numeric\\" pattern=\\"[0-9]*\\" autocomplete=\\"off\\" aria-label=\\"Quantidade de Item snap\\" data-testid=\\"cart-item-qty-snap-san\\" data-feedback=\\"sanitized\\" aria-describedby=\\"cart-item-qty-fb-snap-san\\" class=\\"m-0 flex h-6 w-10 appearance-none border-x border-border/30 bg-muted/20 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ring-1 ring-warning/60 bg-warning/10\\" value=\\"10\\">
-      LIVE : <span id=\\"cart-item-qty-fb-snap-san\\" role=\\"status\\" aria-live=\\"polite\\" class=\\"sr-only\\">Apenas dígitos são aceitos</span>"
-    `);
+    // Asserts explícitos sobre a superfície visível ao usuário.
+    expect(input.className).toContain('ring-warning/60');
+    expect(input.className).toContain('bg-warning/10');
+    expect(input.getAttribute('aria-describedby')).toBe('cart-item-qty-fb-snap-san');
+    const live = document.getElementById('cart-item-qty-fb-snap-san')!;
+    expect(live.getAttribute('role')).toBe('status');
+    expect(live.getAttribute('aria-live')).toBe('polite');
+    expect(live.textContent).toBe('Apenas dígitos são aceitos');
+    expect(snapshotBundle('snap-san')).toMatchSnapshot('sanitized');
   });
 
   it('clamped: 9999999 → ring âmbar + mensagem "Valor limitado a 999.999"', () => {
@@ -55,10 +61,12 @@ describe('PopoverQtyInput — snapshot de feedback visual', () => {
     fireEvent.blur(input);
 
     expect(input.dataset.feedback).toBe('clamped');
-    expect(snapshotBundle('snap-clamp')).toMatchInlineSnapshot(`
-      "INPUT: <input type=\\"text\\" inputmode=\\"numeric\\" pattern=\\"[0-9]*\\" autocomplete=\\"off\\" aria-label=\\"Quantidade de Item snap\\" data-testid=\\"cart-item-qty-snap-clamp\\" data-feedback=\\"clamped\\" aria-describedby=\\"cart-item-qty-fb-snap-clamp\\" class=\\"m-0 flex h-6 w-10 appearance-none border-x border-border/30 bg-muted/20 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ring-1 ring-warning/60 bg-warning/10\\" value=\\"999999\\">
-      LIVE : <span id=\\"cart-item-qty-fb-snap-clamp\\" role=\\"status\\" aria-live=\\"polite\\" class=\\"sr-only\\">Valor limitado a 999.999</span>"
-    `);
+    expect(input.className).toContain('ring-warning/60');
+    expect(input.value).toBe('999999');
+    const live = document.getElementById('cart-item-qty-fb-snap-clamp')!;
+    expect(live.textContent).toBe('Valor limitado a 999.999');
+    expect(live.getAttribute('aria-live')).toBe('polite');
+    expect(snapshotBundle('snap-clamp')).toMatchSnapshot('clamped');
   });
 
   it('invalid: vazio → ring vermelho + aria-invalid + mensagem "Valor inválido"', () => {
@@ -77,9 +85,11 @@ describe('PopoverQtyInput — snapshot de feedback visual', () => {
 
     expect(input.dataset.feedback).toBe('invalid');
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(snapshotBundle('snap-inv')).toMatchInlineSnapshot(`
-      "INPUT: <input type=\\"text\\" inputmode=\\"numeric\\" pattern=\\"[0-9]*\\" autocomplete=\\"off\\" aria-label=\\"Quantidade de Item snap\\" aria-invalid=\\"true\\" data-testid=\\"cart-item-qty-snap-inv\\" data-feedback=\\"invalid\\" aria-describedby=\\"cart-item-qty-fb-snap-inv\\" class=\\"m-0 flex h-6 w-10 appearance-none border-x border-border/30 bg-muted/20 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ring-1 ring-destructive/70 bg-destructive/10\\" value=\\"10\\">
-      LIVE : <span id=\\"cart-item-qty-fb-snap-inv\\" role=\\"status\\" aria-live=\\"polite\\" class=\\"sr-only\\">Valor inválido — quantidade restaurada</span>"
-    `);
+    expect(input.className).toContain('ring-destructive/70');
+    expect(input.className).toContain('bg-destructive/10');
+    const live = document.getElementById('cart-item-qty-fb-snap-inv')!;
+    expect(live.textContent).toBe('Valor inválido — quantidade restaurada');
+    expect(live.getAttribute('role')).toBe('status');
+    expect(snapshotBundle('snap-inv')).toMatchSnapshot('invalid');
   });
 });
