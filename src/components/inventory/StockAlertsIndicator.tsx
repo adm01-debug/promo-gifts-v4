@@ -257,6 +257,17 @@ export function StockAlertsIndicator() {
   const activeServerCount = tabCounts[activeTab];
   const activeRoute = TABS.find((t) => t.key === activeTab)?.route ?? '/estoque';
 
+  const activeQuery =
+    activeTab === 'stockout'
+      ? stockoutQuery
+      : activeTab === 'low'
+      ? lowQuery
+      : activeTab === 'new'
+      ? noveltyQuery
+      : restocksQuery;
+  const isListLoading = activeQuery.isLoading;
+  const listError = activeQuery.isError ? activeQuery.error : null;
+
   // ── Badge dominant color ──────────────────────────────────────
   const badgeColor = useMemo(() => {
     if (counts.stockout > 0) return 'bg-destructive';
@@ -322,6 +333,7 @@ export function StockAlertsIndicator() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
+                data-testid={`stock-alerts-chip-${tab.key}`}
                 className={cn(
                   'flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-medium transition-all',
                   isActive
@@ -368,7 +380,27 @@ export function StockAlertsIndicator() {
         {/* List */}
         <ScrollArea className="h-[320px]">
           <div className="space-y-1.5 p-3">
-            {activeList.length === 0 ? (
+            {isListLoading ? (
+              <div
+                data-testid="stock-alerts-loading"
+                className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-muted-foreground"
+              >
+                <Loader2 className="h-6 w-6 animate-spin opacity-70" />
+                <p className="text-xs">Carregando alertas...</p>
+              </div>
+            ) : listError ? (
+              <div
+                data-testid="stock-alerts-error"
+                role="alert"
+                className="mx-1 flex flex-col items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-6 text-center"
+              >
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <p className="text-xs font-medium text-destructive">Erro ao carregar</p>
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  Tente novamente em instantes.
+                </p>
+              </div>
+            ) : activeList.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 <Package className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p className="text-sm">

@@ -41,3 +41,37 @@ describe('StockAlertsIndicator — largura do painel (SSOT)', () => {
     expect(componentSrc).toContain('data-testid="stock-alerts-panel"');
   });
 });
+
+describe('StockAlertsIndicator — chips (presença e ordem)', () => {
+  const CHIP_ORDER = ['stockout', 'low', 'new', 'restocked'] as const;
+  const CHIP_LABELS = ['Zerou', 'Baixo', 'Novidade', 'Chegou'] as const;
+
+  it('define os 4 chips na ordem canônica: Zerou → Baixo → Novidade → Chegou', () => {
+    // Extrai a array TABS do source
+    const tabsMatch = componentSrc.match(/const TABS:\s*TabDef\[\]\s*=\s*\[([\s\S]*?)\];/);
+    expect(tabsMatch, 'array TABS não encontrada').toBeTruthy();
+    const tabsBlock = tabsMatch![1];
+
+    const keyOrder = [...tabsBlock.matchAll(/key:\s*'([^']+)'/g)].map((m) => m[1]);
+    expect(keyOrder).toEqual([...CHIP_ORDER]);
+
+    const labelOrder = [...tabsBlock.matchAll(/label:\s*'([^']+)'/g)].map((m) => m[1]);
+    expect(labelOrder).toEqual([...CHIP_LABELS]);
+  });
+
+  it('cada chip expõe data-testid="stock-alerts-chip-<key>" (via template)', () => {
+    expect(componentSrc).toMatch(
+      /data-testid=\{`stock-alerts-chip-\$\{tab\.key\}`\}/,
+    );
+  });
+
+  it('renderiza a linha de chips com flex-nowrap + shrink-0 (não quebra a 391px)', () => {
+    expect(componentSrc).toMatch(/flex flex-nowrap[^"']*gap-1[^"']*/);
+    expect(componentSrc).toMatch(/flex shrink-0 items-center/);
+  });
+
+  it('estados de loading e erro do painel expõem testids dedicados', () => {
+    expect(componentSrc).toContain('data-testid="stock-alerts-loading"');
+    expect(componentSrc).toContain('data-testid="stock-alerts-error"');
+  });
+});
