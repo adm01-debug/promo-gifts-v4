@@ -57,6 +57,11 @@
   --sidebar-accent-foreground: 210 40% 98%;
   --sidebar-ring: 217 91% 60%;
 
+  /* ─── Notification / Stock alerts panel width ─────── */
+  /* SSOT: largura do painel StockAlertsIndicator. Reduzida 7% (420 → 391px).
+     Alterar aqui propaga desktop + mobile. */
+  --stock-alerts-panel-width: 391px;
+
   /* ─── Gradient tokens ─────────────────────────────── */
   --gradient-hero: linear-gradient(
     135deg,
