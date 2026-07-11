@@ -99,4 +99,38 @@ describe('PopoverQtyInput — snapshot de feedback visual', () => {
     expect(live.getAttribute('role')).toBe('status');
     expect(snapshotBundle('snap-inv')).toMatchSnapshot('invalid');
   });
+
+  it('reverted (Esc): valor volta ao último válido e feedback fica idle', () => {
+    render(<Controlled itemId="snap-rev" initial={42} />);
+    const input = screen.getByTestId('cart-item-qty-snap-rev') as HTMLInputElement;
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '777' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(input.value).toBe('42');
+    expect(input.dataset.feedback).toBe('idle');
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+    expect(input.className).not.toContain('ring-warning/60');
+    expect(input.className).not.toContain('ring-destructive/70');
+    expect(snapshotBundle('snap-rev')).toMatchSnapshot('reverted');
+  });
+
+  it('committed (Enter): valor válido persiste e feedback fica idle', () => {
+    render(<Controlled itemId="snap-cmt" initial={10} />);
+    const input = screen.getByTestId('cart-item-qty-snap-cmt') as HTMLInputElement;
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    // Enter dispara blur() no componente; simulamos aqui para JSDOM.
+    fireEvent.blur(input);
+
+    expect(input.value).toBe('80');
+    expect(input.dataset.feedback).toBe('idle');
+    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(input.hasAttribute('aria-describedby')).toBe(false);
+    expect(input.className).not.toContain('ring-warning/60');
+    expect(input.className).not.toContain('ring-destructive/70');
+    expect(snapshotBundle('snap-cmt')).toMatchSnapshot('committed');
+  });
 });
