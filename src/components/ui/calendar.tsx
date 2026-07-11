@@ -70,7 +70,7 @@ function Calendar({
         row: 'flex w-full gap-0',
         cell: 'flex-1 aspect-square text-center p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
-        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[14px] leading-none font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[12px] leading-none font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'text-destructive font-semibold aria-selected:bg-destructive aria-selected:text-primary-foreground',
