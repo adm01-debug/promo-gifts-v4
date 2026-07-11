@@ -16,7 +16,7 @@ const REQUIRED = [
   /\btext-\[11px\]/,
   /\btext-\[10px\]/,
   /\bh-5 w-5\b/,
-  /\bh-3 w-3\b/,
+  /\bmd:h-3 md:w-3\b/,
   /\btext-\[7px\]/,
   /space-y-1/,
   /w-\[180px\]/,
