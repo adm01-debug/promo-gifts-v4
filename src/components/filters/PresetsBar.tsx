@@ -534,26 +534,17 @@ export const PresetsBar = React.forwardRef<HTMLDivElement, PresetsBarProps>(
         </Dialog>
 
         {/* ─── Delete Dialog ─────────────────────────────── */}
-        <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir Preset</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir o preset "{selectedPreset?.name}"? Esta ação não pode
-                ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeletePreset}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          open={isDeleteOpen}
+          onOpenChange={setIsDeleteOpen}
+          variant="destructive"
+          title="Excluir preset?"
+          description={`Tem certeza que deseja excluir o preset "${selectedPreset?.name}"? Esta ação não pode ser desfeita.`}
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          onConfirm={handleDeletePreset}
+          testId="presets-bar-delete-dialog"
+        />
       </div>
     );
   },
