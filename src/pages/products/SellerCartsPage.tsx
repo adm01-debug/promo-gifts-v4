@@ -73,10 +73,14 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
  * Datepicker inline do prazo de envio do carrinho.
- * Usa o shadcn Calendar (design iOS) em um Popover, substituindo o
- * `<input type="date">` nativo (que renderizava o calendário do navegador).
- * Mantém value/onChange no formato ISO `YYYY-MM-DD` para compatibilidade
- * com `handleShippingDeadlineChange` e com os testes existentes.
+ * Delega ao `DatePickerField` compartilhado (variante compact) para manter
+ * paridade visual com o design iOS Calendar do shadcn.
+ *
+ * Contrato preservado (testes/a11y):
+ *  - id="cart-shipping-deadline"
+ *  - data-testid="cart-shipping-deadline-input"
+ *  - aria-invalid/aria-describedby quando há erro
+ *  - value/onChange no formato ISO `YYYY-MM-DD` (null = vazio)
  */
 interface ShippingDeadlinePickerProps {
   value: string | null;
@@ -85,119 +89,23 @@ interface ShippingDeadlinePickerProps {
 }
 
 function ShippingDeadlinePicker({ value, hasError, onChange }: ShippingDeadlinePickerProps) {
-  const [open, setOpen] = useState(false);
-  const today = startOfDay(new Date());
-
-  const selectedDate = useMemo(() => {
-    if (!value) return undefined;
-    const parsed = parse(value, 'yyyy-MM-dd', new Date());
-    return isValid(parsed) ? parsed : undefined;
-  }, [value]);
-
-  const label = selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'dd/mm/aaaa';
-
-  const handleSelect = useCallback(
-    (date: Date | undefined) => {
-      if (!date) {
-        onChange(null);
-        return;
-      }
-      onChange(format(date, 'yyyy-MM-dd'));
-      setOpen(false);
-    },
-    [onChange],
-  );
-
-  const handleClear = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onChange(null);
-    },
-    [onChange],
-  );
-
-  const handleToday = useCallback(() => {
-    onChange(format(today, 'yyyy-MM-dd'));
-    setOpen(false);
-  }, [onChange, today]);
-
+  const today = React.useMemo(() => startOfDay(new Date()), []);
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          id="cart-shipping-deadline"
-          data-testid="cart-shipping-deadline-input"
-          aria-invalid={hasError || undefined}
-          aria-describedby={hasError ? 'cart-shipping-deadline-error' : undefined}
-          aria-label="Prazo para envio"
-          className={cn(
-            'inline-flex h-7 items-center gap-1.5 rounded-md border bg-background/50 px-2 text-xs text-foreground transition-all focus:outline-none focus:ring-2',
-            hasError
-              ? 'border-destructive/60 focus:border-destructive focus:ring-destructive/20'
-              : 'border-border/30 hover:border-primary/40 focus:border-primary/40 focus:ring-primary/10',
-            !selectedDate && 'text-muted-foreground',
-          )}
-        >
-          <CalendarClock aria-hidden="true" className="h-3 w-3 text-primary" />
-          <span className="tabular-nums">{label}</span>
-          {selectedDate && (
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label="Limpar prazo"
-              onClick={handleClear}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onChange(null);
-                }
-              }}
-              className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <XIcon className="h-3 w-3" aria-hidden="true" />
-            </span>
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-auto p-0"
-        data-testid="cart-shipping-deadline-calendar"
-      >
-        <Calendar
-          mode="single"
-          locale={ptBR}
-          selected={selectedDate}
-          defaultMonth={selectedDate ?? today}
-          onSelect={handleSelect}
-          disabled={{ before: today }}
-          initialFocus
-          className="pointer-events-auto"
-        />
-        <div className="flex items-center justify-between border-t border-border/40 px-3 py-2">
-          <button
-            type="button"
-            onClick={() => {
-              onChange(null);
-              setOpen(false);
-            }}
-            className="text-xs font-medium text-destructive hover:text-destructive/80"
-          >
-            Limpar
-          </button>
-          <button
-            type="button"
-            onClick={handleToday}
-            className="text-xs font-medium text-destructive hover:text-destructive/80"
-          >
-            Hoje
-          </button>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <DatePickerField
+      id="cart-shipping-deadline"
+      data-testid="cart-shipping-deadline-input"
+      variant="compact"
+      aria-label="Prazo para envio"
+      aria-invalid={hasError || undefined}
+      aria-describedby={hasError ? 'cart-shipping-deadline-error' : undefined}
+      value={value ?? ''}
+      onChange={(next) => onChange(next === '' ? null : next)}
+      minDate={today}
+      placeholder="dd/mm/aaaa"
+    />
   );
 }
+
 
 
 /**
