@@ -487,3 +487,68 @@ describe('<PopoverQtyInput /> — múltiplos itens no mesmo carrinho', () => {
   });
 });
 
+describe('<PopoverQtyInput /> — limites 1/999999/9999999/0 em itens distintos', () => {
+  function FourItemHarness() {
+    const unitPrices = [10, 2, 3, 5];
+    const initial = [50, 50, 50, 50];
+    const [qs, setQs] = useState<number[]>(initial);
+    const setAt = (idx: number, v: number) =>
+      setQs((prev) => prev.map((x, i) => (i === idx ? v : x)));
+    return (
+      <div>
+        {unitPrices.map((price, idx) => (
+          <div key={idx}>
+            <PopoverQtyInput
+              itemId={`bnd-${idx}`}
+              productName={`Item ${idx}`}
+              quantity={qs[idx]}
+              onCommit={(next) => setAt(idx, next)}
+            />
+            <span data-testid={`bnd-qty-${idx}`}>{qs[idx]}</span>
+            <span data-testid={`bnd-total-${idx}`}>{(price * qs[idx]).toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  it('cada item mantém quantidade e Total consistentes após 1 / 999999 / 9999999 / 0', () => {
+    render(<FourItemHarness />);
+    const boundaries = [
+      { idx: 0, input: '1', expected: 1, unit: 10 },
+      { idx: 1, input: '999999', expected: 999_999, unit: 2 },
+      { idx: 2, input: '9999999', expected: 999_999, unit: 3 },
+      { idx: 3, input: '0', expected: 50, unit: 5 }, // revertido
+    ];
+
+    for (const b of boundaries) {
+      const input = screen.getByTestId(`cart-item-qty-bnd-${b.idx}`) as HTMLInputElement;
+      act(() => input.focus());
+      fireEvent.change(input, { target: { value: b.input } });
+      fireEvent.blur(input);
+    }
+
+    for (const b of boundaries) {
+      expect(screen.getByTestId(`bnd-qty-${b.idx}`).textContent).toBe(String(b.expected));
+      expect(screen.getByTestId(`bnd-total-${b.idx}`).textContent).toBe(
+        (b.unit * b.expected).toFixed(2),
+      );
+    }
+
+    // Feedback semântico por item, cada um refletindo seu próprio caso.
+    expect(
+      (screen.getByTestId('cart-item-qty-bnd-0') as HTMLInputElement).dataset.feedback,
+    ).not.toBe('clamped');
+    expect(
+      (screen.getByTestId('cart-item-qty-bnd-1') as HTMLInputElement).dataset.feedback,
+    ).not.toBe('clamped');
+    expect(
+      (screen.getByTestId('cart-item-qty-bnd-2') as HTMLInputElement).dataset.feedback,
+    ).toBe('clamped');
+    expect(
+      (screen.getByTestId('cart-item-qty-bnd-3') as HTMLInputElement).dataset.feedback,
+    ).toBe('invalid');
+  });
+});
+
+
