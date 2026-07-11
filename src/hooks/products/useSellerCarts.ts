@@ -223,6 +223,9 @@ export function useSellerCarts() {
     mutationFn: async (cartId: string) => {
       if (!userId) throw new Error('Não autenticado');
 
+      const startedAt = performance.now();
+      cartDeleteLog.info('cart_delete_start', { cart_id: cartId });
+
       const { data, error } = await supabase
         .from('seller_carts')
         .delete()
@@ -230,11 +233,33 @@ export function useSellerCarts() {
         .eq('seller_id', userId)
         .select('id');
 
-      if (error) throw error;
-      if (!Array.isArray(data) || data.length !== 1 || data[0]?.id !== cartId) {
-        throw new Error('Não foi possível confirmar a exclusão do carrinho. Atualize a lista e tente novamente.');
+      const durationMs = Math.round(performance.now() - startedAt);
+      const rowsAffected = Array.isArray(data) ? data.length : 0;
+
+      if (error) {
+        cartDeleteLog.error('cart_delete_failed', {
+          cart_id: cartId,
+          rows_affected: rowsAffected,
+          duration_ms: durationMs,
+          error: error.message,
+        });
+        throw error;
       }
 
+      if (rowsAffected !== 1 || data?.[0]?.id !== cartId) {
+        cartDeleteLog.warn('cart_delete_zero_rows', {
+          cart_id: cartId,
+          rows_affected: rowsAffected,
+          duration_ms: durationMs,
+        });
+        throw new CartDeleteZeroRowsError();
+      }
+
+      cartDeleteLog.info('cart_delete_ok', {
+        cart_id: cartId,
+        rows_affected: rowsAffected,
+        duration_ms: durationMs,
+      });
       return data[0].id;
     },
     onSuccess: (deletedCartId) => {
@@ -245,6 +270,12 @@ export function useSellerCarts() {
       toast.success('Carrinho removido');
     },
     onError: (err: Error) => {
+      if (err instanceof CartDeleteZeroRowsError) {
+        toast.error('Carrinho não foi removido', {
+          description: 'O servidor respondeu, mas nenhuma linha foi afetada. Atualize a lista e tente novamente.',
+        });
+        return;
+      }
       toast.error('Operação falhou', { description: sanitizeError(err) });
     },
   });
