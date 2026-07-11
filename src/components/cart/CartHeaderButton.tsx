@@ -755,16 +755,21 @@ export function CartHeaderButton() {
                                   </div>
 
                                   {/* Unitário destacado no topo + Total alinhado com o stepper */}
-                                  <div className="flex min-w-[60px] flex-col items-end justify-between self-stretch">
+                                  <div
+                                    data-testid={`cart-item-prices-${item.id}`}
+                                    className="flex min-w-[60px] flex-col items-end justify-between self-stretch"
+                                  >
                                     <PriceLabel
                                       label="Unitário"
                                       value={item.product_price}
+                                      testId={`cart-item-unit-${item.id}`}
                                       isPrimary
                                       className="items-end"
                                     />
                                     <PriceLabel
                                       label="Total"
                                       value={item.product_price * item.quantity}
+                                      testId={`cart-item-total-${item.id}`}
                                       className="flex-row items-baseline gap-1 space-y-0 text-[10px]"
                                     />
                                   </div>
