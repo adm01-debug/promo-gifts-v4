@@ -285,7 +285,9 @@ export function StockAlertsIndicator() {
       </Tooltip>
 
       <PopoverContent
-        className="relative w-[391px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
+        data-testid="stock-alerts-panel"
+        style={{ width: 'var(--stock-alerts-panel-width)' }}
+        className="relative max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl sm:max-w-[calc(100vw-2rem)]"
         align="end"
         sideOffset={8}
       >
