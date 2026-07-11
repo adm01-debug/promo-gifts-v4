@@ -1,9 +1,10 @@
 /**
- * Testes do PopoverQtyInput — sanitização, clamp e navegação por teclado.
+ * Testes do PopoverQtyInput — sanitização, clamp, teclado e feedback visual.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import {
   PopoverQtyInput,
   normalizeQty,
