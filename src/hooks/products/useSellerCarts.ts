@@ -216,15 +216,14 @@ export function useSellerCarts() {
         .delete()
         .eq('id', cartId)
         .eq('seller_id', userId)
-        .select('id')
-        .maybeSingle();
+        .select('id');
 
       if (error) throw error;
-      if (data?.id !== cartId) {
+      if (!Array.isArray(data) || data.length !== 1 || data[0]?.id !== cartId) {
         throw new Error('Não foi possível confirmar a exclusão do carrinho. Atualize a lista e tente novamente.');
       }
 
-      return data.id;
+      return data[0].id;
     },
     onSuccess: (deletedCartId) => {
       queryClient.setQueryData<SellerCart[]>([QUERY_KEY, userId], (previous) =>
