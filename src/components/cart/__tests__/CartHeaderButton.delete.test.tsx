@@ -42,8 +42,8 @@ function trashOnClick(
   e.preventDefault();
   e.stopPropagation();
   const id = cartId;
-  setOpen(false);
   setHandoff(true);
+  setOpen(false);
   const scheduleOpen = () => {
     setPendingDeleteId(id);
     defer(() => setHandoff(false));
@@ -107,7 +107,7 @@ describe('CartHeaderButton — trash button onClick', () => {
     expect(setHandoff).toHaveBeenNthCalledWith(2, false);
   });
 
-  it('setOpen(false) e handoff são chamados ANTES de setPendingDeleteId', () => {
+  it('handoff é marcado ANTES de setOpen(false) e setPendingDeleteId', () => {
     const order: string[] = [];
     const e = makeEvent();
     const setOpen = vi.fn(() => { order.push('setOpen'); });
@@ -117,7 +117,7 @@ describe('CartHeaderButton — trash button onClick', () => {
     const defer = (cb: () => void) => { cb(); return 1; };
 
     trashOnClick(e, 'x', setOpen, setPendingDeleteId, setHandoff, raf, defer);
-    expect(order).toEqual(['setOpen', 'handoff:true', 'setPending', 'handoff:false']);
+    expect(order).toEqual(['handoff:true', 'setOpen', 'setPending', 'handoff:false']);
   });
 
   it('quando rAF não roda o callback (SSR/mock), setPendingDeleteId NÃO é chamado', () => {
