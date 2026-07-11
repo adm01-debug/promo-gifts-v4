@@ -34,6 +34,12 @@ function Calendar({
           const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
           return narrow.charAt(0).toUpperCase();
         },
+        // fix_version: calendar-ios-two-line-caption-2026-07-11 — mês acima, ano abaixo
+        formatCaption: (date) => {
+          const month = date.toLocaleDateString('pt-BR', { month: 'long' });
+          const year = date.getFullYear();
+          return `${month.charAt(0).toUpperCase()}${month.slice(1)}\n${year}` as unknown as string;
+        },
         ...formatters,
       }}
       modifiers={{
