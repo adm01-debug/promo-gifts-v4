@@ -55,7 +55,7 @@ function Calendar({
         month: 'flex w-full flex-col space-y-2',
         caption: 'flex justify-between items-center px-1 pt-0 pb-2',
         caption_label:
-          'text-[17px] font-bold tracking-tight leading-none text-destructive capitalize inline-flex items-center gap-1',
+          'text-[17px] font-bold tracking-tight leading-tight text-destructive capitalize flex flex-col items-start whitespace-pre-line',
         nav: 'flex items-center gap-3',
         nav_button:
           'inline-flex h-7 w-7 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
