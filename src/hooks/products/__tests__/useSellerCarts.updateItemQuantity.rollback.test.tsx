@@ -157,11 +157,9 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
     expect(computeTotal(readItem(qc, 'it-1'))).toBe(120);
 
     // Dispara mutação (não aguardamos ainda — o patch está pendurado).
-    let mutationPromise!: Promise<unknown>;
-    await act(async () => {
-      mutationPromise = result.current.mutateAsync({ itemId: 'it-1', quantity: 80 }).catch(() => {});
-    });
-    await flushMicrotasks();
+    const mutationPromise = await startMutation(() =>
+      result.current.mutateAsync({ itemId: 'it-1', quantity: 80 }).catch(() => {}),
+    );
 
     // Otimista aplicado — Total mostra 80*12 = 960.
     expect(readItem(qc, 'it-1')?.quantity).toBe(80);
@@ -186,11 +184,9 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       wrapper: wrapperWith(qc),
     });
 
-    let mutationPromise!: Promise<unknown>;
-    await act(async () => {
-      mutationPromise = result.current.mutateAsync({ itemId: 'it-2', quantity: 999 }).catch(() => {});
-    });
-    await flushMicrotasks();
+    const mutationPromise = await startMutation(() =>
+      result.current.mutateAsync({ itemId: 'it-2', quantity: 999 }).catch(() => {}),
+    );
     expect(readItem(qc, 'it-2')?.quantity).toBe(999);
 
     // Simula AbortError.
@@ -212,11 +208,9 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       wrapper: wrapperWith(qc),
     });
 
-    let mutationPromise!: Promise<unknown>;
-    await act(async () => {
-      mutationPromise = result.current.mutateAsync({ itemId: 'it-3', quantity: 42 });
-    });
-    await flushMicrotasks();
+    const mutationPromise = await startMutation(() =>
+      result.current.mutateAsync({ itemId: 'it-3', quantity: 42 }),
+    );
     expect(readItem(qc, 'it-3')?.quantity).toBe(42);
 
     // Sucesso.
@@ -237,11 +231,9 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       wrapper: wrapperWith(qc),
     });
 
-    let p!: Promise<unknown>;
-    await act(async () => {
-      p = result.current.mutateAsync({ itemId: 'it-clamp', quantity: 9_999_999 });
-    });
-    await flushMicrotasks();
+    const p = await startMutation(() =>
+      result.current.mutateAsync({ itemId: 'it-clamp', quantity: 9_999_999 }),
+    );
     // Otimista: MAX_QTY.
     expect(readItem(qc, 'it-clamp')?.quantity).toBe(MAX_QTY);
     await act(async () => {
@@ -319,11 +311,9 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       JSON.stringify(qc.getQueryData([QUERY_KEY, USER_ID])),
     );
 
-    let p!: Promise<unknown>;
-    await act(async () => {
-      p = result.current.mutateAsync({ itemId: 'it-x', quantity: 500 }).catch(() => {});
-    });
-    await flushMicrotasks();
+    const p = await startMutation(() =>
+      result.current.mutateAsync({ itemId: 'it-x', quantity: 500 }).catch(() => {}),
+    );
     await act(async () => {
       patch.reject(new Error('constraint'));
       await p;
