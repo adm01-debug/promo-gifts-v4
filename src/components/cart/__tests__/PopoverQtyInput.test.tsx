@@ -296,3 +296,194 @@ describe('<PopoverQtyInput /> — integração com Total do pai (recalc)', () =>
     expect(total.textContent).toBe((1 * MAX_QTY).toFixed(2));
   });
 });
+
+describe('<PopoverQtyInput /> — mensagens e a11y do feedback', () => {
+  const renderWithFeedback = (
+    itemId: string,
+    initial: number,
+    action: (input: HTMLInputElement) => void,
+  ) => {
+    render(
+      <PopoverQtyInput
+        itemId={itemId}
+        productName="Caneta Neon"
+        quantity={initial}
+        onCommit={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId(`cart-item-qty-${itemId}`) as HTMLInputElement;
+    act(() => input.focus());
+    action(input);
+    return input;
+  };
+
+  it('emite mensagem role=status com aria-live=polite ao digitar caracteres inválidos', () => {
+    renderWithFeedback('a11y-1', 5, (i) =>
+      fireEvent.change(i, { target: { value: '5,a' } }),
+    );
+    const status = screen.getByRole('status');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(status.textContent).toMatch(/apenas dígitos/i);
+  });
+
+  it('mensagem correta ao clamp para 999.999', () => {
+    renderWithFeedback('a11y-2', 5, (i) => {
+      fireEvent.change(i, { target: { value: '9999999' } });
+      fireEvent.blur(i);
+    });
+    expect(screen.getByRole('status').textContent).toMatch(/999\.999/);
+  });
+
+  it('mensagem correta + aria-invalid=true quando o commit é inválido', () => {
+    const input = renderWithFeedback('a11y-3', 5, (i) => {
+      fireEvent.change(i, { target: { value: '' } });
+      fireEvent.blur(i);
+    });
+    expect(screen.getByRole('status').textContent).toMatch(/inválido/i);
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute(
+      'aria-describedby',
+      'cart-item-qty-fb-a11y-3',
+    );
+  });
+
+  it('sem feedback: input NÃO expõe aria-invalid nem describedby', () => {
+    render(
+      <PopoverQtyInput
+        itemId="a11y-4"
+        productName="Item"
+        quantity={5}
+        onCommit={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('cart-item-qty-a11y-4') as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(input.getAttribute('aria-describedby')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+});
+
+describe('<PopoverQtyInput /> — limites exatos [1, 999999, 9999999, 0]', () => {
+  function BoundaryHarness({ unitPrice = 10 }: { unitPrice?: number }) {
+    const [qty, setQty] = useState(50);
+    return (
+      <div>
+        <PopoverQtyInput
+          itemId="bnd"
+          productName="Item"
+          quantity={qty}
+          onCommit={setQty}
+        />
+        <span data-testid="bnd-total">{(unitPrice * qty).toFixed(2)}</span>
+        <span data-testid="bnd-qty">{qty}</span>
+      </div>
+    );
+  }
+
+  const setAndCommit = (value: string) => {
+    const input = screen.getByTestId('cart-item-qty-bnd') as HTMLInputElement;
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value } });
+    fireEvent.blur(input);
+    return input;
+  };
+
+  it('boundary 1: commit → qty=1, Total=1×preço', () => {
+    render(<BoundaryHarness unitPrice={10} />);
+    setAndCommit('1');
+    expect(screen.getByTestId('bnd-qty').textContent).toBe('1');
+    expect(screen.getByTestId('bnd-total').textContent).toBe('10.00');
+  });
+
+  it('boundary 999999: commit exato, sem clamp', () => {
+    render(<BoundaryHarness unitPrice={2} />);
+    const input = setAndCommit('999999');
+    expect(screen.getByTestId('bnd-qty').textContent).toBe('999999');
+    expect(screen.getByTestId('bnd-total').textContent).toBe(
+      (2 * 999_999).toFixed(2),
+    );
+    // Não dispara clamp porque o valor bate exatamente no MAX.
+    expect(input.dataset.feedback).not.toBe('clamped');
+  });
+
+  it('boundary 9999999: clamp em 999.999 e Total reflete o MAX', () => {
+    render(<BoundaryHarness unitPrice={2} />);
+    const input = setAndCommit('9999999');
+    expect(screen.getByTestId('bnd-qty').textContent).toBe('999999');
+    expect(screen.getByTestId('bnd-total').textContent).toBe(
+      (2 * 999_999).toFixed(2),
+    );
+    expect(input.dataset.feedback).toBe('clamped');
+  });
+
+  it('boundary 0: revertido para o último valor válido (50), sem alterar Total', () => {
+    render(<BoundaryHarness unitPrice={10} />);
+    const input = setAndCommit('0');
+    expect(screen.getByTestId('bnd-qty').textContent).toBe('50');
+    expect(screen.getByTestId('bnd-total').textContent).toBe('500.00');
+    expect(input.dataset.feedback).toBe('invalid');
+    expect(input.value).toBe('50');
+  });
+});
+
+describe('<PopoverQtyInput /> — múltiplos itens no mesmo carrinho', () => {
+  function MultiHarness() {
+    const [a, setA] = useState(2);
+    const [b, setB] = useState(10);
+    return (
+      <div>
+        <PopoverQtyInput
+          itemId="m-a"
+          productName="Item A"
+          quantity={a}
+          onCommit={setA}
+          autoFocus
+        />
+        <span data-testid="total-a">{(50 * a).toFixed(2)}</span>
+        <PopoverQtyInput
+          itemId="m-b"
+          productName="Item B"
+          quantity={b}
+          onCommit={setB}
+        />
+        <span data-testid="total-b">{(30 * b).toFixed(2)}</span>
+      </div>
+    );
+  }
+
+  it('cada item atualiza seu próprio Total sem afetar os outros', async () => {
+    const user = userEvent.setup();
+    render(<MultiHarness />);
+    const inputA = screen.getByTestId('cart-item-qty-m-a') as HTMLInputElement;
+    const inputB = screen.getByTestId('cart-item-qty-m-b') as HTMLInputElement;
+
+    // A ganha autoFocus automaticamente
+    expect(document.activeElement).toBe(inputA);
+
+    await user.keyboard('{Control>}a{/Control}80{Enter}');
+    expect(screen.getByTestId('total-a').textContent).toBe((50 * 80).toFixed(2));
+    expect(screen.getByTestId('total-b').textContent).toBe((30 * 10).toFixed(2));
+
+    await user.click(inputB);
+    await user.keyboard('{Control>}a{/Control}999999{Enter}');
+    expect(screen.getByTestId('total-b').textContent).toBe(
+      (30 * 999_999).toFixed(2),
+    );
+    // A permaneceu em 80
+    expect(screen.getByTestId('total-a').textContent).toBe((50 * 80).toFixed(2));
+  });
+
+  it('Tab move o foco do item A para o item B (sem travar)', async () => {
+    const user = userEvent.setup();
+    render(<MultiHarness />);
+    const inputA = screen.getByTestId('cart-item-qty-m-a') as HTMLInputElement;
+    const inputB = screen.getByTestId('cart-item-qty-m-b') as HTMLInputElement;
+
+    expect(document.activeElement).toBe(inputA);
+    await user.tab();
+    expect(document.activeElement).toBe(inputB);
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(inputA);
+  });
+});
+
