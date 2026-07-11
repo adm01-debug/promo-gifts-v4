@@ -285,7 +285,7 @@ export function StockAlertsIndicator() {
       </Tooltip>
 
       <PopoverContent
-        className="relative w-[420px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
+        className="relative w-[391px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
         align="end"
         sideOffset={8}
       >
