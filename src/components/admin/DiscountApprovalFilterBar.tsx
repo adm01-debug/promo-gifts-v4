@@ -7,6 +7,7 @@
  */
 import { useId } from 'react';
 import { Input } from '@/components/ui/input';
+import { DatePickerField } from '@/components/ui/date-picker-field';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,26 +180,24 @@ export function DiscountApprovalFilterBar({
           <Label htmlFor={ids.from} className="text-xs">
             De
           </Label>
-          <Input
+          <DatePickerField
             id={ids.from}
-            type="date"
             value={value.dateFrom}
-            onChange={(e) => patch({ dateFrom: e.target.value })}
-            className="h-9"
+            onChange={(next) => patch({ dateFrom: next })}
             data-testid="dar-filter-date-from"
+            className="w-full"
           />
         </div>
         <div>
           <Label htmlFor={ids.to} className="text-xs">
             Até
           </Label>
-          <Input
+          <DatePickerField
             id={ids.to}
-            type="date"
             value={value.dateTo}
-            onChange={(e) => patch({ dateTo: e.target.value })}
-            className="h-9"
+            onChange={(next) => patch({ dateTo: next })}
             data-testid="dar-filter-date-to"
+            className="w-full"
           />
         </div>
       </div>

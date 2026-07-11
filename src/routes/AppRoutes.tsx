@@ -35,6 +35,9 @@ const QuoteAddProductButtonHarness = import.meta.env.DEV
 const CalendarHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/CalendarHarness'))
   : null;
+const DatePickerFieldHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/DatePickerFieldHarness'))
+  : null;
 const NegotiationMarkupCardHarness = import.meta.env.DEV
   ? lazyWithRetry(() => import('@/pages/__visual/NegotiationMarkupCardHarness'))
   : null;
@@ -155,6 +158,9 @@ export function AppRoutes() {
         )}
         {CalendarHarness && (
           <Route path="/__visual/calendar" element={<CalendarHarness />} />
+        )}
+        {DatePickerFieldHarness && (
+          <Route path="/__visual/date-picker-field" element={<DatePickerFieldHarness />} />
         )}
         {NegotiationMarkupCardHarness && (
           <Route
