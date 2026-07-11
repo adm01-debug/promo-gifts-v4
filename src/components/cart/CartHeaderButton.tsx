@@ -693,6 +693,7 @@ export function CartHeaderButton() {
                                         itemId={item.id}
                                         productName={item.product_name}
                                         quantity={item.quantity}
+                                        autoFocus={idx === 0}
                                         onCommit={(next) =>
                                           updateItemQuantity(item.id, next)
                                         }
