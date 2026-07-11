@@ -60,7 +60,7 @@ export default function CalendarHarness() {
       <h1 className="sr-only">Calendário visual</h1>
       <div
         data-testid="visual-calendar-card"
-        className="w-[240px] rounded-2xl border border-border/50 bg-card p-2 shadow-xl"
+        className="w-full max-w-[340px] md:w-[240px] md:max-w-[240px] rounded-2xl border border-border/50 bg-card p-2 shadow-xl"
       >
         <Calendar mode="single" defaultMonth={month} selected={selected} />
       </div>
