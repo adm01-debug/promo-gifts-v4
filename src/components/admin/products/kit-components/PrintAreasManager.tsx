@@ -289,28 +289,18 @@ export function PrintAreasManager({
         </CollapsibleContent>
       </Collapsible>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir área de gravação?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A área <strong>{deleteTarget?.area_name || deleteTarget?.location_name}</strong> será
-              removida permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isSaving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        variant="destructive"
+        title="Excluir área de gravação?"
+        description={`A área "${deleteTarget?.area_name || deleteTarget?.location_name || ''}" será removida permanentemente.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={handleDelete}
+        loading={isSaving}
+        testId="print-area-delete"
+      />
     </>
   );
 }
