@@ -9,7 +9,21 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { useState } from 'react';
 import { PopoverQtyInput } from '../PopoverQtyInput';
+
+/** Wrapper controlado — o commit flui de volta para `quantity`, como no app. */
+function Controlled({ itemId, initial = 10 }: { itemId: string; initial?: number }) {
+  const [q, setQ] = useState(initial);
+  return (
+    <PopoverQtyInput
+      itemId={itemId}
+      productName="Item snap"
+      quantity={q}
+      onCommit={setQ}
+    />
+  );
+}
 
 function snapshotBundle(itemId: string): string {
   const input = screen.getByTestId(`cart-item-qty-${itemId}`) as HTMLInputElement;
