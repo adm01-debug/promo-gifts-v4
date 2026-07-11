@@ -314,7 +314,7 @@ export function StockAlertsIndicator() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1.5 border-b border-border/30 px-4 py-2">
+        <div className="flex flex-nowrap gap-1 border-b border-border/30 px-3 py-2">
           {TABS.map((tab) => {
             const count = tabCounts[tab.key];
             const isActive = activeTab === tab.key;
@@ -323,17 +323,17 @@ export function StockAlertsIndicator() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-all',
+                  'flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-medium transition-all',
                   isActive
                     ? tab.activeColor
                     : 'border-transparent text-muted-foreground hover:bg-muted/40',
                 )}
               >
-                {tab.label}
+                <span className="whitespace-nowrap">{tab.label}</span>
                 {count > 0 && (
                   <span
                     className={cn(
-                      'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold',
+                      'flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums',
                       isActive ? 'bg-current/20' : 'bg-muted',
                     )}
                   >
@@ -344,6 +344,7 @@ export function StockAlertsIndicator() {
             );
           })}
         </div>
+
 
         {/* Filtro de período */}
         <div className="flex items-center gap-1.5 border-b border-border/20 bg-muted/20 px-4 py-1.5">
