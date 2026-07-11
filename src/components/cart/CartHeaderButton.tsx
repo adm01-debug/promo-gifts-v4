@@ -626,7 +626,7 @@ export function CartHeaderButton() {
                           {/* Items list — only for active cart */}
                           {isActive && cart.items.length > 0 && (
                             <div className="space-y-1.5 border-t border-border/30 px-3 py-2">
-                              {cart.items.slice(0, 5).map((item) => (
+                              {cart.items.slice(0, 5).map((item, idx) => (
                                 <div
                                   key={item.id}
                                   className="group/item relative flex items-start gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-background/60"
