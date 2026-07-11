@@ -891,17 +891,25 @@ export function CartHeaderButton() {
       }}
     >
       <AlertDialogContent
-        className="!max-w-[420px] w-[92vw]"
+        className="!max-w-[440px] w-[92vw] border-destructive/30 shadow-[0_0_40px_-12px_hsl(var(--destructive)/0.35)]"
         data-testid="cart-delete-dialog"
       >
-        <AlertDialogHeader>
-          <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
-          <AlertDialogDescription data-testid="cart-delete-dialog-description">
-            {pendingDeleteCart
-              ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
-              : 'Esta ação não pode ser desfeita.'}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+        <div className="flex items-start gap-4">
+          <div
+            aria-hidden="true"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/30"
+          >
+            <Trash2 className="h-5 w-5 text-destructive" />
+          </div>
+          <AlertDialogHeader className="flex-1 space-y-1.5 text-left sm:text-left">
+            <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
+            <AlertDialogDescription data-testid="cart-delete-dialog-description">
+              {pendingDeleteCart
+                ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
+                : 'Esta ação não pode ser desfeita.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </div>
         <AlertDialogFooter>
           <AlertDialogCancel
             data-testid="cart-delete-cancel"
