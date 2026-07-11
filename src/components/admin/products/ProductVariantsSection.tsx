@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { VariantGridMatrix } from '@/components/products/VariantGridMatrix';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useProductVariants } from './useProductVariants';
 import { VariantForm } from './VariantForm';
