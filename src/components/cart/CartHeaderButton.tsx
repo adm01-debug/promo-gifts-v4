@@ -753,10 +753,11 @@ export function CartHeaderButton() {
                                     )}
                                   </div>
 
-                                  {/* Subtotal vertical for quick scanning */}
+                                  {/* Unit price destacado (vertical) */}
                                   <PriceLabel
-                                    label="Total"
-                                    value={item.product_price * item.quantity}
+                                    label="Unitário"
+                                    value={item.product_price}
+                                    isPrimary
                                     className="min-w-[60px] items-end"
                                   />
 
