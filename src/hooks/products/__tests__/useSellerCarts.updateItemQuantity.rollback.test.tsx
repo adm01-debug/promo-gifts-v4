@@ -79,7 +79,9 @@ function useUpdateItemQuantityHarness(
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
-      queries: { retry: false, gcTime: 0, staleTime: Infinity },
+      // `gcTime` default preserva a entrada sem observers — necessário porque
+      // populamos o cache via `setQueryData` sem `queryFn` (não há observers).
+      queries: { retry: false, staleTime: Infinity },
       mutations: { retry: false },
     },
   });
