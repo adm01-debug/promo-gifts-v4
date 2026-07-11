@@ -39,7 +39,8 @@ interface SellerCartContextType {
 
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
-  deleteCart: (cartId: string) => void;
+  deleteCart: (cartId: string) => Promise<void>;
+  isDeletingCart: boolean;
   addToActiveCart: (
     item: AddToCartInput,
     cartId?: string,
