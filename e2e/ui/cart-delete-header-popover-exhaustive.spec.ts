@@ -395,4 +395,72 @@ test.describe('CartHeaderButton — exaustivo (delete via popover)', () => {
     await page.getByTestId('cart-delete-cancel').click();
     expect(h.deleted()).toEqual([carts[0].id]);
   });
+
+  // 16 — duplo clique + clique alternado teclado/mouse: nunca >1 DELETE em voo
+  test('duplo clique + Enter/Space alternado — máximo 1 DELETE por tentativa', async ({ page }) => {
+    const cart = makeMockCart(0, 1);
+    cart.id = 'exh-16';
+    const h = await seed(page, [cart]);
+    // Delay suficiente para que múltiplos inputs cheguem enquanto o request voa.
+    h.setDelay(500);
+    await gotoAndSettle(page, '/');
+    await openPopover(page);
+    await page.getByTestId(`cart-delete-${cart.id}`).click();
+    await expect(page.getByTestId('cart-delete-dialog')).toBeVisible();
+
+    const confirm = page.getByTestId('cart-delete-confirm');
+    await confirm.focus();
+
+    // Rajada mista: dblclick + Enter + Space + click programático — tudo em
+    // <100ms. O guard `isDeletingCart` deve absorver todos exceto o primeiro.
+    await Promise.all([
+      confirm.dblclick({ force: true }).catch(() => {}),
+      page.keyboard.press('Enter').catch(() => {}),
+      page.keyboard.press('Space').catch(() => {}),
+      confirm.click({ force: true }).catch(() => {}),
+      confirm.click({ force: true }).catch(() => {}),
+    ]);
+
+    await expect(page.getByTestId('cart-delete-dialog')).toBeHidden({ timeout: 6_000 });
+    // Invariante crítica: sob rajada, no máximo 1 DELETE efetivo.
+    expect(h.attempts()).toBeLessThanOrEqual(1);
+    expect(h.deleted()).toEqual([cart.id]);
+  });
+
+  // 17 — falha + rajada de teclado/mouse: 2 tentativas totais, nunca 3+
+  test('rajada após falha — retry mantém no máximo 1 DELETE em voo', async ({ page }) => {
+    const cart = makeMockCart(0, 1);
+    cart.id = 'exh-17';
+    const h = await seed(page, [cart]);
+    h.setMode('fail');
+    h.setDelay(300);
+    await gotoAndSettle(page, '/');
+    await openPopover(page);
+    await page.getByTestId(`cart-delete-${cart.id}`).click();
+    await expect(page.getByTestId('cart-delete-dialog')).toBeVisible();
+
+    const confirm = page.getByTestId('cart-delete-confirm');
+    // 1ª rajada: 3 inputs concorrentes → 1 DELETE (falha)
+    await confirm.focus();
+    await Promise.all([
+      confirm.click({ force: true }).catch(() => {}),
+      page.keyboard.press('Enter').catch(() => {}),
+      confirm.dblclick({ force: true }).catch(() => {}),
+    ]);
+    await expect(page.locator('[data-sonner-toast][data-type="error"]').first()).toBeVisible();
+    await expect(confirm).toBeEnabled();
+
+    // 2ª rajada após recuperação do backend
+    h.setMode('ok');
+    await Promise.all([
+      confirm.click({ force: true }).catch(() => {}),
+      page.keyboard.press('Enter').catch(() => {}),
+      page.keyboard.press('Space').catch(() => {}),
+    ]);
+    await expect(page.getByTestId('cart-delete-dialog')).toBeHidden({ timeout: 6_000 });
+
+    // Exatamente 2 attempts (1 fail + 1 ok). Nunca 3+.
+    expect(h.attempts()).toBe(2);
+    expect(h.deleted()).toEqual([cart.id]);
+  });
 });
