@@ -539,55 +539,24 @@ export function CartHeaderButton() {
                                   <TooltipContent side="top">Limpar itens</TooltipContent>
                                 </Tooltip>
                               )}
-                              {/* Excluir carrinho — dois cliques para confirmar */}
-                              {pendingDeleteId === cart.id ? (
-                                <div
-                                  className="flex items-center gap-1"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                              {/* Excluir carrinho — abre AlertDialog de confirmação */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
                                   <button
                                     type="button"
-                                    aria-label={`Confirmar exclusão do carrinho de ${cart.company_name}`}
-                                    className="rounded-md px-1.5 py-0.5 text-[10px] font-bold text-destructive transition-colors hover:bg-destructive/10"
+                                    aria-label={`Excluir carrinho de ${cart.company_name}`}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                                    style={{ opacity: isActive ? 1 : undefined }}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      deleteCart(cart.id);
-                                      setPendingDeleteId(null);
+                                      setPendingDeleteId(cart.id);
                                     }}
                                   >
-                                    Excluir
+                                    <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                                   </button>
-                                  <button
-                                    type="button"
-                                    aria-label={`Cancelar exclusão do carrinho de ${cart.company_name}`}
-                                    className="rounded-md px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted/60"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setPendingDeleteId(null);
-                                    }}
-                                  >
-                                    Cancelar
-                                  </button>
-                                </div>
-                              ) : (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      aria-label={`Excluir carrinho de ${cart.company_name}`}
-                                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
-                                      style={{ opacity: isActive ? 1 : undefined }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPendingDeleteId(cart.id);
-                                      }}
-                                    >
-                                      <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">Excluir carrinho</TooltipContent>
-                                </Tooltip>
-                              )}
+                                </TooltipTrigger>
+                                <TooltipContent side="top">Excluir carrinho</TooltipContent>
+                              </Tooltip>
                               {/* Recolher/expandir carrinho — chevron explícito */}
                               <Tooltip>
                                 <TooltipTrigger asChild>
