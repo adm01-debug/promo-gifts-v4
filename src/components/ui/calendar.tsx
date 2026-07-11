@@ -27,7 +27,7 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-2 select-none overflow-hidden', className)}
+      className={cn('pointer-events-auto p-2 select-none overflow-hidden w-[224px] min-w-[224px] max-w-[224px]', className)}
       formatters={{
         formatWeekdayName: (date) => {
           const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
@@ -70,7 +70,7 @@ function Calendar({
         row: 'flex w-full gap-0',
         cell: 'flex-1 aspect-square text-center p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
-        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[14px] leading-none font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[12px] leading-none font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'text-destructive font-semibold aria-selected:bg-destructive aria-selected:text-primary-foreground',
