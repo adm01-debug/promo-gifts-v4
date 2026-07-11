@@ -14,16 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   Select,
   SelectContent,
@@ -661,60 +652,37 @@ function CartsListContent() {
         }}
       />
 
-      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-        <AlertDialogContent data-testid="carts-bulk-delete-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Excluir {selectedCount} {selectedCount === 1 ? 'carrinho' : 'carrinhos'}?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Os carrinhos selecionados e todos os seus itens
-              serão removidos permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmBulkDelete}
-              data-testid="carts-bulk-delete-confirm"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir {selectedCount}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        variant="destructive"
+        title={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}?`}
+        description="Esta ação não pode ser desfeita. Os carrinhos selecionados e todos os seus itens serão removidos permanentemente."
+        confirmLabel={`Excluir ${selectedCount}`}
+        confirmLabelShort="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={confirmBulkDelete}
+        testId="carts-bulk-delete-dialog"
+      />
 
-      <AlertDialog
+      <ConfirmDialog
         open={!!deleteConfirmId}
         onOpenChange={(open) => !open && setDeleteConfirmId(null)}
-      >
-        <AlertDialogContent data-testid="cart-row-delete-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O carrinho e todos os seus itens serão removidos
-              permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteConfirmId) {
-                  deleteCart(deleteConfirmId);
-                  toast.success('Carrinho excluído');
-                }
-                setDeleteConfirmId(null);
-              }}
-              data-testid="cart-row-delete-confirm"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Confirmar Exclusão
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        variant="destructive"
+        title="Excluir carrinho?"
+        description="Esta ação não pode ser desfeita. O carrinho e todos os seus itens serão removidos permanentemente."
+        confirmLabel="Confirmar exclusão"
+        confirmLabelShort="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          if (deleteConfirmId) {
+            deleteCart(deleteConfirmId);
+            toast.success('Carrinho excluído');
+          }
+          setDeleteConfirmId(null);
+        }}
+        testId="cart-row-delete-dialog"
+      />
     </div>
   );
 }

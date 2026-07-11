@@ -221,39 +221,55 @@ export function QuoteProductColorSelector({
         }}
       >
         <AlertDialogContent
+          className="!max-w-[400px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl"
           data-testid="out-of-stock-confirm-dialog"
           aria-labelledby="oos-confirm-title"
           aria-describedby="oos-confirm-desc"
         >
-          <AlertDialogHeader>
-            <AlertDialogTitle id="oos-confirm-title" className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />
-              Estoque zerado no fornecedor
-            </AlertDialogTitle>
-            <AlertDialogDescription id="oos-confirm-desc">
-              O estoque da cor{' '}
-              <strong className="text-foreground">
-                {pendingOutOfStock?.color_name || 'selecionada'}
-              </strong>{' '}
-              está zerado no fornecedor. Você tem certeza que quer adicioná-la ao orçamento?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="out-of-stock-confirm-cancel">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              data-testid="out-of-stock-confirm-accept"
-              autoFocus
-              onClick={() => {
-                const v = pendingOutOfStock;
-                setPendingOutOfStock(null);
-                if (v) onSelect(v);
-              }}
-            >
-              Adicionar mesmo assim
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-warning to-transparent" />
+          <div className="px-4 pb-1.5 pt-4">
+            <AlertDialogHeader>
+              <div className="flex items-start gap-3">
+                <div className="relative flex-shrink-0">
+                  <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-warning/30" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 ring-1 ring-inset ring-warning/20">
+                    <AlertTriangle className="h-[18px] w-[18px] text-warning" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                  <AlertDialogTitle id="oos-confirm-title" className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                    Estoque zerado no fornecedor
+                  </AlertDialogTitle>
+                  <AlertDialogDescription id="oos-confirm-desc" className="text-xs leading-relaxed text-muted-foreground">
+                    O estoque da cor{' '}
+                    <strong className="text-foreground">
+                      {pendingOutOfStock?.color_name || 'selecionada'}
+                    </strong>{' '}
+                    está zerado no fornecedor. Você tem certeza que quer adicioná-la ao orçamento?
+                  </AlertDialogDescription>
+                </div>
+              </div>
+            </AlertDialogHeader>
+          </div>
+          <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+            <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+              <AlertDialogCancel data-testid="out-of-stock-confirm-cancel" className="mt-0 h-8 rounded-md border-border/70 bg-transparent px-3 text-xs">
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                data-testid="out-of-stock-confirm-accept"
+                autoFocus
+                onClick={() => {
+                  const v = pendingOutOfStock;
+                  setPendingOutOfStock(null);
+                  if (v) onSelect(v);
+                }}
+                className="inline-flex h-8 items-center rounded-md px-3.5 text-xs font-semibold"
+              >
+                Adicionar mesmo assim
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>

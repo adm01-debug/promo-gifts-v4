@@ -1,16 +1,7 @@
 /**
  * MockupGenerator Dialogs — Technique change + Delete confirmation
  */
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface TechniqueChangeDialogProps {
   open: boolean;
@@ -31,37 +22,30 @@ export function TechniqueChangeDialog({
   onConfirm,
   onCancel,
 }: TechniqueChangeDialogProps) {
+  const description = [
+    `Você está trocando de "${fromName ?? ''}" para "${toName ?? ''}".`,
+    'O logo será mantido, mas as dimensões serão ajustadas aos limites da nova técnica.',
+    hasGeneratedMockup ? 'O mockup gerado será descartado (será necessário gerar novamente).' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={open}
       onOpenChange={(o) => {
         onOpenChange(o);
         if (!o) onCancel();
       }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Alterar técnica de personalização?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <span className="block">
-              Você está trocando de <strong>{fromName}</strong> para <strong>{toName}</strong>.
-            </span>
-            <span className="block text-sm">
-              • O logo será mantido, mas as dimensões serão ajustadas aos limites da nova técnica.
-              {hasGeneratedMockup && (
-                <span className="block">
-                  • O mockup gerado será descartado (será necessário gerar novamente).
-                </span>
-              )}
-            </span>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Alterar técnica</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      variant="warning"
+      title="Alterar técnica de personalização?"
+      description={description}
+      confirmLabel="Alterar técnica"
+      cancelLabel="Cancelar"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      testId="mockup-technique-change-dialog"
+    />
   );
 }
 
@@ -73,22 +57,16 @@ interface DeleteDialogProps {
 
 export function DeleteMockupDialog({ open, onOpenChange, onConfirm }: DeleteDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Excluir mockup?</AlertDialogTitle>
-          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            Excluir
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      variant="destructive"
+      title="Excluir mockup?"
+      description="Esta ação não pode ser desfeita."
+      confirmLabel="Excluir"
+      cancelLabel="Cancelar"
+      onConfirm={onConfirm}
+      testId="mockup-delete-dialog"
+    />
   );
 }
