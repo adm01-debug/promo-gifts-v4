@@ -8,7 +8,7 @@
  * - Notas sempre visíveis (textarea inline com debounce)
  * - Sidebar reorganizada (Hero pricing → Ação → Menu) + Health Checklist
  */
-import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
 
