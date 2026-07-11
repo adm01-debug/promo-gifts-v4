@@ -333,6 +333,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       setActiveCartId,
       createCart,
       deleteCart,
+      isDeletingCart: deleteCartMutation.isPending,
       addToActiveCart,
       removeItem,
       updateItemQuantity,
