@@ -127,12 +127,20 @@ function deferredPatch() {
   return { fn, resolve: () => resolveFn(), reject: (e: unknown) => rejectFn(e) };
 }
 
-/** Espera um tick para o React Query executar onMutate + rerender. */
-async function flushMicrotasks() {
+/** Espera onMutate (async) concluir dentro do MESMO `act`. */
+async function startMutation<T>(
+  fn: () => Promise<T>,
+): Promise<Promise<T>> {
+  let p!: Promise<T>;
   await act(async () => {
+    p = fn();
+    // Dá tempo para o encadeamento onMutate (await cancelQueries + setQueryData)
+    // rodar antes de sairmos do act e observarmos o estado otimista.
+    await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
   });
+  return p;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
