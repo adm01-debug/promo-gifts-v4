@@ -257,6 +257,17 @@ export function StockAlertsIndicator() {
   const activeServerCount = tabCounts[activeTab];
   const activeRoute = TABS.find((t) => t.key === activeTab)?.route ?? '/estoque';
 
+  const activeQuery =
+    activeTab === 'stockout'
+      ? stockoutQuery
+      : activeTab === 'low'
+      ? lowQuery
+      : activeTab === 'new'
+      ? noveltyQuery
+      : restocksQuery;
+  const isListLoading = activeQuery.isLoading;
+  const listError = activeQuery.isError ? activeQuery.error : null;
+
   // ── Badge dominant color ──────────────────────────────────────
   const badgeColor = useMemo(() => {
     if (counts.stockout > 0) return 'bg-destructive';
