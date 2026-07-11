@@ -341,30 +341,18 @@ export function ProductVariantsSection({
       </div>
 
       {/* Delete dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={!!m.deleteTarget}
         onOpenChange={(open) => !open && m.setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir variação?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A variação <strong>{m.deleteTarget?.color_name || m.deleteTarget?.name}</strong> (SKU:{' '}
-              {m.deleteTarget?.sku}) será desativada.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={m.isSaving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={m.handleDelete}
-              disabled={m.isSaving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {m.isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        variant="destructive"
+        title="Excluir variação?"
+        description={`A variação "${m.deleteTarget?.color_name || m.deleteTarget?.name || ''}" (SKU: ${m.deleteTarget?.sku ?? ''}) será desativada.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={m.handleDelete}
+        loading={m.isSaving}
+        testId="product-variant-delete"
+      />
     </div>
   );
 }
