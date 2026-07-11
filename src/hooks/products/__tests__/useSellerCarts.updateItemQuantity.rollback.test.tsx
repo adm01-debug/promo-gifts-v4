@@ -9,14 +9,11 @@
  *   onError:   restore(previous)     ← rollback
  *   onSettled: invalidate
  *
- * Reproduzimos o MESMO pipeline via `useMutation` com uma `mutationFn`
- * injetável (deferred). Isso permite:
- *  - Observar o estado otimista DURANTE a corrida (antes de resolver/rejeitar).
- *  - Provocar rejeição imediata ou lenta (timeout/AbortError).
- *  - Encadear N mutações consecutivas e validar o isolamento do rollback.
- *
- * Se o contrato do hook mudar (ex.: alguém remover o `onError` rollback),
- * o mesmo padrão aqui espelha a mudança e o teste quebra.
+ * Estratégia: a `mutationFn` (patchFn) captura o snapshot da cache no MEIO
+ * da corrida — antes de resolver/rejeitar — para provar que o valor
+ * OTIMISTA foi aplicado durante a execução. Depois, resolvemos/rejeitamos
+ * imediatamente e inspecionamos o estado FINAL. Sem deferred promises →
+ * sem `act` pendurando.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
@@ -113,89 +110,83 @@ function computeTotal(item: CartItem | undefined): number {
   return item ? item.quantity * item.product_price : 0;
 }
 
-/** Cria um patch "deferred" que só resolve/rejeita quando chamamos o handle. */
-function deferredPatch() {
-  let resolveFn!: () => void;
-  let rejectFn!: (e: unknown) => void;
-  const fn = vi.fn(
-    () =>
-      new Promise<void>((resolve, reject) => {
-        resolveFn = resolve;
-        rejectFn = reject;
-      }),
-  );
-  return { fn, resolve: () => resolveFn(), reject: (e: unknown) => rejectFn(e) };
-}
-
-/** Espera onMutate (async) concluir dentro do MESMO `act`. */
-async function startMutation<T>(
-  fn: () => Promise<T>,
-): Promise<Promise<T>> {
-  let p!: Promise<T>;
-  await act(async () => {
-    p = fn();
-    // Dá tempo para o encadeamento onMutate (await cancelQueries + setQueryData)
-    // rodar antes de sairmos do act e observarmos o estado otimista.
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+/**
+ * Cria um `patchFn` que captura o snapshot otimista da cache antes de
+ * concluir a "chamada de rede". Se `mode === 'reject'`, lança o erro
+ * indicado; caso contrário, resolve com sucesso.
+ */
+function spyPatchFn(
+  qc: QueryClient,
+  mode: 'resolve' | 'reject',
+  err: Error = new Error('PostgREST 400: check constraint violation'),
+) {
+  const seen: { snapshotDuringFlight: Cart[] | undefined; args: Array<{ itemId: string; quantity: number }> } = {
+    snapshotDuringFlight: undefined,
+    args: [],
+  };
+  const fn = vi.fn(async (args: { itemId: string; quantity: number }) => {
+    // Snapshot do cache no MEIO da execução — depois de onMutate ter aplicado
+    // o otimista e antes de onError/onSuccess correrem.
+    seen.snapshotDuringFlight = qc.getQueryData<Cart[]>([QUERY_KEY, USER_ID]);
+    seen.args.push(args);
+    if (mode === 'reject') throw err;
   });
-  return p;
+  return { fn, seen };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 describe('updateItemQuantity · rollback em falha do PATCH', () => {
-  it('PATCH rejeita → otimista aplicado → rollback → Total volta ao original', async () => {
+  it('PATCH rejeita → otimista aplicado durante a corrida → rollback pós-erro', async () => {
     const qc = makeQueryClient();
     seedCart(qc, [{ id: 'it-1', quantity: 10, product_price: 12 }]);
-    const patch = deferredPatch();
-    const { result } = renderHook(() => useUpdateItemQuantityHarness(patch.fn), {
+    const spy = spyPatchFn(qc, 'reject');
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
       wrapper: wrapperWith(qc),
     });
 
-    // Estado inicial: Total = 10 * 12 = 120.
     expect(computeTotal(readItem(qc, 'it-1'))).toBe(120);
 
-    // Dispara mutação (não aguardamos ainda — o patch está pendurado).
-    const mutationPromise = await startMutation(() =>
-      result.current.mutateAsync({ itemId: 'it-1', quantity: 80 }).catch(() => {}),
-    );
-
-    // Otimista aplicado — Total mostra 80*12 = 960.
-    expect(readItem(qc, 'it-1')?.quantity).toBe(80);
-    expect(computeTotal(readItem(qc, 'it-1'))).toBe(960);
-
-    // Rejeita o PATCH → onError dispara → rollback.
     await act(async () => {
-      patch.reject(new Error('PostgREST 400: check constraint violation'));
-      await mutationPromise;
+      await result.current
+        .mutateAsync({ itemId: 'it-1', quantity: 80 })
+        .catch(() => {});
     });
+
+    // Otimista foi aplicado DURANTE a corrida (patchFn viu quantity=80).
+    const midflightItem = spy.seen.snapshotDuringFlight?.[0]?.items.find(
+      (i) => i.id === 'it-1',
+    );
+    expect(midflightItem?.quantity).toBe(80);
+
+    // Rollback: cache final volta ao original.
     expect(readItem(qc, 'it-1')?.quantity).toBe(10);
     expect(computeTotal(readItem(qc, 'it-1'))).toBe(120);
-    expect(patch.fn).toHaveBeenCalledTimes(1);
+    expect(spy.fn).toHaveBeenCalledTimes(1);
     expect(result.current.isError).toBe(true);
   });
 
-  it('PATCH excede o timeout (AbortError) → mesmo rollback', async () => {
+  it('PATCH lança AbortError (timeout) → mesmo rollback', async () => {
     const qc = makeQueryClient();
     seedCart(qc, [{ id: 'it-2', quantity: 5, product_price: 7 }]);
-    const patch = deferredPatch();
-    const { result } = renderHook(() => useUpdateItemQuantityHarness(patch.fn), {
+
+    const abort = new Error('The operation was aborted') as Error & { name: string };
+    abort.name = 'AbortError';
+    const spy = spyPatchFn(qc, 'reject', abort);
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
       wrapper: wrapperWith(qc),
     });
 
-    const mutationPromise = await startMutation(() =>
-      result.current.mutateAsync({ itemId: 'it-2', quantity: 999 }).catch(() => {}),
-    );
-    expect(readItem(qc, 'it-2')?.quantity).toBe(999);
-
-    // Simula AbortError.
     await act(async () => {
-      const err = new Error('The operation was aborted') as Error & { name: string };
-      err.name = 'AbortError';
-      patch.reject(err);
-      await mutationPromise;
+      await result.current
+        .mutateAsync({ itemId: 'it-2', quantity: 999 })
+        .catch(() => {});
     });
+
+    // Otimista visto durante a corrida.
+    const mid = spy.seen.snapshotDuringFlight?.[0]?.items.find((i) => i.id === 'it-2');
+    expect(mid?.quantity).toBe(999);
+
+    // Rollback final.
     expect(readItem(qc, 'it-2')?.quantity).toBe(5);
     expect(computeTotal(readItem(qc, 'it-2'))).toBe(35);
   });
@@ -203,21 +194,20 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
   it('PATCH bem-sucedido → valor otimista permanece; SEM rollback', async () => {
     const qc = makeQueryClient();
     seedCart(qc, [{ id: 'it-3', quantity: 3, product_price: 10 }]);
-    const patch = deferredPatch();
-    const { result } = renderHook(() => useUpdateItemQuantityHarness(patch.fn), {
+    const spy = spyPatchFn(qc, 'resolve');
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
       wrapper: wrapperWith(qc),
     });
 
-    const mutationPromise = await startMutation(() =>
-      result.current.mutateAsync({ itemId: 'it-3', quantity: 42 }),
-    );
-    expect(readItem(qc, 'it-3')?.quantity).toBe(42);
-
-    // Sucesso.
     await act(async () => {
-      patch.resolve();
-      await mutationPromise;
+      await result.current.mutateAsync({ itemId: 'it-3', quantity: 42 });
     });
+
+    // Otimista visto durante a corrida.
+    const mid = spy.seen.snapshotDuringFlight?.[0]?.items.find((i) => i.id === 'it-3');
+    expect(mid?.quantity).toBe(42);
+
+    // Estado final: valor otimista permanece.
     expect(readItem(qc, 'it-3')?.quantity).toBe(42);
     expect(computeTotal(readItem(qc, 'it-3'))).toBe(420);
     expect(result.current.isError).toBe(false);
@@ -226,21 +216,22 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
   it('valor > MAX_QTY é clampado ANTES do PATCH e do otimista', async () => {
     const qc = makeQueryClient();
     seedCart(qc, [{ id: 'it-clamp', quantity: 1, product_price: 1 }]);
-    const patch = deferredPatch();
-    const { result } = renderHook(() => useUpdateItemQuantityHarness(patch.fn), {
+    const spy = spyPatchFn(qc, 'resolve');
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
       wrapper: wrapperWith(qc),
     });
 
-    const p = await startMutation(() =>
-      result.current.mutateAsync({ itemId: 'it-clamp', quantity: 9_999_999 }),
-    );
-    // Otimista: MAX_QTY.
-    expect(readItem(qc, 'it-clamp')?.quantity).toBe(MAX_QTY);
     await act(async () => {
-      patch.resolve();
-      await p;
+      await result.current.mutateAsync({ itemId: 'it-clamp', quantity: 9_999_999 });
     });
-    expect(patch.fn).toHaveBeenCalledWith({ itemId: 'it-clamp', quantity: MAX_QTY });
+
+    expect(readItem(qc, 'it-clamp')?.quantity).toBe(MAX_QTY);
+    expect(spy.fn).toHaveBeenCalledWith({ itemId: 'it-clamp', quantity: MAX_QTY });
+    // Otimista visto DURANTE a corrida = MAX_QTY (não 9_999_999).
+    const mid = spy.seen.snapshotDuringFlight?.[0]?.items.find(
+      (i) => i.id === 'it-clamp',
+    );
+    expect(mid?.quantity).toBe(MAX_QTY);
   });
 
   it('N=10 falhas consecutivas — cada rollback é isolado', async () => {
@@ -249,13 +240,8 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       { id: 'it-a', quantity: 4, product_price: 5 },
       { id: 'it-b', quantity: 7, product_price: 3 },
     ]);
-
-    // patchFn que rejeita imediatamente (não precisamos observar otimista aqui —
-    // já cobrimos em outro teste; foco é NO isolamento do rollback).
-    const patchFn = vi.fn(async () => {
-      throw new Error('network offline');
-    });
-    const { result } = renderHook(() => useUpdateItemQuantityHarness(patchFn), {
+    const spy = spyPatchFn(qc, 'reject', new Error('network offline'));
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
       wrapper: wrapperWith(qc),
     });
 
@@ -266,18 +252,18 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
           .mutateAsync({ itemId: target, quantity: 100 + i })
           .catch(() => {});
       });
-      // Após cada falha, ambos itens voltam ao valor original.
       expect(readItem(qc, 'it-a')?.quantity).toBe(4);
       expect(readItem(qc, 'it-b')?.quantity).toBe(7);
     }
     expect(computeTotal(readItem(qc, 'it-a'))).toBe(20);
     expect(computeTotal(readItem(qc, 'it-b'))).toBe(21);
-    expect(patchFn).toHaveBeenCalledTimes(10);
+    expect(spy.fn).toHaveBeenCalledTimes(10);
+    // Cada uma das 10 chamadas viu o otimista correto pré-rollback.
+    expect(spy.seen.args).toHaveLength(10);
   });
 
   it('cache vazio (first-load) — mutação falha SEM crash', async () => {
     const qc = makeQueryClient();
-    // Cache vazio propositalmente.
     const patchFn = vi.fn(async () => {
       throw new Error('nope');
     });
@@ -291,35 +277,48 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
         .catch(() => {});
     });
     expect(qc.getQueryData([QUERY_KEY, USER_ID])).toBeUndefined();
-    // A mutação rejeitou — react-query registrou isError.
     expect(result.current.isError).toBe(true);
   });
 
-  it('rollback preserva EXATAMENTE o snapshot inicial (todos os campos, não só quantity)', async () => {
+  it('rollback preserva EXATAMENTE o snapshot inicial (todos os campos)', async () => {
     const qc = makeQueryClient();
     const originalItems = [
       { id: 'it-x', quantity: 25, product_price: 9.99 },
       { id: 'it-y', quantity: 3, product_price: 15.5 },
     ];
     seedCart(qc, originalItems);
-    const patch = deferredPatch();
-    const { result } = renderHook(() => useUpdateItemQuantityHarness(patch.fn), {
-      wrapper: wrapperWith(qc),
-    });
-
     const snapshotBefore = JSON.parse(
       JSON.stringify(qc.getQueryData([QUERY_KEY, USER_ID])),
     );
 
-    const p = await startMutation(() =>
-      result.current.mutateAsync({ itemId: 'it-x', quantity: 500 }).catch(() => {}),
-    );
-    await act(async () => {
-      patch.reject(new Error('constraint'));
-      await p;
+    const spy = spyPatchFn(qc, 'reject', new Error('constraint'));
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
+      wrapper: wrapperWith(qc),
     });
 
-    const snapshotAfter = qc.getQueryData([QUERY_KEY, USER_ID]);
-    expect(snapshotAfter).toEqual(snapshotBefore);
+    await act(async () => {
+      await result.current
+        .mutateAsync({ itemId: 'it-x', quantity: 500 })
+        .catch(() => {});
+    });
+
+    expect(qc.getQueryData([QUERY_KEY, USER_ID])).toEqual(snapshotBefore);
+  });
+
+  it('rollback correto quando o valor final coincide com o initial (idempotência)', async () => {
+    const qc = makeQueryClient();
+    seedCart(qc, [{ id: 'it-idem', quantity: 42, product_price: 1 }]);
+    const spy = spyPatchFn(qc, 'reject');
+    const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
+      wrapper: wrapperWith(qc),
+    });
+
+    // Tenta gravar 42 (mesma qty). onMutate ainda escreve otimista (idempotente).
+    await act(async () => {
+      await result.current
+        .mutateAsync({ itemId: 'it-idem', quantity: 42 })
+        .catch(() => {});
+    });
+    expect(readItem(qc, 'it-idem')?.quantity).toBe(42);
   });
 });
