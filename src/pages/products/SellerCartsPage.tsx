@@ -663,24 +663,12 @@ function SellerCartsContent() {
               Prazo p/ envio
             </label>
             <div className="inline-flex flex-wrap items-center gap-1.5">
-              <input
-                id="cart-shipping-deadline"
-                type="date"
-                data-testid="cart-shipping-deadline-input"
-                value={s.shippingDeadlineDraft ?? ''}
-                min={new Date().toISOString().slice(0, 10)}
-                aria-invalid={!!s.shippingDeadlineError || undefined}
-                aria-describedby={
-                  s.shippingDeadlineError ? 'cart-shipping-deadline-error' : undefined
-                }
-                onChange={(e) => s.handleShippingDeadlineChange(e.target.value || null)}
-                className={cn(
-                  'h-7 rounded-md border bg-background/50 px-2 text-xs text-foreground transition-all focus:outline-none focus:ring-2',
-                  s.shippingDeadlineError
-                    ? 'border-destructive/60 focus:border-destructive focus:ring-destructive/20'
-                    : 'border-border/30 focus:border-primary/40 focus:ring-primary/10',
-                )}
+              <ShippingDeadlinePicker
+                value={s.shippingDeadlineDraft ?? null}
+                hasError={!!s.shippingDeadlineError}
+                onChange={(v) => s.handleShippingDeadlineChange(v)}
               />
+
               {s.shippingDeadlineBadge && !s.shippingDeadlineError && (
                 <span
                   role="status"
