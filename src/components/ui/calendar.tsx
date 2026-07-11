@@ -27,7 +27,7 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-2 select-none overflow-hidden w-[224px] min-w-[224px] max-w-[224px]', className)}
+      className={cn('pointer-events-auto p-1.5 select-none overflow-hidden w-[180px] min-w-[180px] max-w-[180px]', className)}
       formatters={{
         formatWeekdayName: (date) => {
           const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
@@ -49,28 +49,28 @@ function Calendar({
         ...modifiersClassNames,
       }}
       classNames={{
-        months: 'flex w-full flex-col sm:flex-row gap-3',
+        months: 'flex w-full flex-col sm:flex-row gap-2',
         month: 'flex w-full flex-col space-y-1',
-        caption: 'flex justify-between items-start px-0.5 pt-0 pb-1',
+        caption: 'flex justify-between items-start px-0.5 pt-0 pb-0.5',
         caption_label:
-          'text-[14px] font-bold tracking-tight leading-[1.1] text-destructive capitalize flex flex-col items-start gap-0 whitespace-pre-line',
-        nav: 'flex items-center gap-2',
+          'text-[11px] font-bold tracking-tight leading-[1.1] text-destructive capitalize flex flex-col items-start gap-0 whitespace-pre-line',
+        nav: 'flex items-center gap-1.5',
         nav_button:
-          'inline-flex h-6 w-6 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          'inline-flex h-5 w-5 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         nav_button_previous: 'static',
         nav_button_next: 'static',
         table: 'flex w-full min-w-0 flex-col border-collapse',
         head: 'block w-full',
-        tbody: 'flex w-full flex-col gap-1',
-        head_row: 'flex w-full gap-0 pb-1',
+        tbody: 'flex w-full flex-col gap-0.5',
+        head_row: 'flex w-full gap-0 pb-0.5',
 
 
         head_cell:
-          'flex-1 font-semibold uppercase tracking-[0.08em] text-[9px] leading-none text-muted-foreground/70 flex items-center justify-center',
+          'flex-1 font-semibold uppercase tracking-[0.08em] text-[7px] leading-none text-muted-foreground/70 flex items-center justify-center',
         row: 'flex w-full gap-0',
         cell: 'flex-1 aspect-square text-center p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center',
 
-        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[12px] leading-none font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
+        day: 'inline-flex h-full w-full items-center justify-center rounded-full text-[10px] leading-none font-normal text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-selected:opacity-100',
         day_range_end: 'day-range-end',
         day_today:
           'text-destructive font-semibold aria-selected:bg-destructive aria-selected:text-primary-foreground',
@@ -84,8 +84,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-        IconRight: () => <ChevronRight className="h-4 w-4" />,
+        IconLeft: () => <ChevronLeft className="h-3 w-3" />,
+        IconRight: () => <ChevronRight className="h-3 w-3" />,
       }}
 
       {...props}
