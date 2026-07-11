@@ -20,6 +20,10 @@ const REQUIRED = [
   /\btext-\[7px\]/,
   /space-y-1/,
   /w-\[180px\]/,
+  // Escala responsiva mobile (área de toque ≥ 44px):
+  /\btext-\[13px\]/,
+  /\btext-\[15px\]/,
+  /\bh-11 w-11\b/,
 ];
 const FORBIDDEN = [
   /\bp-4\b/,
