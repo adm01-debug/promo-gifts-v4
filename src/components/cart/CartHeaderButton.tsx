@@ -748,8 +748,8 @@ export function CartHeaderButton() {
                                     )}
                                   </div>
 
-                                  {/* Unitário destacado + Total abaixo */}
-                                  <div className="flex min-w-[60px] flex-col items-end gap-0.5">
+                                  {/* Unitário destacado no topo + Total alinhado com o stepper */}
+                                  <div className="flex min-w-[60px] flex-col items-end justify-between self-stretch">
                                     <PriceLabel
                                       label="Unitário"
                                       value={item.product_price}
