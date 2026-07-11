@@ -891,64 +891,89 @@ export function CartHeaderButton() {
       }}
     >
       <AlertDialogContent
-        className="!max-w-[440px] w-[92vw] border-destructive/30 shadow-[0_0_40px_-12px_hsl(var(--destructive)/0.35)]"
+        className="!max-w-[358px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
         data-testid="cart-delete-dialog"
       >
-        <div className="flex items-start gap-4">
-          <div
-            aria-hidden="true"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/30"
-          >
-            <Trash2 className="h-5 w-5 text-destructive" />
-          </div>
-          <AlertDialogHeader className="flex-1 space-y-1.5 text-left sm:text-left">
-            <AlertDialogTitle>Excluir carrinho?</AlertDialogTitle>
-            <AlertDialogDescription data-testid="cart-delete-dialog-description">
-              {pendingDeleteCart
-                ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
-                : 'Esta ação não pode ser desfeita.'}
-            </AlertDialogDescription>
+        {/* Top accent bar — destructive */}
+        <div
+          aria-hidden="true"
+          className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent"
+        />
+
+        <div className="px-4 pb-1.5 pt-4">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              {/* Icon tile com glow */}
+              <div className="relative flex-shrink-0">
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-destructive/30"
+                />
+                <div className="flex h-9 w-9 animate-scale-in items-center justify-center rounded-xl bg-destructive/10 ring-1 ring-inset ring-destructive/20 transition-transform duration-300 hover:scale-105">
+                  <Trash2 className="h-[18px] w-[18px] text-destructive" strokeWidth={2.2} />
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                <AlertDialogTitle className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                  Excluir carrinho?
+                </AlertDialogTitle>
+                <AlertDialogDescription
+                  className="text-xs leading-relaxed text-muted-foreground"
+                  data-testid="cart-delete-dialog-description"
+                >
+                  {pendingDeleteCart
+                    ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
+                    : 'Esta ação não pode ser desfeita.'}
+                </AlertDialogDescription>
+              </div>
+            </div>
           </AlertDialogHeader>
         </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel
-            data-testid="cart-delete-cancel"
-            disabled={isDeletingCart}
-          >
-            Cancelar
-          </AlertDialogCancel>
-          <AlertDialogAction
-            aria-label="Confirmar exclusão do carrinho"
-            aria-busy={isDeletingCart}
-            data-testid="cart-delete-confirm"
-            disabled={isDeletingCart}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60"
-            onClick={async (e) => {
-              e.preventDefault();
-              if (!pendingDeleteId || isDeletingCart) return;
-              try {
-                await deleteCart(pendingDeleteId);
-                setPendingDeleteId(null);
-              } catch {
-                // toast de erro já é emitido pela mutation; mantém dialog aberto
-                // para o usuário poder tentar novamente ou cancelar.
-              }
-            }}
-          >
-            {isDeletingCart ? (
-              <span className="inline-flex items-center gap-1.5">
-                <Loader2
-                  aria-hidden="true"
-                  data-testid="cart-delete-loading"
-                  className="h-3.5 w-3.5 animate-spin"
-                />
-                Excluindo…
-              </span>
-            ) : (
-              'Excluir'
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+
+        {/* Divisor + footer */}
+        <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+          <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+            <AlertDialogCancel
+              data-testid="cart-delete-cancel"
+              disabled={isDeletingCart}
+              aria-label="Cancelar"
+              className="mt-0 h-8 whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              aria-label="Confirmar exclusão do carrinho"
+              aria-busy={isDeletingCart}
+              data-testid="cart-delete-confirm"
+              disabled={isDeletingCart}
+              className="inline-flex h-8 items-center whitespace-nowrap rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground shadow-sm shadow-destructive/20 transition-all hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/30 active:scale-[0.98] disabled:opacity-60"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!pendingDeleteId || isDeletingCart) return;
+                try {
+                  await deleteCart(pendingDeleteId);
+                  setPendingDeleteId(null);
+                } catch {
+                  // toast de erro já é emitido pela mutation; mantém dialog aberto
+                }
+              }}
+            >
+              {isDeletingCart ? (
+                <>
+                  <Loader2
+                    aria-hidden="true"
+                    data-testid="cart-delete-loading"
+                    className="mr-1.5 h-3.5 w-3.5 animate-spin"
+                  />
+                  Excluindo…
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
     </>
