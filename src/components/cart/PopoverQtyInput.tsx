@@ -15,6 +15,22 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+export const MIN_QTY = 1;
+export const MAX_QTY = 999_999;
+
+/**
+ * Normaliza uma string qualquer para um inteiro válido dentro de [MIN, MAX],
+ * ou retorna `null` quando a entrada não representa uma quantidade legítima.
+ */
+export function normalizeQty(raw: string): number | null {
+  const digitsOnly = raw.replace(/[^0-9]/g, '');
+  if (digitsOnly.length === 0) return null;
+  const parsed = parseInt(digitsOnly, 10);
+  if (Number.isNaN(parsed)) return null;
+  if (parsed < MIN_QTY) return null;
+  return Math.min(MAX_QTY, parsed);
+}
+
 export interface PopoverQtyInputProps {
   itemId: string;
   productName: string;
