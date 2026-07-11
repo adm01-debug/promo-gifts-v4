@@ -59,10 +59,10 @@ describe('StockAlertsIndicator — chips (presença e ordem)', () => {
     expect(labelOrder).toEqual([...CHIP_LABELS]);
   });
 
-  it('cada chip expõe data-testid="stock-alerts-chip-<key>"', () => {
-    for (const key of CHIP_ORDER) {
-      expect(componentSrc).toContain(`stock-alerts-chip-${key}`);
-    }
+  it('cada chip expõe data-testid="stock-alerts-chip-<key>" (via template)', () => {
+    expect(componentSrc).toMatch(
+      /data-testid=\{`stock-alerts-chip-\$\{tab\.key\}`\}/,
+    );
   });
 
   it('renderiza a linha de chips com flex-nowrap + shrink-0 (não quebra a 391px)', () => {
