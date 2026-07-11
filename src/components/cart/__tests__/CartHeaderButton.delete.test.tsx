@@ -35,13 +35,29 @@ function trashOnClick(
   cartId: string,
   setOpen: (v: boolean) => void,
   setPendingDeleteId: (id: string) => void,
+  setHandoff: (v: boolean) => void,
   raf: (cb: () => void) => number,
+  defer: (cb: () => void) => number,
 ) {
   e.preventDefault();
   e.stopPropagation();
   const id = cartId;
   setOpen(false);
-  raf(() => setPendingDeleteId(id));
+  setHandoff(true);
+  const scheduleOpen = () => {
+    setPendingDeleteId(id);
+    defer(() => setHandoff(false));
+  };
+  raf(scheduleOpen);
+}
+
+function popoverOnCloseAutoFocus(
+  e: EventLike,
+  isDeleteDialogHandoff: boolean,
+  setShowPicker: (v: boolean) => void,
+) {
+  setShowPicker(false);
+  if (isDeleteDialogHandoff) e.preventDefault();
 }
 
 async function confirmOnClick(
@@ -75,36 +91,62 @@ describe('CartHeaderButton — trash button onClick', () => {
     const e = makeEvent();
     const setOpen = vi.fn();
     const setPendingDeleteId = vi.fn();
+    const setHandoff = vi.fn();
     const raf = vi.fn((cb: () => void) => { cb(); return 1; });
+    const defer = vi.fn((cb: () => void) => { cb(); return 1; });
 
-    trashOnClick(e, 'cart-42', setOpen, setPendingDeleteId, raf);
+    trashOnClick(e, 'cart-42', setOpen, setPendingDeleteId, setHandoff, raf, defer);
 
     expect(e.pd).toBe(1);
     expect(e.sp).toBe(1);
     expect(setOpen).toHaveBeenCalledExactlyOnceWith(false);
+    expect(setHandoff).toHaveBeenNthCalledWith(1, true);
     expect(raf).toHaveBeenCalledOnce();
+    expect(defer).toHaveBeenCalledOnce();
     expect(setPendingDeleteId).toHaveBeenCalledExactlyOnceWith('cart-42');
+    expect(setHandoff).toHaveBeenNthCalledWith(2, false);
   });
 
-  it('setOpen(false) é chamado ANTES de setPendingDeleteId (ordem crítica p/ evitar corrida)', () => {
+  it('setOpen(false) e handoff são chamados ANTES de setPendingDeleteId', () => {
     const order: string[] = [];
     const e = makeEvent();
     const setOpen = vi.fn(() => { order.push('setOpen'); });
     const setPendingDeleteId = vi.fn(() => { order.push('setPending'); });
+    const setHandoff = vi.fn((v: boolean) => { order.push(`handoff:${v}`); });
     const raf = (cb: () => void) => { cb(); return 1; };
+    const defer = (cb: () => void) => { cb(); return 1; };
 
-    trashOnClick(e, 'x', setOpen, setPendingDeleteId, raf);
-    expect(order).toEqual(['setOpen', 'setPending']);
+    trashOnClick(e, 'x', setOpen, setPendingDeleteId, setHandoff, raf, defer);
+    expect(order).toEqual(['setOpen', 'handoff:true', 'setPending', 'handoff:false']);
   });
 
   it('quando rAF não roda o callback (SSR/mock), setPendingDeleteId NÃO é chamado', () => {
     const e = makeEvent();
     const setOpen = vi.fn();
     const setPendingDeleteId = vi.fn();
+    const setHandoff = vi.fn();
     const raf = vi.fn(() => 0); // não invoca cb
-    trashOnClick(e, 'x', setOpen, setPendingDeleteId, raf);
+    const defer = vi.fn((cb: () => void) => { cb(); return 1; });
+    trashOnClick(e, 'x', setOpen, setPendingDeleteId, setHandoff, raf, defer);
     expect(setOpen).toHaveBeenCalledExactlyOnceWith(false);
+    expect(setHandoff).toHaveBeenCalledExactlyOnceWith(true);
     expect(setPendingDeleteId).not.toHaveBeenCalled();
+  });
+
+  it('onCloseAutoFocus normal só fecha picker e não cancela foco', () => {
+    const e = makeEvent();
+    const setShowPicker = vi.fn();
+    popoverOnCloseAutoFocus(e, false, setShowPicker);
+    expect(setShowPicker).toHaveBeenCalledExactlyOnceWith(false);
+    expect(e.pd).toBe(0);
+  });
+
+  it('onCloseAutoFocus durante handoff previne foco e não limpa pendingDeleteId', () => {
+    const e = makeEvent();
+    const setShowPicker = vi.fn();
+    popoverOnCloseAutoFocus(e, true, setShowPicker);
+    expect(setShowPicker).toHaveBeenCalledExactlyOnceWith(false);
+    expect(e.pd).toBe(1);
   });
 });
 
