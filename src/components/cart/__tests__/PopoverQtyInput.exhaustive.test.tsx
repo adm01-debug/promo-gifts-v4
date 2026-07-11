@@ -317,7 +317,14 @@ describe('Isolamento de estado entre múltiplos inputs (N=20)', () => {
       if (mod === 0) scenarios.push({ raw: String(100 + i), expectFeedback: 'idle', expectValue: String(100 + i) });
       else if (mod === 1) scenarios.push({ raw: '9999999', expectFeedback: 'clamped', expectValue: String(MAX_QTY) });
       else if (mod === 2) scenarios.push({ raw: '', expectFeedback: 'invalid', expectValue: String(10 + i) });
-      else scenarios.push({ raw: 'x,y' + i, expectFeedback: /* sanitiza → só o dígito i */ 'idle', expectValue: String(i) === '0' ? String(10 + i) : String(i) });
+      // mod===3: entrada com lixo → sanitizada para o dígito `i` (ex.: 'x,y3' → '3').
+      // O flash('sanitized') é disparado no change e persiste após o Enter (o
+      // commit só troca para 'clamped' quando digitsOnly > MAX). Como i ∈ [3..19],
+      // o dígito extraído é sempre ≥ MIN_QTY, então o commit é aceito.
+      else {
+        const digit = i; // "x,y" + i → digits '' + i → parseInt(i)
+        scenarios.push({ raw: 'x,y' + i, expectFeedback: 'sanitized', expectValue: String(digit) });
+      }
     }
 
     for (let i = 0; i < N; i++) {
