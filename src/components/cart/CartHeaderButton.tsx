@@ -45,6 +45,75 @@ import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
 import { useState, useEffect } from 'react';
 
+/**
+ * Input controlado de quantidade dentro do popover do carrinho.
+ * - Permite digitar valores livremente (ex.: "80")
+ * - Commit em Enter ou blur; Esc restaura o valor original
+ * - Clamp entre 1 e 999.999; valores inválidos revertem ao original
+ * - Sincroniza com prop externa quando o usuário não está editando
+ */
+function PopoverQtyInput({
+  itemId,
+  productName,
+  quantity,
+  onCommit,
+}: {
+  itemId: string;
+  productName: string;
+  quantity: number;
+  onCommit: (next: number) => void;
+}) {
+  const [draft, setDraft] = useState<string>(String(quantity));
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(String(quantity));
+  }, [quantity, editing]);
+
+  const commit = () => {
+    setEditing(false);
+    const parsed = parseInt(draft, 10);
+    if (Number.isNaN(parsed) || parsed < 1) {
+      setDraft(String(quantity));
+      return;
+    }
+    const clamped = Math.min(999999, parsed);
+    setDraft(String(clamped));
+    if (clamped !== quantity) onCommit(clamped);
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      aria-label={`Quantidade de ${productName}`}
+      data-testid={`cart-item-qty-${itemId}`}
+      value={draft}
+      onFocus={(e) => {
+        setEditing(true);
+        e.target.select();
+      }}
+      onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
+      onBlur={commit}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          (e.currentTarget as HTMLInputElement).blur();
+        } else if (e.key === 'Escape') {
+          setDraft(String(quantity));
+          setEditing(false);
+          (e.currentTarget as HTMLInputElement).blur();
+        }
+      }}
+      className="m-0 flex h-6 w-10 appearance-none border-x border-border/30 bg-muted/20 text-center text-[11px] font-bold tabular-nums text-foreground [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+    />
+  );
+}
+
+
 export function CartHeaderButton() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -686,12 +755,14 @@ export function CartHeaderButton() {
                                           <Minus aria-hidden="true" className="h-3 w-3" />
                                         )}
                                       </button>
-                                      <span
-                                        data-testid={`cart-item-qty-${item.id}`}
-                                        className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums"
-                                      >
-                                        {item.quantity}
-                                      </span>
+                                      <PopoverQtyInput
+                                        itemId={item.id}
+                                        productName={item.product_name}
+                                        quantity={item.quantity}
+                                        onCommit={(next) =>
+                                          updateItemQuantity(item.id, next)
+                                        }
+                                      />
                                       <button
                                         type="button"
                                         aria-label={`Aumentar quantidade de ${item.product_name}`}
