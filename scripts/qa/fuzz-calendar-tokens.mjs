@@ -16,18 +16,19 @@ const FORBIDDEN = [
   /\btext-white\b/,
   /#[0-9a-fA-F]{3,6}\b/,
 ];
-// Invariantes do design iOS Calendar (revisado 2026-07-11):
-// - mês em vermelho (destructive) com peso bold e chevron dropdown
-// - números 17px, hoje = texto vermelho, selecionado = círculo vermelho preenchido
-// - domingos em destructive, weekdays uppercase 11px
+// Invariantes do design iOS Calendar (revisado 2026-07-11, shrink -20% 2027):
+// - mês em vermelho (destructive) com peso bold
+// - números 10px, mês 11px, weekdays 7px uppercase
+// - domingos em destructive, hoje em vermelho, selecionado = círculo preenchido
 // - grid proporcional (flex-1 + aspect-square), sem dimensões fixas nas células
 const REQUIRED = [
   /rounded-full/,
   /text-destructive/,
   /bg-destructive/,
   /text-primary-foreground/,
-  /text-\[17px\]/,
+  /text-\[10px\]/,
   /text-\[11px\]/,
+  /text-\[7px\]/,
   /font-bold/,
   /font-semibold/,
   /tracking-tight/,
@@ -36,12 +37,13 @@ const REQUIRED = [
   /invisible/,
   /flex-1/,
   /aspect-square/,
-  /h-7 w-7/,
-  /h-4 w-4/,
-  /p-3/,
-  /space-y-2/,
+  /h-5 w-5/,
+  /h-3 w-3/,
+  /p-1\.5/,
+  /space-y-1/,
   /gap-0/,
   /select-none/,
+  /w-\[180px\]/,
 ];
 const REQUIRED_LITERALS = [
   `cell: 'flex-1 aspect-square`,
