@@ -9,6 +9,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const cartDeleteLog = createClientLogger('cart.delete');
+
+/** Sentinel: DELETE respondeu 2xx mas nenhuma linha foi removida (RLS silencioso ou id já removido). */
+export class CartDeleteZeroRowsError extends Error {
+  public readonly code = 'cart_delete_zero_rows' as const;
+  constructor(message = 'Nenhuma linha foi removida.') {
+    super(message);
+    this.name = 'CartDeleteZeroRowsError';
+  }
+}
 
 /** Teto máximo de carrinhos simultâneos por vendedor (enforcement client-side; backend não impõe). */
 export const MAX_SELLER_CARTS = 50;
