@@ -27,44 +27,8 @@ function Calendar({
     <DayPicker
       locale={ptBR}
       showOutsideDays={showOutsideDays}
-      className={cn('pointer-events-auto p-3 select-none', className)}
-      formatters={{
-        // fix_version: calendar-ios-type-safe-2026-07-03 — cast Day para satisfazer date-fns typings
-        formatWeekdayName: (date) => {
-          const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
-          return narrow.charAt(0).toUpperCase();
-        },
-        // fix_version: calendar-ios-two-line-caption-2026-07-11 — mês acima, ano abaixo
-        formatCaption: (date) => {
-          const month = date.toLocaleDateString('pt-BR', { month: 'long' });
-          const year = date.getFullYear();
-          return `${month.charAt(0).toUpperCase()}${month.slice(1)}\n${year}` as unknown as string;
-        },
-        ...formatters,
-      }}
-      modifiers={{
-        sunday: (date) => date.getDay() === 0,
-        ...modifiers,
-      }}
-      modifiersClassNames={{
-        sunday: 'text-destructive',
-        ...modifiersClassNames,
-      }}
-      classNames={{
-        months: 'flex w-full flex-col sm:flex-row gap-4',
-        month: 'flex w-full flex-col space-y-3',
-        caption: 'flex justify-between items-start px-1 pt-0 pb-3',
-        caption_label:
-          'text-[14px] font-bold tracking-tight leading-[1.15] text-destructive capitalize flex flex-col items-start gap-0.5 whitespace-pre-line',
-        nav: 'flex items-center gap-3',
-        nav_button:
-          'inline-flex h-7 w-7 items-center justify-center rounded-full bg-transparent p-0 text-destructive transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        nav_button_previous: 'static',
-        nav_button_next: 'static',
-        table: 'flex w-full min-w-0 flex-col border-collapse',
-        head: 'block w-full',
-        tbody: 'flex w-full flex-col gap-1.5',
-        head_row: 'flex w-full gap-0 pb-2',
+      className={cn('pointer-events-auto p-2 select-none overflow-hidden', className)}
+
         head_cell:
           'flex-1 font-semibold uppercase tracking-[0.08em] text-[9px] leading-none text-muted-foreground/70 flex items-center justify-center',
         row: 'flex w-full gap-0',
