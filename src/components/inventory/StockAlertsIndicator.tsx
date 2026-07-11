@@ -333,6 +333,7 @@ export function StockAlertsIndicator() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
+                data-testid={`stock-alerts-chip-${tab.key}`}
                 className={cn(
                   'flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-medium transition-all',
                   isActive
