@@ -157,7 +157,10 @@ export function PopoverQtyInput({
             setDraft(String(quantity));
             setFeedback('idle');
             setEditing(false);
-            (e.currentTarget as HTMLInputElement).blur();
+            // NÃO chamamos blur() aqui: manter o foco no próprio input evita
+            // que o Radix/Popover perca a referência de foco e mande o cursor
+            // para o <body>. O input é o "trigger" de edição daquele item.
+            (e.currentTarget as HTMLInputElement).focus();
           }
           // Tab / Shift+Tab: comportamento padrão (não interceptamos).
         }}
