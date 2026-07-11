@@ -227,7 +227,12 @@ export function CartHeaderButton() {
   }
 
 
+  const pendingDeleteCart = pendingDeleteId
+    ? carts.find((c) => c.id === pendingDeleteId) ?? null
+    : null;
+
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
