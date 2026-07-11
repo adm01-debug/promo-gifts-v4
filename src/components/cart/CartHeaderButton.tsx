@@ -734,57 +734,7 @@ export function CartHeaderButton() {
                                         </span>
                                       </div>
                                     )}
-                                    {/* Qty stepper row */}
-                                    <div className="mt-1.5 flex items-center justify-end gap-2">
-                                      {/* Qty stepper */}
-                                      <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
-                                        <button
-                                          type="button"
-                                          aria-label={
-                                            item.quantity <= 1
-                                              ? `Remover ${item.product_name}`
-                                              : `Diminuir quantidade de ${item.product_name}`
-                                          }
-                                          className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (item.quantity <= 1) {
-                                              handleRemoveWithUndo(cart.id, item);
-                                            } else {
-                                              updateItemQuantity(item.id, item.quantity - 1);
-                                            }
-                                          }}
-                                        >
-                                          {item.quantity <= 1 ? (
-                                            <Trash2
-                                              aria-hidden="true"
-                                              className="h-3 w-3 text-destructive"
-                                            />
-                                          ) : (
-                                            <Minus aria-hidden="true" className="h-3 w-3" />
-                                          )}
-                                        </button>
-                                        <span
-                                          data-testid={`cart-item-qty-${item.id}`}
-                                          className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums"
-                                        >
-                                          {item.quantity}
-                                        </span>
-                                        <button
-                                          type="button"
-                                          aria-label={`Aumentar quantidade de ${item.product_name}`}
-                                          className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                                          disabled={item.quantity >= 999999}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (item.quantity >= 999999) return;
-                                            updateItemQuantity(item.id, item.quantity + 1);
-                                          }}
-                                        >
-                                          <Plus aria-hidden="true" className="h-3 w-3" />
-                                        </button>
-                                      </div>
-                                    </div>
+                                    {/* Qty stepper foi movido para baixo da imagem */}
                                     {itemErrors[item.id] && (
                                       <CartItemErrorAlert
                                         itemId={item.id}
