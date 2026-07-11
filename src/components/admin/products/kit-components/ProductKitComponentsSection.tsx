@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import {
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { ComponentForm } from './ComponentForm';
