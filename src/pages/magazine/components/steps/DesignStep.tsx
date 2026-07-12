@@ -1,19 +1,26 @@
 /**
- * Step 4 — Design: galeria dos 10 templates com miniaturas FIÉIS ao layout,
- * usando os produtos já selecionados da revista (ou placeholders).
+ * Step 4 — Design: galeria dos 12 templates com miniaturas FIÉIS ao layout +
+ * seletor obrigatório de categoria (14 tokens Abreez-inspired) que colore o
+ * SidebarChrome/PageNumberBadge de todas as páginas.
  */
 
 import { Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { Magazine, MagazineTemplateId } from '@/types/magazine';
+import type {
+  Magazine,
+  MagazineCategory,
+  MagazineTemplateId,
+} from '@/types/magazine';
 import { templatesByFamily } from '../templates/TemplateRegistry';
 import { TemplateThumbnail } from '../TemplateThumbnail';
+import { MAGAZINE_CATEGORY_META } from '../templates/chrome';
 
 interface Props {
   magazine: Magazine;
   onChange: (id: MagazineTemplateId) => void;
+  onCategoryChange: (category: MagazineCategory) => void;
 }
 
 const FAMILY_LABELS: Record<'editorial' | 'catalog' | 'corporate', string> = {
@@ -28,12 +35,75 @@ const FAMILY_HINT: Record<'editorial' | 'catalog' | 'corporate', string> = {
   corporate: 'Marca do cliente em destaque, layouts B2B sóbrios.',
 };
 
-export function DesignStep({ magazine, onChange }: Props) {
+const CATEGORY_LIST: MagazineCategory[] = [
+  'technology',
+  'drinkwares',
+  'general',
+  'wearables',
+  'pins',
+  'awards',
+  'packaging',
+  'stationery',
+  'bags',
+  'clocks',
+  'signs',
+  'id',
+  'giftsets',
+  'customized',
+];
+
+export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
   const grouped = templatesByFamily();
   const source = magazine.items.length > 0 ? magazine : undefined;
+  const currentCategory = magazine.branding.category ?? 'technology';
 
   return (
     <div className="space-y-8">
+      {/* Seletor de categoria semântica — obrigatório (Abreez SSOT) */}
+      <section aria-labelledby="magazine-category-picker">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h3
+            id="magazine-category-picker"
+            className="text-sm font-semibold uppercase tracking-widest text-muted-foreground"
+          >
+            Categoria da revista
+          </h3>
+          <span className="text-xs text-muted-foreground">
+            Define a cor da sidebar vertical, do número de página e dos rótulos.
+          </span>
+        </div>
+        <div
+          role="radiogroup"
+          aria-label="Categoria da revista"
+          className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7"
+        >
+          {CATEGORY_LIST.map((cat) => {
+            const meta = MAGAZINE_CATEGORY_META[cat];
+            const selected = currentCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => onCategoryChange(cat)}
+                className={cn(
+                  'group flex flex-col items-center gap-1.5 rounded-md border p-2 text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  selected ? 'border-primary bg-primary/5 ring-1 ring-primary/40' : 'hover:border-primary/40',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="h-8 w-full rounded-sm ring-1 ring-black/5"
+                  style={{ background: meta.hex }}
+                />
+                <span className="font-medium leading-tight text-center">{meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {(Object.keys(grouped) as Array<keyof typeof grouped>).map((family) => (
         <section key={family} aria-labelledby={`family-${family}`}>
           <div className="mb-3 flex items-baseline justify-between">

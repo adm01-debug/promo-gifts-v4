@@ -1,7 +1,11 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
 import { effectiveContent, formatPrice, itemPrice, resolveItemImage } from '../shared';
-import { Folio } from '../chrome';
+import { Folio, PrintingChip, SkuChip } from '../chrome';
 
+/**
+ * MonoTemplate — 1 produto B&W com ficha estruturada "info stack"
+ * (padrão Abreez p.7): SKU chip → nome bold → 3 linhas metadata → printing chip.
+ */
 export function MonoTemplate({ magazine, page, totalPages }: TemplatePageProps) {
   const item = page.items[0];
   if (!item) return null;
@@ -34,19 +38,36 @@ export function MonoTemplate({ magazine, page, totalPages }: TemplatePageProps) 
           {c.showDescription && p.shortDescription && (
             <p className="mt-8 max-w-[1100px] text-3xl leading-snug">{p.shortDescription}</p>
           )}
+          {/* Printing chips (info stack style) */}
+          {c.showPersonalization && p.hasPersonalization && (
+            <div className="mt-6 flex flex-wrap gap-2">
+              <PrintingChip label="UV Printing" />
+              <PrintingChip label="Screen Printing" />
+              <PrintingChip label="Laser Engraving" />
+            </div>
+          )}
         </div>
         <div className="col-span-4 flex flex-col justify-between border-l-[6px] border-black pl-10">
           <div className="space-y-4">
             {c.showCode && (
               <div>
                 <div className="text-lg uppercase tracking-[0.5em] opacity-60">Referência</div>
-                <div className="mt-1 text-3xl font-black">{p.sku}</div>
+                <div className="mt-1"><SkuChip sku={p.sku} size="lg" /></div>
               </div>
             )}
             {c.showColors && item.variantColorName && (
               <div>
                 <div className="text-lg uppercase tracking-[0.5em] opacity-60">Cor</div>
                 <div className="mt-1 text-3xl font-black uppercase">{item.variantColorName}</div>
+              </div>
+            )}
+            {c.showDimensions && p.dimensions && (
+              <div>
+                <div className="text-lg uppercase tracking-[0.5em] opacity-60">Tamanho</div>
+                <div className="mt-1 text-xl">
+                  {[p.dimensions.width, p.dimensions.height, p.dimensions.depth]
+                    .filter(Boolean).join(' × ')} mm
+                </div>
               </div>
             )}
           </div>

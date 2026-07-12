@@ -1,7 +1,12 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
 import { effectiveContent, formatPrice, itemPrice, resolveItemImage } from '../shared';
-import { ColorSwatchDot, Folio, PriceTag } from '../chrome';
+import { CalloutCard, ColorSwatchDot, Folio, PriceTag, SkuChip } from '../chrome';
 
+/**
+ * CorporateSplitTemplate — "Long-form article" (padrão Abreez p.40/p.220):
+ * foto lifestyle full-bleed à esquerda + CalloutCard com storytelling B2B à direita.
+ * Segundo produto abaixo, invertido, para ritmo.
+ */
 export function CorporateSplitTemplate({ magazine, page, totalPages }: TemplatePageProps) {
   return (
     <div className="mag-page flex flex-col bg-white">
@@ -34,6 +39,7 @@ export function CorporateSplitTemplate({ magazine, page, totalPages }: TemplateP
         </div>
         <Folio index={page.index} total={totalPages} />
       </header>
+
       <div className="flex flex-1 flex-col">
         {page.items.slice(0, 2).map((item, idx) => {
           const c = effectiveContent(magazine.content, item.overrides);
@@ -44,34 +50,32 @@ export function CorporateSplitTemplate({ magazine, page, totalPages }: TemplateP
               key={item.id}
               className={`flex flex-1 ${reverse ? 'flex-row-reverse' : 'flex-row'} border-t`}
             >
-              <div className="relative w-1/2 overflow-hidden bg-neutral-50">
+              <div className="relative w-2/5 overflow-hidden bg-neutral-50">
                 <img src={resolveItemImage(item)} alt={p.name} className="h-full w-full object-cover" />
-                <span
-                  className="absolute left-6 top-6 rounded-sm bg-white/95 px-3 py-1 text-lg uppercase tracking-[0.35em]"
-                  style={{ color: 'var(--mag-primary)' }}
-                >
-                  {String(idx + 1).padStart(2, '0')} · {p.category_name ?? 'Produto'}
-                </span>
               </div>
-              <div className="flex w-1/2 flex-col justify-center p-14">
+              <div className="flex w-3/5 flex-col justify-center p-14">
                 <div
                   className="text-xl uppercase tracking-[0.4em]"
-                  style={{ color: 'var(--mag-secondary)', fontFamily: 'var(--mag-body)' }}
+                  style={{ color: 'var(--mag-category-color)', fontFamily: 'var(--mag-body)' }}
                 >
                   {p.category_name ?? 'Coleção'}
                 </div>
                 <h3
-                  className="mt-3 text-6xl font-semibold leading-[1.05]"
+                  className="mt-3 text-5xl font-semibold leading-[1.05]"
                   style={{ color: 'var(--mag-primary)', fontFamily: 'var(--mag-heading)' }}
                 >
                   {p.name}
                 </h3>
                 {c.showDescription && p.shortDescription && (
-                  <p className="mt-5 line-clamp-4 text-2xl leading-snug opacity-90">{p.shortDescription}</p>
+                  <div className="mt-5">
+                    <CalloutCard tone="brand" className="text-xl">
+                      {p.shortDescription}
+                    </CalloutCard>
+                  </div>
                 )}
-                <div className="mt-8 flex items-end justify-between border-t pt-5">
-                  <div className="space-y-1 text-2xl opacity-75">
-                    {c.showCode && <div>Cód. {p.sku}</div>}
+                <div className="mt-6 flex items-end justify-between border-t pt-5">
+                  <div className="flex flex-col gap-2 text-lg opacity-75">
+                    {c.showCode && <SkuChip sku={p.sku} size="sm" />}
                     {c.showColors && <ColorSwatchDot item={item} />}
                   </div>
                   {c.showPrice && (

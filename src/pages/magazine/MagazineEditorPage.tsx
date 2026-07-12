@@ -262,7 +262,13 @@ export default function MagazineEditorPage() {
               />
             )}
             {step === 'content' && <ContentStep magazine={magazine} onChange={editor.setContent} />}
-            {step === 'design' && <DesignStep magazine={magazine} onChange={editor.setTemplate} />}
+            {step === 'design' && (
+              <DesignStep
+                magazine={magazine}
+                onChange={editor.setTemplate}
+                onCategoryChange={(category) => editor.setBranding({ category })}
+              />
+            )}
             {step === 'layout' && (
               <LayoutStep
                 magazine={magazine}
