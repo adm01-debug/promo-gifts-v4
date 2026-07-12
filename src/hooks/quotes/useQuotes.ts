@@ -179,7 +179,11 @@ export function useQuotes() {
     mutationFn: (quoteId: string) => quoteService.deleteQuote(quoteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast.success('Orçamento exluído');
+      // NÃO disparamos toast aqui — o caller (useQuotesListPage / QuoteViewPage)
+      // é responsável por exibir `showUndoToast` COM botão de Desfazer usando
+      // o snapshot capturado ANTES do DELETE. Emitir um `toast.success` aqui
+      // criava um segundo toast empilhado (com typo "exluído") que cobria
+      // visualmente o botão "Desfazer" do toast correto — ver screenshot do bug.
     },
     onError: () => {
       toast.error('Erro ao excluir orçamento');
