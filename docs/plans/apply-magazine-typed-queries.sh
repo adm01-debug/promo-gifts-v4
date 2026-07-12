@@ -96,7 +96,7 @@ fi
 # 4.4 — substituir bloco interface MagazineRow { ... } por type alias
 awk '
   /^interface MagazineRow \{$/ { skip=1; print "type MagazineRow = Database['\''public'\'']['\''Tables'\'']['\''magazines'\'']['\''Row'\''];"; next }
-  skip && /^\}$/ { skip=0; next }
+  skip && /^\}[[:space:]]*$/ { skip=0; next }
   skip { next }
   { print }
 ' "$FILE" > "$FILE.awk" && mv "$FILE.awk" "$FILE"
@@ -104,7 +104,7 @@ awk '
 # 4.5 — substituir bloco interface MagazineItemRow { ... } por type alias
 awk '
   /^interface MagazineItemRow \{$/ { skip=1; print "type MagazineItemRow = Database['\''public'\'']['\''Tables'\'']['\''magazine_items'\'']['\''Row'\''];"; next }
-  skip && /^\}$/ { skip=0; next }
+  skip && /^\}[[:space:]]*$/ { skip=0; next }
   skip { next }
   { print }
 ' "$FILE" > "$FILE.awk" && mv "$FILE.awk" "$FILE"
