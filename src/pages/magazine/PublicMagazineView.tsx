@@ -162,10 +162,49 @@ export default function PublicMagazineView() {
     }
   }, [token, safeIdx, total]);
 
-  /* ---------------- Keyboard ---------------- */
+  /* ---------------- Zoom por página ---------------- */
+  const zoom = usePageZoom(safeIdx);
+
+  /* ---------------- Modo apresentação (auto-advance) ---------------- */
+  const presentationAdvance = useCallback(() => {
+    if (safeIdx >= total - 1) go(0);
+    else next();
+  }, [safeIdx, total, go, next]);
+  const presentation = usePresentationMode({
+    currentIndex: safeIdx,
+    total,
+    onAdvance: presentationAdvance,
+    intervalMs: 5000,
+    loop: true,
+  });
+
+  /* ---------------- Keyboard consolidado (I1+I2+I3, C2) ----------------
+   * Um único listener com precedência ordenada:
+   *   1. Ignora quando foco está em input/textarea/select
+   *   2. Ignora Space quando foco está num <button> (evita duplo trigger)
+   *   3. ESC: TOC > Help > Zoom > Apresentação
+   *   4. Demais atalhos
+   */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const t = e.target;
+      if (
+        t instanceof HTMLInputElement ||
+        t instanceof HTMLTextAreaElement ||
+        t instanceof HTMLSelectElement
+      ) return;
+      // C2: Space em botão focado é ação nativa — não avança página também
+      if (e.key === ' ' && t instanceof HTMLButtonElement) return;
+
+      // ESC com precedência
+      if (e.key === 'Escape') {
+        if (tocOpen) { e.preventDefault(); setTocOpen(false); return; }
+        if (helpOpen) { e.preventDefault(); setHelpOpen(false); return; }
+        if (zoom.state.scale === 2) { e.preventDefault(); zoom.reset(); return; }
+        if (presentation.active) { e.preventDefault(); presentation.stop(); return; }
+        return;
+      }
+
       switch (e.key) {
         case 'ArrowRight':
         case 'PageDown':
@@ -201,6 +240,11 @@ export default function PublicMagazineView() {
           e.preventDefault();
           toggleBookmark(safeIdx);
           break;
+        case 'p':
+        case 'P':
+          e.preventDefault();
+          presentation.toggle();
+          break;
         case '?':
           e.preventDefault();
           setHelpOpen((v) => !v);
@@ -209,49 +253,14 @@ export default function PublicMagazineView() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx]);
+  }, [
+    prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx,
+    tocOpen, helpOpen,
+    zoom.state.scale, zoom.reset,
+    presentation.active, presentation.toggle, presentation.stop,
+  ]);
 
-  /* ---------------- Zoom por página ---------------- */
-  const zoom = usePageZoom(safeIdx);
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && zoom.state.scale === 2) {
-        e.preventDefault();
-        zoom.reset();
-      }
-    };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
-  }, [zoom]);
 
-  /* ---------------- Modo apresentação (auto-advance) ---------------- */
-  const presentationAdvance = useCallback(() => {
-    if (safeIdx >= total - 1) go(0);
-    else next();
-  }, [safeIdx, total, go, next]);
-  const presentation = usePresentationMode({
-    currentIndex: safeIdx,
-    total,
-    onAdvance: presentationAdvance,
-    intervalMs: 5000,
-    loop: true,
-  });
-
-  // Atalho `P` alterna apresentação, ESC sai
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === 'p' || e.key === 'P') {
-        e.preventDefault();
-        presentation.toggle();
-      } else if (e.key === 'Escape' && presentation.active) {
-        e.preventDefault();
-        presentation.stop();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [presentation]);
 
 
 
