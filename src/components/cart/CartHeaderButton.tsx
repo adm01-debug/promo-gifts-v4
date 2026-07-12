@@ -924,9 +924,16 @@ export function CartHeaderButton() {
                   className="text-xs leading-relaxed text-muted-foreground"
                   data-testid="cart-delete-dialog-description"
                 >
-                  {pendingDeleteCart
-                    ? <>Você está prestes a excluir <span className="font-semibold text-foreground">"{pendingDeleteCart.company_name}"</span>. Esta ação não pode ser desfeita.</>
-                    : 'Esta ação não pode ser desfeita.'}
+                  {pendingDeleteCart ? (
+                    <>
+                      <span className="font-semibold text-foreground">
+                        "{pendingDeleteCart.company_name}"
+                      </span>{' '}
+                      será removido — você pode desfazer por até 8 segundos após a confirmação.
+                    </>
+                  ) : (
+                    'O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação.'
+                  )}
                 </AlertDialogDescription>
               </div>
             </div>
