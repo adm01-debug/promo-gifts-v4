@@ -122,11 +122,28 @@ export default function PublicMagazineView() {
 
   /* ---------------- Nav helpers ---------------- */
   const go = useCallback(
-    (idx: number) => setPageIdx(Math.min(Math.max(idx, 0), Math.max(total - 1, 0))),
+    (idx: number) => {
+      const clamped = Math.min(Math.max(idx, 0), Math.max(total - 1, 0));
+      setPageIdx((current) => {
+        if (clamped > current) setDirection(1);
+        else if (clamped < current) setDirection(-1);
+        return clamped;
+      });
+    },
     [total],
   );
   const prev = useCallback(() => go(safeIdx - 1), [go, safeIdx]);
   const next = useCallback(() => go(safeIdx + 1), [go, safeIdx]);
+
+  /* ---------------- Persistência da última página lida ---------------- */
+  useEffect(() => {
+    if (!token || !total) return;
+    try {
+      localStorage.setItem(LAST_PAGE_KEY(token), String(safeIdx));
+    } catch {
+      /* localStorage cheio/desabilitado — silencioso */
+    }
+  }, [token, safeIdx, total]);
 
   /* ---------------- Keyboard ---------------- */
   useEffect(() => {
