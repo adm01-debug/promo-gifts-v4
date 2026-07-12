@@ -705,7 +705,11 @@ function CartsListContent() {
         onOpenChange={setBulkDeleteOpen}
         variant="destructive"
         title={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}?`}
-        description="Esta ação não pode ser desfeita. Os carrinhos selecionados e todos os seus itens serão removidos permanentemente."
+        description={
+          selectedCount === 1
+            ? 'O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação.'
+            : 'Os carrinhos serão removidos — você pode desfazer por até 8 segundos após a confirmação.'
+        }
         confirmLabel={`Excluir ${selectedCount}`}
         confirmLabelShort="Excluir"
         cancelLabel="Cancelar"
@@ -718,16 +722,34 @@ function CartsListContent() {
         onOpenChange={(open) => !open && setDeleteConfirmId(null)}
         variant="destructive"
         title="Excluir carrinho?"
-        description="Esta ação não pode ser desfeita. O carrinho e todos os seus itens serão removidos permanentemente."
+        description="O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação."
         confirmLabel="Confirmar exclusão"
         confirmLabelShort="Excluir"
         cancelLabel="Cancelar"
-        onConfirm={() => {
-          if (deleteConfirmId) {
-            deleteCart(deleteConfirmId);
-            toast.success('Carrinho excluído');
-          }
+        onConfirm={async () => {
+          if (!deleteConfirmId) return;
+          // Snapshot ANTES do DELETE para restauração fiel (Undo).
+          const snapshot = carts.find((c) => c.id === deleteConfirmId);
           setDeleteConfirmId(null);
+          if (!snapshot) return;
+          try {
+            await deleteCart(deleteConfirmId);
+            showUndoToast({
+              title: 'Carrinho excluído',
+              description: 'Você pode desfazer esta ação.',
+              duration: 8000,
+              onUndo: async () => {
+                const newId = await restoreCart(snapshot);
+                if (newId) {
+                  toast.success('Carrinho restaurado.');
+                } else {
+                  toast.error('Não foi possível restaurar o carrinho.');
+                }
+              },
+            });
+          } catch {
+            // Mutation já emitiu toast de erro.
+          }
         }}
         testId="cart-row-delete-dialog"
       />
