@@ -48,8 +48,10 @@ describe('undoCopy — SSOT: duração + singular/plural', () => {
   });
 
   describe('singular/plural — deletedToastTitle', () => {
-    it('0 → plural (defensivo: título nunca some)', () => {
-      expect(deletedToastTitle(0)).toBe('0 carrinhos excluídos');
+    it('0 → mesmo copy do singular (defensivo: nunca exibe "0 carrinhos")', () => {
+      // Regra: se por algum motivo o caller passar 0 (bulk sem seleção
+      // efetiva), o título cai no singular — nunca exibimos "0 carrinhos".
+      expect(deletedToastTitle(0)).toBe('Carrinho excluído');
     });
     it('1 → singular sem número', () => {
       expect(deletedToastTitle(1)).toBe('Carrinho excluído');
