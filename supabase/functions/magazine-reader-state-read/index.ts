@@ -1,8 +1,17 @@
 // supabase/functions/magazine-reader-state-read/index.ts
 //
-// verify_jwt = false (público) — ver supabase/config.toml.
-// FIX 2026-07-12: config.toml não tinha entrada, caiu em verify_jwt=true
-// default e bloqueava 100% do tráfego anônimo no gateway. Corrigido.
+// Complementa B.2 (write): leitura do estado salvo (bookmarks/last-page)
+// para o fetch inicial que useMagazineReaderState.ts faz ao montar.
+// Sem esta edge, o cliente não teria como buscar o estado remoto sem
+// acessar a tabela diretamente (o que a auditoria fechou por segurança).
+//
+// verify_jwt = false (leitor público) — ver supabase/config.toml.
+// FIX 2026-07-12 (2a rodada de validação exaustiva): esta função ficou
+// presa em verify_jwt=true mesmo após o primeiro redeploy corrigir as
+// outras 4 do módulo — o CI aparentemente pulou/falhou silenciosamente
+// neste arquivo específico (possível colisão de paralelismo no matrix).
+// Push isolado (retry_marker=2) só deste arquivo para forçar novo attempt
+// e permitir rastrear o job especificamente.
 
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
