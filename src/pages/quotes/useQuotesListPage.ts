@@ -139,8 +139,10 @@ export function useQuotesListPage() {
   const handleDelete = async () => {
     const id = deleteConfirmId;
     if (!id) return;
-    // Guarda de reentrada: evita cliques duplicados no botão de confirmar.
-    if (isDeleting) return;
+    // Guarda de reentrada síncrona (ref) — cliques duplicados no botão de
+    // confirmar são ignorados antes mesmo do rerender que flusha `isDeleting`.
+    if (isDeletingRef.current) return;
+    isDeletingRef.current = true;
 
     setIsDeleting(true);
     try {
