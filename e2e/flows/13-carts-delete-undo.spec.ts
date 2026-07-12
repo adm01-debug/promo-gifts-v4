@@ -180,4 +180,87 @@ test.describe("Carrinhos: exclusão com Desfazer (paridade com Orçamentos)", ()
     // Nenhum DELETE adicional
     expect(calls.delete).toBe(deletesAfterUx);
   });
+
+  test("E — bulk delete com falha parcial no POST de restore → só restaura o que deu certo e copy 'restaurado(s)/falhou(aram)'", async ({ page }) => {
+    // Semeia 3 carrinhos e intercepta o POST de restore para que APENAS 2 dos 3
+    // insertes sejam bem-sucedidos. Regra: cartInsert #2 responde 500 → o
+    // restore reporta "2 restaurado(s), 1 falhou(aram)" (toast warning) e
+    // NÃO faz retry silencioso do que falhou.
+    const carts = Array.from({ length: 3 }, (_, i) => makeMockCart(i, 2));
+    await mockSellerCartsAPI(page, carts);
+
+    const calls = { delete: 0, cartInsertOk: 0, cartInsertFail: 0 };
+    await page.route(SELLER_CARTS_REST, async (route, request) => {
+      if (request.method() === "DELETE") {
+        calls.delete += 1;
+        await route.fulfill({ status: 204, body: "", headers: { "Content-Range": "0-0/1" } });
+        return;
+      }
+      if (request.method() === "POST") {
+        // 1º e 3º POST → 201, 2º → 500 (falha parcial)
+        const totalPost = calls.cartInsertOk + calls.cartInsertFail + 1;
+        if (totalPost === 2) {
+          calls.cartInsertFail += 1;
+          await route.fulfill({
+            status: 500,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "simulated failure" }),
+          });
+          return;
+        }
+        calls.cartInsertOk += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify([{ id: `restored-${totalPost}`, seller_id: "mock-seller-id" }]),
+        });
+        return;
+      }
+      await route.continue();
+    });
+    await page.route(SELLER_CART_ITEMS_REST, async (route, request) => {
+      if (request.method() === "POST") {
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify([]) });
+        return;
+      }
+      await route.continue();
+    });
+
+    await gotoAndSettle(page, "/carrinhos");
+
+    await page.getByRole("button", { name: /selecionar/i }).first().click();
+    const rowCheckboxes = page.getByRole("checkbox", {
+      name: /selecionar carrinho|selecionar linha/i,
+    });
+    await expect(rowCheckboxes.first()).toBeVisible({ timeout: 8_000 });
+    for (let i = 0; i < 3; i += 1) {
+      await rowCheckboxes.nth(i).click();
+    }
+    await page.getByRole("button", { name: /excluir 3/i }).click();
+
+    const bulkDialog = page.getByTestId("carts-bulk-delete-dialog");
+    await bulkDialog.getByRole("button", { name: /excluir/i }).click();
+
+    // 3 DELETEs efetivados
+    await expect.poll(() => calls.delete, { timeout: 15_000 }).toBeGreaterThanOrEqual(3);
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+
+    // Aciona Desfazer
+    await page.locator(UNDO_BTN).click();
+
+    // Aguarda os 3 POSTs (2 ok + 1 falha) — o restore NÃO faz retry silencioso.
+    await expect
+      .poll(() => calls.cartInsertOk + calls.cartInsertFail, { timeout: 10_000 })
+      .toBe(3);
+    expect(calls.cartInsertOk).toBe(2);
+    expect(calls.cartInsertFail).toBe(1);
+
+    // Copy do toast agregado: "2 restaurado(s), 1 falhou(aram)."
+    // Sonner renderiza o toast fora do UNDO_TOAST — buscamos pelo texto.
+    await expect(page.getByText(/2 restaurado\(s\), 1 falhou\(aram\)\./)).toBeVisible({
+      timeout: 6_000,
+    });
+    // NUNCA vaza a copy de "todos restaurados" quando houve falha parcial.
+    await expect(page.locator("body")).not.toContainText(/3 carrinhos restaurados/);
+  });
 });
