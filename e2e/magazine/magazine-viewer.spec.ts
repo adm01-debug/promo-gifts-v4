@@ -237,3 +237,97 @@ test.describe('Magazine viewer — swipe mobile', () => {
     await expectPage(page, 2);
   });
 });
+
+/**
+ * Persistência do estado do leitor (useMagazineReaderState).
+ *
+ * Contexto: enquanto a tabela `magazine_reader_state` não estiver aplicada
+ * no BD Gold, o hook opera em modo localStorage-first (fallback). Este teste
+ * valida essa camada — que é o SSOT efetivo hoje — e cobre o análogo do
+ * `updated_at` observando que o valor persistido em localStorage muda a cada
+ * navegação (o BD, quando promovido, replica esse comportamento via trigger
+ * `magazine_reader_state_touch`).
+ */
+test.describe('Magazine viewer — persistência do estado do leitor', () => {
+  const BK_KEY = `mag:bookmarks:${MAGAZINE_TOKEN}`;
+  const LP_KEY = `mag:last-page:${MAGAZINE_TOKEN}`;
+
+  test('última página + bookmarks sobrevivem a reload', async ({ page }) => {
+    await seedAndOpen(page);
+    await expectPage(page, 1);
+
+    // Navega para página 3 e marca
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expectPage(page, 3);
+    await page.keyboard.press('B');
+    await expect(page.getByRole('button', { name: /Marcada/i })).toBeVisible();
+
+    // Confere que o localStorage já refletiu (SSOT do fallback)
+    const persistedBefore = await page.evaluate(
+      ([lpKey, bkKey]) => ({
+        lastPage: localStorage.getItem(lpKey),
+        bookmarks: localStorage.getItem(bkKey),
+      }),
+      [LP_KEY, BK_KEY],
+    );
+    expect(persistedBefore.lastPage).toBe('2'); // índice 0-based = página 3
+    expect(JSON.parse(persistedBefore.bookmarks ?? '[]')).toEqual([2]);
+
+    // Reload: o hook precisa rehidratar do localStorage e voltar à p.3
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'E2E Revista de Teste' }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expectPage(page, 3);
+    await expect(page.getByRole('button', { name: /Marcada/i })).toBeVisible();
+  });
+
+  test('navegação atualiza o registro (análogo do updated_at)', async ({ page }) => {
+    await seedAndOpen(page);
+    await expectPage(page, 1);
+
+    // Snapshot inicial do valor persistido + timestamp de escrita
+    const initial = await page.evaluate((lpKey) => {
+      const value = localStorage.getItem(lpKey);
+      // Marca o momento pré-navegação — o próximo write acontecerá depois
+      return { value, t: Date.now() };
+    }, LP_KEY);
+
+    // Navega para p.2 → dispara setLastPage(1) → nova gravação no storage
+    await page.keyboard.press('ArrowRight');
+    await expectPage(page, 2);
+
+    // O valor persistido MUDOU (esse é o critério observável do "updated_at"
+    // na camada local — no BD, o trigger BEFORE UPDATE bumparia updated_at
+    // no mesmo instante lógico).
+    const afterFirst = await page.evaluate((lpKey) => localStorage.getItem(lpKey), LP_KEY);
+    expect(afterFirst).not.toBe(initial.value);
+    expect(afterFirst).toBe('1');
+
+    // Segunda navegação: valor precisa avançar novamente
+    await page.keyboard.press('ArrowRight');
+    await expectPage(page, 3);
+    const afterSecond = await page.evaluate((lpKey) => localStorage.getItem(lpKey), LP_KEY);
+    expect(afterSecond).toBe('2');
+    expect(afterSecond).not.toBe(afterFirst);
+  });
+
+  test('fingerprint do dispositivo é gerado 1x e reusado', async ({ page }) => {
+    await seedAndOpen(page);
+    // Toca o hook navegando (força fluxo de escrita)
+    await page.keyboard.press('ArrowRight');
+
+    const first = await page.evaluate(() => localStorage.getItem('mag:fingerprint'));
+    expect(first).toBeTruthy();
+    expect(first!.length).toBeGreaterThanOrEqual(8);
+
+    // Reload não deve regenerar
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'E2E Revista de Teste' }),
+    ).toBeVisible({ timeout: 15_000 });
+    const second = await page.evaluate(() => localStorage.getItem('mag:fingerprint'));
+    expect(second).toBe(first);
+  });
+});
