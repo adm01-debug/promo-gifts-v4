@@ -119,11 +119,15 @@ function isRemoteDisabled(storage: Storage | null): boolean {
 }
 
 function disableRemote(storage: Storage | null, reason: string): void {
-  if (!storage) return;
-  try {
-    storage.setItem(REMOTE_DISABLED_KEY, '1');
-  } catch {
-    /* noop */
+  // Persiste a flag SOMENTE se storage está disponível. Em modo privado
+  // extremo (sem localStorage) a flag vive apenas em memória via ref
+  // dentro do hook — mas o toast ainda precisa aparecer.
+  if (storage) {
+    try {
+      storage.setItem(REMOTE_DISABLED_KEY, '1');
+    } catch {
+      /* noop */
+    }
   }
   if (typeof console !== 'undefined' && typeof console.info === 'function') {
     // Log informativo (não é erro — é degradação esperada quando a tabela
