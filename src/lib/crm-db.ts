@@ -479,6 +479,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       );
     }
 
+    await ensureCrmSession();
     const startedAt = performance.now();
     const reqBytes = estimatePayloadBytes(query);
     const opLabel = query.operation || 'invoke';
