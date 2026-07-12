@@ -267,7 +267,9 @@ export function useSellerCarts() {
         previous?.filter((cart) => cart.id !== deletedCartId) ?? previous,
       );
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
-      toast.success('Carrinho removido');
+      // Toast de sucesso é emitido pelo chamador (showUndoToast em CartsListPage/
+      // CartHeaderButton) para permitir o fluxo de Desfazer. Emitir aqui geraria
+      // dois toasts sobrepostos.
     },
     onError: (err: Error) => {
       if (err instanceof CartDeleteZeroRowsError) {
