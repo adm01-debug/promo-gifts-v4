@@ -436,11 +436,13 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
         else if (next.size < MAX_BOOKMARKS) next.add(index);
         else return current; // limite de segurança — ignora silenciosamente
         writeBookmarksLocal(storage, token, next);
-        scheduleRemote(Array.from(next).sort((a, b) => a - b), lastPageIndex);
+        // Ler lastPageIndex via ref — evita stale closure quando setLastPage
+        // e toggleBookmark ocorrem no mesmo tick (BUG A).
+        scheduleRemote(Array.from(next).sort((a, b) => a - b), lastPageIndexRef.current);
         return next;
       });
     },
-    [token, storage, scheduleRemote, lastPageIndex],
+    [token, storage, scheduleRemote],
   );
 
   const clearBookmarks = useCallback(() => {
@@ -448,10 +450,10 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     setBookmarks(() => {
       const next = new Set<number>();
       writeBookmarksLocal(storage, token, next);
-      scheduleRemote([], lastPageIndex);
+      scheduleRemote([], lastPageIndexRef.current);
       return next;
     });
-  }, [token, storage, scheduleRemote, lastPageIndex]);
+  }, [token, storage, scheduleRemote]);
 
   const setLastPage = useCallback(
     (index: number) => {
@@ -460,11 +462,15 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
       setLastPageIndex((current) => {
         if (current === safe) return current;
         writeLastPageLocal(storage, token, safe);
-        scheduleRemote(Array.from(bookmarks).sort((a, b) => a - b), safe);
+        // Ler bookmarks via ref — evita stale closure (BUG A).
+        scheduleRemote(
+          Array.from(bookmarksRef.current).sort((a, b) => a - b),
+          safe,
+        );
         return safe;
       });
     },
-    [token, storage, scheduleRemote, bookmarks],
+    [token, storage, scheduleRemote],
   );
 
   return {
