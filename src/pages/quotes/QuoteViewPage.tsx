@@ -43,6 +43,8 @@ import {
 import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
+import { useQuotes, type QuoteItem } from '@/hooks/quotes';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
