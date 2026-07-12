@@ -1,22 +1,29 @@
 /**
- * Regression guard para altura reduzida dos botões Cancelar/Excluir do
+ * Regression guard para altura reduzida dos botões Cancelar/Confirmar do
  * `ConfirmDialog` (SSOT em `src/components/ui/ConfirmDialog.tsx`).
  *
- * Garante para TODAS as variantes (default | destructive | warning | info):
- *   1) Classes CSS incluem `h-[26px]` E `min-h-[26px]`.
- *   2) Classe `min-h-[44px]` NÃO está presente (regressão do `buttonVariants`
- *      default que costumava sobrescrever a altura reduzida).
- *   3) Altura renderizada real (bounding box) fica em ~26px (24..30 tolerância).
- *   4) Em viewport mobile (375×667) o foco vai para o botão via keyboard e
- *      Enter/Espaço disparam `click` sem regressão.
+ * Contrato validado:
+ *   1) Em TODAS as variantes (default | destructive | warning | info), as
+ *      classes CSS aplicadas incluem `h-[26px]` e `min-h-[26px]` e NÃO
+ *      contêm `min-h-[44px]` (regressão do `buttonVariants` default).
+ *   2) Em viewport desktop (≥640px), a altura renderizada é ~26px (24..30px).
+ *   3) Em viewport mobile (<640px), o piso é 44px devido à regra global de
+ *      touch-target (WCAG 2.5.5) em `src/styles/responsive.css` — as classes
+ *      ainda são `h-[26px] min-h-[26px]`, mas o CSS global sobrescreve o
+ *      min-height para 44px. Isso é INTENCIONAL de acessibilidade e o spec
+ *      documenta o contrato para prevenir tanto regressão (ficar >44px sem
+ *      motivo) quanto remoção acidental da regra WCAG.
+ *   4) Em mobile, foco alcançável e Enter/Espaço disparam click.
  *
  * Sem side-effects: usa o harness dev-only `/__test/confirm-dialog`.
  */
 import { test, expect, type Page } from '@playwright/test';
 
 const VARIANTS = ['default', 'destructive', 'warning', 'info'] as const;
-const EXPECTED_H = 26;
-const TOLERANCE = 4; // ±4px cobre padding/border/rounding do browser.
+const DESKTOP_H = 26;
+const DESKTOP_TOL = 4; // ±4px cobre padding/border/rounding.
+const MOBILE_H = 44; // WCAG 2.5.5 floor via CSS global (responsive.css).
+const MOBILE_TOL = 2;
 
 async function openHarness(page: Page, variant: string) {
   await page.goto(`/__test/confirm-dialog?variant=${variant}&width=400`, {
@@ -29,80 +36,85 @@ async function openHarness(page: Page, variant: string) {
   await expect(page.getByRole('alertdialog')).toBeVisible();
 }
 
-async function assertButtonHeight(page: Page, testId: string, variant: string) {
+/**
+ * Valida CLASSES (tw-merge) e altura renderizada para uma faixa esperada.
+ * `expected` é o alvo de altura em px; `tolerance` a folga aceita.
+ */
+async function assertButton(
+  page: Page,
+  testId: string,
+  label: string,
+  expected: number,
+  tolerance: number,
+) {
   const btn = page.locator(`[data-testid="${testId}"]`);
-  await expect(btn, `[${variant}] ${testId} deve estar visível`).toBeVisible();
+  await expect(btn, `[${label}] ${testId} visível`).toBeVisible();
 
   const cls = (await btn.getAttribute('class')) ?? '';
 
-  expect(
-    cls,
-    `[${variant}] ${testId}: classe deve conter h-[26px] — atual="${cls}"`,
-  ).toContain('h-[26px]');
-
-  expect(
-    cls,
-    `[${variant}] ${testId}: classe deve conter min-h-[26px] — atual="${cls}"`,
-  ).toContain('min-h-[26px]');
-
-  // Regressão explícita: min-h-[44px] (herdado de buttonVariants.default)
-  // NÃO pode aparecer entre as classes finais aplicadas pelo tw-merge.
+  expect(cls, `[${label}] ${testId} deve conter h-[26px]`).toContain('h-[26px]');
+  expect(cls, `[${label}] ${testId} deve conter min-h-[26px]`).toContain('min-h-[26px]');
   expect(
     cls.includes('min-h-[44px]'),
-    `[${variant}] ${testId}: min-h-[44px] NÃO deve estar presente (regressão do buttonVariants default) — atual="${cls}"`,
+    `[${label}] ${testId}: min-h-[44px] NÃO pode ser aplicado como classe (regressão do buttonVariants default)`,
   ).toBe(false);
 
   const box = await btn.boundingBox();
-  expect(box, `[${variant}] ${testId}: bounding box deve existir`).not.toBeNull();
+  expect(box, `[${label}] ${testId} bounding box`).not.toBeNull();
   const h = box!.height;
   expect(
     h,
-    `[${variant}] ${testId}: altura renderizada ${h.toFixed(2)}px fora da faixa ${EXPECTED_H}±${TOLERANCE}px`,
-  ).toBeGreaterThanOrEqual(EXPECTED_H - TOLERANCE);
-  expect(h).toBeLessThanOrEqual(EXPECTED_H + TOLERANCE);
+    `[${label}] ${testId}: altura ${h.toFixed(2)}px fora de ${expected}±${tolerance}px`,
+  ).toBeGreaterThanOrEqual(expected - tolerance);
+  expect(h).toBeLessThanOrEqual(expected + tolerance);
 }
 
-for (const variant of VARIANTS) {
-  test.describe(`ConfirmDialog height 26px — ${variant}`, () => {
+// ── Desktop: todas as variantes em ~26px ────────────────────────────────
+test.describe('ConfirmDialog height 26px @ desktop', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  for (const variant of VARIANTS) {
     test(`Cancelar & Confirmar em 26px sem min-h-[44px] (${variant})`, async ({ page }) => {
       await openHarness(page, variant);
-      await assertButtonHeight(page, 'confirm-dialog-no', variant);
-      await assertButtonHeight(page, 'confirm-dialog-yes', variant);
+      await assertButton(page, 'confirm-dialog-no', variant, DESKTOP_H, DESKTOP_TOL);
+      await assertButton(page, 'confirm-dialog-yes', variant, DESKTOP_H, DESKTOP_TOL);
     });
-  });
-}
+  }
+});
 
-test.describe('ConfirmDialog mobile keyboard & focus', () => {
+// ── Mobile (<640px): WCAG 2.5.5 força 44px, mas classes 26px persistem ──
+test.describe('ConfirmDialog mobile keyboard & focus (<640px)', () => {
   test.use({ viewport: { width: 375, height: 667 } });
 
-  test('foco alcançável e Enter/Espaço disparam ação (destructive @ 375px)', async ({ page }) => {
+  test('classes 26px preservadas, altura efetiva ~44px (WCAG 2.5.5)', async ({ page }) => {
     await openHarness(page, 'destructive');
+    await assertButton(page, 'confirm-dialog-no', 'mobile', MOBILE_H, MOBILE_TOL);
+    await assertButton(page, 'confirm-dialog-yes', 'mobile', MOBILE_H, MOBILE_TOL);
+  });
 
-    // Altura reduzida também vale em mobile.
-    await assertButtonHeight(page, 'confirm-dialog-no', 'destructive/mobile');
-    await assertButtonHeight(page, 'confirm-dialog-yes', 'destructive/mobile');
+  test('foco via keyboard + Enter/Espaço disparam click', async ({ page }) => {
+    await openHarness(page, 'destructive');
 
     const cancel = page.locator('[data-testid="confirm-dialog-no"]');
     const confirm = page.locator('[data-testid="confirm-dialog-yes"]');
 
-    // Foco programático + verificação de que o elemento focado é o botão.
     await cancel.focus();
     expect(
       await page.evaluate(
-        (el) => document.activeElement === el,
-        await cancel.elementHandle(),
+        () => (document.activeElement as HTMLElement | null)?.getAttribute('data-testid'),
       ),
       'Cancelar deve receber foco',
-    ).toBe(true);
+    ).toBe('confirm-dialog-no');
 
-    // Instrumentação: contamos cliques disparados via keyboard.
+    // Conta cliques disparados via teclado.
     await page.evaluate(() => {
       (window as unknown as { __clicks: string[] }).__clicks = [];
       for (const id of ['confirm-dialog-no', 'confirm-dialog-yes']) {
-        const el = document.querySelector(`[data-testid="${id}"]`);
-        el?.addEventListener('click', () => {
-          (window as unknown as { __clicks: string[] }).__clicks.push(id);
-        });
+        document
+          .querySelector(`[data-testid="${id}"]`)
+          ?.addEventListener('click', () => {
+            (window as unknown as { __clicks: string[] }).__clicks.push(id);
+          });
       }
     });
 
@@ -114,9 +126,6 @@ test.describe('ConfirmDialog mobile keyboard & focus', () => {
     const clicks = await page.evaluate(
       () => (window as unknown as { __clicks: string[] }).__clicks,
     );
-    expect(clicks, 'Enter em Cancelar + Espaço em Confirmar devem disparar click').toEqual([
-      'confirm-dialog-no',
-      'confirm-dialog-yes',
-    ]);
+    expect(clicks).toEqual(['confirm-dialog-no', 'confirm-dialog-yes']);
   });
 });
