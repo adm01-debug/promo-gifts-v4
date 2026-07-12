@@ -82,45 +82,66 @@ export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages 
   );
 }
 
+/**
+ * CoverPage — recipe da p.1 do catálogo Abreez 2026:
+ * fundo categórico + still-life do 1º produto + logo em caixa branca top-left +
+ * subtítulo serif all-caps top-right + palavra script cursivo na base.
+ */
 function CoverPage({ magazine }: { magazine: Magazine }) {
   const hero = magazine.items[0];
   const heroImage = hero?.productSnapshot.image_url;
   return (
     <div
-      className="mag-page relative flex flex-col justify-between"
-      style={{ background: 'var(--mag-primary)', color: '#fff' }}
+      className="mag-page relative flex flex-col overflow-hidden text-white"
+      style={{ background: 'var(--mag-category-color, var(--mag-brand-green, #2e4a3a))' }}
     >
       {heroImage && (
         <img
           src={heroImage}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ opacity: 0.35 }}
+          style={{ opacity: 0.55, mixBlendMode: 'luminosity' }}
         />
       )}
-      <div className="relative flex items-center gap-8 p-16">
-        {magazine.branding.clientLogoUrl && (
-          <img
-            src={magazine.branding.clientLogoUrl}
-            alt="logo"
-            className="h-40 w-40 rounded-full bg-white object-contain p-3"
-          />
-        )}
-        <div>
-          <div className="text-3xl uppercase tracking-[0.4em] opacity-80" style={{ fontFamily: 'var(--mag-body)' }}>
-            Catálogo
-          </div>
-          {magazine.branding.clientName && (
-            <div className="mt-2 text-4xl" style={{ fontFamily: 'var(--mag-body)' }}>
-              {magazine.branding.clientName}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.15) 0%,transparent 40%,rgba(0,0,0,0.55) 100%)' }}
+      />
+
+      {/* Top-left: logo do cliente em caixa branca */}
+      <div className="relative flex items-start justify-between p-16">
+        <div className="rounded-md bg-white p-4 shadow-sm">
+          {magazine.branding.clientLogoUrl ? (
+            <img
+              src={magazine.branding.clientLogoUrl}
+              alt={magazine.branding.clientName ?? 'Cliente'}
+              className="h-24 w-56 object-contain"
+            />
+          ) : (
+            <div
+              className="flex h-24 w-56 items-center justify-center text-3xl font-black uppercase tracking-widest"
+              style={{ color: 'var(--mag-category-color)', fontFamily: 'var(--mag-heading)' }}
+            >
+              {magazine.branding.clientName?.slice(0, 12) ?? 'PROMO'}
             </div>
           )}
         </div>
+
+        {/* Top-right: subtítulo serif all-caps */}
+        <div
+          className="text-right text-4xl font-bold uppercase leading-tight tracking-[0.2em]"
+          style={{ fontFamily: 'var(--mag-heading)' }}
+        >
+          {new Date().getFullYear()}<br />
+          COLEÇÃO
+        </div>
       </div>
-      <div className="relative p-16">
+
+      {/* Título principal ao centro-inferior */}
+      <div className="relative flex flex-1 flex-col justify-end p-16">
         <h1
           className="leading-[0.95]"
-          style={{ fontFamily: 'var(--mag-heading)', fontSize: 260, letterSpacing: '-0.03em' }}
+          style={{ fontFamily: 'var(--mag-heading)', fontSize: 220, letterSpacing: '-0.03em' }}
         >
           {magazine.title}
         </h1>
@@ -130,44 +151,121 @@ function CoverPage({ magazine }: { magazine: Magazine }) {
           </p>
         )}
       </div>
-      <div className="relative flex items-center justify-between px-16 pb-16 text-2xl uppercase tracking-widest opacity-70">
-        <span style={{ fontFamily: 'var(--mag-body)' }}>Promo Gifts</span>
-        <span style={{ fontFamily: 'var(--mag-body)' }}>{new Date().getFullYear()}</span>
+
+      {/* Script cursivo na base */}
+      <div className="relative flex items-end justify-between p-16">
+        <div className="text-2xl uppercase tracking-widest opacity-80" style={{ fontFamily: 'var(--mag-body)' }}>
+          Promo Gifts · {new Date().getFullYear()}
+        </div>
+        <div
+          className="mag-script leading-none"
+          style={{ fontSize: 180, opacity: 0.95 }}
+        >
+          catálogo
+        </div>
       </div>
     </div>
   );
 }
 
+/**
+ * BackCoverPage — recipe da p.378 do Abreez: fundo verde categórico +
+ * dotmap pattern + título "OBRIGADO" + info do cliente + contato.
+ */
 function BackCoverPage({ magazine }: { magazine: Magazine }) {
   return (
     <div
-      className="mag-page flex flex-col items-center justify-center gap-10 p-24 text-center"
-      style={{ background: 'var(--mag-primary)', color: '#fff' }}
+      className="mag-page relative flex flex-col items-center justify-center gap-10 overflow-hidden p-24 text-center text-white"
+      style={{ background: 'var(--mag-category-color, var(--mag-brand-green, #2e4a3a))' }}
     >
-      <div className="text-3xl uppercase tracking-[0.5em] opacity-80">Obrigado</div>
-      <div className="text-6xl" style={{ fontFamily: 'var(--mag-heading)' }}>
-        Fale com a Promo Gifts
+      <div
+        aria-hidden
+        className="mag-dotmap-bg absolute inset-0 opacity-40"
+      />
+      <div className="relative">
+        <div className="text-4xl uppercase tracking-[0.5em] opacity-90">Obrigado</div>
+        <h2
+          className="mt-6 text-8xl font-bold"
+          style={{ fontFamily: 'var(--mag-heading)' }}
+        >
+          Fale com a Promo Gifts
+        </h2>
+        {magazine.branding.clientName && (
+          <div className="mt-6 text-3xl opacity-90">
+            Preparado exclusivamente para <strong>{magazine.branding.clientName}</strong>
+          </div>
+        )}
+        <div className="mt-16 flex items-center justify-center gap-8 text-2xl uppercase tracking-widest opacity-80">
+          <span>promogifts.com.br</span>
+          <span aria-hidden>·</span>
+          <span>{new Date().getFullYear()}</span>
+        </div>
       </div>
-      {magazine.branding.clientName && (
-        <div className="text-3xl opacity-90">Preparado exclusivamente para {magazine.branding.clientName}</div>
-      )}
-      <div className="mt-12 text-2xl opacity-70">promogifts.com.br</div>
     </div>
   );
 }
 
+/**
+ * SectionPage — recipe da p.6 do Abreez: 3 colunas (4 imagens à esquerda,
+ * moldura branca central, torre tipográfica vertical à direita).
+ */
 function SectionPage({ title }: { title: string }) {
   return (
     <div
-      className="mag-page flex items-center justify-center"
-      style={{ background: 'var(--mag-primary)', color: '#fff' }}
+      className="mag-page grid grid-cols-3 overflow-hidden"
+      style={{ background: 'white' }}
     >
-      <h2
-        className="text-center"
-        style={{ fontFamily: 'var(--mag-heading)', fontSize: 200, letterSpacing: '-0.02em' }}
-      >
-        {title}
-      </h2>
+      {/* Coluna 1 — placeholder 4 imagens (produção real injeta fotos) */}
+      <div className="grid grid-rows-4 gap-2 p-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="w-full"
+            style={{
+              background: `color-mix(in srgb, var(--mag-category-color) ${20 + i * 15}%, black)`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Coluna 2 — moldura branca central */}
+      <div className="flex items-center justify-center p-8">
+        <div
+          className="flex h-4/5 w-full flex-col items-center justify-between p-8 text-center"
+          style={{ border: '1px solid var(--mag-category-color)' }}
+        >
+          <div className="text-8xl opacity-70" style={{ color: 'var(--mag-category-color)' }}>◊</div>
+          <div>
+            <h2
+              className="text-4xl font-bold leading-tight"
+              style={{ fontFamily: 'var(--mag-heading)', color: 'var(--mag-primary)' }}
+            >
+              {title}
+            </h2>
+          </div>
+          <div
+            className="text-lg uppercase tracking-[0.4em] opacity-60"
+            style={{ fontFamily: 'var(--mag-body)' }}
+          >
+            Coleção
+          </div>
+        </div>
+      </div>
+
+      {/* Coluna 3 — torre tipográfica vertical */}
+      <div className="flex items-center justify-center">
+        <div
+          className="text-7xl font-black uppercase leading-[0.9] tracking-[0.4em]"
+          style={{
+            writingMode: 'vertical-rl',
+            transform: 'rotate(180deg)',
+            fontFamily: 'var(--mag-heading)',
+            color: 'var(--mag-category-color)',
+          }}
+        >
+          {title.toUpperCase().slice(0, 20)}
+        </div>
+      </div>
     </div>
   );
 }
