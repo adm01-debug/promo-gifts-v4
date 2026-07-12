@@ -11,6 +11,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
+import { bulkRestoreSummary } from '@/pages/products/seller-carts/bulkRestoreSummary';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
