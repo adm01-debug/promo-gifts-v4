@@ -124,7 +124,7 @@ describe('useMagazineReaderState — hidratação inicial', () => {
     expect(result.current.bookmarks.size).toBe(0);
     expect(result.current.lastPageIndex).toBe(0);
     // Não deve gerar chamada remota
-    expect(supabaseCalls).toHaveLength(0);
+    expect(fetchCalls).toHaveLength(0);
   });
 });
 
