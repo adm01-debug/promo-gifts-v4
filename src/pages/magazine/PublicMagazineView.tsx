@@ -204,6 +204,18 @@ export default function PublicMagazineView() {
 
   /* ---------------- Zoom por página ---------------- */
   const zoom = usePageZoom(safeIdx);
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && zoom.state.scale === 2) {
+        e.preventDefault();
+        zoom.reset();
+      }
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [zoom]);
+
+
 
   /* ---------------- Swipe (desabilitado quando zoom ativo) ---------------- */
   const onTouchStart = (e: React.TouchEvent) => {
