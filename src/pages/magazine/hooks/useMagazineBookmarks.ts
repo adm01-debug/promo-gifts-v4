@@ -26,6 +26,18 @@ export function useMagazineBookmarks(token: string | undefined) {
     setBookmarks(read(token));
   }, [token]);
 
+  // M: sync entre abas — outra aba mudou os marcadores da mesma revista
+  useEffect(() => {
+    if (!token) return;
+    const key = KEY(token);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== key) return;
+      setBookmarks(read(token));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [token]);
+
   const persist = useCallback(
     (next: Set<number>) => {
       if (!token) return;
