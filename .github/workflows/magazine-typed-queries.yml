@@ -1,0 +1,113 @@
+# Dry-run da migração `magazineService` → queries tipadas.
+#
+# Em PRs / pushes que tocam magazineService.ts, types.ts ou os artefatos
+# do PR armado, este workflow:
+#   1. Detecta se types.ts já contém as tabelas magazines/magazine_items.
+#   2. Se SIM  → executa apply-magazine-typed-queries.sh em cópia temporária,
+#      roda tsgo, lint-untyped-from e a suíte vitest do módulo. Bloqueia o
+#      merge se qualquer passo quebrar (isto é, "as queries tipadas quebraram
+#      algo" = red).
+#   3. Se NÃO → sai como neutro/skip com aviso (o PR de regeneração ainda
+#      precisa entrar antes; o dry-run não pode falhar por essa razão).
+#
+# Nunca commita mudanças — este é um dry-run puro de validação. Aplicação
+# real continua manual (bash docs/plans/apply-magazine-typed-queries.sh no
+# PR de migração).
+
+name: Magazine typed queries — dry-run
+
+on:
+  pull_request:
+    paths:
+      - 'src/services/magazineService.ts'
+      - 'src/integrations/supabase/types.ts'
+      - 'docs/plans/apply-magazine-typed-queries.sh'
+      - 'docs/plans/magazine-typed-queries-migration.patch'
+      - '.github/workflows/magazine-typed-queries.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/services/magazineService.ts'
+      - 'src/integrations/supabase/types.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: magazine-typed-queries-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dry-run:
+    name: Aplica patch em cópia e valida
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Detecta se types.ts está pronto
+        id: gate
+        run: |
+          if grep -qE "magazines: \{" src/integrations/supabase/types.ts \
+             && grep -qE "magazine_items: \{" src/integrations/supabase/types.ts; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::types.ts contém magazines + magazine_items → executando dry-run completo"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::types.ts ainda não regenerado — dry-run em modo skip. Rode antes 'Regenerate Supabase Types'."
+          fi
+
+      - name: Aplica script de migração (dry-run em worktree)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          # Roda o script no próprio checkout (não commita — o job termina
+          # sem push). Se falhar, o workflow reprova o PR.
+          bash docs/plans/apply-magazine-typed-queries.sh
+
+      - name: Confirma que untypedFrom sumiu de magazineService
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          if grep -q "untypedFrom" src/services/magazineService.ts; then
+            echo "::error::apply-magazine-typed-queries.sh rodou mas 'untypedFrom' ainda aparece em magazineService.ts"
+            grep -n "untypedFrom" src/services/magazineService.ts
+            exit 1
+          fi
+
+      - name: Typecheck (tsgo)
+        if: steps.gate.outputs.ready == 'true'
+        run: npx tsgo --noEmit
+
+      - name: Lint untypedFrom × types.ts
+        if: steps.gate.outputs.ready == 'true'
+        run: bash scripts/lint-untyped-from.sh
+
+      - name: Vitest — módulo Magazine + service
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          npx vitest run \
+            src/services/__tests__/magazineAddProductsUnique.test.ts \
+            src/services/__tests__/magazineEdgeContract.test.ts \
+            src/pages/magazine/__tests__/publishAwait.regression.test.ts \
+            tests/integration/magazine-service-fuzz.test.ts \
+            --reporter=default
+
+      - name: Resumo
+        if: always()
+        run: |
+          if [[ "${{ steps.gate.outputs.ready }}" == "true" ]]; then
+            echo "::notice::Dry-run completo — a migração está segura para aplicar em PR dedicado."
+          else
+            echo "::notice::Dry-run em modo skip — reabra este workflow após o merge do types.ts regenerado."
+          fi
