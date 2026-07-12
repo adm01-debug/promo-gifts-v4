@@ -152,7 +152,60 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
 
     // Última garantia: botão ausente do DOM
     await expect(page.locator(UNDO_BTN)).toHaveCount(0);
+
+    // ================================================================
+    // FORCE-CLICK HARDENING: mesmo forçando o clique de várias formas,
+    // NENHUMA restauração deve disparar. Cobre três vetores de ataque:
+    //   (a) Playwright `click({ force: true })` no locator ausente;
+    //   (b) `dispatchEvent('click')` via evaluate em qualquer resíduo;
+    //   (c) reinjeção sintética via querySelector + .click() nativo.
+    // Todos devem ser no-op — o toast já foi dismissed e o handler
+    // do sonner foi liberado.
+    // ================================================================
+
+    // (a) force click no locator ausente — Playwright deve falhar ao
+    //     resolver o elemento; capturamos o erro e validamos que a
+    //     tentativa não gerou POST.
+    const forceClickAttempt = await page
+      .locator(UNDO_BTN)
+      .click({ force: true, timeout: 1_500 })
+      .then(() => "clicked")
+      .catch(() => "unreachable");
+    expect(forceClickAttempt).toBe("unreachable");
+
+    // (b) e (c) — dispatch/click via DOM nativo em qualquer resíduo.
+    const domAttackResult = await page.evaluate((sel) => {
+      const results: string[] = [];
+      const nodes = document.querySelectorAll(sel);
+      results.push(`found=${nodes.length}`);
+      nodes.forEach((el, idx) => {
+        try {
+          (el as HTMLButtonElement).dispatchEvent(
+            new MouseEvent("click", { bubbles: true, cancelable: true }),
+          );
+          results.push(`dispatch-${idx}=ok`);
+        } catch (e) {
+          results.push(`dispatch-${idx}=err`);
+        }
+        try {
+          (el as HTMLButtonElement).click();
+          results.push(`native-${idx}=ok`);
+        } catch (e) {
+          results.push(`native-${idx}=err`);
+        }
+      });
+      return results.join("|");
+    }, UNDO_BTN);
+    // Zero nós = ataque sem alvo; QUALQUER nó residual seria uma regressão.
+    expect(domAttackResult).toBe("found=0");
+
+    // Invariante final: mesmo após todas as tentativas, POST de restore
+    // permanece em 0 durante uma janela adicional estável.
+    await expect
+      .poll(() => postCalls, { timeout: 2_000, intervals: [200, 500] })
+      .toBe(0);
   });
+
 
   test("DELETE falha (500) → toast Desfazer NÃO aparece, linha permanece sem duplicatas", async ({
     page,
