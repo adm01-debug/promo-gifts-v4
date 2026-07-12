@@ -987,7 +987,6 @@ export function CartHeaderButton() {
                 }
               }}
             >
-            >
               {isDeletingCart ? (
                 <>
                   <Loader2
