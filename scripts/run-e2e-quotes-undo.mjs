@@ -37,6 +37,8 @@ const SPECS = [
   "e2e/flows/04o-quotes-single-delete-undo.spec.ts",
   "e2e/flows/04p-quotes-bulk-delete-undo.spec.ts",
   "e2e/flows/04q-quotes-single-delete-undo-edge-cases.spec.ts",
+  "e2e/flows/04r-undo-toast-a11y-keyboard.spec.ts",
+  "e2e/flows/04s-quotes-duplicate-undo-a11y-rapid.spec.ts",
 ];
 
 // ─── 1) Sanidade: specs existem ─────────────────────────────────────────
