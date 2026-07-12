@@ -108,6 +108,35 @@ if (!isMock && process.env.E2E_USER_EMAIL) {
   );
 }
 
+// Guarda contra "silent green": se o Playwright for chamado com `--list`
+// e reportar 0 testes, o exit code natural do binário é 0 — o que faria
+// o CI passar mesmo com erros de coleta (imports quebrados, glob errado).
+// Capturamos stdout+stderr APENAS quando `--list` está presente e
+// promovemos para exit=3 se a saída contiver "Total: 0 tests".
+const isListMode = passthrough.includes("--list");
+
+if (isListMode) {
+  const result = spawnSync("npx", args, {
+    stdio: ["inherit", "pipe", "pipe"],
+    cwd: ROOT,
+    env: process.env,
+    shell: process.platform === "win32",
+    encoding: "utf8",
+  });
+  process.stdout.write(result.stdout ?? "");
+  process.stderr.write(result.stderr ?? "");
+  const combined = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+  if (/Total:\s*0\s*tests/i.test(combined) || /No tests found/i.test(combined)) {
+    console.error(
+      "\n❌ Falha de coleta: Playwright encontrou 0 testes. " +
+        "Provável erro de import (ex.: export ausente em helpers). " +
+        "Verifique o output acima e não confie no exit=0 do modo --list.",
+    );
+    process.exit(3);
+  }
+  process.exit(result.status ?? 1);
+}
+
 const result = spawnSync("npx", args, {
   stdio: "inherit",
   cwd: ROOT,
