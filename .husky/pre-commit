@@ -3,6 +3,10 @@
 # um glob dentro de um comentario fechou o bloco e o repo ficou 6 dias sem lint.
 node scripts/check-eslint-config-parses.mjs || exit 1
 
+# Mesmo motivo: um lock fora de sincronia faz o `npm ci` do CI morrer no install e
+# TODOS os steps seguintes viram `skipped`. Falha cedo, aqui, com o comando do fix.
+node scripts/check-lockfile-sync.mjs || exit 1
+
 npx lint-staged
 
 # Regeneração seletiva de fixtures de PDF quando arquivos de layout mudam.
