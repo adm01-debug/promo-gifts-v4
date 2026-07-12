@@ -1,11 +1,8 @@
 // supabase/functions/magazine-reader-state-read/index.ts
 //
-// Complementa B.2 (write): leitura do estado salvo (bookmarks/last-page)
-// para o fetch inicial que useMagazineReaderState.ts faz ao montar.
-// Sem esta edge, o cliente não teria como buscar o estado remoto sem
-// acessar a tabela diretamente (o que a auditoria fechou por segurança).
-//
-// verify_jwt = false (leitor público)
+// verify_jwt = false (público) — ver supabase/config.toml.
+// FIX 2026-07-12: config.toml não tinha entrada, caiu em verify_jwt=true
+// default e bloqueava 100% do tráfego anônimo no gateway. Corrigido.
 
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";

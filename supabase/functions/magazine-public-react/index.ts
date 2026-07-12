@@ -1,11 +1,8 @@
 // supabase/functions/magazine-public-react/index.ts
 //
-// B.3 — Reações anônimas (like/love/fire/idea) com toggle.
-// Depende do FIX C10 no schema: UNIQUE NULLS NOT DISTINCT garante que o
-// conflito de INSERT realmente dispara quando page_index/item_id são NULL,
-// permitindo o toggle funcionar (o draft original nunca conflitava nesse caso).
-//
-// verify_jwt = false
+// verify_jwt = false (público) — ver supabase/config.toml.
+// FIX 2026-07-12: config.toml não tinha entrada, caiu em verify_jwt=true
+// default e bloqueava 100% do tráfego anônimo no gateway. Corrigido.
 
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
@@ -72,20 +69,31 @@ Deno.serve(async (req) => {
     }
 
     const ipHash = await hashIp(ip);
-    const matchFilter = {
-      magazine_id: mag.id,
-      viewer_fingerprint: fingerprint,
-      kind,
-      page_index: pageIndex ?? null,
-      item_id: itemId ?? null,
-    };
 
-    // Toggle: tenta deletar primeiro (se existir, remove); senão insere.
-    const { data: existing } = await supabase
+    // FIX (auditoria 2026-07-12): .match() com valores null pode gerar
+    // 'column=eq.null' em vez de 'column=is.null' dependendo da versao do
+    // supabase-js, o que NUNCA daria match em uma linha com valor NULL de
+    // fato (PostgREST exige eq.null especificamente, mas o comportamento
+    // variou entre versoes). Construimos o filtro explicitamente com
+    // .is()/.eq() para garantir semantica correta e determinística.
+    let existingQuery = supabase
       .from("magazine_public_reactions")
       .select("id")
-      .match(matchFilter)
-      .maybeSingle();
+      .eq("magazine_id", mag.id)
+      .eq("viewer_fingerprint", fingerprint)
+      .eq("kind", kind);
+    existingQuery = pageIndex === null || pageIndex === undefined
+      ? existingQuery.is("page_index", null)
+      : existingQuery.eq("page_index", pageIndex);
+    existingQuery = itemId === null || itemId === undefined
+      ? existingQuery.is("item_id", null)
+      : existingQuery.eq("item_id", itemId);
+
+    const { data: existing, error: selectErr } = await existingQuery.maybeSingle();
+    if (selectErr) {
+      log.error("select_failed", { error: selectErr.message });
+      return log.respond(new Response(JSON.stringify({ error: "internal_error", request_id: requestId }), { status: 500, headers: jsonHeaders }));
+    }
 
     if (existing) {
       const { error: delErr } = await supabase.from("magazine_public_reactions").delete().eq("id", existing.id);
@@ -97,7 +105,14 @@ Deno.serve(async (req) => {
       return log.respond(new Response(JSON.stringify({ toggled: "removed", request_id: requestId }), { status: 200, headers: jsonHeaders }));
     }
 
-    const { error: insErr } = await supabase.from("magazine_public_reactions").insert({ ...matchFilter, ip_hash: ipHash });
+    const { error: insErr } = await supabase.from("magazine_public_reactions").insert({
+      magazine_id: mag.id,
+      viewer_fingerprint: fingerprint,
+      kind,
+      page_index: pageIndex ?? null,
+      item_id: itemId ?? null,
+      ip_hash: ipHash,
+    });
     if (insErr) {
       log.error("insert_failed", { error: insErr.message });
       return log.respond(new Response(JSON.stringify({ error: "internal_error", request_id: requestId }), { status: 500, headers: jsonHeaders }));

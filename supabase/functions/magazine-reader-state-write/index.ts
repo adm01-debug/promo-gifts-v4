@@ -1,11 +1,9 @@
 // supabase/functions/magazine-reader-state-write/index.ts
 //
 // B.2 — Upsert de bookmarks/última-página do leitor público.
-// FIX C1/A15: substitui o supabase.from('magazine_reader_state').upsert()
-// direto que o hook useMagazineReaderState.ts fazia do client anon.
-// Grava magazine_token_HASH, nunca o token cru (FIX R4).
-//
-// verify_jwt = false (leitor público, sem login)
+// verify_jwt = false (público) — ver supabase/config.toml.
+// FIX 2026-07-12: config.toml não tinha entrada, caiu em verify_jwt=true
+// default e bloqueava 100% do tráfego anônimo no gateway. Corrigido.
 
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
@@ -14,8 +12,6 @@ import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 import { RateLimiter } from "../_shared/rate-limiter.ts";
 
-// FIX A6: fingerprint aceita UUID OU o fallback "session-..." que o hook já usa
-// em Safari privado / storage bloqueado (senão 400 permanente para esses usuários)
 const bodySchema = z.object({
   token: z.string().min(24).max(64).regex(/^[a-f0-9]+$/i),
   fingerprint: z.string().min(8).max(128),
@@ -24,7 +20,6 @@ const bodySchema = z.object({
   sessionId: z.string().max(128).optional(),
 });
 
-// FIX A9: rate-limit real é o débounce de 600ms do hook; 5 writes/s é generoso o bastante
 const writeLimiter = new RateLimiter({ maxRequests: 5, windowMs: 1_000, keyPrefix: "mag-reader-write" });
 
 async function sha256Hex(input: string): Promise<string> {
@@ -63,8 +58,6 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const tokenHash = await sha256Hex(token);
 
-    // Confirma que o token corresponde a uma revista publicada antes de gravar
-    // (evita poluir a tabela com hashes de tokens que nunca existiram)
     const { data: mag, error: magErr } = await supabase
       .from("magazines").select("id").eq("public_token", token).eq("status", "published").maybeSingle();
 
@@ -88,7 +81,6 @@ Deno.serve(async (req) => {
     if (upsertError) {
       const code = (upsertError as { code?: string }).code ?? "";
       log.error("upsert_failed", { code, error: upsertError.message });
-      // FIX: 42501/42P01 → 503 sync_disabled (hook já cai em local-only graciosamente)
       if (code === "42501" || code === "42P01") {
         return log.respond(new Response(JSON.stringify({ error: "sync_disabled", request_id: requestId }), { status: 503, headers: jsonHeaders }));
       }

@@ -5,7 +5,10 @@
 // direto — RLS bloqueia anon em 100% das tabelas magazine_*. Esta edge
 // usa service_role internamente e é o ÚNICO caminho de leitura pública.
 //
-// verify_jwt = false (público, sem autenticação)
+// verify_jwt = false (público, sem autenticação) — ver supabase/config.toml.
+// FIX 2026-07-12 (validação exaustiva): config.toml não tinha entrada para
+// esta função e caiu no default verify_jwt=true, bloqueando 100% do tráfego
+// anônimo no gateway ANTES deste código rodar. Corrigido.
 
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
@@ -95,11 +98,10 @@ Deno.serve(async (req) => {
     }
 
     if (!magazine) {
-      // FIX A13: loga a falha SEM o token em claro (usa hash)
       await supabase.rpc("record_public_token_failure", {
         _resource_type: "magazine",
         _resource_id: tokenHash,
-        _attempted_token: tokenHash, // hash, não o token cru
+        _attempted_token: tokenHash,
         _ip: ip,
         _ua: req.headers.get("user-agent") ?? "",
         _reason: "not_found_or_unpublished",
@@ -109,7 +111,6 @@ Deno.serve(async (req) => {
       return log.respond(new Response(JSON.stringify({ error: "invalid_or_expired", request_id: requestId }), { status: 401, headers: jsonHeaders }));
     }
 
-    // Analytics: insere evento (view_count é derivado via rollup — FIX R5, A2)
     await supabase.from("magazine_public_view_events").insert({
       magazine_id: magazine.id,
       token_hash: tokenHash,
@@ -118,7 +119,6 @@ Deno.serve(async (req) => {
       referer_host: (() => { try { return req.headers.get("referer") ? new URL(req.headers.get("referer")!).host : null; } catch { return null; } })(),
     }).then(() => {}, (e: unknown) => log.warn("view_event_insert_failed", { err: String(e) }));
 
-    // Payload compatível com o tipo Magazine do front (camelCase)
     const payload = {
       id: magazine.id,
       title: magazine.title,
