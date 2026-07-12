@@ -979,6 +979,7 @@ export function useSellerCarts() {
     moveItemToCart,
     duplicateItemToCart,
     restoreItems,
+    restoreCartWithItems,
     clearCart: async (cartId: string) => {
       const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
       if (error) throw error;
