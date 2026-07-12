@@ -391,7 +391,7 @@ export default function QuotesListPage() {
           }}
         >
           <AlertDialogContent
-            className="!max-w-[460px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl"
+            className="!max-w-[345px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl"
             data-testid="quotes-bulk-delete-dialog"
           >
             <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent" />
