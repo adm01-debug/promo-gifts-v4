@@ -159,7 +159,7 @@ async function renderLoadedEditor() {
 
 describe('useMagazineEditor — stale ref race condition', () => {
   it('[A] setTitle → setBranding in same tick: BOTH mutations applied', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       // Two mutations in the same synchronous tick
@@ -173,7 +173,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[A2] setTitle → setSubtitle → setTitle: last write wins, no state loss', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Title A');
@@ -186,7 +186,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[B] setTitle preserves current items after addProducts', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     // First: add a product
     await act(async () => {
@@ -205,7 +205,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[C] publish() idempotency: calling twice does not corrupt state', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Ready to Publish');
@@ -236,7 +236,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
       ],
     };
 
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.removeItem('item_a');
@@ -252,7 +252,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
 
   it('[E] autosave debounce: magazineService.update called after 400ms', async () => {
     const { magazineService } = await import('@/services/magazineService');
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Debounced Save');
@@ -272,7 +272,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[F] setTitle with empty string clears title', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
     await act(async () => {
       result.current.setTitle('');
     });
@@ -280,7 +280,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[G] setBranding with partial patch does not lose existing branding fields', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
     const originalPrimary = result.current.magazine?.branding.primaryColor;
 
     await act(async () => {
@@ -295,7 +295,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
 
 describe('useMagazineEditor — loading states', () => {
   it('loaded=false initially', () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
     // Before useEffect runs, loaded may be false (implementation dependent)
     // Just ensure it becomes true
     act(() => { vi.runAllTimers(); });
@@ -310,13 +310,13 @@ describe('useMagazineEditor — loading states', () => {
   });
 
   it('saving=false initially', () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
     // saving starts false, becomes true on persist, then false after debounce
     expect(result.current.saving).toBe(false);
   });
 
   it('saving=true during debounce, false after 400ms', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Test Saving State');
