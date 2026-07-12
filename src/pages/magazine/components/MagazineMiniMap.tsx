@@ -169,6 +169,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
         {total > 1 &&
           validBookmarks.map((idx) => {
             const left = (idx / Math.max(total - 1, 1)) * 100;
+            const isCurrent = idx === currentIndex;
             return (
               <button
                 key={idx}
@@ -179,10 +180,19 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
-                className="absolute -translate-x-1/2 rounded-full bg-amber-400 shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white"
+                onKeyDown={(e) => e.stopPropagation()}
+                className={
+                  'absolute -translate-x-1/2 rounded-full shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white ' +
+                  (isCurrent ? 'bg-amber-300 scale-125' : 'bg-amber-400')
+                }
                 style={{ left: `${left}%`, width: 10, height: 10 }}
-                aria-label={`Ir para página marcada ${idx + 1}`}
-                title={`Marcador · página ${idx + 1}`}
+                aria-label={
+                  isCurrent
+                    ? `Página marcada ${idx + 1} (atual)`
+                    : `Ir para página marcada ${idx + 1}`
+                }
+                aria-current={isCurrent ? 'location' : undefined}
+                title={`Marcador · página ${idx + 1}${isCurrent ? ' (atual)' : ''}`}
               />
             );
           })}
