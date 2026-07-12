@@ -43,9 +43,9 @@ fi
 # ---------------------------------------------------------------------------
 # 3) Snapshot de contagens ANTES (invariantes esperados)
 # ---------------------------------------------------------------------------
-BEFORE_MAG=$(grep -c "untypedFrom<MagazineRow>('magazines')" "$FILE" || echo 0)
-BEFORE_ITEMS=$(grep -c "untypedFrom<MagazineItemRow>('magazine_items')" "$FILE" || echo 0)
-BEFORE_TOTAL=$(grep -c "untypedFrom" "$FILE" || echo 0)
+BEFORE_MAG=$(grep -c "untypedFrom<MagazineRow>('magazines')" "$FILE" || true)
+BEFORE_ITEMS=$(grep -c "untypedFrom<MagazineItemRow>('magazine_items')" "$FILE" || true)
+BEFORE_TOTAL=$(grep -c "untypedFrom" "$FILE" || true)
 echo "::notice::antes → magazines=$BEFORE_MAG · magazine_items=$BEFORE_ITEMS · untypedFrom total=$BEFORE_TOTAL"
 
 if [[ "$BEFORE_MAG" -eq 0 || "$BEFORE_ITEMS" -eq 0 ]]; then
@@ -110,7 +110,7 @@ rm -f "$FILE.bak"
 # ---------------------------------------------------------------------------
 # 5) Verificações pós-transformação
 # ---------------------------------------------------------------------------
-REM=$(grep -c "untypedFrom" "$FILE" || echo 0)
+REM=$(grep -c "untypedFrom" "$FILE" || true)
 if [[ "$REM" -ne 0 ]]; then
   echo "::error::sobrou 'untypedFrom' em $FILE após substituição:"
   grep -n "untypedFrom" "$FILE"
@@ -118,8 +118,8 @@ if [[ "$REM" -ne 0 ]]; then
   exit 4
 fi
 
-AFTER_MAG=$(grep -c "supabase.from('magazines')" "$FILE" || echo 0)
-AFTER_ITEMS=$(grep -c "supabase.from('magazine_items')" "$FILE" || echo 0)
+AFTER_MAG=$(grep -c "supabase.from('magazines')" "$FILE" || true)
+AFTER_ITEMS=$(grep -c "supabase.from('magazine_items')" "$FILE" || true)
 
 if [[ "$AFTER_MAG" -lt "$BEFORE_MAG" ]]; then
   echo "::error::supabase.from('magazines') novos ($AFTER_MAG) < untypedFrom<MagazineRow> originais ($BEFORE_MAG)"
