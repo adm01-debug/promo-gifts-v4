@@ -16,19 +16,22 @@
  * Contrato: nunca lança, nunca bloqueia render, nunca depende de rede.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 // ---------- Chaves ----------
 const BOOKMARKS_KEY = (token: string) => `mag:bookmarks:${token}`;
 const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
 const FINGERPRINT_KEY = 'mag:fingerprint';
-const REMOTE_DISABLED_KEY = 'mag:remote-disabled'; // flag por sessão
+const REMOTE_DISABLED_KEY = 'mag:remote-disabled'; // flag persistente entre reloads
+const TOAST_SHOWN_KEY = 'mag:remote-toast-shown'; // sessionStorage — 1x por aba
 
 // ---------- Constantes ----------
 const REMOTE_TABLE = 'magazine_reader_state';
 const DEBOUNCE_MS = 600;
 const MAX_BOOKMARKS = 500;
 const REMOTE_TIMEOUT_MS = 4000;
+const TOAST_ID = 'magazine-reader-state-remote-disabled';
 
 // ---------- Utils ----------
 function safeStorage(): Storage | null {
