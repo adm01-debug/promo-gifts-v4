@@ -60,9 +60,14 @@ export default function PublicMagazineView() {
   const [pageIdx, setPageIdx] = useState(() => {
     const raw = Number(searchParams.get('p'));
     if (Number.isFinite(raw) && raw > 0) return raw - 1;
-    if (token) {
-      const saved = Number(localStorage.getItem(LAST_PAGE_KEY(token)));
-      if (Number.isFinite(saved) && saved > 0) return saved;
+    // C1: localStorage pode lançar em Safari privado / storage bloqueado.
+    try {
+      if (token) {
+        const saved = Number(localStorage.getItem(LAST_PAGE_KEY(token)));
+        if (Number.isFinite(saved) && saved > 0) return saved;
+      }
+    } catch {
+      /* storage indisponível — fallback 0 */
     }
     return 0;
   });
