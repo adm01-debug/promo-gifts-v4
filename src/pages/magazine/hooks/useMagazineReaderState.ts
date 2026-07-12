@@ -1,12 +1,26 @@
 /**
  * useMagazineReaderState — estado unificado do leitor da revista pública.
  *
+ * FIX C1 (auditoria BD, 2026-07-12): este hook ANTES fazia
+ * `supabase.from('magazine_reader_state').select/upsert(...)` DIRETO do
+ * client anônimo. Com `GRANT SELECT ... TO anon` + `USING (true)`, qualquer
+ * visitante conseguia listar `magazine_token` de TODAS as revistas do
+ * sistema — o token é a credencial de acesso das revistas públicas.
+ *
+ * A correção fecha `anon` em TODAS as tabelas magazine_* via RLS+REVOKE no
+ * banco, e este hook passa a falar exclusivamente com duas edge functions
+ * que usam service_role internamente e nunca expõem o token cru ao BD
+ * (gravam sha256(token), não o token):
+ *
+ *   - GET  magazine-reader-state-read  → busca bookmarks/last-page
+ *   - POST magazine-reader-state-write → upsert (debounced)
+ *
  * Persistência:
  *  1. localStorage-first (síncrono, offline-friendly, latência zero)
- *  2. Sync best-effort com BD Gold (tabela `magazine_reader_state`) — se
- *     disponível. Em qualquer erro (tabela inexistente, RLS bloqueia,
- *     rede offline) o sync é desativado silenciosamente para a sessão
- *     e o localStorage segue como único ponto de verdade.
+ *  2. Sync best-effort com as edges acima. Em qualquer erro (edge fora do
+ *     ar, rede offline, revista despublicada) o sync é desativado
+ *     silenciosamente para a sessão e o localStorage segue como único
+ *     ponto de verdade.
  *
  * Chaves compatíveis com hooks legados:
  *  - `mag:bookmarks:<token>`   → number[]
@@ -17,7 +31,6 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 // ---------- Chaves ----------
 const BOOKMARKS_KEY = (token: string) => `mag:bookmarks:${token}`;
@@ -27,11 +40,15 @@ const REMOTE_DISABLED_KEY = 'mag:remote-disabled'; // flag persistente entre rel
 const TOAST_SHOWN_KEY = 'mag:remote-toast-shown'; // sessionStorage — 1x por aba
 
 // ---------- Constantes ----------
-const REMOTE_TABLE = 'magazine_reader_state';
 const DEBOUNCE_MS = 600;
 const MAX_BOOKMARKS = 500;
 const REMOTE_TIMEOUT_MS = 4000;
 const TOAST_ID = 'magazine-reader-state-remote-disabled';
+
+// FIX C1: URLs das edge functions (nunca acessa a tabela direto)
+const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL ?? ''}/functions/v1`;
+const READ_ENDPOINT = `${SUPABASE_FUNCTIONS_URL}/magazine-reader-state-read`;
+const WRITE_ENDPOINT = `${SUPABASE_FUNCTIONS_URL}/magazine-reader-state-write`;
 
 // ---------- Utils ----------
 function safeStorage(): Storage | null {
@@ -119,9 +136,6 @@ function isRemoteDisabled(storage: Storage | null): boolean {
 }
 
 function disableRemote(storage: Storage | null, reason: string): void {
-  // Persiste a flag SOMENTE se storage está disponível. Em modo privado
-  // extremo (sem localStorage) a flag vive apenas em memória via ref
-  // dentro do hook — mas o toast ainda precisa aparecer.
   if (storage) {
     try {
       storage.setItem(REMOTE_DISABLED_KEY, '1');
@@ -130,18 +144,11 @@ function disableRemote(storage: Storage | null, reason: string): void {
     }
   }
   if (typeof console !== 'undefined' && typeof console.info === 'function') {
-    // Log informativo (não é erro — é degradação esperada quando a tabela
-    // ainda não foi promovida ao Gold ou quando RLS bloqueia o token).
     console.info('[magazine-reader-state] remote sync disabled:', reason);
   }
   notifyRemoteDisabled(reason);
 }
 
-/**
- * Feedback visual one-shot quando o sync remoto é desativado por RLS/permission/
- * tabela ausente. Guardado por `sessionStorage` — não repete no mesmo tab e
- * não atrapalha o leitor (o localStorage continua funcionando).
- */
 function notifyRemoteDisabled(reason: string): void {
   if (typeof window === 'undefined') return;
   try {
@@ -149,17 +156,16 @@ function notifyRemoteDisabled(reason: string): void {
     if (ss.getItem(TOAST_SHOWN_KEY) === '1') return;
     ss.setItem(TOAST_SHOWN_KEY, '1');
   } catch {
-    // sessionStorage indisponível — segue sem persistir; toast pode aparecer
-    // 1x por render, mas o `id` do sonner deduplica dentro da mesma sessão.
+    // sessionStorage indisponível — segue sem persistir
   }
 
-  const isPermission = /42501|PGRST301|permission denied/i.test(reason);
-  const isMissing = /42P01|does not exist|Not Acceptable/i.test(reason);
+  const isUnauthorized = /401|invalid_or_expired/i.test(reason);
+  const isServiceDown = /503|sync_disabled/i.test(reason);
 
-  const description = isPermission
-    ? 'Sem permissão para sincronizar (RLS). Seus marcadores continuam salvos neste dispositivo.'
-    : isMissing
-      ? 'Sincronização entre dispositivos ainda não está ativa. Marcadores salvos localmente.'
+  const description = isUnauthorized
+    ? 'Este link expirou. Seus marcadores continuam salvos neste dispositivo.'
+    : isServiceDown
+      ? 'Sincronização temporariamente indisponível. Marcadores salvos localmente.'
       : 'Falha ao sincronizar com o servidor. Marcadores salvos localmente.';
 
   toast.info('Modo local ativado', {
@@ -169,12 +175,10 @@ function notifyRemoteDisabled(reason: string): void {
   });
 }
 
-// Promise com timeout — evita que o botão de bookmark fique dependente
-// de uma requisição pendurada por 30s se o BD estiver lento.
-function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T> {
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('remote-timeout')), ms);
-    Promise.resolve(p).then(
+    p.then(
       (v) => {
         clearTimeout(t);
         resolve(v);
@@ -195,11 +199,6 @@ export interface MagazineReaderState {
   toggleBookmark: (index: number) => void;
   clearBookmarks: () => void;
   setLastPage: (index: number) => void;
-  /**
-   * `local-only`  → sync remoto desativado (offline, RLS, tabela ausente)
-   * `syncing`     → tentativa em curso
-   * `synced`      → última operação remota bem-sucedida
-   */
   syncStatus: 'local-only' | 'syncing' | 'synced';
 }
 
@@ -218,17 +217,13 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     isRemoteDisabled(storage) ? 'local-only' : 'syncing',
   );
 
-  // Buffers p/ debounce remoto
   const pendingRef = useRef<{ bookmarks: number[]; lastPageIndex: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteDisabledRef = useRef<boolean>(isRemoteDisabled(storage));
-  // Refs para leitura sempre-atual do state — evita stale closures quando
-  // duas ações ocorrem no mesmo tick antes do próximo render (BUG A).
   const bookmarksRef = useRef<Set<number>>(bookmarks);
   const lastPageIndexRef = useRef<number>(lastPageIndex);
   bookmarksRef.current = bookmarks;
   lastPageIndexRef.current = lastPageIndex;
-  // Guard de unmount para evitar setState em componente desmontado (BUG B).
   const isMountedRef = useRef<boolean>(true);
   useEffect(() => {
     isMountedRef.current = true;
@@ -240,7 +235,6 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     if (isMountedRef.current) setSyncStatus(s);
   }, []);
 
-  // Re-hidrata local quando o token mudar (troca de revista)
   useEffect(() => {
     if (!token) {
       setBookmarks(new Set());
@@ -251,7 +245,6 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     setLastPageIndex(readLastPageLocal(storage, token));
   }, [token, storage]);
 
-  // Sync entre abas: outra aba mudou os marcadores/última página
   useEffect(() => {
     if (!token || !storage) return;
     const bkKey = BOOKMARKS_KEY(token);
@@ -264,7 +257,7 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     return () => window.removeEventListener('storage', onStorage);
   }, [token, storage]);
 
-  // Fetch inicial do remoto + merge (union de bookmarks, max de lastPage)
+  // FIX C1: fetch inicial via edge magazine-reader-state-read (nunca a tabela direto)
   useEffect(() => {
     if (!token) return;
     if (remoteDisabledRef.current) {
@@ -276,76 +269,50 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     (async () => {
       try {
         safeSetSyncStatus('syncing');
-        const query = supabase
-          .from(REMOTE_TABLE as never)
-          .select('bookmarks,last_page_index')
-          .eq('magazine_token', token)
-          .eq('viewer_fingerprint', fingerprint)
-          .maybeSingle();
-
-        const { data, error } = (await withTimeout(query, REMOTE_TIMEOUT_MS)) as {
-          data: { bookmarks: number[] | null; last_page_index: number | null } | null;
-          error: { code?: string; message?: string } | null;
-        };
+        const url = `${READ_ENDPOINT}?token=${encodeURIComponent(token)}&fingerprint=${encodeURIComponent(fingerprint)}`;
+        const res = await withTimeout(fetch(url, { method: 'GET' }), REMOTE_TIMEOUT_MS);
 
         if (cancelled) return;
 
-        if (error) {
-          // 42P01 = tabela inexistente | 42501 = permission denied | PGRST* = PostgREST
-          const code = error.code ?? '';
-          const msg = error.message ?? '';
-          if (
-            code === '42P01' ||
-            code === '42501' ||
-            code === 'PGRST301' ||
-            /permission denied|does not exist|Not Acceptable/i.test(msg)
-          ) {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({ error: `http_${res.status}` }));
+          const reason = `${res.status}:${body?.error ?? 'unknown'}`;
+          if (res.status === 401 || res.status === 503) {
             remoteDisabledRef.current = true;
-            disableRemote(storage, `${code || 'unknown'}: ${msg}`);
-            safeSetSyncStatus('local-only');
-            return;
+            disableRemote(storage, reason);
           }
-          // Outros erros: mantém local-only nesta sessão, sem persistir flag
           safeSetSyncStatus('local-only');
           return;
         }
 
-        if (data) {
-          const remoteBk = Array.isArray(data.bookmarks)
-            ? data.bookmarks.filter((n) => Number.isFinite(n) && n >= 0)
-            : [];
-          const remoteLast =
-            typeof data.last_page_index === 'number' && data.last_page_index >= 0
-              ? data.last_page_index
-              : 0;
+        const data = (await res.json()) as { bookmarks: number[]; lastPageIndex: number };
+        const remoteBk = Array.isArray(data.bookmarks)
+          ? data.bookmarks.filter((n) => Number.isFinite(n) && n >= 0)
+          : [];
+        const remoteLast =
+          typeof data.lastPageIndex === 'number' && data.lastPageIndex >= 0 ? data.lastPageIndex : 0;
 
-          setBookmarks((current) => {
-            const union = new Set<number>(current);
-            for (const n of remoteBk) union.add(n);
-            // Se a fusão mudou algo, persiste local (mantém consistência)
-            if (union.size !== current.size) {
-              writeBookmarksLocal(storage, token, union);
-              return union;
-            }
-            return current;
-          });
+        setBookmarks((current) => {
+          const union = new Set<number>(current);
+          for (const n of remoteBk) union.add(n);
+          if (union.size !== current.size) {
+            writeBookmarksLocal(storage, token, union);
+            return union;
+          }
+          return current;
+        });
 
-          setLastPageIndex((current) => {
-            // Se o remoto está à frente, adota; senão mantém local (usuário
-            // pode ter avançado offline).
-            if (remoteLast > current) {
-              writeLastPageLocal(storage, token, remoteLast);
-              return remoteLast;
-            }
-            return current;
-          });
-        }
+        setLastPageIndex((current) => {
+          if (remoteLast > current) {
+            writeLastPageLocal(storage, token, remoteLast);
+            return remoteLast;
+          }
+          return current;
+        });
 
         safeSetSyncStatus('synced');
       } catch (err) {
         if (cancelled) return;
-        // Timeout, offline, ou outro — degradar para local-only nesta sessão
-        // (sem persistir a flag; próxima sessão tenta de novo).
         safeSetSyncStatus('local-only');
         if (typeof console !== 'undefined') {
           console.info('[magazine-reader-state] initial fetch failed, going local-only:', err);
@@ -356,9 +323,9 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     return () => {
       cancelled = true;
     };
-  }, [token, fingerprint, storage]);
+  }, [token, fingerprint, storage, safeSetSyncStatus]);
 
-  // Envia buffer pendente para o remoto (debounced)
+  // FIX C1: envia via edge magazine-reader-state-write (nunca upsert direto na tabela)
   const flushRemote = useCallback(async () => {
     if (!token || remoteDisabledRef.current) return;
     const payload = pendingRef.current;
@@ -367,38 +334,36 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
 
     try {
       safeSetSyncStatus('syncing');
-      const upsert = supabase.from(REMOTE_TABLE as never).upsert(
-        {
-          magazine_token: token,
-          viewer_fingerprint: fingerprint,
-          bookmarks: payload.bookmarks,
-          last_page_index: payload.lastPageIndex,
-        } as never,
-        { onConflict: 'magazine_token,viewer_fingerprint' },
+      const res = await withTimeout(
+        fetch(WRITE_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            fingerprint,
+            bookmarks: payload.bookmarks,
+            lastPageIndex: payload.lastPageIndex,
+          }),
+        }),
+        REMOTE_TIMEOUT_MS,
       );
-      const { error } = (await withTimeout(upsert, REMOTE_TIMEOUT_MS)) as {
-        error: { code?: string; message?: string } | null;
-      };
-      if (error) {
-        const code = error.code ?? '';
-        const msg = error.message ?? '';
-        if (
-          code === '42P01' ||
-          code === '42501' ||
-          code === 'PGRST301' ||
-          /permission denied|does not exist/i.test(msg)
-        ) {
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: `http_${res.status}` }));
+        const reason = `write:${res.status}:${body?.error ?? 'unknown'}`;
+        if (res.status === 401 || res.status === 503) {
           remoteDisabledRef.current = true;
-          disableRemote(storage, `write:${code || 'unknown'}:${msg}`);
+          disableRemote(storage, reason);
         }
         safeSetSyncStatus('local-only');
         return;
       }
+
       safeSetSyncStatus('synced');
     } catch {
       safeSetSyncStatus('local-only');
     }
-  }, [token, fingerprint, storage]);
+  }, [token, fingerprint, storage, safeSetSyncStatus]);
 
   const scheduleRemote = useCallback(
     (bkList: number[], lastIdx: number) => {
@@ -412,14 +377,12 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     [flushRemote],
   );
 
-  // Flush ao desmontar / trocar de token — evita perder writes pendentes
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      // Best-effort: dispara flush final (fire-and-forget)
       void flushRemote();
     };
   }, [flushRemote]);
@@ -434,10 +397,8 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
         const next = new Set(current);
         if (next.has(index)) next.delete(index);
         else if (next.size < MAX_BOOKMARKS) next.add(index);
-        else return current; // limite de segurança — ignora silenciosamente
+        else return current;
         writeBookmarksLocal(storage, token, next);
-        // Ler lastPageIndex via ref — evita stale closure quando setLastPage
-        // e toggleBookmark ocorrem no mesmo tick (BUG A).
         scheduleRemote(Array.from(next).sort((a, b) => a - b), lastPageIndexRef.current);
         return next;
       });
@@ -462,7 +423,6 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
       setLastPageIndex((current) => {
         if (current === safe) return current;
         writeLastPageLocal(storage, token, safe);
-        // Ler bookmarks via ref — evita stale closure (BUG A).
         scheduleRemote(
           Array.from(bookmarksRef.current).sort((a, b) => a - b),
           safe,
