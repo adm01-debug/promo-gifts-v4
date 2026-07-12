@@ -294,10 +294,8 @@ describe('useMagazineEditor — stale ref race condition', () => {
 });
 
 describe('useMagazineEditor — loading states', () => {
-  it('loaded=false initially', () => {
+  it('loaded=false initially', async () => {
     const { result } = await renderLoadedEditor();
-    // Before useEffect runs, loaded may be false (implementation dependent)
-    // Just ensure it becomes true
     act(() => { vi.runAllTimers(); });
     expect(result.current.loaded).toBe(true);
   });
@@ -309,7 +307,7 @@ describe('useMagazineEditor — loading states', () => {
     expect(result.current.magazine).toBeNull();
   });
 
-  it('saving=false initially', () => {
+  it('saving=false initially', async () => {
     const { result } = await renderLoadedEditor();
     // saving starts false, becomes true on persist, then false after debounce
     expect(result.current.saving).toBe(false);
