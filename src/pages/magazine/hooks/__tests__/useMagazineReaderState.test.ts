@@ -211,38 +211,31 @@ describe('useMagazineReaderState — persistência local', () => {
   });
 });
 
-describe('useMagazineReaderState — fallback quando Supabase falha', () => {
-  it('42P01 dispara toast + persiste flag remote-disabled', async () => {
-    mockError = { code: '42P01', message: 'relation does not exist' };
+describe('useMagazineReaderState — fallback quando edge falha', () => {
+  it('503 dispara toast + persiste flag remote-disabled', async () => {
+    readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     renderHook(() => useMagazineReaderState(TOKEN));
-    // Aguarda o fetch async completar
     await new Promise((r) => setTimeout(r, 20));
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');
     expect(toastCalls.length).toBeGreaterThanOrEqual(1);
     expect(toastCalls[0].title).toBe('Modo local ativado');
+    expect(String(toastCalls[0].opts?.description ?? '')).toMatch(/temporariamente indispon/i);
   });
 
-  it('42501 (RLS) → copy contextual "Sem permissão"', async () => {
-    sessionStorage.clear(); // permitir novo toast
-    mockError = { code: '42501', message: 'permission denied for table magazine_reader_state' };
-    renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
-    const permToast = toastCalls.find((t) =>
-      String(t.opts?.description ?? '').includes('Sem permissão'),
-    );
-    expect(permToast).toBeDefined();
-  });
-
-  it('PGRST301 detectado por código', async () => {
+  it('401 (token inválido/expirado) → copy contextual "expirou"', async () => {
     sessionStorage.clear();
-    mockError = { code: 'PGRST301', message: 'JWT expired' };
+    readReply = { kind: 'status', status: 401, body: { error: 'invalid_or_expired' } };
     renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
+    const expiredToast = toastCalls.find((t) =>
+      String(t.opts?.description ?? '').match(/expirou/i),
+    );
+    expect(expiredToast).toBeDefined();
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');
   });
 
   it('toast é one-shot: 2 mounts consecutivos → 1 toast', async () => {
-    mockError = { code: '42P01', message: 'does not exist' };
+    readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { unmount } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     unmount();
@@ -252,15 +245,15 @@ describe('useMagazineReaderState — fallback quando Supabase falha', () => {
     expect(toastCalls.length).toBe(0);
   });
 
-  it('erro sem código conhecido NÃO persiste flag (transitório)', async () => {
-    mockError = { code: '08006', message: 'connection failure' };
+  it('erro de rede (throw) NÃO persiste flag (transitório)', async () => {
+    readReply = { kind: 'throw', error: new Error('network down') };
     renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     expect(localStorage.getItem('mag:remote-disabled')).toBeNull();
   });
 
   it('sem remote-disabled, funciona 100% local (writes seguem no localStorage)', async () => {
-    mockError = { code: '42P01', message: 'does not exist' };
+    readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     await act(async () => {
@@ -291,8 +284,7 @@ describe('useMagazineReaderState — fingerprint', () => {
 
 describe('useMagazineReaderState — merge de estado remoto', () => {
   it('união de bookmarks (local ∪ remoto)', async () => {
-    mockError = null;
-    mockData = { bookmarks: [10, 20], last_page_index: 0 };
+    readReply = { kind: 'ok', body: { bookmarks: [10, 20], lastPageIndex: 0 } };
     localStorage.setItem(BK_KEY, JSON.stringify([1, 2]));
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
@@ -300,8 +292,7 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
   });
 
   it('lastPage: adota remoto se estiver à frente', async () => {
-    mockError = null;
-    mockData = { bookmarks: [], last_page_index: 15 };
+    readReply = { kind: 'ok', body: { bookmarks: [], lastPageIndex: 15 } };
     localStorage.setItem(LP_KEY, '5');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
@@ -309,17 +300,15 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
   });
 
   it('lastPage: mantém local se remoto atrás (offline avançou)', async () => {
-    mockError = null;
-    mockData = { bookmarks: [], last_page_index: 2 };
+    readReply = { kind: 'ok', body: { bookmarks: [], lastPageIndex: 2 } };
     localStorage.setItem(LP_KEY, '10');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     expect(result.current.lastPageIndex).toBe(10);
   });
 
-  it('remoto com bookmarks null/undefined não quebra', async () => {
-    mockError = null;
-    mockData = { bookmarks: null, last_page_index: null };
+  it('remoto com bookmarks null/lastPageIndex null não quebra', async () => {
+    readReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     expect(result.current.bookmarks.size).toBe(0);
