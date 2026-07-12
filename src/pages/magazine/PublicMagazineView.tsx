@@ -47,6 +47,7 @@ import { MagazineMiniMap } from './components/MagazineMiniMap';
 import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
 import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
 import { usePageZoom } from './hooks/usePageZoom';
+import { usePresentationMode } from './hooks/usePresentationMode';
 import './magazine.css';
 
 const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
