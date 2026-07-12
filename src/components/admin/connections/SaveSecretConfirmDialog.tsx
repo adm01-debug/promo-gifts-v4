@@ -165,7 +165,7 @@ export function SaveSecretConfirmDialog({
             <Button
               onClick={() => onConfirm()}
               disabled={isLoading}
-              className="inline-flex h-8 items-center rounded-md px-3.5 text-xs font-semibold shadow-sm"
+              className="inline-flex h-[26px] min-h-[26px] items-center rounded-md px-3.5 text-xs font-semibold shadow-sm"
             >
               {isLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               Sim, {verb.toLowerCase()}

@@ -165,7 +165,7 @@ export function RotateSecretConfirmDialog({
             <Button
               onClick={() => onConfirm(notes.trim() || undefined)}
               disabled={isLoading}
-              className="inline-flex h-8 items-center rounded-md bg-warning px-3.5 text-xs font-semibold text-warning-foreground shadow-sm hover:bg-warning/90"
+              className="inline-flex h-[26px] min-h-[26px] items-center rounded-md bg-warning px-3.5 text-xs font-semibold text-warning-foreground shadow-sm hover:bg-warning/90"
             >
               {isLoading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               Sim, rotacionar

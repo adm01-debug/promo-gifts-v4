@@ -320,8 +320,8 @@ export function ProductSupplierSection({
                                   </div>
                                   <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
                                     <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
-                                      <AlertDialogCancel className="mt-0 h-8 rounded-md border-border/70 bg-transparent px-3 text-xs">Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => removeSource(src.id)} className="inline-flex h-8 items-center rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90">
+                                      <AlertDialogCancel className="mt-0 h-[26px] min-h-[26px] rounded-md border-border/70 bg-transparent px-3 py-0 text-xs">Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => removeSource(src.id)} className="inline-flex h-[26px] min-h-[26px] items-center rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90">
                                         Remover
                                       </AlertDialogAction>
                                     </AlertDialogFooter>

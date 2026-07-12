@@ -474,7 +474,7 @@ export default function QuotesListPage() {
                 <AlertDialogCancel
                   disabled={isBulkDeleting}
                   onClick={cancelBulkDelete}
-                  className="mt-0 h-8 rounded-md border-border/70 bg-transparent px-3 text-xs"
+                  className="mt-0 h-[26px] min-h-[26px] rounded-md border-border/70 bg-transparent px-3 py-0 text-xs"
                 >
                   Cancelar
                 </AlertDialogCancel>
@@ -485,7 +485,7 @@ export default function QuotesListPage() {
                     e.preventDefault();
                     void handleBulkDelete();
                   }}
-                  className="inline-flex h-8 items-center rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90"
+                  className="inline-flex h-[26px] min-h-[26px] items-center rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90"
                 >
                   {isBulkDeleting
                     ? `Excluindo… (${bulkDeleteProgress.done}/${bulkDeleteProgress.total})`
