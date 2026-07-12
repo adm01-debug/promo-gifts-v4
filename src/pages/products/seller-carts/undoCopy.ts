@@ -26,28 +26,39 @@ export const UNDO_DURATION_LABEL = '8 segundos';
 /** Descrição padrão do toast "Desfazer" (com tempo consistente). */
 export const UNDO_TOAST_DESCRIPTION = `Você pode desfazer por até ${UNDO_DURATION_LABEL}.`;
 
+/**
+ * Normaliza um contador vindo da UI: nunca deixa NaN/Infinity/negativo/fracionário
+ * vazar para a copy visível. Fallback defensivo = 1 (singular seguro).
+ */
+function normalizeCount(count: number): number {
+  if (!Number.isFinite(count)) return 1;
+  const n = Math.floor(count);
+  return n < 0 ? 0 : n;
+}
+
 /** Título do ConfirmDialog destrutivo (singular ou plural). */
 export function deleteConfirmDialogTitle(count: number): string {
-  return count <= 1 ? 'Excluir carrinho?' : `Excluir ${count} carrinhos?`;
+  const n = normalizeCount(count);
+  return n <= 1 ? 'Excluir carrinho?' : `Excluir ${n} carrinhos?`;
 }
 
 /** Descrição do ConfirmDialog destrutivo — inclui o tempo de undo. */
 export function deleteConfirmDialogDescription(count: number): string {
-  const prefix =
-    count <= 1
-      ? 'O carrinho será removido'
-      : 'Os carrinhos serão removidos';
+  const n = normalizeCount(count);
+  const prefix = n <= 1 ? 'O carrinho será removido' : 'Os carrinhos serão removidos';
   return `${prefix} — você pode desfazer por até ${UNDO_DURATION_LABEL} após a confirmação.`;
 }
 
 /** Título do toast "Desfazer" após DELETE (singular/plural). */
 export function deletedToastTitle(count: number): string {
-  return count <= 1 ? 'Carrinho excluído' : `${count} carrinhos excluídos`;
+  const n = normalizeCount(count);
+  return n <= 1 ? 'Carrinho excluído' : `${n} carrinhos excluídos`;
 }
 
 /** Texto do CTA de confirmação (bulk exibe contagem; individual usa label curto). */
 export function confirmDialogConfirmLabel(count: number): string {
-  return count <= 1 ? 'Confirmar exclusão' : `Excluir ${count}`;
+  const n = normalizeCount(count);
+  return n <= 1 ? 'Confirmar exclusão' : `Excluir ${n}`;
 }
 
 /** Copy do resultado do restore para o caso individual (1 carrinho). */
@@ -56,5 +67,8 @@ export const RESTORE_SINGLE_ERROR = 'Não foi possível restaurar o carrinho.';
 
 /** Copy do toast "Item removido" (undo dentro de um carrinho). */
 export function itemRemovedToastTitle(itemName: string): string {
-  return `${itemName} removido`;
+  const safe = typeof itemName === 'string' && itemName.trim().length > 0
+    ? itemName.trim()
+    : 'Item';
+  return `${safe} removido`;
 }
