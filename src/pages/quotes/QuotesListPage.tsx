@@ -356,7 +356,7 @@ export default function QuotesListPage() {
                     toast.success(`${ids.length} orçamento(s) exportado(s)`);
                   });
                 }}
-                onDuplicate={(id) => duplicateQuote(id)}
+                onDuplicate={(id) => handleDuplicateWithUndo(id)}
               />
             )}
           </div>
