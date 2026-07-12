@@ -378,5 +378,127 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     );
     const uniq = new Set(itemIds);
     expect(uniq.size).toBe(itemIds.length);
+
+  test("alta latência no DELETE — contador só inicia após resposta e expira corretamente", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    await gotoAndSettle(page, "/orcamentos");
+    const seed = await seedQuotesForStatusChips(page);
+    expect(seed.skipped, `seed falhou: ${seed.skipped}`).toBeNull();
+
+    await gotoAndSettle(page, "/orcamentos");
+    await expect(page.locator(Sel.page.title("orcamentos")).first()).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.locator('button[data-chip-key="all"]').click();
+
+    const firstRow = page.locator('[data-testid^="quote-row-"]').first();
+    await expect(firstRow).toBeVisible({ timeout: 10_000 });
+    const rowTestId = (await firstRow.getAttribute("data-testid"))!;
+    const quoteId = rowTestId.replace(/^quote-row-/, "");
+
+    // Latência artificial de ~4s no DELETE. Como o timer do toast só é
+    // criado APÓS o `deleteQuote` resolver, a latência não deve encurtar
+    // a janela de undo — o objetivo é garantir esse invariante.
+    const DELETE_LATENCY_MS = 4_000;
+    let deleteCalls = 0;
+    let deleteRespondedAt = 0;
+    let postCalls = 0;
+
+    await page.route(QUOTES_REST, async (route, request) => {
+      const method = request.method();
+      if (method === "DELETE") {
+        deleteCalls += 1;
+        await new Promise((r) => setTimeout(r, DELETE_LATENCY_MS));
+        deleteRespondedAt = Date.now();
+        await route.fulfill({ status: 204, body: "" });
+        return;
+      }
+      if (method === "POST") {
+        postCalls += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify([{ id: `restored-${quoteId}` }]),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    const clickedAt = Date.now();
+    await page.getByTestId(`quote-row-more-${quoteId}`).click();
+    await page.getByTestId(`quote-row-menu-delete-${quoteId}`).click();
+    await page.getByTestId("quote-list-delete-dialog-yes").click();
+
+    // Enquanto o DELETE está pendente (primeiros ~2s da latência) o toast
+    // de Desfazer NÃO deve estar visível — o wrapper só o dispara após
+    // o await resolver com sucesso.
+    await expect
+      .poll(async () => page.locator(UNDO_TOAST).count(), {
+        timeout: 2_000,
+        intervals: [200, 400],
+      })
+      .toBe(0);
+
+    // Toast aparece SOMENTE após a resposta do DELETE.
+    const toast = page.locator(UNDO_TOAST);
+    await expect(toast).toBeVisible({ timeout: DELETE_LATENCY_MS + 10_000 });
+    const toastVisibleAt = Date.now();
+
+    // Sanidade: toast surgiu depois da resposta do DELETE (não antes),
+    // provando que a latência foi respeitada sem quebrar a UX.
+    expect(deleteRespondedAt - clickedAt).toBeGreaterThanOrEqual(
+      DELETE_LATENCY_MS - 500,
+    );
+    expect(toastVisibleAt).toBeGreaterThanOrEqual(deleteRespondedAt - 100);
+
+    // Contador inicia com valor completo (não descontou os 4s de latência).
+    const countdown = page.locator(UNDO_COUNTDOWN);
+    await expect(countdown).toBeVisible();
+    const initialSec = Number(await countdown.getAttribute("data-remaining-sec"));
+    expect(initialSec).toBeGreaterThan(0);
+    expect(initialSec).toBeLessThanOrEqual(8);
+
+    // Contador decrementa até 0 (ou toast é dispensado).
+    await expect
+      .poll(
+        async () => {
+          const el = page.locator(UNDO_COUNTDOWN);
+          const count = await el.count();
+          if (count === 0) return 0;
+          return Number((await el.getAttribute("data-remaining-sec")) ?? 0);
+        },
+        { timeout: 20_000, intervals: [200, 500, 1000] },
+      )
+      .toBe(0);
+
+    // Botão fica desabilitado OU sai do DOM ao expirar.
+    await expect
+      .poll(
+        async () => {
+          const btn = page.locator(UNDO_BTN);
+          const count = await btn.count();
+          if (count === 0) return "absent";
+          const disabled = await btn.isDisabled();
+          const expired = await btn.getAttribute("data-expired");
+          return disabled || expired === "true" ? "disabled" : "clickable";
+        },
+        { timeout: 5_000, intervals: [100, 250, 500] },
+      )
+      .not.toBe("clickable");
+
+    // Toast é totalmente removido do DOM após onTimeout.
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(0, { timeout: 5_000 });
+
+    // Nenhum POST de restore foi disparado durante toda a janela.
+    expect(deleteCalls).toBeGreaterThanOrEqual(1);
+    expect(postCalls).toBe(0);
+    await expect
+      .poll(() => postCalls, { timeout: 2_000, intervals: [200, 400] })
+      .toBe(0);
   });
+});
 });
