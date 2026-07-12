@@ -1,6 +1,10 @@
 /**
  * Regras de validação por step do editor de Magazine.
  * Cada step reporta bloqueios (impedem avançar) e avisos (permitem avançar).
+ *
+ * PhD-level null safety:
+ * - All field accesses use optional chaining / nullish coalescing
+ * - Handles legacy schemas where branding or content may be null
  */
 
 import type { Magazine } from '@/types/magazine';
@@ -17,24 +21,52 @@ export function validateStep(step: StepId, m: Magazine): StepValidation {
   const warnings: string[] = [];
 
   if (step === 'identity') {
-    if (!m.title.trim()) blocks.push('Defina um título para a revista.');
-    if (m.branding.clientLogoUrl && !/^https?:\/\//.test(m.branding.clientLogoUrl)) {
+    // FIX: null-safe title access — legacy rows may have null title
+    const title = (m.title ?? '').trim();
+    if (!title) blocks.push('Defina um título para a revista.');
+
+    // FIX: optional chaining on branding — schema migration may leave branding null
+    const logoUrl = m.branding?.clientLogoUrl;
+    if (logoUrl && !/^https?:\/\//.test(logoUrl)) {
       warnings.push('URL do logo do cliente parece inválida.');
     }
   }
 
   if (step === 'products') {
-    if (m.items.length === 0) blocks.push('Adicione ao menos um produto.');
-    if (m.items.length === 1) warnings.push('Revistas com um só produto viram uma one-pager.');
+    // FIX: null-safe items access
+    const itemCount = (m.items ?? []).length;
+    if (itemCount === 0) blocks.push('Adicione ao menos um produto.');
+    if (itemCount === 1) warnings.push('Revistas com um só produto viram uma one-pager.');
   }
 
   if (step === 'design' || step === 'layout') {
-    if (m.items.length === 0) blocks.push('Adicione produtos antes de escolher o design.');
+    // FIX: null-safe items access
+    if ((m.items ?? []).length === 0) blocks.push('Adicione produtos antes de escolher o design.');
   }
 
   return { blocks, warnings };
 }
 
 export function canPublish(m: Magazine): boolean {
-  return m.title.trim().length > 0 && m.items.length > 0;
+  // FIX: null-safe title + items — prevents crash when magazine is partially hydrated
+  const hasTitle = (m.title ?? '').trim().length > 0;
+  const hasProducts = (m.items ?? []).length > 0;
+  return hasTitle && hasProducts;
+}
+
+/**
+ * getCompletionPercentage — step completion as 0–100.
+ * Used for progress indicators.
+ */
+export function getCompletionPercentage(m: Magazine): number {
+  let completed = 0;
+  const total = 5;
+
+  if ((m.title ?? '').trim().length > 0) completed++;
+  if ((m.items ?? []).length > 0) completed++;
+  if (m.content?.introText || m.content?.closingText) completed++;
+  if (m.templateId) completed++;
+  if ((m.items ?? []).length >= 2) completed++;
+
+  return Math.round((completed / total) * 100);
 }

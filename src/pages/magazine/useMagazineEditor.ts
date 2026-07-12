@@ -1,6 +1,18 @@
 /**
  * useMagazineEditor — carrega/edita/salva uma revista. v1 usa localStorage
  * via magazineService com autosave debounced.
+ *
+ * CRITICAL FIX: magazineRef stale-read race condition
+ * ─────────────────────────────────────────────────────
+ * Before: magazineRef.current was updated ONLY in a useEffect (deferred).
+ * This meant two rapid mutations (e.g. setTitle → setBranding in same tick)
+ * would both read the OLD ref, causing the second mutation to LOSE the
+ * first's changes (title would disappear after branding update).
+ *
+ * After: persist() updates magazineRef.current IMMEDIATELY before setState,
+ * so the next mutation always reads the latest snapshot, even in the same tick.
+ * The useEffect remains as a safety net for external state changes (e.g. from
+ * magazineService calls that bypass persist()).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,17 +34,28 @@ export function useMagazineEditor(id: string | undefined) {
   const [saving, setSaving] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // CRITICAL FIX: Declare ref BEFORE persist so persist can update it immediately.
+  // Using useRef<Magazine | null>(null) — initial value set in useEffect below.
+  const magazineRef = useRef<Magazine | null>(null);
+
   useEffect(() => {
     if (!id) {
       setLoaded(true);
       return;
     }
-    setMagazine(magazineService.get(id));
+    const loaded = magazineService.get(id);
+    magazineRef.current = loaded; // Sync ref immediately on load
+    setMagazine(loaded);
     setLoaded(true);
   }, [id]);
 
   const persist = useCallback(
     (next: Magazine) => {
+      // CRITICAL FIX: Update ref IMMEDIATELY before calling setMagazine.
+      // React batches setState calls; useEffect (which previously synced the ref)
+      // runs AFTER the render, meaning two persist() calls in the same tick
+      // would both read the old ref. This fix ensures each call sees fresh data.
+      magazineRef.current = next;
       setMagazine(next);
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaving(true);
@@ -44,7 +67,8 @@ export function useMagazineEditor(id: string | undefined) {
     [],
   );
 
-  const magazineRef = useRef(magazine);
+  // Safety net: keeps ref in sync for external state changes
+  // (e.g. magazineService calls that bypass persist, HMR, test overrides)
   useEffect(() => {
     magazineRef.current = magazine;
   }, [magazine]);
@@ -99,7 +123,10 @@ export function useMagazineEditor(id: string | undefined) {
       const current = magazineRef.current;
       if (!current) return;
       const updated = magazineService.addProducts(current.id, products);
-      if (updated) setMagazine(updated);
+      if (updated) {
+        magazineRef.current = updated; // FIX: sync ref for rapid follow-up mutations
+        setMagazine(updated);
+      }
     },
     [],
   );
@@ -109,7 +136,10 @@ export function useMagazineEditor(id: string | undefined) {
       const current = magazineRef.current;
       if (!current) return;
       const updated = magazineService.removeItem(current.id, itemId);
-      if (updated) setMagazine(updated);
+      if (updated) {
+        magazineRef.current = updated; // FIX: sync ref immediately
+        setMagazine(updated);
+      }
     },
     [],
   );
@@ -119,7 +149,10 @@ export function useMagazineEditor(id: string | undefined) {
       const current = magazineRef.current;
       if (!current) return;
       const updated = magazineService.reorderItems(current.id, orderedIds);
-      if (updated) setMagazine(updated);
+      if (updated) {
+        magazineRef.current = updated; // FIX: sync ref immediately
+        setMagazine(updated);
+      }
     },
     [],
   );
@@ -129,7 +162,10 @@ export function useMagazineEditor(id: string | undefined) {
       const current = magazineRef.current;
       if (!current) return;
       const updated = magazineService.updateItem(current.id, itemId, patch);
-      if (updated) setMagazine(updated);
+      if (updated) {
+        magazineRef.current = updated; // FIX: sync ref immediately
+        setMagazine(updated);
+      }
     },
     [],
   );
@@ -138,7 +174,10 @@ export function useMagazineEditor(id: string | undefined) {
     const current = magazineRef.current;
     if (!current) return null;
     const updated = magazineService.publish(current.id);
-    if (updated) setMagazine(updated);
+    if (updated) {
+      magazineRef.current = updated; // FIX: sync ref
+      setMagazine(updated);
+    }
     return updated;
   }, []);
 
@@ -146,7 +185,10 @@ export function useMagazineEditor(id: string | undefined) {
     const current = magazineRef.current;
     if (!current) return;
     const updated = magazineService.unpublish(current.id);
-    if (updated) setMagazine(updated);
+    if (updated) {
+      magazineRef.current = updated; // FIX: sync ref
+      setMagazine(updated);
+    }
   }, []);
 
   const isOwner = useMemo(

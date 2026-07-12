@@ -81,13 +81,15 @@ export default function MagazineEditorPage() {
 
   const magazine = editor.magazine;
   
-  // FIX: useMemo dependency violation — magazine was used in closure but not in deps.
-  // Now explicitly include magazine to satisfy React ESLint rules.
-  // However, we memoize based on the specific fields paginateMagazine actually uses
-  // to avoid unnecessary recalculations when other properties change.
+  // FIX #2: Cleaned useMemo deps — removed redundant `magazine.items.length` scalar.
+  // `magazine.items` reference change already covers count changes (magazineService
+  // always returns a new array reference). `magazine.templateId` and `magazine.title`
+  // are scalars that cover the other paginateMagazine inputs.
+  // `magazine.content` covers groupByCategory changes.
   const pages = useMemo(
     () => paginateMagazine(magazine),
-    [magazine.items.length, magazine.templateId, magazine.items, magazine.title]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [magazine.items, magazine.templateId, magazine.title, magazine.content?.groupByCategory]
   );
   
   const safePreviewIdx = Math.min(previewIdx, Math.max(0, pages.length - 1));
@@ -96,8 +98,11 @@ export default function MagazineEditorPage() {
   const canPrev = currentIdx > 0;
   const canNext = currentIdx < STEPS.length - 1;
 
-  // FIX: validateStep uses magazine fields, so include them in deps.
-  // Keep granular deps to avoid unnecessary recalculations.
+  // FIX: validateStep deps match the fields it actually reads.
+  // - identity: title, branding.clientLogoUrl
+  // - products: items.length
+  // - design/layout: items.length
+  // Using items.length as scalar avoids array reference comparison churn.
   const validation = useMemo(
     () => validateStep(step, magazine),
     [
