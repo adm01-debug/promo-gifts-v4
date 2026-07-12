@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { paginateMagazine } from './pagination';
 import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
+import { MagazineMiniMap } from './components/MagazineMiniMap';
 import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
 import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
 import { usePageZoom } from './hooks/usePageZoom';
