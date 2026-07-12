@@ -308,6 +308,7 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
       );
     }
 
+    await ensureCrmSession();
     const startedAt = performance.now();
     const body = { operation: 'batch', queries };
     const reqBytes = estimatePayloadBytes(body);
