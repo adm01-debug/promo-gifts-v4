@@ -329,8 +329,26 @@ export default function QuoteViewPage() {
                 <DropdownMenuItem
                   onClick={async () => {
                     const newQuote = await duplicateQuote(quote.id ?? '');
-                    if (newQuote?.id) navigate(`/orcamentos/${newQuote.id}`);
+                    if (!newQuote?.id) {
+                      toast.error('Não foi possível duplicar o orçamento.');
+                      return;
+                    }
+                    const newId = newQuote.id;
+                    // Paridade com a exclusão: toast único com Desfazer (undo =
+                    // deletar a cópia recém-criada). 8s de janela.
+                    showUndoToast({
+                      title: 'Orçamento duplicado',
+                      description: 'Você pode desfazer esta ação.',
+                      duration: 8000,
+                      onUndo: async () => {
+                        const ok = await deleteQuote(newId);
+                        if (ok) toast.success('Duplicação desfeita.');
+                        else toast.error('Não foi possível desfazer a duplicação.');
+                      },
+                    });
+                    navigate(`/orcamentos/${newId}`);
                   }}
+                  data-testid="quote-actions-duplicate"
                 >
                   <Copy className="mr-2 h-4 w-4" /> Duplicar
                 </DropdownMenuItem>
