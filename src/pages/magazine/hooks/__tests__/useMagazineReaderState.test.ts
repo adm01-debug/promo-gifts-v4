@@ -17,40 +17,48 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-// --- Mock supabase client: por default retorna 42P01 (tabela ausente) ---
-const supabaseCalls: Array<{ op: string; payload?: unknown }> = [];
-let mockError: { code?: string; message?: string } | null = {
-  code: '42P01',
-  message: 'relation "magazine_reader_state" does not exist',
-};
-let mockData: { bookmarks: number[] | null; last_page_index: number | null } | null = null;
+// --- Mock global fetch: simula edge functions magazine-reader-state-{read,write} ---
+// O hook migrou de `supabase.from('magazine_reader_state')` (acesso direto,
+// fechado por RLS) para chamadas fetch nas edges com service_role. Os testes
+// mockam fetch e controlam status HTTP + body.
+type FetchReply =
+  | { kind: 'ok'; body: { bookmarks: number[] | null; lastPageIndex: number | null } }
+  | { kind: 'status'; status: number; body?: unknown }
+  | { kind: 'throw'; error?: Error };
 
-vi.mock('@/integrations/supabase/client', () => {
-  const buildQuery = (op: string) => ({
-    select: () => buildQuery(op),
-    eq: () => buildQuery(op),
-    maybeSingle: () => {
-      supabaseCalls.push({ op });
-      return Promise.resolve({ data: mockData, error: mockError });
-    },
-    // upsert é awaitável direto
-    then: (fn: (v: unknown) => unknown) => {
-      supabaseCalls.push({ op });
-      return Promise.resolve({ data: null, error: mockError }).then(fn);
-    },
-  });
-  return {
-    supabase: {
-      from: () => ({
-        select: () => buildQuery('select'),
-        upsert: (payload: unknown) => {
-          supabaseCalls.push({ op: 'upsert', payload });
-          return Promise.resolve({ data: null, error: mockError });
-        },
+const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+let readReply: FetchReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+let writeReply: FetchReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+
+function makeResponse(reply: FetchReply): Promise<Response> {
+  if (reply.kind === 'throw') {
+    return Promise.reject(reply.error ?? new Error('network-error'));
+  }
+  if (reply.kind === 'ok') {
+    return Promise.resolve(
+      new Response(JSON.stringify(reply.body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
       }),
-    },
-  };
+    );
+  }
+  return Promise.resolve(
+    new Response(JSON.stringify(reply.body ?? { error: `http_${reply.status}` }), {
+      status: reply.status,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+}
+
+const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input.toString();
+  fetchCalls.push({ url, init });
+  if (url.includes('magazine-reader-state-read')) return makeResponse(readReply);
+  if (url.includes('magazine-reader-state-write')) return makeResponse(writeReply);
+  return new Response('{}', { status: 200 });
 });
+
+globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 // --- Mock sonner: captura toasts ---
 const toastCalls: Array<{ title: string; opts?: Record<string, unknown> }> = [];
@@ -72,10 +80,11 @@ const LP_KEY = `mag:last-page:${TOKEN}`;
 function resetAll() {
   localStorage.clear();
   sessionStorage.clear();
-  supabaseCalls.length = 0;
+  fetchCalls.length = 0;
   toastCalls.length = 0;
-  mockError = null;
-  mockData = null;
+  readReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+  writeReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+  fetchMock.mockClear();
 }
 
 beforeEach(() => resetAll());
