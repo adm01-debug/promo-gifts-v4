@@ -289,11 +289,40 @@ export default function PublicMagazineView() {
           <Button
             variant="secondary"
             size="sm"
+            onClick={() => toggleBookmark(safeIdx)}
+            aria-label={hasBookmark(safeIdx) ? 'Remover marcador desta página (B)' : 'Marcar esta página (B)'}
+            title={hasBookmark(safeIdx) ? 'Remover marcador (B)' : 'Marcar página (B)'}
+            aria-pressed={hasBookmark(safeIdx)}
+          >
+            {hasBookmark(safeIdx) ? (
+              <BookmarkCheck className="mr-2 h-4 w-4" />
+            ) : (
+              <Bookmark className="mr-2 h-4 w-4" />
+            )}
+            {hasBookmark(safeIdx) ? 'Marcada' : 'Marcar'}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setTocOpen(true)}
             aria-label="Abrir sumário (T)"
             title="Sumário (T)"
           >
             <List className="mr-2 h-4 w-4" /> Sumário
+            {bookmarks.size > 0 && (
+              <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] tabular-nums">
+                {bookmarks.size}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setHelpOpen(true)}
+            aria-label="Ver atalhos de teclado (?)"
+            title="Atalhos (?)"
+          >
+            <HelpCircle className="h-4 w-4" />
           </Button>
           <Button
             variant="secondary"
