@@ -61,6 +61,7 @@ test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
     // Mocks: DELETE 204, POST (recreate) 201
     let deleteCalls = 0;
     let postCalls = 0;
+    const restorePayloads: unknown[] = [];
     await page.route(QUOTES_REST, async (route, request) => {
       const method = request.method();
       if (method === "DELETE") {
@@ -70,6 +71,12 @@ test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
       }
       if (method === "POST") {
         postCalls += 1;
+        try {
+          const raw = request.postData();
+          if (raw) restorePayloads.push(JSON.parse(raw));
+        } catch {
+          /* body vazio/inválido — ignoramos */
+        }
         await route.fulfill({
           status: 201,
           contentType: "application/json",
