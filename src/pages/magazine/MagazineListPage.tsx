@@ -43,6 +43,7 @@ import {
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { getTemplate } from './components/templates/TemplateRegistry';
+import { MagazineCardThumbnail } from './components/MagazineCardThumbnail';
 
 type SortMode = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc';
 type StatusFilter = 'all' | 'draft' | 'published';
