@@ -72,26 +72,27 @@ let storedMagazine: Magazine | null = MOCK_MAGAZINE;
 
 vi.mock('@/services/magazineService', () => ({
   magazineService: {
-    get: vi.fn((id: string) => (id === 'mag_test' ? { ...storedMagazine } : null)),
-    update: vi.fn((id: string, data: Magazine) => {
+    get: vi.fn(async (id: string) => (id === 'mag_test' ? { ...storedMagazine } : null)),
+    update: vi.fn(async (id: string, data: Magazine) => {
       if (id === 'mag_test') storedMagazine = { ...data };
+      return storedMagazine;
     }),
-    addProducts: vi.fn((id: string, products: unknown[]) => {
+    addProducts: vi.fn(async (id: string, products: unknown[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
         ...storedMagazine,
-        items: [...storedMagazine.items, ...products.map((p, i) => ({ ...DUMMY_ITEM, id: `item_${Date.now()}_${i}` }))],
+        items: [...storedMagazine.items, ...products.map((_p, i) => ({ ...DUMMY_ITEM, id: `item_${Date.now()}_${i}` }))],
       } as Magazine;
       storedMagazine = updated;
       return updated;
     }),
-    removeItem: vi.fn((id: string, itemId: string) => {
+    removeItem: vi.fn(async (id: string, itemId: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, items: storedMagazine.items.filter((i) => i.id !== itemId) };
       storedMagazine = updated;
       return updated;
     }),
-    reorderItems: vi.fn((id: string, orderedIds: string[]) => {
+    reorderItems: vi.fn(async (id: string, orderedIds: string[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const itemMap = new Map(storedMagazine.items.map((it) => [it.id, it]));
       const reordered = orderedIds.map((oid, i) => ({ ...itemMap.get(oid)!, position: i }));
@@ -99,7 +100,7 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
-    updateItem: vi.fn((id: string, itemId: string, patch: Partial<typeof DUMMY_ITEM>) => {
+    updateItem: vi.fn(async (id: string, itemId: string, patch: Partial<typeof DUMMY_ITEM>) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
         ...storedMagazine,
@@ -108,13 +109,13 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
-    publish: vi.fn((id: string) => {
+    publish: vi.fn(async (id: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, status: 'published' as const, publicToken: 'tok_abc' };
       storedMagazine = updated;
       return updated;
     }),
-    unpublish: vi.fn((id: string) => {
+    unpublish: vi.fn(async (id: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, status: 'draft' as const, publicToken: null };
       storedMagazine = updated;
