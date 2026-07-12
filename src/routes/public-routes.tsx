@@ -36,6 +36,7 @@ export const publicRoutes = (
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route path="/termos" element={<TermsPage />} />
     <Route path="/privacidade" element={<PrivacyPage />} />
+    <Route path="/revista-publica/:token" element={<PublicMagazineView />} />
     <Route path="/__test/color-swatches" element={<ColorSwatchesHarness />} />
     <Route path="/__test/confirm-dialog" element={<ConfirmDialogHarness />} />
     <Route path="/__test/alert-dialog" element={<AlertDialogHarness />} />
