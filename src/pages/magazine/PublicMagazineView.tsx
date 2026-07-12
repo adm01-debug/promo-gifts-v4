@@ -85,9 +85,16 @@ export default function PublicMagazineView() {
       setLoaded(true);
       return;
     }
-    const found = magazineService.getByToken(token);
-    setMagazine(found && found.status === 'published' ? found : null);
-    setLoaded(true);
+    let cancelled = false;
+    (async () => {
+      const found = await magazineService.getPublicByToken(token);
+      if (cancelled) return;
+      setMagazine(found && found.status === 'published' ? found : null);
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   const pages = useMemo(() => (magazine ? paginateMagazine(magazine) : []), [magazine]);
