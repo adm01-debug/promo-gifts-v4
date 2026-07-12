@@ -15,11 +15,15 @@ interface Props {
 }
 
 /** Somente keys booleanas — introText/closingText são texto e têm UI própria. */
-type BooleanContentKey = {
-  [K in keyof MagazineContentSettings]: MagazineContentSettings[K] extends boolean | undefined
-    ? K
-    : never;
-}[keyof MagazineContentSettings];
+type BooleanContentKey =
+  | 'showPrice'
+  | 'showCode'
+  | 'showPersonalization'
+  | 'showDescription'
+  | 'showDimensions'
+  | 'showMaterials'
+  | 'showColors'
+  | 'groupByCategory';
 type Toggle = { key: BooleanContentKey; label: string; hint: string };
 
 const FIELD_TOGGLES: Toggle[] = [
