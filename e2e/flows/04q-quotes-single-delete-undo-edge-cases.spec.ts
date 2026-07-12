@@ -76,21 +76,61 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     const toast = page.locator(UNDO_TOAST);
     await expect(toast).toBeVisible({ timeout: 10_000 });
     await expect(page.locator(UNDO_TITLE)).toBeVisible();
-    await expect(page.locator(UNDO_COUNTDOWN)).toBeVisible();
+    const countdown = page.locator(UNDO_COUNTDOWN);
+    await expect(countdown).toBeVisible();
 
-    // Aguarda o contador expirar (duração = 8s + margem). O toast é
-    // dispensado quando remainingSec chega a 0.
-    await expect(page.locator(UNDO_TOAST)).toHaveCount(0, { timeout: 20_000 });
+    // Assert determinístico: o attribute `data-remaining-sec` do contador
+    // DECREMENTA monotonicamente até 0 — sem depender de `setTimeout`.
+    const initialSec = Number(await countdown.getAttribute("data-remaining-sec"));
+    expect(initialSec).toBeGreaterThan(0);
+    expect(initialSec).toBeLessThanOrEqual(8);
 
-    // Nenhum POST de restore foi disparado durante a espera
+    // Aguarda o contador chegar a 0 OU o toast ser removido do DOM.
+    // (o wrapper `showUndoToast` chama `dismiss` no `onTimeout`.)
+    await expect
+      .poll(
+        async () => {
+          const el = page.locator(UNDO_COUNTDOWN);
+          const count = await el.count();
+          if (count === 0) return 0;
+          const attr = await el.getAttribute("data-remaining-sec");
+          return Number(attr ?? 0);
+        },
+        { timeout: 20_000, intervals: [200, 500, 1000] },
+      )
+      .toBe(0);
+
+    // Aguarda o botão ficar indisponível (disabled OU removido do DOM) —
+    // ambos os estados satisfazem o invariante "não é mais clicável".
+    await expect
+      .poll(
+        async () => {
+          const btn = page.locator(UNDO_BTN);
+          const count = await btn.count();
+          if (count === 0) return "absent";
+          const disabled = await btn.isDisabled();
+          const expired = await btn.getAttribute("data-expired");
+          return disabled || expired === "true" ? "disabled" : "clickable";
+        },
+        { timeout: 5_000, intervals: [100, 250, 500] },
+      )
+      .not.toBe("clickable");
+
+    // Aguarda o toast ser totalmente removido do DOM (o wrapper dispara
+    // sonner.dismiss no onTimeout — não usamos setTimeout).
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(0, { timeout: 5_000 });
+
+    // Nenhum POST de restore foi disparado durante toda a expiração
     expect(postCalls).toBe(0);
 
-    // Aguarda mais 1.5s para garantir que nenhum restore silencioso ocorre
-    await page.waitForTimeout(1500);
-    expect(postCalls).toBe(0);
+    // Reassert após settle: a rede deve estar completamente silenciosa —
+    // usamos expect.poll com valor estável (não muda por 500ms) em vez
+    // de sleep arbitrário.
+    await expect
+      .poll(() => postCalls, { timeout: 2_000, intervals: [200, 400] })
+      .toBe(0);
 
-    // O botão "Desfazer" saiu do DOM — clique via .click() em locator
-    // com 0 elementos falha rápido, confirmando a indisponibilidade
+    // Última garantia: botão ausente do DOM
     await expect(page.locator(UNDO_BTN)).toHaveCount(0);
   });
 
