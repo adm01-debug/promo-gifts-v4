@@ -208,7 +208,7 @@ export function ConfirmDialog({
               data-testid={noTestId}
               aria-label={cancelLabel}
               title={cancelLabel}
-              className="mt-0 h-8 whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="mt-0 h-[26px] whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {cancelLabelShort ? (
                 <>
