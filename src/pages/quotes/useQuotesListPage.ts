@@ -199,6 +199,7 @@ export function useQuotesListPage() {
         },
       });
     } finally {
+      isDeletingRef.current = false;
       setIsDeleting(false);
     }
   };
