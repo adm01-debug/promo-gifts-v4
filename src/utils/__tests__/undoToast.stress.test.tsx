@@ -180,6 +180,67 @@ describe('UndoToast — pausa em hover/focus preserva o tempo restante', () => {
   });
 });
 
+describe('UndoToast — botão fica disabled ao expirar (data-expired="true")', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('remainingMs > 0 → botão habilitado, data-expired="false"', () => {
+    render(
+      <UndoToastContent
+        title="t"
+        duration={5000}
+        onUndo={() => {}}
+        onTimeout={() => {}}
+      />,
+    );
+    const btn = q<HTMLButtonElement>('[data-testid="undo-toast-button"]');
+    expect(btn.disabled).toBe(false);
+    expect(btn.getAttribute('data-expired')).toBe('false');
+    expect(btn.getAttribute('aria-disabled')).toBeNull();
+  });
+
+  it('quando remainingMs chega a 0: disabled=true, data-expired="true", aria-disabled="true"', () => {
+    const onUndo = vi.fn();
+    render(
+      <UndoToastContent
+        title="t"
+        duration={2000}
+        onUndo={onUndo}
+        onTimeout={() => {}}
+      />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+    const btn = q<HTMLButtonElement>('[data-testid="undo-toast-button"]');
+    expect(btn.disabled).toBe(true);
+    expect(btn.getAttribute('data-expired')).toBe('true');
+    expect(btn.getAttribute('aria-disabled')).toBe('true');
+
+    // Clique no botão disabled não dispara onUndo (comportamento nativo do HTML)
+    fireEvent.click(btn);
+    expect(onUndo).not.toHaveBeenCalled();
+  });
+
+  it('frozenMs=0 → botão nasce disabled', () => {
+    render(
+      <UndoToastContent
+        title="t"
+        duration={5000}
+        frozenMs={0}
+        onUndo={() => {}}
+        onTimeout={() => {}}
+      />,
+    );
+    const btn = q<HTMLButtonElement>('[data-testid="undo-toast-button"]');
+    expect(btn.disabled).toBe(true);
+    expect(q('[data-testid="undo-toast-countdown"]').textContent).toBe('0s');
+  });
+});
+
 describe('UndoToast — timeout dispara exatamente uma vez', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
