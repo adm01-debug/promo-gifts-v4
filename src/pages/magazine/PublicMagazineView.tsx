@@ -550,7 +550,7 @@ export default function PublicMagazineView() {
         </nav>
 
         <p className="mt-3 text-center text-[11px] uppercase tracking-widest text-white/40">
-          Atalhos: ← → navegar · F tela cheia · T sumário · B marcador · ? ajuda
+          Atalhos: ← → navegar · F tela cheia · T sumário · B marcador · P apresentar · ? ajuda
         </p>
       </main>
 
