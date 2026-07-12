@@ -226,7 +226,7 @@ export function ConfirmDialog({
               aria-label={confirmLabel}
               title={confirmLabel}
               className={cn(
-                'inline-flex h-8 items-center whitespace-nowrap rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                'inline-flex h-[26px] items-center whitespace-nowrap rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
                 variant === 'destructive' &&
                   'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
                 variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
