@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
@@ -38,6 +39,8 @@ import { paginateMagazine } from './pagination';
 import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
 import './magazine.css';
+
+const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
 
 export default function PublicMagazineView() {
   const { token } = useParams<{ token: string }>();
