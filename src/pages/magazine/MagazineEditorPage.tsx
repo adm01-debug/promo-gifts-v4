@@ -27,7 +27,12 @@ import { ProductsStep } from './components/steps/ProductsStep';
 import { ContentStep } from './components/steps/ContentStep';
 import { DesignStep } from './components/steps/DesignStep';
 import { LayoutStep } from './components/steps/LayoutStep';
-import { canPublish, validateStep, type StepId } from './utils/stepValidation';
+import {
+  canPublish,
+  validateStep,
+  type StepId,
+  type StepValidation,
+} from './utils/stepValidation';
 import './magazine.css';
 
 const STEPS: Array<{ id: StepId; label: string }> = [
@@ -38,6 +43,12 @@ const STEPS: Array<{ id: StepId; label: string }> = [
   { id: 'layout', label: 'Layout & Gerar' },
 ];
 
+/**
+ * Validação neutra enquanto a revista ainda não hidratou.
+ * Constante de módulo → referência estável, não gera re-render.
+ */
+const EMPTY_VALIDATION: StepValidation = { blocks: [], warnings: [] };
+
 export default function MagazineEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -45,7 +56,31 @@ export default function MagazineEditorPage() {
   const [previewIdx, setPreviewIdx] = useState(0);
   const editor = useMagazineEditor(id);
 
-  // Atalhos globais leves — Cmd/Ctrl+S salva imediato (autosave já roda), Cmd/Ctrl+Enter publica
+  // `magazine` é null enquanto carrega e quando o id não existe.
+  const magazine = editor.magazine;
+
+  // ───────────────────────────────────────────────────────────────────────
+  // CORREÇÃO CRÍTICA — React error #310
+  // ("Rendered more hooks than during the previous render")
+  //
+  // Antes: os dois useMemo abaixo ficavam DEPOIS dos early returns
+  // (`if (!editor.loaded) return …` e `if (!editor.magazine) return …`).
+  //
+  //   Render 1 (loaded = false) → early return  → N hooks executados
+  //   Render 2 (loaded = true)  → segue o corpo → N + 2 hooks executados
+  //
+  // React compara a ordem/contagem de hooks entre renders → crash em 100%
+  // dos mounts da página, capturado por MagazineErrorBoundary/ProtectedRoute.
+  //
+  // Agora: TODOS os hooks rodam incondicionalmente, no topo. `paginateMagazine`
+  // já aceita null e `validateStep` recebe fallback neutro. Os early returns
+  // ficam ABAIXO de todos os hooks.
+  //
+  // Guard-rail permanente: `react-hooks/rules-of-hooks` já é 'error' no
+  // eslint.config.js — qualquer regressão desse tipo reprova no CI.
+  // ───────────────────────────────────────────────────────────────────────
+
+  // Atalhos globais leves — Cmd/Ctrl+S salva imediato (autosave já roda)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const cmd = e.metaKey || e.ctrlKey;
@@ -58,6 +93,34 @@ export default function MagazineEditorPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Deps enxutas: a referência de `items` já cobre mudança de contagem
+  // (magazineService sempre devolve array novo); templateId/title são escalares;
+  // content.groupByCategory cobre o agrupamento por categoria.
+  const pages = useMemo(
+    () => paginateMagazine(magazine),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      magazine?.items,
+      magazine?.templateId,
+      magazine?.title,
+      magazine?.content?.groupByCategory,
+    ],
+  );
+
+  // Deps espelham os campos realmente lidos por validateStep:
+  // identity → title + branding.clientLogoUrl | products/design/layout → items.length
+  const validation = useMemo(
+    () => (magazine ? validateStep(step, magazine) : EMPTY_VALIDATION),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      step,
+      magazine?.title,
+      magazine?.items?.length,
+      magazine?.branding?.clientLogoUrl,
+    ],
+  );
+
+  // ── A PARTIR DAQUI NENHUM HOOK PODE SER CHAMADO ────────────────────────
   if (!editor.loaded) {
     return (
       <div className="flex h-[60vh] items-center justify-center text-muted-foreground" role="status">
@@ -65,7 +128,7 @@ export default function MagazineEditorPage() {
       </div>
     );
   }
-  if (!editor.magazine) {
+  if (!magazine) {
     return (
       <div className="mx-auto max-w-md p-10 text-center">
         <h1 className="mb-2 text-xl font-semibold">Revista não encontrada</h1>
@@ -79,39 +142,12 @@ export default function MagazineEditorPage() {
     );
   }
 
-  const magazine = editor.magazine;
-  
-  // FIX #2: Cleaned useMemo deps — removed redundant `magazine.items.length` scalar.
-  // `magazine.items` reference change already covers count changes (magazineService
-  // always returns a new array reference). `magazine.templateId` and `magazine.title`
-  // are scalars that cover the other paginateMagazine inputs.
-  // `magazine.content` covers groupByCategory changes.
-  const pages = useMemo(
-    () => paginateMagazine(magazine),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [magazine.items, magazine.templateId, magazine.title, magazine.content?.groupByCategory]
-  );
-  
   const safePreviewIdx = Math.min(previewIdx, Math.max(0, pages.length - 1));
 
   const currentIdx = STEPS.findIndex((s) => s.id === step);
   const canPrev = currentIdx > 0;
   const canNext = currentIdx < STEPS.length - 1;
 
-  // FIX: validateStep deps match the fields it actually reads.
-  // - identity: title, branding.clientLogoUrl
-  // - products: items.length
-  // - design/layout: items.length
-  // Using items.length as scalar avoids array reference comparison churn.
-  const validation = useMemo(
-    () => validateStep(step, magazine),
-    [
-      step,
-      magazine.title,
-      magazine.items.length,
-      magazine.branding?.clientLogoUrl,
-    ],
-  );
   const publishable = canPublish(magazine);
 
   const goToStep = (target: StepId) => {
