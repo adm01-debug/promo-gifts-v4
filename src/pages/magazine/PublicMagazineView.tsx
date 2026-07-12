@@ -219,6 +219,37 @@ export default function PublicMagazineView() {
     return () => window.removeEventListener('keydown', onEsc);
   }, [zoom]);
 
+  /* ---------------- Modo apresentação (auto-advance) ---------------- */
+  const presentationAdvance = useCallback(() => {
+    if (safeIdx >= total - 1) go(0);
+    else next();
+  }, [safeIdx, total, go, next]);
+  const presentation = usePresentationMode({
+    currentIndex: safeIdx,
+    total,
+    onAdvance: presentationAdvance,
+    intervalMs: 5000,
+    loop: true,
+  });
+
+  // Atalho `P` alterna apresentação, ESC sai
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        presentation.toggle();
+      } else if (e.key === 'Escape' && presentation.active) {
+        e.preventDefault();
+        presentation.stop();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [presentation]);
+
+
+
 
 
   /* ---------------- Swipe (desabilitado quando zoom ativo) ---------------- */
