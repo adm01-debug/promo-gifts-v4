@@ -127,11 +127,69 @@ export function useQuotesListPage() {
     return results;
   }, [quotes, debouncedSearch, statusFilter, quoteFuse, sortBy]);
 
+  /**
+   * Exclusão individual com toast "Desfazer" (mesmo padrão do bulk):
+   *  - snapshot pré-delete via fetchQuote (necessário p/ restaurar quote+items);
+   *  - deleteQuote sequencial;
+   *  - fecha o dialog imediatamente;
+   *  - onUndo recria via createQuote (descarta campos gerados).
+   */
   const handleDelete = async () => {
-    if (deleteConfirmId) {
-      await deleteQuote(deleteConfirmId);
-      setDeleteConfirmId(null);
+    const id = deleteConfirmId;
+    if (!id) return;
+
+    // 1) snapshot ANTES do delete
+    let snapshot: Quote | null = null;
+    try {
+      snapshot = await fetchQuote(id);
+    } catch {
+      /* segue sem snapshot — undo ficará indisponível */
     }
+
+    // 2) delete
+    const ok = await deleteQuote(id);
+    setDeleteConfirmId(null);
+
+    if (!ok) {
+      toast.error('Não foi possível excluir o orçamento. Tente novamente.');
+      return;
+    }
+
+    // 3) sem snapshot → sucesso simples, sem desfazer
+    if (!snapshot) {
+      toast.success('Orçamento excluído.');
+      return;
+    }
+
+    // 4) toast com "Desfazer"
+    showUndoToast({
+      title: 'Orçamento excluído',
+      description: 'Você pode desfazer esta ação.',
+      duration: 8000,
+      onUndo: async () => {
+        try {
+          const items: QuoteItem[] = (snapshot!.items ?? []).map((it) => ({
+            ...it,
+          })) as QuoteItem[];
+          const {
+            id: _omitId,
+            created_at: _c,
+            updated_at: _u,
+            quote_number: _qn,
+            ...rest
+          } = snapshot as Quote & { id?: string };
+          void _omitId; void _c; void _u; void _qn;
+          const created = await createQuote(rest as Partial<Quote>, items);
+          if (created) {
+            toast.success('Orçamento restaurado.');
+          } else {
+            toast.error('Não foi possível restaurar o orçamento.');
+          }
+        } catch {
+          toast.error('Não foi possível restaurar o orçamento.');
+        }
+      },
+    });
   };
 
   /**
