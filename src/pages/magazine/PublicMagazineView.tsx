@@ -49,10 +49,16 @@ export default function PublicMagazineView() {
   const [loaded, setLoaded] = useState(false);
   const [pageIdx, setPageIdx] = useState(() => {
     const raw = Number(searchParams.get('p'));
-    return Number.isFinite(raw) && raw > 0 ? raw - 1 : 0;
+    if (Number.isFinite(raw) && raw > 0) return raw - 1;
+    if (token) {
+      const saved = Number(localStorage.getItem(LAST_PAGE_KEY(token)));
+      if (Number.isFinite(saved) && saved > 0) return saved;
+    }
+    return 0;
   });
   const [tocOpen, setTocOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const rootRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
 
