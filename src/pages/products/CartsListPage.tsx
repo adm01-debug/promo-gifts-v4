@@ -280,22 +280,69 @@ function CartsListContent() {
     });
   }, [visibleIds]);
 
-  const confirmBulkDelete = useCallback(() => {
+  const confirmBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) {
       toast.info('Selecione ao menos um carrinho para excluir.');
       setBulkDeleteOpen(false);
       return;
     }
-    ids.forEach((id) => deleteCart(id));
-    toast.success(
-      ids.length === 1
-        ? 'Carrinho excluído.'
-        : `${ids.length} carrinhos excluídos.`,
-    );
+
+    // Snapshot ANTES do DELETE — necessário para restauração fiel (Undo).
+    // Preserva ordem para restaurar do 1º ao último se o usuário desfizer.
+    const snapshots = ids
+      .map((id) => carts.find((c) => c.id === id))
+      .filter((c): c is SellerCart => Boolean(c));
+
     setBulkDeleteOpen(false);
     clearSelection();
-  }, [selectedIds, deleteCart, clearSelection]);
+
+    // Executa DELETEs em paralelo. Falhas individuais reportadas pela mutation.
+    const results = await Promise.allSettled(ids.map((id) => deleteCart(id)));
+    const deletedCount = results.filter((r) => r.status === 'fulfilled').length;
+    if (deletedCount === 0) return; // toda a exclusão falhou; mutation já mostrou erro.
+
+    const isSingular = deletedCount === 1;
+    showUndoToast({
+      title: isSingular ? 'Carrinho excluído' : `${deletedCount} carrinhos excluídos`,
+      description: 'Você pode desfazer esta ação.',
+      duration: 8000,
+      onUndo: async () => {
+        // Restaura apenas os snapshots dos carrinhos que foram efetivamente
+        // excluídos (mantém ordem original).
+        const successIndexes = results
+          .map((r, i) => (r.status === 'fulfilled' ? i : -1))
+          .filter((i) => i >= 0);
+        const toRestore = successIndexes.map((i) => snapshots[i]).filter(Boolean);
+
+        const restoreResults = await Promise.allSettled(
+          toRestore.map((snap) => restoreCart(snap)),
+        );
+        const restoredCount = restoreResults.filter(
+          (r) => r.status === 'fulfilled' && r.value !== undefined,
+        ).length;
+        const failedCount = toRestore.length - restoredCount;
+
+        if (restoredCount === toRestore.length) {
+          toast.success(
+            restoredCount === 1
+              ? 'Carrinho restaurado.'
+              : `${restoredCount} carrinhos restaurados.`,
+          );
+        } else if (restoredCount > 0) {
+          toast.warning(
+            `${restoredCount} restaurado(s), ${failedCount} falhou(aram).`,
+          );
+        } else {
+          toast.error(
+            isSingular
+              ? 'Não foi possível restaurar o carrinho.'
+              : 'Não foi possível restaurar os carrinhos.',
+          );
+        }
+      },
+    });
+  }, [selectedIds, deleteCart, clearSelection, carts, restoreCart]);
 
   /**
    * Atalho: Esc sai do modo de seleção e limpa marcações.
