@@ -8,6 +8,7 @@
 #
 # 2026-07-12 (v2): eliminado o .patch (headers de hunk frágeis com GNU patch).
 # Toda a transformação agora é sed/awk determinístico + verificações estritas.
+# Auditado com 280+ cenários de fuzz (bateria em /tmp/fuzz/runner.sh).
 
 set -euo pipefail
 
@@ -19,16 +20,28 @@ if [[ ! -f "$FILE" ]]; then
   exit 1
 fi
 
+if [[ ! -w "$FILE" ]]; then
+  echo "::error::$FILE não é gravável (permissões?)"
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # 1) Pré-check: types.ts precisa ter as tabelas
 # ---------------------------------------------------------------------------
-if ! grep -qE "magazines: \{" "$TYPES"; then
-  echo "::error::$TYPES não contém a tabela 'magazines'."
+if [[ ! -f "$TYPES" ]]; then
+  echo "::error::$TYPES não encontrado — rode 'Regenerate Supabase Types' primeiro."
+  exit 2
+fi
+# Grep em linhas não-comentário: descarta // e /* ... */ single-line.
+# Usa \s antes de "magazines:" para evitar match parcial em "my_magazines:".
+NONCOMMENT=$(sed 's|//.*$||; s|/\*[^*]*\*/||g' "$TYPES")
+if ! echo "$NONCOMMENT" | grep -qE "(^|[[:space:]])magazines: \{"; then
+  echo "::error::$TYPES não contém a tabela 'magazines' (fora de comentários)."
   echo "         Rode antes o workflow 'Regenerate Supabase Types' e mergeie o PR."
   exit 2
 fi
-if ! grep -qE "magazine_items: \{" "$TYPES"; then
-  echo "::error::$TYPES não contém a tabela 'magazine_items'."
+if ! echo "$NONCOMMENT" | grep -qE "(^|[[:space:]])magazine_items: \{"; then
+  echo "::error::$TYPES não contém a tabela 'magazine_items' (fora de comentários)."
   exit 2
 fi
 
@@ -49,7 +62,7 @@ BEFORE_TOTAL=$(grep -c "untypedFrom" "$FILE" || true)
 echo "::notice::antes → magazines=$BEFORE_MAG · magazine_items=$BEFORE_ITEMS · untypedFrom total=$BEFORE_TOTAL"
 
 if [[ "$BEFORE_MAG" -eq 0 || "$BEFORE_ITEMS" -eq 0 ]]; then
-  echo "::error::contagens inesperadas — abortando por segurança"
+  echo "::error::contagens inesperadas (magazines=$BEFORE_MAG items=$BEFORE_ITEMS) — abortando por segurança"
   exit 3
 fi
 
@@ -70,7 +83,7 @@ sed -i.bak "/^import { untypedFrom } from '@\/lib\/supabase-untyped';$/d" "$FILE
 # 4.3 — inserir import Database logo após import supabase (idempotente)
 if ! grep -q "^import type { Database } from '@/integrations/supabase/types';$" "$FILE"; then
   awk '
-    /^import { supabase } from .@\/integrations\/supabase\/client.;$/ && !done {
+    /^import \{ supabase \} from .@\/integrations\/supabase\/client.;$/ && !done {
       print
       print "import type { Database } from '\''@/integrations/supabase/types'\'';"
       done=1
@@ -82,21 +95,21 @@ fi
 
 # 4.4 — substituir bloco interface MagazineRow { ... } por type alias
 awk '
-  /^interface MagazineRow \{$/ { skip=1; print "type MagazineRow = Database['\''public'\'']['\''Tables'\'']['\''magazines'\'']['\''Row'\''];"; next }
-  skip && /^\}$/ { skip=0; next }
+  /^interface MagazineRow \{[[:space:]]*$/ { skip=1; print "type MagazineRow = Database['\''public'\'']['\''Tables'\'']['\''magazines'\'']['\''Row'\''];"; next }
+  skip && /^\}[[:space:]]*$/ { skip=0; next }
   skip { next }
   { print }
 ' "$FILE" > "$FILE.awk" && mv "$FILE.awk" "$FILE"
 
 # 4.5 — substituir bloco interface MagazineItemRow { ... } por type alias
 awk '
-  /^interface MagazineItemRow \{$/ { skip=1; print "type MagazineItemRow = Database['\''public'\'']['\''Tables'\'']['\''magazine_items'\'']['\''Row'\''];"; next }
-  skip && /^\}$/ { skip=0; next }
+  /^interface MagazineItemRow \{[[:space:]]*$/ { skip=1; print "type MagazineItemRow = Database['\''public'\'']['\''Tables'\'']['\''magazine_items'\'']['\''Row'\''];"; next }
+  skip && /^\}[[:space:]]*$/ { skip=0; next }
   skip { next }
   { print }
 ' "$FILE" > "$FILE.awk" && mv "$FILE.awk" "$FILE"
 
-# 4.6 — atualizar comentário do topo (linhas que mencionam untypedFrom + regeneração pendente)
+# 4.6 — atualizar comentário do topo
 sed -i.bak \
   -e "s| \* A camada usa \`untypedFrom<Row>()\` porque as tabelas magazine_\* ainda| * 2026-07-XX (PR tipagem): tabelas presentes em types.ts após regeneração;|" \
   -e "s| \* não estão em src/integrations/supabase/types.ts (regeneração pendente).| * migrado para queries tipadas via \`supabase.from()\`.|" \
@@ -136,9 +149,11 @@ grep -q "^type MagazineRow = Database\['public'\]\['Tables'\]\['magazines'\]\['R
 grep -q "^type MagazineItemRow = Database\['public'\]\['Tables'\]\['magazine_items'\]\['Row'\];$" "$FILE" \
   || { echo "::error::type alias MagazineItemRow ausente"; exit 6; }
 
-# Import Database presente
-grep -q "^import type { Database } from '@/integrations/supabase/types';$" "$FILE" \
-  || { echo "::error::import Database ausente"; exit 7; }
+# Import Database presente e único
+N_DB=$(grep -c "^import type { Database } from '@/integrations/supabase/types';$" "$FILE" || true)
+if [[ "$N_DB" -ne 1 ]]; then
+  echo "::error::import Database deveria aparecer 1x, apareceu $N_DB"; exit 7;
+fi
 
 # Nenhuma interface órfã
 if grep -qE "^interface MagazineRow \{|^interface MagazineItemRow \{" "$FILE"; then
@@ -153,7 +168,15 @@ if grep -q "^void supabase;$" "$FILE"; then
   exit 9
 fi
 
-echo "::notice::migração aplicada · magazines=$AFTER_MAG · magazine_items=$AFTER_ITEMS"
+# Balanceamento sintático básico
+OPENS=$(tr -cd '{' < "$FILE" | wc -c)
+CLOSES=$(tr -cd '}' < "$FILE" | wc -c)
+if [[ "$OPENS" -ne "$CLOSES" ]]; then
+  echo "::error::chaves desbalanceadas: $OPENS { vs $CLOSES }"
+  exit 10
+fi
+
+echo "::notice::migração aplicada · magazines=$AFTER_MAG · magazine_items=$AFTER_ITEMS · linhas=$(wc -l < $FILE)"
 echo "::notice::backup em $FILE.premigration.bak (remover após validar)"
 echo "::notice::validar em seguida:"
 echo "  npx tsgo --noEmit"
