@@ -15,6 +15,11 @@ import {
 } from '@/components/cart/CartUtilComponents';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
+import {
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  itemRemovedToastTitle,
+} from '@/pages/products/seller-carts/undoCopy';
 import { differenceInDays } from 'date-fns';
 import {
   KeyboardSensor,
