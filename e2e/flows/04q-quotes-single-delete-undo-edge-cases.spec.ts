@@ -105,6 +105,49 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     expect(initialSec).toBeGreaterThan(0);
     expect(initialSec).toBeLessThanOrEqual(8);
 
+    // Estado inicial: enquanto contador > 0, botão NÃO deve estar expirado
+    // (aria-disabled ausente/null, data-expired="false", disabled=false).
+    // Fixa o invariante negativo antes de esperar a transição para zero.
+    await expect(page.locator(UNDO_BTN)).toHaveAttribute("data-expired", "false");
+    await expect(page.locator(UNDO_BTN)).not.toHaveAttribute("aria-disabled", "true");
+    expect(await page.locator(UNDO_BTN).isDisabled()).toBe(false);
+
+    // ================================================================
+    // Instala MutationObserver in-page para capturar o SNAPSHOT do botão
+    // no instante EXATO em que o contador chega a 0. Sem isso, o handler
+    // `onTimeout` do wrapper chama `sonner.dismiss` na mesma tick após o
+    // re-render com `remainingMs=0`, e o teste perderia a janela de asserção.
+    // O observer grava em `window.__undoBtnExpirySnapshot` o primeiro
+    // estado observado com `data-expired="true"`.
+    // ================================================================
+    await page.evaluate((sel) => {
+      const btn = document.querySelector(sel) as HTMLButtonElement | null;
+      if (!btn) return;
+      const w = window as unknown as {
+        __undoBtnExpirySnapshot?: Record<string, string | boolean | null>;
+        __undoBtnExpiryObserver?: MutationObserver;
+      };
+      w.__undoBtnExpirySnapshot = undefined;
+      const capture = () => {
+        if (w.__undoBtnExpirySnapshot) return; // fixa 1ª ocorrência
+        const expired = btn.getAttribute("data-expired");
+        if (expired !== "true") return;
+        w.__undoBtnExpirySnapshot = {
+          dataExpired: expired,
+          ariaDisabled: btn.getAttribute("aria-disabled"),
+          disabledProp: btn.disabled,
+          dataRemainingSec: btn.getAttribute("data-remaining-sec"),
+          dataRemainingMs: btn.getAttribute("data-remaining-ms"),
+          isConnected: btn.isConnected,
+          capturedAt: new Date().toISOString(),
+        };
+      };
+      capture();
+      const obs = new MutationObserver(capture);
+      obs.observe(btn, { attributes: true, attributeOldValue: false });
+      w.__undoBtnExpiryObserver = obs;
+    }, UNDO_BTN);
+
     // Aguarda o contador chegar a 0 OU o toast ser removido do DOM.
     // (o wrapper `showUndoToast` chama `dismiss` no `onTimeout`.)
     await expect
@@ -119,6 +162,27 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
         { timeout: 20_000, intervals: [200, 500, 1000] },
       )
       .toBe(0);
+
+    // Recupera o snapshot capturado pelo observer — deve existir E ter
+    // aria-disabled="true", data-expired="true", disabled=true e
+    // data-remaining-sec="0" no mesmo instante.
+    const expirySnapshot = await page.evaluate(() => {
+      const w = window as unknown as {
+        __undoBtnExpirySnapshot?: Record<string, string | boolean | null>;
+        __undoBtnExpiryObserver?: MutationObserver;
+      };
+      w.__undoBtnExpiryObserver?.disconnect();
+      return w.__undoBtnExpirySnapshot ?? null;
+    });
+
+    expect(expirySnapshot, "MutationObserver não capturou o instante de expiração").not.toBeNull();
+    expect(expirySnapshot!.dataExpired).toBe("true");
+    expect(expirySnapshot!.ariaDisabled).toBe("true");
+    expect(expirySnapshot!.disabledProp).toBe(true);
+    expect(expirySnapshot!.dataRemainingSec).toBe("0");
+    // data-remaining-ms pode ser exatamente "0" (setState clamp).
+    expect(Number(expirySnapshot!.dataRemainingMs)).toBe(0);
+
 
     // Aguarda o botão ficar indisponível (disabled OU removido do DOM) —
     // ambos os estados satisfazem o invariante "não é mais clicável".
