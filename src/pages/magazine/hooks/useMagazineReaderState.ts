@@ -130,6 +130,39 @@ function disableRemote(storage: Storage | null, reason: string): void {
     // ainda não foi promovida ao Gold ou quando RLS bloqueia o token).
     console.info('[magazine-reader-state] remote sync disabled:', reason);
   }
+  notifyRemoteDisabled(reason);
+}
+
+/**
+ * Feedback visual one-shot quando o sync remoto é desativado por RLS/permission/
+ * tabela ausente. Guardado por `sessionStorage` — não repete no mesmo tab e
+ * não atrapalha o leitor (o localStorage continua funcionando).
+ */
+function notifyRemoteDisabled(reason: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const ss = window.sessionStorage;
+    if (ss.getItem(TOAST_SHOWN_KEY) === '1') return;
+    ss.setItem(TOAST_SHOWN_KEY, '1');
+  } catch {
+    // sessionStorage indisponível — segue sem persistir; toast pode aparecer
+    // 1x por render, mas o `id` do sonner deduplica dentro da mesma sessão.
+  }
+
+  const isPermission = /42501|PGRST301|permission denied/i.test(reason);
+  const isMissing = /42P01|does not exist|Not Acceptable/i.test(reason);
+
+  const description = isPermission
+    ? 'Sem permissão para sincronizar (RLS). Seus marcadores continuam salvos neste dispositivo.'
+    : isMissing
+      ? 'Sincronização entre dispositivos ainda não está ativa. Marcadores salvos localmente.'
+      : 'Falha ao sincronizar com o servidor. Marcadores salvos localmente.';
+
+  toast.info('Modo local ativado', {
+    id: TOAST_ID,
+    description,
+    duration: 6000,
+  });
 }
 
 // Promise com timeout — evita que o botão de bookmark fique dependente
