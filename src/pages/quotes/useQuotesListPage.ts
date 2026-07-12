@@ -349,6 +349,7 @@ export function useQuotesListPage() {
     setSortBy,
     deleteConfirmId,
     setDeleteConfirmId,
+    isDeleting,
     bulkDeleteIds,
     setBulkDeleteIds,
     isBulkDeleting,
