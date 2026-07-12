@@ -33,9 +33,9 @@ function makePlaceholderItem(idx: number): MagazineItem {
       id: `ph-${idx}`,
       name: ['Aurora Notebook', 'Copo Térmico', 'Mochila Executiva', 'Ecobag Signature', 'Squeeze Premium', 'Caneta Delta'][idx % 6],
       sku: `SKU-${100 + idx}`,
-      price: 49.9 + idx * 10,
-      sale_price: undefined,
       shortDescription: 'Produto de alto padrão com acabamento premium e opções de personalização.',
+      description: null,
+      price: 49.9 + idx * 10,
       image_url: PLACEHOLDER_IMG,
       images: [],
       colors: [],
@@ -46,6 +46,7 @@ function makePlaceholderItem(idx: number): MagazineItem {
     },
   };
 }
+
 
 export function TemplateThumbnail({ templateId, sourceMagazine }: Props) {
   const template = getTemplate(templateId);
