@@ -21,7 +21,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import type { Magazine } from '@/types/magazine';
+
+// Telemetria pré-remoção: ver docs/plans/magazine-gold-import-removal.md.
+// Painel /admin/telemetria filtra por scope='magazine.gold-import'.
+// Critério de remoção: 14 dias consecutivos com zero eventos '..._success'.
+const log = createClientLogger('magazine.gold-import');
 
 const LEGACY_STORAGE_KEY = 'promobrind.magazines.v1';
 
@@ -112,6 +118,7 @@ export function useMagazineGoldImport(userId: string | undefined): {
     }
 
     let cancelled = false;
+    log.info('magazine_import_local_start', { count: localMagazines.length });
 
     (async () => {
       setImporting(true);
@@ -120,6 +127,7 @@ export function useMagazineGoldImport(userId: string | undefined): {
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
         if (!accessToken) {
+          log.info('magazine_import_local_skipped', { reason: 'no_session' });
           setImporting(false);
           return; // sem sessão — tenta de novo quando logar
         }
@@ -144,6 +152,7 @@ export function useMagazineGoldImport(userId: string | undefined): {
         if (cancelled) return;
 
         if (!res.ok) {
+          log.warn('magazine_import_local_failed', { status: res.status });
           // Edge fora do ar, 401, etc. — NÃO marca migrado; tenta de novo depois.
           setImporting(false);
           return;
@@ -154,6 +163,10 @@ export function useMagazineGoldImport(userId: string | undefined): {
 
         setLastResult(body.results);
         markMigrated();
+        log.info('magazine_import_local_success', {
+          okCount,
+          totalCount: localMagazines.length,
+        });
 
         if (okCount > 0) {
           toast.success(
@@ -165,7 +178,10 @@ export function useMagazineGoldImport(userId: string | undefined): {
             },
           );
         }
-      } catch {
+      } catch (err) {
+        log.warn('magazine_import_local_error', {
+          message: err instanceof Error ? err.message : String(err),
+        });
         // Timeout/rede — silencioso, tenta de novo na próxima sessão
         if (!cancelled) setImporting(false);
       } finally {
