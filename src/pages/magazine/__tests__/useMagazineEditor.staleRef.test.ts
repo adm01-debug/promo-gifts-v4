@@ -142,6 +142,21 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/**
+ * Renderiza o hook e aguarda o load inicial (agora async) terminar antes de
+ * devolver o resultado. Necessário após a migração do magazineService para
+ * Supabase — o `useEffect` de carga faz `await magazineService.get(id)`.
+ */
+async function renderLoadedEditor() {
+  const rh = renderHook(() => useMagazineEditor('mag_test'));
+  await act(async () => {
+    // Flush microtasks do load inicial
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return rh;
+}
+
 describe('useMagazineEditor — stale ref race condition', () => {
   it('[A] setTitle → setBranding in same tick: BOTH mutations applied', async () => {
     const { result } = renderHook(() => useMagazineEditor('mag_test'));
