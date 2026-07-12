@@ -21,7 +21,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import type { Magazine } from '@/types/magazine';
+
+// Telemetria pré-remoção: ver docs/plans/magazine-gold-import-removal.md.
+// Painel /admin/telemetria filtra por scope='magazine.gold-import'.
+// Critério de remoção: 14 dias consecutivos com zero eventos '..._success'.
+const log = createClientLogger('magazine.gold-import');
 
 const LEGACY_STORAGE_KEY = 'promobrind.magazines.v1';
 
