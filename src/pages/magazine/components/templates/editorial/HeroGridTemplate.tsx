@@ -24,7 +24,7 @@ export function HeroGridTemplate({ magazine, page, totalPages }: TemplatePagePro
                 <div key={item.id} className="relative overflow-hidden">
                   <img
                     src={resolveItemImage(item)}
-                    alt=""
+                    alt={productImageAlt(item)}
                     className="h-full w-full object-cover"
                     style={{ filter: 'saturate(0.75) contrast(1.05)' }}
                   />
