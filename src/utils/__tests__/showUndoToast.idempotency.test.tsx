@@ -165,17 +165,21 @@ describe('showUndoToast — guarda undone (idempotência de cliques)', () => {
     const undo1 = vi.fn();
     const undo2 = vi.fn();
     showUndoToast({ title: 'A', onUndo: undo1, duration: 5000 });
-    const first = render(toastCalls[0].children);
+    // Renderiza cada toast em um container isolado para escopar as queries.
+    const c1 = document.createElement('div');
+    const c2 = document.createElement('div');
+    document.body.appendChild(c1);
+    document.body.appendChild(c2);
+    const first = render(toastCalls[0].children, { container: c1 });
     fireEvent.click(first.getByTestId('undo-toast-button'));
     expect(undo1).toHaveBeenCalledTimes(1);
 
     showUndoToast({ title: 'B', onUndo: undo2, duration: 5000 });
-    const second = render(toastCalls[1].children);
-    // Segundo toast deve funcionar independentemente
+    const second = render(toastCalls[1].children, { container: c2 });
     fireEvent.click(second.getByTestId('undo-toast-button'));
     expect(undo2).toHaveBeenCalledTimes(1);
 
-    // Cross-check: cliques extras no primeiro não afetam o segundo
+    // Cliques extras no primeiro não afetam o segundo
     fireEvent.click(first.getByTestId('undo-toast-button'));
     expect(undo1).toHaveBeenCalledTimes(1);
     expect(undo2).toHaveBeenCalledTimes(1);
