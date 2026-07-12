@@ -222,6 +222,23 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
   const pendingRef = useRef<{ bookmarks: number[]; lastPageIndex: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteDisabledRef = useRef<boolean>(isRemoteDisabled(storage));
+  // Refs para leitura sempre-atual do state — evita stale closures quando
+  // duas ações ocorrem no mesmo tick antes do próximo render (BUG A).
+  const bookmarksRef = useRef<Set<number>>(bookmarks);
+  const lastPageIndexRef = useRef<number>(lastPageIndex);
+  bookmarksRef.current = bookmarks;
+  lastPageIndexRef.current = lastPageIndex;
+  // Guard de unmount para evitar setState em componente desmontado (BUG B).
+  const isMountedRef = useRef<boolean>(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const safeSetSyncStatus = useCallback((s: MagazineReaderState['syncStatus']) => {
+    if (isMountedRef.current) setSyncStatus(s);
+  }, []);
 
   // Re-hidrata local quando o token mudar (troca de revista)
   useEffect(() => {
