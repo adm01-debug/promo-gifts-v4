@@ -110,7 +110,7 @@ export default function CartsListPage() {
 
 function CartsListContent() {
   const navigate = useNavigate();
-  const { carts, isLoading, deleteCart, duplicateCart } = useSellerCartContext();
+  const { carts, isLoading, deleteCart, duplicateCart, restoreCart } = useSellerCartContext();
 
   const handleGenerateQuote = useCallback(
     (cart: SellerCart) => {
