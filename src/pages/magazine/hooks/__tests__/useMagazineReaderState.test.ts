@@ -17,40 +17,48 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-// --- Mock supabase client: por default retorna 42P01 (tabela ausente) ---
-const supabaseCalls: Array<{ op: string; payload?: unknown }> = [];
-let mockError: { code?: string; message?: string } | null = {
-  code: '42P01',
-  message: 'relation "magazine_reader_state" does not exist',
-};
-let mockData: { bookmarks: number[] | null; last_page_index: number | null } | null = null;
+// --- Mock global fetch: simula edge functions magazine-reader-state-{read,write} ---
+// O hook migrou de `supabase.from('magazine_reader_state')` (acesso direto,
+// fechado por RLS) para chamadas fetch nas edges com service_role. Os testes
+// mockam fetch e controlam status HTTP + body.
+type FetchReply =
+  | { kind: 'ok'; body: { bookmarks: number[] | null; lastPageIndex: number | null } }
+  | { kind: 'status'; status: number; body?: unknown }
+  | { kind: 'throw'; error?: Error };
 
-vi.mock('@/integrations/supabase/client', () => {
-  const buildQuery = (op: string) => ({
-    select: () => buildQuery(op),
-    eq: () => buildQuery(op),
-    maybeSingle: () => {
-      supabaseCalls.push({ op });
-      return Promise.resolve({ data: mockData, error: mockError });
-    },
-    // upsert é awaitável direto
-    then: (fn: (v: unknown) => unknown) => {
-      supabaseCalls.push({ op });
-      return Promise.resolve({ data: null, error: mockError }).then(fn);
-    },
-  });
-  return {
-    supabase: {
-      from: () => ({
-        select: () => buildQuery('select'),
-        upsert: (payload: unknown) => {
-          supabaseCalls.push({ op: 'upsert', payload });
-          return Promise.resolve({ data: null, error: mockError });
-        },
+const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+let readReply: FetchReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+let writeReply: FetchReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+
+function makeResponse(reply: FetchReply): Promise<Response> {
+  if (reply.kind === 'throw') {
+    return Promise.reject(reply.error ?? new Error('network-error'));
+  }
+  if (reply.kind === 'ok') {
+    return Promise.resolve(
+      new Response(JSON.stringify(reply.body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
       }),
-    },
-  };
+    );
+  }
+  return Promise.resolve(
+    new Response(JSON.stringify(reply.body ?? { error: `http_${reply.status}` }), {
+      status: reply.status,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+}
+
+const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input.toString();
+  fetchCalls.push({ url, init });
+  if (url.includes('magazine-reader-state-read')) return makeResponse(readReply);
+  if (url.includes('magazine-reader-state-write')) return makeResponse(writeReply);
+  return new Response('{}', { status: 200 });
 });
+
+globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 // --- Mock sonner: captura toasts ---
 const toastCalls: Array<{ title: string; opts?: Record<string, unknown> }> = [];
@@ -72,10 +80,11 @@ const LP_KEY = `mag:last-page:${TOKEN}`;
 function resetAll() {
   localStorage.clear();
   sessionStorage.clear();
-  supabaseCalls.length = 0;
+  fetchCalls.length = 0;
   toastCalls.length = 0;
-  mockError = null;
-  mockData = null;
+  readReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+  writeReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
+  fetchMock.mockClear();
 }
 
 beforeEach(() => resetAll());
@@ -115,7 +124,7 @@ describe('useMagazineReaderState — hidratação inicial', () => {
     expect(result.current.bookmarks.size).toBe(0);
     expect(result.current.lastPageIndex).toBe(0);
     // Não deve gerar chamada remota
-    expect(supabaseCalls).toHaveLength(0);
+    expect(fetchCalls).toHaveLength(0);
   });
 });
 
@@ -202,38 +211,31 @@ describe('useMagazineReaderState — persistência local', () => {
   });
 });
 
-describe('useMagazineReaderState — fallback quando Supabase falha', () => {
-  it('42P01 dispara toast + persiste flag remote-disabled', async () => {
-    mockError = { code: '42P01', message: 'relation does not exist' };
+describe('useMagazineReaderState — fallback quando edge falha', () => {
+  it('503 dispara toast + persiste flag remote-disabled', async () => {
+    readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     renderHook(() => useMagazineReaderState(TOKEN));
-    // Aguarda o fetch async completar
     await new Promise((r) => setTimeout(r, 20));
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');
     expect(toastCalls.length).toBeGreaterThanOrEqual(1);
     expect(toastCalls[0].title).toBe('Modo local ativado');
+    expect(String(toastCalls[0].opts?.description ?? '')).toMatch(/temporariamente indispon/i);
   });
 
-  it('42501 (RLS) → copy contextual "Sem permissão"', async () => {
-    sessionStorage.clear(); // permitir novo toast
-    mockError = { code: '42501', message: 'permission denied for table magazine_reader_state' };
-    renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
-    const permToast = toastCalls.find((t) =>
-      String(t.opts?.description ?? '').includes('Sem permissão'),
-    );
-    expect(permToast).toBeDefined();
-  });
-
-  it('PGRST301 detectado por código', async () => {
+  it('401 (token inválido/expirado) → copy contextual "expirou"', async () => {
     sessionStorage.clear();
-    mockError = { code: 'PGRST301', message: 'JWT expired' };
+    readReply = { kind: 'status', status: 401, body: { error: 'invalid_or_expired' } };
     renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
+    const expiredToast = toastCalls.find((t) =>
+      String(t.opts?.description ?? '').match(/expirou/i),
+    );
+    expect(expiredToast).toBeDefined();
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');
   });
 
   it('toast é one-shot: 2 mounts consecutivos → 1 toast', async () => {
-    mockError = { code: '42P01', message: 'does not exist' };
+    readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { unmount } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     unmount();
@@ -243,15 +245,15 @@ describe('useMagazineReaderState — fallback quando Supabase falha', () => {
     expect(toastCalls.length).toBe(0);
   });
 
-  it('erro sem código conhecido NÃO persiste flag (transitório)', async () => {
-    mockError = { code: '08006', message: 'connection failure' };
+  it('erro de rede (throw) NÃO persiste flag (transitório)', async () => {
+    readReply = { kind: 'throw', error: new Error('network down') };
     renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     expect(localStorage.getItem('mag:remote-disabled')).toBeNull();
   });
 
   it('sem remote-disabled, funciona 100% local (writes seguem no localStorage)', async () => {
-    mockError = { code: '42P01', message: 'does not exist' };
+    readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     await act(async () => {
@@ -282,8 +284,7 @@ describe('useMagazineReaderState — fingerprint', () => {
 
 describe('useMagazineReaderState — merge de estado remoto', () => {
   it('união de bookmarks (local ∪ remoto)', async () => {
-    mockError = null;
-    mockData = { bookmarks: [10, 20], last_page_index: 0 };
+    readReply = { kind: 'ok', body: { bookmarks: [10, 20], lastPageIndex: 0 } };
     localStorage.setItem(BK_KEY, JSON.stringify([1, 2]));
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
@@ -291,8 +292,7 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
   });
 
   it('lastPage: adota remoto se estiver à frente', async () => {
-    mockError = null;
-    mockData = { bookmarks: [], last_page_index: 15 };
+    readReply = { kind: 'ok', body: { bookmarks: [], lastPageIndex: 15 } };
     localStorage.setItem(LP_KEY, '5');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
@@ -300,17 +300,15 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
   });
 
   it('lastPage: mantém local se remoto atrás (offline avançou)', async () => {
-    mockError = null;
-    mockData = { bookmarks: [], last_page_index: 2 };
+    readReply = { kind: 'ok', body: { bookmarks: [], lastPageIndex: 2 } };
     localStorage.setItem(LP_KEY, '10');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     expect(result.current.lastPageIndex).toBe(10);
   });
 
-  it('remoto com bookmarks null/undefined não quebra', async () => {
-    mockError = null;
-    mockData = { bookmarks: null, last_page_index: null };
+  it('remoto com bookmarks null/lastPageIndex null não quebra', async () => {
+    readReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     expect(result.current.bookmarks.size).toBe(0);
