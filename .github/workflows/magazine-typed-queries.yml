@@ -93,21 +93,117 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: bash scripts/lint-untyped-from.sh
 
+      - name: Prepara diretório do relatório
+        if: always()
+        run: mkdir -p qa/reports
+
       - name: Vitest — módulo Magazine + service
         if: steps.gate.outputs.ready == 'true'
         run: |
+          set -o pipefail
           npx vitest run \
             src/services/__tests__/magazineAddProductsUnique.test.ts \
             src/services/__tests__/magazineEdgeContract.test.ts \
             src/pages/magazine/__tests__/publishAwait.regression.test.ts \
             tests/integration/magazine-service-fuzz.test.ts \
-            --reporter=default
+            --reporter=default 2>&1 | tee qa/reports/vitest.log
+
+      - name: Gera relatório de revalidação
+        if: always()
+        env:
+          READY: ${{ steps.gate.outputs.ready }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          STATUS: ${{ job.status }}
+        run: |
+          set -e
+          REPORT="qa/reports/magazine-typed-queries-revalidation.md"
+          TS_MAG=$(grep -cE "magazines: \{" src/integrations/supabase/types.ts || true)
+          TS_MI=$(grep -cE "magazine_items: \{" src/integrations/supabase/types.ts || true)
+          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || echo 0)
+          FROM_MAG=$(grep -cE '\.from\(["'"'"']magazines["'"'"']' src/services/magazineService.ts || echo 0)
+          FROM_MI=$(grep -cE '\.from\(["'"'"']magazine_items["'"'"']' src/services/magazineService.ts || echo 0)
+
+          {
+            echo "# Magazine Typed Queries — Revalidação"
+            echo ""
+            echo "- **Repo:** \`$REPO\`"
+            echo "- **Ref:** \`$REF\`"
+            echo "- **SHA:** \`$SHA\`"
+            echo "- **Run:** #$RUN_NUMBER (\`$RUN_ID\`)"
+            echo "- **Evento:** \`$EVENT\` por @\`$ACTOR\`"
+            echo "- **Status do job:** \`$STATUS\`"
+            echo "- **Gate types.ts pronto:** \`$READY\`"
+            echo ""
+            echo "## Contagens"
+            echo ""
+            echo "| Métrica | Valor | Esperado |"
+            echo "|---|---:|---:|"
+            echo "| \`magazines: {\` em types.ts | $TS_MAG | ≥ 1 |"
+            echo "| \`magazine_items: {\` em types.ts | $TS_MI | ≥ 1 |"
+            echo "| \`untypedFrom\` em magazineService.ts | $UF_COUNT | 0 (pós-apply) |"
+            echo "| \`.from('magazines')\` tipado | $FROM_MAG | 13 |"
+            echo "| \`.from('magazine_items')\` tipado | $FROM_MI | 10 |"
+            echo ""
+            echo "## Etapas"
+            echo ""
+            if [[ "$READY" == "true" ]]; then
+              echo "- Apply script: executado"
+              echo "- tsgo --noEmit: ver log do job"
+              echo "- lint-untyped-from: ver log do job"
+              echo "- vitest (4 suítes): ver \`vitest.log\`"
+            else
+              echo "- Skip: types.ts ainda não contém magazines/magazine_items. Rode 'Regenerate Supabase Types' antes."
+            fi
+            echo ""
+            echo "_Gerado automaticamente em $(date -u +'%Y-%m-%dT%H:%M:%SZ')._"
+          } > "$REPORT"
+
+          # JSON estruturado para consumidores automáticos
+          cat > qa/reports/magazine-typed-queries-revalidation.json <<JSON
+          {
+            "repo": "$REPO",
+            "ref": "$REF",
+            "sha": "$SHA",
+            "run_id": "$RUN_ID",
+            "run_number": "$RUN_NUMBER",
+            "event": "$EVENT",
+            "actor": "$ACTOR",
+            "job_status": "$STATUS",
+            "types_ready": "$READY",
+            "counts": {
+              "types_magazines": $TS_MAG,
+              "types_magazine_items": $TS_MI,
+              "untyped_from_remaining": $UF_COUNT,
+              "from_magazines": $FROM_MAG,
+              "from_magazine_items": $FROM_MI
+            },
+            "generated_at": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          JSON
+
+          echo "::notice::Relatório gerado em $REPORT"
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publica artifact de auditoria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: magazine-typed-queries-revalidation-${{ github.run_number }}
+          path: qa/reports/
+          retention-days: 90
+          if-no-files-found: error
 
       - name: Resumo
         if: always()
         run: |
           if [[ "${{ steps.gate.outputs.ready }}" == "true" ]]; then
-            echo "::notice::Dry-run completo — a migração está segura para aplicar em PR dedicado."
+            echo "::notice::Dry-run completo — relatório publicado como artifact."
           else
-            echo "::notice::Dry-run em modo skip — reabra este workflow após o merge do types.ts regenerado."
+            echo "::notice::Dry-run em modo skip — relatório publicado com gate=false para auditoria."
           fi
