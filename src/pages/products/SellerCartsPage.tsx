@@ -773,17 +773,11 @@ function SellerCartsContent() {
             {s.activeCart.items.length === 0 ? (
               <CartEmptyStateSmart
                 activeCart={s.activeCart}
-                templates={s.templates.map(({ id, name, description, items }) => ({
-                  id,
-                  name,
-                  description: description ?? undefined,
-                  items,
-                }))}
                 otherCarts={s.otherCarts}
-                onApplyTemplate={s.handleLoadTemplate}
                 onDuplicateLast={handleDuplicateLast}
                 onNavigateProducts={() => s.navigate('/produtos')}
               />
+
             ) : (
               <>
 
