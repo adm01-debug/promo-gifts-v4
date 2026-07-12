@@ -335,9 +335,11 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     // Tentamos re-clicar no locator: deve resultar em 0 elementos.
     await expect(page.locator(UNDO_BTN)).toHaveCount(0);
 
-    // Aguarda margem para garantir ausência de retry silencioso
-    await page.waitForTimeout(2000);
-    expect(rpcCreateCalls).toBe(1);
+    // Aguarda ausência de retry silencioso via poll estável (sem setTimeout):
+    // o valor de rpcCreateCalls deve permanecer 1 durante toda a janela.
+    await expect
+      .poll(() => rpcCreateCalls, { timeout: 2_000, intervals: [200, 500] })
+      .toBe(1);
 
     // Invariante: nenhuma inserção direta em quote_items — items foram
     // enviados dentro do payload do RPC (evita duplicação parcial em caso
