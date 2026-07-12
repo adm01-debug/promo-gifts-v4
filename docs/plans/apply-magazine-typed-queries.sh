@@ -32,14 +32,15 @@ if [[ ! -f "$TYPES" ]]; then
   echo "::error::$TYPES não encontrado — rode 'Regenerate Supabase Types' primeiro."
   exit 2
 fi
-# Grep em linhas não-comentário: descarta // e /* ... */ single-line
+# Grep em linhas não-comentário: descarta // e /* ... */ single-line.
+# Usa \s antes de "magazines:" para evitar match parcial em "my_magazines:".
 NONCOMMENT=$(sed 's|//.*$||; s|/\*[^*]*\*/||g' "$TYPES")
-if ! echo "$NONCOMMENT" | grep -qE "magazines: \{"; then
+if ! echo "$NONCOMMENT" | grep -qE "(^|[[:space:]])magazines: \{"; then
   echo "::error::$TYPES não contém a tabela 'magazines' (fora de comentários)."
   echo "         Rode antes o workflow 'Regenerate Supabase Types' e mergeie o PR."
   exit 2
 fi
-if ! echo "$NONCOMMENT" | grep -qE "magazine_items: \{"; then
+if ! echo "$NONCOMMENT" | grep -qE "(^|[[:space:]])magazine_items: \{"; then
   echo "::error::$TYPES não contém a tabela 'magazine_items' (fora de comentários)."
   exit 2
 fi
