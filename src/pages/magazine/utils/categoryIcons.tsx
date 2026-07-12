@@ -6,11 +6,6 @@
 
 import type { SVGProps } from 'react';
 import {
-  Bag,
-  Award,
-  Clock as ClockIcon,
-} from 'lucide-react';
-import {
   Cpu,
   GlassWater,
   Gift,
@@ -20,6 +15,7 @@ import {
   Package,
   PenLine,
   Backpack,
+  Clock as ClockIcon,
   Signpost,
   IdCard,
   Boxes,
