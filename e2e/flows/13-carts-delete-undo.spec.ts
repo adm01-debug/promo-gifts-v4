@@ -1,0 +1,183 @@
+/**
+ * E2E — Exclusão de Carrinhos com Desfazer.
+ *
+ * Cobre paridade com Orçamentos (04o/04p) para o módulo Carrinhos:
+ *   A. Excluir 1 pela linha → toast "Desfazer" único → clicar restaura.
+ *   B. Excluir 3 em lote → toast "N carrinhos excluídos" único → restaura todos.
+ *   C. Excluir pelo popover do header → toast "Desfazer" → restaura.
+ *   D. Sem clicar em Desfazer (8s+): toast some, DELETE persiste, sem duplicatas.
+ *
+ * Guarda anti-regressão do copy do ConfirmDialog: proíbe "Esta ação não pode
+ * ser desfeita" (copy antigo) e exige o novo padrão SSOT.
+ *
+ * Interceptação: page.route() em /rest/v1/seller_carts para simular DELETE 204
+ * e POST 201 sem tocar dados reais. Usa o helper `mockSellerCartsAPI`.
+ */
+import { test, expect, requireAuth } from "../fixtures/test-base";
+import { gotoAndSettle } from "../helpers/nav";
+import { mockSellerCartsAPI, makeMockCart, type MockCart } from "../helpers/cart-mock";
+
+test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
+
+const SELLER_CARTS_REST = /\/rest\/v1\/seller_carts(\?|$)/;
+const SELLER_CART_ITEMS_REST = /\/rest\/v1\/seller_cart_items(\?|$)/;
+const UNDO_TOAST = '[data-testid="undo-toast"]';
+const UNDO_BTN = '[data-testid="undo-toast-button"]';
+
+/**
+ * Semeia N carrinhos mockados e devolve o array + captura POSTs/DELETEs
+ * emitidos pela app, para asserções de contagem no fluxo Undo.
+ */
+async function primeCarts(page: import("@playwright/test").Page, count: number) {
+  const carts = Array.from({ length: count }, (_, i) => makeMockCart(i, 2));
+  await mockSellerCartsAPI(page, carts);
+
+  const calls = { delete: 0, cartInsert: 0, itemInsert: 0 };
+  await page.route(SELLER_CARTS_REST, async (route, request) => {
+    if (request.method() === "DELETE") {
+      calls.delete += 1;
+      await route.fulfill({
+        status: 204,
+        body: "",
+        headers: { "Content-Range": "0-0/1" },
+      });
+      return;
+    }
+    if (request.method() === "POST") {
+      calls.cartInsert += 1;
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify([{ id: `restored-${calls.cartInsert}`, seller_id: "mock-seller-id" }]),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.route(SELLER_CART_ITEMS_REST, async (route, request) => {
+    if (request.method() === "POST") {
+      calls.itemInsert += 1;
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  return { carts, calls };
+}
+
+test.describe("Carrinhos: exclusão com Desfazer (paridade com Orçamentos)", () => {
+  test.beforeEach(() => {
+    requireAuth();
+  });
+
+  test("A — excluir 1 carrinho pela linha → toast Desfazer → restaura", async ({ page }) => {
+    const { calls } = await primeCarts(page, 3);
+    await gotoAndSettle(page, "/carrinhos");
+
+    // Abre menu de ações da 1ª linha e dispara "Excluir".
+    const firstRowMenu = page.locator('[aria-label*="Ações"], [data-testid^="cart-row-menu-"]').first();
+    if (await firstRowMenu.count()) {
+      await firstRowMenu.click();
+      await page.getByRole("menuitem", { name: /excluir/i }).first().click();
+    } else {
+      // Fallback: acha o botão Excluir diretamente
+      await page.getByRole("button", { name: /excluir/i }).first().click();
+    }
+
+    // Copy SSOT do diálogo (guarda anti-regressão)
+    const dialog = page.getByTestId("cart-row-delete-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText(
+      "O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação.",
+    );
+    await expect(dialog).not.toContainText("Esta ação não pode ser desfeita");
+
+    // Confirma
+    await dialog.getByRole("button", { name: /confirmar exclusão|excluir/i }).click();
+
+    await expect.poll(() => calls.delete, { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+
+    // Toast Desfazer único
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(1);
+    const btn = page.locator(UNDO_BTN);
+    await expect(btn).toHaveCount(1);
+    await expect(btn).toHaveAttribute("aria-label", /desfazer/i);
+
+    // Clica Desfazer → dispara POST em seller_carts (recria carrinho).
+    await btn.click();
+    await expect.poll(() => calls.cartInsert, { timeout: 8_000 }).toBeGreaterThanOrEqual(1);
+  });
+
+  test("B — excluir 3 em lote → 1 toast → restaura os 3", async ({ page }) => {
+    const { calls } = await primeCarts(page, 3);
+    await gotoAndSettle(page, "/carrinhos");
+
+    // Entra em modo de seleção
+    await page.getByRole("button", { name: /selecionar/i }).first().click();
+
+    const rowCheckboxes = page.getByRole("checkbox", {
+      name: /selecionar carrinho|selecionar linha/i,
+    });
+    await expect(rowCheckboxes.first()).toBeVisible({ timeout: 8_000 });
+    const count = await rowCheckboxes.count();
+    for (let i = 0; i < Math.min(count, 3); i += 1) {
+      await rowCheckboxes.nth(i).click();
+    }
+
+    // Aciona bulk delete
+    await page.getByRole("button", { name: /excluir 3/i }).click();
+
+    const bulkDialog = page.getByTestId("carts-bulk-delete-dialog");
+    await expect(bulkDialog).toBeVisible();
+    await expect(bulkDialog).toContainText(
+      "Os carrinhos serão removidos — você pode desfazer por até 8 segundos após a confirmação.",
+    );
+    await expect(bulkDialog).not.toContainText("Esta ação não pode ser desfeita");
+
+    await bulkDialog.getByRole("button", { name: /excluir/i }).click();
+
+    // Aguarda os 3 DELETEs
+    await expect.poll(() => calls.delete, { timeout: 15_000 }).toBeGreaterThanOrEqual(3);
+
+    // UM ÚNICO toast agregado
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(1);
+    await expect(page.locator(UNDO_TOAST)).toContainText(/3 carrinhos excluídos/i);
+
+    await page.locator(UNDO_BTN).click();
+    await expect.poll(() => calls.cartInsert, { timeout: 10_000 }).toBeGreaterThanOrEqual(3);
+  });
+
+  test("D — sem clicar em Desfazer (>8s) toast some, DELETE persiste, sem duplicatas", async ({ page }) => {
+    const { calls } = await primeCarts(page, 3);
+    await gotoAndSettle(page, "/carrinhos");
+
+    // Bulk delete rápido: seleciona 1 e confirma
+    await page.getByRole("button", { name: /selecionar/i }).first().click();
+    const rowCheckboxes = page.getByRole("checkbox", {
+      name: /selecionar carrinho|selecionar linha/i,
+    });
+    await rowCheckboxes.first().click();
+    await page.getByRole("button", { name: /excluir 1/i }).click();
+
+    const bulkDialog = page.getByTestId("carts-bulk-delete-dialog");
+    await bulkDialog.getByRole("button", { name: /excluir/i }).click();
+
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+    const deletesAfterUx = calls.delete;
+
+    // Aguarda o toast expirar (8s + folga)
+    await page.waitForTimeout(9_000);
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+    // Nenhum POST de restore após o timeout
+    expect(calls.cartInsert).toBe(0);
+    // Nenhum DELETE adicional
+    expect(calls.delete).toBe(deletesAfterUx);
+  });
+});

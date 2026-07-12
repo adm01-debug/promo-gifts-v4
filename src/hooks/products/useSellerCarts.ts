@@ -267,7 +267,9 @@ export function useSellerCarts() {
         previous?.filter((cart) => cart.id !== deletedCartId) ?? previous,
       );
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
-      toast.success('Carrinho removido');
+      // Toast de sucesso é emitido pelo chamador (showUndoToast em CartsListPage/
+      // CartHeaderButton) para permitir o fluxo de Desfazer. Emitir aqui geraria
+      // dois toasts sobrepostos.
     },
     onError: (err: Error) => {
       if (err instanceof CartDeleteZeroRowsError) {
@@ -878,6 +880,86 @@ export function useSellerCarts() {
     },
   });
 
+  // ============================================================
+  // RESTORE CART (Undo delete) — recria carrinho + itens a partir de snapshot.
+  // ============================================================
+  // Allowlist estrita: só campos semânticos do carrinho vão para o INSERT.
+  // Nunca vaza `id`, `seller_id`, `created_at`, `updated_at` do snapshot.
+  const restoreCartWithItems = useMutation<
+    SellerCart | undefined,
+    Error,
+    SellerCart
+  >({
+    mutationFn: async (snapshot) => {
+      if (!userId) throw new Error('Não autenticado');
+
+      // 1) INSERT do carrinho (allowlist estrita).
+      const { data: cartRow, error: cartErr } = await supabase
+        .from('seller_carts')
+        .insert({
+          seller_id: userId,
+          company_id: snapshot.company_id,
+          company_name: snapshot.company_name,
+          company_location: snapshot.company_location ?? null,
+          company_logo_url: snapshot.company_logo_url ?? null,
+          notes: snapshot.notes ?? null,
+          status: snapshot.status,
+          shipping_deadline: snapshot.shipping_deadline ?? null,
+        })
+        .select()
+        .single();
+
+      if (cartErr) {
+        if (isCartLimitError(cartErr)) {
+          throw new Error(
+            `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de restaurar.`,
+          );
+        }
+        throw cartErr;
+      }
+
+      const newCartId = (cartRow as { id: string }).id;
+
+      // 2) INSERT em massa dos itens (preservando sort_order).
+      const items = snapshot.items ?? [];
+      if (items.length > 0) {
+        const rows = items.map((it) => ({
+          cart_id: newCartId,
+          product_id: it.product_id,
+          product_name: it.product_name,
+          product_sku: it.product_sku ?? null,
+          product_image_url: it.product_image_url ?? null,
+          product_price: it.product_price,
+          quantity: clampQuantity(it.quantity ?? 1),
+          color_name: it.color_name ?? null,
+          color_hex: it.color_hex ?? null,
+          notes: it.notes ?? null,
+          sort_order: it.sort_order ?? null,
+        }));
+        const { error: itemsErr } = await supabase
+          .from('seller_cart_items')
+          .insert(rows);
+        if (itemsErr) throw itemsErr;
+      }
+
+      return {
+        ...(cartRow as Omit<SellerCart, 'items' | 'notes' | 'status' | 'shipping_deadline'>),
+        notes: snapshot.notes ?? null,
+        status: snapshot.status,
+        shipping_deadline: snapshot.shipping_deadline ?? null,
+        items,
+      } as SellerCart;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
+    },
+    onError: (err: Error) => {
+      // Toast fica sob responsabilidade do chamador (que precisa distinguir
+      // singular/plural em cenários de lote). Mantemos silêncio aqui.
+      cartDeleteLog.error('cart_restore_failed', { error: err.message });
+    },
+  });
+
   return {
     carts,
     isLoading: cartsQuery.isLoading,
@@ -897,6 +979,7 @@ export function useSellerCarts() {
     moveItemToCart,
     duplicateItemToCart,
     restoreItems,
+    restoreCartWithItems,
     clearCart: async (cartId: string) => {
       const { error } = await supabase.from('seller_cart_items').delete().eq('cart_id', cartId);
       if (error) throw error;

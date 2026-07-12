@@ -10,6 +10,7 @@ import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVe
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -109,7 +110,7 @@ export default function CartsListPage() {
 
 function CartsListContent() {
   const navigate = useNavigate();
-  const { carts, isLoading, deleteCart, duplicateCart } = useSellerCartContext();
+  const { carts, isLoading, deleteCart, duplicateCart, restoreCart } = useSellerCartContext();
 
   const handleGenerateQuote = useCallback(
     (cart: SellerCart) => {
@@ -279,22 +280,69 @@ function CartsListContent() {
     });
   }, [visibleIds]);
 
-  const confirmBulkDelete = useCallback(() => {
+  const confirmBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) {
       toast.info('Selecione ao menos um carrinho para excluir.');
       setBulkDeleteOpen(false);
       return;
     }
-    ids.forEach((id) => deleteCart(id));
-    toast.success(
-      ids.length === 1
-        ? 'Carrinho excluído.'
-        : `${ids.length} carrinhos excluídos.`,
-    );
+
+    // Snapshot ANTES do DELETE — necessário para restauração fiel (Undo).
+    // Preserva ordem para restaurar do 1º ao último se o usuário desfizer.
+    const snapshots = ids
+      .map((id) => carts.find((c) => c.id === id))
+      .filter((c): c is SellerCart => Boolean(c));
+
     setBulkDeleteOpen(false);
     clearSelection();
-  }, [selectedIds, deleteCart, clearSelection]);
+
+    // Executa DELETEs em paralelo. Falhas individuais reportadas pela mutation.
+    const results = await Promise.allSettled(ids.map((id) => deleteCart(id)));
+    const deletedCount = results.filter((r) => r.status === 'fulfilled').length;
+    if (deletedCount === 0) return; // toda a exclusão falhou; mutation já mostrou erro.
+
+    const isSingular = deletedCount === 1;
+    showUndoToast({
+      title: isSingular ? 'Carrinho excluído' : `${deletedCount} carrinhos excluídos`,
+      description: 'Você pode desfazer esta ação.',
+      duration: 8000,
+      onUndo: async () => {
+        // Restaura apenas os snapshots dos carrinhos que foram efetivamente
+        // excluídos (mantém ordem original).
+        const successIndexes = results
+          .map((r, i) => (r.status === 'fulfilled' ? i : -1))
+          .filter((i) => i >= 0);
+        const toRestore = successIndexes.map((i) => snapshots[i]).filter(Boolean);
+
+        const restoreResults = await Promise.allSettled(
+          toRestore.map((snap) => restoreCart(snap)),
+        );
+        const restoredCount = restoreResults.filter(
+          (r) => r.status === 'fulfilled' && r.value !== undefined,
+        ).length;
+        const failedCount = toRestore.length - restoredCount;
+
+        if (restoredCount === toRestore.length) {
+          toast.success(
+            restoredCount === 1
+              ? 'Carrinho restaurado.'
+              : `${restoredCount} carrinhos restaurados.`,
+          );
+        } else if (restoredCount > 0) {
+          toast.warning(
+            `${restoredCount} restaurado(s), ${failedCount} falhou(aram).`,
+          );
+        } else {
+          toast.error(
+            isSingular
+              ? 'Não foi possível restaurar o carrinho.'
+              : 'Não foi possível restaurar os carrinhos.',
+          );
+        }
+      },
+    });
+  }, [selectedIds, deleteCart, clearSelection, carts, restoreCart]);
 
   /**
    * Atalho: Esc sai do modo de seleção e limpa marcações.
@@ -657,7 +705,11 @@ function CartsListContent() {
         onOpenChange={setBulkDeleteOpen}
         variant="destructive"
         title={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}?`}
-        description="Esta ação não pode ser desfeita. Os carrinhos selecionados e todos os seus itens serão removidos permanentemente."
+        description={
+          selectedCount === 1
+            ? 'O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação.'
+            : 'Os carrinhos serão removidos — você pode desfazer por até 8 segundos após a confirmação.'
+        }
         confirmLabel={`Excluir ${selectedCount}`}
         confirmLabelShort="Excluir"
         cancelLabel="Cancelar"
@@ -670,16 +722,34 @@ function CartsListContent() {
         onOpenChange={(open) => !open && setDeleteConfirmId(null)}
         variant="destructive"
         title="Excluir carrinho?"
-        description="Esta ação não pode ser desfeita. O carrinho e todos os seus itens serão removidos permanentemente."
+        description="O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação."
         confirmLabel="Confirmar exclusão"
         confirmLabelShort="Excluir"
         cancelLabel="Cancelar"
-        onConfirm={() => {
-          if (deleteConfirmId) {
-            deleteCart(deleteConfirmId);
-            toast.success('Carrinho excluído');
-          }
+        onConfirm={async () => {
+          if (!deleteConfirmId) return;
+          // Snapshot ANTES do DELETE para restauração fiel (Undo).
+          const snapshot = carts.find((c) => c.id === deleteConfirmId);
           setDeleteConfirmId(null);
+          if (!snapshot) return;
+          try {
+            await deleteCart(deleteConfirmId);
+            showUndoToast({
+              title: 'Carrinho excluído',
+              description: 'Você pode desfazer esta ação.',
+              duration: 8000,
+              onUndo: async () => {
+                const newId = await restoreCart(snapshot);
+                if (newId) {
+                  toast.success('Carrinho restaurado.');
+                } else {
+                  toast.error('Não foi possível restaurar o carrinho.');
+                }
+              },
+            });
+          } catch {
+            // Mutation já emitiu toast de erro.
+          }
         }}
         testId="cart-row-delete-dialog"
       />

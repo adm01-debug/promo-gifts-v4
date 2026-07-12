@@ -40,6 +40,8 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => Promise<void>;
+  /** Recria um carrinho a partir do snapshot (Undo). Resolve com o novo `id` ou `undefined` em falha. */
+  restoreCart: (snapshot: SellerCart) => Promise<string | undefined>;
   isDeletingCart: boolean;
   addToActiveCart: (
     item: AddToCartInput,
@@ -90,6 +92,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     duplicateItemToCart: duplicateItemMutation,
     clearCart: clearCartMutation,
     restoreItems: restoreItemsMutation,
+    restoreCartWithItems: restoreCartWithItemsMutation,
   } = useSellerCarts();
 
   const [activeCartId, setActiveCartId] = useState<string | null>(null);
@@ -322,6 +325,19 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [restoreItemsMutation],
   );
 
+  const restoreCart = useCallback(
+    async (snapshot: SellerCart): Promise<string | undefined> => {
+      try {
+        const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
+        return created?.id;
+      } catch {
+        // Chamador (toast Desfazer) decide o texto do erro (singular/plural).
+        return undefined;
+      }
+    },
+    [restoreCartWithItemsMutation],
+  );
+
   const ctxValue = useMemo(
     () => ({
       carts,
@@ -333,6 +349,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       setActiveCartId,
       createCart,
       deleteCart,
+      restoreCart,
       isDeletingCart: deleteCartMutation.isPending,
       addToActiveCart,
       removeItem,
@@ -361,6 +378,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       setActiveCartId,
       createCart,
       deleteCart,
+      restoreCart,
       deleteCartMutation.isPending,
       addToActiveCart,
       removeItem,
