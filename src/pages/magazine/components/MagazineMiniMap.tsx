@@ -134,7 +134,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
         </div>
 
         {total > 1 &&
-          Array.from(bookmarks).map((idx) => {
+          validBookmarks.map((idx) => {
             const left = (idx / Math.max(total - 1, 1)) * 100;
             return (
               <button
