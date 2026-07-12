@@ -65,8 +65,9 @@ export function MonoTemplate({ magazine, page, totalPages }: TemplatePageProps) 
               <div>
                 <div className="text-lg uppercase tracking-[0.5em] opacity-60">Tamanho</div>
                 <div className="mt-1 text-xl">
-                  {[p.dimensions.width, p.dimensions.height, p.dimensions.depth]
-                    .filter(Boolean).join(' × ')} mm
+                  {[p.dimensions.width_cm, p.dimensions.height_cm, p.dimensions.length_cm]
+                    .filter((n): n is number => typeof n === 'number' && Number.isFinite(n))
+                    .join(' × ')} cm
                 </div>
               </div>
             )}
