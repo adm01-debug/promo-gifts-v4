@@ -103,6 +103,25 @@ test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
     // Contagem regressiva visível (7s ou 8s por conta do render)
     await expect(toast).toContainText(/[678]s/);
 
+    // ASSERT ANTI-REGRESSÃO (bug do toast duplicado):
+    //   1) EXATAMENTE 1 toast de exclusão com botão "Desfazer".
+    //   2) NENHUM toast success paralelo sem botão (o bug antigo empilhava
+    //      um `toast.success('Orçamento exluído')` sem action, cobrindo o
+    //      botão Desfazer).
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(1);
+    await expect(page.locator(UNDO_BTN)).toHaveCount(1);
+    const sonnerToasts = page.locator('[data-sonner-toast]');
+    const totalToasts = await sonnerToasts.count();
+    // Todo toast Sonner visível DEVE conter o botão Desfazer — caso contrário
+    // há um toast success órfão duplicado.
+    for (let i = 0; i < totalToasts; i++) {
+      const t = sonnerToasts.nth(i);
+      const txt = ((await t.textContent()) ?? '').toLowerCase();
+      if (txt.includes('excluí') || txt.includes('exluí')) {
+        await expect(t.locator('[data-testid="undo-toast-button"]')).toHaveCount(1);
+      }
+    }
+
     // Clica em "Desfazer" → POST de restore é chamado
     await page.locator(UNDO_BTN).click();
     await expect

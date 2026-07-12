@@ -43,6 +43,8 @@ import {
 import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
+import { useQuotes, type QuoteItem } from '@/hooks/quotes';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
@@ -97,6 +99,9 @@ export default function QuoteViewPage() {
     duplicateQuote,
     deleteQuote,
   } = useQuoteViewData(id);
+
+  // Acesso direto a createQuote para o fluxo de Desfazer da exclusão individual.
+  const { createQuote } = useQuotes();
 
   // Itens com a margem de negociação já aplicada (espelha o PDF). Os componentes
   // de tabela/totais recalculam a partir dos itens, então recebem os valores já
@@ -500,7 +505,7 @@ export default function QuoteViewPage() {
         onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}
         variant="destructive"
         title="Excluir orçamento?"
-        description="Esta ação não pode ser desfeita. O orçamento será removido permanentemente."
+        description="O orçamento será removido — você pode desfazer por até 8 segundos após a confirmação."
         confirmLabel="Excluir"
         cancelLabel="Cancelar"
         loading={isDeleting}
@@ -508,10 +513,45 @@ export default function QuoteViewPage() {
           if (!quote?.id || isDeleting) return;
           setIsDeleting(true);
           try {
+            // Snapshot da tela individual: já temos `quote` (com items) em memória.
+            // Espelha o padrão de `useQuotesListPage.handleDelete` — snapshot ANTES
+            // do DELETE + showUndoToast com contador de 8s. Sem toast.success extra.
+            const snapshot = quote;
             await deleteQuote(quote.id);
-            toast.success('Orçamento excluído');
             setDeleteOpen(false);
             navigate('/orcamentos');
+            if (!snapshot) {
+              toast.success('Orçamento excluído.');
+              return;
+            }
+            showUndoToast({
+              title: 'Orçamento excluído',
+              description: 'Você pode desfazer esta ação.',
+              duration: 8000,
+              onUndo: async () => {
+                try {
+                  const items: QuoteItem[] = (snapshot.items ?? []).map((it) => ({
+                    ...it,
+                  })) as QuoteItem[];
+                  const {
+                    id: _omitId,
+                    created_at: _c,
+                    updated_at: _u,
+                    quote_number: _qn,
+                    ...rest
+                  } = snapshot as typeof snapshot & { id?: string };
+                  void _omitId; void _c; void _u; void _qn;
+                  const created = await createQuote(rest, items);
+                  if (created) {
+                    toast.success('Orçamento restaurado.');
+                  } else {
+                    toast.error('Não foi possível restaurar o orçamento.');
+                  }
+                } catch {
+                  toast.error('Não foi possível restaurar o orçamento.');
+                }
+              },
+            });
           } catch {
             toast.error('Não foi possível excluir o orçamento. Tente novamente.');
           } finally {
