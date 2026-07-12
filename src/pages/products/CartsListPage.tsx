@@ -315,9 +315,9 @@ function CartsListContent() {
 
     const isSingular = deletedCount === 1;
     showUndoToast({
-      title: isSingular ? 'Carrinho excluído' : `${deletedCount} carrinhos excluídos`,
-      description: 'Você pode desfazer esta ação.',
-      duration: 8000,
+      title: deletedToastTitle(deletedCount),
+      description: UNDO_TOAST_DESCRIPTION,
+      duration: UNDO_DURATION_MS,
       onUndo: async () => {
         // Restaura apenas os snapshots dos carrinhos que foram efetivamente
         // excluídos (mantém ordem original).
