@@ -73,10 +73,9 @@ export function PreviewSidebar({ magazine, pages, activeIdx, onSelect, onOpenAll
                     aria-current={idx === activeIdx ? 'true' : undefined}
                   >
                     <div className="aspect-[3/4] w-full overflow-hidden bg-neutral-50">
-                      <div className="pointer-events-none origin-top-left" style={{ transform: 'scale(0.06)', width: 1920, height: 2716 }}>
-                        <MagazinePageRenderer magazine={magazine} page={p} totalPages={pages.length} />
-                      </div>
+                      <MagazinePageRenderer magazine={magazine} page={p} totalPages={pages.length} fitContainer />
                     </div>
+
                     <div className="flex items-center justify-between px-1.5 py-1 text-[10px]">
                       <span className="font-mono">{String(idx + 1).padStart(2, '0')}</span>
                       <span className="truncate text-muted-foreground">{pageLabel(p)}</span>
