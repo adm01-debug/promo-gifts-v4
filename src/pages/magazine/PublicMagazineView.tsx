@@ -334,15 +334,26 @@ export default function PublicMagazineView() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="overflow-hidden rounded-xl bg-white shadow-2xl">
-          {current ? (
-            <MagazinePageRenderer
-              magazine={magazine}
-              page={current}
-              totalPages={total}
-              fitContainer
-            />
-          ) : null}
+        <div className="relative overflow-hidden rounded-xl bg-white shadow-2xl">
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            {current ? (
+              <motion.div
+                key={current.index}
+                custom={direction}
+                initial={{ opacity: 0, x: direction === 1 ? 60 : -60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction === 1 ? -60 : 60 }}
+                transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+              >
+                <MagazinePageRenderer
+                  magazine={magazine}
+                  page={current}
+                  totalPages={total}
+                  fitContainer
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
 
         <nav
