@@ -44,6 +44,13 @@ import { resolveCartCompanyCnpj } from './cartCompanyCnpj';
 import { CartItemErrorAlert } from './CartItemErrorAlert';
 import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
+import {
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  deletedToastTitle,
+  RESTORE_SINGLE_SUCCESS,
+  RESTORE_SINGLE_ERROR,
+} from '@/pages/products/seller-carts/undoCopy';
 import { toast } from 'sonner';
 import { useState, useEffect, useRef } from 'react';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
@@ -970,15 +977,15 @@ export function CartHeaderButton() {
                     return;
                   }
                   showUndoToast({
-                    title: 'Carrinho excluído',
-                    description: 'Você pode desfazer esta ação.',
-                    duration: 8000,
+                    title: deletedToastTitle(1),
+                    description: UNDO_TOAST_DESCRIPTION,
+                    duration: UNDO_DURATION_MS,
                     onUndo: async () => {
                       const newId = await restoreCart(snapshot);
                       if (newId) {
-                        toast.success('Carrinho restaurado.');
+                        toast.success(RESTORE_SINGLE_SUCCESS);
                       } else {
-                        toast.error('Não foi possível restaurar o carrinho.');
+                        toast.error(RESTORE_SINGLE_ERROR);
                       }
                     },
                   });

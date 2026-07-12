@@ -5,7 +5,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect, useContext } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
-import { useCartTemplates, type CartTemplateItem, type SellerCart } from '@/hooks/products';
+import { useCartTemplates, type CartTemplateItem, type SellerCart, type AddToCartInput } from '@/hooks/products';
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -15,6 +15,11 @@ import {
 } from '@/components/cart/CartUtilComponents';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
+import {
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  itemRemovedToastTitle,
+} from '@/pages/products/seller-carts/undoCopy';
 import { differenceInDays } from 'date-fns';
 import {
   KeyboardSensor,
@@ -263,33 +268,40 @@ export function useSellerCartsPage() {
 
   const handleRemoveItem = useCallback(
     (itemId: string, itemName: string) => {
+      // Snapshot ANTES do remove: preserva sort_order, notes e todos os campos
+      // semânticos para restauração fiel (mesma posição, notas, cor, quantidade).
+      // Usa `restoreItems` (não `addToActiveCart`) porque este propaga sort_order,
+      // enquanto addToActiveCart cria com sort_order novo (perdendo a posição).
       const item = activeCart?.items.find((i) => i.id === itemId);
-      removeItem(itemId);
-      if (item && activeCart) {
-        const cartId = activeCart.id;
-        showUndoToast({
-          title: `${itemName} removido`,
-          description: activeCart.company_name,
-          onUndo: () => {
-            addToActiveCart(
-              {
-                product_id: item.product_id,
-                product_name: item.product_name,
-                product_sku: item.product_sku || undefined,
-                product_image_url: item.product_image_url || undefined,
-                product_price: item.product_price,
-                quantity: item.quantity,
-                color_name: item.color_name || undefined,
-                color_hex: item.color_hex || undefined,
-                notes: item.notes ?? undefined,
-              },
-              cartId,
-            );
-          },
-        });
+      if (!item || !activeCart) {
+        removeItem(itemId);
+        return;
       }
+      const cartId = activeCart.id;
+      const snapshot: AddToCartInput = {
+        product_id: item.product_id,
+        product_name: item.product_name,
+        product_sku: item.product_sku || undefined,
+        product_image_url: item.product_image_url || undefined,
+        product_price: item.product_price,
+        quantity: item.quantity,
+        color_name: item.color_name || undefined,
+        color_hex: item.color_hex || undefined,
+        notes: item.notes ?? undefined,
+        sort_order: item.sort_order ?? undefined,
+      };
+      removeItem(itemId);
+      showUndoToast({
+        title: itemRemovedToastTitle(itemName),
+        description: UNDO_TOAST_DESCRIPTION,
+        duration: UNDO_DURATION_MS,
+        onUndo: () => {
+          // restoreItems preserva sort_order → item volta na MESMA posição.
+          restoreItems(cartId, [snapshot]);
+        },
+      });
     },
-    [removeItem, activeCart, addToActiveCart],
+    [removeItem, activeCart, restoreItems],
   );
 
   const handleUpdateQuantity = useCallback(
