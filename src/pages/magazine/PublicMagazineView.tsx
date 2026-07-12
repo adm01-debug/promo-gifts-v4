@@ -287,7 +287,7 @@ export default function PublicMagazineView() {
     );
   }
 
-  const progressPct = total > 1 ? ((safeIdx + 1) / total) * 100 : 100;
+  
 
   return (
     <div ref={rootRef} className="min-h-screen bg-neutral-950 py-6 focus:outline-none" tabIndex={-1}>
