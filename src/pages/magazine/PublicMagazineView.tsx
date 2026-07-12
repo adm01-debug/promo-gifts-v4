@@ -202,8 +202,15 @@ export default function PublicMagazineView() {
     return () => window.removeEventListener('keydown', onKey);
   }, [prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx]);
 
-  /* ---------------- Swipe ---------------- */
+  /* ---------------- Zoom por página ---------------- */
+  const zoom = usePageZoom(safeIdx);
+
+  /* ---------------- Swipe (desabilitado quando zoom ativo) ---------------- */
   const onTouchStart = (e: React.TouchEvent) => {
+    if (zoom.state.scale !== 1) {
+      touchStartX.current = null;
+      return;
+    }
     touchStartX.current = e.touches[0]?.clientX ?? null;
   };
   const onTouchEnd = (e: React.TouchEvent) => {
