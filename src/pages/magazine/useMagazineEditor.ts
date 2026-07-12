@@ -43,10 +43,17 @@ export function useMagazineEditor(id: string | undefined) {
       setLoaded(true);
       return;
     }
-    const loaded = magazineService.get(id);
-    magazineRef.current = loaded; // Sync ref immediately on load
-    setMagazine(loaded);
-    setLoaded(true);
+    let cancelled = false;
+    (async () => {
+      const loaded = await magazineService.get(id);
+      if (cancelled) return;
+      magazineRef.current = loaded;
+      setMagazine(loaded);
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const persist = useCallback(
@@ -60,8 +67,7 @@ export function useMagazineEditor(id: string | undefined) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaving(true);
       saveTimer.current = setTimeout(() => {
-        magazineService.update(next.id, next);
-        setSaving(false);
+        void magazineService.update(next.id, next).finally(() => setSaving(false));
       }, 400);
     },
     [],
