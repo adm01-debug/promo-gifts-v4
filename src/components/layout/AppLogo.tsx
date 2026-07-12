@@ -123,7 +123,7 @@ export function AppLogo({
           {/* Subtitle — DIVERSITY: gradient text (opacity-70 herdado) | Outros: muted/primary */}
           <span
             className={cn(
-              'text-[10px] font-semibold uppercase tracking-widest opacity-70',
+              'text-right text-[10px] font-semibold uppercase tracking-widest opacity-70',
               isDiversity ? '' : variant === 'light' ? 'text-primary' : 'text-muted-foreground',
               subtextClassName,
             )}
