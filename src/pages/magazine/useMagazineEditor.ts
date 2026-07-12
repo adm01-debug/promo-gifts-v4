@@ -44,98 +44,114 @@ export function useMagazineEditor(id: string | undefined) {
     [],
   );
 
+  const magazineRef = useRef(magazine);
+  useEffect(() => {
+    magazineRef.current = magazine;
+  }, [magazine]);
+
   const setTitle = useCallback(
     (title: string) => {
-      if (!magazine) return;
-      persist({ ...magazine, title });
+      const current = magazineRef.current;
+      if (!current) return;
+      persist({ ...current, title });
     },
-    [magazine, persist],
+    [persist],
   );
 
   const setSubtitle = useCallback(
     (subtitle: string) => {
-      if (!magazine) return;
-      persist({ ...magazine, subtitle });
+      const current = magazineRef.current;
+      if (!current) return;
+      persist({ ...current, subtitle });
     },
-    [magazine, persist],
+    [persist],
   );
 
   const setTemplate = useCallback(
     (templateId: MagazineTemplateId) => {
-      if (!magazine) return;
-      persist({ ...magazine, templateId });
+      const current = magazineRef.current;
+      if (!current) return;
+      persist({ ...current, templateId });
     },
-    [magazine, persist],
+    [persist],
   );
 
   const setBranding = useCallback(
     (patch: Partial<MagazineClientBranding>) => {
-      if (!magazine) return;
-      persist({ ...magazine, branding: { ...magazine.branding, ...patch } });
+      const current = magazineRef.current;
+      if (!current) return;
+      persist({ ...current, branding: { ...current.branding, ...patch } });
     },
-    [magazine, persist],
+    [persist],
   );
 
   const setContent = useCallback(
     (patch: Partial<MagazineContentSettings>) => {
-      if (!magazine) return;
-      persist({ ...magazine, content: { ...magazine.content, ...patch } });
+      const current = magazineRef.current;
+      if (!current) return;
+      persist({ ...current, content: { ...current.content, ...patch } });
     },
-    [magazine, persist],
+    [persist],
   );
 
   const addProducts = useCallback(
     (products: Product[]) => {
-      if (!magazine) return;
-      const updated = magazineService.addProducts(magazine.id, products);
+      const current = magazineRef.current;
+      if (!current) return;
+      const updated = magazineService.addProducts(current.id, products);
       if (updated) setMagazine(updated);
     },
-    [magazine],
+    [],
   );
 
   const removeItem = useCallback(
     (itemId: string) => {
-      if (!magazine) return;
-      const updated = magazineService.removeItem(magazine.id, itemId);
+      const current = magazineRef.current;
+      if (!current) return;
+      const updated = magazineService.removeItem(current.id, itemId);
       if (updated) setMagazine(updated);
     },
-    [magazine],
+    [],
   );
 
   const reorderItems = useCallback(
     (orderedIds: string[]) => {
-      if (!magazine) return;
-      const updated = magazineService.reorderItems(magazine.id, orderedIds);
+      const current = magazineRef.current;
+      if (!current) return;
+      const updated = magazineService.reorderItems(current.id, orderedIds);
       if (updated) setMagazine(updated);
     },
-    [magazine],
+    [],
   );
 
   const updateItem = useCallback(
     (itemId: string, patch: Partial<MagazineItem>) => {
-      if (!magazine) return;
-      const updated = magazineService.updateItem(magazine.id, itemId, patch);
+      const current = magazineRef.current;
+      if (!current) return;
+      const updated = magazineService.updateItem(current.id, itemId, patch);
       if (updated) setMagazine(updated);
     },
-    [magazine],
+    [],
   );
 
   const publish = useCallback(() => {
-    if (!magazine) return null;
-    const updated = magazineService.publish(magazine.id);
+    const current = magazineRef.current;
+    if (!current) return null;
+    const updated = magazineService.publish(current.id);
     if (updated) setMagazine(updated);
     return updated;
-  }, [magazine]);
+  }, []);
 
   const unpublish = useCallback(() => {
-    if (!magazine) return;
-    const updated = magazineService.unpublish(magazine.id);
+    const current = magazineRef.current;
+    if (!current) return;
+    const updated = magazineService.unpublish(current.id);
     if (updated) setMagazine(updated);
-  }, [magazine]);
+  }, []);
 
   const isOwner = useMemo(
     () => (magazine && user ? magazine.ownerId === user.id : false),
-    [magazine, user],
+    [magazine?.id, magazine?.ownerId, user?.id],
   );
 
   return {

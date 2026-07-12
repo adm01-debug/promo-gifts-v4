@@ -80,14 +80,22 @@ export default function MagazineEditorPage() {
   }
 
   const magazine = editor.magazine;
-  const pages = paginateMagazine(magazine);
+  const pages = useMemo(() => paginateMagazine(magazine), [magazine.items.length, magazine.templateId]);
   const safePreviewIdx = Math.min(previewIdx, Math.max(0, pages.length - 1));
 
   const currentIdx = STEPS.findIndex((s) => s.id === step);
   const canPrev = currentIdx > 0;
   const canNext = currentIdx < STEPS.length - 1;
 
-  const validation = useMemo(() => validateStep(step, magazine), [step, magazine]);
+  const validation = useMemo(
+    () => validateStep(step, magazine),
+    [
+      step,
+      magazine.title,
+      magazine.items.length,
+      magazine.branding.clientLogoUrl,
+    ],
+  );
   const publishable = canPublish(magazine);
 
   const goToStep = (target: StepId) => {
