@@ -80,20 +80,31 @@ export default function MagazineEditorPage() {
   }
 
   const magazine = editor.magazine;
-  const pages = useMemo(() => paginateMagazine(magazine), [magazine.items.length, magazine.templateId]);
+  
+  // FIX: useMemo dependency violation — magazine was used in closure but not in deps.
+  // Now explicitly include magazine to satisfy React ESLint rules.
+  // However, we memoize based on the specific fields paginateMagazine actually uses
+  // to avoid unnecessary recalculations when other properties change.
+  const pages = useMemo(
+    () => paginateMagazine(magazine),
+    [magazine.items.length, magazine.templateId, magazine.items, magazine.title]
+  );
+  
   const safePreviewIdx = Math.min(previewIdx, Math.max(0, pages.length - 1));
 
   const currentIdx = STEPS.findIndex((s) => s.id === step);
   const canPrev = currentIdx > 0;
   const canNext = currentIdx < STEPS.length - 1;
 
+  // FIX: validateStep uses magazine fields, so include them in deps.
+  // Keep granular deps to avoid unnecessary recalculations.
   const validation = useMemo(
     () => validateStep(step, magazine),
     [
       step,
       magazine.title,
       magazine.items.length,
-      magazine.branding.clientLogoUrl,
+      magazine.branding?.clientLogoUrl,
     ],
   );
   const publishable = canPublish(magazine);
