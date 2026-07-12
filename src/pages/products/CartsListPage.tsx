@@ -321,25 +321,11 @@ function CartsListContent() {
         const restoredCount = restoreResults.filter(
           (r) => r.status === 'fulfilled' && r.value !== undefined,
         ).length;
-        const failedCount = toRestore.length - restoredCount;
 
-        if (restoredCount === toRestore.length) {
-          toast.success(
-            restoredCount === 1
-              ? 'Carrinho restaurado.'
-              : `${restoredCount} carrinhos restaurados.`,
-          );
-        } else if (restoredCount > 0) {
-          toast.warning(
-            `${restoredCount} restaurado(s), ${failedCount} falhou(aram).`,
-          );
-        } else {
-          toast.error(
-            isSingular
-              ? 'Não foi possível restaurar o carrinho.'
-              : 'Não foi possível restaurar os carrinhos.',
-          );
-        }
+        const summary = bulkRestoreSummary(toRestore.length, restoredCount);
+        if (summary.tone === 'success') toast.success(summary.message);
+        else if (summary.tone === 'warning') toast.warning(summary.message);
+        else toast.error(summary.message);
       },
     });
   }, [selectedIds, deleteCart, clearSelection, carts, restoreCart]);
