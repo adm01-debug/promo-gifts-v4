@@ -152,14 +152,17 @@ export default function PublicMagazineView() {
   const prev = useCallback(() => go(safeIdx - 1), [go, safeIdx]);
   const next = useCallback(() => go(safeIdx + 1), [go, safeIdx]);
 
-  /* ---------------- Persistência da última página lida ---------------- */
+  /* ---------------- Persistência da última página lida (N: debounce 500ms) ---------------- */
   useEffect(() => {
     if (!token || !total) return;
-    try {
-      localStorage.setItem(LAST_PAGE_KEY(token), String(safeIdx));
-    } catch {
-      /* localStorage cheio/desabilitado — silencioso */
-    }
+    const id = window.setTimeout(() => {
+      try {
+        localStorage.setItem(LAST_PAGE_KEY(token), String(safeIdx));
+      } catch {
+        /* localStorage cheio/desabilitado — silencioso */
+      }
+    }, 500);
+    return () => window.clearTimeout(id);
   }, [token, safeIdx, total]);
 
   /* ---------------- Zoom por página ---------------- */
