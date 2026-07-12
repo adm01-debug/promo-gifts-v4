@@ -2,27 +2,33 @@
  * MagazineMiniMap — barra de progresso interativa:
  *  - Clique/arraste em qualquer ponto para pular (scrub)
  *  - Dots âmbar dos marcadores clicáveis
- *  - Thumb (indicador) da página atual
+ *  - Thumb da página atual
  *  - Tooltip flutuante durante o arrasto
- *  - Mouse + touch, acessível (role=slider + keyboard já vem do viewer)
+ *  - Hover-preview: mostra miniatura da página sob o cursor (desktop)
+ *  - Mouse + touch, acessível (role=slider)
  */
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 
 interface Props {
   total: number;
   currentIndex: number;
   bookmarks: Set<number>;
   onGo: (index: number) => void;
+  /** Renderiza a miniatura para hover-preview (opcional, apenas desktop). */
+  renderPreview?: (index: number) => ReactNode;
 }
 
-export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props) {
+export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPreview }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [scrubIdx, setScrubIdx] = useState<number | null>(null);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const progressPct = total > 1 ? ((currentIndex + 1) / total) * 100 : 100;
-  const previewIdx = scrubIdx ?? currentIndex;
-  const previewLeft = total > 1 ? (previewIdx / Math.max(total - 1, 1)) * 100 : 0;
+  const thumbIdx = scrubIdx ?? currentIndex;
+  const thumbLeft = total > 1 ? (thumbIdx / Math.max(total - 1, 1)) * 100 : 0;
+  const previewLeft =
+    hoverIdx != null && total > 1 ? (hoverIdx / Math.max(total - 1, 1)) * 100 : 0;
 
   const idxFromClientX = useCallback(
     (clientX: number): number => {
@@ -60,9 +66,10 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props)
     setScrubIdx(null);
   }, []);
 
+  const showPreview = !dragging && hoverIdx != null && renderPreview && total > 1;
+
   return (
     <div className="relative mx-auto mb-3 max-w-[1100px]">
-      {/* Track hitbox generoso (h-4) para facilitar arraste sem engordar visual */}
       <div
         ref={trackRef}
         className="group relative flex h-4 cursor-pointer items-center"
@@ -76,9 +83,16 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props)
           e.preventDefault();
           handleDown(e.clientX);
         }}
-        onMouseMove={(e) => handleMove(e.clientX)}
+        onMouseMove={(e) => {
+          handleMove(e.clientX);
+          setHoverIdx(idxFromClientX(e.clientX));
+        }}
+        onMouseEnter={(e) => setHoverIdx(idxFromClientX(e.clientX))}
         onMouseUp={handleUp}
-        onMouseLeave={handleUp}
+        onMouseLeave={() => {
+          handleUp();
+          setHoverIdx(null);
+        }}
         onTouchStart={(e) => {
           const t = e.touches[0];
           if (t) handleDown(t.clientX);
@@ -92,7 +106,6 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props)
         }}
         onTouchEnd={handleUp}
       >
-        {/* trilha */}
         <div className="h-[3px] w-full overflow-hidden rounded-full bg-white/10 transition-[height] group-hover:h-[5px]">
           <div
             className="h-full bg-white/80 transition-all duration-200"
@@ -100,7 +113,6 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props)
           />
         </div>
 
-        {/* dots de marcadores */}
         {total > 1 &&
           Array.from(bookmarks).map((idx) => {
             const left = (idx / Math.max(total - 1, 1)) * 100;
@@ -122,12 +134,11 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props)
             );
           })}
 
-        {/* thumb da página atual */}
         {total > 1 && (
           <div
             className="pointer-events-none absolute -translate-x-1/2 rounded-full bg-white shadow-lg ring-2 ring-neutral-950 transition-transform"
             style={{
-              left: `${previewLeft}%`,
+              left: `${thumbLeft}%`,
               width: dragging ? 16 : 12,
               height: dragging ? 16 : 12,
               transform: `translate(-50%, 0) ${dragging ? 'scale(1.1)' : ''}`,
@@ -136,17 +147,36 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo }: Props)
           />
         )}
 
-        {/* tooltip durante scrub */}
         {dragging && scrubIdx != null && (
           <div
             className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium tabular-nums text-white shadow-lg"
-            style={{ left: `${previewLeft}%` }}
+            style={{ left: `${thumbLeft}%` }}
             aria-hidden
           >
             Página {scrubIdx + 1}
           </div>
         )}
       </div>
+
+      {/* Hover preview (desktop only — não renderiza durante drag para não competir com tooltip) */}
+      {showPreview && (
+        <div
+          className="pointer-events-none absolute z-30 hidden -translate-x-1/2 md:block"
+          style={{
+            left: `calc(${previewLeft}% )`,
+            bottom: 'calc(100% + 10px)',
+            maxWidth: 'min(220px, 40vw)',
+          }}
+          aria-hidden
+        >
+          <div className="overflow-hidden rounded-md border border-white/20 bg-white shadow-2xl ring-1 ring-black/40">
+            <div className="w-[220px]">{renderPreview(hoverIdx)}</div>
+          </div>
+          <div className="mt-1 text-center text-[10px] font-medium uppercase tabular-nums tracking-widest text-white/80">
+            Página {hoverIdx + 1}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
