@@ -43,6 +43,7 @@ import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
 import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
 import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
+import { usePageZoom } from './hooks/usePageZoom';
 import './magazine.css';
 
 const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
