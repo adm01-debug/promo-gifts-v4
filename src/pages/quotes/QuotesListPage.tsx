@@ -75,6 +75,7 @@ export default function QuotesListPage() {
     handleClearFilters,
     handleMarkApproved,
     duplicateQuote,
+    handleDuplicateWithUndo,
     updateQuoteStatus,
   } = useQuotesListPage();
 
