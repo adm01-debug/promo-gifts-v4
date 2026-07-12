@@ -177,6 +177,7 @@ export function CartHeaderButton() {
     canCreateCart,
     setActiveCartId,
     deleteCart,
+    restoreCart,
     isDeletingCart,
     removeItem,
     updateItemQuantity,
