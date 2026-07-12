@@ -252,6 +252,7 @@ export default function MagazineListPage() {
                   }}
                   data-testid={`magazine-card-${m.id}`}
                 >
+                  <MagazineCardThumbnail magazine={m} />
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="line-clamp-1 text-base">{m.title}</CardTitle>
