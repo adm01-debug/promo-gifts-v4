@@ -329,6 +329,18 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     async (snapshot: SellerCart): Promise<string | undefined> => {
       try {
         const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
+        // Após restaurar, garante que o ponteiro do carrinho ativo (localStorage)
+        // não fique apontando para o id ANTIGO/inexistente do snapshot. Se não há
+        // seleção ativa (típico após excluir o carrinho ativo), auto-foca no
+        // carrinho restaurado; se o ponteiro atual coincide com o id do snapshot
+        // (defensivo — não deveria acontecer, pois deleteCart já limpou), corrige.
+        if (created?.id) {
+          setActiveCartId((prev) => {
+            if (!prev) return created.id;
+            if (prev === snapshot.id) return created.id;
+            return prev;
+          });
+        }
         return created?.id;
       } catch {
         // Chamador (toast Desfazer) decide o texto do erro (singular/plural).
