@@ -183,7 +183,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload test-results (mock)
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts-quotes-undo-mock
