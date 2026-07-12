@@ -17,6 +17,7 @@
  * O host `pqpdolkaeqlyzpdpbizo` NÃO deve receber tráfego (guarda SSOT).
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
+import { installMockAuth, isMockAuthEnabled } from "../helpers/mock-auth";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 import { seedQuotesForStatusChips } from "../helpers/quotes-status-seed";
@@ -28,7 +29,10 @@ const UNDO_TOAST = '[data-testid="undo-toast"]';
 const UNDO_BTN = '[data-testid="undo-toast-button"]';
 
 test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
-  test.beforeEach(() => requireAuth());
+  test.beforeEach(async ({ page }) => {
+    requireAuth();
+    if (isMockAuthEnabled()) await installMockAuth(page);
+  });
 
   test("delete → toast Desfazer com contador → clicar Desfazer dispara POST de restore", async ({
     page,

@@ -12,6 +12,7 @@
  *      automático nem POSTs duplicados.
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
+import { installMockAuth, isMockAuthEnabled } from "../helpers/mock-auth";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 import { seedQuotesForStatusChips } from "../helpers/quotes-status-seed";
@@ -45,7 +46,10 @@ async function selectFirstTwoQuotes(page: import("@playwright/test").Page) {
 }
 
 test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
-  test.beforeEach(() => requireAuth());
+  test.beforeEach(async ({ page }) => {
+    requireAuth();
+    if (isMockAuthEnabled()) await installMockAuth(page);
+  });
 
   test("sucesso: DELETE em lote → clicar Desfazer dispara POSTs de restore", async ({
     page,
