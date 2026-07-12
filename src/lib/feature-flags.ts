@@ -59,7 +59,13 @@ export type FeatureFlag =
    * - Aplicado: 2026-06-22
    */
   | 'useColorSwatchesV2'
-  | 'voice_commands';
+  | 'voice_commands'
+  /**
+   * Módulo Magazine — criação de revistas/catálogos personalizados a partir
+   * do catálogo, com 10 templates de design, branding do cliente CRM,
+   * PDF (browser print) e link público via token. Rota /magazine.
+   */
+  | 'magazineModule';
 
 interface FlagConfig {
   /** Default enabled state */
