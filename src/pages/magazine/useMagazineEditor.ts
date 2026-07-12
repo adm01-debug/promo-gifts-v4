@@ -43,10 +43,17 @@ export function useMagazineEditor(id: string | undefined) {
       setLoaded(true);
       return;
     }
-    const loaded = magazineService.get(id);
-    magazineRef.current = loaded; // Sync ref immediately on load
-    setMagazine(loaded);
-    setLoaded(true);
+    let cancelled = false;
+    (async () => {
+      const loaded = await magazineService.get(id);
+      if (cancelled) return;
+      magazineRef.current = loaded;
+      setMagazine(loaded);
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const persist = useCallback(
@@ -60,8 +67,7 @@ export function useMagazineEditor(id: string | undefined) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaving(true);
       saveTimer.current = setTimeout(() => {
-        magazineService.update(next.id, next);
-        setSaving(false);
+        void magazineService.update(next.id, next).finally(() => setSaving(false));
       }, 400);
     },
     [],
@@ -119,12 +125,12 @@ export function useMagazineEditor(id: string | undefined) {
   );
 
   const addProducts = useCallback(
-    (products: Product[]) => {
+    async (products: Product[]) => {
       const current = magazineRef.current;
       if (!current) return;
-      const updated = magazineService.addProducts(current.id, products);
+      const updated = await magazineService.addProducts(current.id, products);
       if (updated) {
-        magazineRef.current = updated; // FIX: sync ref for rapid follow-up mutations
+        magazineRef.current = updated;
         setMagazine(updated);
       }
     },
@@ -132,12 +138,12 @@ export function useMagazineEditor(id: string | undefined) {
   );
 
   const removeItem = useCallback(
-    (itemId: string) => {
+    async (itemId: string) => {
       const current = magazineRef.current;
       if (!current) return;
-      const updated = magazineService.removeItem(current.id, itemId);
+      const updated = await magazineService.removeItem(current.id, itemId);
       if (updated) {
-        magazineRef.current = updated; // FIX: sync ref immediately
+        magazineRef.current = updated;
         setMagazine(updated);
       }
     },
@@ -145,12 +151,12 @@ export function useMagazineEditor(id: string | undefined) {
   );
 
   const reorderItems = useCallback(
-    (orderedIds: string[]) => {
+    async (orderedIds: string[]) => {
       const current = magazineRef.current;
       if (!current) return;
-      const updated = magazineService.reorderItems(current.id, orderedIds);
+      const updated = await magazineService.reorderItems(current.id, orderedIds);
       if (updated) {
-        magazineRef.current = updated; // FIX: sync ref immediately
+        magazineRef.current = updated;
         setMagazine(updated);
       }
     },
@@ -158,35 +164,35 @@ export function useMagazineEditor(id: string | undefined) {
   );
 
   const updateItem = useCallback(
-    (itemId: string, patch: Partial<MagazineItem>) => {
+    async (itemId: string, patch: Partial<MagazineItem>) => {
       const current = magazineRef.current;
       if (!current) return;
-      const updated = magazineService.updateItem(current.id, itemId, patch);
+      const updated = await magazineService.updateItem(current.id, itemId, patch);
       if (updated) {
-        magazineRef.current = updated; // FIX: sync ref immediately
+        magazineRef.current = updated;
         setMagazine(updated);
       }
     },
     [],
   );
 
-  const publish = useCallback(() => {
+  const publish = useCallback(async () => {
     const current = magazineRef.current;
     if (!current) return null;
-    const updated = magazineService.publish(current.id);
+    const updated = await magazineService.publish(current.id);
     if (updated) {
-      magazineRef.current = updated; // FIX: sync ref
+      magazineRef.current = updated;
       setMagazine(updated);
     }
     return updated;
   }, []);
 
-  const unpublish = useCallback(() => {
+  const unpublish = useCallback(async () => {
     const current = magazineRef.current;
     if (!current) return;
-    const updated = magazineService.unpublish(current.id);
+    const updated = await magazineService.unpublish(current.id);
     if (updated) {
-      magazineRef.current = updated; // FIX: sync ref
+      magazineRef.current = updated;
       setMagazine(updated);
     }
   }, []);

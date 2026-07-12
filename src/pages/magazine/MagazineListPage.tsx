@@ -66,13 +66,14 @@ export default function MagazineListPage() {
   // até o próximo passo do roadmap trocar magazineService por Supabase).
   useMagazineGoldImport(user?.id);
 
-  const refresh = () => {
+  const refresh = async () => {
     if (!user) return;
-    setMagazines(magazineService.list(user.id));
+    const list = await magazineService.list(user.id);
+    setMagazines(list);
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -103,36 +104,38 @@ export default function MagazineListPage() {
 
   const empty = magazines.length === 0;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!user) return;
-    const mag = magazineService.create({ ownerId: user.id, organizationId: null });
+    const mag = await magazineService.create({ ownerId: user.id, organizationId: null });
     navigate(`/magazine/${mag.id}`);
   };
 
-  const handleDuplicate = (id: string) => {
-    const cloned = magazineService.duplicate(id);
+  const handleDuplicate = async (id: string) => {
+    const cloned = await magazineService.duplicate(id);
     if (cloned) {
       toast.success('Revista duplicada.');
-      refresh();
+      await refresh();
     }
   };
 
   const confirmDelete = (m: Magazine) => setPendingDelete(m);
 
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (!pendingDelete) return;
     const backup = pendingDelete;
-    magazineService.delete(backup.id);
+    await magazineService.delete(backup.id);
     setPendingDelete(null);
-    refresh();
+    await refresh();
     toast('Revista excluída.', {
       description: backup.title,
       action: {
         label: 'Desfazer',
         onClick: () => {
-          magazineService.restore(backup);
-          refresh();
-          toast.success('Revista restaurada.');
+          void (async () => {
+            await magazineService.restore(backup);
+            await refresh();
+            toast.success('Revista restaurada.');
+          })();
         },
       },
       duration: 8000,

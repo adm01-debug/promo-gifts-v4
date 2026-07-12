@@ -72,26 +72,27 @@ let storedMagazine: Magazine | null = MOCK_MAGAZINE;
 
 vi.mock('@/services/magazineService', () => ({
   magazineService: {
-    get: vi.fn((id: string) => (id === 'mag_test' ? { ...storedMagazine } : null)),
-    update: vi.fn((id: string, data: Magazine) => {
+    get: vi.fn(async (id: string) => (id === 'mag_test' ? { ...storedMagazine } : null)),
+    update: vi.fn(async (id: string, data: Magazine) => {
       if (id === 'mag_test') storedMagazine = { ...data };
+      return storedMagazine;
     }),
-    addProducts: vi.fn((id: string, products: unknown[]) => {
+    addProducts: vi.fn(async (id: string, products: unknown[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
         ...storedMagazine,
-        items: [...storedMagazine.items, ...products.map((p, i) => ({ ...DUMMY_ITEM, id: `item_${Date.now()}_${i}` }))],
+        items: [...storedMagazine.items, ...products.map((_p, i) => ({ ...DUMMY_ITEM, id: `item_${Date.now()}_${i}` }))],
       } as Magazine;
       storedMagazine = updated;
       return updated;
     }),
-    removeItem: vi.fn((id: string, itemId: string) => {
+    removeItem: vi.fn(async (id: string, itemId: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, items: storedMagazine.items.filter((i) => i.id !== itemId) };
       storedMagazine = updated;
       return updated;
     }),
-    reorderItems: vi.fn((id: string, orderedIds: string[]) => {
+    reorderItems: vi.fn(async (id: string, orderedIds: string[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const itemMap = new Map(storedMagazine.items.map((it) => [it.id, it]));
       const reordered = orderedIds.map((oid, i) => ({ ...itemMap.get(oid)!, position: i }));
@@ -99,7 +100,7 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
-    updateItem: vi.fn((id: string, itemId: string, patch: Partial<typeof DUMMY_ITEM>) => {
+    updateItem: vi.fn(async (id: string, itemId: string, patch: Partial<typeof DUMMY_ITEM>) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
         ...storedMagazine,
@@ -108,13 +109,13 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
-    publish: vi.fn((id: string) => {
+    publish: vi.fn(async (id: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, status: 'published' as const, publicToken: 'tok_abc' };
       storedMagazine = updated;
       return updated;
     }),
-    unpublish: vi.fn((id: string) => {
+    unpublish: vi.fn(async (id: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, status: 'draft' as const, publicToken: null };
       storedMagazine = updated;
@@ -141,9 +142,24 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/**
+ * Renderiza o hook e aguarda o load inicial (agora async) terminar antes de
+ * devolver o resultado. Necessário após a migração do magazineService para
+ * Supabase — o `useEffect` de carga faz `await magazineService.get(id)`.
+ */
+async function renderLoadedEditor() {
+  const rh = renderHook(() => useMagazineEditor('mag_test'));
+  await act(async () => {
+    // Flush microtasks do load inicial
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return rh;
+}
+
 describe('useMagazineEditor — stale ref race condition', () => {
   it('[A] setTitle → setBranding in same tick: BOTH mutations applied', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       // Two mutations in the same synchronous tick
@@ -157,7 +173,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[A2] setTitle → setSubtitle → setTitle: last write wins, no state loss', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Title A');
@@ -170,7 +186,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[B] setTitle preserves current items after addProducts', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     // First: add a product
     await act(async () => {
@@ -189,7 +205,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[C] publish() idempotency: calling twice does not corrupt state', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Ready to Publish');
@@ -220,7 +236,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
       ],
     };
 
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.removeItem('item_a');
@@ -236,7 +252,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
 
   it('[E] autosave debounce: magazineService.update called after 400ms', async () => {
     const { magazineService } = await import('@/services/magazineService');
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Debounced Save');
@@ -256,7 +272,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[F] setTitle with empty string clears title', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
     await act(async () => {
       result.current.setTitle('');
     });
@@ -264,7 +280,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   });
 
   it('[G] setBranding with partial patch does not lose existing branding fields', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
     const originalPrimary = result.current.magazine?.branding.primaryColor;
 
     await act(async () => {
@@ -278,10 +294,8 @@ describe('useMagazineEditor — stale ref race condition', () => {
 });
 
 describe('useMagazineEditor — loading states', () => {
-  it('loaded=false initially', () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
-    // Before useEffect runs, loaded may be false (implementation dependent)
-    // Just ensure it becomes true
+  it('loaded=false initially', async () => {
+    const { result } = await renderLoadedEditor();
     act(() => { vi.runAllTimers(); });
     expect(result.current.loaded).toBe(true);
   });
@@ -293,14 +307,14 @@ describe('useMagazineEditor — loading states', () => {
     expect(result.current.magazine).toBeNull();
   });
 
-  it('saving=false initially', () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+  it('saving=false initially', async () => {
+    const { result } = await renderLoadedEditor();
     // saving starts false, becomes true on persist, then false after debounce
     expect(result.current.saving).toBe(false);
   });
 
   it('saving=true during debounce, false after 400ms', async () => {
-    const { result } = renderHook(() => useMagazineEditor('mag_test'));
+    const { result } = await renderLoadedEditor();
 
     await act(async () => {
       result.current.setTitle('Test Saving State');

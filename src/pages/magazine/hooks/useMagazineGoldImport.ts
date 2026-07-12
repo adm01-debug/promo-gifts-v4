@@ -21,8 +21,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
-import { magazineService } from '@/services/magazineService';
 import type { Magazine } from '@/types/magazine';
+
+const LEGACY_STORAGE_KEY = 'promobrind.magazines.v1';
 
 const MIGRATED_FLAG_KEY = 'promobrind.magazines.migratedToGold.v1';
 const IMPORT_ENDPOINT_PATH = '/functions/v1/magazine-import-local';
@@ -93,7 +94,17 @@ export function useMagazineGoldImport(userId: string | undefined): {
     if (!userId || ranRef.current || isMigrated()) return;
     ranRef.current = true;
 
-    const localMagazines = magazineService.list(userId);
+    // Lê localStorage legado direto — o magazineService v2 aponta para o BD Gold.
+    let localMagazines: Magazine[] = [];
+    try {
+      const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as Magazine[]) : [];
+      localMagazines = Array.isArray(parsed)
+        ? parsed.filter((m) => m && m.ownerId === userId)
+        : [];
+    } catch {
+      localMagazines = [];
+    }
     if (localMagazines.length === 0) {
       // Nada para migrar — marca como feito para não checar de novo
       markMigrated();

@@ -22,12 +22,18 @@ export default function MagazinePrintPage() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      setMagazine(magazineService.get(id));
-    } else if (token) {
-      setMagazine(magazineService.getByToken(token));
-    }
-    setLoaded(true);
+    let cancelled = false;
+    (async () => {
+      let m: Magazine | null = null;
+      if (id) m = await magazineService.get(id);
+      else if (token) m = await magazineService.getPublicByToken(token);
+      if (cancelled) return;
+      setMagazine(m);
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id, token]);
 
   const pages = useMemo(() => (magazine ? paginateMagazine(magazine) : []), [magazine]);
