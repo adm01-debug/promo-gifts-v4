@@ -112,14 +112,26 @@ export function UndoToastContent({
       onBlurCapture={resume}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium leading-tight text-foreground">{title}</p>
+        <p
+          data-testid="undo-toast-title"
+          className="text-[13px] font-medium leading-tight text-foreground"
+        >
+          {title}
+        </p>
         {description && (
-          <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{description}</p>
+          <p
+            data-testid="undo-toast-description"
+            className="mt-0.5 text-[11px] leading-tight text-muted-foreground"
+          >
+            {description}
+          </p>
         )}
       </div>
       <button
         type="button"
         data-testid="undo-toast-button"
+        data-remaining-ms={remainingMs}
+        data-remaining-sec={remainingSec}
         onClick={onUndo}
         aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
         className={cn(
@@ -167,6 +179,8 @@ export function UndoToastContent({
         </span>
         <span aria-hidden="true">Desfazer</span>
         <span
+          data-testid="undo-toast-countdown"
+          data-remaining-sec={remainingSec}
           aria-live="polite"
           aria-atomic="true"
           className="tabular-nums text-primary/70 font-normal"
