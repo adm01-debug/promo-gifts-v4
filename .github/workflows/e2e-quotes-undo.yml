@@ -127,7 +127,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload test-results (trace, screenshot, HTML dumps)
-        if: steps.creds.outputs.has_creds == 'true' && failure()
+        if: steps.creds.outputs.has_creds == 'true' && always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts-quotes-undo-real
