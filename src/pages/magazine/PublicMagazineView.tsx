@@ -396,6 +396,24 @@ export default function PublicMagazineView() {
               </>
             )}
           </Button>
+          <Button
+            variant={presentation.active ? 'default' : 'secondary'}
+            size="sm"
+            onClick={presentation.toggle}
+            aria-label={presentation.active ? 'Parar apresentação (P)' : 'Iniciar apresentação (P)'}
+            aria-pressed={presentation.active}
+            title={presentation.active ? 'Parar apresentação (P)' : 'Apresentação automática (P)'}
+          >
+            {presentation.active ? (
+              <>
+                <Pause className="mr-2 h-4 w-4" /> Pausar
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" /> Apresentar
+              </>
+            )}
+          </Button>
           <Button variant="secondary" size="sm" onClick={openPrint} aria-label="Baixar PDF">
             <Printer className="mr-2 h-4 w-4" /> Baixar PDF
           </Button>
