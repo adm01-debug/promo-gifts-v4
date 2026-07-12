@@ -42,9 +42,6 @@ const MAP: Record<MagazineCategory, (p: IconProps) => JSX.Element> = {
   customized: (p) => <Sparkles strokeWidth={1.6} {...p} />,
 };
 
-// suprime warning de import não usado (Bag/Award são reservados para v2)
-void Bag;
-void Award;
 
 export function CategoryIcon({
   category,
