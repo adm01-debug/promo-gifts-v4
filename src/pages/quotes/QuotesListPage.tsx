@@ -438,7 +438,9 @@ export default function QuotesListPage() {
                         ) : (
                           <>
                             <p>
-                              Esta ação é destrutiva, mas você poderá <strong className="text-foreground">Desfazer</strong> por alguns segundos após confirmar.
+                              {bulkDeleteIds.length === 1
+                                ? 'O orçamento será removido — você pode desfazer por até 8 segundos após a confirmação.'
+                                : 'Os orçamentos serão removidos — você pode desfazer por até 8 segundos após a confirmação.'}
                             </p>
                             {(() => {
                               const preview = filteredQuotes
