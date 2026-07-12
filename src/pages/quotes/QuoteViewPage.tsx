@@ -505,7 +505,7 @@ export default function QuoteViewPage() {
         onOpenChange={(o) => !isDeleting && setDeleteOpen(o)}
         variant="destructive"
         title="Excluir orçamento?"
-        description="Esta ação não pode ser desfeita. O orçamento será removido permanentemente."
+        description="O orçamento será removido — você pode desfazer por até 8 segundos após a confirmação."
         confirmLabel="Excluir"
         cancelLabel="Cancelar"
         loading={isDeleting}
