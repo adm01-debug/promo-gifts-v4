@@ -44,6 +44,13 @@ import { resolveCartCompanyCnpj } from './cartCompanyCnpj';
 import { CartItemErrorAlert } from './CartItemErrorAlert';
 import { cn } from '@/lib/utils';
 import { showUndoToast } from '@/utils/undoToast';
+import {
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  deletedToastTitle,
+  RESTORE_SINGLE_SUCCESS,
+  RESTORE_SINGLE_ERROR,
+} from '@/pages/products/seller-carts/undoCopy';
 import { toast } from 'sonner';
 import { useState, useEffect, useRef } from 'react';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
