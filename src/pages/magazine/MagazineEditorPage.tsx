@@ -217,7 +217,7 @@ export default function MagazineEditorPage() {
                   </Button>
                 </div>
                 {previewPage ? (
-                  <MagazinePageRenderer magazine={magazine} page={previewPage} fitContainer />
+                  <MagazinePageRenderer magazine={magazine} page={previewPage} totalPages={pages.length} fitContainer />
                 ) : (
                   <div className="rounded-lg border p-8 text-center text-xs text-muted-foreground">
                     Adicione produtos para gerar o preview.
