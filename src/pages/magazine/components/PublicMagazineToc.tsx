@@ -70,13 +70,22 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
                       : 'border-white/10 hover:border-white/40',
                   )}
                 >
-                  <div className="bg-white">
+                  <div className="relative bg-white">
                     <MagazinePageRenderer
                       magazine={magazine}
                       page={p}
                       totalPages={pages.length}
                       fitContainer
                     />
+                    {marked && (
+                      <span
+                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-neutral-900 shadow"
+                        aria-label="Página marcada"
+                        title="Página marcada"
+                      >
+                        <BookmarkCheck className="h-3.5 w-3.5" />
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between gap-2 bg-white/5 px-2 py-1.5 text-[10px] uppercase tracking-widest text-white/80">
                     <span className="tabular-nums">
