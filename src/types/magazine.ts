@@ -12,12 +12,35 @@ export type MagazineTemplateId =
   | 'editorial-magazine'
   | 'editorial-hero-grid'
   | 'editorial-mono'
+  | 'editorial-manifesto'
   | 'catalog-grid-2x3'
   | 'catalog-grid-3x3'
   | 'catalog-list'
+  | 'catalog-giftset'
   | 'corporate-hero'
   | 'corporate-split'
   | 'corporate-executive';
+
+/**
+ * Categoria semântica da revista — usada pelo SidebarChrome e PageNumberBadge
+ * para colorir consistentemente todas as páginas internas. Sistema inspirado
+ * no TOC do catálogo Abreez 2026.
+ */
+export type MagazineCategory =
+  | 'technology'
+  | 'drinkwares'
+  | 'general'
+  | 'wearables'
+  | 'pins'
+  | 'awards'
+  | 'packaging'
+  | 'stationery'
+  | 'bags'
+  | 'clocks'
+  | 'signs'
+  | 'id'
+  | 'giftsets'
+  | 'customized';
 
 export type MagazineTemplateFamily = 'editorial' | 'catalog' | 'corporate';
 
@@ -51,6 +74,11 @@ export interface MagazineClientBranding {
   clientLogoUrl: string | null;
   clientCrmId: string | null;
   colors: { primary: string; secondary: string; text: string };
+  /**
+   * Categoria semântica da revista — colore SidebarChrome/PageNumberBadge.
+   * `null` = deriva da primeira categoria de produto encontrada (fallback).
+   */
+  category: MagazineCategory | null;
 }
 
 /** Item da revista — 1 produto por posição, com override de variação/imagem. */
@@ -132,8 +160,9 @@ export const DEFAULT_BRANDING: MagazineClientBranding = {
   clientLogoUrl: null,
   clientCrmId: null,
   colors: {
-    primary: '#0f172a',
-    secondary: '#f97316',
-    text: '#0f172a',
+    primary: '#2e4a3a',
+    secondary: '#e86f2e',
+    text: '#1a1a1a',
   },
+  category: 'technology',
 };
