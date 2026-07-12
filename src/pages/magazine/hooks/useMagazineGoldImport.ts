@@ -94,7 +94,17 @@ export function useMagazineGoldImport(userId: string | undefined): {
     if (!userId || ranRef.current || isMigrated()) return;
     ranRef.current = true;
 
-    const localMagazines = magazineService.list(userId);
+    // Lê localStorage legado direto — o magazineService v2 aponta para o BD Gold.
+    let localMagazines: Magazine[] = [];
+    try {
+      const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as Magazine[]) : [];
+      localMagazines = Array.isArray(parsed)
+        ? parsed.filter((m) => m && m.ownerId === userId)
+        : [];
+    } catch {
+      localMagazines = [];
+    }
     if (localMagazines.length === 0) {
       // Nada para migrar — marca como feito para não checar de novo
       markMigrated();
