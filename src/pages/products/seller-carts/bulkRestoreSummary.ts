@@ -18,19 +18,29 @@ export interface BulkRestoreSummary {
  * @param restored  quantidade efetivamente restaurada (INSERT ok).
  */
 export function bulkRestoreSummary(attempted: number, restored: number): BulkRestoreSummary {
-  const failed = Math.max(0, attempted - restored);
-  const isSingular = attempted === 1;
+  // Normalização defensiva: NaN/Infinity/negativo/fracionário nunca chegam à UI.
+  const norm = (v: number) => {
+    if (!Number.isFinite(v)) return 0;
+    const n = Math.floor(v);
+    return n < 0 ? 0 : n;
+  };
+  const a = norm(attempted);
+  // `restored` é logicamente limitado por `attempted` — clamp para evitar
+  // mensagens como "3 restaurados, -1 falhou" caso um caller reporte errado.
+  const r = Math.min(norm(restored), a);
+  const failed = a - r;
+  const isSingular = a === 1;
 
-  if (restored === attempted && attempted > 0) {
+  if (r === a && a > 0) {
     return {
       tone: 'success',
-      message: restored === 1 ? 'Carrinho restaurado.' : `${restored} carrinhos restaurados.`,
+      message: r === 1 ? 'Carrinho restaurado.' : `${r} carrinhos restaurados.`,
     };
   }
-  if (restored > 0) {
+  if (r > 0) {
     return {
       tone: 'warning',
-      message: `${restored} restaurado(s), ${failed} falhou(aram).`,
+      message: `${r} restaurado(s), ${failed} falhou(aram).`,
     };
   }
   return {
