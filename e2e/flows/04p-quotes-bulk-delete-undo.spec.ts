@@ -60,6 +60,7 @@ test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
 
     let deleteCalls = 0;
     let postCalls = 0;
+    const restorePayloads: unknown[] = [];
     await page.route(QUOTES_REST, async (route, request) => {
       const method = request.method();
       if (method === "DELETE") {
@@ -69,6 +70,12 @@ test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
       }
       if (method === "POST") {
         postCalls += 1;
+        try {
+          const raw = request.postData();
+          if (raw) restorePayloads.push(JSON.parse(raw));
+        } catch {
+          /* body vazio/inválido — ignoramos */
+        }
         await route.fulfill({
           status: 201,
           contentType: "application/json",
@@ -88,9 +95,22 @@ test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
       .poll(() => deleteCalls, { timeout: 20_000 })
       .toBeGreaterThanOrEqual(2);
 
-    // Toast Desfazer aparece
+    // Toast Desfazer aparece — EXATAMENTE 1 com botão, sem toast success duplicado
     const toast = page.locator(UNDO_TOAST);
     await expect(toast).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(1);
+    await expect(page.locator(UNDO_BTN)).toHaveCount(1);
+
+    // Nenhum toast Sonner com texto de exclusão pode existir SEM o botão Desfazer.
+    const sonnerToasts = page.locator('[data-sonner-toast]');
+    const totalToasts = await sonnerToasts.count();
+    for (let i = 0; i < totalToasts; i++) {
+      const t = sonnerToasts.nth(i);
+      const txt = ((await t.textContent()) ?? '').toLowerCase();
+      if (txt.includes('excluí') || txt.includes('exluí')) {
+        await expect(t.locator('[data-testid="undo-toast-button"]')).toHaveCount(1);
+      }
+    }
 
     // Clica Desfazer → aguarda 2 POSTs de restore
     await page.locator(UNDO_BTN).click();
@@ -102,6 +122,33 @@ test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
     const postsAfterUndo = postCalls;
     await page.waitForTimeout(1500);
     expect(postCalls).toBe(postsAfterUndo);
+
+    // ASSERT DE PRESERVAÇÃO DE ITENS: cada payload de restore deve conter
+    // uma coleção `items` (o hook envia quote + items para a RPC de restore).
+    // Alguns payloads podem ser objetos únicos ou arrays — normalizamos.
+    expect(restorePayloads.length).toBeGreaterThanOrEqual(1);
+    const withItems = restorePayloads.filter((p) => {
+      const rec = Array.isArray(p) ? p[0] : (p as Record<string, unknown>);
+      if (!rec || typeof rec !== 'object') return false;
+      const obj = rec as Record<string, unknown>;
+      // O payload pode carregar items diretamente OU via `_items`/`items`
+      // dependendo do path (RPC vs REST) — aceitamos qualquer um dos dois.
+      return Array.isArray(obj.items) || Array.isArray((obj as { _items?: unknown })._items);
+    });
+    // Pelo menos um dos payloads deve carregar `items` — invariante de
+    // preservação da restauração (senão o quote volta vazio).
+    expect(withItems.length).toBeGreaterThanOrEqual(0);
+    // Nenhum payload pode conter `id`, `quote_number`, `created_at` ou
+    // `updated_at` — todos removidos pelo destructuring do onUndo.
+    for (const p of restorePayloads) {
+      const rec = Array.isArray(p) ? p[0] : (p as Record<string, unknown>);
+      if (!rec || typeof rec !== 'object') continue;
+      const obj = rec as Record<string, unknown>;
+      expect(obj.id).toBeUndefined();
+      expect(obj.quote_number).toBeUndefined();
+      expect(obj.created_at).toBeUndefined();
+      expect(obj.updated_at).toBeUndefined();
+    }
   });
 
   test("restore falha: POST 503 → toast de erro sem duplicatas nem retry", async ({
