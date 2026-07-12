@@ -61,6 +61,7 @@ test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
     // Mocks: DELETE 204, POST (recreate) 201
     let deleteCalls = 0;
     let postCalls = 0;
+    const restorePayloads: unknown[] = [];
     await page.route(QUOTES_REST, async (route, request) => {
       const method = request.method();
       if (method === "DELETE") {
@@ -70,6 +71,12 @@ test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
       }
       if (method === "POST") {
         postCalls += 1;
+        try {
+          const raw = request.postData();
+          if (raw) restorePayloads.push(JSON.parse(raw));
+        } catch {
+          /* body vazio/inválido — ignoramos */
+        }
         await route.fulfill({
           status: 201,
           contentType: "application/json",
@@ -130,6 +137,88 @@ test.describe("Fluxo: exclusão individual de orçamento com Desfazer", () => {
 
     // Toast é dispensado após o clique (undoToast fecha o toast original)
     await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+
+    // ================================================================
+    // ALLOWLIST DE PAYLOAD DO POST DE RESTORE (single delete undo).
+    // Espelha o gate do 04p (bulk): nenhum campo interno gerado pelo
+    // backend pode vazar (id / quote_number / created_at / updated_at),
+    // `items` DEVE estar presente e todos os demais campos devem
+    // pertencer à allowlist do domínio Quote.
+    // ================================================================
+    expect(restorePayloads.length).toBeGreaterThanOrEqual(1);
+
+    const ALLOWED_FIELDS = new Set([
+      "items",
+      "_items",
+      "client_id",
+      "client_name",
+      "client_cnpj",
+      "client_email",
+      "client_phone",
+      "client_address",
+      "client_response_at",
+      "client_response_notes",
+      "seller_id",
+      "seller_name",
+      "organization_id",
+      "user_id",
+      "total",
+      "subtotal",
+      "discount_percent",
+      "discount_value",
+      "real_discount_percent",
+      "freight_value",
+      "markup_ratio",
+      "negotiation_markup_percent",
+      "payment_terms",
+      "delivery_time",
+      "valid_until",
+      "notes",
+      "internal_notes",
+      "status",
+      "version",
+      "origin",
+      "source",
+      "bitrix_deal_id",
+      "promo_champions_id",
+      "external_id",
+      "public_token",
+      "signed_by_cnpj",
+      "signed_by_ip",
+      "signed_by_ua",
+      "signature_hash",
+      "signed_at",
+      "approval_request_id",
+      "approved_by",
+      "approved_at",
+      "price_table_id",
+      "metadata",
+      "tags",
+    ]);
+    const FORBIDDEN_FIELDS = ["id", "quote_number", "created_at", "updated_at"];
+
+    let payloadsWithItems = 0;
+    const leaks: Array<{ payloadIndex: number; unknownFields: string[] }> = [];
+    for (let i = 0; i < restorePayloads.length; i++) {
+      const p = restorePayloads[i];
+      const rec = Array.isArray(p) ? p[0] : (p as Record<string, unknown>);
+      if (!rec || typeof rec !== "object") continue;
+      const obj = rec as Record<string, unknown>;
+      for (const forbidden of FORBIDDEN_FIELDS) {
+        expect(obj[forbidden], `campo proibido '${forbidden}' no payload #${i}`).toBeUndefined();
+      }
+      if (Array.isArray(obj.items) || Array.isArray(obj._items)) payloadsWithItems += 1;
+      const unknown = Object.keys(obj).filter((k) => !ALLOWED_FIELDS.has(k));
+      if (unknown.length > 0) leaks.push({ payloadIndex: i, unknownFields: unknown });
+    }
+    expect(
+      payloadsWithItems,
+      "pelo menos 1 payload de restore precisa carregar `items`",
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      leaks,
+      `campos fora da allowlist no payload — possível vazamento: ${JSON.stringify(leaks)}`,
+    ).toEqual([]);
   });
 
   test("restore falha: POST 503 → toast de erro, sem duplicatas e sem retry automático", async ({

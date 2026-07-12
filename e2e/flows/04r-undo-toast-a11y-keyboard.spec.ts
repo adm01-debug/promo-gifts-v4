@@ -192,4 +192,51 @@ test.describe("Toast Desfazer — acessibilidade + teclado", () => {
       }, { timeout: 2_000, intervals: [200, 500] })
       .toBe(0);
   });
+
+  test("F. cliques rápidos consecutivos em Desfazer disparam onUndo exatamente 1x", async ({
+    page,
+  }) => {
+    // Bug clássico: sem guarda `undone`, spam-click no botão dispara N
+    // restores. Aqui simulamos 15 cliques rápidos e confirmamos que o
+    // handler roda apenas 1 vez e o toast é dispensado.
+    await showUndoToastInBrowser(page, 8000);
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 5_000 });
+
+    const btn = page.locator(UNDO_BTN);
+    // Rajada de cliques (force:true para ignorar transições de estado).
+    for (let i = 0; i < 15; i++) {
+      await btn.click({ force: true, timeout: 800 }).catch(() => {
+        /* após dispensado o botão some — clique falha, esperado */
+      });
+    }
+
+    // onUndo chamado UMA única vez, apesar dos 15 cliques.
+    await expect.poll(() => getUndoCount(page), { timeout: 3_000 }).toBe(1);
+
+    // Toast é dispensado — nenhuma cópia residual.
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(0, { timeout: 3_000 });
+    const desfazerToasts = await page
+      .locator('[data-sonner-toast]:has-text("Desfazer")')
+      .count();
+    expect(desfazerToasts).toBe(0);
+
+    // Reassert estável: sem retry silencioso após 1s.
+    await page.waitForTimeout(1000);
+    expect(await getUndoCount(page)).toBe(1);
+  });
+
+  test("G. duplo Enter no botão focado dispara onUndo exatamente 1x (guarda undone)", async ({
+    page,
+  }) => {
+    await showUndoToastInBrowser(page, 8000);
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 5_000 });
+
+    await page.locator(UNDO_BTN).focus();
+    // Duas teclas Enter em sequência rápida
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Enter").catch(() => {
+      /* botão já removido do DOM após a 1ª — ok */
+    });
+    await expect.poll(() => getUndoCount(page), { timeout: 3_000 }).toBe(1);
+  });
 });

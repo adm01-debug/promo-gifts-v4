@@ -12,6 +12,8 @@ on:
       - "e2e/flows/04o-*.spec.ts"
       - "e2e/flows/04p-*.spec.ts"
       - "e2e/flows/04q-*.spec.ts"
+      - "e2e/flows/04r-*.spec.ts"
+      - "e2e/flows/04s-*.spec.ts"
       - "e2e/helpers/mock-auth.ts"
       - "e2e/helpers/diagnostics.ts"
       - "e2e/helpers/quotes-status-seed.ts"
@@ -24,6 +26,8 @@ on:
       - "e2e/flows/04o-*.spec.ts"
       - "e2e/flows/04p-*.spec.ts"
       - "e2e/flows/04q-*.spec.ts"
+      - "e2e/flows/04r-*.spec.ts"
+      - "e2e/flows/04s-*.spec.ts"
       - "e2e/helpers/mock-auth.ts"
       - "e2e/helpers/diagnostics.ts"
       - "e2e/helpers/quotes-status-seed.ts"
@@ -123,7 +127,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload test-results (trace, screenshot, HTML dumps)
-        if: steps.creds.outputs.has_creds == 'true' && failure()
+        if: steps.creds.outputs.has_creds == 'true' && always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts-quotes-undo-real
@@ -179,7 +183,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload test-results (mock)
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts-quotes-undo-mock
