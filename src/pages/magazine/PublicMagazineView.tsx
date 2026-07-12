@@ -432,13 +432,42 @@ export default function PublicMagazineView() {
         </div>
       </header>
 
-      {/* Progress bar + mini-mapa interativo (scrub por arraste) */}
+      {/* Progress bar + mini-mapa interativo (scrub, dots, hover-preview) */}
       <MagazineMiniMap
         total={total}
         currentIndex={safeIdx}
         bookmarks={bookmarks}
         onGo={go}
+        renderPreview={(idx) => {
+          const p = pages[idx];
+          if (!p) return null;
+          return (
+            <MagazinePageRenderer
+              magazine={magazine}
+              page={p}
+              totalPages={total}
+              fitContainer
+            />
+          );
+        }}
       />
+
+      {/* Barra de progresso do timer da apresentação */}
+      {presentation.active && total > 1 && (
+        <div
+          className="mx-auto mb-3 h-[2px] max-w-[1100px] overflow-hidden rounded-full bg-white/10"
+          role="progressbar"
+          aria-label="Tempo até a próxima página"
+          aria-valuemin={0}
+          aria-valuemax={1}
+          aria-valuenow={presentation.progress}
+        >
+          <div
+            className="h-full bg-amber-400"
+            style={{ width: `${presentation.progress * 100}%`, transition: 'none' }}
+          />
+        </div>
+      )}
 
       <main
         className="mx-auto max-w-[1100px] px-4"
