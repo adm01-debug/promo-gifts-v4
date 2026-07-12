@@ -62,11 +62,15 @@ export function getCompletionPercentage(m: Magazine): number {
   let completed = 0;
   const total = 5;
 
-  if ((m.title ?? '').trim().length > 0) completed++;
-  if ((m.items ?? []).length > 0) completed++;
+  const hasTitle = (m.title ?? '').trim().length > 0;
+  const itemsCount = (m.items ?? []).length;
+
+  if (hasTitle) completed++;
+  if (itemsCount > 0) completed++;
   if (m.content?.introText || m.content?.closingText) completed++;
-  if (m.templateId) completed++;
-  if ((m.items ?? []).length >= 2) completed++;
+  // templateId só conta se a revista já tem título — evita 20% para revista vazia
+  if (m.templateId && hasTitle) completed++;
+  if (itemsCount >= 2) completed++;
 
   return Math.round((completed / total) * 100);
 }
