@@ -8,6 +8,7 @@ import {
   Unauthorized,
   TermsPage,
   PrivacyPage,
+  PublicMagazineView,
 } from './lazy-pages';
 
 // Dev-only harness (sem auth) para validação visual de componentes.
