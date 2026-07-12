@@ -19,6 +19,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
@@ -39,6 +40,8 @@ import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
 import './magazine.css';
 
+const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
+
 export default function PublicMagazineView() {
   const { token } = useParams<{ token: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,10 +49,16 @@ export default function PublicMagazineView() {
   const [loaded, setLoaded] = useState(false);
   const [pageIdx, setPageIdx] = useState(() => {
     const raw = Number(searchParams.get('p'));
-    return Number.isFinite(raw) && raw > 0 ? raw - 1 : 0;
+    if (Number.isFinite(raw) && raw > 0) return raw - 1;
+    if (token) {
+      const saved = Number(localStorage.getItem(LAST_PAGE_KEY(token)));
+      if (Number.isFinite(saved) && saved > 0) return saved;
+    }
+    return 0;
   });
   const [tocOpen, setTocOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const rootRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -113,11 +122,28 @@ export default function PublicMagazineView() {
 
   /* ---------------- Nav helpers ---------------- */
   const go = useCallback(
-    (idx: number) => setPageIdx(Math.min(Math.max(idx, 0), Math.max(total - 1, 0))),
+    (idx: number) => {
+      const clamped = Math.min(Math.max(idx, 0), Math.max(total - 1, 0));
+      setPageIdx((current) => {
+        if (clamped > current) setDirection(1);
+        else if (clamped < current) setDirection(-1);
+        return clamped;
+      });
+    },
     [total],
   );
   const prev = useCallback(() => go(safeIdx - 1), [go, safeIdx]);
   const next = useCallback(() => go(safeIdx + 1), [go, safeIdx]);
+
+  /* ---------------- Persistência da última página lida ---------------- */
+  useEffect(() => {
+    if (!token || !total) return;
+    try {
+      localStorage.setItem(LAST_PAGE_KEY(token), String(safeIdx));
+    } catch {
+      /* localStorage cheio/desabilitado — silencioso */
+    }
+  }, [token, safeIdx, total]);
 
   /* ---------------- Keyboard ---------------- */
   useEffect(() => {
@@ -308,15 +334,26 @@ export default function PublicMagazineView() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="overflow-hidden rounded-xl bg-white shadow-2xl">
-          {current ? (
-            <MagazinePageRenderer
-              magazine={magazine}
-              page={current}
-              totalPages={total}
-              fitContainer
-            />
-          ) : null}
+        <div className="relative overflow-hidden rounded-xl bg-white shadow-2xl">
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            {current ? (
+              <motion.div
+                key={current.index}
+                custom={direction}
+                initial={{ opacity: 0, x: direction === 1 ? 60 : -60 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: direction === 1 ? -60 : 60 }}
+                transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+              >
+                <MagazinePageRenderer
+                  magazine={magazine}
+                  page={current}
+                  totalPages={total}
+                  fitContainer
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
 
         <nav

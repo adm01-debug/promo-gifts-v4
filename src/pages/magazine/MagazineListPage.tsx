@@ -43,6 +43,7 @@ import {
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { getTemplate } from './components/templates/TemplateRegistry';
+import { MagazineCardThumbnail } from './components/MagazineCardThumbnail';
 
 type SortMode = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc';
 type StatusFilter = 'all' | 'draft' | 'published';
@@ -240,7 +241,7 @@ export default function MagazineListPage() {
                   tabIndex={0}
                   aria-label={`Abrir revista ${m.title}`}
                   className={cn(
-                    'group cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    'group cursor-pointer overflow-hidden transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   )}
                   onClick={() => openCard(m)}
                   onKeyDown={(e) => {
@@ -251,6 +252,7 @@ export default function MagazineListPage() {
                   }}
                   data-testid={`magazine-card-${m.id}`}
                 >
+                  <MagazineCardThumbnail magazine={m} />
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="line-clamp-1 text-base">{m.title}</CardTitle>
