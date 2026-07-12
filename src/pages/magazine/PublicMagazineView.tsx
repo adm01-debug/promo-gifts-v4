@@ -31,6 +31,8 @@ import {
   Maximize,
   MessageCircle,
   Minimize,
+  Pause,
+  Play,
   Printer,
   Share2,
 } from 'lucide-react';
