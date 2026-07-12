@@ -1,11 +1,15 @@
 /**
- * Step 4 — Design: galeria dos 10 templates agrupados por família.
+ * Step 4 — Design: galeria dos 10 templates com miniaturas FIÉIS ao layout,
+ * usando os produtos já selecionados da revista (ou placeholders).
  */
 
 import { Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { Magazine, MagazineTemplateId } from '@/types/magazine';
 import { templatesByFamily } from '../templates/TemplateRegistry';
+import { TemplateThumbnail } from '../TemplateThumbnail';
 
 interface Props {
   magazine: Magazine;
@@ -18,56 +22,69 @@ const FAMILY_LABELS: Record<'editorial' | 'catalog' | 'corporate', string> = {
   corporate: 'Corporativo / B2B',
 };
 
+const FAMILY_HINT: Record<'editorial' | 'catalog' | 'corporate', string> = {
+  editorial: 'Fotografia dominante, 1–5 produtos por página. Ideal para lançamentos.',
+  catalog: 'Densidade alta, foco em preço e código. Ideal para pedidos.',
+  corporate: 'Marca do cliente em destaque, layouts B2B sóbrios.',
+};
+
 export function DesignStep({ magazine, onChange }: Props) {
   const grouped = templatesByFamily();
+  const source = magazine.items.length > 0 ? magazine : undefined;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {(Object.keys(grouped) as Array<keyof typeof grouped>).map((family) => (
-        <section key={family}>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            {FAMILY_LABELS[family]}
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <section key={family} aria-labelledby={`family-${family}`}>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h3
+              id={`family-${family}`}
+              className="text-sm font-semibold uppercase tracking-widest text-muted-foreground"
+            >
+              {FAMILY_LABELS[family]}
+            </h3>
+            <span className="text-xs text-muted-foreground">{FAMILY_HINT[family]}</span>
+          </div>
+          <div
+            role="radiogroup"
+            aria-labelledby={`family-${family}`}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          >
             {grouped[family].map((t) => {
               const selected = magazine.templateId === t.id;
               return (
                 <Card
                   key={t.id}
-                  className={`cursor-pointer transition ${
-                    selected ? 'border-primary ring-2 ring-primary/40' : 'hover:border-primary/60'
-                  }`}
+                  role="radio"
+                  aria-checked={selected}
+                  tabIndex={0}
                   onClick={() => onChange(t.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onChange(t.id);
+                    }
+                  }}
+                  className={cn(
+                    'cursor-pointer overflow-hidden transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    selected ? 'border-primary ring-2 ring-primary/40' : 'hover:border-primary/60',
+                  )}
                   data-testid={`magazine-template-${t.id}`}
                 >
-                  <div
-                    className="aspect-[3/4] w-full overflow-hidden rounded-t-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${t.defaultColors.primary}, ${t.defaultColors.secondary})`,
-                    }}
-                  >
-                    <div className="flex h-full flex-col items-center justify-center p-6 text-white">
-                      <div
-                        className="mb-3 text-4xl leading-none"
-                        style={{ fontFamily: `'${t.fonts.heading}', serif` }}
-                      >
-                        Aa
-                      </div>
-                      <div
-                        className="text-center text-xs uppercase tracking-widest opacity-80"
-                        style={{ fontFamily: `'${t.fonts.body}', sans-serif` }}
-                      >
-                        {t.name}
-                      </div>
-                    </div>
-                  </div>
+                  <TemplateThumbnail templateId={t.id} sourceMagazine={source} />
                   <CardContent className="space-y-1 p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold">{t.name}</span>
-                      {selected && <Check className="h-4 w-4 text-primary" />}
+                      {selected && <Check className="h-4 w-4 text-primary" aria-label="Selecionado" />}
                     </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">{t.description}</p>
-                    <div className="text-[10px] text-muted-foreground">
-                      {t.productsPerPage} produto{t.productsPerPage === 1 ? '' : 's'} / página
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <Badge variant="outline" className="text-[10px]">
+                        {t.productsPerPage} / pág
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {t.fonts.heading}
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -76,6 +93,12 @@ export function DesignStep({ magazine, onChange }: Props) {
           </div>
         </section>
       ))}
+      {!source && (
+        <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+          Dica: adicione produtos na etapa anterior para ver o design com seus produtos reais.
+          Enquanto isso, as miniaturas usam produtos de amostra.
+        </p>
+      )}
     </div>
   );
 }
