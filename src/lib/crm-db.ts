@@ -58,6 +58,22 @@ function safeCrmErrorFields(error: unknown): Record<string, unknown> {
   return { message: safeCrmLogMessage(error) };
 }
 
+/**
+ * Guarda de sessão: evita chamar o crm-db-bridge sem access_token válido
+ * (o bridge retornaria 401 "Token invalido ou expirado" e travaria a UI).
+ * Lança erro tipado que os callers já tratam como "não autenticado".
+ */
+async function ensureCrmSession(): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) {
+    const err = new Error('CRM unauthenticated: no active session');
+    (err as Error & { code?: string }).code = 'UNAUTHENTICATED';
+    throw err;
+  }
+}
+
+
 // ============================================
 // CIRCUIT BREAKER para 429 / rate-limit
 // ============================================
@@ -292,6 +308,7 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
       );
     }
 
+    await ensureCrmSession();
     const startedAt = performance.now();
     const body = { operation: 'batch', queries };
     const reqBytes = estimatePayloadBytes(body);
@@ -462,6 +479,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       );
     }
 
+    await ensureCrmSession();
     const startedAt = performance.now();
     const reqBytes = estimatePayloadBytes(query);
     const opLabel = query.operation || 'invoke';
