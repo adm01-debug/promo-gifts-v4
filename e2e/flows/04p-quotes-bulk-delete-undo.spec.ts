@@ -123,32 +123,121 @@ test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
     await page.waitForTimeout(1500);
     expect(postCalls).toBe(postsAfterUndo);
 
-    // ASSERT DE PRESERVAÇÃO DE ITENS: cada payload de restore deve conter
-    // uma coleção `items` (o hook envia quote + items para a RPC de restore).
-    // Alguns payloads podem ser objetos únicos ou arrays — normalizamos.
+    // ================================================================
+    // ASSERTS EXPANDIDOS DE PAYLOAD DE RESTORE
+    //
+    // (1) Cada payload é normalizado (array de 1 elemento OU objeto).
+    // (2) Campos gerados pelo backend NUNCA vazam: id, quote_number,
+    //     created_at, updated_at (destructuring do onUndo).
+    // (3) `items` está presente E é um array (preservação de itens).
+    // (4) TODOS os campos do payload pertencem a uma allowlist conhecida —
+    //     qualquer campo fora da lista é flagged como vazamento suspeito.
+    //     A allowlist é uma superset intencional (aceita novos campos
+    //     opcionais do domínio de Quote sem quebrar o teste), mas
+    //     PROIBIDA de conter os 4 gerados acima.
+    // ================================================================
     expect(restorePayloads.length).toBeGreaterThanOrEqual(1);
-    const withItems = restorePayloads.filter((p) => {
-      const rec = Array.isArray(p) ? p[0] : (p as Record<string, unknown>);
-      if (!rec || typeof rec !== 'object') return false;
-      const obj = rec as Record<string, unknown>;
-      // O payload pode carregar items diretamente OU via `_items`/`items`
-      // dependendo do path (RPC vs REST) — aceitamos qualquer um dos dois.
-      return Array.isArray(obj.items) || Array.isArray((obj as { _items?: unknown })._items);
-    });
-    // Pelo menos um dos payloads deve carregar `items` — invariante de
-    // preservação da restauração (senão o quote volta vazio).
-    expect(withItems.length).toBeGreaterThanOrEqual(0);
-    // Nenhum payload pode conter `id`, `quote_number`, `created_at` ou
-    // `updated_at` — todos removidos pelo destructuring do onUndo.
-    for (const p of restorePayloads) {
+
+    // Superset de campos ACEITOS no payload de restore. Campos do domínio
+    // Quote + metadados de negociação/discount/CRM. Manter em sync com
+    // `quoteTypes.ts` — falha aqui indica ou (a) vazamento de campo
+    // interno, ou (b) novo campo legítimo a incluir na allowlist.
+    const ALLOWED_FIELDS = new Set([
+      // items collection
+      'items',
+      '_items',
+      // client info
+      'client_id',
+      'client_name',
+      'client_cnpj',
+      'client_email',
+      'client_phone',
+      'client_address',
+      'client_response_at',
+      'client_response_notes',
+      // seller/org
+      'seller_id',
+      'seller_name',
+      'organization_id',
+      'user_id',
+      // valores
+      'total',
+      'subtotal',
+      'discount_percent',
+      'discount_value',
+      'real_discount_percent',
+      'freight_value',
+      'markup_ratio',
+      'negotiation_markup_percent',
+      // termos comerciais
+      'payment_terms',
+      'delivery_time',
+      'valid_until',
+      'notes',
+      'internal_notes',
+      // status / fluxo
+      'status',
+      'version',
+      'origin',
+      'source',
+      // sync/CRM
+      'bitrix_deal_id',
+      'promo_champions_id',
+      'external_id',
+      // tokens públicos / assinatura eletrônica (todos opcionais)
+      'public_token',
+      'signed_by_cnpj',
+      'signed_by_ip',
+      'signed_by_ua',
+      'signature_hash',
+      'signed_at',
+      // metadados de aprovação de desconto
+      'approval_request_id',
+      'approved_by',
+      'approved_at',
+      // margens/tabelas
+      'price_table_id',
+      // catch-all conhecidos
+      'metadata',
+      'tags',
+    ]);
+
+    const FORBIDDEN_FIELDS = ['id', 'quote_number', 'created_at', 'updated_at'];
+
+    let payloadsWithItems = 0;
+    const leaks: Array<{ payloadIndex: number; unknownFields: string[] }> = [];
+
+    for (let i = 0; i < restorePayloads.length; i++) {
+      const p = restorePayloads[i];
       const rec = Array.isArray(p) ? p[0] : (p as Record<string, unknown>);
       if (!rec || typeof rec !== 'object') continue;
       const obj = rec as Record<string, unknown>;
-      expect(obj.id).toBeUndefined();
-      expect(obj.quote_number).toBeUndefined();
-      expect(obj.created_at).toBeUndefined();
-      expect(obj.updated_at).toBeUndefined();
+
+      // (2) Campos proibidos — nunca podem estar no payload
+      for (const forbidden of FORBIDDEN_FIELDS) {
+        expect(obj[forbidden], `campo proibido '${forbidden}' no payload #${i}`).toBeUndefined();
+      }
+
+      // (3) items presente e é array
+      const hasItems = Array.isArray(obj.items) || Array.isArray(obj._items);
+      if (hasItems) payloadsWithItems++;
+
+      // (4) Detecta chaves fora da allowlist
+      const unknown = Object.keys(obj).filter((k) => !ALLOWED_FIELDS.has(k));
+      if (unknown.length > 0) {
+        leaks.push({ payloadIndex: i, unknownFields: unknown });
+      }
     }
+
+    expect(
+      payloadsWithItems,
+      'pelo menos 1 payload de restore precisa carregar `items` (senão o restore volta vazio)',
+    ).toBeGreaterThanOrEqual(1);
+
+    expect(
+      leaks,
+      `campos fora da allowlist detectados no payload — possível vazamento de estado interno: ${JSON.stringify(leaks)}`,
+    ).toEqual([]);
   });
 
   test("restore falha: POST 503 → toast de erro sem duplicatas nem retry", async ({
