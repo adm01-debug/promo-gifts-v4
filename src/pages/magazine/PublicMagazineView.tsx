@@ -435,7 +435,7 @@ export default function PublicMagazineView() {
         </nav>
 
         <p className="mt-3 text-center text-[11px] uppercase tracking-widest text-white/40">
-          Atalhos: ← → navegar · F tela cheia · T sumário · Home/End extremos
+          Atalhos: ← → navegar · F tela cheia · T sumário · B marcador · ? ajuda
         </p>
       </main>
 
@@ -446,7 +446,9 @@ export default function PublicMagazineView() {
         pages={pages}
         currentIndex={safeIdx}
         onGo={go}
+        bookmarks={bookmarks}
       />
+      <KeyboardHelpOverlay open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
