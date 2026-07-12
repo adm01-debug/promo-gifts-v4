@@ -182,12 +182,19 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     // DELETE foi tentado
     await expect.poll(() => deleteCalls, { timeout: 15_000 }).toBeGreaterThanOrEqual(1);
 
-    // Aguarda margem para garantir que o toast Desfazer NÃO aparece
-    await page.waitForTimeout(2000);
-    await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+    // Toast Desfazer NÃO deve aparecer — validado via poll estável (sem
+    // setTimeout arbitrário): a contagem deve permanecer 0 durante a janela.
+    await expect
+      .poll(
+        async () => page.locator(UNDO_TOAST).count(),
+        { timeout: 3_000, intervals: [200, 500, 1000] },
+      )
+      .toBe(0);
 
-    // Nenhum POST de restore disparado
-    expect(postCalls).toBe(0);
+    // Nenhum POST de restore disparado (poll estável)
+    await expect
+      .poll(() => postCalls, { timeout: 2_000, intervals: [200, 500] })
+      .toBe(0);
 
     // A linha específica continua no DOM (delete falhou → nada removido do estado)
     await expect(page.getByTestId(`quote-row-${quoteId}`)).toBeVisible({
