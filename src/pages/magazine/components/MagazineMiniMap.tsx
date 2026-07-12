@@ -99,6 +99,39 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
         aria-valuenow={currentIndex + 1}
         aria-label={`Progresso da leitura: página ${currentIndex + 1} de ${total}. Arraste para pular.`}
         tabIndex={0}
+        onKeyDown={(e) => {
+          // L: navegação por teclado no slider (a11y)
+          if (total <= 1) return;
+          let handled = true;
+          switch (e.key) {
+            case 'ArrowLeft':
+            case 'ArrowDown':
+              onGo(Math.max(currentIndex - 1, 0));
+              break;
+            case 'ArrowRight':
+            case 'ArrowUp':
+              onGo(Math.min(currentIndex + 1, total - 1));
+              break;
+            case 'PageDown':
+              onGo(Math.max(currentIndex - 5, 0));
+              break;
+            case 'PageUp':
+              onGo(Math.min(currentIndex + 5, total - 1));
+              break;
+            case 'Home':
+              onGo(0);
+              break;
+            case 'End':
+              onGo(total - 1);
+              break;
+            default:
+              handled = false;
+          }
+          if (handled) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
         onMouseDown={(e) => {
           e.preventDefault();
           handleDown(e.clientX);
