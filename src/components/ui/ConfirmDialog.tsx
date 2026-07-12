@@ -208,7 +208,7 @@ export function ConfirmDialog({
               data-testid={noTestId}
               aria-label={cancelLabel}
               title={cancelLabel}
-              className="mt-0 h-[26px] whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="mt-0 h-[26px] min-h-[26px] whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 py-0 text-xs font-medium leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {cancelLabelShort ? (
                 <>
@@ -226,7 +226,7 @@ export function ConfirmDialog({
               aria-label={confirmLabel}
               title={confirmLabel}
               className={cn(
-                'inline-flex h-[26px] items-center whitespace-nowrap rounded-md px-3.5 text-xs font-semibold shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                'inline-flex h-[26px] min-h-[26px] items-center whitespace-nowrap rounded-md px-3.5 py-0 text-xs font-semibold leading-none shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
                 variant === 'destructive' &&
                   'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
                 variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
