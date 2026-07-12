@@ -1,41 +1,30 @@
 /**
- * CartEmptyStateSmart - Empty state com 3 CTAs inteligentes:
- * Aplicar template, Duplicar último carrinho desta empresa, Explorar catálogo.
+ * CartEmptyStateSmart - Empty state com 2 CTAs inteligentes:
+ * Duplicar último carrinho desta empresa e Explorar catálogo.
  */
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutTemplate, Copy, Package, Sparkles, ArrowRight } from 'lucide-react';
-import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
+import { Copy, Package, Sparkles, ArrowRight } from 'lucide-react';
+import { type SellerCart } from '@/hooks/products';
 import { cn } from '@/lib/utils';
-
-interface SmartTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  items: CartTemplateItem[];
-}
 
 interface CartEmptyStateSmartProps {
   activeCart: SellerCart;
-  templates: SmartTemplate[];
   otherCarts: SellerCart[];
-  onApplyTemplate: (items: CartTemplateItem[]) => void;
   onDuplicateLast: (sourceCart: SellerCart) => void;
   onNavigateProducts: () => void;
 }
 
 export function CartEmptyStateSmart({
   activeCart,
-  templates,
   otherCarts,
-  onApplyTemplate,
   onDuplicateLast,
   onNavigateProducts,
 }: CartEmptyStateSmartProps) {
-  const topTemplates = templates.slice(0, 3);
   const lastCartSameCompany = otherCarts
     .filter((c) => c.company_id === activeCart.company_id && c.items.length > 0)
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 duration-500 animate-in fade-in zoom-in">
