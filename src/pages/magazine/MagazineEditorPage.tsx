@@ -162,12 +162,12 @@ export default function MagazineEditorPage() {
     setStep(target);
   };
 
-  const publish = () => {
+  const publish = async () => {
     if (!publishable) {
       toast.error('Complete título e adicione produtos antes de publicar.');
       return;
     }
-    const updated = editor.publish();
+    const updated = await editor.publish();
     if (updated?.publicToken) {
       const url = `${window.location.origin}/revista-publica/${updated.publicToken}`;
       navigator.clipboard.writeText(url).catch(() => undefined);
