@@ -40,6 +40,8 @@ interface SellerCartContextType {
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
   deleteCart: (cartId: string) => Promise<void>;
+  /** Recria um carrinho a partir do snapshot (Undo). Resolve com o novo `id` ou `undefined` em falha. */
+  restoreCart: (snapshot: SellerCart) => Promise<string | undefined>;
   isDeletingCart: boolean;
   addToActiveCart: (
     item: AddToCartInput,
