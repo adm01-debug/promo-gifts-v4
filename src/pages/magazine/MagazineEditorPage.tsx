@@ -223,7 +223,9 @@ export default function MagazineEditorPage() {
               variant="outline"
               size="sm"
               onClick={openPrint}
-              disabled={magazine.items.length === 0}
+              // items pode vir null de linhas legadas; paginateMagazine e stepValidation
+              // já usam (m.items ?? []) — o componente era a única exceção e estourava.
+              disabled={(magazine.items ?? []).length === 0}
             >
               <Download className="mr-2 h-4 w-4" /> PDF
             </Button>

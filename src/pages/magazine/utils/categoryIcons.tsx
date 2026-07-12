@@ -17,7 +17,9 @@ import {
   Backpack,
   Clock as ClockIcon,
   Signpost,
-  IdCard,
+  // `IdCard` NÃO existe no lucide-react instalado: o import virava `undefined` e
+  // <undefined/> derruba o React ("Element type is invalid"). `Contact` é o crachá.
+  Contact,
   Boxes,
   Sparkles,
 } from 'lucide-react';
@@ -37,7 +39,7 @@ const MAP: Record<MagazineCategory, (p: IconProps) => JSX.Element> = {
   bags: (p) => <Backpack strokeWidth={1.6} {...p} />,
   clocks: (p) => <ClockIcon strokeWidth={1.6} {...p} />,
   signs: (p) => <Signpost strokeWidth={1.6} {...p} />,
-  id: (p) => <IdCard strokeWidth={1.6} {...p} />,
+  id: (p) => <Contact strokeWidth={1.6} {...p} />,
   giftsets: (p) => <Boxes strokeWidth={1.6} {...p} />,
   customized: (p) => <Sparkles strokeWidth={1.6} {...p} />,
 };
