@@ -100,6 +100,9 @@ export default function QuoteViewPage() {
     deleteQuote,
   } = useQuoteViewData(id);
 
+  // Acesso direto a createQuote para o fluxo de Desfazer da exclusão individual.
+  const { createQuote } = useQuotes();
+
   // Itens com a margem de negociação já aplicada (espelha o PDF). Os componentes
   // de tabela/totais recalculam a partir dos itens, então recebem os valores já
   // inflados e permanecem coerentes entre si e com o total persistido.
