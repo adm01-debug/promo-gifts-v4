@@ -29,7 +29,7 @@ function ensureFonts() {
   fontsInjected = true;
 }
 
-export function MagazinePageRenderer({ magazine, page, fitContainer }: Props) {
+export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages }: Props) {
   const template = getTemplate(magazine.templateId);
   const Component = template.Component;
   const wrapperRef = useRef<HTMLDivElement>(null);
