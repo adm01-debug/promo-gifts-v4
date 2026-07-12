@@ -154,6 +154,55 @@ test.describe("Carrinhos: exclusão com Desfazer (paridade com Orçamentos)", ()
     await expect.poll(() => calls.cartInsert, { timeout: 10_000 }).toBeGreaterThanOrEqual(3);
   });
 
+  test("C — excluir pelo popover do CartHeaderButton → toast Desfazer → restaura", async ({ page }) => {
+    const { calls } = await primeCarts(page, 2);
+    // Qualquer rota que renderiza o header serve; usamos /carrinhos para reaproveitar o mock.
+    await gotoAndSettle(page, "/carrinhos");
+
+    // Abre o popover do carrinho no header
+    const trigger = page.getByTestId("cart-trigger");
+    await expect(trigger).toBeVisible({ timeout: 8_000 });
+    await trigger.click();
+
+    // Aguarda o drawer/popover renderizar e localiza o botão de excluir de um carrinho.
+    // `cart-delete-${id}` é o testId estável do botão no popover.
+    const drawer = page.getByTestId("cart-drawer");
+    await expect(drawer).toBeVisible({ timeout: 6_000 });
+    const deleteBtn = drawer.locator('[data-testid^="cart-delete-mock-cart-"]').first();
+    await expect(deleteBtn).toBeVisible({ timeout: 6_000 });
+    await deleteBtn.click();
+
+    // AlertDialog do header (testId != cart-row-delete-dialog): usa `cart-delete-dialog`
+    const dialog = page.getByTestId("cart-delete-dialog");
+    await expect(dialog).toBeVisible({ timeout: 6_000 });
+    // Copy SSOT — deve conter "você pode desfazer por até 8 segundos"
+    await expect(dialog.getByTestId("cart-delete-dialog-description")).toContainText(
+      /você pode desfazer por até 8 segundos após a confirmação/i,
+    );
+    await expect(dialog).not.toContainText("Esta ação não pode ser desfeita");
+
+    // Confirma
+    await page.getByTestId("cart-delete-confirm").click();
+
+    // DELETE efetivado
+    await expect.poll(() => calls.delete, { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+
+    // Toast Desfazer único (título singular)
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(1);
+    await expect(page.locator(UNDO_TOAST)).toContainText(/Carrinho excluído/);
+    // Descrição do toast padronizada com tempo (SSOT)
+    await expect(page.locator(UNDO_TOAST)).toContainText(/você pode desfazer por até 8 segundos/i);
+
+    // Clica Desfazer → dispara POST de restore
+    const btn = page.locator(UNDO_BTN);
+    await expect(btn).toHaveCount(1);
+    await btn.click();
+    await expect.poll(() => calls.cartInsert, { timeout: 8_000 }).toBeGreaterThanOrEqual(1);
+    await expect(page.getByText(/Carrinho restaurado\./)).toBeVisible({ timeout: 6_000 });
+  });
+
+
   test("D — sem clicar em Desfazer (>8s) toast some, DELETE persiste, sem duplicatas", async ({ page }) => {
     const { calls } = await primeCarts(page, 3);
     await gotoAndSettle(page, "/carrinhos");
