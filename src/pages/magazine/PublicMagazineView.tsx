@@ -43,6 +43,7 @@ import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
 import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
 import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
+import { usePageZoom } from './hooks/usePageZoom';
 import './magazine.css';
 
 const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
@@ -201,8 +202,27 @@ export default function PublicMagazineView() {
     return () => window.removeEventListener('keydown', onKey);
   }, [prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx]);
 
-  /* ---------------- Swipe ---------------- */
+  /* ---------------- Zoom por página ---------------- */
+  const zoom = usePageZoom(safeIdx);
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && zoom.state.scale === 2) {
+        e.preventDefault();
+        zoom.reset();
+      }
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [zoom]);
+
+
+
+  /* ---------------- Swipe (desabilitado quando zoom ativo) ---------------- */
   const onTouchStart = (e: React.TouchEvent) => {
+    if (zoom.state.scale !== 1) {
+      touchStartX.current = null;
+      return;
+    }
     touchStartX.current = e.touches[0]?.clientX ?? null;
   };
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -359,19 +379,39 @@ export default function PublicMagazineView() {
         </div>
       </header>
 
-      {/* Progress bar */}
-      <div
-        className="mx-auto mb-3 h-[3px] max-w-[1100px] overflow-hidden rounded-full bg-white/10"
-        role="progressbar"
-        aria-valuemin={1}
-        aria-valuemax={total}
-        aria-valuenow={safeIdx + 1}
-        aria-label={`Progresso da leitura: página ${safeIdx + 1} de ${total}`}
-      >
+      {/* Progress bar + mini-mapa de marcadores */}
+      <div className="relative mx-auto mb-3 max-w-[1100px]">
         <div
-          className="h-full bg-white/80 transition-all duration-300"
-          style={{ width: `${progressPct}%` }}
-        />
+          className="h-[3px] overflow-hidden rounded-full bg-white/10"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={safeIdx + 1}
+          aria-label={`Progresso da leitura: página ${safeIdx + 1} de ${total}`}
+        >
+          <div
+            className="h-full bg-white/80 transition-all duration-300"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+        {total > 1 && bookmarks.size > 0 && (
+          <div className="pointer-events-none absolute inset-x-0 -top-1 h-3">
+            {Array.from(bookmarks).map((idx) => {
+              const left = (idx / Math.max(total - 1, 1)) * 100;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => go(idx)}
+                  className="pointer-events-auto absolute -translate-x-1/2 rounded-full bg-amber-400 shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white"
+                  style={{ left: `${left}%`, width: 10, height: 10, top: 0 }}
+                  aria-label={`Ir para página marcada ${idx + 1}`}
+                  title={`Marcador · página ${idx + 1}`}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <main
@@ -379,7 +419,11 @@ export default function PublicMagazineView() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="relative overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div
+          className="relative overflow-hidden rounded-xl bg-white shadow-2xl"
+          style={{ cursor: zoom.state.scale === 2 ? 'grab' : 'zoom-in' }}
+          {...zoom.handlers}
+        >
           <AnimatePresence mode="wait" initial={false} custom={direction}>
             {current ? (
               <motion.div
@@ -389,6 +433,12 @@ export default function PublicMagazineView() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: direction === 1 ? -60 : 60 }}
                 transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
+                style={{
+                  transform: `translate(${zoom.state.tx}px, ${zoom.state.ty}px) scale(${zoom.state.scale})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1)',
+                  willChange: 'transform',
+                }}
               >
                 <MagazinePageRenderer
                   magazine={magazine}
@@ -399,6 +449,16 @@ export default function PublicMagazineView() {
               </motion.div>
             ) : null}
           </AnimatePresence>
+          {zoom.state.scale === 2 && (
+            <button
+              type="button"
+              onClick={zoom.reset}
+              className="absolute right-3 top-3 z-10 rounded-full bg-neutral-900/80 px-3 py-1 text-xs text-white shadow hover:bg-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              aria-label="Resetar zoom (Esc)"
+            >
+              Zoom 2× · Esc
+            </button>
+          )}
         </div>
 
         <nav
