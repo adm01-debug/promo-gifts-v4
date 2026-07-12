@@ -1,0 +1,18 @@
+// Add to App.tsx boot sequence (after AuthProvider mounts)
+// Insert this in a useEffect at the top level
+
+import { validateRLSPolicies } from '@/lib/supabase/rls-validator';
+
+useEffect(() => {
+  // Run RLS validation at boot (non-blocking)
+  validateRLSPolicies()
+    .then((result) => {
+      if (!result.isHealthy) {
+        console.warn('⚠️ RLS Policy Issues Detected:', result.errors);
+        // Optionally report to monitoring service
+      }
+    })
+    .catch((err) => {
+      console.debug('RLS validator error (non-fatal):', err);
+    });
+}, []);
