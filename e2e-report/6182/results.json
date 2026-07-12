@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+        "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+      },
+      "gitCommit": {
+        "shortHash": "4d2755e",
+        "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+        "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+        "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1783896569000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1783896569000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/4d2755e4003ac985760148875eed810fdd07a2cb",
+            "commitHash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29212266221"
+          },
+          "gitCommit": {
+            "shortHash": "4d2755e",
+            "hash": "4d2755e4003ac985760148875eed810fdd07a2cb",
+            "subject": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile",
+            "body": "fix(ci): destrava o `npm ci` e trava a regressão do lockfile\n\nO CI inteiro estava vermelho — e não por causa de nenhum teste.\n\nCinco dependências (`@fontsource/dm-serif-display`, `@fontsource/great-vibes`,\n`@fontsource/inter`, `@fontsource/playfair-display` e `pixelmatch`) foram adicionadas\nao `package.json` sem regenerar o lock. `npm ci` — que é o que o CI usa — se recusa a\ninstalar quando os dois divergem:\n\n    npm ci can only install packages when your package.json and\n    package-lock.json are in sync\n\nO step \"Install dependencies\" morria em 1 segundo e typecheck, lint, testes e coverage\neram todos marcados como `skipped`. Full CI, E2E e Credentials Audit ficavam vermelhos\nsem nunca ter checado uma linha sequer.\n\nÉ o mesmo padrão do `eslint.config.js` quebrado: um guard-rail que morre em silêncio.\n\n- `npm install --package-lock-only`: lock de volta em sincronia (117 deps)\n- `scripts/check-lockfile-sync.mjs`: guard zero-dep que compara package.json e lock\n  (presença, faixa de versão e resolução na árvore) e imprime o comando do conserto\n- roda no `pre-commit` e como step do `full-ci` ANTES do install — o step de install é\n  condicionado a `cache-hit != true`, então um lock quebrado podia passar batido num\n  cache-hit; o guard não depende do cache\n",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1783896569000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-12T22:52:54.525Z",
+    "duration": 3133.524,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
