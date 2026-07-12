@@ -52,6 +52,7 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
         <ul role="list" className="mt-4 grid grid-cols-2 gap-3 pb-8">
           {pages.map((p) => {
             const active = p.index === currentIndex;
+            const marked = bookmarks?.has(p.index) ?? false;
             return (
               <li key={p.index}>
                 <button
