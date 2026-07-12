@@ -21,9 +21,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Bookmark,
+  BookmarkCheck,
   ChevronLeft,
   ChevronRight,
   Copy,
+  HelpCircle,
   List,
   Maximize,
   MessageCircle,
@@ -38,6 +41,8 @@ import { Button } from '@/components/ui/button';
 import { paginateMagazine } from './pagination';
 import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
+import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
+import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
 import './magazine.css';
 
 const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
