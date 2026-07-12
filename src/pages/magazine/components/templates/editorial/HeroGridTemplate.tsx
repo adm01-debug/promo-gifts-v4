@@ -36,7 +36,7 @@ export function HeroGridTemplate({ magazine, page, totalPages }: TemplatePagePro
               ))
             : (
               <div className="row-span-4 overflow-hidden">
-                <img src={resolveItemImage(hero)} alt="" className="h-full w-full object-cover" />
+                <img src={resolveItemImage(hero)} alt={productImageAlt(hero)} className="h-full w-full object-cover" />
               </div>
             )}
         </div>
