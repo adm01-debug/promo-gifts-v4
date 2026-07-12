@@ -73,7 +73,7 @@ export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages 
     ) : page.kind === 'section' ? (
       <SectionPage title={page.sectionTitle ?? ''} />
     ) : (
-      <Component magazine={magazine} page={page} />
+      <Component magazine={magazine} page={page} totalPages={totalPages} />
     );
 
   if (!fitContainer) {
