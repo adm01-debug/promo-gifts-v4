@@ -701,13 +701,9 @@ function CartsListContent() {
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         variant="destructive"
-        title={`Excluir ${selectedCount} ${selectedCount === 1 ? 'carrinho' : 'carrinhos'}?`}
-        description={
-          selectedCount === 1
-            ? 'O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação.'
-            : 'Os carrinhos serão removidos — você pode desfazer por até 8 segundos após a confirmação.'
-        }
-        confirmLabel={`Excluir ${selectedCount}`}
+        title={deleteConfirmDialogTitle(selectedCount)}
+        description={deleteConfirmDialogDescription(selectedCount)}
+        confirmLabel={confirmDialogConfirmLabel(selectedCount)}
         confirmLabelShort="Excluir"
         cancelLabel="Cancelar"
         onConfirm={confirmBulkDelete}
@@ -718,9 +714,9 @@ function CartsListContent() {
         open={!!deleteConfirmId}
         onOpenChange={(open) => !open && setDeleteConfirmId(null)}
         variant="destructive"
-        title="Excluir carrinho?"
-        description="O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação."
-        confirmLabel="Confirmar exclusão"
+        title={deleteConfirmDialogTitle(1)}
+        description={deleteConfirmDialogDescription(1)}
+        confirmLabel={confirmDialogConfirmLabel(1)}
         confirmLabelShort="Excluir"
         cancelLabel="Cancelar"
         onConfirm={async () => {
@@ -732,15 +728,15 @@ function CartsListContent() {
           try {
             await deleteCart(deleteConfirmId);
             showUndoToast({
-              title: 'Carrinho excluído',
-              description: 'Você pode desfazer esta ação.',
-              duration: 8000,
+              title: deletedToastTitle(1),
+              description: UNDO_TOAST_DESCRIPTION,
+              duration: UNDO_DURATION_MS,
               onUndo: async () => {
                 const newId = await restoreCart(snapshot);
                 if (newId) {
-                  toast.success('Carrinho restaurado.');
+                  toast.success(RESTORE_SINGLE_SUCCESS);
                 } else {
-                  toast.error('Não foi possível restaurar o carrinho.');
+                  toast.error(RESTORE_SINGLE_ERROR);
                 }
               },
             });
