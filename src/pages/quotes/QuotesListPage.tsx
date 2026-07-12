@@ -74,7 +74,7 @@ export default function QuotesListPage() {
     handleBulkDelete,
     handleClearFilters,
     handleMarkApproved,
-    duplicateQuote,
+    handleDuplicateWithUndo,
     updateQuoteStatus,
   } = useQuotesListPage();
 
@@ -355,7 +355,7 @@ export default function QuotesListPage() {
                     toast.success(`${ids.length} orçamento(s) exportado(s)`);
                   });
                 }}
-                onDuplicate={(id) => duplicateQuote(id)}
+                onDuplicate={(id) => handleDuplicateWithUndo(id)}
               />
             )}
           </div>
