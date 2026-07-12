@@ -62,10 +62,12 @@ export default function PublicMagazineView() {
     return 0;
   });
   const [tocOpen, setTocOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [direction, setDirection] = useState<1 | -1>(1);
   const rootRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
+  const { toggle: toggleBookmark, has: hasBookmark, bookmarks } = useMagazineBookmarks(token);
 
   /* ---------------- Load ---------------- */
   useEffect(() => {
