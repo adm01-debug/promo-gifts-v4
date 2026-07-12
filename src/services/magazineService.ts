@@ -1,6 +1,12 @@
 /**
- * MagazineService — persistência v1 local (localStorage) + hooks para
- * migração ao BD Gold quando disponível. Preserva o SSOT em src/types/magazine.
+ * MagazineService — persistência v2 no BD Gold (doufsxqlfjyuvxuezpln).
+ *
+ * Migração 2026-07-12: substituído localStorage por chamadas Supabase
+ * (tabelas `magazines`, `magazine_items`) + edge `magazine-public-view`
+ * para leitura anônima. Toda a API passa a ser assíncrona.
+ *
+ * A camada usa `untypedFrom<Row>()` porque as tabelas magazine_* ainda
+ * não estão em src/integrations/supabase/types.ts (regeneração pendente).
  */
 
 import type {
@@ -11,56 +17,88 @@ import type {
   MagazineProductSnapshot,
   MagazineTemplateId,
 } from '@/types/magazine';
-import {
-  DEFAULT_BRANDING,
-  DEFAULT_MAGAZINE_CONTENT,
-} from '@/types/magazine';
+import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
 import type { Product } from '@/types/product-catalog';
+import { untypedFrom } from '@/lib/supabase-untyped';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
-const STORAGE_KEY = 'promobrind.magazines.v1';
-const TOKEN_INDEX_KEY = 'promobrind.magazines.tokenIndex.v1';
+// ---------------------------------------------------------------------------
+// Row shapes (mapeamento do BD Gold)
+// ---------------------------------------------------------------------------
 
-function readAll(): Magazine[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as Magazine[]) : [];
-  } catch (err) {
-    logger.warn('[magazineService] Falha ao ler localStorage:', err);
-    return [];
-  }
+interface MagazineRow {
+  id: string;
+  owner_id: string;
+  organization_id: string | null;
+  title: string;
+  subtitle: string | null;
+  template_id: MagazineTemplateId;
+  branding: MagazineClientBranding;
+  content_settings: MagazineContentSettings;
+  page_order: number[] | null;
+  status: Magazine['status'];
+  public_token: string | null;
+  pdf_url: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
-function writeAll(list: Magazine[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch (err) {
-    logger.error('[magazineService] Falha ao gravar localStorage:', err);
-  }
+interface MagazineItemRow {
+  id: string;
+  magazine_id: string;
+  product_id: string;
+  product_snapshot: MagazineProductSnapshot;
+  variant_color_name: string | null;
+  position: number;
+  page_number: number | null;
+  overrides: Partial<MagazineContentSettings>;
 }
 
-function writeTokenIndex(token: string, id: string): void {
-  try {
-    const raw = localStorage.getItem(TOKEN_INDEX_KEY);
-    const idx = raw ? (JSON.parse(raw) as Record<string, string>) : {};
-    idx[token] = id;
-    localStorage.setItem(TOKEN_INDEX_KEY, JSON.stringify(idx));
-  } catch (err) {
-    logger.warn('[magazineService] Falha ao gravar índice de token:', err);
-  }
+// ---------------------------------------------------------------------------
+// Mapping helpers
+// ---------------------------------------------------------------------------
+
+function rowToItem(row: MagazineItemRow): MagazineItem {
+  return {
+    id: row.id,
+    productId: row.product_id,
+    productSnapshot: row.product_snapshot,
+    variantColorName: row.variant_color_name,
+    position: row.position,
+    pageNumber: row.page_number,
+    overrides: row.overrides ?? {},
+  };
 }
 
-function readTokenIndex(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(TOKEN_INDEX_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
+function rowToMagazine(row: MagazineRow, items: MagazineItemRow[]): Magazine {
+  return {
+    id: row.id,
+    ownerId: row.owner_id,
+    organizationId: row.organization_id,
+    title: row.title,
+    subtitle: row.subtitle ?? '',
+    templateId: row.template_id,
+    branding: { ...DEFAULT_BRANDING, ...(row.branding ?? {}) },
+    content: { ...DEFAULT_MAGAZINE_CONTENT, ...(row.content_settings ?? {}) },
+    items: [...items].sort((a, b) => a.position - b.position).map(rowToItem),
+    pageOrder: row.page_order,
+    status: row.status,
+    publicToken: row.public_token,
+    pdfUrl: row.pdf_url,
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
+/**
+ * Snapshot puro (produto → JSON armazenado em magazine_items.product_snapshot).
+ * Continua síncrono — não depende do BD.
+ */
 export function productToSnapshot(product: Product): MagazineProductSnapshot {
   return {
     id: product.id,
@@ -82,189 +120,450 @@ export function productToSnapshot(product: Product): MagazineProductSnapshot {
   };
 }
 
-function newId(prefix: string): string {
-  // eslint-disable-next-line no-restricted-globals
-  const rnd =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2) + Date.now().toString(36);
-  return `${prefix}_${rnd}`;
+// ---------------------------------------------------------------------------
+// Low-level fetchers
+// ---------------------------------------------------------------------------
+
+async function fetchMagazineRow(id: string): Promise<MagazineRow | null> {
+  const { data, error } = await untypedFrom<MagazineRow>('magazines')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) {
+    logger.warn('[magazineService] fetchMagazineRow error:', error.message);
+    return null;
+  }
+  return (data as MagazineRow | null) ?? null;
 }
 
+async function fetchItems(magazineId: string): Promise<MagazineItemRow[]> {
+  const { data, error } = await untypedFrom<MagazineItemRow>('magazine_items')
+    .select('*')
+    .eq('magazine_id', magazineId)
+    .order('position', { ascending: true });
+  if (error) {
+    logger.warn('[magazineService] fetchItems error:', error.message);
+    return [];
+  }
+  return ((data as MagazineItemRow[] | null) ?? []);
+}
+
+async function hydrate(id: string): Promise<Magazine | null> {
+  const row = await fetchMagazineRow(id);
+  if (!row) return null;
+  const items = await fetchItems(id);
+  return rowToMagazine(row, items);
+}
+
+// ---------------------------------------------------------------------------
+// Public-view edge
+// ---------------------------------------------------------------------------
+
+interface PublicViewPayload {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  templateId: MagazineTemplateId;
+  branding: MagazineClientBranding;
+  content: MagazineContentSettings;
+  pageOrder: number[] | null;
+  status: Magazine['status'];
+  items: Array<{
+    id: string;
+    productId: string;
+    productSnapshot: MagazineProductSnapshot;
+    variantColorName: string | null;
+    position: number;
+    pageNumber: number | null;
+    overrides: Partial<MagazineContentSettings>;
+  }>;
+}
+
+async function callPublicView(token: string): Promise<PublicViewPayload | null> {
+  const base = (import.meta.env.VITE_SUPABASE_URL as string) ?? '';
+  const anonKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) ?? '';
+  if (!base) return null;
+  try {
+    const url = `${base}/functions/v1/magazine-public-view?token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        [REQUEST_ID_HEADER]: newRequestId(),
+        ...(anonKey ? { apikey: anonKey } : {}),
+      },
+    });
+    if (!res.ok) {
+      await res.text().catch(() => '');
+      return null;
+    }
+    return (await res.json()) as PublicViewPayload;
+  } catch (err) {
+    logger.warn('[magazineService] callPublicView failed:', err);
+    return null;
+  }
+}
+
+function publicPayloadToMagazine(token: string, p: PublicViewPayload): Magazine {
+  return {
+    id: p.id,
+    ownerId: '',
+    organizationId: null,
+    title: p.title,
+    subtitle: p.subtitle ?? '',
+    templateId: p.templateId,
+    branding: { ...DEFAULT_BRANDING, ...(p.branding ?? {}) },
+    content: { ...DEFAULT_MAGAZINE_CONTENT, ...(p.content ?? {}) },
+    items: [...p.items]
+      .sort((a, b) => a.position - b.position)
+      .map((it) => ({
+        id: it.id,
+        productId: it.productId,
+        productSnapshot: it.productSnapshot,
+        variantColorName: it.variantColorName,
+        position: it.position,
+        pageNumber: it.pageNumber,
+        overrides: it.overrides ?? {},
+      })),
+    pageOrder: p.pageOrder,
+    status: p.status,
+    publicToken: token,
+    pdfUrl: null,
+    publishedAt: null,
+    createdAt: '',
+    updatedAt: '',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Service API (async)
+// ---------------------------------------------------------------------------
+
 export const magazineService = {
-  list(ownerId: string): Magazine[] {
-    return readAll()
-      .filter((m) => m.ownerId === ownerId)
-      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  async list(ownerId: string): Promise<Magazine[]> {
+    const { data, error } = await untypedFrom<MagazineRow>('magazines')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .is('deleted_at', null)
+      .order('updated_at', { ascending: false });
+    if (error) {
+      logger.warn('[magazineService.list] error:', error.message);
+      return [];
+    }
+    const rows = (data as MagazineRow[] | null) ?? [];
+    if (rows.length === 0) return [];
+    // Busca items de todas as revistas em uma query só
+    const ids = rows.map((r) => r.id);
+    const { data: itemsData } = await untypedFrom<MagazineItemRow>('magazine_items')
+      .select('*')
+      .in('magazine_id', ids);
+    const items = (itemsData as MagazineItemRow[] | null) ?? [];
+    const byMag = new Map<string, MagazineItemRow[]>();
+    for (const it of items) {
+      const arr = byMag.get(it.magazine_id) ?? [];
+      arr.push(it);
+      byMag.set(it.magazine_id, arr);
+    }
+    return rows.map((r) => rowToMagazine(r, byMag.get(r.id) ?? []));
   },
 
-  get(id: string): Magazine | null {
-    return readAll().find((m) => m.id === id) ?? null;
+  async get(id: string): Promise<Magazine | null> {
+    return hydrate(id);
   },
 
-  getByToken(token: string): Magazine | null {
-    const idx = readTokenIndex();
-    const id = idx[token];
-    if (!id) return null;
-    return this.get(id);
+  async getByToken(token: string): Promise<Magazine | null> {
+    const payload = await callPublicView(token);
+    return payload ? publicPayloadToMagazine(token, payload) : null;
   },
 
-  create(input: {
+  /** Alias explícito — leitura pública SEMPRE vai pela edge. */
+  async getPublicByToken(token: string): Promise<Magazine | null> {
+    return this.getByToken(token);
+  },
+
+  async create(input: {
     ownerId: string;
     organizationId?: string | null;
     title?: string;
     templateId?: MagazineTemplateId;
-  }): Magazine {
-    const now = new Date().toISOString();
-    const magazine: Magazine = {
-      id: newId('mag'),
-      ownerId: input.ownerId,
-      organizationId: input.organizationId ?? null,
+  }): Promise<Magazine> {
+    const insertRow = {
+      owner_id: input.ownerId,
+      organization_id: input.organizationId ?? null,
       title: input.title ?? 'Nova Revista',
       subtitle: '',
-      templateId: input.templateId ?? 'editorial-vogue',
+      template_id: input.templateId ?? 'editorial-vogue',
       branding: { ...DEFAULT_BRANDING },
-      content: { ...DEFAULT_MAGAZINE_CONTENT },
-      items: [],
-      pageOrder: null,
-      status: 'draft',
-      publicToken: null,
-      pdfUrl: null,
-      publishedAt: null,
-      createdAt: now,
-      updatedAt: now,
+      content_settings: { ...DEFAULT_MAGAZINE_CONTENT },
+      status: 'draft' as const,
     };
-    const all = readAll();
-    all.push(magazine);
-    writeAll(all);
-    return magazine;
+    const { data, error } = await untypedFrom<MagazineRow>('magazines')
+      .insert(insertRow)
+      .select('*')
+      .single();
+    if (error || !data) {
+      throw new Error(`[magazineService.create] ${error?.message ?? 'insert falhou'}`);
+    }
+    return rowToMagazine(data as MagazineRow, []);
   },
 
-  update(id: string, patch: Partial<Magazine>): Magazine | null {
-    const all = readAll();
-    const idx = all.findIndex((m) => m.id === id);
-    if (idx < 0) return null;
-    const updated: Magazine = {
-      ...all[idx],
-      ...patch,
-      id: all[idx].id,
-      ownerId: all[idx].ownerId,
-      createdAt: all[idx].createdAt,
-      updatedAt: new Date().toISOString(),
-    };
-    all[idx] = updated;
-    writeAll(all);
-    return updated;
+  async update(id: string, patch: Partial<Magazine>): Promise<Magazine | null> {
+    const updateRow: Record<string, unknown> = {};
+    if ('title' in patch) updateRow.title = patch.title;
+    if ('subtitle' in patch) updateRow.subtitle = patch.subtitle;
+    if ('templateId' in patch) updateRow.template_id = patch.templateId;
+    if ('branding' in patch) updateRow.branding = patch.branding;
+    if ('content' in patch) updateRow.content_settings = patch.content;
+    if ('pageOrder' in patch) updateRow.page_order = patch.pageOrder;
+    if ('status' in patch) updateRow.status = patch.status;
+    if ('publicToken' in patch) updateRow.public_token = patch.publicToken;
+    if ('pdfUrl' in patch) updateRow.pdf_url = patch.pdfUrl;
+    if ('publishedAt' in patch) updateRow.published_at = patch.publishedAt;
+
+    if (Object.keys(updateRow).length > 0) {
+      const { error } = await untypedFrom<MagazineRow>('magazines')
+        .update(updateRow)
+        .eq('id', id);
+      if (error) {
+        logger.warn('[magazineService.update] header error:', error.message);
+        return null;
+      }
+    }
+
+    // Se o patch inclui items, sincroniza (delete + insert).
+    if (patch.items) {
+      await untypedFrom<MagazineItemRow>('magazine_items').delete().eq('magazine_id', id);
+      if (patch.items.length > 0) {
+        const rows = patch.items.map((it, idx) => ({
+          magazine_id: id,
+          product_id: it.productId,
+          product_snapshot: it.productSnapshot,
+          variant_color_name: it.variantColorName,
+          position: idx,
+          page_number: it.pageNumber,
+          overrides: it.overrides ?? {},
+        }));
+        const { error: insErr } = await untypedFrom<MagazineItemRow>('magazine_items').insert(rows);
+        if (insErr) {
+          logger.warn('[magazineService.update] items insert error:', insErr.message);
+        }
+      }
+    }
+
+    return hydrate(id);
   },
 
-  updateContent(id: string, patch: Partial<MagazineContentSettings>): Magazine | null {
-    const current = this.get(id);
+  async updateContent(id: string, patch: Partial<MagazineContentSettings>): Promise<Magazine | null> {
+    const current = await this.get(id);
     if (!current) return null;
     return this.update(id, { content: { ...current.content, ...patch } });
   },
 
-  updateBranding(id: string, patch: Partial<MagazineClientBranding>): Magazine | null {
-    const current = this.get(id);
+  async updateBranding(id: string, patch: Partial<MagazineClientBranding>): Promise<Magazine | null> {
+    const current = await this.get(id);
     if (!current) return null;
     return this.update(id, { branding: { ...current.branding, ...patch } });
   },
 
-  addProducts(id: string, products: Product[]): Magazine | null {
-    const current = this.get(id);
+  async addProducts(id: string, products: Product[]): Promise<Magazine | null> {
+    const current = await this.get(id);
     if (!current) return null;
     const existingIds = new Set(current.items.map((i) => i.productId));
-    const additions: MagazineItem[] = products
-      .filter((p) => !existingIds.has(p.id))
-      .map((p, offset) => ({
-        id: newId('item'),
-        productId: p.id,
-        productSnapshot: productToSnapshot(p),
-        variantColorName: p.colors?.[0]?.name ?? null,
-        position: current.items.length + offset,
-        pageNumber: null,
-        overrides: {},
-      }));
+    const additions = products.filter((p) => !existingIds.has(p.id));
     if (additions.length === 0) return current;
-    return this.update(id, { items: [...current.items, ...additions] });
+    const basePos = current.items.length;
+    const rows = additions.map((p, offset) => ({
+      magazine_id: id,
+      product_id: p.id,
+      product_snapshot: productToSnapshot(p),
+      variant_color_name: p.colors?.[0]?.name ?? null,
+      position: basePos + offset,
+      page_number: null,
+      overrides: {},
+    }));
+    const { error } = await untypedFrom<MagazineItemRow>('magazine_items').insert(rows);
+    if (error) {
+      logger.warn('[magazineService.addProducts] error:', error.message);
+      return current;
+    }
+    // Bumpa updated_at do header
+    await untypedFrom<MagazineRow>('magazines')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return hydrate(id);
   },
 
-  removeItem(id: string, itemId: string): Magazine | null {
-    const current = this.get(id);
-    if (!current) return null;
-    const items = current.items
-      .filter((i) => i.id !== itemId)
-      .map((i, idx) => ({ ...i, position: idx }));
-    return this.update(id, { items });
+  async removeItem(id: string, itemId: string): Promise<Magazine | null> {
+    const { error } = await untypedFrom<MagazineItemRow>('magazine_items')
+      .delete()
+      .eq('id', itemId)
+      .eq('magazine_id', id);
+    if (error) {
+      logger.warn('[magazineService.removeItem] error:', error.message);
+      return this.get(id);
+    }
+    await untypedFrom<MagazineRow>('magazines')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return hydrate(id);
   },
 
-  reorderItems(id: string, orderedIds: string[]): Magazine | null {
-    const current = this.get(id);
-    if (!current) return null;
-    const byId = new Map(current.items.map((i) => [i.id, i]));
-    const items: MagazineItem[] = orderedIds
-      .map((iid, idx) => {
-        const it = byId.get(iid);
-        return it ? { ...it, position: idx } : null;
-      })
-      .filter((x): x is MagazineItem => x !== null);
-    return this.update(id, { items });
+  async reorderItems(id: string, orderedIds: string[]): Promise<Magazine | null> {
+    // Atualiza posição em paralelo — cada item recebe seu novo índice.
+    await Promise.all(
+      orderedIds.map((itemId, idx) =>
+        untypedFrom<MagazineItemRow>('magazine_items')
+          .update({ position: idx })
+          .eq('id', itemId)
+          .eq('magazine_id', id),
+      ),
+    );
+    await untypedFrom<MagazineRow>('magazines')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return hydrate(id);
   },
 
-  updateItem(id: string, itemId: string, patch: Partial<MagazineItem>): Magazine | null {
-    const current = this.get(id);
-    if (!current) return null;
-    const items = current.items.map((i) => (i.id === itemId ? { ...i, ...patch, id: i.id } : i));
-    return this.update(id, { items });
+  async updateItem(id: string, itemId: string, patch: Partial<MagazineItem>): Promise<Magazine | null> {
+    const updateRow: Record<string, unknown> = {};
+    if ('productSnapshot' in patch) updateRow.product_snapshot = patch.productSnapshot;
+    if ('variantColorName' in patch) updateRow.variant_color_name = patch.variantColorName;
+    if ('position' in patch) updateRow.position = patch.position;
+    if ('pageNumber' in patch) updateRow.page_number = patch.pageNumber;
+    if ('overrides' in patch) updateRow.overrides = patch.overrides;
+    if (Object.keys(updateRow).length > 0) {
+      const { error } = await untypedFrom<MagazineItemRow>('magazine_items')
+        .update(updateRow)
+        .eq('id', itemId)
+        .eq('magazine_id', id);
+      if (error) {
+        logger.warn('[magazineService.updateItem] error:', error.message);
+      }
+    }
+    await untypedFrom<MagazineRow>('magazines')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', id);
+    return hydrate(id);
   },
 
-  duplicate(id: string): Magazine | null {
-    const current = this.get(id);
+  async duplicate(id: string): Promise<Magazine | null> {
+    const current = await this.get(id);
     if (!current) return null;
-    const clone = this.create({
+    const clone = await this.create({
       ownerId: current.ownerId,
       organizationId: current.organizationId,
       title: `${current.title} (cópia)`,
       templateId: current.templateId,
     });
-    return this.update(clone.id, {
+    // Header extras (branding/content) + items
+    await this.update(clone.id, {
       branding: current.branding,
       content: current.content,
-      items: current.items.map((i) => ({ ...i, id: newId('item') })),
+      subtitle: current.subtitle,
     });
+    if (current.items.length > 0) {
+      const rows = current.items.map((it, idx) => ({
+        magazine_id: clone.id,
+        product_id: it.productId,
+        product_snapshot: it.productSnapshot,
+        variant_color_name: it.variantColorName,
+        position: idx,
+        page_number: it.pageNumber,
+        overrides: it.overrides ?? {},
+      }));
+      const { error } = await untypedFrom<MagazineItemRow>('magazine_items').insert(rows);
+      if (error) logger.warn('[magazineService.duplicate] items error:', error.message);
+    }
+    return hydrate(clone.id);
   },
 
-  delete(id: string): void {
-    const all = readAll().filter((m) => m.id !== id);
-    writeAll(all);
+  async delete(id: string): Promise<void> {
+    // Soft-delete: preserva registro para Undo do toast.
+    const { error } = await untypedFrom<MagazineRow>('magazines')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) logger.warn('[magazineService.delete] error:', error.message);
   },
 
   /**
-   * Restaura uma revista deletada (usada pelo Undo do toast).
-   * Se já existir uma revista com o mesmo id, é sobrescrita.
+   * Restaura uma revista deletada (Undo do toast).
+   * Estratégia: tenta desmarcar `deleted_at`. Se o registro sumiu (hard-delete),
+   * reinsere header + items usando o objeto passado.
    */
-  restore(magazine: Magazine): Magazine {
-    const all = readAll().filter((m) => m.id !== magazine.id);
-    all.push(magazine);
-    writeAll(all);
-    if (magazine.publicToken) writeTokenIndex(magazine.publicToken, magazine.id);
-    return magazine;
+  async restore(magazine: Magazine): Promise<Magazine> {
+    const { data, error } = await untypedFrom<MagazineRow>('magazines')
+      .update({ deleted_at: null, updated_at: new Date().toISOString() })
+      .eq('id', magazine.id)
+      .select('*')
+      .maybeSingle();
+
+    if (!error && data) {
+      const hydrated = await hydrate(magazine.id);
+      return hydrated ?? magazine;
+    }
+
+    // Hard-deleted: reinsere.
+    const insertRow = {
+      id: magazine.id,
+      owner_id: magazine.ownerId,
+      organization_id: magazine.organizationId,
+      title: magazine.title,
+      subtitle: magazine.subtitle,
+      template_id: magazine.templateId,
+      branding: magazine.branding,
+      content_settings: magazine.content,
+      page_order: magazine.pageOrder,
+      status: magazine.status,
+      public_token: magazine.publicToken,
+      pdf_url: magazine.pdfUrl,
+      published_at: magazine.publishedAt,
+    };
+    const { error: insErr } = await untypedFrom<MagazineRow>('magazines').insert(insertRow);
+    if (insErr) {
+      logger.warn('[magazineService.restore] reinsert error:', insErr.message);
+      return magazine;
+    }
+    if (magazine.items.length > 0) {
+      const itemRows = magazine.items.map((it, idx) => ({
+        magazine_id: magazine.id,
+        product_id: it.productId,
+        product_snapshot: it.productSnapshot,
+        variant_color_name: it.variantColorName,
+        position: idx,
+        page_number: it.pageNumber,
+        overrides: it.overrides ?? {},
+      }));
+      await untypedFrom<MagazineItemRow>('magazine_items').insert(itemRows);
+    }
+    const hydrated = await hydrate(magazine.id);
+    return hydrated ?? magazine;
   },
 
-
-
-  publish(id: string): Magazine | null {
-    const current = this.get(id);
-    if (!current) return null;
-    const token = current.publicToken ?? newId('tok').replace('tok_', '');
-    writeTokenIndex(token, id);
-    return this.update(id, {
-      status: 'published',
-      publicToken: token,
-      publishedAt: new Date().toISOString(),
-    });
+  async publish(id: string): Promise<Magazine | null> {
+    // O trigger fn_magazine_public_token gera o token quando status vira 'published'.
+    const { error } = await untypedFrom<MagazineRow>('magazines')
+      .update({ status: 'published', published_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) {
+      logger.warn('[magazineService.publish] error:', error.message);
+      return null;
+    }
+    return hydrate(id);
   },
 
-  unpublish(id: string): Magazine | null {
-    return this.update(id, { status: 'draft' });
+  async unpublish(id: string): Promise<Magazine | null> {
+    const { error } = await untypedFrom<MagazineRow>('magazines')
+      .update({ status: 'draft' })
+      .eq('id', id);
+    if (error) {
+      logger.warn('[magazineService.unpublish] error:', error.message);
+      return null;
+    }
+    return hydrate(id);
   },
 };
+
+// Marca o supabase client como usado (evita tree-shake do import) — o
+// untypedFrom() já depende dele, mas mantemos referência explícita para
+// documentação.
+void supabase;
