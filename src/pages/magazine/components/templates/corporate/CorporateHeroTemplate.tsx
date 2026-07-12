@@ -1,12 +1,21 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
 import { effectiveContent, formatPrice, itemPrice, resolveItemImage } from '../shared';
-import { ColorSwatchDot, PriceTag } from '../chrome';
+import { ColorSwatchDot, PriceTag, SkuChip, VerticalCategoryStripe } from '../chrome';
 
+/**
+ * CorporateHeroTemplate — capa com logo do cliente + 4 produtos.
+ * Adota sidebar categórica e SkuChip do padrão Abreez.
+ */
 export function CorporateHeroTemplate({ magazine, page, totalPages }: TemplatePageProps) {
   return (
     <div className="mag-page flex flex-col bg-white">
+      <VerticalCategoryStripe
+        index={page.index}
+        label={page.items[0]?.productSnapshot.category_name ?? magazine.title}
+      />
+
       <header
-        className="flex items-center justify-between px-14 py-10 text-white"
+        className="ml-20 flex items-center justify-between px-14 py-10 text-white"
         style={{
           background:
             'linear-gradient(135deg,var(--mag-primary) 0%,var(--mag-primary) 65%,color-mix(in srgb,var(--mag-primary) 70%,black) 100%)',
@@ -17,7 +26,7 @@ export function CorporateHeroTemplate({ magazine, page, totalPages }: TemplatePa
             <img
               src={magazine.branding.clientLogoUrl}
               alt={magazine.branding.clientName ?? 'Cliente'}
-              className="h-24 w-24 rounded-full bg-white object-contain p-2 ring-4 ring-white/20"
+              className="h-24 w-24 rounded-lg bg-white object-contain p-2 ring-2 ring-white/20"
             />
           )}
           <div>
@@ -45,37 +54,34 @@ export function CorporateHeroTemplate({ magazine, page, totalPages }: TemplatePa
           </div>
         </div>
       </header>
-      <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-6 p-10">
+      <div className="ml-20 grid flex-1 grid-cols-2 grid-rows-2 gap-6 p-10">
         {page.items.slice(0, 4).map((item) => {
           const c = effectiveContent(magazine.content, item.overrides);
           const p = item.productSnapshot;
           return (
             <div
               key={item.id}
-              className="flex flex-col overflow-hidden rounded-2xl border shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
-              style={{ borderColor: 'rgba(0,0,0,0.08)' }}
+              className="flex flex-col overflow-hidden"
+              style={{ border: '0.5pt solid rgba(0,0,0,0.15)' }}
             >
-              <div className="relative flex-1 overflow-hidden bg-neutral-50">
-                <img src={resolveItemImage(item)} alt={p.name} className="h-full w-full object-cover" />
-                {p.category_name && (
-                  <span
-                    className="absolute left-3 top-3 rounded-sm bg-white/95 px-3 py-1 text-sm uppercase tracking-widest"
-                    style={{ color: 'var(--mag-primary)' }}
-                  >
-                    {p.category_name}
-                  </span>
-                )}
+              <div
+                className="relative flex-1 overflow-hidden"
+                style={{ background: 'var(--mag-brand-cream, #f1efe7)' }}
+              >
+                <img src={resolveItemImage(item)} alt={p.name} className="h-full w-full object-contain p-3" />
               </div>
-              <div className="border-t p-6" style={{ background: 'white' }}>
+              <div className="border-t p-5" style={{ background: 'white' }}>
+                <div className="mb-2 flex items-center gap-2">
+                  {c.showCode && <SkuChip sku={p.sku} size="sm" />}
+                </div>
                 <h3
-                  className="text-3xl font-semibold leading-tight"
+                  className="text-2xl font-semibold leading-tight"
                   style={{ color: 'var(--mag-primary)', fontFamily: 'var(--mag-heading)' }}
                 >
                   {p.name}
                 </h3>
                 <div className="mt-3 flex items-center justify-between">
-                  <div className="space-y-1 text-xl opacity-75">
-                    {c.showCode && <div>Cód. {p.sku}</div>}
+                  <div className="text-lg opacity-75">
                     {c.showColors && <ColorSwatchDot item={item} />}
                   </div>
                   {c.showPrice && (

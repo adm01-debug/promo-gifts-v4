@@ -1,62 +1,102 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
 import { effectiveContent, formatPrice, itemPrice, resolveItemImage } from '../shared';
-import { Folio, PriceTag } from '../chrome';
+import { Folio, PriceTag, HairlineDivider } from '../chrome';
 
+/**
+ * HeroGridTemplate — reformulado como "Section Cinemascope" (padrão Abreez p.6):
+ * 4 imagens empilhadas à esquerda + moldura branca central com título + torre
+ * tipográfica vertical à direita. Se houver mais produtos, vira grade abaixo.
+ */
 export function HeroGridTemplate({ magazine, page, totalPages }: TemplatePageProps) {
   const [hero, ...rest] = page.items;
   if (!hero) return null;
   const hc = effectiveContent(magazine.content, hero.overrides);
+  const stackImages = rest.slice(0, 4);
+
   return (
-    <div className="mag-page flex flex-col bg-white p-14">
-      <div className="mb-8 flex items-center justify-between">
-        <span
-          className="text-2xl uppercase tracking-[0.4em]"
-          style={{ color: 'var(--mag-secondary)', fontFamily: 'var(--mag-body)' }}
-        >
-          {hero.productSnapshot.category_name ?? 'Destaques'}
-        </span>
-        <Folio index={page.index} total={totalPages} />
+    <div className="mag-page flex flex-col bg-white p-10">
+      {/* Cinemascope 3 colunas: stack + moldura + torre */}
+      <div className="mb-8 grid flex-1 grid-cols-3 gap-6" style={{ maxHeight: 1650 }}>
+        {/* Coluna 1 — 4 fotos empilhadas com overlay teal */}
+        <div className="grid grid-rows-4 gap-3">
+          {stackImages.length > 0
+            ? stackImages.map((item) => (
+                <div key={item.id} className="relative overflow-hidden">
+                  <img
+                    src={resolveItemImage(item)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    style={{ filter: 'saturate(0.75) contrast(1.05)' }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: 'color-mix(in srgb, var(--mag-category-color) 25%, transparent)' }}
+                  />
+                </div>
+              ))
+            : (
+              <div className="row-span-4 overflow-hidden">
+                <img src={resolveItemImage(hero)} alt="" className="h-full w-full object-cover" />
+              </div>
+            )}
+        </div>
+
+        {/* Coluna 2 — Moldura branca central */}
+        <div className="flex items-center justify-center px-4">
+          <div
+            className="flex h-full w-full flex-col items-center justify-between p-8 text-center"
+            style={{ border: '1px solid var(--mag-category-color)' }}
+          >
+            <div className="text-6xl opacity-70" style={{ color: 'var(--mag-category-color)' }}>◊</div>
+            <div>
+              <div
+                className="text-3xl font-bold leading-tight"
+                style={{ fontFamily: 'var(--mag-heading)', color: 'var(--mag-primary)' }}
+              >
+                {magazine.title}
+              </div>
+              {hero.productSnapshot.shortDescription && hc.showDescription && (
+                <p className="mt-6 text-xl leading-relaxed opacity-80" style={{ fontFamily: 'var(--mag-body)' }}>
+                  {hero.productSnapshot.shortDescription.slice(0, 220)}
+                </p>
+              )}
+            </div>
+            <Folio index={page.index} total={totalPages} />
+          </div>
+        </div>
+
+        {/* Coluna 3 — Torre tipográfica vertical */}
+        <div className="flex items-center justify-center">
+          <div
+            className="text-6xl font-black uppercase leading-[0.9] tracking-[0.5em]"
+            style={{
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              fontFamily: 'var(--mag-heading)',
+              color: 'var(--mag-category-color)',
+            }}
+          >
+            {(hero.productSnapshot.category_name ?? magazine.title).toUpperCase().slice(0, 24)}
+          </div>
+        </div>
       </div>
-      <div className="relative mb-8 overflow-hidden" style={{ height: 1300 }}>
-        <img src={resolveItemImage(hero)} alt={hero.productSnapshot.name} className="h-full w-full object-cover" />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(180deg,transparent 45%,rgba(0,0,0,0.65))' }}
-        />
-        <div className="absolute inset-x-10 bottom-10 flex items-end justify-between text-white">
+
+      <HairlineDivider />
+
+      {/* Ficha do hero em rodapé */}
+      <div className="mt-6 flex items-end justify-between">
+        <div>
           <h2
-            className="max-w-[70%] leading-[0.9]"
-            style={{ fontFamily: 'var(--mag-heading)', fontSize: 140, letterSpacing: '-0.03em' }}
+            className="text-5xl leading-[1] max-w-[900px]"
+            style={{ fontFamily: 'var(--mag-heading)', color: 'var(--mag-text)' }}
           >
             {hero.productSnapshot.name}
           </h2>
-          {hc.showPrice && <PriceTag value={formatPrice(itemPrice(hero))} size="lg" variant="stack" />}
+          {hc.showCode && (
+            <div className="mt-2 text-xl uppercase tracking-widest opacity-70">Ref. {hero.productSnapshot.sku}</div>
+          )}
         </div>
-      </div>
-      <div className="grid flex-1 grid-cols-4 gap-6">
-        {rest.slice(0, 4).map((item) => {
-          const c = effectiveContent(magazine.content, item.overrides);
-          const p = item.productSnapshot;
-          return (
-            <div key={item.id} className="flex flex-col">
-              <div className="mb-3 flex-1 overflow-hidden bg-neutral-100" style={{ minHeight: 420 }}>
-                <img src={resolveItemImage(item)} alt={p.name} className="h-full w-full object-cover" />
-              </div>
-              <div
-                className="line-clamp-2 text-2xl font-semibold leading-tight"
-                style={{ fontFamily: 'var(--mag-heading)', color: 'var(--mag-text)' }}
-              >
-                {p.name}
-              </div>
-              {c.showCode && <div className="mt-1 text-xl opacity-70">Cód. {p.sku}</div>}
-              {c.showPrice && (
-                <div className="mt-2">
-                  <PriceTag value={formatPrice(itemPrice(item))} size="sm" variant="stack" />
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {hc.showPrice && <PriceTag value={formatPrice(itemPrice(hero))} size="lg" variant="stack" />}
       </div>
     </div>
   );
