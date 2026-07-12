@@ -7,6 +7,7 @@
  */
 
 import { memo } from 'react';
+import { BookmarkCheck } from 'lucide-react';
 import type { Magazine, MagazinePage } from '@/types/magazine';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MagazinePageRenderer } from './MagazinePageRenderer';
@@ -19,6 +20,7 @@ interface Props {
   pages: MagazinePage[];
   currentIndex: number;
   onGo: (index: number) => void;
+  bookmarks?: Set<number>;
 }
 
 function pageLabel(p: MagazinePage): string {
@@ -35,6 +37,7 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
   pages,
   currentIndex,
   onGo,
+  bookmarks,
 }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -49,6 +52,7 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
         <ul role="list" className="mt-4 grid grid-cols-2 gap-3 pb-8">
           {pages.map((p) => {
             const active = p.index === currentIndex;
+            const marked = bookmarks?.has(p.index) ?? false;
             return (
               <li key={p.index}>
                 <button
@@ -66,13 +70,22 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
                       : 'border-white/10 hover:border-white/40',
                   )}
                 >
-                  <div className="bg-white">
+                  <div className="relative bg-white">
                     <MagazinePageRenderer
                       magazine={magazine}
                       page={p}
                       totalPages={pages.length}
                       fitContainer
                     />
+                    {marked && (
+                      <span
+                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-amber-400 text-neutral-900 shadow"
+                        aria-label="Página marcada"
+                        title="Página marcada"
+                      >
+                        <BookmarkCheck className="h-3.5 w-3.5" />
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between gap-2 bg-white/5 px-2 py-1.5 text-[10px] uppercase tracking-widest text-white/80">
                     <span className="tabular-nums">

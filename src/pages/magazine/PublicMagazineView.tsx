@@ -21,9 +21,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Bookmark,
+  BookmarkCheck,
   ChevronLeft,
   ChevronRight,
   Copy,
+  HelpCircle,
   List,
   Maximize,
   MessageCircle,
@@ -38,6 +41,8 @@ import { Button } from '@/components/ui/button';
 import { paginateMagazine } from './pagination';
 import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
+import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
+import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
 import './magazine.css';
 
 const LAST_PAGE_KEY = (token: string) => `mag:last-page:${token}`;
@@ -57,10 +62,12 @@ export default function PublicMagazineView() {
     return 0;
   });
   const [tocOpen, setTocOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [direction, setDirection] = useState<1 | -1>(1);
   const rootRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
+  const { toggle: toggleBookmark, has: hasBookmark, bookmarks } = useMagazineBookmarks(token);
 
   /* ---------------- Load ---------------- */
   useEffect(() => {
@@ -179,11 +186,20 @@ export default function PublicMagazineView() {
           e.preventDefault();
           setTocOpen((v) => !v);
           break;
+        case 'b':
+        case 'B':
+          e.preventDefault();
+          toggleBookmark(safeIdx);
+          break;
+        case '?':
+          e.preventDefault();
+          setHelpOpen((v) => !v);
+          break;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [prev, next, go, toggleFullscreen, total]);
+  }, [prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx]);
 
   /* ---------------- Swipe ---------------- */
   const onTouchStart = (e: React.TouchEvent) => {
@@ -273,11 +289,40 @@ export default function PublicMagazineView() {
           <Button
             variant="secondary"
             size="sm"
+            onClick={() => toggleBookmark(safeIdx)}
+            aria-label={hasBookmark(safeIdx) ? 'Remover marcador desta página (B)' : 'Marcar esta página (B)'}
+            title={hasBookmark(safeIdx) ? 'Remover marcador (B)' : 'Marcar página (B)'}
+            aria-pressed={hasBookmark(safeIdx)}
+          >
+            {hasBookmark(safeIdx) ? (
+              <BookmarkCheck className="mr-2 h-4 w-4" />
+            ) : (
+              <Bookmark className="mr-2 h-4 w-4" />
+            )}
+            {hasBookmark(safeIdx) ? 'Marcada' : 'Marcar'}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setTocOpen(true)}
             aria-label="Abrir sumário (T)"
             title="Sumário (T)"
           >
             <List className="mr-2 h-4 w-4" /> Sumário
+            {bookmarks.size > 0 && (
+              <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px] tabular-nums">
+                {bookmarks.size}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setHelpOpen(true)}
+            aria-label="Ver atalhos de teclado (?)"
+            title="Atalhos (?)"
+          >
+            <HelpCircle className="h-4 w-4" />
           </Button>
           <Button
             variant="secondary"
@@ -390,7 +435,7 @@ export default function PublicMagazineView() {
         </nav>
 
         <p className="mt-3 text-center text-[11px] uppercase tracking-widest text-white/40">
-          Atalhos: ← → navegar · F tela cheia · T sumário · Home/End extremos
+          Atalhos: ← → navegar · F tela cheia · T sumário · B marcador · ? ajuda
         </p>
       </main>
 
@@ -401,7 +446,9 @@ export default function PublicMagazineView() {
         pages={pages}
         currentIndex={safeIdx}
         onGo={go}
+        bookmarks={bookmarks}
       />
+      <KeyboardHelpOverlay open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
