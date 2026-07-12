@@ -312,4 +312,183 @@ test.describe("Carrinhos: exclusão com Desfazer (paridade com Orçamentos)", ()
     // NUNCA vaza a copy de "todos restaurados" quando houve falha parcial.
     await expect(page.locator("body")).not.toContainText(/3 carrinhos restaurados/);
   });
+
+  test("F — falha parcial no undo do popover (CartHeaderButton) → toast de erro e nada indevidamente restaurado", async ({ page }) => {
+    // Semeia 2 carrinhos e intercepta o POST de restore com falha 500.
+    // No popover só deletamos 1 carrinho → o restore falha inteiro; o toast
+    // deve refletir a falha e o carrinho NÃO deve aparecer como restaurado.
+    const carts = Array.from({ length: 2 }, (_, i) => makeMockCart(i, 2));
+    await mockSellerCartsAPI(page, carts);
+
+    const calls = { delete: 0, cartInsertOk: 0, cartInsertFail: 0 };
+    await page.route(SELLER_CARTS_REST, async (route, request) => {
+      if (request.method() === "DELETE") {
+        calls.delete += 1;
+        await route.fulfill({ status: 204, body: "", headers: { "Content-Range": "0-0/1" } });
+        return;
+      }
+      if (request.method() === "POST") {
+        calls.cartInsertFail += 1;
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "simulated restore failure" }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+    await page.route(SELLER_CART_ITEMS_REST, async (route) => {
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify([]) });
+    });
+
+    await gotoAndSettle(page, "/carrinhos");
+
+    const trigger = page.getByTestId("cart-trigger");
+    await expect(trigger).toBeVisible({ timeout: 8_000 });
+    await trigger.click();
+
+    const drawer = page.getByTestId("cart-drawer");
+    await expect(drawer).toBeVisible({ timeout: 6_000 });
+    const deleteBtn = drawer.locator('[data-testid^="cart-delete-mock-cart-"]').first();
+    await deleteBtn.click();
+
+    const dialog = page.getByTestId("cart-delete-dialog");
+    await expect(dialog).toBeVisible({ timeout: 6_000 });
+    await page.getByTestId("cart-delete-confirm").click();
+
+    await expect.poll(() => calls.delete, { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+    await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+
+    // Screenshot baseline: toast pós-delete no popover.
+    await page.locator(UNDO_TOAST).screenshot({ path: "test-results/13-carts-undo/F-toast-before-undo.png" });
+
+    // Clica Desfazer → POST falha
+    await page.locator(UNDO_BTN).click();
+    await expect.poll(() => calls.cartInsertFail, { timeout: 8_000 }).toBeGreaterThanOrEqual(1);
+    expect(calls.cartInsertOk).toBe(0);
+
+    // Toast de erro (não deve exibir "restaurado" como sucesso total)
+    await expect(page.getByText(/falhou|erro|não foi possível/i).first()).toBeVisible({
+      timeout: 6_000,
+    });
+    await expect(page.locator("body")).not.toContainText(/Carrinho restaurado\./);
+
+    await page.screenshot({ path: "test-results/13-carts-undo/F-after-failed-undo.png" });
+  });
+
+  test("G — botão Desfazer fica inerte após 8s (linha, bulk e popover) sem novos POSTs", async ({ page }) => {
+    // Cenário G1: exclusão pela linha
+    {
+      const { calls } = await primeCarts(page, 2);
+      await gotoAndSettle(page, "/carrinhos");
+
+      const firstRowMenu = page.locator('[aria-label*="Ações"], [data-testid^="cart-row-menu-"]').first();
+      if (await firstRowMenu.count()) {
+        await firstRowMenu.click();
+        await page.getByRole("menuitem", { name: /excluir/i }).first().click();
+      } else {
+        await page.getByRole("button", { name: /excluir/i }).first().click();
+      }
+      const dialog = page.getByTestId("cart-row-delete-dialog");
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole("button", { name: /confirmar exclusão|excluir/i }).click();
+
+      const btn = page.locator(UNDO_BTN);
+      await expect(btn).toBeVisible({ timeout: 6_000 });
+      await page.locator(UNDO_TOAST).screenshot({ path: "test-results/13-carts-undo/G1-row-toast.png" });
+
+      // Aguarda 8.5s para o toast expirar
+      await page.waitForTimeout(8_500);
+      await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+
+      // Tenta clicar no botão remanescente (força, ignora visibilidade) — não deve disparar restore
+      const insertsBefore = calls.cartInsert;
+      await btn.click({ force: true, timeout: 1_000 }).catch(() => {});
+      await page.waitForTimeout(1_000);
+      expect(calls.cartInsert).toBe(insertsBefore);
+    }
+
+    // Cenário G2: bulk
+    {
+      const { calls } = await primeCarts(page, 3);
+      await gotoAndSettle(page, "/carrinhos");
+
+      await page.getByRole("button", { name: /selecionar/i }).first().click();
+      const rowCheckboxes = page.getByRole("checkbox", {
+        name: /selecionar carrinho|selecionar linha/i,
+      });
+      await expect(rowCheckboxes.first()).toBeVisible({ timeout: 8_000 });
+      await rowCheckboxes.nth(0).click();
+      await rowCheckboxes.nth(1).click();
+      await page.getByRole("button", { name: /excluir 2/i }).click();
+      const bulkDialog = page.getByTestId("carts-bulk-delete-dialog");
+      await bulkDialog.getByRole("button", { name: /excluir/i }).click();
+
+      await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+      await page.locator(UNDO_TOAST).screenshot({ path: "test-results/13-carts-undo/G2-bulk-toast.png" });
+
+      await page.waitForTimeout(8_500);
+      await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+      const insertsBefore = calls.cartInsert;
+      await page.locator(UNDO_BTN).click({ force: true, timeout: 1_000 }).catch(() => {});
+      await page.waitForTimeout(1_000);
+      expect(calls.cartInsert).toBe(insertsBefore);
+    }
+
+    // Cenário G3: popover
+    {
+      const { calls } = await primeCarts(page, 2);
+      await gotoAndSettle(page, "/carrinhos");
+
+      const trigger = page.getByTestId("cart-trigger");
+      await trigger.click();
+      const drawer = page.getByTestId("cart-drawer");
+      await expect(drawer).toBeVisible({ timeout: 6_000 });
+      await drawer.locator('[data-testid^="cart-delete-mock-cart-"]').first().click();
+      await expect(page.getByTestId("cart-delete-dialog")).toBeVisible({ timeout: 6_000 });
+      await page.getByTestId("cart-delete-confirm").click();
+
+      await expect(page.locator(UNDO_TOAST)).toBeVisible({ timeout: 6_000 });
+      await page.locator(UNDO_TOAST).screenshot({ path: "test-results/13-carts-undo/G3-popover-toast.png" });
+
+      await page.waitForTimeout(8_500);
+      await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+      const insertsBefore = calls.cartInsert;
+      await page.locator(UNDO_BTN).click({ force: true, timeout: 1_000 }).catch(() => {});
+      await page.waitForTimeout(1_000);
+      expect(calls.cartInsert).toBe(insertsBefore);
+    }
+  });
+
+  test("H — sem toasts duplicados no timeout (contagem = 0 após 8.5s em todos os fluxos)", async ({ page }) => {
+    await primeCarts(page, 3);
+    await gotoAndSettle(page, "/carrinhos");
+
+    // Fluxo 1: linha
+    const firstRowMenu = page.locator('[aria-label*="Ações"], [data-testid^="cart-row-menu-"]').first();
+    if (await firstRowMenu.count()) {
+      await firstRowMenu.click();
+      await page.getByRole("menuitem", { name: /excluir/i }).first().click();
+    } else {
+      await page.getByRole("button", { name: /excluir/i }).first().click();
+    }
+    await page
+      .getByTestId("cart-row-delete-dialog")
+      .getByRole("button", { name: /confirmar exclusão|excluir/i })
+      .click();
+
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(1, { timeout: 6_000 });
+    await page.waitForTimeout(8_500);
+    // Após timeout: nenhum toast Desfazer restante
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(0);
+
+    // Screenshot final — estado sem toasts duplicados.
+    await page.screenshot({ path: "test-results/13-carts-undo/H-after-timeout.png" });
+
+    // Confirma que a região de toasts do sonner não tem toasts remanescentes
+    // com texto de undo (evita duplicatas em fila).
+    const anyUndo = page.getByText(/você pode desfazer por até 8 segundos/i);
+    await expect(anyUndo).toHaveCount(0);
+  });
 });
