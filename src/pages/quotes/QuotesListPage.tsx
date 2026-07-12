@@ -364,7 +364,11 @@ export default function QuotesListPage() {
         {/* Delete Confirmation Dialog */}
         <ConfirmDialog
           open={!!deleteConfirmId}
-          onOpenChange={(o) => !o && setDeleteConfirmId(null)}
+          onOpenChange={(o) => {
+            // Bloqueia fechamento durante exclusão para evitar perda de feedback.
+            if (isDeleting) return;
+            if (!o) setDeleteConfirmId(null);
+          }}
           variant="destructive"
           title="Excluir orçamento?"
           description="Esta ação não pode ser desfeita. O orçamento será removido permanentemente."
@@ -372,6 +376,7 @@ export default function QuotesListPage() {
           confirmLabelShort="Excluir"
           cancelLabel="Cancelar"
           onConfirm={handleDelete}
+          loading={isDeleting}
           testId="quote-list-delete-dialog"
         />
 
