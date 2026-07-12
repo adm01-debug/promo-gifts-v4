@@ -186,11 +186,20 @@ export default function PublicMagazineView() {
           e.preventDefault();
           setTocOpen((v) => !v);
           break;
+        case 'b':
+        case 'B':
+          e.preventDefault();
+          toggleBookmark(safeIdx);
+          break;
+        case '?':
+          e.preventDefault();
+          setHelpOpen((v) => !v);
+          break;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [prev, next, go, toggleFullscreen, total]);
+  }, [prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx]);
 
   /* ---------------- Swipe ---------------- */
   const onTouchStart = (e: React.TouchEvent) => {
