@@ -325,6 +325,19 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     [restoreItemsMutation],
   );
 
+  const restoreCart = useCallback(
+    async (snapshot: SellerCart): Promise<string | undefined> => {
+      try {
+        const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
+        return created?.id;
+      } catch {
+        // Chamador (toast Desfazer) decide o texto do erro (singular/plural).
+        return undefined;
+      }
+    },
+    [restoreCartWithItemsMutation],
+  );
+
   const ctxValue = useMemo(
     () => ({
       carts,
