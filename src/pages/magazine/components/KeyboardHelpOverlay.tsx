@@ -18,8 +18,9 @@ const SHORTCUTS: Shortcut[] = [
   { keys: ['F'], label: 'Alternar tela cheia' },
   { keys: ['T'], label: 'Abrir sumário' },
   { keys: ['B'], label: 'Marcar/desmarcar página' },
+  { keys: ['P'], label: 'Modo apresentação (auto-advance)' },
   { keys: ['?'], label: 'Mostrar/ocultar este painel' },
-  { keys: ['Esc'], label: 'Fechar sumário/tela cheia' },
+  { keys: ['Esc'], label: 'Fechar sumário / zoom / apresentação' },
 ];
 
 interface Props {
